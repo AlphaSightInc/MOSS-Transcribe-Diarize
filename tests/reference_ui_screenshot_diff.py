@@ -56,6 +56,17 @@ def parse_args() -> argparse.Namespace:
         default=REPOSITORY_ROOT / "evidence/phase1/r1-reference-ui/screenshot-diff",
         help="Directory for screenshots, masks, Vite logs, and report.json.",
     )
+    parser.add_argument(
+        "--diagnostic-region",
+        action="append",
+        default=[],
+        metavar="ID=SELECTOR",
+        help=(
+            "Non-gating measurement region. The selector must render in both UIs; "
+            "the report records its union box and its share of the charter-masked diff. "
+            "May be repeated."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -180,6 +191,19 @@ def prepare_page(page: Page, fixture: list[dict[str, Any]], is_reference: bool) 
     return {"fixture_tail_rendered": required_text, "transcript_text": content}
 
 
+def wait_for_visual_settle(page: Page) -> None:
+    page.evaluate(
+        """
+        async () => {
+          await document.fonts.ready;
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
+        """
+    )
+    # The reference rail's collapsed-state transition is 0.28 s. Screenshot only after it ends.
+    page.wait_for_timeout(300)
+
+
 def selector_box(page: Page, selector: str) -> dict[str, float]:
     box = page.locator(selector).bounding_box()
     if box is None:
@@ -193,6 +217,22 @@ def union_box(reference: dict[str, float], candidate: dict[str, float]) -> tuple
     right = int(max(reference["x"] + reference["width"], candidate["x"] + candidate["width"]) + 1)
     bottom = int(max(reference["y"] + reference["height"], candidate["y"] + candidate["height"]) + 1)
     return left, top, right, bottom
+
+
+def parse_diagnostic_regions(raw_regions: list[str]) -> list[tuple[str, str]]:
+    regions: list[tuple[str, str]] = []
+    seen_ids: set[str] = set()
+    for raw_region in raw_regions:
+        region_id, separator, selector = raw_region.partition("=")
+        if not separator or not region_id or not selector:
+            raise ValueError(
+                f"Diagnostic region must use ID=SELECTOR, got {raw_region!r}."
+            )
+        if region_id in seen_ids:
+            raise ValueError(f"Duplicate diagnostic region id: {region_id!r}.")
+        seen_ids.add(region_id)
+        regions.append((region_id, selector))
+    return regions
 
 
 def apply_exemptions(
@@ -221,6 +261,46 @@ def apply_exemptions(
                 "reference_box": reference,
                 "candidate_box": candidate,
                 "masked_union_box": {"left": left, "top": top, "right": right, "bottom": bottom},
+            }
+        )
+    return evidence
+
+
+def measure_diagnostic_regions(
+    difference: bytearray,
+    width: int,
+    height: int,
+    regions: list[tuple[str, str]],
+    reference_page: Page,
+    candidate_page: Page,
+) -> list[dict[str, Any]]:
+    differing_pixels_after_exemptions = sum(difference)
+    evidence: list[dict[str, Any]] = []
+    for region_id, selector in regions:
+        reference = selector_box(reference_page, selector)
+        candidate = selector_box(candidate_page, selector)
+        left, top, right, bottom = union_box(reference, candidate)
+        left, top = max(0, left), max(0, top)
+        right, bottom = min(width, right), min(height, bottom)
+        region_pixels = sum(
+            difference[row * width + column]
+            for row in range(top, bottom)
+            for column in range(left, right)
+        )
+        evidence.append(
+            {
+                "id": region_id,
+                "selector": selector,
+                "reference_box": reference,
+                "candidate_box": candidate,
+                "union_box": {"left": left, "top": top, "right": right, "bottom": bottom},
+                "differing_pixels_after_exemptions": region_pixels,
+                "percent_of_viewport": region_pixels * 100 / (width * height),
+                "percent_of_charter_masked_difference": (
+                    region_pixels * 100 / differing_pixels_after_exemptions
+                    if differing_pixels_after_exemptions
+                    else 0.0
+                ),
             }
         )
     return evidence
@@ -258,6 +338,7 @@ def compare_viewport(
     candidate_path: Path,
     mask_path: Path,
     config: dict[str, Any],
+    diagnostic_regions: list[tuple[str, str]],
     reference_page: Page,
     candidate_page: Page,
 ) -> dict[str, Any]:
@@ -277,6 +358,14 @@ def compare_viewport(
         difference, width, height, config["exemptions"], reference_page, candidate_page
     )
     differing_pixels = sum(difference)
+    diagnostics = measure_diagnostic_regions(
+        difference,
+        width,
+        height,
+        diagnostic_regions,
+        reference_page,
+        candidate_page,
+    )
     Image.frombytes("L", (width, height), bytes(value * 255 for value in difference)).save(mask_path)
     largest = largest_component(difference, width, height, config["connectivity"])
     area = width * height
@@ -293,6 +382,7 @@ def compare_viewport(
         "largest_four_connected_region_pixels": largest,
         "largest_four_connected_region_percent": largest_percent,
         "exemptions": exemptions,
+        "diagnostic_regions": diagnostics,
         "passed": (
             differing_percent <= config["max_different_pixel_percent"]
             and largest_percent <= config["max_largest_region_percent"]
@@ -304,6 +394,7 @@ def main() -> int:
     args = parse_args()
     fixture = load_json(args.fixture)
     config = load_json(args.config)
+    diagnostic_regions = parse_diagnostic_regions(args.diagnostic_region)
     if not isinstance(fixture, list) or not fixture:
         raise ValueError("The screenshot fixture must be a non-empty JSON array.")
 
@@ -334,6 +425,8 @@ def main() -> int:
                         candidate_page.wait_for_selector(".main")
                         reference_fixture = prepare_page(reference_page, fixture, is_reference=True)
                         candidate_fixture = prepare_page(candidate_page, fixture, is_reference=False)
+                        wait_for_visual_settle(reference_page)
+                        wait_for_visual_settle(candidate_page)
                         label = f"{viewport['width']}x{viewport['height']}"
                         reference_path = output / f"reference-{label}.png"
                         candidate_path = output / f"candidate-{label}.png"
@@ -345,6 +438,7 @@ def main() -> int:
                             candidate_path,
                             mask_path,
                             config,
+                            diagnostic_regions,
                             reference_page,
                             candidate_page,
                         )
@@ -370,6 +464,10 @@ def main() -> int:
             "max_largest_region_percent": config["max_largest_region_percent"],
             "connectivity": config["connectivity"],
         },
+        "diagnostic_regions": [
+            {"id": region_id, "selector": selector}
+            for region_id, selector in diagnostic_regions
+        ],
         "viewports": viewport_results,
         "passed": all(result["passed"] for result in viewport_results),
     }

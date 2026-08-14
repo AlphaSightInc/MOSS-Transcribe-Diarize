@@ -1,6 +1,6 @@
 # Context — r1-reference-ui
 
-Iteration 8. The binding acceptance checklist has been reconciled against the
+Iteration 9. The binding acceptance checklist has been reconciled against the
 PRD, charter, T-02, T-05, T-07, and T-10. The first visible reference-shell
 slice and reduced transcript component now replace the stub; the full port remains open.
 
@@ -49,31 +49,30 @@ slice and reduced transcript component now replace the stub; the full port remai
   the current slice as complete. It also renders the real `App` and proves the rail has
   `data-right-collapsed="true"`, no history body, and no interactive control. Its captured raw
   output is `evidence/phase1/r1-reference-ui/reference-ui-probe-iteration-6.txt`.
-- `tests/reference_ui_screenshot_diff.py` is now the committed charter §5 probe. It serves the
+- `tests/reference_ui_screenshot_diff.py` is the committed charter §5 probe. It serves the
   reference and candidate source trees locally in the same headless Chromium process, injects
   `tests/fixtures/reference_ui_screenshot_fixture.json` through each real `state/session.ts`,
-  and records screenshots, masks, selectors, and metrics for 1440x900 and 1280x800. Its config
-  declares only the ruled exemptions: the collapsed right rail and the two-versus-reference mode
-  control. The valid run has no Vite/API errors and confirms the same provisional-tail fixture
-  text rendered in both actual transcript components. It fails honestly:
-  `27.2860%` differing pixels / `17.4164%` largest region at 1440x900 and `29.8669%` /
-  `22.4482%` at 1280x800, versus the charter's `2%` / `1%` limits. Raw output:
-  `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/`.
-- **BLOCKED — supervisor fidelity ruling required.** Iteration 8 re-audited the committed
-  screenshot report and its exact config: only the right rail and the mode control are masked.
-  Yet T-05/C2 require the reference's host-only microphone/source/mute/export surfaces to be
-  dropped. T-10's original question calls T-05's dropped controls legitimate exemptions, while
-  the binding charter §5 omits them. The report proves both real transcript components rendered
-  the shared fixture, then fails at 27.2860% / 17.4164% (1440x900) and 29.8669% / 22.4482%
-  (1280x800), versus 2% / 1%. The still-missing retained reference surface independently keeps
-  the branch far from the gate, but that future work cannot resolve this rules collision. Do not
-  add an undeclared mask or reintroduce dropped controls. Supervisor must choose one explicit
+  waits for fonts and the reference's 0.28 s collapsed-rail transition, then records screenshots,
+  masks, selectors, and metrics at 1440x900 and 1280x800. The config still declares only the
+  ruled exemptions: the collapsed right rail and the two-versus-reference mode control. Its
+  optional `--diagnostic-region ID=SELECTOR` output is non-gating and leaves that mask untouched.
+  Two settled runs both rendered the fixture tail in the real transcript components and failed
+  honestly: 1440x900 is `11.5220–11.5613%` differing / `3.1278%` largest region; 1280x800 is
+  `17.0370–17.1004%` / `7.5531%`, versus the charter's `2%` / `1%`. The settled raw artifacts
+  are `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-9-settled-{a,b}/`; superseded
+  iteration-7 timing-sensitive output remains historical evidence only.
+- **BLOCKED — supervisor fidelity ruling required.** The settled diagnostic attributes current
+  unmasked difference inside the shared control-panel box alone to `5.8448–5.8454%` of the
+  1440x900 viewport and `6.4544%` at 1280x800; the shared transcript-panel box adds
+  `5.5985–5.6370%` and `7.0905–7.1539%`. Those boxes are measurement regions, not proposed
+  exemptions, so they do not isolate or excuse individual controls. T-05/C2 still require the
+  reference's host-only microphone/source/mute/export surfaces to be dropped, while T-10's
+  question calls dropped controls legitimate exemptions and binding charter §5 omits them. Do
+  not add an undeclared mask or reintroduce dropped controls. Supervisor must choose one explicit
   canonical rule: (a) amend charter §5 with declared T-05 dropped-control exemption selectors,
   (b) revise T-05/C2 to retain those reference controls, or (c) approve a different canonical
-  Phase-1 visual oracle. Evidence and re-runnable probe:
-  `tests/reference_ui_screenshot_diff.py`,
-  `tests/fixtures/reference_ui_screenshot_diff.json`, and
-  `evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/report.json`.
+  Phase-1 visual oracle. Evidence and re-runnable probe: `tests/reference_ui_screenshot_diff.py`,
+  `tests/fixtures/reference_ui_screenshot_diff.json`, and the two iteration-9 reports.
 - Focused validation passed: `npm --prefix frontend run typecheck && npm --prefix frontend test &&
   python3 scripts/afk-guardrails/preflight.py r1-reference-ui && git diff --check`.
   Vitest: 12 passed. The Vite `__dirname` deprecation warning is pre-existing tool output,

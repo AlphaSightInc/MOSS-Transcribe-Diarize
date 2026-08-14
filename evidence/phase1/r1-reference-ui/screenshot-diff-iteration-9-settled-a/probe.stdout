@@ -1,0 +1,329 @@
+{
+  "probe": "tests/reference_ui_screenshot_diff.py",
+  "reference_frontend": "/Users/gao/Desktop/AI_Projects/LiveTranscribe/frontend",
+  "candidate_frontend": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/frontend",
+  "fixture": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/tests/fixtures/reference_ui_screenshot_fixture.json",
+  "config": "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/tests/fixtures/reference_ui_screenshot_diff.json",
+  "thresholds": {
+    "max_different_pixel_percent": 2.0,
+    "max_largest_region_percent": 1.0,
+    "connectivity": 4
+  },
+  "diagnostic_regions": [
+    {
+      "id": "control-panel",
+      "selector": "#control-panel"
+    },
+    {
+      "id": "transcript-panel",
+      "selector": "#transcript-panel"
+    },
+    {
+      "id": "topbar",
+      "selector": ".topbar"
+    }
+  ],
+  "viewports": [
+    {
+      "reference_screenshot": "reference-1440x900.png",
+      "candidate_screenshot": "candidate-1440x900.png",
+      "difference_mask": "difference-mask-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "raw_differing_pixels_before_exemptions": 161063,
+      "differing_pixels_after_exemptions": 149325,
+      "different_pixel_percent": 11.52199074074074,
+      "largest_four_connected_region_pixels": 40536,
+      "largest_four_connected_region_percent": 3.1277777777777778,
+      "exemptions": [
+        {
+          "id": "right-column-rail",
+          "reference_selector": ".history-panel",
+          "candidate_selector": ".history-panel",
+          "reference_box": {
+            "x": 1374.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 812.5
+          },
+          "candidate_box": {
+            "x": 1374.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 812.5
+          },
+          "masked_union_box": {
+            "left": 1374,
+            "top": 69,
+            "right": 1423,
+            "bottom": 883
+          }
+        },
+        {
+          "id": "mode-segmented-control",
+          "reference_selector": "[role='tablist'][aria-label='Session mode']",
+          "candidate_selector": "[role='tablist'][aria-label='Session mode']",
+          "reference_box": {
+            "x": 31.0,
+            "y": 164.0,
+            "width": 254.0,
+            "height": 41.5
+          },
+          "candidate_box": {
+            "x": 31.0,
+            "y": 179.375,
+            "width": 254.0,
+            "height": 41.5
+          },
+          "masked_union_box": {
+            "left": 31,
+            "top": 164,
+            "right": 286,
+            "bottom": 221
+          }
+        }
+      ],
+      "diagnostic_regions": [
+        {
+          "id": "control-panel",
+          "selector": "#control-panel",
+          "reference_box": {
+            "x": 18.0,
+            "y": 69.5,
+            "width": 280.0,
+            "height": 812.5
+          },
+          "candidate_box": {
+            "x": 18.0,
+            "y": 69.5,
+            "width": 280.0,
+            "height": 812.5
+          },
+          "union_box": {
+            "left": 18,
+            "top": 69,
+            "right": 299,
+            "bottom": 883
+          },
+          "differing_pixels_after_exemptions": 75749,
+          "percent_of_viewport": 5.84483024691358,
+          "percent_of_charter_masked_difference": 50.72760756738657
+        },
+        {
+          "id": "transcript-panel",
+          "selector": "#transcript-panel",
+          "reference_box": {
+            "x": 310.0,
+            "y": 13.5,
+            "width": 1052.0,
+            "height": 868.5
+          },
+          "candidate_box": {
+            "x": 310.0,
+            "y": 13.5,
+            "width": 1052.0,
+            "height": 868.5
+          },
+          "union_box": {
+            "left": 310,
+            "top": 13,
+            "right": 1363,
+            "bottom": 883
+          },
+          "differing_pixels_after_exemptions": 72557,
+          "percent_of_viewport": 5.598533950617284,
+          "percent_of_charter_masked_difference": 48.58998828059602
+        },
+        {
+          "id": "topbar",
+          "selector": ".topbar",
+          "reference_box": {
+            "x": 18.0,
+            "y": 14.0,
+            "width": 1404.0,
+            "height": 45.5
+          },
+          "candidate_box": {
+            "x": 18.0,
+            "y": 14.0,
+            "width": 1404.0,
+            "height": 45.5
+          },
+          "union_box": {
+            "left": 18,
+            "top": 14,
+            "right": 1423,
+            "bottom": 60
+          },
+          "differing_pixels_after_exemptions": 3408,
+          "percent_of_viewport": 0.26296296296296295,
+          "percent_of_charter_masked_difference": 2.2822702159718733
+        }
+      ],
+      "passed": false,
+      "fixture": {
+        "reference": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "LiveTranscribe\n\u270e\n# Speakers\nA\nS01\nS02\nTranscript\nSummary\nFind\nCopy\nAuto-scroll\nFormatted\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        },
+        "candidate": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "Live transcript\nS01\nS02\nFind\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        }
+      }
+    },
+    {
+      "reference_screenshot": "reference-1280x800.png",
+      "candidate_screenshot": "candidate-1280x800.png",
+      "difference_mask": "difference-mask-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "raw_differing_pixels_before_exemptions": 185391,
+      "differing_pixels_after_exemptions": 174459,
+      "different_pixel_percent": 17.03701171875,
+      "largest_four_connected_region_pixels": 77344,
+      "largest_four_connected_region_percent": 7.553125,
+      "exemptions": [
+        {
+          "id": "right-column-rail",
+          "reference_selector": ".history-panel",
+          "candidate_selector": ".history-panel",
+          "reference_box": {
+            "x": 1214.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 712.5
+          },
+          "candidate_box": {
+            "x": 1214.0,
+            "y": 69.5,
+            "width": 48.0,
+            "height": 712.5
+          },
+          "masked_union_box": {
+            "left": 1214,
+            "top": 69,
+            "right": 1263,
+            "bottom": 783
+          }
+        },
+        {
+          "id": "mode-segmented-control",
+          "reference_selector": "[role='tablist'][aria-label='Session mode']",
+          "candidate_selector": "[role='tablist'][aria-label='Session mode']",
+          "reference_box": {
+            "x": 31.0,
+            "y": 164.0,
+            "width": 214.0,
+            "height": 41.5
+          },
+          "candidate_box": {
+            "x": 31.0,
+            "y": 179.375,
+            "width": 214.0,
+            "height": 41.5
+          },
+          "masked_union_box": {
+            "left": 31,
+            "top": 164,
+            "right": 246,
+            "bottom": 221
+          }
+        }
+      ],
+      "diagnostic_regions": [
+        {
+          "id": "control-panel",
+          "selector": "#control-panel",
+          "reference_box": {
+            "x": 18.0,
+            "y": 69.5,
+            "width": 240.0,
+            "height": 712.5
+          },
+          "candidate_box": {
+            "x": 18.0,
+            "y": 69.5,
+            "width": 240.0,
+            "height": 712.5
+          },
+          "union_box": {
+            "left": 18,
+            "top": 69,
+            "right": 259,
+            "bottom": 783
+          },
+          "differing_pixels_after_exemptions": 66093,
+          "percent_of_viewport": 6.45439453125,
+          "percent_of_charter_masked_difference": 37.88454593916049
+        },
+        {
+          "id": "transcript-panel",
+          "selector": "#transcript-panel",
+          "reference_box": {
+            "x": 270.0,
+            "y": 13.5,
+            "width": 932.0,
+            "height": 768.5
+          },
+          "candidate_box": {
+            "x": 270.0,
+            "y": 13.5,
+            "width": 932.0,
+            "height": 768.5
+          },
+          "union_box": {
+            "left": 270,
+            "top": 13,
+            "right": 1203,
+            "bottom": 783
+          },
+          "differing_pixels_after_exemptions": 72607,
+          "percent_of_viewport": 7.09052734375,
+          "percent_of_charter_masked_difference": 41.61837451779501
+        },
+        {
+          "id": "topbar",
+          "selector": ".topbar",
+          "reference_box": {
+            "x": 18.0,
+            "y": 14.0,
+            "width": 1244.0,
+            "height": 45.5
+          },
+          "candidate_box": {
+            "x": 18.0,
+            "y": 14.0,
+            "width": 1244.0,
+            "height": 45.5
+          },
+          "union_box": {
+            "left": 18,
+            "top": 14,
+            "right": 1263,
+            "bottom": 60
+          },
+          "differing_pixels_after_exemptions": 4249,
+          "percent_of_viewport": 0.41494140625,
+          "percent_of_charter_masked_difference": 2.435529264755616
+        }
+      ],
+      "passed": false,
+      "fixture": {
+        "reference": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "LiveTranscribe\n\u270e\n# Speakers\nA\nS01\nS02\nTranscript\nSummary\nFind\nCopy\nAuto-scroll\nFormatted\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        },
+        "candidate": {
+          "fixture_tail_rendered": "The fixture ends with a provisional tail.",
+          "transcript_text": "Live transcript\nS01\nS02\nFind\nS01\n00:00:00\n\nThe shared transcript fixture begins with a confirmed speaker turn.\n\nS02\n00:00:03\n\nA second generic speaker makes the legend and turn boundary visible.\n\nS01\n00:00:07\n\nThe fixture ends with a provisional tail."
+        }
+      }
+    }
+  ],
+  "passed": false
+}
