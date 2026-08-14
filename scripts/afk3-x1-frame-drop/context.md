@@ -1,6 +1,6 @@
 # Context — x1-frame-drop
 
-Iteration 6.
+Iteration 7.
 
 Branch `afk3/x1-frame-drop` from `dev`. Every defect in the PRD was found by independent adversarial
 review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-afk-charter.md`
@@ -8,14 +8,17 @@ review with a reproduction; they are facts, not hypotheses. Read `docs/phase1-af
 
 ## Current branch-validation baseline — not x1 work
 
-The iteration-6 full-suite run has three failures: the L15 baseline intentionally refuses the
-product-tree drift from `9089b332`, and two Darwin-only macOS lifecycle/UDS tests fail
-(`test_built_macos_app_finishes_launch_and_honors_application_terminate` and
-`test_built_macos_app_cli_cross_real_uds_and_private_tls_server`). All remaining tests passed:
-`1007 passed, 4 skipped, 479 subtests passed`. Neither `tests/test_macos_uds_tracer.py` nor the
-L15 baseline paths differ from `pre-afk-20260813...HEAD`; x1 must not edit their pins or tests to
-manufacture a green suite. The strict all-suite exit is therefore an external baseline blocker,
-not an x1 regression.
+The iteration-6 full-suite run had three failures: L15 product-tree drift from `9089b332` and two
+Darwin macOS lifecycle/UDS tests. Iteration 7's focused reproductions confirm two current
+blockers: `BaselineContractTests::test_a2_instrument_is_hash_pinned_and_production_bound` raises
+`l15_product_tree_drift: 9089b332...`, and
+`test_built_macos_app_finishes_launch_and_honors_application_terminate` exits 2 because its PID
+does not resolve through `NSRunningApplication`. The other previously failing UDS/TLS test passes
+both focused and in the full macOS module (`1 failed, 5 passed`), so it is not currently a
+reproduced blocker. The full suite has not been rerun in iteration 7; its strict green exit
+remains open because the two focused failures remain. Neither
+`tests/test_macos_uds_tracer.py` nor `prototypes/streaming-diarization/l15` differs from
+`pre-afk-20260813...HEAD`, and x1 must not change their pins or tests to manufacture a pass.
 
 ## Validation
 
@@ -36,8 +39,9 @@ python3 scripts/afk-guardrails/preflight.py x1-frame-drop
   `evidence/phase1/x1-frame-drop/`; `preflight.py x1-frame-drop` confirms their citations and
   ownership. `iteration-6` also verified those six probe/artifact paths are tracked.
 - [ ] Strict all-suite validation exits green after merging current `dev`: `dev` is already an
-  ancestor (0 behind / 11 branch commits), but `pytest -q` exits 1 only on the inherited baseline
-  failures above. Do not mask them with exclusions; needs their owning work, not an x1 change.
+  ancestor (0 behind / 12 branch commits), but `pytest -q` cannot exit green while the focused L15
+  product-tree and macOS lifecycle failures above persist. Do not mask them with exclusions; this
+  needs their owning work, not an x1 change.
 
 ## G7 production-geometry result
 
@@ -55,11 +59,12 @@ also passed again against the added route instrumentation using temporary output
 
 ## Current integration state
 
-`dev` (`23afb6d`) is already an ancestor of this branch through merge `ccd906d` (verified again
-at iteration 6: `git rev-list --left-right --count dev...HEAD` = `0 11`), so the required
-merged-result is current `HEAD`; no merge is necessary. The full-suite command at that head was
-`1007 passed, 4 skipped, 479 subtests passed` plus the three inherited failures documented above.
-`python3 scripts/afk-guardrails/preflight.py x1-frame-drop` remains `PREFLIGHT OK`.
+`dev` (`23afb6d`) is already an ancestor of this branch through merge `ccd906d` (iteration 7:
+`git rev-list --left-right --count dev...HEAD` = `0 12`), so the required merged-result is current
+`HEAD`; no merge is necessary. The iteration-6 full suite was `1007 passed, 4 skipped, 479
+subtests passed` plus its three baseline failures; iteration 7 narrowed that to the two currently
+reproduced failures described above. `python3 scripts/afk-guardrails/preflight.py x1-frame-drop`
+remains `PREFLIGHT OK`.
 
 The PRD's literal `sendPaused || sendInFlight` predecessor is on the unmerged
 `afk2/f1-canary-fixes` line, not this checkout. The checked-out page instead starts every frame
@@ -96,6 +101,8 @@ worklet cadence or a real provider, and they do not satisfy the required 8000-fr
 
 ## Ranked candidates
 
-1. Blocked outside x1: restore the inherited L15/macOS baseline suite to a green exit, then rerun
-   the exact full-suite command on this unchanged merged head. Do not change those out-of-scope
-   tests, their pins, or test selection from this ticket.
+1. Blocked outside x1: L15's owner must reconcile its immutable `9089b332` product-tree pin with
+   the twelve current `moss_transcribe_diarize/app/*` changes, and the macOS owner must repair the
+   Launch Services lifecycle test/application boundary. Then rerun the exact full-suite command
+   on this unchanged merged head. Do not change those out-of-scope tests, pins, or test selection
+   from this ticket.
