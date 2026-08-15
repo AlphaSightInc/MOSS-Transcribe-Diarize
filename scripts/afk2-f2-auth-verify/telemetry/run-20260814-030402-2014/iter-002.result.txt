@@ -1,6 +1,0 @@
-Committed `34641d2` — auth acceptance map.
-
-Found: capture/view bearer digests use `==`; constant-time gate fails. Diagnostic focused suite: 111 pass / 355 subtests. Required `.venv/bin/pytest` blocked: worktree lacks `.venv`.
-
-Next: harden `live_auth.py`; supply local venv.
-

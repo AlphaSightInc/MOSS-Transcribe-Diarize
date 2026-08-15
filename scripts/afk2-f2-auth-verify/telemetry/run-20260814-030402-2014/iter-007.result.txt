@@ -1,6 +1,0 @@
-Iteration 7 committed: `6396afa`.
-
-- Added pairing-mode raw evidence: [iteration-7-pairing-mode.xml](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/evidence/phase1/f2-auth-verify/iteration-7-pairing-mode.xml)
-- Validation: 3 focused tests passed; preflight passed.
-- Still blocked: no worktree `.venv`; `dev` must merge before exact gate.
-- Next: constant-time or authority-diff artifact.

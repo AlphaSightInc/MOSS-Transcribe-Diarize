@@ -1,7 +1,0 @@
-Iteration 3 committed: `3aae9bf`.
-
-Changed `live_auth.py` to use `hmac.compare_digest` for capture/view bearer digests.
-
-Validation: `test_live_auth.py` 15 passed; preflight + diff check passed.
-
-Blocked: required `.venv` absent; `dev` advanced and needs merge before final gate.

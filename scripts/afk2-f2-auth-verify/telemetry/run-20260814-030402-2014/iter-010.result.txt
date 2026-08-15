@@ -1,6 +1,0 @@
-Committed `d2a0dff`.
-
-Gate blocked: `.venv/bin/pytest` missing, exit 127. Evidence: `evidence/phase1/f2-auth-verify/iteration-10-required-gate-environment-blocker.txt`.
-
-Preflight + diff check pass. Next: operator supplies `.venv`, merge `dev`, run exact gate.
-

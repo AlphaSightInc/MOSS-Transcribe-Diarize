@@ -1,5 +1,0 @@
-Committed `c145e19` — F2 acceptance checklist + loop record.
-
-Validation: `git diff --check` and preflight PASS.
-
-No auth behavior changed or proven. Next: map `live_auth.py`, routes, tests to all seven criteria.

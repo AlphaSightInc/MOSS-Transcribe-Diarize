@@ -1,7 +1,0 @@
-Iteration 5 committed: `e838850 ralph: iteration 5 - prove token disk exclusion`.
-
-- Added configured-token disk-state regression proof.
-- Focused test: 2 passed; preflight/diff check passed.
-- Required `.venv` gate remains blocked: `.venv/bin/pytest` absent.
-- Worktree clean; `dev` is ancestor of HEAD.
-
