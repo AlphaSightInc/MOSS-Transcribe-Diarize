@@ -1,6 +1,0 @@
-Iteration 1 committed: `e283840 ralph: iteration 1 - record acceptance contract`.
-
-- Recorded f6 acceptance checklist and crash-limit.
-- Preflight: `PREFLIGHT OK`.
-- Next: inspect journal/finalization paths; implement smallest P0 slice.
-

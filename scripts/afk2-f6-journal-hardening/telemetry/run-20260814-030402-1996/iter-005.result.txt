@@ -1,7 +1,0 @@
-Iteration 5 committed: `f099d1b`.
-
-- Journal rows now persist `exemplar_count` and `provisional`.
-- 0.05 s provisional-support probe passes; owned suites: 81 passed.
-- Preflight passes; worktree clean.
-- Final gate still blocked: `.venv/bin/pytest` absent. No COMPLETE.
-

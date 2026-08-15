@@ -1,5 +1,0 @@
-Iteration 7 committed: `107797d ralph: iteration 7 - record final gate blocker`.
-
-Blocked: mandatory `.venv/bin/pytest` absent; no adjacent executable pytest. Preflight passes. Evidence: `evidence/phase1/f6-journal-hardening/iteration-07-final-gate-prerequisite.txt`.
-
-<promise>COMPLETE</promise>

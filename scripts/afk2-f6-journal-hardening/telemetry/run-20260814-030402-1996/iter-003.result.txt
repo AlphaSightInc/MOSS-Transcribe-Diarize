@@ -1,7 +1,0 @@
-Committed `00e6d85` — ENOSPC partial-write regression.
-
-- Runtime stop stays closed; emits one `vector_journal_failed`.
-- Preflight OK; focused tests: 3 passed.
-- Final gate still blocked: `.venv/bin/pytest` absent.
-- Next: named `None`-centroid refusals.
-
