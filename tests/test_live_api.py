@@ -635,6 +635,42 @@ class LiveApiTest(unittest.TestCase):
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
             self.assertEqual(rejected.status_code, 403)
 
+    def test_v2_lane_frame_is_refused_after_mono_terminal_failure(self):
+        from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            self.assertEqual(
+                client.post(frames_url, json=frame_payload(0, 4)).status_code,
+                200,
+            )
+            terminal = client.post(frames_url, json=frame_payload(1, 5))
+            self.assertIsNotNone(terminal.json()["snapshot"]["terminal_failure"])
+
+            late_v2 = client.post(
+                frames_url,
+                json=v2_frame_payload(0, 1, lane="system"),
+            )
+
+            self.assertEqual(late_v2.status_code, 409)
+            self.assertEqual(
+                app.state.live_v2_sessions.get(session_id).snapshot().lanes[
+                    LiveLane.SYSTEM
+                ].next_sequence,
+                0,
+            )
+
     def test_clean_stop_immediately_revokes_view_authority(self):
         from moss_transcribe_diarize.app.server import create_app
 

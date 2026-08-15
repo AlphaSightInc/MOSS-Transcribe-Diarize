@@ -156,3 +156,10 @@ WHAT THESE TESTS DO NOT COVER
   - A view token that expires mid-meeting on a *healthy* session. It is answered 401 by the
     same code path, so the portal now stops and says the view ended -- correct copy, but the
     scenario has no probe of its own.
+
+POST-REBOOT COVERAGE — 2026-08-15
+  The previously unnamed v2 admission change now has a route regression:
+  `test_v2_lane_frame_is_refused_after_mono_terminal_failure` drives the mono runtime to a
+  terminal failure, posts a v2 system-lane frame, requires HTTP 409, and proves the lane's
+  sequence remains zero. This pins the selected permanent-refusal behavior without coupling
+  the test to the sibling x3 branch's mono response-code reconciliation.
