@@ -169,6 +169,7 @@ def build_app(
     *,
     model_path: Path | None = None,
     live_provider_manifest: Path | None = None,
+    runtime_factory_override=None,
 ):
     from fastapi.responses import FileResponse, JSONResponse
 
@@ -187,7 +188,10 @@ def build_app(
         device_id="browser-route-probe",
         now=1.0,
     )
-    if model_path is None and live_provider_manifest is None:
+    if runtime_factory_override is not None:
+        runtime_factory = runtime_factory_override
+        provider_scope = "real production routes with a probe-supplied deterministic runtime; no model inference"
+    elif model_path is None and live_provider_manifest is None:
         def runtime_factory():
             runtime = helpers.make_live_runtime(
                 max_retained_samples=320_000,
@@ -237,6 +241,7 @@ def build_app(
     app.state.prototype_provider_scope = provider_scope
     app.state.prototype_commit_wall_ns = commit_wall_ns
     app.state.prototype_telemetry = {
+        "accepted_frames": [],
         "lanes": {},
         "contract_probes": [],
         "phases": [],
@@ -245,6 +250,46 @@ def build_app(
         "heartbeats": [],
     }
     app.state.prototype_lock = threading.Lock()
+
+    @app.middleware("http")
+    async def record_strict_v2_frame_acceptance(request: Request, call_next):
+        """Keep only successful strict-v2 frame admissions for browser-probe joins."""
+        parts = request.url.path.split("/")
+        frame = None
+        if (
+            request.method == "POST"
+            and len(parts) == 6
+            and parts[:4] == ["", "api", "live", "sessions"]
+            and parts[5] == "frames"
+        ):
+            try:
+                payload = await request.json()
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                payload = None
+            if (
+                isinstance(payload, dict)
+                and payload.get("lane") in ("system", "microphone")
+                and isinstance(payload.get("sequence"), int)
+                and isinstance(payload.get("sample_count"), int)
+                and isinstance(payload.get("sample_rate"), int)
+                and isinstance(payload.get("device_epoch"), int)
+            ):
+                frame = {
+                    "session_id": parts[4],
+                    "lane": payload["lane"],
+                    "sequence": payload["sequence"],
+                    "sample_count": payload["sample_count"],
+                    "sample_rate": payload["sample_rate"],
+                    "device_epoch": payload["device_epoch"],
+                }
+
+        response = await call_next(request)
+        if frame is not None and response.status_code == 200:
+            with app.state.prototype_lock:
+                app.state.prototype_telemetry["accepted_frames"].append(
+                    {**frame, "route_accepted_wall_ms": round(time.time() * 1_000)}
+                )
+        return response
 
     @app.get("/capture-harness")
     def capture_harness():
@@ -347,14 +392,36 @@ def build_app(
         hidden_heartbeats = [
             record for record in heartbeats if record.get("client_visibility") == "hidden"
         ]
-        hidden_frames = {
-            lane: [
-                record
-                for record in records.values()
-                if record.get("client_visibility") == "hidden"
-            ]
-            for lane, records in telemetry["lanes"].items()
-        }
+        def admitted_frames(visibility: str) -> dict[str, list[dict]]:
+            selected = {"system": [], "microphone": []}
+            for accepted in telemetry["accepted_frames"]:
+                if accepted["session_id"] != session_id:
+                    continue
+                emitted = next(
+                    (
+                        record
+                        for record in telemetry["lanes"].get(accepted["lane"], {}).values()
+                        if record.get("session_id") == session_id
+                        and record.get("wire_sequence") == accepted["sequence"]
+                        and record.get("client_visibility") == visibility
+                    ),
+                    None,
+                )
+                if emitted is not None:
+                    selected[accepted["lane"]].append(
+                        {
+                            **accepted,
+                            "emitted_sequence": emitted["sequence"],
+                            "client_visibility": emitted["client_visibility"],
+                            "client_wall_ms": emitted["client_wall_ms"],
+                            "client_rms": emitted["client_rms"],
+                            "quanta": emitted["quanta"],
+                        }
+                    )
+            return selected
+
+        hidden_frames = admitted_frames("hidden")
+        visible_frames = admitted_frames("visible")
         try:
             v2 = app.state.live_v2_sessions.get(session_id).snapshot().to_dict()
         except KeyError:
@@ -397,19 +464,19 @@ def build_app(
             },
             "hidden_frame_cadence": {
                 lane: _visibility_cadence(
-                    list(telemetry["lanes"][lane].values()),
+                    records,
                     "hidden",
-                    time_key="client_wall_ms",
+                    time_key="route_accepted_wall_ms",
                 )
-                for lane in hidden_frames
+                for lane, records in hidden_frames.items()
             },
             "visible_frame_cadence": {
                 lane: _visibility_cadence(
-                    list(records.values()),
+                    records,
                     "visible",
-                    time_key="client_wall_ms",
+                    time_key="route_accepted_wall_ms",
                 )
-                for lane, records in telemetry["lanes"].items()
+                for lane, records in visible_frames.items()
             },
             "v2_session": v2,
             "helper_presence": None if helper_presence is None else helper_presence.to_dict(),
@@ -420,6 +487,11 @@ def build_app(
             ],
             "raw_hidden_heartbeats": hidden_heartbeats,
             "raw_hidden_frames": hidden_frames,
+            "raw_strict_v2_frame_acceptances": [
+                accepted
+                for accepted in telemetry["accepted_frames"]
+                if accepted["session_id"] == session_id
+            ],
         }
 
     @app.post("/prototype/reset")

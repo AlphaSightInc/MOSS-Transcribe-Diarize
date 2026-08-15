@@ -209,7 +209,7 @@ def test_helper_heartbeat_route_is_capture_owned_and_visible_in_authorized_snaps
         assert advanced.json()["helper_presence"]["last_seen_monotonic_ns"] == 1_000
         assert snapshot.status_code == 200
         assert snapshot.json()["helper_presence"] == advanced.json()["helper_presence"]
-        assert snapshot.json()["capture_phase"] == "recording"
+        assert snapshot.json()["capture_phase"] == "awaiting_audio"
         assert snapshot.json()["status_line"] == (
             "Microphone audio is too loud and may sound distorted."
         )

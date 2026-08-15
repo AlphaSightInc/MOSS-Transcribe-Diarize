@@ -1,0 +1,26 @@
+Probe: npm --prefix frontend test -- src/capture/captureClient.test.ts
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run src/capture/captureClient.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/2/MOSS-Transcribe-Diarize/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  14:45:26
+   Duration  565ms (transform 30ms, setup 0ms, import 38ms, tests 419ms, environment 0ms)
+
+Probe: npm --prefix frontend run typecheck
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+Scope: the focused test drives rejected microphone and display requests plus a
+surface with no audio through `CaptureClient`. It proves each invokes the
+typed pre-session callback, tears down local capture, and performs no fetch;
+it does not exercise an attended browser chooser or a server session.

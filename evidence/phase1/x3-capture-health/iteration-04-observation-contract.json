@@ -1,0 +1,83 @@
+{
+  "backpressure": {
+    "errors": [
+      "LiveV2LaneCapacityError",
+      "LiveV2LaneCapacityError"
+    ],
+    "rejection_count_exercised": 2,
+    "snapshot_equal_after_rejections": true
+  },
+  "missing_required_observations": [
+    "consecutive_backpressure_rejections",
+    "consecutive_sequence_rejections",
+    "consecutive_silent_samples",
+    "last_server_arrival_monotonic_ns"
+  ],
+  "production_path": "LiveV2Session.accept -> LiveV2Session.snapshot/account_through",
+  "question": "Does the production LiveV2Session snapshot retain the server facts needed for capture-health policy?",
+  "recency": {
+    "client_capture_timestamp_is_not_a_snapshot_field": true,
+    "server_monotonic_elapsed_ns": 29719209,
+    "snapshot_equal_after_wait": true
+  },
+  "sequence_gap": {
+    "errors": [
+      "LiveV2OutOfOrderFrameError",
+      "LiveV2OutOfOrderFrameError",
+      "LiveV2OutOfOrderFrameError"
+    ],
+    "rejection_count_exercised": 3,
+    "snapshot_equal_after_rejections": true
+  },
+  "silent_vs_voiced": {
+    "accounted_silent_snapshot": {
+      "lanes": {
+        "microphone": {
+          "accepted_samples": 1,
+          "accounted_samples": 1,
+          "current_device_epoch": 0,
+          "failed_samples": 0,
+          "failure_code": null,
+          "health": "active",
+          "lane": "microphone",
+          "next_sequence": 1,
+          "pruned_through_sequence": -1,
+          "retained_samples": 0
+        },
+        "system": {
+          "accepted_samples": 0,
+          "accounted_samples": 0,
+          "current_device_epoch": null,
+          "failed_samples": 0,
+          "failure_code": null,
+          "health": "active",
+          "lane": "system",
+          "next_sequence": 0,
+          "pruned_through_sequence": -1,
+          "retained_samples": 0
+        }
+      },
+      "status": "active",
+      "terminal_reason": null
+    },
+    "inputs": {
+      "silent": true,
+      "voiced": false
+    },
+    "retained_frame_count_after_accounting": 0,
+    "snapshots_equal_before_accounting": true
+  },
+  "snapshot_lane_keys": [
+    "accepted_samples",
+    "accounted_samples",
+    "current_device_epoch",
+    "failed_samples",
+    "failure_code",
+    "health",
+    "lane",
+    "next_sequence",
+    "pruned_through_sequence",
+    "retained_samples"
+  ],
+  "verdict": "The v2 snapshot retains cumulative accounting and lane health, but not server arrival time, silence history, sequence-rejection history, or backpressure history. Capture-health policy cannot truthfully infer those facts from this snapshot alone."
+}

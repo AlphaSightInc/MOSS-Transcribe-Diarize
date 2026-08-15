@@ -119,6 +119,9 @@ passing; the independent review reran the six isolation/fairness/mixer/lane test
   terminal session (resync or recreate); 429 on the v2 lane path = **non-terminal**
   backpressure (retry). The legacy mono path's backpressure is terminal for the session —
   always send v2 lane frames.
+- On a 409, pause both lane senders and require an explicit recreation. Before fresh lane
+  sequences are reset to zero, drain every old-session frame response; retain the FIFO PCM but
+  clear its old wire-sequence assignment. A failed create leaves the recreation control enabled.
 - The mixer aligns lanes by `capture_timestamp_ns` across lanes (origin is the max of the
   lanes' first-frame stamps; tails seal by cross-lane comparison), so the shared-clock
   rule below is load-bearing, not stylistic.

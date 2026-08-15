@@ -1,0 +1,53 @@
+$ evidence/phase1/x4-journal-mode/run-final-gate.sh
+dev=f6353ebe4b8dd3f99198443e878cfed27a0f1f53
+head=2b70a56130b7c843e9a6aed51bae5978250e87c8
+dev_is_ancestor_of_head=true
+$ PYTHONPATH=. .venv/bin/python evidence/phase1/x4-journal-mode/probe-preexisting-modes.py
+[1] original primitives over pre-existing paths
+  before                 file=0644 leaf_dir=0777 ancestor=0775
+  after (original)       file=0644 leaf_dir=0777 ancestor=0775
+[2] current LiveVectorJournal.declared over an identical sandbox
+  before                 file=0644 leaf_dir=0777 ancestor=0775
+  after (current)        file=0600 leaf_dir=0700 ancestor=0755
+  rows written=1 refusals=()
+  preexisting line retained=True
+[3] an ancestor this process does not own
+  ancestor before=0775 after=0775 refusal='vector journal ancestor is group- or world-writable and could not be made private: /private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/x4-journal-modes-fws43nci/foreign/data'
+PROBE OK
+$ PYTHONPATH=. .venv/bin/python evidence/phase1/x4-journal-mode/probe-batch-loss.py
+[missing-protocol-attribute]
+  naive_append raised AttributeError: 'types.SimpleNamespace' object has no attribute 'provisional'
+  naive  journaled 0/4: []
+  shipped journaled 3/4: ['speaker-0001', 'speaker-0002', 'speaker-0004']
+  shipped refusals: [('speaker-0003', 'provisional_missing')]
+[unserializable-speaker-label]
+  naive_append raised TypeError: Object of type bytes is not JSON serializable
+  naive  journaled 0/4: []
+  shipped journaled 3/4: ['speaker-0001', 'speaker-0002', 'speaker-0004']
+  shipped refusals: [('<invalid:bytes>', 'speaker_label_invalid')]
+PROBE OK
+$ PYTHONPATH=. .venv/bin/python evidence/phase1/x4-journal-mode/probe-reader-contract.py
+seeded 459 bytes, ends with newline=False
+refusal-only session: written=0 refusals=[('speaker-refused', 'centroid_empty'), ('speaker-also-refused', 'sample_seconds_invalid')]
+  torn tail terminated=True
+next real session: written=1
+forensic bytes retained=True
+lines on disk=7 rows read=2
+  row session_id='an-earlier-session' speaker_label='speaker-0001'
+  row session_id='next-real-session' speaker_label='speaker-0002'
+PROBE OK
+$ PYTHONPATH=. .venv/bin/pytest -q tests/test_live_service_runtime.py tests/test_live_api.py
+................................................................. [ 80%]
+................                         [100%]
+=============================== warnings summary ===============================
+tests/test_live_api.py::LiveApiTest::test_a_degraded_lane_keeps_publishing_where_a_failed_lane_is_refused
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+81 passed, 1 warning, 327 subtests passed in 5.99s
+$ PYTHONPATH=. .venv/bin/pytest -q tests/test_live_provider_bundle.py
+...............................................                          [100%]
+47 passed in 2.61s
+$ python3 scripts/afk-guardrails/preflight.py x4-journal-mode
+PREFLIGHT OK [x4-journal-mode] prerequisites present, ownership clean, no banned patterns
