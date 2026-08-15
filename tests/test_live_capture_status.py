@@ -75,6 +75,38 @@ def test_projection_uses_reference_compatible_phases_and_server_owned_healthy_co
 
 
 @pytest.mark.parametrize(
+    ("session_status", "lane_failures", "expected_phase", "expected_line"),
+    (
+        ("closed", None, "stopped", "Audio capture stopped."),
+        ("aborted", None, "failed", "Audio capture failed."),
+        ("failed", None, "failed", "Audio capture failed."),
+        (
+            "closed",
+            {"microphone": "browser_track_ended"},
+            "failed",
+            "Microphone audio stopped.",
+        ),
+    ),
+)
+def test_terminal_session_state_precedes_nonterminal_capture_facts(
+    session_status: str,
+    lane_failures: dict[str, str] | None,
+    expected_phase: str,
+    expected_line: str,
+):
+    status = project_live_capture_status(
+        _presence(),
+        terminal_session_status=session_status,
+        terminal_lane_failures=lane_failures,
+    )
+
+    assert status.to_dict() == {
+        "capture_phase": expected_phase,
+        "status_line": expected_line,
+    }
+
+
+@pytest.mark.parametrize(
     ("code", "lane", "lane_state", "overall_state", "expected_text"),
     (
         (

@@ -144,3 +144,18 @@ Note on the interpreter: this host intermittently refused reads under ~/Desktop 
 where the shared .venv symlink points. Where .venv was unreachable, the same commands were run
 with an equivalent interpreter and produced identical counts (54 passed / 327 subtests on the
 focused gate); both are recorded above.
+
+================================================================================
+POST-REBOOT OWNER DECISIONS — 2026-08-15
+================================================================================
+
+Prototype question: can one terminal-precedence table avoid contradictory session/capture
+states while distinguishing a clean user stop from failure? A throwaway driver exercised the
+real `project_live_capture_status` seam for active, closed, aborted, failed, and closed-with-lane-
+failure cases. Verdict: terminal session state always wins; clean `closed` maps to capture phase
+`stopped`; abort, runtime failure, or any terminal lane failure maps to `failed`.
+
+The owner also selected permanent conflict semantics for frames sent after terminal failure.
+`_failure_status` now returns 429 only when a pacing failure is explicitly retryable; a retained
+non-retryable terminal pacing failure returns typed 409, matching the v2 lane route and preventing
+retry-forever behavior.

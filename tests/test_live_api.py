@@ -647,7 +647,8 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(aborted.json()["snapshot"]["session"]["failure_reason"], "caller cancelled")
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
-            self.assertEqual(rejected.status_code, 429)
+            self.assertEqual(rejected.status_code, 409)
+            self.assertFalse(rejected.json()["failure"]["retryable"])
 
     def test_clean_stop_immediately_revokes_view_authority(self):
         from moss_transcribe_diarize.app.server import create_app
@@ -679,7 +680,7 @@ class LiveApiTest(unittest.TestCase):
 
             capture_terminal = client.get(f"/api/live/sessions/{session_id}/snapshot")
             self.assertEqual(capture_terminal.status_code, 200)
-            self.assertEqual(capture_terminal.json()["capture_phase"], "failed")
+            self.assertEqual(capture_terminal.json()["capture_phase"], "stopped")
             self.assertEqual(capture_terminal.json()["status_line"], "Audio capture stopped.")
 
             self.assertEqual(
@@ -828,7 +829,8 @@ class LiveApiTest(unittest.TestCase):
             retried = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 1.0})
 
             self.assertEqual(first.status_code, 409)
-            self.assertEqual(retried.status_code, 429)
+            self.assertEqual(retried.status_code, 409)
+            self.assertFalse(retried.json()["failure"]["retryable"])
             self.assertEqual(retried.json()["failure"]["kind"], "transport_pacing")
             self.assertEqual(retried.json()["failure"]["code"], "backpressure_or_deadline")
             self.assertEqual(retried.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")

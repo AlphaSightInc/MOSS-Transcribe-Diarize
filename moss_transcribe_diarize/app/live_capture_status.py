@@ -11,7 +11,7 @@ from .live_lane_contract import LiveLane, LiveV2Frame
 from .live_v2_session import LiveV2SessionSnapshot
 
 
-CapturePhase = Literal["starting", "awaiting_audio", "recording", "failed"]
+CapturePhase = Literal["starting", "awaiting_audio", "recording", "stopped", "failed"]
 
 _NANOSECONDS_PER_SECOND = 1_000_000_000
 _CAPTURE_HEALTH_FRAME_PERIODS = 4
@@ -351,7 +351,7 @@ def _terminal_capture_status(
             _issue_status_line(lane, code, is_failed=True, continuing=False),
         )
     if terminal_session_status == "closed":
-        return LiveCaptureStatus("failed", "Audio capture stopped.")
+        return LiveCaptureStatus("stopped", "Audio capture stopped.")
     return LiveCaptureStatus("failed", "Audio capture failed.")
 
 

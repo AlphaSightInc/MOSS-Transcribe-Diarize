@@ -878,7 +878,7 @@ class _ObservedLiveV2SessionRegistry:
 
 def _failure_status(exc: LiveServiceError) -> int:
     if exc.failure.kind == LiveServiceFailureKind.TRANSPORT_PACING:
-        return 429
+        return 429 if exc.failure.retryable else 409
     if exc.failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
         return 503
     return 409
