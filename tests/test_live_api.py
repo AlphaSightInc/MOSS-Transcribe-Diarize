@@ -2126,10 +2126,14 @@ class LiveApiTest(unittest.TestCase):
                 f"/api/live/sessions/{session_id}/snapshot?since_version={version}"
             )
             self.assertEqual(repoll.status_code, 200)
-            # The cursor still does its job: no snapshot body is re-sent.
-            self.assertTrue(repoll.json()["unchanged"])
-            self.assertIsNone(repoll.json()["snapshot"])
-            # But the server-authored reason is still there, tick after tick.
+            # Terminal snapshots deliberately bypass the ordinary version gate so a
+            # status-only client learns to stop from the same response as the reason.
+            self.assertFalse(repoll.json()["unchanged"])
+            self.assertEqual(
+                repoll.json()["snapshot"]["session"]["status"],
+                "aborted",
+            )
+            # The server-authored reason is still there, tick after tick.
             self.assertEqual(repoll.json()["capture_phase"], "failed")
             self.assertEqual(
                 repoll.json()["status_line"],

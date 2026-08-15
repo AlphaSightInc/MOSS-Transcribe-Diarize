@@ -742,13 +742,7 @@ def _snapshot_response(
     # and it answered "starting" / "Waiting for audio capture to start." for a session that
     # had already died. One terminal read followed by silence is not a readable reason.
     current = runtime.snapshot(session_id)
-    snapshot = (
-        None
-        if current is not None
-        and since_version is not None
-        and current.session.version <= since_version
-        else current
-    )
+    snapshot = runtime.snapshot(session_id, since_version=since_version)
     terminal_session_status, terminal_lane_failures = _terminal_capture_facts(current)
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)

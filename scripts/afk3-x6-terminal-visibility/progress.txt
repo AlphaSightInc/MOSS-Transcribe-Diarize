@@ -163,3 +163,16 @@ POST-REBOOT COVERAGE — 2026-08-15
   terminal failure, posts a v2 system-lane frame, requires HTTP 409, and proves the lane's
   sequence remains zero. This pins the selected permanent-refusal behavior without coupling
   the test to the sibling x3 branch's mono response-code reconciliation.
+
+MERGED X3/X6 RECONCILIATION — 2026-08-15
+  A throwaway raw-body prototype proved the semantic collision on the merged head: for the
+  same caught-up cursor, `LiveServiceRuntime.snapshot(..., since_version=cursor)` returned a
+  terminal `failed` snapshot while `live_transport._snapshot_response` returned
+  `snapshot=null`, `unchanged=true`, and only `capture_phase=failed`. X3's adapter had manually
+  reapplied the ordinary cursor gate after x6's runtime deliberately bypassed it for terminal
+  state. The adapter now delegates transported-snapshot gating to the runtime and separately
+  reads current state for the durable capture judgment. Terminal session state remains the
+  authority; clean closed capture remains `stopped`.
+  Ownership exception: the AFK3 handoff requires this x3/x6 collision to be resolved when x6
+  lands. The reconciliation therefore changes x3-owned `live_transport.py` on x6; the ticket
+  preflight may report only this explicitly approved cross-ticket integration finding.
