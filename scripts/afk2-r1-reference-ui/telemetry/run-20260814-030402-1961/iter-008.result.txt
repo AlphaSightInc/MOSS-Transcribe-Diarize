@@ -1,4 +1,0 @@
-Committed `6acc54a` — fidelity-rule escalation recorded.
-
-Blocker: supervisor must choose canonical exemptions/oracle; UI and mask unchanged. Preflight passed.
-

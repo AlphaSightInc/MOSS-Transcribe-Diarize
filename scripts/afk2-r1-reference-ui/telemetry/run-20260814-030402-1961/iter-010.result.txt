@@ -1,5 +1,0 @@
-Committed `c9bd7d0`.
-
-Fresh fidelity report remains RED: 11.5613%/3.1278% at 1440×900; 17.0361%/7.5531% at 1280×800. Typecheck, 12 tests, preflight, diff check passed. Resume needs supervisor oracle ruling + r2 session client.
-
-<promise>COMPLETE</promise>

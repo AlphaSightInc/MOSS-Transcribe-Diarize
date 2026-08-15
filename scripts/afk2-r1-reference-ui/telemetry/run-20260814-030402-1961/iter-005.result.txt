@@ -1,6 +1,0 @@
-Committed `3e2fa04` — T-02 MOSS poller + dispatcher seam.
-
-Validated: typecheck, 11/11 frontend tests, r1 preflight, clean diff.
-
-Next: commit count/rail artifacts, then screenshot-diff probe. Not complete.
-

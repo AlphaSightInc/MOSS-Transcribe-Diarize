@@ -1,8 +1,0 @@
-Iteration 3 committed: `ccc4e9b ralph: iteration 3 - port transcript model`.
-
-Ported Phase‑1 transcript types, merge/search/label libraries, signal state, and 4 behavioral tests.
-
-Validated: typecheck; Vitest 6/6; r1 preflight OK; clean diff.
-
-Next: reduced reference `TranscriptPane` + component tests, then T‑02 poller binding.
-

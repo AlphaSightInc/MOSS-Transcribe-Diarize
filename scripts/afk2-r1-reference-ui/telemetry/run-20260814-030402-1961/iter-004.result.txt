@@ -1,7 +1,0 @@
-Committed `47d6662 ralph: iteration 4 - port transcript pane`.
-
-- Ported reduced state-bound `TranscriptPane`; search, generic labels, provisional rows.
-- Tests: 8/8; typecheck + r1 preflight + diff check pass.
-- Branch clean. No merge/push.
-- Next: T‑02 poller via `dispatchWsEvent()`.
-

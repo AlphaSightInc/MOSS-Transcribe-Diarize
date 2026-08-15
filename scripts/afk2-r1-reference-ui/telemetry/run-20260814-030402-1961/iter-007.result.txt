@@ -1,6 +1,0 @@
-Committed `af72d04` — screenshot-fidelity probe.
-
-Probe is intentionally red: 27.2860% / 29.8669% pixel diff vs 2% limit. Same fixture rendered both sides. Evidence: [report.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/r1-reference-ui/screenshot-diff-iteration-7-verified/report.json), [probe](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/tests/reference_ui_screenshot_diff.py).
-
-Validation: typecheck pass; Vitest 12/12; preflight pass; clean worktree. Blocker recorded: T-05 requires dropping visible reference controls but §5 does not exempt them.
-
