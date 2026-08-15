@@ -846,7 +846,11 @@ class LiveServiceRuntime:
 
     def _pending_work_items(self, state: _RuntimeSession) -> int:
         in_flight = 1 if state.session_id in self._in_flight_session_ids else 0
-        return state.arbiter.snapshot().live_canonical + in_flight
+        return (
+            state.arbiter.snapshot().live_canonical
+            + state.coordinator.pending_canonical_count()
+            + in_flight
+        )
 
     def _has_unresolved_work_locked(self, state: _RuntimeSession) -> bool:
         return bool(self._pending_work_items(state) or state.session.snapshot().pending_span_ids)
@@ -907,6 +911,9 @@ class LiveServiceRuntime:
                     continue
                 if state.session_id in self._in_flight_session_ids:
                     continue
+                refilled = state.coordinator.queue_pending_canonical()
+                for item_id in refilled:
+                    self._record_event(state, "canonical_queued", {"item_id": item_id})
                 item = state.arbiter.next_work()
                 if item is None:
                     if state.session.snapshot().pending_span_ids:
@@ -998,7 +1005,11 @@ class LiveServiceRuntime:
                             code=failure.code,
                             detail=failure.detail,
                         )
-                elif state.arbiter.snapshot().live_canonical > 0:
+                else:
+                    refilled = state.coordinator.queue_pending_canonical()
+                    for item_id in refilled:
+                        self._record_event(state, "canonical_queued", {"item_id": item_id})
+                if state.arbiter.snapshot().live_canonical > 0:
                     self._mark_ready_locked(state)
         except Exception as exc:
             with self._lock:

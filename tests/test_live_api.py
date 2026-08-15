@@ -1633,6 +1633,10 @@ class LiveApiTest(unittest.TestCase):
                     json=v2_frame_payload(sequence, 1_000, lane="system"),
                 )
                 self.assertEqual(accepted.status_code, 200)
+                self.assertLessEqual(
+                    app.state.live_runtime._sessions[saturated_id].arbiter.snapshot().live_canonical,
+                    1,
+                )
 
             rejected_payload = v2_frame_payload(4, 1_000, lane="system")
             first_rejection = client.post(saturated_url, json=rejected_payload)
@@ -1640,6 +1644,10 @@ class LiveApiTest(unittest.TestCase):
 
             self.assertEqual(first_rejection.status_code, 429)
             self.assertEqual(identical_retry.status_code, 429)
+            self.assertLessEqual(
+                app.state.live_runtime._sessions[saturated_id].arbiter.snapshot().live_canonical,
+                1,
+            )
             self.assertEqual(first_rejection.json()["failure"]["kind"], "transport_pacing")
             self.assertTrue(first_rejection.json()["failure"]["retryable"])
             self.assertIsNone(first_rejection.json()["snapshot"]["terminal_failure"])

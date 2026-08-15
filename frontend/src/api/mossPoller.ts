@@ -65,6 +65,7 @@ interface SnapshotRender {
 export interface MossPollerOptions {
   sessionId: string;
   accessToken: string;
+  terminalAccessToken?: string;
   mode?: SessionMode;
   baseUrl?: string;
   fetch?: typeof globalThis.fetch;
@@ -132,6 +133,53 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       globalThis.clearTimeout(retryTimer);
       retryTimer = null;
     }
+  }
+
+  async function recoverOwnerTerminal(signal: AbortSignal): Promise<string | null> {
+    if (!options.terminalAccessToken) return null;
+    const payload = await fetchJson(
+      fetcher,
+      endpoint("snapshot", snapshotVersion),
+      options.terminalAccessToken,
+      signal
+    );
+    const snapshot = parseSnapshot(payload);
+    if (!snapshot || !TERMINAL_STATUSES.has(snapshot.status)) return null;
+
+    const renderedSnapshot = renderSnapshot(
+      snapshot,
+      eventSequence,
+      true,
+      lastLabelRevisionVersion,
+      revisedSpanIds,
+      priorProvisional
+    );
+    dispatch({
+      type: "session_state",
+      session_id: snapshot.sessionId,
+      mode,
+      state: snapshot.status,
+      status: snapshot.status,
+      error: snapshot.failureReason,
+      status_line: snapshot.statusLine
+    });
+    dispatch(renderedSnapshot.event);
+    if (renderedSnapshot.relabelEvent) dispatch(renderedSnapshot.relabelEvent);
+    snapshotVersion = snapshot.version;
+    lastLabelRevisionVersion = snapshot.labelRevisionVersion;
+    priorProvisional = renderedSnapshot.provisional
+      ? {
+          generation: renderedSnapshot.provisional.generation,
+          items: renderedSnapshot.provisionalItems
+        }
+      : null;
+    for (const spanId of renderedSnapshot.revisedSpanIds) revisedSpanIds.add(spanId);
+    lastSessionState = {
+      sessionId: snapshot.sessionId,
+      status: snapshot.status,
+      failureReason: snapshot.failureReason
+    };
+    return snapshot.failureReason ?? snapshot.statusLine ?? `Session ${snapshot.status}.`;
   }
 
   async function poll(): Promise<void> {
@@ -260,6 +308,18 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       }
       const message = errorMessage(error);
       if (error instanceof PollHttpError && [401, 403, 404, 409].includes(error.status)) {
+        if (error.status === 401 || error.status === 403) {
+          try {
+            const terminalMessage = await recoverOwnerTerminal(controller.signal);
+            if (terminalMessage !== null) {
+              stop();
+              options.onTerminal?.(terminalMessage);
+              return;
+            }
+          } catch {
+            // Fall through to the scoped credential's terminal response.
+          }
+        }
         dispatch({
           type: "session_state",
           session_id: options.sessionId,

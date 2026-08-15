@@ -614,6 +614,33 @@ describe("browser capture frame contract", () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
+  it("reconciles an uncertain final frame before Stop closes local media", async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("connection reset"))
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+    (client as unknown as { scheduleHeartbeat: (state: string) => Promise<void> }).scheduleHeartbeat = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    const close = vi.spyOn(client as unknown as CaptureClient, "close").mockResolvedValue(undefined);
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+    expect(lane.frameQueue).toHaveLength(1);
+
+    await client.stop(1);
+
+    const frameBodies = fetchSpy.mock.calls.slice(0, 2).map(([, request]) =>
+      JSON.parse((request as RequestInit).body as string),
+    );
+    expect(frameBodies).toMatchObject([{ sequence: 0 }, { sequence: 0 }]);
+    expect(lane.frameQueue).toHaveLength(0);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it("serializes worklet frame POSTs within a lane", async () => {
     let resolveFirst!: (response: { ok: boolean; status: number }) => void;
     const firstResponse = new Promise<{ ok: boolean; status: number }>((resolve) => {

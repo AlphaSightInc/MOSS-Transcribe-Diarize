@@ -14,7 +14,7 @@ from .live_adapters import (
     LiveProviderTransientError,
     trustworthy_duration_sec,
 )
-from .live_arbiter import ArbiterWorkItem, InferenceArbiter
+from .live_arbiter import ArbiterWorkItem, InferenceArbiter, InferenceArbiterBackpressure
 from .live_endpoint import EndpointPolicy, EndpointPolicyError, EndpointSpan, SpeechObservation
 from .live_identity import unattributed_transcript
 from .live_identity_sweep import SweepRevision
@@ -223,6 +223,7 @@ class LiveCoordinator:
         self.identity_preparer = identity_preparer
         self.arbiter = arbiter
         self._pcm = _PcmRetention()
+        self._pending_canonical: deque[FrozenSpan] = deque()
         self._consecutive_unanswered_spans = 0
 
     def accept_frame(self, frame: AudioFrame) -> CoordinatorFrameResult:
@@ -542,16 +543,26 @@ class LiveCoordinator:
         return self._queue_canonical_batch(frozen)
 
     def _queue_canonical_batch(self, spans: tuple[FrozenSpan, ...]) -> tuple[int, ...]:
-        admissions = self.arbiter.submit_live_canonical_batch(
-            tuple(
-                (
-                    f"{self.session_key}:span-{span.id}",
-                    CanonicalWork(session_key=self.session_key, span=span),
-                )
-                for span in spans
-            )
-        )
-        return tuple(admission.item_id for admission in admissions if admission.item_id is not None)
+        self._pending_canonical.extend(spans)
+        queued = self.queue_pending_canonical()
+        if spans and not queued:
+            raise InferenceArbiterBackpressure("live canonical queue is full.")
+        return queued
+
+    def pending_canonical_count(self) -> int:
+        return len(self._pending_canonical)
+
+    def queue_pending_canonical(self) -> tuple[int, ...]:
+        queued: list[int] = []
+        while self._pending_canonical:
+            span = self._pending_canonical[0]
+            try:
+                item_id = self._queue_canonical(span)
+            except InferenceArbiterBackpressure:
+                break
+            self._pending_canonical.popleft()
+            queued.append(item_id)
+        return tuple(queued)
 
     def _queue_canonical(self, span: FrozenSpan) -> int:
         admission = self.arbiter.submit_live_canonical(

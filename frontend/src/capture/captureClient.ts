@@ -152,6 +152,7 @@ type LaneState = {
   trackEndedListeners: Array<Readonly<{ track: MediaStreamTrack; listener: () => void }>>;
   frameQueue: QueuedFrame[];
   postInFlight: boolean;
+  postFlush: Promise<void> | null;
   sequence: number;
   deviceEpoch: number;
   pendingDiscontinuityEpochs: Set<number>;
@@ -191,7 +192,6 @@ type FramePostResult =
   | "accepted"
   | "retry"
   | "dropped"
-  | "unconfirmed"
   | "recreate"
   | "stopped";
 
@@ -505,9 +505,18 @@ export class CaptureClient {
       return;
     }
     this.stopping = true;
+    let deliveryFailure: unknown = null;
+    let remainingDeadline = deadlineSeconds;
     try {
+      try {
+        remainingDeadline = await this.drainFrameQueues(deadlineSeconds);
+      } catch (error) {
+        deliveryFailure = error;
+        remainingDeadline = 0;
+      }
       await this.scheduleHeartbeat("stopped");
-      await stopCaptureSession(session, this.options.captureBearer, deadlineSeconds);
+      await stopCaptureSession(session, this.options.captureBearer, remainingDeadline);
+      if (deliveryFailure) throw deliveryFailure;
     } finally {
       await this.close();
     }
@@ -593,6 +602,7 @@ export class CaptureClient {
       trackEndedListeners: [],
       frameQueue: [],
       postInFlight: false,
+      postFlush: null,
       sequence: 0,
       deviceEpoch: 1,
       pendingDiscontinuityEpochs: new Set(),
@@ -658,7 +668,7 @@ export class CaptureClient {
 
     this.queueHeartbeat(workletFrame);
     state.frameQueue.push({ workletFrame, deviceEpoch: state.deviceEpoch });
-    if (!state.postInFlight) void this.flushFrameQueue(state);
+    if (!state.postInFlight) state.postFlush = this.flushFrameQueue(state);
   }
 
   private async flushFrameQueue(state: LaneState): Promise<void> {
@@ -686,21 +696,21 @@ export class CaptureClient {
 
         state.frameQueue.shift();
         state.sequence += 1;
-        if (discontinuity && result !== "unconfirmed") {
-          state.pendingDiscontinuityEpochs.delete(deviceEpoch);
-        }
-        if (result === "dropped" || result === "unconfirmed") state.droppedFrames += 1;
+        if (discontinuity) state.pendingDiscontinuityEpochs.delete(deviceEpoch);
+        if (result === "dropped") state.droppedFrames += 1;
       }
     } finally {
       state.postInFlight = false;
+      state.postFlush = null;
     }
   }
 
   private async postFrame(frame: V2Frame, state: LaneState): Promise<FramePostResult> {
     const session = this.session;
     if (!session) return "dropped";
+    let response: Response;
     try {
-      const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
+      response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
         method: "POST",
         cache: "no-store",
         headers: {
@@ -709,38 +719,60 @@ export class CaptureClient {
         },
         body: JSON.stringify(frame),
       });
-      if (response.ok) return "accepted";
-      const failure = await this.frameFailure(response);
-      if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) {
-        return "retry";
-      }
-      if (response.status === 429) return "dropped";
-      if (
-        response.status === 409 &&
-        failure.code === "v2_out_of_order_frame" &&
-        failure.expectedSequence !== null
-      ) {
-        state.sequence = failure.expectedSequence;
-        return "retry";
-      }
-      const error = new Error(`frame POST failed: HTTP ${response.status}`);
-      if (response.status === 409) {
-        this.resetSessionForRecreation();
-        this.reportTransportError("frame", error);
-        return "recreate";
-      }
-      if (response.status === 400) {
-        this.reportTransportError("frame", error);
-        void this.close().catch((closeError) => this.reportTransportError("frame", closeError));
-        return "stopped";
-      }
-      throw error;
     } catch (caught) {
       this.reportTransportError("frame", caught);
       // No response means the server may have admitted the frame. Retain the exact
       // payload and sequence so its idempotent replay contract resolves ambiguity.
       return "retry";
     }
+    if (response.ok) return "accepted";
+    const failure = await this.frameFailure(response);
+    if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) return "retry";
+    if (response.status === 429) return "dropped";
+    if (
+      response.status === 409 &&
+      failure.code === "v2_out_of_order_frame" &&
+      failure.expectedSequence !== null
+    ) {
+      state.sequence = failure.expectedSequence;
+      return "retry";
+    }
+    const error = new Error(`frame POST failed: HTTP ${response.status}`);
+    if (response.status === 409) {
+      this.resetSessionForRecreation();
+      this.reportTransportError("frame", error);
+      return "recreate";
+    }
+    if (response.status >= 500) {
+      this.reportTransportError("frame", error);
+      return "retry";
+    }
+    this.reportTransportError("frame", error);
+    try {
+      await this.close();
+    } catch (closeError) {
+      this.reportTransportError("frame", closeError);
+    }
+    return "stopped";
+  }
+
+  private async drainFrameQueues(deadlineSeconds: number): Promise<number> {
+    const deadlineMs = Date.now() + deadlineSeconds * 1000;
+    while ([...this.lanes.values()].some((state) => state.frameQueue.length > 0 || state.postInFlight)) {
+      const inFlight = [...this.lanes.values()].flatMap((state) =>
+        state.postFlush ? [state.postFlush] : [],
+      );
+      if (inFlight.length > 0) await Promise.allSettled(inFlight);
+      for (const state of this.lanes.values()) {
+        if (!state.postInFlight && state.frameQueue.length > 0) {
+          state.postFlush = this.flushFrameQueue(state);
+          await state.postFlush;
+        }
+      }
+      if (![...this.lanes.values()].some((state) => state.frameQueue.length > 0 || state.postInFlight)) break;
+      if (Date.now() >= deadlineMs) throw new Error("capture frame delivery deadline expired");
+    }
+    return Math.max(0, (deadlineMs - Date.now()) / 1000);
   }
 
   private async frameFailure(response: Response): Promise<FrameFailure> {

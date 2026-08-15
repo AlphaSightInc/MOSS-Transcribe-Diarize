@@ -69,23 +69,6 @@ class InferenceArbiter:
         self._live_canonical.append(item)
         return ArbiterAdmission(True, item.id)
 
-    def submit_live_canonical_batch(
-        self,
-        entries: tuple[tuple[str, Any], ...],
-    ) -> tuple[ArbiterAdmission, ...]:
-        if not entries:
-            return ()
-        # A frame/endpoint transition is the atomic admission unit. Refuse before
-        # inserting anything when already saturated; once admitted, keep every span
-        # from that bounded unit together rather than partially mutating its session.
-        self._ensure_room(self._live_canonical, self.max_live_canonical_items, "live canonical queue is full.")
-        admissions: list[ArbiterAdmission] = []
-        for key, payload in entries:
-            item = self._item(self.LIVE_CANONICAL, key, payload)
-            self._live_canonical.append(item)
-            admissions.append(ArbiterAdmission(True, item.id))
-        return tuple(admissions)
-
     def submit_live_provisional(self, *, coalesce_key: str, payload: Any) -> ArbiterAdmission:
         previous = self._live_provisional.pop(coalesce_key, None)
         if previous is None and len(self._live_provisional) >= self.max_live_provisional_items:
