@@ -488,21 +488,49 @@ describe("PRD defect 5 — the preflight signal gate is a no-op", () => {
 });
 
 describe("the server contract table this suite is built on", () => {
-  it("covers every reachable frame outcome and names which ones consume the sequence", () => {
+  /*
+   * Deliberately narrow. Asserting here that
+   * SERVER_SEQUENCE_CONSUMED["lane_retention_capacity_reached"] is false would only
+   * restate a literal declared twenty lines away in a file this test imports -- no input
+   * could make it fail, so it would prove nothing. What that cell is worth checking
+   * against is the production ingress, and that check lives where it can actually fail:
+   * `probes/measure_frame_outcome_contract_probe.py`, which drives the real
+   * LiveLaneIngress and exits non-zero on any disagreement.
+   *
+   * What IS checkable from here is that the two exported tables stay in step, since they
+   * are edited separately and the fake below reads one while the client's handling is
+   * reasoned from the other.
+   */
+  it("keeps the outcome table and the consumption table in step", () => {
     const scenarios = SERVER_FRAME_OUTCOMES.map(([scenario]) => scenario);
     expect(new Set(scenarios).size).toBe(scenarios.length);
     expect(Object.keys(SERVER_SEQUENCE_CONSUMED).sort()).toEqual([...scenarios].sort());
+  });
 
-    // The two 429s that must be handled in opposite directions.
-    const capacity = SERVER_FRAME_OUTCOMES.find(
-      ([, status, code]) => status === 429 && code === "v2_lane_retention_capacity_reached",
-    );
-    const backpressure = SERVER_FRAME_OUTCOMES.find(
-      ([, status, code]) => status === 429 && code === null,
-    );
-    expect(capacity).toBeDefined();
-    expect(backpressure).toBeDefined();
-    expect(SERVER_SEQUENCE_CONSUMED["lane_retention_capacity_reached"]).toBe(false);
-    expect(SERVER_SEQUENCE_CONSUMED["queue_backpressure_after_accept"]).toBe(true);
+  it("drives both 429s through the fake and gets opposite consumption out", async () => {
+    // Not a restatement of the table: this runs the fake's own decision path, which is
+    // what every test above is judged against.
+    const capacity = new FakeLaneIngressServer({ maxRetainedSamples: FRAME_SAMPLES });
+    const frame = (sequence: number) => ({
+      lane: "microphone",
+      sequence,
+      device_epoch: 1,
+      discontinuity: false,
+      sample_count: FRAME_SAMPLES,
+    });
+    expect(capacity.handle(frame(0)).status).toBe(200);
+    const rejected = capacity.handle(frame(1));
+    expect(rejected.status).toBe(429);
+    await expect(rejected.json()).resolves.toMatchObject({
+      failure: { code: "v2_lane_retention_capacity_reached" },
+    });
+    expect(capacity.admitted("microphone")).toBe(1); // unconsumed: resend sequence 1
+
+    const backpressure = new FakeLaneIngressServer();
+    backpressure.applyQueueBackpressure(1);
+    const throttled = backpressure.handle(frame(0));
+    expect(throttled.status).toBe(429);
+    await expect(throttled.json()).resolves.not.toHaveProperty("failure");
+    expect(backpressure.admitted("microphone")).toBe(1); // consumed: do NOT resend
   });
 });
