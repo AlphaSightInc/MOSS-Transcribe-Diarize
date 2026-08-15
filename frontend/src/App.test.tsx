@@ -49,6 +49,9 @@ describe("App shell", () => {
     expect(root.querySelector(".history-panel .panel-body")).toBeNull();
     expect(root.querySelectorAll("[data-transcript-segment]")).toHaveLength(0);
     expect(root.querySelector('a[href="/live"]')).toBeNull();
+    expect(root.querySelector('[aria-label="Capture bearer"]')).not.toBeNull();
+    expect(root.querySelector('[aria-label="Listening setup"]')?.textContent).toContain("Speakers");
+    expect(root.textContent).toContain("Enable microphone");
   });
 
   it("keeps only Live and File modes, and the File tab exposes browser file selection", () => {

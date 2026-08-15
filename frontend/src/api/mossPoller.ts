@@ -242,7 +242,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         return;
       }
       const message = errorMessage(error);
-      if (error instanceof PollHttpError && (error.status === 404 || error.status === 409)) {
+      if (error instanceof PollHttpError && [401, 403, 404, 409].includes(error.status)) {
         dispatch({
           type: "session_state",
           session_id: options.sessionId,

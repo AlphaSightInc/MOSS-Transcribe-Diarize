@@ -1,4 +1,5 @@
 import { useRef, useState } from "preact/hooks";
+import { ControlPanel } from "./components/ControlPanel";
 import { SegmentedControl } from "./components/SegmentedControl";
 import { TranscriptPane } from "./components/TranscriptPane";
 import { sessionStatus, sessionStatusLine } from "./state/session";
@@ -62,13 +63,7 @@ export function App() {
             </section>
 
             {mode === "live" ? (
-              <section className="control-section" data-mode="live">
-                <div className="label">Capture</div>
-                <p className="hint">Choose Start capture when browser capture is connected.</p>
-                <button type="button" className="record-btn" disabled>
-                  <span>Start capture</span>
-                </button>
-              </section>
+              <ControlPanel />
             ) : (
               <section className="control-section" data-mode="file">
                 <div className="label">File</div>

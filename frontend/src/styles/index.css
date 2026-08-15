@@ -742,6 +742,7 @@ textarea:focus {
 
 .control-panel .field select,
 .control-panel .field input[type="text"],
+.control-panel .field input[type="password"],
 .control-panel .field input[type="url"] {
   appearance: none;
   -webkit-appearance: none;
@@ -905,6 +906,67 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.capture-supervisor {
+  gap: 10px;
+}
+
+.capture-security-note,
+.capture-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.capture-status {
+  min-height: 34px;
+  border-left: 2px solid var(--line-2);
+  padding-left: 10px;
+}
+
+.capture-supervisor[data-capture-phase="active"] .capture-status {
+  border-color: var(--ok);
+  color: var(--ink-2);
+}
+
+.capture-supervisor[data-capture-phase="error"] .capture-status,
+.capture-supervisor[data-capture-phase="terminal"] .capture-status {
+  border-color: var(--danger);
+}
+
+.capture-meters {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 10px;
+}
+
+.capture-meter {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.capture-meter-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+}
+
+.capture-meter-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+  transition: width 80ms linear;
 }
 
 .control-panel .btn {

@@ -309,19 +309,19 @@ describe("MOSS session poller", () => {
     expect(poller.cursors().eventSequence).toBe(3);
   });
 
-  it("stops on a terminal polling response instead of scheduling a retry", async () => {
+  it.each([401, 403, 404, 409])("stops on terminal HTTP %i instead of scheduling a retry", async (status) => {
     const onTerminal = vi.fn();
     const poller = createMossSessionPoller({
       sessionId: "missing-session",
       accessToken: "view-token",
-      fetch: vi.fn(async () => jsonResponse({ detail: "session not found" }, 404)) as typeof fetch,
+      fetch: vi.fn(async () => jsonResponse({ detail: "polling ended" }, status)) as typeof fetch,
       onTerminal
     });
 
     await poller.poll();
 
     expect(poller.running()).toBe(false);
-    expect(onTerminal).toHaveBeenCalledWith("session not found");
+    expect(onTerminal).toHaveBeenCalledWith("polling ended");
   });
 
   it("uses the ruled 250 ms capture cadence and 2 s finalization cadence", () => {
