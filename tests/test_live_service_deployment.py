@@ -473,6 +473,81 @@ def test_the_cli_refuses_an_empty_or_multiline_shared_token_file(
         web_cli._live_shared_token(args)
 
 
+@pytest.mark.parametrize("contents", [" \n", "\t\n", "   ", "\n"])
+def test_the_cli_refuses_a_whitespace_only_shared_token_file(
+    monkeypatch, tmp_path: Path, contents: str
+) -> None:
+    """The defect this refuses accepted a one-character token and called it configured.
+
+    `not lines[0]` is false for `" "`, so a printf slip or a trimmed secrets-manager value
+    produced a deployment that looked configured and handed capture authority to anyone who
+    tried a space. The empty/multiline cases above never covered it: they are the two shapes
+    the loader already rejected.
+    """
+    token_file = tmp_path / "shared-token"
+    token_file.write_text(contents, encoding="utf-8")
+    token_file.chmod(0o600)
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(token_file),
+    )
+    with pytest.raises(SystemExit, match="exactly one non-empty line"):
+        web_cli._live_shared_token(args)
+
+
+def test_the_cli_strips_padding_from_the_shared_token_file(monkeypatch, tmp_path: Path) -> None:
+    """Padding must not survive into the digest the wire is compared against.
+
+    `LiveAccessRegistry` canonicalizes every presented bearer, so a configured token that
+    kept its padding would be a token no client could ever present.
+    """
+    token_file = tmp_path / "shared-token"
+    token_file.write_text("  process-only-secret\t\n", encoding="utf-8")
+    token_file.chmod(0o600)
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(token_file),
+    )
+    assert web_cli._live_shared_token(args) == "process-only-secret"
+
+
+@pytest.mark.parametrize("mode", [0o640, 0o604, 0o644, 0o660, 0o606])
+def test_the_cli_refuses_a_group_or_world_accessible_shared_token_file(
+    monkeypatch, tmp_path: Path, mode: int
+) -> None:
+    """A shared bearer readable by anyone but the service owner is already leaked."""
+    token_file = tmp_path / "shared-token"
+    token_file.write_text("process-only-secret\n", encoding="utf-8")
+    token_file.chmod(mode)
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(token_file),
+    )
+    with pytest.raises(SystemExit, match="group- or world-accessible"):
+        web_cli._live_shared_token(args)
+
+
+def test_the_cli_follows_a_symlink_to_the_real_token_file_permissions(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """A 0600 symlink is not a 0600 secret; the mode that matters is the target's."""
+    target = tmp_path / "real-shared-token"
+    target.write_text("process-only-secret\n", encoding="utf-8")
+    target.chmod(0o644)
+    link = tmp_path / "shared-token"
+    link.symlink_to(target)
+    web_cli, args = cli_args(
+        monkeypatch,
+        "--live",
+        "--live-shared-token-file", str(link),
+    )
+    with pytest.raises(SystemExit, match="group- or world-accessible"):
+        web_cli._live_shared_token(args)
+
+
 def test_the_cli_refuses_a_shared_token_file_outside_live_mode(
     monkeypatch, tmp_path: Path
 ) -> None:

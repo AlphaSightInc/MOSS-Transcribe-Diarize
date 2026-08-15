@@ -1,0 +1,45 @@
+x6-terminal-visibility -- terminal-visibility-from-one-snapshot-read.txt
+
+What this proves:
+  A terminally-failed session is discoverable from a single /snapshot read by the
+  reader that actually polls it -- one holding the version cursor it last rendered,
+  not the since_version=0 that the version gate can never suppress. Also: a healthy
+  session still answers `unchanged`, and a meeting that closed cleanly is not
+  relabelled `failed` by a teardown that lands after it.
+
+Committed, re-runnable probes:
+  tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read
+  tests/test_live_service_runtime.py::test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version
+  tests/test_live_service_runtime.py::test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader
+  tests/test_live_service_runtime.py::test_a_terminal_failure_does_not_relabel_a_session_that_already_ended
+  tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority
+
+Regenerate with:
+  .venv/bin/python evidence/phase1/x6-terminal-visibility/regenerate_probe_evidence.py
+
+Interpreter: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/.venv/bin/pytest
+
+$ PYTHONPATH="$PWD" .venv/bin/pytest -v tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read tests/test_live_service_runtime.py::test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version tests/test_live_service_runtime.py::test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader tests/test_live_service_runtime.py::test_a_terminal_failure_does_not_relabel_a_session_that_already_ended tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 5 items
+
+tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read PASSED [ 20%]
+tests/test_live_service_runtime.py::test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version PASSED [ 40%]
+tests/test_live_service_runtime.py::test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader PASSED [ 60%]
+tests/test_live_service_runtime.py::test_a_terminal_failure_does_not_relabel_a_session_that_already_ended PASSED [ 80%]
+tests/test_live_api.py::LiveApiTest::test_failed_stop_revokes_the_view_without_stranding_capture_authority PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 5 passed, 1 warning in 2.63s =========================
+
+exit status: 0

@@ -1,0 +1,917 @@
+{
+  "all_checks_passed": false,
+  "checks": [
+    {
+      "check": "control-still-reports-healthy",
+      "detail": "a fusion that never emits the healthy line is not a fix; the control must keep it",
+      "passed": true
+    },
+    {
+      "check": "1-system-lane-never-sent-a-frame-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Capturing microphone and shared audio.'",
+      "passed": false
+    },
+    {
+      "check": "2-one-frame-each-then-nothing-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Capturing microphone and shared audio.'",
+      "passed": false
+    },
+    {
+      "check": "3-thousand-silent-microphone-frames-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Capturing microphone and shared audio.'",
+      "passed": false
+    },
+    {
+      "check": "4-sequence-gap-58-consecutive-rejects-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Capturing microphone and shared audio.'",
+      "passed": false
+    },
+    {
+      "check": "5-server-lane-health-failed-drops-healthy-claim",
+      "detail": "http=200 phase=recording line='Capturing microphone and shared audio.'",
+      "passed": false
+    },
+    {
+      "check": "microphone-denied-yields-a-readable-reason",
+      "detail": "http=403 phase=None line=None",
+      "passed": false
+    }
+  ],
+  "label": "dev-pre-branch-reproduction",
+  "policy_inputs": {
+    "consecutive_sequence_rejects": 58,
+    "descriptor_frame_samples": 1000,
+    "sample_rate": 16000,
+    "silent_frames_posted": 1000,
+    "stale_after_seconds": 0.25,
+    "wall_clock_stall_seconds": 0.4
+  },
+  "question": "Through the real authenticated /snapshot route, does each of the five PRD capture scenarios stop claiming healthy recording, does a healthy session still claim it, and does a microphone-denied session yield a readable server reason?",
+  "route_rows": [
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-control/snapshot after one voiced frame on each lane",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257753878228208,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 10,
+          "sequence": 0,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "active",
+            "version": 0
+          },
+          "session_id": "review-control",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            },
+            "system": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "system",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "0-healthy-control",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-missing-system/snapshot after 1 microphone frame and 0 system frames",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257753882627291,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 11,
+          "sequence": 1,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "active",
+            "version": 0
+          },
+          "session_id": "review-missing-system",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            },
+            "system": {
+              "accepted_samples": 0,
+              "accounted_samples": 0,
+              "current_device_epoch": null,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "system",
+              "next_sequence": 0,
+              "pruned_through_sequence": -1,
+              "retained_samples": 0
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "1-system-lane-never-sent-a-frame",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-stale/snapshot 0.40s after the last frame (descriptor stale-after is 0.25s)",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257753885838708,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 12,
+          "sequence": 2,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "active",
+            "version": 0
+          },
+          "session_id": "review-stale",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            },
+            "system": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "system",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "2-one-frame-each-then-nothing",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-silent/snapshot after 1000 microphone frames with silent=true",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257754296232791,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 13,
+          "sequence": 3,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 15984,
+            "accounted_samples": 12000,
+            "committed": [
+              {
+                "end_sample": 4000,
+                "identity_snapshot_version": 1,
+                "prefix_hash": "4ff7e5089c16670187873f90d2fc2143094988fc85df2c03533a6330cabd0429",
+                "revised_transcript": null,
+                "span_id": 0,
+                "start_sample": 0,
+                "transcript": "[0][S01]stable[1]"
+              },
+              {
+                "end_sample": 8000,
+                "identity_snapshot_version": 2,
+                "prefix_hash": "21d068a1cb369ff02f15fc7266bc3329e837a98ae92d14cdd74526c99d6c305c",
+                "revised_transcript": null,
+                "span_id": 1,
+                "start_sample": 4000,
+                "transcript": "[0][S01]stable[1]"
+              },
+              {
+                "end_sample": 12000,
+                "identity_snapshot_version": 3,
+                "prefix_hash": "2756f4d32af01fe8b9c3514734b123ff78aeed18884c478f0a9718f70b5a7f11",
+                "revised_transcript": null,
+                "span_id": 2,
+                "start_sample": 8000,
+                "transcript": "[0][S01]stable[1]"
+              }
+            ],
+            "committed_prefix_hash": "2756f4d32af01fe8b9c3514734b123ff78aeed18884c478f0a9718f70b5a7f11",
+            "committed_samples": 12000,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 12000,
+            "identity_snapshot": {
+              "canonical_speakers": [
+                "speaker-0001"
+              ],
+              "diagnostics": [],
+              "version": 3
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 999,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 3984,
+            "status": "active",
+            "version": 1002
+          },
+          "session_id": "review-silent",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 16000,
+              "accounted_samples": 15984,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1000,
+              "pruned_through_sequence": 871,
+              "retained_samples": 16
+            },
+            "system": {
+              "accepted_samples": 16000,
+              "accounted_samples": 15984,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "system",
+              "next_sequence": 1000,
+              "pruned_through_sequence": 871,
+              "retained_samples": 16
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "3-thousand-silent-microphone-frames",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-sequence/snapshot after 58 consecutive out-of-sequence microphone rejects",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257755677553041,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 14,
+          "sequence": 4,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "active",
+            "version": 0
+          },
+          "session_id": "review-sequence",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            },
+            "system": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "system",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "4-sequence-gap-58-consecutive-rejects",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio."
+    },
+    {
+      "capture_phase": "recording",
+      "claims_healthy_recording": true,
+      "helper_system_state": "capturing",
+      "http_status": 200,
+      "request": "GET /api/live/sessions/review-server-lane-failed/snapshot after the server marked the system lane failed",
+      "response_body": {
+        "capture_phase": "recording",
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-review",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2257755719769291,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 15,
+          "sequence": 5,
+          "state": "capturing"
+        },
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 256,
+              "max_retained_samples": 128000,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "review-fake",
+            "provider_revision": "review-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": null,
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "active",
+            "version": 0
+          },
+          "session_id": "review-server-lane-failed",
+          "terminal_failure": null
+        },
+        "status_line": "Capturing microphone and shared audio.",
+        "unchanged": false,
+        "v2_session": {
+          "lanes": {
+            "microphone": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 0,
+              "failure_code": null,
+              "health": "active",
+              "lane": "microphone",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 1000
+            },
+            "system": {
+              "accepted_samples": 1000,
+              "accounted_samples": 0,
+              "current_device_epoch": 0,
+              "failed_samples": 1000,
+              "failure_code": "server_lane_failure",
+              "health": "failed",
+              "lane": "system",
+              "next_sequence": 1,
+              "pruned_through_sequence": -1,
+              "retained_samples": 0
+            }
+          },
+          "status": "active",
+          "terminal_reason": null
+        }
+      },
+      "scenario": "5-server-lane-health-failed",
+      "server_reason_readable": true,
+      "status_line": "Capturing microphone and shared audio.",
+      "v2_system_health": "failed"
+    },
+    {
+      "capture_phase": null,
+      "claims_healthy_recording": false,
+      "http_status": 403,
+      "request": "GET /api/live/sessions/review-terminal-denied/snapshot (capture credential) after a terminal mic-denied heartbeat",
+      "response_body": {
+        "detail": "session is not owned by this device."
+      },
+      "scenario": "6-microphone-denied-terminal-capture-credential",
+      "server_reason_readable": false,
+      "status_line": null
+    },
+    {
+      "capture_phase": null,
+      "claims_healthy_recording": false,
+      "http_status": 401,
+      "request": "GET /api/live/sessions/review-terminal-denied/snapshot (view credential) after the same terminal heartbeat",
+      "response_body": {
+        "detail": "invalid bearer authority."
+      },
+      "scenario": "6b-microphone-denied-terminal-view-credential",
+      "server_reason_readable": false,
+      "status_line": null
+    }
+  ],
+  "scope": {
+    "not_a_unit_call": "no scenario calls project_live_capture_status directly",
+    "not_covered": "no browser, no permission prompt, no deployed host, single process",
+    "route": "local create_app -> paired capture credential -> HTTP /sessions, /frames, /heartbeat, /snapshot"
+  }
+}

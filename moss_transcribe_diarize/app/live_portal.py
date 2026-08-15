@@ -182,7 +182,9 @@ LIVE_PORTAL_HTML = """<!doctype html>
         sessionId: "",
         viewToken: "",
         snapshotVersion: 0,
-        eventSequence: 0,
+        // `/events?since_seq` is inclusive, and sequence 0 is session_created.  -1
+        // therefore means no event has rendered yet; it lets the first poll render 0 once.
+        eventSequence: -1,
         connected: false,
         generation: 0,
         inFlight: false,
@@ -252,7 +254,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.sessionId = "";
         state.viewToken = "";
         state.snapshotVersion = 0;
-        state.eventSequence = 0;
+        state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
         nodes.sharedToken.value = "";
@@ -281,6 +283,24 @@ LIVE_PORTAL_HTML = """<!doctype html>
         setControls(false);
       }
 
+      // A refusal of authority, as opposed to a refused request. 401 is "this token is not
+      // (or is no longer) a view of this session"; 403 is "this peer may not view it".
+      // Neither becomes true again by asking a second time.
+      function viewRefused(error) {
+        return error && (error.status === 401 || error.status === 403);
+      }
+
+      function viewEnded(error) {
+        terminalDisconnect();
+        setText(
+          nodes.statusDetail,
+          `View ended (${(error && error.message) || "not authorised"}). The server no longer `
+            + `authorises this view. A live session's view is released as soon as the session `
+            + `stops being viewable, so this usually means the meeting is over; a view token `
+            + `also expires on its own. Connect again with a fresh token to watch a live session.`,
+        );
+      }
+
       async function readJson(response) {
         let payload;
         try {
@@ -290,10 +310,14 @@ LIVE_PORTAL_HTML = """<!doctype html>
         }
         if (!response.ok) {
           const failure = payload && payload.failure;
-          if (failure && (failure.code || failure.kind || failure.reason)) {
-            throw new Error([failure.code, failure.kind, failure.reason].filter(Boolean).join(": "));
-          }
-          throw new Error(`HTTP ${response.status}`);
+          const error = failure && (failure.code || failure.kind || failure.reason)
+            ? new Error([failure.code, failure.kind, failure.reason].filter(Boolean).join(": "))
+            : new Error(`HTTP ${response.status}`);
+          // The status code travels with the error. A refused *request* may be worth
+          // retrying; a refused *authority* never is, and the poll loop is the only
+          // place that can tell those apart.
+          error.status = response.status;
+          throw error;
         }
         return payload;
       }
@@ -347,7 +371,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.generation += 1;
         state.retryIndex = 0;
         state.snapshotVersion = 0;
-        state.eventSequence = 0;
+        state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
         setText(nodes.events, "");
@@ -634,7 +658,16 @@ LIVE_PORTAL_HTML = """<!doctype html>
           // retrying so the next pair cannot overlap a stale in-flight request.
           controller.abort();
           if (error.name !== "AbortError" && state.connected && generation === state.generation) {
-            scheduleRetry(error.message || "request failed");
+            if (viewRefused(error)) {
+              // View authority is derived from the session lifecycle: the grant is released
+              // the moment the session stops being viewable, so a poll that is refused is a
+              // poll against a session that has ended. Retrying it is retrying nothing, and
+              // retrying forever is how a dead meeting became a browser that sat on
+              // "Reconnecting" and never told anyone the meeting was over.
+              viewEnded(error);
+            } else {
+              scheduleRetry(error.message || "request failed");
+            }
           }
         } finally {
           if (generation === state.generation) {

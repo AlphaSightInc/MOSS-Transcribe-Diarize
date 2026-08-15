@@ -5,6 +5,7 @@ import concurrent.futures
 import dataclasses
 import inspect
 import json
+import os
 import threading
 import time
 import unittest
@@ -1017,6 +1018,8 @@ class JournalingIdentity(FinalizingIdentity):
                 speaker_label="speaker-0001",
                 centroid=(0.25, 0.75),
                 sample_seconds=2.5,
+                exemplar_count=3,
+                provisional=False,
                 embedder_id="wespeaker:test-revision",
                 embedder_state_sha="ab" * 32,
             ),
@@ -1024,6 +1027,8 @@ class JournalingIdentity(FinalizingIdentity):
                 speaker_label="speaker-refused",
                 centroid=(float("nan"),),
                 sample_seconds=1.0,
+                exemplar_count=0,
+                provisional=True,
                 embedder_id="wespeaker:test-revision",
                 embedder_state_sha="ab" * 32,
             ),
@@ -1112,6 +1117,8 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
         "speaker_label": "speaker-0001",
         "centroid": [0.25, 0.75],
         "sample_seconds": 2.5,
+        "exemplar_count": 3,
+        "provisional": False,
         "embedder_id": "wespeaker:test-revision",
         "embedder_state_sha": "ab" * 32,
         "created_at": 1_800_000_006.0,
@@ -1125,6 +1132,426 @@ def test_clean_stop_journals_completed_identity_and_names_unusable_speaker(tmp_p
         "refusals": {"speaker-refused": "centroid_non_finite"},
     }
     assert "speaker_label=speaker-refused reason=centroid_non_finite" in caplog.text
+
+
+def test_journal_refuses_bad_contract_rows_without_dropping_valid_observations(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    result = LiveVectorJournal(journal_path).append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_007.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-valid",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=1,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-bad-count",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=-1,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-bad-provisional",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=0,
+                provisional="yes",
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+            SimpleNamespace(
+                speaker_label="speaker-missing-field",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=1,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert result.written == 1
+    assert [(item.speaker_label, item.reason) for item in result.refusals] == [
+        ("speaker-bad-count", "exemplar_count_invalid"),
+        ("speaker-bad-provisional", "provisional_invalid"),
+        ("speaker-missing-field", "provisional_missing"),
+    ]
+    assert json.loads(journal_path.read_text(encoding="utf-8")) == {
+        "session_id": "completed-session",
+        "speaker_label": "speaker-valid",
+        "centroid": [0.25, 0.75],
+        "sample_seconds": 2.5,
+        "exemplar_count": 1,
+        "provisional": False,
+        "embedder_id": "wespeaker:test-revision",
+        "embedder_state_sha": "ab" * 32,
+        "created_at": 1_800_000_007.0,
+        "echo_mode": "headphones",
+    }
+
+
+def test_journal_declines_an_unserializable_row_without_losing_the_other_speakers(
+    tmp_path, monkeypatch
+):
+    """A four-speaker meeting where one row cannot be encoded keeps the other three.
+
+    Validating field types is not enough on its own: the encode step runs after
+    validation, and joining the whole batch into one payload made any encoder error
+    escape `append_session`. The runtime catches that as one opaque
+    `vector_journal_failed` and the entire meeting's identity evidence is gone.
+    """
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    def observation(label):
+        return SimpleNamespace(
+            speaker_label=label,
+            centroid=(0.25, 0.75),
+            sample_seconds=2.5,
+            exemplar_count=1,
+            provisional=False,
+            embedder_id="wespeaker:test-revision",
+            embedder_state_sha="ab" * 32,
+        )
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    journal = live_vector_journal.LiveVectorJournal(journal_path)
+    batch = (
+        observation("speaker-0001"),
+        observation("speaker-0002"),
+        observation(b"speaker-0003"),
+        observation("speaker-0004"),
+    )
+
+    result = journal.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_011.0,
+        observations=batch,
+    )
+
+    assert result.written == 3
+    assert [(item.speaker_label, item.reason) for item in result.refusals] == [
+        ("<invalid:bytes>", "speaker_label_invalid")
+    ]
+    assert [row["speaker_label"] for row in journal.read_rows()] == [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004",
+    ]
+
+    # The same guarantee must hold when the encoder itself fails on a row whose
+    # fields all validated -- the reason the encode is per row rather than per batch.
+    real_dumps = live_vector_journal.json.dumps
+
+    def refuse_one_speaker(row, **kwargs):
+        if row["speaker_label"] == "speaker-0002":
+            raise TypeError("probe: this row cannot be encoded")
+        return real_dumps(row, **kwargs)
+
+    injected_path = tmp_path / "injected.jsonl"
+    injected = live_vector_journal.LiveVectorJournal(injected_path)
+    monkeypatch.setattr(live_vector_journal.json, "dumps", refuse_one_speaker)
+    injected_result = injected.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_012.0,
+        observations=batch[:2] + batch[3:],
+    )
+    monkeypatch.undo()
+
+    assert injected_result.written == 2
+    assert [(item.speaker_label, item.reason) for item in injected_result.refusals] == [
+        ("speaker-0002", "row_not_serializable")
+    ]
+    assert [row["speaker_label"] for row in injected.read_rows()] == [
+        "speaker-0001",
+        "speaker-0004",
+    ]
+
+
+def test_journal_terminates_a_refusal_only_torn_tail_and_reader_skips_it(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    torn_prefix = b'{"session_id":"failed-before-fsync","speaker_label":"speaker-0001"'
+    journal_path.write_bytes(torn_prefix)
+    journal = LiveVectorJournal(journal_path)
+
+    refused = journal.append_session(
+        session_id="refusal-only-session",
+        echo_mode="headphones",
+        created_at=1_800_000_008.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-refused",
+                centroid=(),
+                sample_seconds=1.0,
+                exemplar_count=0,
+                provisional=True,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert refused.written == 0
+    assert journal_path.read_bytes() == torn_prefix + b"\n"
+    journal_path.write_bytes(torn_prefix + b"\n\n")
+
+    written = journal.append_session(
+        session_id="next-clean-session",
+        echo_mode="headphones",
+        created_at=1_800_000_009.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0002",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    assert written.written == 1
+    assert journal.read_rows() == (
+        {
+            "session_id": "next-clean-session",
+            "speaker_label": "speaker-0002",
+            "centroid": [0.25, 0.75],
+            "sample_seconds": 2.5,
+            "exemplar_count": 2,
+            "provisional": False,
+            "embedder_id": "wespeaker:test-revision",
+            "embedder_state_sha": "ab" * 32,
+            "created_at": 1_800_000_009.0,
+            "echo_mode": "headphones",
+        },
+    )
+
+
+def test_journal_truncation_race_does_not_create_a_leading_blank(tmp_path, monkeypatch):
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    journal_path = tmp_path / "speaker-vectors.jsonl"
+    journal_path.write_bytes(b'{"session_id":"about-to-truncate"')
+    real_read = live_vector_journal.os.read
+
+    def truncate_before_read(descriptor, size):
+        os.ftruncate(descriptor, 0)
+        return real_read(descriptor, size)
+
+    monkeypatch.setattr(live_vector_journal.os, "read", truncate_before_read)
+    result = live_vector_journal.LiveVectorJournal(journal_path).append_session(
+        session_id="next-clean-session",
+        echo_mode="headphones",
+        created_at=1_800_000_010.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0003",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    journal_bytes = journal_path.read_bytes()
+
+    assert result.written == 1
+    assert journal_bytes.startswith(b"{")
+    assert json.loads(journal_bytes)["session_id"] == "next-clean-session"
+
+
+def test_declared_journal_repairs_preexisting_loose_directory_and_file(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        JOURNAL_FILE_MODE,
+        LiveVectorJournal,
+    )
+
+    directory = tmp_path / "private-journal"
+    directory.mkdir()
+    os.chmod(directory, 0o777)
+    journal_path = directory / "speaker-vectors.jsonl"
+    journal_path.write_text('{"preexisting":true}\n', encoding="utf-8")
+    os.chmod(journal_path, 0o644)
+
+    journal = LiveVectorJournal.declared(
+        journal_path,
+        checkout_root=tmp_path / "checkout",
+    )
+    assert directory.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
+
+    result = journal.append_session(
+        session_id="completed-session",
+        echo_mode="headphones",
+        created_at=1_800_000_007.0,
+        observations=(
+            SimpleNamespace(
+                speaker_label="speaker-0002",
+                centroid=(0.25, 0.75),
+                sample_seconds=2.5,
+                exemplar_count=1,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        ),
+    )
+
+    rows = journal_path.read_text(encoding="utf-8").splitlines()
+
+    assert result.written == 1
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
+    assert json.loads(rows[0]) == {"preexisting": True}
+    assert json.loads(rows[1])["session_id"] == "completed-session"
+
+
+def test_declared_journal_tightens_a_peer_writable_ancestor_it_owns(tmp_path):
+    """A 0775 ancestor this service created itself is repaired, not made fatal.
+
+    Releases before this one built the chain with `mkdir(parents=True)`, which leaves
+    every intermediate directory at the process umask -- 0775 under a umask of 002.
+    Refusing that outright bricks `--live` startup on exactly the hosts that ran the
+    older code, because `web_cli` builds the journal before the app exists.
+    """
+
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        LiveVectorJournal,
+    )
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+
+    journal = LiveVectorJournal.declared(journal_path, checkout_root=tmp_path / "checkout")
+
+    assert loose_ancestor.stat().st_mode & 0o777 == 0o755
+    assert journal.path.parent.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+
+
+def test_declared_journal_refuses_an_ancestor_it_cannot_make_private(tmp_path, monkeypatch):
+    """An ancestor owned by another principal is refused and left untouched.
+
+    That principal can rename a component out from under the journal, and this
+    process cannot chmod what it does not own -- so there is nothing to repair and
+    the only safe answer is to refuse. `geteuid` is redirected because a test
+    cannot create a directory owned by another user without privilege.
+    """
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+    foreign_uid = os.geteuid() + 1
+    monkeypatch.setattr(live_vector_journal.os, "geteuid", lambda: foreign_uid)
+
+    with pytest.raises(ValueError, match="could not be made private"):
+        live_vector_journal.LiveVectorJournal.declared(
+            journal_path, checkout_root=tmp_path / "checkout"
+        )
+
+    assert loose_ancestor.stat().st_mode & 0o777 == 0o777
+    assert not journal_path.parent.exists()
+
+
+def test_declared_journal_refuses_a_filesystem_that_ignores_directory_modes(tmp_path, monkeypatch):
+    """The private mode is asserted as a postcondition, not assumed from chmod."""
+
+    from moss_transcribe_diarize.app import live_vector_journal
+
+    loose_ancestor = tmp_path / "loose-ancestor"
+    loose_ancestor.mkdir()
+    os.chmod(loose_ancestor, 0o777)
+    journal_path = loose_ancestor / "new-journal" / "speaker-vectors.jsonl"
+    monkeypatch.setattr(live_vector_journal.os, "chmod", lambda *args, **kwargs: None)
+
+    with pytest.raises(ValueError, match="could not be made private"):
+        live_vector_journal.LiveVectorJournal.declared(
+            journal_path, checkout_root=tmp_path / "checkout"
+        )
+
+
+def test_declared_journal_creates_private_intermediate_directories(tmp_path):
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        LiveVectorJournal,
+    )
+
+    root = tmp_path / "private-root"
+    root.mkdir(mode=JOURNAL_DIRECTORY_MODE)
+    intermediate = root / "intermediate"
+    # Pin the umask: under a umask of 0o077 a plain mkdir would land on 0700 by
+    # accident and this assertion would hold with the enforcement deleted.
+    previous_umask = os.umask(0o022)
+    try:
+        journal = LiveVectorJournal.declared(
+            intermediate / "live" / "speaker-vectors.jsonl",
+            checkout_root=tmp_path / "checkout",
+        )
+    finally:
+        os.umask(previous_umask)
+
+    assert intermediate.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal.path.parent.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+
+
+def test_web_cli_journal_survives_the_umask_masked_chain_an_earlier_release_left(tmp_path):
+    """The real route: `web_cli._live_vector_journal` must open the chain it created.
+
+    This is the caller that a refusal would take down -- it runs before the app is
+    constructed, so a `ValueError` here is a startup outage rather than a degraded
+    session.
+    """
+
+    from types import SimpleNamespace as _Args
+
+    from moss_transcribe_diarize.app.live_vector_journal import (
+        JOURNAL_DIRECTORY_MODE,
+        JOURNAL_FILE_MODE,
+    )
+    from moss_transcribe_diarize.app.web_cli import _live_vector_journal
+
+    data_root = tmp_path / "share" / "moss-transcribe-diarize"
+    leaf = data_root / "live"
+    leaf.mkdir(parents=True)
+    journal_path = leaf / "speaker-vectors.jsonl"
+    journal_path.write_text('{"preexisting":true}\n', encoding="utf-8")
+    os.chmod(journal_path, 0o644)
+    os.chmod(data_root, 0o775)
+
+    journal = _live_vector_journal(
+        _Args(live=True, live_vector_journal_path=str(journal_path)),
+        checkout_root=tmp_path / "checkout",
+    )
+
+    assert journal.path == journal_path.resolve()
+    assert data_root.stat().st_mode & 0o777 == 0o755
+    assert leaf.stat().st_mode & 0o777 == JOURNAL_DIRECTORY_MODE
+    assert journal_path.stat().st_mode & 0o777 == JOURNAL_FILE_MODE
 
 
 def test_journaling_session_accepts_a_bodyless_create_and_records_it_as_unspecified(tmp_path):
@@ -1175,3 +1602,110 @@ def test_abort_never_writes_completed_identity_observations(tmp_path):
 
     assert not journal_path.exists()
     assert "vector_journal_appended" not in [event.kind for event in runtime.events(created.session_id)]
+
+
+def _runtime_driven_to_terminal_failure() -> tuple[LiveServiceRuntime, str, int]:
+    """A session killed the way a provider kills one: mid-meeting, with no clean stop.
+
+    Retention backpressure is used because it is the cheapest deterministic path onto
+    `_fail` that never asks the session object to transition -- which is the property
+    under test. `stop(deadline=0)` would not do: `LiveSession.stop` bumps the version on
+    its way to "closing", so it hides the gap this test exists to hold open.
+    """
+
+    runtime = _runtime(
+        speech=(True, False, True, False),
+        descriptor=_descriptor(max_retained_samples=2000),
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    runtime.accept_frame(created.session_id, _frame(1))
+    version_the_reader_holds = runtime.snapshot(created.session_id).session.version
+    with pytest.raises(Exception):
+        runtime.accept_frame(created.session_id, _frame(2))
+    return runtime, created.session_id, version_the_reader_holds
+
+
+def test_a_terminal_failure_reaches_a_reader_that_already_holds_the_current_version():
+    """A dead meeting must not hide behind `since_version`.
+
+    `_fail` fences the session on the runtime and never asks the session object -- which
+    owns `version` -- to transition, so the version a caught-up reader holds does not move
+    when the meeting dies. A reader polling `since_version=<what it last rendered>` was
+    therefore told "unchanged" for the rest of the meeting: it showed "active" beside a
+    frozen transcript and kept polling a session that was already over. Projecting the
+    status onto the snapshot body is not enough on its own, because the body is never sent.
+    """
+
+    runtime, session_id, cursor = _runtime_driven_to_terminal_failure()
+
+    fenced = runtime.snapshot(session_id)
+    assert fenced.terminal_failure is not None
+    # The premise: nothing bumped the counter the gate compares against.
+    assert fenced.session.version == cursor
+
+    delivered = runtime.snapshot(session_id, since_version=cursor)
+    assert delivered is not None, "the version gate withheld the end of the meeting"
+    assert delivered.session.status == "failed"
+    assert delivered.session.failure_reason
+    assert delivered.terminal_failure is not None
+    # And it keeps being delivered: a reader that polled once more must not be told
+    # "unchanged" on the read it would have used to stop.
+    assert runtime.snapshot(session_id, since_version=delivered.session.version) is not None
+
+
+def test_a_healthy_session_still_answers_unchanged_to_a_caught_up_reader():
+    """The bypass above is scoped to terminality, not a blanket removal of the gate."""
+
+    runtime = _runtime(speech=(True,))
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    cursor = runtime.snapshot(created.session_id).session.version
+
+    assert runtime.snapshot(created.session_id, since_version=cursor) is None
+    assert runtime.snapshot(created.session_id, since_version=cursor - 1) is not None
+
+
+def test_a_terminal_failure_does_not_relabel_a_session_that_already_ended():
+    """A teardown that lands after a clean close must not rewrite how the meeting ended.
+
+    `abort` on an already-closed session records a runtime terminal failure -- that is the
+    helper-lease-expiry path, which aborts the mono runtime after the fact -- while the
+    session object correctly stays "closed". Projecting "failed" over it would tell an
+    operator a meeting that finished cleanly had died.
+    """
+
+    runtime = _runtime(speech=(True, False))
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0))
+    runtime.accept_frame(created.session_id, _frame(1))
+    closed = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
+    assert closed.session.status == "closed"
+    assert closed.terminal_failure is None
+
+    late = asyncio.run(runtime.abort(created.session_id, "helper_lease_expired"))
+
+    assert late.terminal_failure is not None, "the late teardown is still recorded"
+    assert late.session.status == "closed"
+    assert runtime.snapshot(created.session_id).session.status == "closed"
+
+
+def test_events_accepts_the_cursor_before_the_first_event_and_refuses_anything_lower():
+    """`/events` is inclusive, so "nothing rendered yet" needs a cursor below seq 0.
+
+    A reader that starts at 0 asks for `seq >= 0` and then has to discard seq 0 as
+    already-seen, so `session_created` is fetched and thrown away for the life of the
+    session and never reaches the reader at all. -1 is the one cursor that means "no
+    event rendered"; -2 and below are still nonsense and must be refused rather than
+    silently treated as 0.
+    """
+
+    runtime = _runtime(speech=(True,))
+    created = runtime.create()
+
+    assert [event.seq for event in runtime.events(created.session_id, since_seq=-1)] == [0]
+    assert [event.kind for event in runtime.events(created.session_id, since_seq=-1)] == ["session_created"]
+    # Inclusive: a reader that has rendered seq 0 re-fetches it and must filter it itself.
+    assert [event.seq for event in runtime.events(created.session_id, since_seq=0)] == [0]
+    with pytest.raises(ValueError, match="at least -1"):
+        runtime.events(created.session_id, since_seq=-2)

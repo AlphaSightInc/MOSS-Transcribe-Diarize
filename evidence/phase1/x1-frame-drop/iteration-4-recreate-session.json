@@ -1,0 +1,342 @@
+{
+  "after_409": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {},
+        "queued": 1,
+        "send_in_flight": true,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "409": 1
+        },
+        "queued": 1,
+        "send_in_flight": false,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": "old-session",
+    "recreate_disabled": false,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": true
+  },
+  "assertions": {
+    "actual_strict_v2_conflict_requires_recreate": true,
+    "failed_recreate_leaves_control_usable": true,
+    "fresh_session_resumes_at_zero_without_sequence_poisoning": true,
+    "old_peer_response_drained_before_new_sequence_reset": true,
+    "recreate_does_not_reset_while_peer_post_is_in_flight": true
+  },
+  "failed_recreate": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {
+          "200": 1
+        },
+        "queued": 0,
+        "send_in_flight": false,
+        "send_paused": false,
+        "sent": 1,
+        "seq": 0
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "409": 1
+        },
+        "queued": 1,
+        "send_in_flight": false,
+        "send_paused": false,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": null,
+    "recreate_disabled": false,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": true
+  },
+  "faults": {
+    "forced_recreate_create_failures": 1,
+    "microphone_old_response_completed_monotonic_ns": 2253268090484125,
+    "microphone_old_response_started_monotonic_ns": 2253267489420708,
+    "response_delay_ms": 600,
+    "session_create_attempts": 3
+  },
+  "initial": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {},
+        "queued": 0,
+        "send_in_flight": false,
+        "sent": 0,
+        "seq": 0
+      },
+      "system": {
+        "errors": 0,
+        "http": {},
+        "queued": 0,
+        "send_in_flight": false,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": "old-session",
+    "recreate_disabled": true,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": false
+  },
+  "new_v2_session": {
+    "lanes": {
+      "microphone": {
+        "accepted_samples": 1000,
+        "accounted_samples": 0,
+        "current_device_epoch": 1,
+        "failed_samples": 0,
+        "failure_code": null,
+        "health": "active",
+        "lane": "microphone",
+        "next_sequence": 1,
+        "pruned_through_sequence": -1,
+        "retained_samples": 1000
+      },
+      "system": {
+        "accepted_samples": 1000,
+        "accounted_samples": 0,
+        "current_device_epoch": 1,
+        "failed_samples": 0,
+        "failure_code": null,
+        "health": "active",
+        "lane": "system",
+        "next_sequence": 1,
+        "pruned_through_sequence": -1,
+        "retained_samples": 1000
+      }
+    },
+    "status": "active",
+    "terminal_reason": null
+  },
+  "old_v2_session": {
+    "lanes": {
+      "microphone": {
+        "accepted_samples": 1000,
+        "accounted_samples": 0,
+        "current_device_epoch": 1,
+        "failed_samples": 0,
+        "failure_code": null,
+        "health": "active",
+        "lane": "microphone",
+        "next_sequence": 1,
+        "pruned_through_sequence": -1,
+        "retained_samples": 1000
+      },
+      "system": {
+        "accepted_samples": 0,
+        "accounted_samples": 0,
+        "current_device_epoch": null,
+        "failed_samples": 0,
+        "failure_code": null,
+        "health": "active",
+        "lane": "system",
+        "next_sequence": 0,
+        "pruned_through_sequence": -1,
+        "retained_samples": 0
+      }
+    },
+    "status": "active",
+    "terminal_reason": null
+  },
+  "passed": true,
+  "probe": "prototypes/browser-capture-feasibility/probe_recreate_session.py",
+  "question": "does a forced strict-v2 409 drain an already-accepted peer POST before sequence reset, survive one failed recreate click, and resume its fresh session at zero",
+  "ready": {
+    "lanes": {},
+    "live_session_id": null,
+    "recreate_disabled": true,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": false
+  },
+  "recovered": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {
+          "200": 1
+        },
+        "queued": 0,
+        "send_in_flight": false,
+        "send_paused": false,
+        "sent": 1,
+        "seq": 0
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "409": 1
+        },
+        "queued": 1,
+        "send_in_flight": true,
+        "send_paused": false,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": "new-session",
+    "recreate_disabled": true,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": false
+  },
+  "recovery_phases": [
+    {
+      "action": "required",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "http_status": 409,
+      "lane": "system",
+      "phase": "session-recovery",
+      "sequence": 1,
+      "session_id": "old-session",
+      "wall_ms": 1786733217178
+    },
+    {
+      "action": "drain-started",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "phase": "session-recovery",
+      "session_id": "old-session",
+      "wall_ms": 1786733217205
+    },
+    {
+      "action": "drained",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "phase": "session-recovery",
+      "session_id": "old-session",
+      "wall_ms": 1786733217781
+    },
+    {
+      "action": "recreate-failed",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "error": "session create failed: HTTP 503",
+      "phase": "session-recovery",
+      "session_id": null,
+      "wall_ms": 1786733217782
+    },
+    {
+      "action": "drain-started",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "phase": "session-recovery",
+      "session_id": null,
+      "wall_ms": 1786733217783
+    },
+    {
+      "action": "drained",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "phase": "session-recovery",
+      "session_id": null,
+      "wall_ms": 1786733217783
+    },
+    {
+      "action": "recreated",
+      "client_id": "633c0b44-0d26-4114-b92d-cae478e84fe9",
+      "phase": "session-recovery",
+      "session_id": "new-session",
+      "wall_ms": 1786733217786
+    }
+  ],
+  "recreate_begun": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {},
+        "queued": 1,
+        "send_in_flight": true,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "409": 1
+        },
+        "queued": 1,
+        "send_in_flight": false,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": "old-session",
+    "recreate_disabled": true,
+    "session_recreate_in_progress": true,
+    "session_recreate_required": true
+  },
+  "requested_response_delay_ms": 600.0,
+  "resumed": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {
+          "200": 2
+        },
+        "queued": 0,
+        "send_in_flight": false,
+        "send_paused": false,
+        "sent": 2,
+        "seq": 1
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "200": 1,
+          "409": 1
+        },
+        "queued": 0,
+        "send_in_flight": false,
+        "send_paused": false,
+        "sent": 1,
+        "seq": 1
+      }
+    },
+    "live_session_id": "new-session",
+    "recreate_disabled": true,
+    "session_recreate_in_progress": false,
+    "session_recreate_required": false
+  },
+  "scope": "local production HTTP routes and real headless Chrome FIFO/recovery-button code; deterministic provider; no model inference, microphone, or display capture",
+  "while_peer_response_is_held": {
+    "lanes": {
+      "microphone": {
+        "errors": 0,
+        "http": {},
+        "queued": 1,
+        "send_in_flight": true,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      },
+      "system": {
+        "errors": 1,
+        "http": {
+          "409": 1
+        },
+        "queued": 1,
+        "send_in_flight": false,
+        "send_paused": true,
+        "sent": 0,
+        "seq": 0
+      }
+    },
+    "live_session_id": "old-session",
+    "recreate_disabled": true,
+    "session_recreate_in_progress": true,
+    "session_recreate_required": true
+  }
+}

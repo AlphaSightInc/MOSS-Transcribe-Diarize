@@ -1,0 +1,163 @@
+{
+  "post_terminal_snapshot": {
+    "capture_credential": {
+      "body": {
+        "capture_phase": "failed",
+        "helper_presence": null,
+        "snapshot": {
+          "descriptor": {
+            "bounds": {
+              "hard_cap_samples": 4000,
+              "max_events": 64,
+              "max_frame_samples": 16000,
+              "max_identity_speakers": 2,
+              "max_queue_depth": 2,
+              "max_retained_samples": 8,
+              "stop_drain_deadline_seconds": null
+            },
+            "config_hashes": {
+              "combined_config_hash": "f416928c068ebc2376db2ee4ab5760fe93bd32173b146960028cd70f31deb56b",
+              "decoder_config_hash": "682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9",
+              "endpoint_config_hash": "b07c86c9a74b32ef06ead2ecd455977eccf1e037b91629bf0fb5e5bada3321e0",
+              "identity_config_hash": "c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb"
+            },
+            "feature_enabled": true,
+            "frame_samples": 1000,
+            "live_protocol": {
+              "capabilities": {
+                "binary": false,
+                "idempotent_frames": true,
+                "lanes": true,
+                "resumable": true
+              },
+              "max_protocol_version": 2,
+              "min_protocol_version": 2,
+              "protocol": "moss-live-service.v2"
+            },
+            "live_protocol_version": "moss-live-service.v1",
+            "provider_manifest_hash": "874203e6783f0fd4ce3ec7c96d1351dcce5a536f6e01964ca9132f748f4484fd",
+            "provider_name": "api-fake",
+            "provider_revision": "test-revision",
+            "sample_rate": 16000,
+            "schema_version": 1,
+            "source_revision": "eda5e69faf0e0251383029295f7e8875a2a1a4f6"
+          },
+          "pending_work_items": 0,
+          "schema_version": 1,
+          "session": {
+            "accepted_samples": 0,
+            "accounted_samples": 0,
+            "committed": [],
+            "committed_prefix_hash": "91f8dc3e395a334b59b6106cd27faabf34a5d7ca283d78c7e113d8619a7f9640",
+            "committed_samples": 0,
+            "epoch": 0,
+            "failure_reason": "helper_failed",
+            "frozen_until_sample": 0,
+            "identity_snapshot": {
+              "canonical_speakers": [],
+              "diagnostics": [],
+              "version": 0
+            },
+            "label_revision_version": 0,
+            "next_frame_sequence": 0,
+            "pending_span_ids": [],
+            "provisional": null,
+            "retained_samples": 0,
+            "status": "aborted",
+            "version": 1
+          },
+          "session_id": "capture-health-terminal-reason-probe-session",
+          "terminal_failure": {
+            "code": "aborted",
+            "detail": {
+              "lane_failures": {
+                "microphone": "browser_microphone_permission_denied"
+              },
+              "reason": "helper_failed",
+              "session_id": "capture-health-terminal-reason-probe-session"
+            },
+            "kind": "transport_pacing",
+            "message": "helper_failed",
+            "retryable": false
+          }
+        },
+        "status_line": "Microphone access was denied. Allow microphone access in Chrome and try again.",
+        "unchanged": false,
+        "v2_session": null
+      },
+      "http_status": 200
+    },
+    "capture_credential_after_pre_branch_access_release": {
+      "body": {
+        "detail": "session is not owned by this device."
+      },
+      "http_status": 403
+    },
+    "view_credential": {
+      "body": {
+        "detail": "invalid bearer authority."
+      },
+      "http_status": 401
+    }
+  },
+  "question": "After a terminal helper heartbeat reports microphone permission denial, can either session credential read a server-authored reason through /snapshot?",
+  "runtime_after_teardown": {
+    "microphone_failure_code": "browser_microphone_permission_denied",
+    "session_status": "aborted",
+    "terminal_failure_code": "aborted",
+    "terminal_failure_kind": "transport_pacing",
+    "terminal_failure_message": "helper_failed"
+  },
+  "scope": {
+    "credentials_omitted": true,
+    "not_covered": "This deterministic local route probe does not exercise a browser permission prompt or production deployment.",
+    "rerun_note": "Rewritten during adversarial review. The original form asserted the 403 the pre-fix tree returned, so it crashed once iteration 10 landed and could no longer regenerate its own artifact. It now performs the pre-branch access release itself, so both the defect and the fix are reproduced on every run.",
+    "route": "local create_app -> paired credentials -> session -> terminal helper heartbeat -> snapshot"
+  },
+  "terminal_heartbeat": {
+    "contains_server_capture_projection": {
+      "capture_phase": false,
+      "status_line": false
+    },
+    "reported_failed_lane": "microphone",
+    "reported_failure_code": "browser_microphone_permission_denied",
+    "reported_helper_state": "failed",
+    "response": {
+      "body": {
+        "helper_presence": {
+          "helper_version": "0.1.0",
+          "instance_id": "helper-a",
+          "lanes": {
+            "microphone": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": "browser_microphone_permission_denied",
+              "state": "failed"
+            },
+            "system": {
+              "device_epoch": 0,
+              "discontinuities": 0,
+              "dropped_frames": 0,
+              "failure_code": null,
+              "state": "capturing"
+            }
+          },
+          "last_seen_monotonic_ns": 2258303096801125,
+          "schema": "moss-live-helper-health.v1",
+          "sent_monotonic_ns": 10,
+          "sequence": 0,
+          "state": "failed"
+        }
+      },
+      "http_status": 200
+    }
+  },
+  "verdict": {
+    "conclusion": "The access release performed by the pre-branch terminal cleanup is the single cause of the unreadable outcome: with it, the owning credential gets 403 and no server string at all; without it, the same route returns the typed microphone-denial reason and still exposes no credential.",
+    "pre_branch_access_release_destroys_the_reason": true,
+    "server_retains_typed_reason": true,
+    "snapshot_returns_server_authored_reason_to_capture_credential": true,
+    "snapshot_returns_server_authored_reason_to_view_credential": false
+  }
+}

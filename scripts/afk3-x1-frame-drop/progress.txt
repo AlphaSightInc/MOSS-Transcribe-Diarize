@@ -1,0 +1,203 @@
+
+[loop 20260814-181406-44129] start budget=40 agent=codex branch=afk3/x1-frame-drop
+
+[loop 20260814-181406-44129] preflight failed before iteration 1
+
+[loop 20260814-181455-47601] start budget=40 agent=codex branch=afk3/x1-frame-drop
+
+[iteration 1] target: record binding x1-frame-drop gate checklist and reconcile integration state; files: scripts/afk3-x1-frame-drop/context.md, scripts/afk3-x1-frame-drop/progress.txt; validation: `python3 scripts/afk-guardrails/preflight.py x1-frame-drop` => PREFLIGHT OK; evidence: `docs/phase1-afk-charter.md` §§4,6 and `scripts/afk3-x1-frame-drop/prd.md`; learned: current `dev` (23afb6d) is already merged via ccd906d, so no merge is needed before the first product slice; next: commit a slow-POST characterization probe before selecting the bounded queue policy.
+
+[iteration 2] target: characterize real worklet-to-POST behavior under a slow response and choose a bounded policy; files: prototypes/browser-capture-feasibility/probe_slow_post_characterization.py, prototypes/browser-capture-feasibility/NOTES.md, evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json, scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/browser-capture-feasibility/probe_slow_post_characterization.py --output evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json` => PASS (real headless Chrome + local strict-v2 routes; each lane emitted/admitted 50 frames over ~3065 ms at 62.5 ms cadence; response hold max=4); evidence: evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json; learned: current checkout has unbounded concurrent frame POSTs rather than the PRD-cited one-in-flight drop guard, so it is still P0-open; next: implement a per-lane serial FIFO bounded by descriptor retention frames, with truthful overflow discontinuity/counters before 409/G7 work.
+
+[iteration 3] target: replace concurrent frame POSTs with descriptor-bounded per-lane FIFO serial senders and make slow-POST loss detectable; files: prototypes/browser-capture-feasibility/{capture_pipeline_page.html,probe_slow_post_characterization.py,NOTES.md}, evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json, scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/browser-capture-feasibility/probe_slow_post_characterization.py --output evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json` => PASS (real headless Chrome + local strict-v2 route; 100 ms response delay; admitted 49/50 vs elapsed 48/49 frames; one held POST per lane; FIFO peak 21/320; ordered wire sequences); evidence: evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json; learned: serial FIFO removes concurrent growth and the direct admitted-vs-elapsed assertion rejects a return to silent loss; next: force 409 and prove drain/recreate clean resume before restoring and running production-geometry G7.
+
+[iteration 4] target: make 409 recovery wait for all old-session FIFO POSTs, then recreate cleanly; files: prototypes/browser-capture-feasibility/{capture_pipeline_page.html,production_route_server.py,probe_recreate_session.py,NOTES.md}, docs/research-chrome-capture-mvp-2026-08-03.md, evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json, scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/browser-capture-feasibility/probe_recreate_session.py --output evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json` => PASS (local production strict-v2 route + headless Chrome; forced system 409 while an already-admitted microphone response was held 600 ms; old response drained before sequence reset; one forced recreate 503 left the button enabled; retry admitted sequence 0 on both fresh lanes); evidence: evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json; learned: queued PCM can survive recreation if old wire sequences are cleared only after every sender drains; next: restore G7's enforced `--frame-samples 8000` and measure hidden >5 min with raw strict-v2 admission arrays.
+
+[iteration 5] target: restore G7's required production-geometry input and strict-v2 admission join; files: prototypes/browser-capture-feasibility/{production_route_server.py,probe_g7_hidden_tab.py,NOTES.md}, evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json, scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/browser-capture-feasibility/probe_g7_hidden_tab.py --frame-samples 8000 --hidden-seconds 310 --output evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json` => PASS (309491 ms hidden; 620 HTTP-200 strict-v2 admissions/lane, each exactly matched elapsed cadence; 621/621 heartbeat 200; hidden p50/p95/max=498/505/507 ms < 2 s lease); regression: slow-POST FIFO and forced-409 recreate probes => PASS to temporary outputs; `python3 scripts/afk-guardrails/preflight.py x1-frame-drop` => PREFLIGHT OK; evidence: evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json; learned: the removed G7 probe and acceptance join are restored without making pre-send telemetry sufficient; next: recheck/merge current `dev`, then run final branch validation on that merged result, retaining the listed baseline failures.
+
+[iteration 6] target: validate x1 on the required current-dev merged result and reconcile its gate state; files: scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `git merge-base --is-ancestor dev HEAD` => 0 and `git rev-list --left-right --count dev...HEAD` => `0 11` (current HEAD is the merged result); `.venv/bin/pytest -q` => `3 failed, 1007 passed, 4 skipped, 479 subtests passed in 103.64s`, failures only L15 `l15_product_tree_drift: 9089b332` plus two Darwin macOS lifecycle/UDS tests; `git diff --name-only pre-afk-20260813...HEAD -- tests/test_macos_uds_tracer.py prototypes/streaming-diarization/l15` => empty; `python3 scripts/afk-guardrails/preflight.py x1-frame-drop` => `PREFLIGHT OK`; tracked-artifact/probe check and `git diff --check` => PASS; evidence: committed raw arrays `evidence/phase1/x1-frame-drop/iteration-{3-slow-post-fifo,4-recreate-session,5-g7-hidden-8000}.json`; learned: every x1 criterion has a committed re-runnable probe and preflight-verified artifact, but strict branch validation is blocked by inherited, out-of-scope baseline failures; next: baseline owners must restore a green all-suite exit, then rerun this exact validation without exclusions.
+
+[iteration 7] target: refresh the sole remaining strict-suite blocker from focused current-head evidence; files: scripts/afk3-x1-frame-drop/{context.md,progress.txt}; validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q prototypes/streaming-diarization/l15/test_l1_baseline.py::BaselineContractTests::test_a2_instrument_is_hash_pinned_and_production_bound tests/test_macos_uds_tracer.py::test_built_macos_app_finishes_launch_and_honors_application_terminate tests/test_macos_uds_tracer.py::test_built_macos_app_cli_cross_real_uds_and_private_tls_server` => `2 failed, 1 passed` (L15 `l15_product_tree_drift: 9089b332...`; macOS lifecycle `NSRunningApplication` PID lookup exit 2); `PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q tests/test_macos_uds_tracer.py` => `1 failed, 5 passed`, so the earlier UDS/TLS failure does not currently reproduce; `git rev-list --left-right --count dev...HEAD` => `0 12`, `git merge-base --is-ancestor dev HEAD` => 0, baseline-path diff from `pre-afk-20260813...HEAD` => empty, and preflight => `PREFLIGHT OK`; evidence: existing committed x1 raw arrays remain `evidence/phase1/x1-frame-drop/iteration-{3-slow-post-fifo,4-recreate-session,5-g7-hidden-8000}.json`; learned: x1 has no permissible remaining change, while the L15 pin and Launch Services lifecycle need their owners; next: restore those two baseline failures, then rerun `.venv/bin/pytest -q` on this exact merged head without exclusions.
+
+[loop 20260814-181455-47601] complete at iteration 7
+
+================================================================================
+ADVERSARIAL REVIEW — 2026-08-14 (independent reviewer, not the ralph loop)
+================================================================================
+
+VERDICT: PASS-WITH-DEFECTS. Every product change on this branch is real, reachable from the
+page's own entry points, and the P0 gate is falsifiable. Two defects are documentation/gate
+quality, not behaviour, plus one environment blocker that stopped me re-running the three
+committed browser probes.
+
+--------------------------------------------------------------------------------
+CRITERION BY CRITERION
+--------------------------------------------------------------------------------
+
+1. "P0: stop discarding captured audio."
+
+   The PRD quotes `capture_pipeline_page.html:962` -> `if (st.sendPaused || st.sendInFlight)
+   return;`. That line is NOT on this branch's base. `git log --all -S sendInFlight --
+   prototypes/browser-capture-feasibility/capture_pipeline_page.html` puts it only on
+   `afk2/f1-canary-fixes` (a5f3cc9, 131c2a1, f8f9d6e), which `git merge-base --is-ancestor
+   afk2/f1-canary-fixes dev` reports is NOT an ancestor of `dev`. `dev`'s page (896 lines)
+   fires an unguarded `fetch` per worklet message with `const sequence = st.seq++` at emit
+   time: unbounded concurrent POSTs, not a drop. Iteration 2 of the loop reported exactly
+   this, and it was right.
+
+   The branch nonetheless implements the right transport: a per-lane FIFO bounded by
+   `max_retained_samples / frame_samples`, one serial sender per lane, the wire sequence
+   assigned only as the head is dispatched and advanced only after a 200, and — when the
+   FIFO does overflow — a cumulative `droppedFrames`, a `discontinuityPending` flag that
+   marks the next admitted frame, and a heartbeat that now reports both.
+
+   PROVEN, not just read: `probe_frame_loss_falsification.py` runs the committed page's real
+   transport script and re-inserts the historical guard as a source mutation.
+     - current page : 49 admitted / 50 elapsed-cadence frames, 0 dropped, per-lane
+                      concurrency 1.
+     - `inflight_drop` mutant : 25 admitted / 49 emitted (49 % loss), `dropped_frames: 0`,
+                      `discontinuities: 0`, heartbeat still reporting zero — the historical
+                      silent-loss signature, reproduced.
+     - forced overflow (capacity 4): 31 dropped, 22 discontinuities, heartbeat route carries
+                      `dropped_frames: 31`, and 44 admitted frames carry `discontinuity: true`.
+
+2. "The assertion that would have caught it."
+
+   `admitted_frames_approximately_match_elapsed_cadence` (probe_slow_post_characterization.py
+   :257) is NOT a tautology. Scored with the committed probe's own `_lane_summary`, it is TRUE
+   on the current page (delta 0) and FALSE on the `inflight_drop` mutant (delta -24).
+
+   Its G7 twin, `admitted_frames_approximately_match_hidden_elapsed_cadence`
+   (probe_g7_hidden_tab.py:253), was falsified separately using probe_g7_hidden_tab's OWN
+   `_admission_cadence` over a rebuilt route-acceptance/telemetry join: delta 0 on the current
+   page, -24 on the same mutant. Both halves of the new gate can fail.
+
+   The other two assertions in the same dict do NOT catch the defect: on the same mutant,
+   `per_lane_frame_posts_are_serial` and `wire_sequences_follow_admitted_worklet_order` both
+   stayed TRUE. `wire_sequences == range(n)` is contiguous by construction and should not be
+   read as loss detection.
+
+   Still tautological in probe_g7_hidden_tab.py, and left in place by this branch:
+     - `each_lane_has_contiguous_hidden_accepted_sequence_progression` (:250) — the records it
+       scores are ROUTE ACCEPTANCES, and `moss_transcribe_diarize/app/live_ingest.py:137`
+       admits a frame only when `frame.sequence == lane.next_sequence`. Accepted sequences
+       are therefore 0,1,2,... by construction; no input can make this false.
+     - `strict_v2_accounting_matches_descriptor_frames` (:263) — `accepted_samples` is
+       accumulated as `start + sample_count` (live_ingest.py:148), so with a fixed
+       `sample_count` (already asserted separately) this is arithmetic identity.
+   Both are harmless now that the cadence assertion exists, but neither is evidence.
+
+3. "Re-run G7 at production geometry."
+
+   (a) `--frame-samples` is restored and REQUIRED: running the probe without it exits non-zero
+       with `error: the following arguments are required: --frame-samples`.
+   (b) The committed artifact `evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json`
+       was opened and checked, not trusted: descriptor `frame_samples: 8000`,
+       `sample_rate: 16000` (500 ms frames), `hidden_duration_ms: 309491` (> 300 s), 620 raw
+       hidden admissions per lane with `sample_count: 8000` on each, 621 heartbeats all HTTP
+       200, hidden heartbeat p50/p95/max 498/505/507 ms, `accepted_minus_elapsed_expected: 0`
+       on both lanes, and `v2_session.accepted_samples = 4 968 000 = 621 x 8000`. The raw
+       arrays are present. Timestamps (14:54:20 -> 14:59:29 local) sit between the iteration-4
+       and iteration-5 commits, and the per-frame jitter/RMS/queue-depth series in the
+       iteration-3 artifact are not fabricable by hand.
+   (c) I could NOT re-run it. See the environment blocker below. What I could re-run without a
+       browser is the half that regressed in a843bb4: with the probe's own runtime override the
+       route advertises `frame_samples: 8000` / `max_retained_samples: 320000`, the page's
+       derived FIFO bound is 40 frames, and `/prototype/verdict`'s descriptor matches the route's.
+
+4. "recreateSession."
+
+   `recreateSession` does not exist on `dev` at all — this branch adds it, together with the
+   `#recreateSession` button, `requireSessionRecreation` (called from the real 409 branch of
+   `sendQueuedFrames`), and `drainFrameSends`. It is NOT dead code at the route: the only path
+   that enables the button is a real HTTP 409 on the real frame send.
+
+   Verified against the race the PRD names, on the real page source: while the peer lane's
+   already-admitted POST is still resolving, the page keeps `live_session_id: old-session` and
+   `microphone.send_in_flight: true`; the old session's `next_sequence` reaches 1 BEFORE the
+   lane's `seq` is reset to 0; a forced 503 on the first recreate leaves
+   `recreate_disabled: false`; the retry lands on `new-session` and both lanes resume at wire
+   sequence 0 with no 409 on the fresh session. Removing the drain (`no_drain` mutation) breaks
+   it: the microphone lane never resumes and `new-session.microphone.next_sequence` stays 0.
+
+--------------------------------------------------------------------------------
+DEFECTS FOUND BY THIS REVIEW
+--------------------------------------------------------------------------------
+
+D1 (documentation): NOTES.md and the loop's progress entries describe the P0 as fixed on this
+   branch without stating that the quoted defect was never in this branch's base. The
+   iteration-2 entry says it, but the four later entries and NOTES.md read as if the drop guard
+   had been removed here. Recorded above so the orchestrator does not double-count the fix.
+
+D2 (gate quality): the two tautological G7 assertions named in section 2 were left in place.
+   Replaced in practice by adding a falsification probe rather than deleting them, so the G7
+   artifact keeps its shape; a future ticket should drop them or make them route-independent.
+
+D3 (coverage): `probe_recreate_session.py` drives `sendQueuedFrames` and the recovery button
+   through the page's `?x1_recreate_probe` seam, whose lane objects are STUBS
+   (`x1ProbeLane()` has no `node`/`src`/`tracks`). The worklet -> enqueue -> 409 -> recreate
+   path is therefore never exercised end to end by any committed probe. My harness exercises
+   the real `attachLane` worklet path for transport, but uses the same seam for recreate.
+
+--------------------------------------------------------------------------------
+ENVIRONMENT BLOCKER (not a branch defect)
+--------------------------------------------------------------------------------
+
+Chrome cannot launch on this machine: `codesign -v "/Applications/Google Chrome.app"` reports
+`invalid signature (code or signature have been modified)` and `spctl -a` reports `internal
+error in Code Signing subsystem`; the bundle is signed with `flags=0x12a00(kill,...)`, so every
+launch dies with SIGABRT (exit 134) and no stderr — including `--dump-dom about:blank`. Chrome
+processes started at 14:30/14:32 today (the loop's own runs) are still alive, so this broke
+after the branch's evidence was produced. Consequently
+`probe_slow_post_characterization.py`, `probe_recreate_session.py` and `probe_g7_hidden_tab.py`
+CANNOT be re-run here; my one attempt failed with `lane_counts={'system': 0, 'microphone': 0}`
+because Chrome died on launch. The same code-signing breakage is the most likely cause of the
+`tests/test_macos_uds_tracer.py` failures that also report `exited early with -6`.
+
+Repairing Chrome means re-signing or reinstalling the operator's browser; I did not do that.
+The browser probes must be re-run by whoever has a working Chrome before G7 is signed off.
+
+--------------------------------------------------------------------------------
+WHAT THE TESTS DO NOT COVER
+--------------------------------------------------------------------------------
+
+* No AudioWorklet, no Chrome scheduler, no real HTTP stack and no hidden-tab intensive
+  throttling in `page_sender_harness.mjs`. It measures transport SEMANTICS only. Anything that
+  depends on Chrome's timer/throttling behaviour is covered only by the committed browser
+  artifacts, which I verified by content but could not re-run.
+* No real microphone, no display capture, no attended Gate-1 checklist, no real provider, no
+  model inference anywhere in x1's evidence.
+* No test asserts the heartbeat's `dropped_frames` against a REAL browser overflow; the
+  truthfulness proof is from the Node harness only.
+* Overflow is only ever forced by shrinking `max_retained_samples`. Nothing measures whether
+  the production 40-frame queue (320000/8000) is deep enough for a real slow uplink, so the
+  drop rate under real network conditions is unmeasured.
+* The 409 -> recreate path is proven only through the stub-lane probe seam (D3). A real
+  worklet-driven session that 409s mid-capture is untested.
+* No backoff on a repeated non-409 error response: `sendQueuedFrames` retries the same FIFO
+  head on the next worklet message, so a permanently-rejected head (e.g. HTTP 400) will fill
+  the queue and convert into counted drops. That is truthful but untested and unbounded in time.
+* `recreateSession` early-returns when `!bothLanesHaveSignal()` without any user-visible
+  message. Unreachable in practice (a session only exists after both lanes had signal) and
+  untested.
+* Nothing verifies the added `X-Prototype-Lane` request header is harmless to the real
+  deployed service; it exists only so the probes' middleware can attribute a lane.
+
+--------------------------------------------------------------------------------
+WHAT I RAN
+--------------------------------------------------------------------------------
+
+  PYTHONDONTWRITEBYTECODE=1 python3 \
+    prototypes/browser-capture-feasibility/probe_frame_loss_falsification.py \
+    --output evidence/phase1/x1-frame-drop/x1-review-frame-loss-falsification.json
+  => all 15 gate checks true (exit 0)
+
+  PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q
+  => see the review commit message for exact counts
+
+  python3 scripts/afk-guardrails/preflight.py x1-frame-drop  => PREFLIGHT OK
+
+Note on the interpreter: the repo `.venv` is a symlink into `~/Desktop/...`, and macOS
+intermittently refused to read that tree during this review (`Operation not permitted` on
+`.venv/pyvenv.cfg`). The pyenv 3.12.10 `python3` has the same fastapi/uvicorn/starlette and was
+used instead. Either works when the filesystem cooperates.

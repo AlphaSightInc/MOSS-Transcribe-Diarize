@@ -11,6 +11,7 @@ import time
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
+from unittest.mock import patch
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_auth import VIEW_ABSOLUTE_CAP_SECONDS
@@ -18,6 +19,7 @@ from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPo
 from moss_transcribe_diarize.app.live_lane_contract import LIVE_V2_REPLAY_ACK_WINDOW, LiveLane
 from moss_transcribe_diarize.app.live_helper_presence import HELPER_HEALTH_SCHEMA
 from moss_transcribe_diarize.app.live_service_runtime import (
+    LIVE_TERMINAL_SESSION_STATUSES,
     LiveServiceBounds,
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
@@ -82,6 +84,7 @@ def v2_frame_payload(
     lane: str = "system",
     sample_rate: int = LIVE_SAMPLE_RATE,
     capture_timestamp_ns: int | None = None,
+    silent: bool = False,
 ) -> dict:
     if capture_timestamp_ns is None:
         capture_timestamp_ns = sequence * samples * 1_000_000_000 // sample_rate
@@ -89,7 +92,7 @@ def v2_frame_payload(
         "lane": lane,
         "capture_timestamp_ns": capture_timestamp_ns,
         "device_epoch": 0,
-        "silent": False,
+        "silent": silent,
         "discontinuity": False,
     }
 
@@ -147,6 +150,14 @@ class _FakeTimer:
         return handle
 
 
+class _MutableMonotonicClock:
+    def __init__(self, value_ns: int = 0) -> None:
+        self.value_ns = value_ns
+
+    def __call__(self) -> int:
+        return self.value_ns
+
+
 def _digest(label: str) -> str:
     return hash_config({"label": label})
 
@@ -199,6 +210,7 @@ def make_live_runtime(
     *,
     max_retained_samples: int = 8,
     max_frame_samples: int = LIVE_SAMPLE_RATE,
+    frame_samples: int = 1000,
     max_queue_depth: int = 2,
     speech: tuple[bool, ...] = (),
     session_id: str = "api-session",
@@ -225,7 +237,7 @@ def make_live_runtime(
             # Same value as the endpoint policy below: one span cap, declared twice.
             hard_cap_samples=4000,
         ),
-        frame_samples=1000,
+        frame_samples=frame_samples,
     )
     ids = iter(session_ids or (session_id,))
     return LiveServiceRuntime(
@@ -271,6 +283,110 @@ class LiveApiTest(unittest.TestCase):
         )
         self.assertEqual(paired.status_code, 200)
         return AuthorizedLiveClient(app, paired.json()["device_token"])
+
+    def test_snapshot_projects_measured_server_observations_and_recovers_after_acceptance(self):
+        """The production route, not a hand-built observation, owns every policy condition."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        frame_samples = 8_000
+        clock = _MutableMonotonicClock()
+        with patch("moss_transcribe_diarize.app.live_capture_status.time.monotonic_ns", clock):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                app = create_app(
+                    model_path="fake-model",
+                    runs_dir=tmpdir,
+                    live_enabled=True,
+                    live_runtime_factory=lambda: make_live_runtime(
+                        max_retained_samples=frame_samples * 2,
+                        max_frame_samples=frame_samples,
+                        frame_samples=frame_samples,
+                        session_ids=("stale", "silent", "sequence", "backpressure"),
+                    ),
+                    **self._live_auth_kwargs(tmpdir),
+                )
+                client = self._paired_client(app)
+
+                def start_session(sequence: int) -> str:
+                    created = client.post("/api/live/sessions")
+                    self.assertEqual(created.status_code, 200)
+                    session_id = created.json()["id"]
+                    heartbeat = client.post(
+                        f"/api/live/sessions/{session_id}/heartbeat",
+                        json=helper_heartbeat_payload(sequence=sequence),
+                    )
+                    self.assertEqual(heartbeat.status_code, 200)
+                    return session_id
+
+                def post_frame(session_id: str, lane: str, sequence: int, *, silent: bool = False):
+                    return client.post(
+                        f"/api/live/sessions/{session_id}/frames",
+                        json=v2_frame_payload(sequence, frame_samples, lane=lane, silent=silent),
+                    )
+
+                def status(session_id: str) -> dict:
+                    response = client.get(f"/api/live/sessions/{session_id}/snapshot")
+                    self.assertEqual(response.status_code, 200)
+                    return response.json()
+
+                def assert_healthy(session_id: str) -> None:
+                    snapshot = status(session_id)
+                    self.assertEqual(
+                        snapshot["capture_phase"],
+                        "recording",
+                    )
+                    self.assertEqual(
+                        snapshot["status_line"],
+                        "Capturing microphone and shared audio.",
+                    )
+
+                stale = start_session(0)
+                self.assertEqual(post_frame(stale, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(stale, "system", 0).status_code, 200)
+                clock.value_ns = 2_000_000_000
+                self.assertEqual(
+                    status(stale)["status_line"],
+                    "Microphone audio has stopped arriving. Check capture and try again.",
+                )
+                self.assertEqual(post_frame(stale, "microphone", 1).status_code, 200)
+                self.assertEqual(post_frame(stale, "system", 1).status_code, 200)
+                assert_healthy(stale)
+
+                silent = start_session(1)
+                for sequence in range(4):
+                    self.assertEqual(post_frame(silent, "microphone", sequence, silent=True).status_code, 200)
+                    self.assertEqual(post_frame(silent, "system", sequence).status_code, 200)
+                self.assertEqual(
+                    status(silent)["status_line"],
+                    "No microphone sound is being detected.",
+                )
+                self.assertEqual(post_frame(silent, "microphone", 4).status_code, 200)
+                assert_healthy(silent)
+
+                sequence_gap = start_session(2)
+                self.assertEqual(post_frame(sequence_gap, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(sequence_gap, "system", 0).status_code, 200)
+                for _ in range(4):
+                    self.assertEqual(post_frame(sequence_gap, "microphone", 2).status_code, 409)
+                self.assertEqual(
+                    status(sequence_gap)["status_line"],
+                    "Microphone audio frames are out of sequence. Reconnecting capture.",
+                )
+                self.assertEqual(post_frame(sequence_gap, "microphone", 1).status_code, 200)
+                assert_healthy(sequence_gap)
+
+                backpressure = start_session(3)
+                self.assertEqual(post_frame(backpressure, "microphone", 0).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "microphone", 1).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "system", 0).status_code, 200)
+                for _ in range(4):
+                    self.assertEqual(post_frame(backpressure, "microphone", 2).status_code, 429)
+                self.assertEqual(
+                    status(backpressure)["status_line"],
+                    "Server is catching up on microphone audio.",
+                )
+                self.assertEqual(post_frame(backpressure, "system", 1).status_code, 200)
+                self.assertEqual(post_frame(backpressure, "microphone", 2).status_code, 200)
+                assert_healthy(backpressure)
 
     def test_live_routes_are_absent_by_default_and_runtime_is_unchanged(self):
         from fastapi.testclient import TestClient
@@ -338,6 +454,27 @@ class LiveApiTest(unittest.TestCase):
                         client.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
                         200,
                     )
+
+    def test_configured_shared_token_normalizes_bearer_header_padding(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                live_shared_token="configured-token",
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = AuthorizedLiveClient(app, "configured-token")
+
+            response = client.post(
+                "/api/live/sessions",
+                headers={"Authorization": "Bearer   configured-token  "},
+            )
+
+            self.assertEqual(response.status_code, 200)
 
     def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
         from fastapi.testclient import TestClient
@@ -468,6 +605,12 @@ class LiveApiTest(unittest.TestCase):
             self.assertFalse(hasattr(app.state.manager, "live_runtime"))
             self.assertIsNotNone(app.state.live_runtime.snapshot(session_id))
             self.assertIn(session_id, app.state.live_v2_sessions)
+            initial_events = client.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(initial_events.status_code, 200)
+            self.assertEqual(
+                [(event["seq"], event["kind"]) for event in initial_events.json()["events"]],
+                [(0, "session_created")],
+            )
 
             ack = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
             self.assertEqual(ack.status_code, 200)
@@ -492,6 +635,11 @@ class LiveApiTest(unittest.TestCase):
             snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot?since_version=0")
             self.assertEqual(snapshot.status_code, 200)
             self.assertFalse(snapshot.json()["unchanged"])
+            self.assertEqual(snapshot.json()["snapshot"]["session"]["status"], "failed")
+            self.assertEqual(
+                snapshot.json()["snapshot"]["terminal_failure"]["code"],
+                "backpressure_or_deadline",
+            )
             self.assertEqual(snapshot.json()["snapshot"]["session"]["next_frame_sequence"], 2)
             self.assertEqual(snapshot.json()["v2_session"]["lanes"]["system"]["next_sequence"], 0)
             self.assertEqual(snapshot.json()["v2_session"]["lanes"]["microphone"]["next_sequence"], 0)
@@ -501,6 +649,95 @@ class LiveApiTest(unittest.TestCase):
             event_payloads = events.json()["events"]
             self.assertEqual([event["seq"] for event in event_payloads], [1, 2, 3])
             self.assertEqual(event_payloads[-1]["kind"], "terminal_failure")
+
+    def test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read(self):
+        """Drive a real session to terminal failure and poll it the way a viewer does.
+
+        The viewer is the party this contract exists for, and it does not issue bare
+        `/snapshot` requests: it carries the version and sequence cursors it last rendered,
+        exactly as `live_portal.py` does. Asserting on `since_version=0` proves nothing
+        here, because 0 is the one cursor the version gate can never suppress -- it is
+        below every version a session that accepted a frame has ever had. This test holds
+        the cursor the viewer actually holds.
+
+        Failing-before: with the version gate applied to terminal snapshots, every poll
+        after the failure answered `{"snapshot": null, "unchanged": true}` forever, so the
+        viewer kept showing "active" over a frozen transcript and never stopped polling.
+        """
+
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            def poll(version_cursor: int, sequence_cursor: int) -> tuple[dict, list[int]]:
+                snapshot = client.get(
+                    f"/api/live/sessions/{session_id}/snapshot?since_version={version_cursor}"
+                )
+                events = client.get(
+                    f"/api/live/sessions/{session_id}/events?since_seq={sequence_cursor}"
+                )
+                self.assertEqual(snapshot.status_code, 200)
+                self.assertEqual(events.status_code, 200)
+                return snapshot.json(), [event["seq"] for event in events.json()["events"]]
+
+            # A fresh viewer has rendered nothing, so its event cursor is the one slot
+            # below the first sequence. seq 0 is `session_created` and it is delivered
+            # here -- once. On the next poll the cursor sits on it and the viewer filters
+            # the repeat itself, which is what an inclusive endpoint requires.
+            version_cursor, sequence_cursor = 0, -1
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertEqual(delivered, [0])
+            first_delivery = list(delivered)
+            sequence_cursor = max(delivered)
+
+            # -1 is the *only* cursor below the first sequence; anything lower is a bug in
+            # the caller and is refused at the wire rather than quietly clamped to 0.
+            self.assertEqual(
+                client.get(f"/api/live/sessions/{session_id}/events?since_seq=-2").status_code,
+                400,
+            )
+
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
+
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertFalse(body["unchanged"])
+            self.assertEqual(body["snapshot"]["session"]["status"], "active")
+            self.assertNotIn(0, [seq for seq in delivered if seq not in first_delivery])
+            self.assertEqual(delivered.count(0), 1, "seq 0 is re-served but only ever once")
+            version_cursor = body["snapshot"]["session"]["version"]
+            sequence_cursor = max(delivered)
+
+            # The viewer is now fully caught up: this is the state the outage happened in.
+            body, _ = poll(version_cursor, sequence_cursor)
+            self.assertTrue(body["unchanged"])
+
+            refused = client.post(
+                f"/api/live/sessions/{session_id}/frames", json=frame_payload(2, 1)
+            )
+            self.assertEqual(refused.status_code, 429)
+
+            # One read, on the cursor the viewer already held, and it knows.
+            body, delivered = poll(version_cursor, sequence_cursor)
+            self.assertFalse(body["unchanged"])
+            session = body["snapshot"]["session"]
+            self.assertEqual(session["status"], "failed")
+            self.assertTrue(session["failure_reason"])
+            self.assertEqual(
+                body["snapshot"]["terminal_failure"]["code"], "backpressure_or_deadline"
+            )
+            # A client that gates only on `status` -- reading no events, no
+            # `terminal_failure`, nothing else -- stops here.
+            self.assertIn(session["status"], LIVE_TERMINAL_SESSION_STATUSES)
 
     def test_stop_timeout_and_abort_return_terminal_failure_semantics(self):
         from fastapi.testclient import TestClient
@@ -532,7 +769,44 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(aborted.json()["snapshot"]["session"]["failure_reason"], "caller cancelled")
 
             rejected = client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 1))
-            self.assertEqual(rejected.status_code, 403)
+            self.assertEqual(rejected.status_code, 409)
+            self.assertFalse(rejected.json()["failure"]["retryable"])
+
+    def test_v2_lane_frame_is_refused_after_mono_terminal_failure(self):
+        from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            self.assertEqual(
+                client.post(frames_url, json=frame_payload(0, 4)).status_code,
+                200,
+            )
+            terminal = client.post(frames_url, json=frame_payload(1, 5))
+            self.assertIsNotNone(terminal.json()["snapshot"]["terminal_failure"])
+
+            late_v2 = client.post(
+                frames_url,
+                json=v2_frame_payload(0, 1, lane="system"),
+            )
+
+            self.assertEqual(late_v2.status_code, 409)
+            self.assertEqual(
+                app.state.live_v2_sessions.get(session_id).snapshot().lanes[
+                    LiveLane.SYSTEM
+                ].next_sequence,
+                0,
+            )
 
     def test_clean_stop_immediately_revokes_view_authority(self):
         from moss_transcribe_diarize.app.server import create_app
@@ -561,6 +835,11 @@ class LiveApiTest(unittest.TestCase):
             stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
             self.assertEqual(stopped.status_code, 200)
             self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "closed")
+
+            capture_terminal = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(capture_terminal.status_code, 200)
+            self.assertEqual(capture_terminal.json()["capture_phase"], "stopped")
+            self.assertEqual(capture_terminal.json()["status_line"], "Audio capture stopped.")
 
             self.assertEqual(
                 viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
@@ -597,9 +876,9 @@ class LiveApiTest(unittest.TestCase):
             # the ownership entry - the capture client still has to be able to abort.
             stopped = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0})
             self.assertEqual(stopped.status_code, 409)
-            # The mono session still reads "active" here; only the runtime's terminal
-            # failure records that the session is over. The view must follow the latter.
-            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "active")
+            # The runtime failure projects to the snapshot status immediately, so every
+            # reader can stop from this response without separately interpreting events.
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "failed")
             self.assertEqual(stopped.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
 
             self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
@@ -708,7 +987,8 @@ class LiveApiTest(unittest.TestCase):
             retried = client.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 1.0})
 
             self.assertEqual(first.status_code, 409)
-            self.assertEqual(retried.status_code, 429)
+            self.assertEqual(retried.status_code, 409)
+            self.assertFalse(retried.json()["failure"]["retryable"])
             self.assertEqual(retried.json()["failure"]["kind"], "transport_pacing")
             self.assertEqual(retried.json()["failure"]["code"], "backpressure_or_deadline")
             self.assertEqual(retried.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
@@ -1420,7 +1700,7 @@ class LiveApiTest(unittest.TestCase):
                 f"/api/live/sessions/{session_id}/frames",
                 json=v2_frame_payload(1, 1, lane="microphone"),
             )
-            self.assertEqual(rejected_after_stop.status_code, 403)
+            self.assertEqual(rejected_after_stop.status_code, 409)
 
     def test_v2_failed_terminal_stop_releases_registry_entry(self):
         from fastapi.testclient import TestClient
@@ -1498,6 +1778,123 @@ class LiveApiTest(unittest.TestCase):
                 status["status_line"],
                 "Microphone capture failed. The session is continuing.",
             )
+
+    def test_snapshot_fuses_v2_arrival_and_server_lane_failure_with_helper_presence(self):
+        """The route, rather than a direct projection call, owns these server-only facts."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            heartbeat = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(),
+            )
+            microphone = client.post(
+                f"/api/live/sessions/{session_id}/frames",
+                json=v2_frame_payload(0, 2, lane="microphone"),
+            )
+            missing_system = client.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(heartbeat.status_code, 200)
+            self.assertEqual(microphone.status_code, 200)
+            self.assertEqual(missing_system.status_code, 200)
+            self.assertEqual(
+                missing_system.json()["capture_phase"],
+                "awaiting_audio",
+            )
+            self.assertEqual(
+                missing_system.json()["status_line"],
+                "Waiting for shared audio to arrive.",
+            )
+
+            self.assertEqual(
+                client.post(
+                    f"/api/live/sessions/{session_id}/frames",
+                    json=v2_frame_payload(0, 2, lane="system"),
+                ).status_code,
+                200,
+            )
+            app.state.live_v2_sessions.get(session_id).fail_lane(
+                LiveLane.SYSTEM,
+                "server_lane_failure",
+            )
+            server_failed = client.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(server_failed.status_code, 200)
+            self.assertEqual(server_failed.json()["helper_presence"]["lanes"]["system"]["state"], "capturing")
+            self.assertEqual(server_failed.json()["v2_session"]["lanes"]["system"]["health"], "failed")
+            self.assertEqual(server_failed.json()["capture_phase"], "recording")
+            self.assertEqual(
+                server_failed.json()["status_line"],
+                "Shared audio capture failed. The session is continuing.",
+            )
+
+    def test_v2_frame_route_tracks_and_releases_capture_observations(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            self.assertIn(session_id, app.state.live_capture_observations)
+            self.assertEqual(
+                client.post(
+                    frames_url,
+                    json=v2_frame_payload(0, 2, lane="microphone", silent=True),
+                ).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                409,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                409,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(1, 2, lane="microphone")).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 9, lane="microphone")).status_code,
+                429,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="microphone")).status_code,
+                200,
+            )
+
+            observation = app.state.live_capture_observations.snapshot(session_id).lanes[
+                LiveLane.MICROPHONE
+            ]
+            self.assertIsNotNone(observation.last_server_arrival_monotonic_ns)
+            self.assertEqual(observation.consecutive_silent_samples, 0)
+            self.assertEqual(observation.consecutive_sequence_rejections, 0)
+            self.assertEqual(observation.consecutive_backpressure_rejections, 0)
+            self.assertIsNotNone(observation.last_rejection_monotonic_ns)
+
+            self.assertEqual(
+                client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "test"}).status_code,
+                200,
+            )
+            self.assertNotIn(session_id, app.state.live_capture_observations)
 
     def test_a_frame_on_the_lane_its_own_heartbeat_failed_is_refused_permanently_and_the_meeting_survives(self):
         """F3's soak sequence, on the lane that failed rather than on its peer.
@@ -1634,14 +2031,113 @@ class LiveApiTest(unittest.TestCase):
             )
 
             self.assertEqual(heartbeat.status_code, 200)
-            self.assertEqual(late_frame.status_code, 403)
+            self.assertEqual(late_frame.status_code, 409)
             self.assertNotIn(session_id, app.state.live_v2_sessions)
+            self.assertNotIn(session_id, app.state.live_capture_observations)
             with self.assertRaises(KeyError):
                 app.state.live_v2_mixers.get(session_id)
             self.assertIsNone(app.state.live_helper_presence.snapshot(session_id))
             self.assertEqual(
                 app.state.live_runtime.snapshot(session_id).session.status,
                 "aborted",
+            )
+
+    def test_terminal_helper_failure_keeps_capture_reason_readable_after_teardown(self):
+        """The capture owner may read the final server status, but the view grant still dies."""
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            created = client.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            terminal = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    state="failed",
+                    failed_lane="microphone",
+                    failure_code="browser_microphone_permission_denied",
+                ),
+            )
+            capture_snapshot = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            viewer_snapshot = viewer.get(f"/api/live/sessions/{session_id}/snapshot")
+
+            self.assertEqual(terminal.status_code, 200)
+            self.assertEqual(capture_snapshot.status_code, 200)
+            self.assertEqual(viewer_snapshot.status_code, 401)
+            body = capture_snapshot.json()
+            self.assertEqual(body["snapshot"]["session"]["status"], "aborted")
+            self.assertEqual(body["capture_phase"], "failed")
+            self.assertEqual(
+                body["status_line"],
+                "Microphone access was denied. Allow microphone access in Chrome and try again.",
+            )
+            rendered = json.dumps(body, sort_keys=True)
+            self.assertNotIn("view_token", rendered)
+            self.assertNotIn("device_token", rendered)
+
+    def test_terminal_capture_reason_survives_the_polling_clients_since_version_tick(self):
+        """The portal polls `/snapshot?since_version=<version>`; the reason must not evaporate.
+
+        Deriving the terminal facts from the cursor-gated snapshot made the readable reason a
+        one-shot: the next poll carried the version it had just been given, the runtime
+        suppressed the snapshot as unchanged, helper presence was already released by
+        teardown, and the projection answered `starting` / "Waiting for audio capture to
+        start." for a session that had died. That is worse than the 403 it replaced -- it is
+        a confident wrong answer -- so the cursor may suppress the transported snapshot but
+        never the capture judgment.
+        """
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=8),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            terminal = client.post(
+                f"/api/live/sessions/{session_id}/heartbeat",
+                json=helper_heartbeat_payload(
+                    state="failed",
+                    failed_lane="microphone",
+                    failure_code="browser_microphone_permission_denied",
+                ),
+            )
+            self.assertEqual(terminal.status_code, 200)
+
+            first = client.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(first.status_code, 200)
+            version = first.json()["snapshot"]["session"]["version"]
+
+            repoll = client.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={version}"
+            )
+            self.assertEqual(repoll.status_code, 200)
+            # Terminal snapshots deliberately bypass the ordinary version gate so a
+            # status-only client learns to stop from the same response as the reason.
+            self.assertFalse(repoll.json()["unchanged"])
+            self.assertEqual(
+                repoll.json()["snapshot"]["session"]["status"],
+                "aborted",
+            )
+            # The server-authored reason is still there, tick after tick.
+            self.assertEqual(repoll.json()["capture_phase"], "failed")
+            self.assertEqual(
+                repoll.json()["status_line"],
+                "Microphone access was denied. Allow microphone access in Chrome and try again.",
             )
 
     def test_stale_lease_callback_after_renewal_does_not_abort_live_session(self):

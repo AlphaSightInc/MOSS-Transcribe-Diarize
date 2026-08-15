@@ -5,7 +5,7 @@ import base64
 import binascii
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Mapping
 
 from starlette.requests import Request
 
@@ -16,7 +16,11 @@ from .live_auth import (
     LiveAccessRegistry,
     LivePeer,
 )
-from .live_capture_status import project_live_capture_status
+from .live_capture_status import (
+    LiveCaptureHealthPolicy,
+    LiveCaptureObservationRegistry,
+    project_live_capture_status,
+)
 from .live_ingest import (
     LiveV2EpochDiscontinuityRequiredError,
     LiveV2LaneCapacityError,
@@ -57,7 +61,11 @@ from .live_session import (
     LiveSessionFailed,
 )
 from .live_tape import LiveSessionTapeRecorder, LiveSessionTapeStore
-from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
+from .live_v2_session import (
+    LiveV2SessionRegistry,
+    LiveV2SessionSnapshot,
+    LiveV2SessionTerminalError,
+)
 
 
 def attach_live_routes(
@@ -71,9 +79,11 @@ def attach_live_routes(
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
-    v2_sessions = LiveV2SessionRegistry(
+    raw_v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
+    capture_observations = LiveCaptureObservationRegistry()
+    v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
     v2_mixers = LiveCompatibilityMixerRegistry(
         max_output_samples=runtime.descriptor.bounds.max_frame_samples
     )
@@ -88,10 +98,15 @@ def attach_live_routes(
         v2_mixers=v2_mixers,
         tapes=tapes,
         helper_presence=helper_presence,
-        access=access,
+        # Terminal cleanup releases media state, but the capture owner retains the tiny
+        # authorization binding needed to read the final server-authored snapshot. The stop
+        # and abort routes use the same contract; view grants still expire through the runtime
+        # lifecycle resolver below.
+        access=None,
         abort_mono=runtime.abort,
     )
     app.state.live_v2_sessions = v2_sessions
+    app.state.live_capture_observations = capture_observations
     app.state.live_v2_mixers = v2_mixers
     app.state.live_tapes = tapes
     app.state.live_helper_presence = helper_presence
@@ -240,6 +255,7 @@ def attach_live_routes(
                     raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
                 v2_session = v2_sessions.get(session_id)
                 ack = v2_session.accept(frame.v2_frame)
+                capture_observations.observe_accepted(session_id, frame.v2_frame)
                 tapes.append_lane_frame(session_id, frame.v2_frame)
                 mixed = v2_mixers.get(session_id).admit_available(
                     session_id,
@@ -273,6 +289,10 @@ def attach_live_routes(
             LiveV2PrunedReplayError,
             LiveV2StaleDeviceEpochError,
         ) as exc:
+            if isinstance(exc, LiveV2OutOfOrderFrameError):
+                capture_observations.observe_sequence_rejection(session_id, exc.lane)
+            elif isinstance(exc, LiveV2LaneCapacityError):
+                capture_observations.observe_backpressure_rejection(session_id, exc.lane)
             status, conflict = live_v2_ingress_failure_response(exc)
             conflict["snapshot"] = _snapshot_payload(runtime, session_id)
             conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
@@ -319,6 +339,7 @@ def attach_live_routes(
             return _snapshot_response(
                 runtime,
                 v2_sessions,
+                capture_observations,
                 helper_presence,
                 session_id,
                 since_version=since_version,
@@ -396,7 +417,6 @@ def attach_live_routes(
                     tapes.release(session_id)
                     helper_failures.release(session_id)
                     helper_presence.release(session_id)
-                    access.release_session(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
                     failure["snapshot"] = _snapshot_payload(runtime, session_id)
                     failure["v2_session"] = v2_snapshot.to_dict()
@@ -409,7 +429,6 @@ def attach_live_routes(
             tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
-            access.release_session(session_id)
             release_v2_on_error = False
             response = {"snapshot": stopped.to_dict()}
             if v2_snapshot is not None:
@@ -488,7 +507,6 @@ def attach_live_routes(
                 tapes.release(session_id)
             helper_failures.release(session_id)
             helper_presence.release(session_id)
-            access.release_session(session_id)
             return {"snapshot": snapshot.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -709,21 +727,67 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
 
 def _snapshot_response(
     runtime: LiveServiceRuntime,
-    v2_sessions: LiveV2SessionRegistry,
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
+    capture_observations: LiveCaptureObservationRegistry,
     helper_presence: HelperPresenceRegistry,
     session_id: str,
     *,
     since_version: int | None = None,
 ) -> dict[str, Any]:
+    # The capture judgment is read from the session as it *is*, then the caller's cursor is
+    # applied to the transported snapshot. Deriving the terminal reason from the cursor-gated
+    # result instead loses it on the very next poll: the portal polls
+    # `/snapshot?since_version=<version>` (live_portal.py) and, once teardown has released
+    # helper presence, a cursor-suppressed snapshot left the projection with no facts at all
+    # and it answered "starting" / "Waiting for audio capture to start." for a session that
+    # had already died. One terminal read followed by silence is not a readable reason.
+    current = runtime.snapshot(session_id)
     snapshot = runtime.snapshot(session_id, since_version=since_version)
+    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(current)
     presence = helper_presence.snapshot(session_id)
+    v2_session = _v2_snapshot(v2_sessions, session_id)
+    observations = _capture_observation_snapshot(capture_observations, session_id)
     return {
         "snapshot": None if snapshot is None else snapshot.to_dict(),
         "unchanged": snapshot is None,
-        "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+        "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
-        **project_live_capture_status(presence).to_dict(),
+        **project_live_capture_status(
+            presence,
+            v2_session=v2_session,
+            observations=observations,
+            policy=LiveCaptureHealthPolicy(
+                frame_samples=runtime.descriptor.frame_samples,
+                sample_rate=runtime.descriptor.sample_rate,
+            ),
+            terminal_session_status=terminal_session_status,
+            terminal_lane_failures=terminal_lane_failures,
+        ).to_dict(),
     }
+
+
+def _terminal_capture_facts(
+    snapshot: Any,
+) -> tuple[str | None, Mapping[str, str] | None]:
+    if snapshot is None:
+        return None, None
+    terminal_failure = snapshot.terminal_failure
+    if terminal_failure is not None:
+        detail = terminal_failure.detail
+        lane_failures = detail.get("lane_failures") if isinstance(detail, Mapping) else None
+        if isinstance(lane_failures, Mapping):
+            return (
+                "failed",
+                {
+                    str(lane): code
+                    for lane, code in lane_failures.items()
+                    if isinstance(lane, str) and isinstance(code, str) and code
+                },
+            )
+        return "failed", None
+    if snapshot.session.status in {"closed", "aborted", "failed"}:
+        return snapshot.session.status, None
+    return None, None
 
 
 def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str, Any] | None:
@@ -735,18 +799,80 @@ def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str,
 
 
 def _v2_snapshot_payload(
-    v2_sessions: LiveV2SessionRegistry,
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
     session_id: str,
 ) -> dict[str, Any] | None:
+    snapshot = _v2_snapshot(v2_sessions, session_id)
+    return None if snapshot is None else snapshot.to_dict()
+
+
+def _v2_snapshot(
+    v2_sessions: "_ObservedLiveV2SessionRegistry",
+    session_id: str,
+) -> LiveV2SessionSnapshot | None:
     try:
-        return v2_sessions.get(session_id).snapshot().to_dict()
+        return v2_sessions.get(session_id).snapshot()
     except KeyError:
         return None
 
 
+def _capture_observation_snapshot(
+    capture_observations: LiveCaptureObservationRegistry,
+    session_id: str,
+):
+    try:
+        return capture_observations.snapshot(session_id)
+    except KeyError:
+        return None
+
+
+class _ObservedLiveV2SessionRegistry:
+    """Pair v2-session lifetime with capture-health observation lifetime."""
+
+    def __init__(
+        self,
+        sessions: LiveV2SessionRegistry,
+        observations: LiveCaptureObservationRegistry,
+    ) -> None:
+        self._sessions = sessions
+        self._observations = observations
+
+    def __contains__(self, session_id: object) -> bool:
+        return session_id in self._sessions
+
+    def contains(self, session_id: str) -> bool:
+        return self._sessions.contains(session_id)
+
+    def create(self, session_id: str):
+        session = self._sessions.create(session_id)
+        try:
+            self._observations.create(session_id)
+        except Exception:
+            self._sessions.release(session_id)
+            raise
+        return session
+
+    def get(self, session_id: str):
+        return self._sessions.get(session_id)
+
+    def release(self, session_id: str):
+        session = self._sessions.release(session_id)
+        self._observations.release(session_id)
+        return session
+
+    def expire(self, session_id: str, reason: str, *, lane_failure_codes=None):
+        snapshot = self._sessions.expire(
+            session_id,
+            reason,
+            lane_failure_codes=lane_failure_codes,
+        )
+        self._observations.release(session_id)
+        return snapshot
+
+
 def _failure_status(exc: LiveServiceError) -> int:
     if exc.failure.kind == LiveServiceFailureKind.TRANSPORT_PACING:
-        return 429
+        return 429 if exc.failure.retryable else 409
     if exc.failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
         return 503
     return 409

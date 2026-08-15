@@ -1,0 +1,178 @@
+
+[loop 20260814-181407-44143] start budget=40 agent=codex branch=afk3/x6-terminal-visibility
+
+[loop 20260814-181407-44143] preflight failed before iteration 1
+
+[loop 20260814-181455-47656] start budget=40 agent=codex branch=afk3/x6-terminal-visibility
+
+[loop 20260814-181455-47656] iteration 1 — terminal snapshot visibility and inclusive event cursor. Touched `moss_transcribe_diarize/app/live_service_runtime.py`, `moss_transcribe_diarize/app/live_portal.py`, `tests/test_live_api.py`, `tests/test_live_portal.py`, `evidence/phase1/x6-terminal-visibility/iteration-01-terminal-visibility.txt`, and this loop state. `terminal_failure` now projects snapshot status to `failed` (explicit abort remains `aborted`); the inclusive `/events` cursor accepts `-1` for no rendered event and the portal starts/resets there, rendering seq 0 exactly once. Validation: `PYTHONPATH="$PWD" .venv/bin/pytest -q tests/test_live_service_runtime.py tests/test_live_api.py tests/test_live_portal.py` → `89 passed, 1 warning, 331 subtests passed`; focused committed probes → `2 passed`; `git rev-list --left-right --count HEAD...dev` → `6 0` (current dev already contained). Evidence: `evidence/phase1/x6-terminal-visibility/iteration-01-terminal-visibility.txt`. Learned: the shared `.venv` is an editable environment for the primary checkout, so worktree tests need `PYTHONPATH="$PWD"` or they validate the wrong source. Next: independent review only; do not merge/push dev here.
+
+[loop 20260814-181455-47656] complete at iteration 1
+
+[adversarial review 20260814] VERDICT ON THE ITERATION-1 SUBMISSION: PASS-WITH-DEFECTS.
+The loop chose the right contract and made a correct, minimal change to `_snapshot` -- but
+it stopped two layers above the defect, and the assertion it wrote could not have caught
+either one. Defect 2 (the inclusive cursor) was genuinely fixed. Defect 1 was not: the
+user-visible symptom it names -- a browser showing a dead meeting as alive and polling it
+forever -- survived the fix intact on the very client the ticket describes. Three further
+defects were found and fixed on the way.
+
+WHAT THE BRANCH GOT RIGHT
+  - `_snapshot` projects a runtime terminal failure onto `LiveSnapshot.status` as "failed",
+    leaving an explicit abort as "aborted". "failed" is already a status the session state
+    machine reaches on its own (`live_session.py:852`) and `live_transport.py:116` already
+    treated a terminal failure as "failed", so the projection matches the tree's own
+    vocabulary rather than inventing one.
+  - It replaced an assertion that encoded the defect. `test_live_api.py` asserted
+    `status == "active"` for a terminally-failed session and carried a comment declaring
+    that as the contract. That comment was rewritten to state the new contract, not just
+    the new literal. That is the ripple the PRD warned about, correctly taken.
+  - The event cursor really does start and reset at -1, and the portal really does render
+    seq 0 exactly once. Verified by mutation: reverting `activateAuthority`'s reset to 0
+    fails three portal tests.
+
+WHAT IT MISSED -- DEFECT 1 SURVIVED THE FIX
+  `LiveServiceRuntime.snapshot(since_version=...)` returns None -- `{"snapshot": null,
+  "unchanged": true}` -- whenever the session's version has not moved past the reader's
+  cursor. `_fail` does not move it: it records terminality on the runtime and never asks
+  the session object, which owns `version`, to transition. So the projected status was
+  computed and then thrown away before it reached the wire.
+
+  A viewer that had caught up polled `/snapshot?since_version=<what it rendered>` and got
+  `unchanged: true` on every poll for the rest of the meeting. `live_portal.py` stops only
+  on `session.status` read out of a snapshot body, so it kept showing "active" over a
+  frozen transcript and kept polling a dead session twice a second. That is the ticket's
+  symptom, unchanged by the ticket's fix.
+
+  The branch's assertion used `since_version=0`. Zero is below every version a session that
+  has accepted a frame has ever had, so it is the one cursor the gate can never suppress.
+  The assertion was true and could not fail for the reason that mattered.
+
+  Fixed: the version gate no longer withholds a terminal snapshot. A healthy session still
+  answers "unchanged" to a caught-up reader.
+
+WHAT IT MISSED -- AND WHAT NO SNAPSHOT CONTRACT COULD HAVE REACHED
+  The portal is a *view*-token client, and `live_auth.py` grants a view only while the
+  session status is in VIEWABLE_SESSION_STATUSES ({active, closing}). The instant a session
+  fails terminally its grant is released, so the viewer's very next `/snapshot` and
+  `/events` are 401. The browser never receives the terminal body at all -- not the
+  branch's, not the fixed one. The whole snapshot contract is unreachable from the client
+  the ticket is about.
+  What the portal did with that 401: `readJson` threw a bare Error, and `poll`'s catch sent
+  every error to `scheduleRetry`, which backs off to 5s and retries with no attempt limit.
+  A dead meeting left a browser on "Reconnecting: HTTP 401" at 0.2 Hz for as long as the tab
+  stayed open. That is the ticket's symptom, on the ticket's client, after the ticket's fix.
+  Fixed in `live_portal.py`: the HTTP status now travels with the error, and 401/403 stop
+  the poll and report that the view ended. A refused request may be worth retrying; a
+  refused authority never is.
+  NOT fixed, and escalated rather than edited: a viewer still cannot learn *why* the meeting
+  ended. That needs VIEWABLE_SESSION_STATUSES to admit terminal statuses so a viewer can
+  read the terminal snapshot once before its grant is released -- `live_auth.py`, which this
+  ticket does not own.
+
+WHAT IT MISSED -- A REGRESSION THE PROJECTION INTRODUCED
+  The projection overwrote every status except "aborted". A meeting that closed cleanly and
+  then had a teardown land on it -- helper lease expiry aborts the mono runtime after the
+  fact -- was relabelled "failed", telling an operator a finished meeting had died. The
+  projection now applies only to a session that is still running.
+
+CRITERION BY CRITERION
+  "discoverable from the snapshot alone"
+    tests/test_live_api.py::LiveApiTest::test_a_polling_viewer_learns_a_session_died_from_one_snapshot_read
+    Drives a real session to terminal failure over the real routes and polls with the
+    cursor the viewer is actually holding. Asserts the body is not `unchanged`, that
+    `session.status == "failed"`, and that the status is in the server's published terminal
+    set -- i.e. a client reading nothing but `status` stops here.
+    evidence/phase1/x6-terminal-visibility/snapshot_wire_probe.py prints that body verbatim;
+    `--baseline` prints the same scenario against dev's product files for the before.
+
+  "the portal renders seq 0 exactly once"
+    tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_renders_seq_zero_once_and_stops_on_a_served_terminal_snapshot
+    Replays bodies captured off real routes through the real portal script -- no
+    hand-written payloads -- and asserts the portal asked for the same cursors the capture
+    used, so a capture rule that drifts fails instead of becoming an easier test. Asserts
+    seq 0 renders once across polls that serve it twice, that the portal reaches state
+    "failed", and that it has no timers left: it stopped.
+
+  "a client that gates only on the documented indicator learns the session died"
+    tests/test_live_portal.py::LivePortalRouteTest::test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever
+    Asserts the premise as well as the fix: a view-token reader really is answered 401 on
+    both `/snapshot` and `/events` once the session dies, and the portal stops on that
+    instead of reconnecting forever. Both replayed responses are real refusals off a real
+    route -- which is why the served-response probe now records each response whole, status
+    code included. Replaying bodies only turned every refusal into a 200, and a probe built
+    that way could not have found this.
+
+  "documented and tested, not folklore"
+    LIVE_TERMINAL_SESSION_STATUSES is the published contract, and
+    tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_stops_on_exactly_the_statuses_the_server_calls_terminal
+    binds the portal's own list to it, so drifting either side fails a test.
+
+EVERY ASSERTION HERE WAS MUTATION-TESTED
+  Each fix was reverted in turn and the gate re-run; every one is caught by name.
+    version gate hides terminal snapshots     -> 3 tests fail
+    no status projection at all               -> 5 tests fail
+    projection overwrites a settled status    -> 1 test fails
+    portal event cursor back to 0             -> 3 tests fail
+    runtime refuses since_seq=-1              -> 4 tests fail
+    events() drops its lower bound            -> 1 test fails
+    portal terminal set drops "failed"        -> 2 tests fail
+    portal retries a refused view again       -> 1 test fails
+  Two of the three `eventSequence = -1` sites (the initial state literal and
+  `clearAuthority`) are NOT load-bearing: mutating either alone changes nothing the gate
+  can see, because `activateAuthority` resets the cursor before the first poll. They are
+  defensive duplicates, not defects.
+
+WHAT THESE TESTS DO NOT COVER
+  - Concurrency. Every probe drives the runtime from one thread. The window between `_fail`
+    recording terminality and `session.abort` transitioning the session object is real and
+    untested: a `/snapshot` landing inside it reads "failed", and the next reads "aborted".
+    Both are terminal, so no client is misled, but the transition itself has no test.
+  - The `capture_phase` / `status_line` fields travelling in the same response. They are
+    projected from helper presence alone (`live_capture_status.py`, owned by x3-capture-health)
+    and know nothing about the session's terminal state, so a dead session with no helper
+    heartbeat still reports `capture_phase: "starting"` and "Waiting for audio capture to
+    start." beside `session.status: "failed"`. Not this ticket's file; flagged, not fixed.
+  - Event-ring overflow. The server keeps `max_events` (64) events; a viewer slower than
+    that silently misses the ones evicted, including `terminal_failure`. The snapshot still
+    tells it the session died, which is why this is a gap rather than an outage, but nothing
+    tests it.
+  - The real browser. The portal probe runs the portal's script under a hand-rolled DOM and
+    fetch double in node. It proves the script's logic; it does not prove that Chrome
+    renders it.
+  - v2 lane frames after a mono terminal failure. `live_transport.py:239` refuses them now
+    that `status` is no longer "active" -- a behaviour change the projection caused and an
+    improvement over admitting frames into a dead session -- but no test names it.
+  - Multi-viewer. One viewer per session in every probe; nothing tests two readers holding
+    different cursors across the same terminal transition.
+  - The deployed host. Everything here is in-process against `TestClient` and a fake
+    provider. No probe touched the GPU host or a real vLLM failure.
+  - What a viewer is told about *why* a meeting ended. It is told the view ended, which is
+    all a 401 supports. Nothing tests the case that would carry the reason, because the
+    server cannot currently produce it (see the escalation above).
+  - Whether a 403 behaves like a 401 here. The portal now stops on both; only 401 is
+    reachable in a probe, because T-01 closed the shared-token trust posture as a single
+    trust domain and removed the isolation path that produced 403s.
+  - A view token that expires mid-meeting on a *healthy* session. It is answered 401 by the
+    same code path, so the portal now stops and says the view ended -- correct copy, but the
+    scenario has no probe of its own.
+
+POST-REBOOT COVERAGE — 2026-08-15
+  The previously unnamed v2 admission change now has a route regression:
+  `test_v2_lane_frame_is_refused_after_mono_terminal_failure` drives the mono runtime to a
+  terminal failure, posts a v2 system-lane frame, requires HTTP 409, and proves the lane's
+  sequence remains zero. This pins the selected permanent-refusal behavior without coupling
+  the test to the sibling x3 branch's mono response-code reconciliation.
+
+MERGED X3/X6 RECONCILIATION — 2026-08-15
+  A throwaway raw-body prototype proved the semantic collision on the merged head: for the
+  same caught-up cursor, `LiveServiceRuntime.snapshot(..., since_version=cursor)` returned a
+  terminal `failed` snapshot while `live_transport._snapshot_response` returned
+  `snapshot=null`, `unchanged=true`, and only `capture_phase=failed`. X3's adapter had manually
+  reapplied the ordinary cursor gate after x6's runtime deliberately bypassed it for terminal
+  state. The adapter now delegates transported-snapshot gating to the runtime and separately
+  reads current state for the durable capture judgment. Terminal session state remains the
+  authority; clean closed capture remains `stopped`.
+  Ownership exception: the AFK3 handoff requires this x3/x6 collision to be resolved when x6
+  lands. The reconciliation therefore changes x3-owned `live_transport.py` on x6; the ticket
+  preflight may report only this explicitly approved cross-ticket integration finding.

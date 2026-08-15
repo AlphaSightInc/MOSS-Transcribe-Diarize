@@ -287,7 +287,7 @@ class LivePortalRouteTest(unittest.TestCase):
         from moss_transcribe_diarize.app.server import create_app
 
         for deadline, expected_status, expected_state in (
-            (0.0, 409, "active"),
+            (0.0, 409, "failed"),
             (5.0, 200, "closed"),
         ):
             with self.subTest(deadline=deadline), tempfile.TemporaryDirectory() as tmpdir:
@@ -335,13 +335,21 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(first_snapshot["headers"]["Authorization"], "Bearer portal-view-secret")
         self.assertEqual(first_snapshot["cache"], "no-store")
         self.assertEqual(first_snapshot["credentials"], "same-origin")
-        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=0", first_events["url"])
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=-1", first_events["url"])
         self.assertEqual(first_events["headers"]["Authorization"], "Bearer portal-view-secret")
         self.assertIn("since_version=2", second_snapshot["url"])
         self.assertIn("since_seq=3", second_events["url"])
         for request in probe["pollRequests"] + probe["controlRequests"]:
             self.assertNotIn("portal-view-secret", request["url"])
-        self.assertEqual(probe["eventRows"], ["seq: 1 | kind: opened | snapshot: 2", "seq: 3 | kind: partial | snapshot: 2", "seq: 4 | kind: commit | snapshot: 4"])
+        self.assertEqual(
+            probe["eventRows"],
+            [
+                "seq: 0 | kind: session_created | snapshot: 1",
+                "seq: 1 | kind: opened | snapshot: 2",
+                "seq: 3 | kind: partial | snapshot: 2",
+                "seq: 4 | kind: commit | snapshot: 4",
+            ],
+        )
         self.assertIn("hello <script>", probe["transcriptBeforeControls"])
         self.assertEqual(
             probe["statusDetailAfterSecondPoll"],
@@ -383,6 +391,220 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["storageWrites"], [])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever(self):
+        """The other half of "polled forever", and the half no snapshot contract can reach.
+
+        View authority is derived from the session lifecycle: `live_auth.py` grants a view
+        only while the session status is in `VIEWABLE_SESSION_STATUSES` ({active, closing}).
+        So the instant a session fails terminally, the viewer's very next `/snapshot` and
+        `/events` are 401 -- it never receives the body that would have told it why, no
+        matter what that body says.
+
+        The portal treated that 401 as a transient fault and retried it on a capped backoff
+        with no attempt limit. A meeting that died left a browser sitting on "Reconnecting:
+        HTTP 401" at 0.2 Hz for as long as the tab stayed open, never saying the meeting was
+        over. Both responses replayed below are real refusals off a real route.
+
+        This does not make the failure *reason* visible to a viewer -- that needs
+        `VIEWABLE_SESSION_STATUSES` to admit terminal statuses, in a file this ticket does
+        not own. It stops the endless poll and says the view ended, which is what the portal
+        can honestly know from a 401.
+        """
+
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                live_auth_state_path=Path(tmpdir) / "live-auth.json",
+                live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
+            )
+            html = TestClient(app).get("/live").text
+            capture = _paired_live_client(app)
+            created = capture.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            capture.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
+            capture.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
+
+            healthy_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version=0"
+            )
+            healthy_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(healthy_snapshot.status_code, 200)
+            cursor = healthy_snapshot.json()["snapshot"]["session"]["version"]
+
+            refused = capture.post(
+                f"/api/live/sessions/{session_id}/frames", json=frame_payload(2, 1)
+            )
+            self.assertEqual(refused.status_code, 429)
+
+            dead_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={cursor}"
+            )
+            dead_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=0")
+            # The premise, stated as an assertion rather than assumed: the viewer cannot
+            # read the terminal snapshot at all.
+            self.assertEqual(dead_snapshot.status_code, 401)
+            self.assertEqual(dead_events.status_code, 401)
+
+            served = [
+                _served(healthy_snapshot),
+                _served(healthy_events),
+                _served(dead_snapshot),
+                _served(dead_events),
+            ]
+
+        probe = _run_served_polls_probe(html, served)
+
+        self.assertEqual(len(probe["requests"]), 4)
+        self.assertEqual(probe["connectionState"], "disconnected")
+        self.assertEqual(
+            probe["activeTimersAtEnd"], 0, "the portal kept retrying a view the server released"
+        )
+        self.assertIn("View ended", probe["statusDetail"])
+        self.assertNotIn("Reconnecting", probe["statusDetail"])
+
+    def test_the_portal_stops_on_exactly_the_statuses_the_server_calls_terminal(self):
+        """The terminal set is one contract, not two lists that happen to agree today.
+
+        The server decides which `session.status` values mean the meeting is over and the
+        portal decides when to stop polling. Those had no relationship in the tree: the
+        portal's list was a literal, so a status the server started publishing would have
+        been polled forever, and a status the portal dropped would have been silent. Bind
+        them, so drifting either one is a failing test rather than an outage.
+        """
+
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.live_service_runtime import (
+            LIVE_TERMINAL_SESSION_STATUSES,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        declared = re.search(r"const terminalStates = new Set\(\[([^\]]*)\]\)", html)
+        self.assertIsNotNone(declared, "the portal no longer declares a terminal set")
+        self.assertEqual(
+            {value.strip().strip('"') for value in declared.group(1).split(",")},
+            set(LIVE_TERMINAL_SESSION_STATUSES),
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_the_portal_renders_seq_zero_once_and_stops_on_a_served_terminal_snapshot(self):
+        """Real route bodies through the real portal script: both defects, end to end.
+
+        Nothing below is a hand-written payload. Each body is what a live `/snapshot` and
+        `/events` actually returned, fetched with the cursors the portal computes for
+        itself, and the probe asserts the portal then asked for exactly those cursors --
+        so a capture rule that drifted from what the portal does fails the test instead of
+        quietly becoming a different, easier test.
+
+        Failing-before, twice over. With the event cursor starting at 0 the portal asked
+        for `seq >= 0` and discarded seq 0 as already-seen, so `session_created` never
+        reached the reader at all. With terminal snapshots suppressed by the version gate,
+        the third poll answered `unchanged` and the portal kept polling a dead session.
+
+        The reader here is device-authorised on purpose. A *view*-token reader has its grant
+        released the moment the session stops being viewable and is answered 401 instead --
+        a separate defect on a separate path, held by
+        `test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever`.
+        Both readers have to stop; they learn to stop from different responses.
+        """
+
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(max_retained_samples=4),
+                live_auth_state_path=Path(tmpdir) / "live-auth.json",
+                live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
+            )
+            html = TestClient(app).get("/live").text
+            client = _paired_live_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+
+            served: list[dict] = []
+            requested: list[str] = []
+            # The portal's own opening cursors: no version rendered, no event rendered.
+            version_cursor, sequence_cursor = 0, -1
+
+            def poll_once() -> None:
+                nonlocal version_cursor, sequence_cursor
+                snapshot_url = (
+                    f"/api/live/sessions/{session_id}/snapshot?since_version={version_cursor}"
+                )
+                events_url = (
+                    f"/api/live/sessions/{session_id}/events?since_seq={sequence_cursor}"
+                )
+                snapshot = client.get(snapshot_url)
+                events = client.get(events_url)
+                self.assertEqual(snapshot.status_code, 200)
+                self.assertEqual(events.status_code, 200)
+                served.extend([_served(snapshot), _served(events)])
+                # Only the cursor half of the path: the probe drives the portal against a
+                # session id of its own, and it is the cursors that have to agree.
+                requested.extend([snapshot_url.split("/")[-1], events_url.split("/")[-1]])
+                if snapshot.json()["snapshot"]:
+                    version_cursor = snapshot.json()["snapshot"]["session"]["version"]
+                fresh = [
+                    event["seq"]
+                    for event in events.json()["events"]
+                    if event["seq"] > sequence_cursor
+                ]
+                if fresh:
+                    sequence_cursor = max(fresh)
+
+            poll_once()
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(0, 2))
+            client.post(f"/api/live/sessions/{session_id}/frames", json=frame_payload(1, 2))
+            poll_once()
+            refused = client.post(
+                f"/api/live/sessions/{session_id}/frames", json=frame_payload(2, 1)
+            )
+            self.assertEqual(refused.status_code, 429)
+            poll_once()
+
+        # The server really did serve seq 0 more than once: the endpoint is inclusive, so
+        # the reader is the only thing that can keep it from being rendered twice.
+        self.assertEqual([event["seq"] for event in served[1]["payload"]["events"]], [0])
+        self.assertIn(0, [event["seq"] for event in served[3]["payload"]["events"]])
+        # And the third snapshot really is the one that carries the death.
+        self.assertEqual(served[4]["payload"]["snapshot"]["session"]["status"], "failed")
+
+        probe = _run_served_polls_probe(html, served)
+
+        self.assertEqual(len(probe["requests"]), len(requested))
+        for expected, request in zip(requested, probe["requests"]):
+            self.assertIn(expected, request["url"])
+
+        seq_zero_rows = [row for row in probe["eventRows"] if row.startswith("seq: 0 |")]
+        self.assertEqual(len(seq_zero_rows), 1, probe["eventRows"])
+        self.assertTrue(seq_zero_rows[0].startswith("seq: 0 | kind: session_created"))
+        # Rendered on the first poll, not a later one, and never re-rendered after.
+        self.assertEqual(len(probe["rowsAfterEachPoll"][0]), 1)
+        self.assertEqual(
+            [row for row in probe["rowsAfterEachPoll"][-1] if row.startswith("seq: 0 |")],
+            seq_zero_rows,
+        )
+
+        self.assertEqual(probe["serverState"], "failed")
+        self.assertEqual(probe["connectionState"], "disconnected")
+        self.assertEqual(probe["activeTimersAtEnd"], 0, "the portal kept polling a dead session")
+        self.assertIn("failure code: backpressure_or_deadline", probe["statusDetail"])
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_browser_contract_retries_without_cursor_gap_or_overlap(self):
         from fastapi.testclient import TestClient
 
@@ -393,9 +615,9 @@ class LivePortalRouteTest(unittest.TestCase):
 
         self.assertEqual(len(probe["requests"]), 4)
         self.assertIn("since_version=0", probe["requests"][0]["url"])
-        self.assertIn("since_seq=0", probe["requests"][1]["url"])
+        self.assertIn("since_seq=-1", probe["requests"][1]["url"])
         self.assertIn("since_version=0", probe["requests"][2]["url"])
-        self.assertIn("since_seq=0", probe["requests"][3]["url"])
+        self.assertIn("since_seq=-1", probe["requests"][3]["url"])
         self.assertEqual(probe["retryDelays"], [0, 500])
         self.assertEqual(
             probe["maxPendingTimers"],
@@ -658,11 +880,14 @@ def _extract_portal_script(html: str) -> str:
     return scripts[0]
 
 
-def _run_node_probe(html: str, scenario: str) -> dict:
+def _run_node_probe(html: str, scenario: str, responses: list | None = None) -> dict:
     script = _extract_portal_script(html)
     node_program = f"""
 const portalScript = {json.dumps(script)};
 const scenario = {json.dumps(scenario)};
+// Bodies captured from a real server on a real route, replayed into the real portal
+// script. Empty for the hand-built scenarios below.
+const servedResponses = {json.dumps(responses or [])};
 
 function makeClassList(initial) {{
   const classes = new Set(initial || []);
@@ -911,7 +1136,7 @@ const snapshots = {{
 async function runHappy() {{
   const env = installPortal([
     {{ payload: snapshots.active2 }},
-    {{ payload: {{ events: [{{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 3, kind: "partial", snapshot_version: 2 }}] }} }},
+    {{ payload: {{ events: [{{ seq: 0, kind: "session_created", snapshot_version: 1 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 1, kind: "opened", snapshot_version: 2 }}, {{ seq: 3, kind: "partial", snapshot_version: 2 }}] }} }},
     {{ payload: snapshots.active4 }},
     {{ payload: {{ events: [{{ seq: 3, kind: "partial", snapshot_version: 2 }}, {{ seq: 4, kind: "commit", snapshot_version: 4 }}] }} }},
     {{ payload: snapshots.closing5 }},
@@ -1183,8 +1408,39 @@ async function runEventRetention() {{
   }}));
 }}
 
+async function runServedPolls() {{
+  // No hand-written payloads: every body and status code here came off a live route.
+  const env = installPortal(servedResponses.map((served) => ({{
+    payload: served.payload,
+    ok: served.ok,
+    status: served.status,
+  }})));
+  env.nodes.sessionId.value = "served-session";
+  env.nodes.viewToken.value = "served-view-secret";
+  env.nodes.connectButton.listeners.click();
+  const rowsAfterEachPoll = [];
+  const pollCount = servedResponses.length / 2;
+  for (let poll = 0; poll < pollCount; poll += 1) {{
+    if (poll > 0 && env.activeTimerCount() === 0) {{
+      break;  // the portal stopped polling; do not invent a timer it never scheduled.
+    }}
+    await env.runNextTimer();
+    rowsAfterEachPoll.push(env.nodes.events.children.map((node) => node.textContent));
+  }}
+  console.log(JSON.stringify({{
+    requests: env.requests,
+    rowsAfterEachPoll,
+    eventRows: env.nodes.events.children.map((node) => node.textContent),
+    serverState: env.nodes.serverState.textContent,
+    connectionState: env.nodes.connectionState.textContent,
+    statusDetail: env.nodes.statusDetail.textContent,
+    activeTimersAtEnd: env.activeTimerCount(),
+  }}));
+}}
+
 const scenarios = {{
   happy: runHappy,
+  servedPolls: runServedPolls,
   sharedStart: runSharedStart,
   retry: runRetry,
   labelRevision: runLabelRevision,
@@ -1256,3 +1512,22 @@ def _run_control_timeout_contract_probe(html: str) -> dict:
 
 def _run_event_retention_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "eventRetention")
+
+
+def _run_served_polls_probe(html: str, responses: list) -> dict:
+    return _run_node_probe(html, "servedPolls", responses)
+
+
+def _served(response) -> dict:
+    """One real HTTP response, recorded whole -- body *and* status code.
+
+    The status is not decoration. A viewer's grant is released the moment its session stops
+    being viewable, so the responses that matter most on this path are refusals, and a probe
+    that replayed only bodies would quietly turn every one of them into a 200.
+    """
+
+    return {
+        "payload": response.json(),
+        "ok": response.status_code < 400,
+        "status": response.status_code,
+    }
