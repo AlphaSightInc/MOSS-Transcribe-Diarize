@@ -1,5 +1,0 @@
-Iteration 3 committed: `c602f4a`.
-
-- Added descriptor-driven capture engine + worklet; nine-key frames, worklet-only heartbeats.
-- Tests: frontend typecheck; Vitest 4/4; preflight OK.
-- Blocked: App/modal and transport wiring outside ownership. No e2e/browser claim.

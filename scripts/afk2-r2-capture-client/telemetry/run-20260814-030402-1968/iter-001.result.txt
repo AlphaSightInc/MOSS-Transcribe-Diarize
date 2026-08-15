@@ -1,7 +1,0 @@
-Iteration 1 committed: `bf9e4bb ralph: iteration 1 - bind capture acceptance`.
-
-- Recorded full unproven acceptance checklist and current implementation boundary.
-- Confirmed all prerequisites/ownership guardrails: `PREFLIGHT OK`.
-- Next: server-fused zero-frame status regression seam.
-- No completion claim; client/status feature remains unimplemented.
-

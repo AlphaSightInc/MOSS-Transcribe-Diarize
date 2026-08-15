@@ -1,3 +1,0 @@
-Committed `e872915` — blocker state recorded. #4/#5 still open/unassigned; `live_transport.py` unowned; r1 has no client integration. Preflight passed.
-
-<promise>COMPLETE</promise>

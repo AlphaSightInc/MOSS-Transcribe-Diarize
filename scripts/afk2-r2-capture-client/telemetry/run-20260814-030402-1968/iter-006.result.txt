@@ -1,6 +1,0 @@
-Iteration 6 committed: `068a23b ralph: iteration 6 - hand off status route`.
-
-- Posted precise route-integration request to Issue #5.
-- Preflight passed; diff clean.
-- Still blocked on Issue #5 transport integration and Issue #4 App/modal integration. No completion claim.
-
