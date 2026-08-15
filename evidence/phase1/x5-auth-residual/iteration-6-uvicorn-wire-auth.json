@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "configured_token_create_session_status": 200,
+    "configured_token_owner_device_id": "shared-token",
+    "legacy_reserved_device_token_status": 401,
+    "loopback_pairing_code_status": 200,
+    "raw_whitespace_bearer_status": 401,
+    "reserved_device_pairing_detail": "device_id is reserved.",
+    "reserved_device_pairing_status": 403,
+    "whitespace_token_file_refused_before_start": true
+  },
+  "private_peer_ip": "100.64.0.26",
+  "probe": "scripts/afk3-x5-auth-residual/probe_uvicorn_wire_auth.py",
+  "success": true,
+  "transport": "locally-run Uvicorn over TLS HTTP/1.1"
+}

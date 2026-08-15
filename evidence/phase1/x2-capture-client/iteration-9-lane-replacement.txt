@@ -1,0 +1,19 @@
+# Raw validation output — iteration 9
+
+Rerun from the repository root:
+
+    npm --prefix frontend test -- src/capture/captureClient.test.ts
+    npm --prefix frontend run typecheck
+    git diff --check
+    python3 scripts/afk-guardrails/preflight.py x2-capture-client
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run src/capture/captureClient.test.ts
+
+Test Files  1 passed (1)
+     Tests  19 passed (19)
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+PREFLIGHT OK [x2-capture-client] prerequisites present, ownership clean, no banned patterns

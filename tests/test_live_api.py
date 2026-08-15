@@ -454,6 +454,27 @@ class LiveApiTest(unittest.TestCase):
                         200,
                     )
 
+    def test_configured_shared_token_normalizes_bearer_header_padding(self):
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                live_shared_token="configured-token",
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = AuthorizedLiveClient(app, "configured-token")
+
+            response = client.post(
+                "/api/live/sessions",
+                headers={"Authorization": "Bearer   configured-token  "},
+            )
+
+            self.assertEqual(response.status_code, 200)
+
     def test_forwarding_headers_cannot_grant_loopback_admin_authority(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app

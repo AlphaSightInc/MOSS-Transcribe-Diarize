@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import ipaddress
 import json
 import os
@@ -174,18 +175,34 @@ class LiveAccessRegistry:
         self._devices: dict[str, _DeviceState] = {}
         self._sessions: dict[str, _SessionState] = {}
         self._session_status: SessionStatusResolver | None = None
+        if shared_token is not None:
+            # Canonicalize the configured bearer the same way every presented bearer is
+            # canonicalized in `authorize()`. Stripping only one side of the comparison
+            # produces a deployment that looks configured and can never be authenticated
+            # against by anyone, because the stored digest covers padding the wire strips.
+            shared_token = shared_token.strip()
+            if not shared_token:
+                raise ValueError("shared_token must not be blank.")
         self._load()
+        shared_digest = _digest(shared_token) if shared_token is not None else None
+        revoked, revoked_at, rebind_marker = self._shared_revocation_marker(
+            self._devices.get(_SHARED_TOKEN_DEVICE_ID), shared_digest
+        )
         self._shared_capture = (
             _DeviceState(
                 device_id=_SHARED_TOKEN_DEVICE_ID,
-                token_digest=_digest(shared_token),
+                token_digest=shared_digest,
                 paired_at=None,
+                revoked=revoked,
+                revoked_at=revoked_at,
             )
             if shared_token is not None
             else None
         )
         if self._shared_capture is not None:
             self._devices[self._shared_capture.device_id] = self._shared_capture
+            if rebind_marker:
+                self._persist()
 
     def bind_session_lifecycle(self, session_status: SessionStatusResolver) -> None:
         """Wire the live session lifecycle that view authority is derived from.
@@ -276,6 +293,10 @@ class LiveAccessRegistry:
                 action=action,
                 session_id=None,
             )
+        # Token files are canonicalized on load. Apply the same canonical form to the
+        # presented HTTP credential before hashing so harmless header padding cannot
+        # turn the configured token into a different bearer.
+        bearer = bearer.strip() if bearer else ""
         if not bearer:
             raise LiveAccessUnauthorized("missing bearer authority.")
         digest = _digest(bearer)
@@ -388,15 +409,55 @@ class LiveAccessRegistry:
             raise LiveAccessUnauthorized("pairing payload is invalid.") from exc
         return secret, cert_sha256
 
+    @staticmethod
+    def _shared_revocation_marker(
+        persisted: _DeviceState | None,
+        shared_digest: str | None,
+    ) -> tuple[bool, float | None, bool]:
+        """Decide whether a persisted shared-principal revocation still binds, and to what.
+
+        The shared principal's `device_id` is a constant, so nothing an operator can do
+        creates a *different* shared principal: a revocation that is durable but not bound
+        to a specific bearer is permanent, and there is no un-revoke call and no route that
+        could reach one. That turns the correct response to a leaked shared token -- revoke
+        it, put a fresh one in the token file, restart -- into a service that answers 401 to
+        every client forever, recoverable only by hand-editing the state file. So the marker
+        records the digest of the bearer it killed: reconfiguring the same token stays dead
+        across restarts (the security property this exists for), and rotating to a new one
+        lapses the marker (the recovery path).
+
+        Persisting that digest costs nothing the deployment had not already conceded. It is
+        a deny-only value -- `_capture_for_digest` refuses any revoked device, and a live
+        shared principal is rebuilt from configuration on every start -- and the state file
+        is 0600 under the same uid as the 0600 token file the plaintext bearer lives in, so
+        a reader of one is already a reader of the other.
+
+        Returns (revoked, revoked_at, rebind_marker).
+        """
+        if persisted is None or not persisted.revoked or shared_digest is None:
+            return False, None, False
+        if persisted.token_digest is None:
+            # A marker from before markers carried a digest cannot say which bearer it
+            # killed, so it fails closed against whatever is configured now and is rewritten
+            # in bound form, which restores rotation as a recovery path from here on.
+            return True, persisted.revoked_at, True
+        if hmac.compare_digest(persisted.token_digest, shared_digest):
+            return True, persisted.revoked_at, False
+        return False, None, False
+
     def _capture_for_digest(self, token_digest: str) -> _DeviceState | None:
         for device in self._devices.values():
-            if device.token_digest == token_digest and not device.revoked:
+            if (
+                device.token_digest is not None
+                and hmac.compare_digest(device.token_digest, token_digest)
+                and not device.revoked
+            ):
                 return device
         return None
 
     def _view_for_digest(self, token_digest: str, *, now: float) -> ViewPrincipal | None:
         for session_id, session in self._sessions.items():
-            if session.view_token_digest != token_digest:
+            if not hmac.compare_digest(session.view_token_digest, token_digest):
                 continue
             if session.view_revoked or now >= session.view_expires_at:
                 return None
@@ -437,13 +498,17 @@ class LiveAccessRegistry:
             "schema_version": 1,
             "devices": {
                 device_id: {
+                    # An *active* shared principal stays configuration-only: the filter
+                    # below drops it, so nothing about it reaches disk. Once revoked it is
+                    # written with its digest, which is what binds the marker to the bearer
+                    # it killed -- see `_shared_revocation_marker`.
                     "token_digest": device.token_digest,
                     "paired_at": device.paired_at,
                     "revoked": device.revoked,
                     "revoked_at": device.revoked_at,
                 }
                 for device_id, device in sorted(self._devices.items())
-                if device is not self._shared_capture
+                if device is not self._shared_capture or device.revoked
             },
         }
         tmp_path = self._state_path.with_name(f".{self._state_path.name}.{os.getpid()}.tmp")
