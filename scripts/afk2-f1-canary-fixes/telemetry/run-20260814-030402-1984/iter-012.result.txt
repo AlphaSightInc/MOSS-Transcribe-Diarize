@@ -1,6 +1,0 @@
-Iteration 12 committed: `292a55b`.
-
-P2 fixed: 429 probe now derives payload geometry from route descriptor. Real-route probe, py_compile, diff check, preflight: PASS. Worktree clean.
-
-Next: merged-head full rerun + independent review. No merge/self-certification.
-

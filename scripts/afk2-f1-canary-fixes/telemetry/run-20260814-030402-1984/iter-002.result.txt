@@ -1,6 +1,0 @@
-Iteration 2 committed: `48cbf34`.
-
-F2 fixed and proven in real headless Chrome + production routes. Raw probe: [f2-event-cursor-iteration2.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/4/MOSS-Transcribe-Diarize/evidence/phase1/f1-canary-fixes/f2-event-cursor-iteration2.json).
-
-Validated `requests [0,1,1]`, renders `[[0],[],[]]`; preflight passes; worktree clean. F1, lane continuity, G7, integration, issue comment remain.
-

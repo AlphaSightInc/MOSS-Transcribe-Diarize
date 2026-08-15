@@ -1,4 +1,0 @@
-Committed `a843bb4` — G7 now requires server-observed HTTP-200 strict-v2 admissions.
-
-Validated: 311.059s hidden; admitted frames both lanes; 3,820 heartbeat 200s; preflight PASS. P1 overlap and P2 geometry remain.
-

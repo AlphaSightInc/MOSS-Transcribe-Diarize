@@ -1,2 +1,0 @@
-Committed `58c9908` — P1 fixed with per-lane recovery controls and passing real-route Chrome overlap evidence. P2 geometry cleanup remains; no merge/completion claim.
-
