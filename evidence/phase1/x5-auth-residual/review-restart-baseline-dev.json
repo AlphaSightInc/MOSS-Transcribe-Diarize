@@ -1,0 +1,69 @@
+{
+  "checks": {
+    "persisted_marker": null,
+    "run1_already_paired_device_status": 200,
+    "run1_leaked_token_after_revoke_status": 401,
+    "run1_leaked_token_status": 200,
+    "run1_lowercase_scheme_status": 401,
+    "run1_padded_header_status": 401,
+    "run1_pid": 9640,
+    "run1_revoke_body": {
+      "device_id": "shared-token",
+      "session_ids": [
+        "restart-probe-0"
+      ]
+    },
+    "run1_revoke_status": 200,
+    "run1_whitespace_bearer_statuses": {
+      "'Bearer    '": 401,
+      "'Bearer '": 401,
+      "'Bearer \\t '": 401,
+      "'Bearer'": 401
+    },
+    "run2_already_paired_device_status": 200,
+    "run2_leaked_token_status": 200,
+    "run2_pid": 9698,
+    "run3_leaked_token_status": 401,
+    "run3_padded_rotated_header_status": 401,
+    "run3_pid": 9818,
+    "run3_rotated_token_status": 200,
+    "state_after_revoke": {
+      "devices": {
+        "already-paired-macbook": {
+          "paired_at": 1.0,
+          "revoked": false,
+          "revoked_at": null,
+          "token_digest": "6006d3242b98ac8fbff60050dbf1864bae311656e1f2c4b3825622fc0fff2eb8"
+        }
+      },
+      "schema_version": 1
+    }
+  },
+  "expectations": {
+    "a lowercase scheme with padding still authenticates": false,
+    "an already-paired device works": true,
+    "each run was a distinct OS process": true,
+    "leaked bearer works before revocation": true,
+    "no whitespace-only bearer is authority": true,
+    "padded header authenticates over h11": false,
+    "revocation did not lock out a paired device": true,
+    "rotating the shared token recovers the service": true,
+    "the bearer itself is not on disk": true,
+    "the leaked bearer dies in process": true,
+    "the leaked bearer is still dead after rotation": true,
+    "the leaked bearer stays dead after a real restart": false,
+    "the marker is on disk": false,
+    "the revoke route accepts a loopback caller": true,
+    "the rotated token authenticates padded too": false
+  },
+  "failed": [
+    "a lowercase scheme with padding still authenticates",
+    "padded header authenticates over h11",
+    "the leaked bearer stays dead after a real restart",
+    "the marker is on disk",
+    "the rotated token authenticates padded too"
+  ],
+  "probe": "scripts/afk3-x5-auth-residual/probe_shared_revocation_process_restart.py",
+  "success": false,
+  "transport": "three successive uvicorn OS processes over TLS on 127.0.0.1"
+}
