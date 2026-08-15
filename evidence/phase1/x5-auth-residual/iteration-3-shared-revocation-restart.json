@@ -1,0 +1,7 @@
+{
+  "fresh_registry_authority_rejected": true,
+  "in_process_authority_rejected": true,
+  "persisted_revocation": true,
+  "probe": "shared_principal_revocation_survives_fresh_registry_start",
+  "revocation_returned_device_id": "shared-token"
+}

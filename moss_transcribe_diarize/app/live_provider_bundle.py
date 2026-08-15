@@ -131,6 +131,8 @@ class LiveSpeakerJournalObservation:
     speaker_label: str
     centroid: tuple[float, ...]
     sample_seconds: float
+    exemplar_count: int
+    provisional: bool
     embedder_id: str
     embedder_state_sha: str
 
@@ -723,6 +725,8 @@ class WeSpeakerLiveEvidenceProvider:
                     speaker_label=speaker_label,
                     centroid=centroid,
                     sample_seconds=sum(item.duration_sec for item in support),
+                    exemplar_count=self._album.exemplar_count(speaker_label),
+                    provisional=self._album.has_provisional(speaker_label),
                     embedder_id=embedder_id,
                     embedder_state_sha=spec.state_sha256,
                 )

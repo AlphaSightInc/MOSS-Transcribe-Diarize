@@ -397,3 +397,111 @@ the local service used the repository test runtime provider and synthetic source
 #1's product client has not landed. Repeat this measurement through that client and its local
 production-provider service before checking the issue criterion. Raw output:
 `evidence/phase1/t5/iteration-5-g7-worklet-lease.txt`.
+
+## X1 slow-POST characterization — 2026-08-14
+
+**Question:** when a strict-v2 frame POST takes longer than the route's frame period, does the
+actual worklet page lose frames, serialize them, or accumulate in-flight HTTP requests?
+
+**Method:** `probe_slow_post_characterization.py` starts the existing local production-route
+harness and headless Chrome with its normal synthetic two-lane worklets. Middleware delays each
+frame response by 100 ms only after the real strict-v2 route has admitted it. The page still uses
+its own descriptor (1,000 samples at 16 kHz: 62.5 ms per frame), transport, telemetry, and
+heartbeat path. One command:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_slow_post_characterization.py \
+  --output evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json
+```
+
+**Verdict:** the checked-out page did not silently lose frames at this measurement point, but it
+did not queue or backpressure them either. Each lane emitted and the strict-v2 route admitted 50
+frames over about 3.065 s (the elapsed cadence estimate is also 50), while four frame responses
+were simultaneously held. The durable assertion joins route admission to elapsed worklet cadence,
+so a return to a one-in-flight drop guard would fail it. The measurement is not G7 and uses the
+deterministic provider, synthetic sources, and the harness descriptor.
+
+The smallest next policy is one descriptor-driven FIFO and one serial sender **per lane**: derive
+its bounded frame capacity from `max_retained_samples / frame_samples`, assign a sequence only as
+the head is sent, and keep the exact head for the route's established retry taxonomy. If that FIFO
+fills, drop only with a cumulative `dropped_frames` count and a discontinuity mark on the first
+post-gap frame; do not silently advance the wire sequence. Raw arrays and server response-hold
+metrics: `evidence/phase1/x1-frame-drop/iteration-2-slow-post-characterization.json`.
+
+## X1 descriptor-bounded FIFO regression — 2026-08-14
+
+**Question:** after replacing concurrent frame POSTs with the measured per-lane FIFO, does a
+slow strict-v2 response preserve admitted frames at worklet cadence while keeping each lane to one
+in-flight POST?
+
+**Method:** `probe_slow_post_characterization.py` again drove real headless Chrome, the page's
+two 48 kHz synthetic sources, and the local production strict-v2 route. The middleware held each
+frame response for 100 ms, longer than the 62.5 ms descriptor frame period. The page derived its
+per-lane queue capacity from the live descriptor's `320000 / 1000 = 320` frames; raw worklet
+timestamps, wire sequences, queue depths, route admissions, and held-response arrays are in
+`evidence/phase1/x1-frame-drop/iteration-3-slow-post-fifo.json`.
+
+**Verdict:** passed. Over about 2.93/3.00 s, microphone/system admitted 49/50 frames versus
+48/49 elapsed-cadence frames (the permitted one-record observation race). Both lanes held exactly
+one frame response at a time, wire sequences were 0..47 and 0..48 in worklet order, and queued
+depth peaked at 21 of 320 without drops. The sender retains its FIFO head across an unsuccessful
+response; overflow increments the heartbeat's real `dropped_frames` and marks the first later
+admitted frame discontinuous.
+
+This proves the P0 slow-POST transport case only. It does not exercise an overflow, 409/recreate,
+production 8000-frame geometry, a five-minute hidden tab, display capture, or a real provider.
+
+## X1 409 recreation race — 2026-08-14
+
+**Question:** when one strict-v2 lane returns a 409 while its peer's old-session POST is still
+resolving, can the page drain before resetting sequence state, retry a failed recreate click, and
+resume the new session without a sequence conflict?
+
+**Method:** `probe_recreate_session.py` starts a local production-route app and headless Chrome.
+The page's opt-in probe seam drives its normal FIFO sender and clicks the normal recovery button;
+it injects only an out-of-order system frame (real strict-v2 409), a 600 ms held microphone
+response after that route already admitted it, and a single 503 on the first recreation create.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_recreate_session.py \
+  --output evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json
+```
+
+**Verdict:** passed. While the microphone response was held, the page retained the old session,
+kept its sender in flight, and left its sequence at zero. The old route then admitted exactly one
+microphone frame before reset; the forced failed create left the button enabled. The retry created
+`new-session`, whose system and microphone lanes each accepted sequence zero and advanced to one.
+The page retains the descriptor-bounded PCM FIFO but clears its old wire sequence only after the
+drain. This is deterministic local-route evidence, not a real-provider, worklet-cadence, or G7
+measurement. Raw state: `evidence/phase1/x1-frame-drop/iteration-4-recreate-session.json`.
+
+## X1 G7 hidden-tab strict-v2 admission at production geometry — 2026-08-14
+
+**Question:** once Chrome's capture page has been hidden beyond the five-minute intensive-
+throttling threshold, does it retain real strict-v2 route admission at the production 8,000-sample
+geometry while the worklet-driven heartbeat stays inside the helper lease?
+
+**Method:** `probe_g7_hidden_tab.py` configures its local deterministic runtime through the
+required `--frame-samples` argument, but the page still obtains that geometry only from
+`/api/live/descriptor`. The route records only HTTP-200 strict-v2 frame admissions and joins each
+to post-ACK worklet telemetry by lane and wire sequence. The probe backgrounds the actual capture
+target using a DevTools-created sibling, retains the full hidden admission/heartbeat arrays, and
+compares admitted frames directly to elapsed worklet cadence.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/browser-capture-feasibility/probe_g7_hidden_tab.py \
+  --frame-samples 8000 \
+  --hidden-seconds 310 \
+  --output evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json
+```
+
+**Verdict:** passed. The descriptor advertised 16 kHz / 8,000-sample frames. Chrome remained
+hidden for 309.491 s, with 620 successful strict-v2 admissions on each lane; each lane's admitted
+count exactly matched its elapsed-cadence expectation. All 621 heartbeat POSTs returned 200, with
+hidden p50/p95/max 498/505/507 ms below the 2 s lease. This uses local production HTTP routes,
+the deterministic provider, and synthetic 48 kHz sources; it does not prove model inference,
+physical microphone input, or attended display capture. Raw arrays:
+`evidence/phase1/x1-frame-drop/iteration-5-g7-hidden-8000.json`.
