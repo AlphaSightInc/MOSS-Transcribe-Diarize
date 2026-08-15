@@ -395,7 +395,9 @@ export class CaptureClient {
     if (!this.lanes.has("microphone")) throw new Error("start microphone before display capture");
     if (this.context?.state !== "running") throw new Error("capture AudioContext is not running");
     return navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS).catch(async (error) => {
-      await this.failBeforeSession("system", "browser_capture_request_rejected");
+      if (!this.session) {
+        await this.failBeforeSession("system", "browser_capture_request_rejected");
+      }
       throw error;
     });
   }
@@ -503,9 +505,12 @@ export class CaptureClient {
       return;
     }
     this.stopping = true;
-    await this.scheduleHeartbeat("stopped");
-    await stopCaptureSession(session, this.options.captureBearer, deadlineSeconds);
-    await this.close();
+    try {
+      await this.scheduleHeartbeat("stopped");
+      await stopCaptureSession(session, this.options.captureBearer, deadlineSeconds);
+    } finally {
+      await this.close();
+    }
   }
 
   async close(): Promise<void> {
@@ -537,7 +542,7 @@ export class CaptureClient {
       if (!response.ok) throw new Error(`descriptor request failed: HTTP ${response.status}`);
       this.descriptor = parseCaptureDescriptor(await response.json());
       const context = new AudioContext({ sampleRate: this.descriptor.sampleRate });
-      await context.audioWorklet.addModule("/worklets/lane-framer.js");
+      await context.audioWorklet.addModule("/static/worklets/lane-framer.js");
       context.addEventListener("statechange", this.onContextStateChange);
       this.context = context;
       return context;
@@ -732,7 +737,9 @@ export class CaptureClient {
       throw error;
     } catch (caught) {
       this.reportTransportError("frame", caught);
-      return "unconfirmed";
+      // No response means the server may have admitted the frame. Retain the exact
+      // payload and sequence so its idempotent replay contract resolves ambiguity.
+      return "retry";
     }
   }
 

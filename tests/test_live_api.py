@@ -1734,6 +1734,7 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(stopped.json()["v2_session"]["status"], "failed")
             self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["retained_samples"], 0)
             self.assertEqual(stopped.json()["v2_session"]["lanes"]["system"]["failed_samples"], 2)
+            self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "aborted")
             self.assertNotIn(session_id, app.state.live_v2_sessions)
             with self.assertRaises(KeyError):
                 app.state.live_v2_mixers.get(session_id)

@@ -309,6 +309,56 @@ describe("MOSS session poller", () => {
     expect(poller.cursors().eventSequence).toBe(3);
   });
 
+  it("updates capture health when the transcript snapshot cursor is unchanged", async () => {
+    const dispatched: WsEvent[] = [];
+    let snapshotRequests = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      if (!String(input).includes("/snapshot")) return jsonResponse({ events: [] });
+      snapshotRequests += 1;
+      if (snapshotRequests === 2) {
+        return jsonResponse({
+          snapshot: null,
+          unchanged: true,
+          capture_phase: "failed",
+          status_line: "Shared audio capture failed. The session is continuing."
+        });
+      }
+      return jsonResponse({
+        snapshot: {
+          session_id: "session-health",
+          descriptor: { sample_rate: 16_000 },
+          session: {
+            status: "active",
+            version: 4,
+            failure_reason: null,
+            label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: [] },
+            committed: [],
+            provisional: null
+          }
+        },
+        unchanged: false,
+        capture_phase: "recording",
+        status_line: "Capturing microphone and shared audio."
+      });
+    });
+    const poller = createMossSessionPoller({
+      sessionId: "session-health",
+      accessToken: "view-token",
+      fetch: fetcher as typeof fetch,
+      dispatch: (event) => dispatched.push(event)
+    });
+
+    await poller.poll();
+    await poller.poll();
+
+    expect(dispatched.filter((event) => event.type === "session_state").at(-1)).toMatchObject({
+      status: "active",
+      error: "Shared audio capture failed. The session is continuing.",
+      status_line: "Shared audio capture failed. The session is continuing."
+    });
+  });
+
   it.each([401, 403, 404, 409])("stops on terminal HTTP %i instead of scheduling a retry", async (status) => {
     const onTerminal = vi.fn();
     const poller = createMossSessionPoller({

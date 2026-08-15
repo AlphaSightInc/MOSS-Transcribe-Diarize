@@ -450,12 +450,13 @@ describe("browser capture frame contract", () => {
     ]);
   });
 
-  it("retains the replacement discontinuity after an unconfirmed frame delivery", async () => {
+  it("replays identical PCM and sequence after an unconfirmed frame delivery", async () => {
     const transportError = new Error("connection reset");
     const fetchSpy = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, status: 200 })
       .mockRejectedValueOnce(transportError)
+      .mockResolvedValueOnce({ ok: true, status: 200 })
       .mockResolvedValueOnce({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
     const { client } = await eventLaneClient();
@@ -472,7 +473,7 @@ describe("browser capture frame contract", () => {
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
     await vi.waitFor(() => expect(replacement.postInFlight).toBe(false));
     deliverWorkletFrame(replacement, workletFrame(4));
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(4));
 
     const bodies = fetchSpy.mock.calls.map(([, request]) =>
       JSON.parse((request as RequestInit).body as string),
@@ -480,9 +481,10 @@ describe("browser capture frame contract", () => {
     expect(bodies).toMatchObject([
       { sequence: 0, device_epoch: 1, discontinuity: false },
       { sequence: 1, device_epoch: 2, discontinuity: true },
-      { sequence: 2, device_epoch: 2, discontinuity: true },
+      { sequence: 1, device_epoch: 2, discontinuity: true },
+      { sequence: 2, device_epoch: 2, discontinuity: false },
     ]);
-    expect(replacement.droppedFrames).toBe(1);
+    expect(replacement.droppedFrames).toBe(0);
   });
 
   it("reports a suspended AudioContext from its real statechange event", async () => {
@@ -510,6 +512,7 @@ describe("browser capture frame contract", () => {
     const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
     const active = client as unknown as { session: { id: string; viewToken: string } | null };
     const context = (await client.prepare()) as unknown as FakeAudioContext;
+    expect(context.audioWorklet.addModule).toHaveBeenCalledWith("/static/worklets/lane-framer.js");
     active.session = { id: "session", viewToken: "view-only" };
 
     context.state = "suspended";
@@ -575,6 +578,40 @@ describe("browser capture frame contract", () => {
       code: "browser_surface_audio_missing",
     });
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps an active session and both lanes when the Reshare chooser is cancelled", async () => {
+    const onPreSessionFailure = vi.fn<(failure: PreSessionCaptureFailure) => void>();
+    const displayError = new DOMException("dismissed", "NotAllowedError");
+    const display = preSessionClient(onPreSessionFailure);
+    display.client.lanes.set("microphone", testLaneState());
+    display.client.lanes.set("system", testLaneState());
+    (display.client as unknown as { session: { id: string; viewToken: string } | null }).session = {
+      id: "active-session",
+      viewToken: "view-only",
+    };
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getDisplayMedia: vi.fn().mockRejectedValue(displayError) },
+    });
+
+    await expect(display.client.requestDisplayMedia()).rejects.toBe(displayError);
+
+    expect(display.context.close).not.toHaveBeenCalled();
+    expect(display.client.lanes.size).toBe(2);
+    expect(onPreSessionFailure).not.toHaveBeenCalled();
+  });
+
+  it("closes local media even when terminal Stop is rejected", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409 }));
+    const { client } = activeFrameClient();
+    (client as unknown as { scheduleHeartbeat: (state: string) => Promise<void> }).scheduleHeartbeat = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    const close = vi.spyOn(client as unknown as CaptureClient, "close").mockResolvedValue(undefined);
+
+    await expect(client.stop(0)).rejects.toThrow("session stop failed: HTTP 409");
+
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it("serializes worklet frame POSTs within a lane", async () => {

@@ -124,7 +124,7 @@ export function ControlPanel() {
       const session = await client.createSession();
       const poller = createMossSessionPoller({
         sessionId: session.id,
-        accessToken: captureBearer.trim(),
+        accessToken: session.viewToken,
         onError: setMessage,
         onTerminal(terminalMessage) {
           transition("terminal");

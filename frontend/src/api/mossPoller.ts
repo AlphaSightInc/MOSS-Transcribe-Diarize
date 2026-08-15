@@ -102,6 +102,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   let pollController: AbortController | null = null;
   let finalizationSeen = false;
   let lastLabelRevisionVersion = 0;
+  let lastSessionState: Pick<MossSnapshot, "sessionId" | "status" | "failureReason"> | null = null;
   const revisedSpanIds = new Set<number>();
   let priorProvisional: { generation: number; items: TranscriptItem[] } | null = null;
 
@@ -159,6 +160,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
 
       const runtimeEvents = parseRuntimeEvents(eventsPayload);
       const newEvents = dedupeNewRuntimeEvents(runtimeEvents, eventSequence);
+      const captureHealth = parseCaptureHealth(snapshotPayload);
       const snapshot = parseSnapshot(snapshotPayload);
 
       // `/snapshot` and `/events` are fetched in parallel, so an event can arrive in a round
@@ -212,6 +214,21 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
           revisedSpanIds.add(spanId);
         }
         snapshotVersion = snapshot.version;
+        lastSessionState = {
+          sessionId: snapshot.sessionId,
+          status: snapshot.status,
+          failureReason: snapshot.failureReason
+        };
+      } else if (lastSessionState) {
+        dispatch({
+          type: "session_state",
+          session_id: lastSessionState.sessionId,
+          mode,
+          state: lastSessionState.status,
+          status: lastSessionState.status,
+          error: captureHealth.phase === "failed" ? captureHealth.statusLine : null,
+          status_line: captureHealth.statusLine
+        });
       }
 
       for (const event of consumedEvents) {
@@ -235,7 +252,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
 
       retryIndex = 0;
       if (running) {
-        scheduleNext(pollDelayForStatus(snapshot?.status ?? "idle"));
+        scheduleNext(pollDelayForStatus(snapshot?.status ?? lastSessionState?.status ?? "idle"));
       }
     } catch (error) {
       if (currentGeneration !== generation) {
@@ -540,6 +557,14 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     provisional: session.provisional === null || session.provisional === undefined
       ? null
       : parseProvisionalSuffix(session.provisional)
+  };
+}
+
+function parseCaptureHealth(payload: unknown): { phase: string | null; statusLine: string | null } {
+  const response = record(payload, "snapshot response");
+  return {
+    phase: optionalString(response.capture_phase),
+    statusLine: optionalString(response.status_line)
   };
 }
 

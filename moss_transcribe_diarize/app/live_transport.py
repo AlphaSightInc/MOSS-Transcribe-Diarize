@@ -412,13 +412,17 @@ def attach_live_routes(
                     failure["v2_session"] = v2_snapshot.to_dict()
                     return JSONResponse(failure, status_code=status)
                 if v2_snapshot.status == "failed":
+                    aborted = await runtime.abort(
+                        session_id,
+                        v2_snapshot.terminal_reason or "v2 capture failed",
+                    )
                     v2_sessions.release(session_id)
                     v2_mixers.release(session_id)
                     tapes.release(session_id)
                     helper_failures.release(session_id)
                     helper_presence.release(session_id)
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
-                    failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                    failure["snapshot"] = aborted.to_dict()
                     failure["v2_session"] = v2_snapshot.to_dict()
                     return JSONResponse(failure, status_code=status)
                 release_v2_on_error = True

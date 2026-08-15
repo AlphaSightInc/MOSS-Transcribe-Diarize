@@ -235,7 +235,7 @@ class LiveCoordinator:
         )
         endpoint_spans = self._observe_endpoint(observations, ack.start_sample, ack.end_sample)
         frozen_spans = tuple(self.session.freeze_until(span.end_sample, reason=span.reason) for span in endpoint_spans)
-        queued = tuple(self._queue_canonical(span) for span in frozen_spans)
+        queued = self._queue_canonical_batch(frozen_spans)
         return CoordinatorFrameResult(
             accepted_start_sample=ack.start_sample,
             accepted_end_sample=ack.end_sample,
@@ -539,7 +539,19 @@ class LiveCoordinator:
 
     def _freeze_and_queue(self, endpoint_spans: tuple[EndpointSpan, ...]) -> tuple[int, ...]:
         frozen = tuple(self.session.freeze_until(span.end_sample, reason=span.reason) for span in endpoint_spans)
-        return tuple(self._queue_canonical(span) for span in frozen)
+        return self._queue_canonical_batch(frozen)
+
+    def _queue_canonical_batch(self, spans: tuple[FrozenSpan, ...]) -> tuple[int, ...]:
+        admissions = self.arbiter.submit_live_canonical_batch(
+            tuple(
+                (
+                    f"{self.session_key}:span-{span.id}",
+                    CanonicalWork(session_key=self.session_key, span=span),
+                )
+                for span in spans
+            )
+        )
+        return tuple(admission.item_id for admission in admissions if admission.item_id is not None)
 
     def _queue_canonical(self, span: FrozenSpan) -> int:
         admission = self.arbiter.submit_live_canonical(

@@ -635,10 +635,11 @@ class LiveServiceRuntime:
             while True:
                 with self._lock:
                     self._raise_terminal(state)
-                    try:
-                        queued = state.coordinator.stop_endpoint()
-                    except InferenceArbiterBackpressure:
+                    queue_depth = state.arbiter.snapshot().live_canonical
+                    if queue_depth >= state.descriptor.bounds.max_queue_depth:
                         queued = None
+                    else:
+                        queued = state.coordinator.stop_endpoint()
                     if queued is not None:
                         for item_id in queued:
                             self._record_event(

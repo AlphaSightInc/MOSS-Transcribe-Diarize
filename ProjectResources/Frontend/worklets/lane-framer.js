@@ -15,11 +15,13 @@ class LaneFramer extends AudioWorkletProcessor {
     const input = inputs[0];
     if (input.length === 0) return true;
 
-    const samples = input[0];
+    const sampleCount = input[0].length;
     if (this.firstSampleFrame === null) this.firstSampleFrame = currentFrame;
 
-    for (let index = 0; index < samples.length; index += 1) {
-      this.buffer[this.filled] = samples[index];
+    for (let index = 0; index < sampleCount; index += 1) {
+      let mixed = 0;
+      for (const channel of input) mixed += channel[index] ?? 0;
+      this.buffer[this.filled] = mixed / input.length;
       this.filled += 1;
       if (this.filled !== this.frameSamples) continue;
 
@@ -42,4 +44,3 @@ class LaneFramer extends AudioWorkletProcessor {
 }
 
 registerProcessor("lane-framer", LaneFramer);
-
