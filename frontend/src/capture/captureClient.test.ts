@@ -348,6 +348,7 @@ describe("browser capture frame contract", () => {
       {
         method: "POST",
         cache: "no-store",
+        signal: expect.any(AbortSignal),
         headers: {
           Authorization: "Bearer capture-token",
           "Content-Type": "application/json",
@@ -368,7 +369,7 @@ describe("browser capture frame contract", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("posts a final stopped heartbeat before stopping and rejects timer-based heartbeats", async () => {
+  it("posts a final stopped heartbeat without a recurring timer loop", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
     const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
@@ -390,7 +391,8 @@ describe("browser capture frame contract", () => {
     expect(fetchSpy.mock.calls[1][0]).toBe("/api/live/sessions/session%2Fwith%20space/stop");
 
     const source = readFileSync(new URL("./captureClient.ts", import.meta.url), "utf8");
-    expect(source).not.toMatch(/\b(?:setInterval|setTimeout)\b/);
+    expect(source).not.toMatch(/\bsetInterval\b/);
+    expect(source.match(/\bsetTimeout\b/g)).toHaveLength(1);
   });
 
   it("reports a real track ended event as a failed lane while its peer keeps capture alive", async () => {
@@ -638,6 +640,74 @@ describe("browser capture frame contract", () => {
     );
     expect(frameBodies).toMatchObject([{ sequence: 0 }, { sequence: 0 }]);
     expect(lane.frameQueue).toHaveLength(0);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("aborts a hanging final frame, attempts Stop, and closes local media", async () => {
+    let frameSignal: AbortSignal | null = null;
+    const fetchSpy = vi.fn((url: string, request: RequestInit) => {
+      if (url.endsWith("/frames")) {
+        frameSignal = request.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          frameSignal?.addEventListener("abort", () => reject(frameSignal?.reason), { once: true });
+        });
+      }
+      return Promise.resolve({ ok: true, status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    (client as unknown as { scheduleHeartbeat: (state: string) => Promise<void> }).scheduleHeartbeat = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    const close = vi.spyOn(client as unknown as CaptureClient, "close").mockResolvedValue(undefined);
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(frameSignal).not.toBeNull());
+
+    await expect(client.stop(0.01)).rejects.toThrow("capture frame delivery deadline expired");
+
+    expect((frameSignal as unknown as AbortSignal).aborted).toBe(true);
+    expect(fetchSpy.mock.calls.map(([url]) => String(url))).toContain(
+      "/api/live/sessions/session/stop",
+    );
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("aborts a pre-existing hanging heartbeat before the final heartbeat and Stop", async () => {
+    let firstHeartbeatSignal: AbortSignal | null = null;
+    let heartbeatCalls = 0;
+    const fetchSpy = vi.fn((url: string, request: RequestInit) => {
+      if (url.endsWith("/heartbeat") && heartbeatCalls++ === 0) {
+        firstHeartbeatSignal = request.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          firstHeartbeatSignal?.addEventListener(
+            "abort",
+            () => reject(firstHeartbeatSignal?.reason),
+            { once: true },
+          );
+        });
+      }
+      return Promise.resolve({ ok: true, status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const active = client as unknown as {
+      session: { id: string; viewToken: string } | null;
+      scheduleHeartbeat: (state: string) => Promise<void>;
+    };
+    active.session = { id: "session", viewToken: "view-only" };
+    const close = vi.spyOn(client, "close").mockResolvedValue(undefined);
+
+    void active.scheduleHeartbeat("capturing");
+    await vi.waitFor(() => expect(firstHeartbeatSignal).not.toBeNull());
+    await client.stop(0);
+
+    expect((firstHeartbeatSignal as unknown as AbortSignal).aborted).toBe(true);
+    expect(fetchSpy.mock.calls.map(([url]) => String(url))).toEqual([
+      "/api/live/sessions/session/heartbeat",
+      "/api/live/sessions/session/heartbeat",
+      "/api/live/sessions/session/stop",
+    ]);
     expect(close).toHaveBeenCalledOnce();
   });
 

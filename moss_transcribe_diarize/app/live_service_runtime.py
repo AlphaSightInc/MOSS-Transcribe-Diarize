@@ -451,6 +451,7 @@ class LiveServiceRuntime:
         self._ready_session_ids: deque[str] = deque()
         self._ready_session_set: set[str] = set()
         self._in_flight_session_ids: set[str] = set()
+        self._in_flight_canonical_counts: dict[str, int] = {}
 
     def create(self, *, echo_mode: str | None = None) -> LiveServiceCreateResult:
         # `echo_mode` is a T-06 browser-preflight concept (headphones vs speakers). No
@@ -503,12 +504,22 @@ class LiveServiceRuntime:
         with self._lock:
             state = self._get(session_id)
             self._raise_terminal(state)
-            queue_depth = state.arbiter.snapshot().live_canonical
+            queue_depth = self._pending_work_items(state)
+            required_work_items = 0
+            if (
+                retryable_queue_backpressure
+                and queue_depth < state.descriptor.bounds.max_queue_depth
+            ):
+                required_work_items = state.coordinator.preview_frame_work_items(frame)
             # V2 retains the staged lane frame for an identical retry. Refuse before mono
             # admission mutates the session; legacy mono leaves this terminal policy disabled.
             if (
                 retryable_queue_backpressure
-                and queue_depth >= state.descriptor.bounds.max_queue_depth
+                and (
+                    queue_depth >= state.descriptor.bounds.max_queue_depth
+                    or queue_depth + required_work_items
+                    > state.descriptor.bounds.max_queue_depth
+                )
             ):
                 raise LiveServiceTransportPacingFailure(
                     "live canonical queue is full.",
@@ -516,24 +527,16 @@ class LiveServiceRuntime:
                     retryable=True,
                     detail={
                         "queue_depth": queue_depth,
+                        "required_work_items": required_work_items,
                         "max_queue_depth": state.descriptor.bounds.max_queue_depth,
                     },
                 )
             try:
                 result = state.coordinator.accept_frame(frame)
             except InferenceArbiterBackpressure as exc:
-                # The preflight above reserves exactly one slot, but a single frame can
-                # freeze several spans (leading-silence close + hard-cap boundary in the
-                # same frame), and each frozen span queues its own canonical item. The
-                # overflow therefore escapes the preflight and used to land in the generic
-                # handler below, which terminalizes the session -- while _failure_status
-                # still maps it to 429, the status the charter defines as "retry". The
-                # client then retried forever against a dead session.
-                #
                 # A queue that is momentarily full is not a session fault, so on the v2
-                # lane path this stays non-terminal. Spans already queued before the
-                # overflow remain queued and drain normally; the v2 layer retains the lane
-                # frame and replays its prior ack on an identical retry.
+                # lane path this stays non-terminal. Every frame's frozen spans share one
+                # bounded work reservation, preventing partial multi-span admission.
                 if retryable_queue_backpressure:
                     raise LiveServiceTransportPacingFailure(
                         str(exc) or "live canonical queue is full.",
@@ -635,8 +638,16 @@ class LiveServiceRuntime:
             while True:
                 with self._lock:
                     self._raise_terminal(state)
-                    queue_depth = state.arbiter.snapshot().live_canonical
-                    if queue_depth >= state.descriptor.bounds.max_queue_depth:
+                    queue_depth = self._pending_work_items(state)
+                    required_work_items = state.coordinator.preview_stop_work_items()
+                    if required_work_items > state.descriptor.bounds.max_queue_depth:
+                        raise TimeoutError(
+                            "live service stop tail exceeds canonical queue capacity."
+                        )
+                    if (
+                        queue_depth + required_work_items
+                        > state.descriptor.bounds.max_queue_depth
+                    ):
                         queued = None
                     else:
                         queued = state.coordinator.stop_endpoint()
@@ -845,10 +856,9 @@ class LiveServiceRuntime:
         )
 
     def _pending_work_items(self, state: _RuntimeSession) -> int:
-        in_flight = 1 if state.session_id in self._in_flight_session_ids else 0
+        in_flight = self._in_flight_canonical_counts.get(state.session_id, 0)
         return (
             state.arbiter.snapshot().live_canonical
-            + state.coordinator.pending_canonical_count()
             + in_flight
         )
 
@@ -911,9 +921,6 @@ class LiveServiceRuntime:
                     continue
                 if state.session_id in self._in_flight_session_ids:
                     continue
-                refilled = state.coordinator.queue_pending_canonical()
-                for item_id in refilled:
-                    self._record_event(state, "canonical_queued", {"item_id": item_id})
                 item = state.arbiter.next_work()
                 if item is None:
                     if state.session.snapshot().pending_span_ids:
@@ -925,99 +932,101 @@ class LiveServiceRuntime:
                         if raise_errors:
                             raise LiveServiceIdentityCommitFailure(failure.message, code=failure.code)
                     continue
-                self._in_flight_session_ids.add(state.session_id)
-                self._record_event(state, "canonical_started", {"item_id": item.id})
                 try:
-                    work = state.coordinator.capture_work_item(item)
+                    span_count = state.coordinator.work_item_span_count(item)
                 except Exception as exc:
-                    self._in_flight_session_ids.discard(state.session_id)
                     self._fail(state, self._failure_from_exception(exc))
                     if raise_errors:
                         raise
                     continue
+                self._in_flight_session_ids.add(state.session_id)
+                self._in_flight_canonical_counts[state.session_id] = span_count
+                self._record_event(state, "canonical_started", {"item_id": item.id})
                 break
             else:
                 return False
-        self._process_in_flight_item(state, item, work, raise_errors=raise_errors)
+        self._process_in_flight_item(state, item, span_count, raise_errors=raise_errors)
         return True
 
-    def _process_in_flight_item(self, state: _RuntimeSession, item: Any, work: Any, *, raise_errors: bool) -> None:
+    def _process_in_flight_item(
+        self,
+        state: _RuntimeSession,
+        item: Any,
+        span_count: int,
+        *,
+        raise_errors: bool,
+    ) -> None:
         try:
-            prepared = state.coordinator.prepare_work_item(work)
-        except Exception as exc:
-            with self._lock:
-                self._in_flight_session_ids.discard(state.session_id)
-                self._fail(state, self._failure_from_exception(exc))
-            if raise_errors:
-                raise
-            return
-
-        try:
-            with self._lock:
-                self._in_flight_session_ids.discard(state.session_id)
-                if state.terminal_failure is not None:
-                    return
-                result = state.coordinator.submit_prepared_work(prepared)
-                self._record_event(
-                    state,
-                    "canonical_processed",
-                    {
-                        "item_id": item.id,
-                        "span_id": result.span_id,
-                        "submitted": result.submitted,
-                        "identity_status": result.identity_status,
-                        "identity_reason": result.identity_reason,
-                        "submission_refusal": result.submission_refusal,
-                        "empty_reason": result.empty_reason,
-                        "committed_samples": result.committed_samples,
-                        "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
-                        "frozen_span_sample_count": result.frozen_span_sample_count,
-                        "frozen_span_duration_sec": result.frozen_span_duration_sec,
-                        "canonical_decode_rtf": result.canonical_decode_rtf,
-                        "canonical_decode_token_cap": result.canonical_decode_token_cap,
-                        "canonical_decode_capped": result.canonical_decode_capped,
-                        # The living document's own record: what a retrospective sweep changed
-                        # about earlier spans while this one published, and by name what it
-                        # declined to change. A transcript that rewrites itself silently is
-                        # the "known but not shown" defect this project keeps paying for.
-                        "identity_revision_version": result.identity_revision_version,
-                        "identity_revision_spans": result.identity_revision_spans,
-                        "identity_revision_units": result.identity_revision_units,
-                        "identity_revision_merges": result.identity_revision_merges,
-                        "identity_revision_refusals": dict(result.identity_revision_refusals),
-                    },
-                )
-                if not result.submitted:
-                    failure = LiveServiceIdentityCommitFailure(
-                        f"canonical work did not atomically publish: {result.submission_refusal}.",
-                        code="canonical_not_submitted",
-                        detail={
+            for span_index in range(span_count):
+                with self._lock:
+                    if state.terminal_failure is not None:
+                        return
+                    work = state.coordinator.capture_work_item(item, span_index=span_index)
+                prepared = state.coordinator.prepare_work_item(work)
+                with self._lock:
+                    if state.terminal_failure is not None:
+                        return
+                    result = state.coordinator.submit_prepared_work(prepared)
+                    self._in_flight_canonical_counts[state.session_id] = span_count - span_index - 1
+                    self._record_event(
+                        state,
+                        "canonical_processed",
+                        {
+                            "item_id": item.id,
+                            "batch_index": span_index,
+                            "batch_size": span_count,
                             "span_id": result.span_id,
+                            "submitted": result.submitted,
                             "identity_status": result.identity_status,
                             "identity_reason": result.identity_reason,
                             "submission_refusal": result.submission_refusal,
+                            "empty_reason": result.empty_reason,
+                            "committed_samples": result.committed_samples,
+                            "canonical_decode_elapsed_sec": result.canonical_decode_elapsed_sec,
+                            "frozen_span_sample_count": result.frozen_span_sample_count,
+                            "frozen_span_duration_sec": result.frozen_span_duration_sec,
+                            "canonical_decode_rtf": result.canonical_decode_rtf,
+                            "canonical_decode_token_cap": result.canonical_decode_token_cap,
+                            "canonical_decode_capped": result.canonical_decode_capped,
+                            "identity_revision_version": result.identity_revision_version,
+                            "identity_revision_spans": result.identity_revision_spans,
+                            "identity_revision_units": result.identity_revision_units,
+                            "identity_revision_merges": result.identity_revision_merges,
+                            "identity_revision_refusals": dict(result.identity_revision_refusals),
                         },
-                    ).failure
-                    self._fail(state, failure)
-                    if raise_errors:
-                        raise LiveServiceIdentityCommitFailure(
-                            failure.message,
-                            code=failure.code,
-                            detail=failure.detail,
-                        )
-                else:
-                    refilled = state.coordinator.queue_pending_canonical()
-                    for item_id in refilled:
-                        self._record_event(state, "canonical_queued", {"item_id": item_id})
-                if state.arbiter.snapshot().live_canonical > 0:
-                    self._mark_ready_locked(state)
+                    )
+                    if not result.submitted:
+                        failure = LiveServiceIdentityCommitFailure(
+                            f"canonical work did not atomically publish: {result.submission_refusal}.",
+                            code="canonical_not_submitted",
+                            detail={
+                                "span_id": result.span_id,
+                                "identity_status": result.identity_status,
+                                "identity_reason": result.identity_reason,
+                                "submission_refusal": result.submission_refusal,
+                            },
+                        ).failure
+                        self._fail(state, failure)
+                        if raise_errors:
+                            raise LiveServiceIdentityCommitFailure(
+                                failure.message,
+                                code=failure.code,
+                                detail=failure.detail,
+                            )
+                        return
         except Exception as exc:
             with self._lock:
-                self._in_flight_session_ids.discard(state.session_id)
                 self._fail(state, self._failure_from_exception(exc))
             if raise_errors:
                 raise
-            return
+        finally:
+            with self._lock:
+                self._in_flight_session_ids.discard(state.session_id)
+                self._in_flight_canonical_counts.pop(state.session_id, None)
+                state.work_changed.set()
+                self._notify_drain_waiters_locked(state)
+                if state.terminal_failure is None and state.arbiter.snapshot().live_canonical > 0:
+                    self._mark_ready_locked(state)
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
         event = LiveServiceEvent(

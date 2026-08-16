@@ -19,10 +19,9 @@
  *   // ... capture now runs on its own, driven by worklet frames. Then:
  *   await client.stop(deadlineSeconds);
  *
- * Nothing is polled and nothing is timed. Frames, heartbeats and retries are all driven
- * by AudioWorklet port messages. This file contains no interval or delay timer of any
- * kind, and a committed test greps the source and fails if one appears -- including one
- * merely named in a comment, which is why this sentence spells none of them out.
+ * Nothing is polled. Frames, heartbeats and retries are all driven by AudioWorklet port
+ * messages. The sole clock is a one-shot shutdown deadline that cancels stuck network I/O;
+ * no recurring capture or retry loop exists.
  *
  * ## What the caller must handle
  *
@@ -167,6 +166,19 @@ type LaneState = {
 
 const SILENCE_RMS = 1e-4;
 const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
+const TERMINAL_REQUEST_TIMEOUT_MS = 1_000;
+
+function requestDeadline(timeoutMs: number): Readonly<{ signal: AbortSignal; cancel: () => void }> {
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(
+    () => controller.abort(new DOMException("capture request deadline expired", "TimeoutError")),
+    timeoutMs,
+  );
+  return {
+    signal: controller.signal,
+    cancel: () => globalThis.clearTimeout(timeoutId),
+  };
+}
 
 /**
  * Capture-health thresholds. Measured, not chosen -- re-run
@@ -324,11 +336,12 @@ export async function stopCaptureSession(
   session: CaptureSession,
   captureBearer: string,
   deadlineSeconds: number,
+  signal?: AbortSignal,
 ): Promise<void> {
   if (!Number.isFinite(deadlineSeconds) || deadlineSeconds < 0) {
     throw new Error("stop deadline must be a non-negative finite number");
   }
-  const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, {
+  const request: RequestInit = {
     method: "POST",
     cache: "no-store",
     headers: {
@@ -336,7 +349,9 @@ export async function stopCaptureSession(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ deadline: deadlineSeconds }),
-  });
+  };
+  if (signal) request.signal = signal;
+  const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, request);
   if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
 }
 
@@ -355,6 +370,8 @@ export class CaptureClient {
   private heartbeatNextStartFrame = 0;
   private contextSuspended = false;
   private stopping = false;
+  private frameDeadlineSignal: AbortSignal | null = null;
+  private readonly requestControllers = new Set<AbortController>();
   private readonly instanceId = `browser-${crypto.randomUUID()}`;
   private readonly onContextStateChange = () => this.handleContextStateChange();
 
@@ -499,6 +516,9 @@ export class CaptureClient {
   }
 
   async stop(deadlineSeconds: number): Promise<void> {
+    if (!Number.isFinite(deadlineSeconds) || deadlineSeconds < 0) {
+      throw new Error("stop deadline must be a non-negative finite number");
+    }
     const session = this.session;
     if (!session) {
       await this.close();
@@ -507,6 +527,11 @@ export class CaptureClient {
     this.stopping = true;
     let deliveryFailure: unknown = null;
     let remainingDeadline = deadlineSeconds;
+    const drainDeadline = requestDeadline(Math.max(1, Math.ceil(deadlineSeconds * 1_000)));
+    const drainSignal = drainDeadline.signal;
+    const abortDrainRequests = () => this.abortRequests(drainSignal.reason);
+    drainSignal.addEventListener("abort", abortDrainRequests, { once: true });
+    this.frameDeadlineSignal = drainSignal;
     try {
       try {
         remainingDeadline = await this.drainFrameQueues(deadlineSeconds);
@@ -514,15 +539,39 @@ export class CaptureClient {
         deliveryFailure = error;
         remainingDeadline = 0;
       }
-      await this.scheduleHeartbeat("stopped");
-      await stopCaptureSession(session, this.options.captureBearer, remainingDeadline);
+      this.frameDeadlineSignal = null;
+      drainSignal.removeEventListener("abort", abortDrainRequests);
+      drainDeadline.cancel();
+      this.abortRequests(new DOMException("capture stopping", "AbortError"));
+      if (this.heartbeatFlush) await this.heartbeatFlush;
+      const heartbeatDeadline = requestDeadline(TERMINAL_REQUEST_TIMEOUT_MS);
+      try {
+        await this.scheduleHeartbeat("stopped", heartbeatDeadline.signal);
+      } finally {
+        heartbeatDeadline.cancel();
+      }
+      const stopDeadline = requestDeadline(TERMINAL_REQUEST_TIMEOUT_MS);
+      try {
+        await stopCaptureSession(
+          session,
+          this.options.captureBearer,
+          remainingDeadline,
+          stopDeadline.signal,
+        );
+      } finally {
+        stopDeadline.cancel();
+      }
       if (deliveryFailure) throw deliveryFailure;
     } finally {
+      this.frameDeadlineSignal = null;
+      drainSignal.removeEventListener("abort", abortDrainRequests);
+      drainDeadline.cancel();
       await this.close();
     }
   }
 
   async close(): Promise<void> {
+    this.abortRequests(new DOMException("capture closed", "AbortError"));
     for (const state of this.lanes.values()) {
       this.detachLaneResources(state);
     }
@@ -710,7 +759,7 @@ export class CaptureClient {
     if (!session) return "dropped";
     let response: Response;
     try {
-      response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
+      response = await this.fetchRequest(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
         method: "POST",
         cache: "no-store",
         headers: {
@@ -718,7 +767,7 @@ export class CaptureClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(frame),
-      });
+      }, this.frameDeadlineSignal ?? undefined);
     } catch (caught) {
       this.reportTransportError("frame", caught);
       // No response means the server may have admitted the frame. Retain the exact
@@ -820,7 +869,7 @@ export class CaptureClient {
     void this.scheduleHeartbeat(this.heartbeatState());
   }
 
-  private scheduleHeartbeat(state: HelperState): Promise<void> {
+  private scheduleHeartbeat(state: HelperState, signal?: AbortSignal): Promise<void> {
     if (!this.session || (this.stopping && state !== "stopped")) return Promise.resolve();
     if (this.heartbeatPending !== "stopped") this.heartbeatPending = state;
     // `heartbeatFlushing` is cleared inside the flush itself, in the same synchronous
@@ -832,12 +881,12 @@ export class CaptureClient {
     // `stopped` heartbeat -- the one fact the server turns into "Audio capture stopped."
     if (!this.heartbeatFlushing) {
       this.heartbeatFlushing = true;
-      this.heartbeatFlush = this.flushHeartbeat();
+      this.heartbeatFlush = this.flushHeartbeat(signal);
     }
     return this.heartbeatFlush ?? Promise.resolve();
   }
 
-  private async flushHeartbeat(): Promise<void> {
+  private async flushHeartbeat(signal?: AbortSignal): Promise<void> {
     try {
       while (this.heartbeatPending && this.session) {
         const state = this.heartbeatPending;
@@ -848,7 +897,7 @@ export class CaptureClient {
           Math.round(performance.now() * 1e6),
         );
         this.heartbeatMonotonicNs = sentMonotonicNs;
-        const response = await fetch(
+        const response = await this.fetchRequest(
           `/api/live/sessions/${encodeURIComponent(session.id)}/heartbeat`,
           {
             method: "POST",
@@ -870,6 +919,7 @@ export class CaptureClient {
               },
             }),
           },
+          signal,
         );
         this.heartbeatSequence += 1;
         if (!response.ok) throw new Error(`heartbeat POST failed: HTTP ${response.status}`);
@@ -879,6 +929,30 @@ export class CaptureClient {
     } finally {
       this.heartbeatFlushing = false;
     }
+  }
+
+  private async fetchRequest(
+    input: string,
+    init: RequestInit,
+    deadlineSignal?: AbortSignal,
+  ): Promise<Response> {
+    if (deadlineSignal?.aborted) {
+      throw deadlineSignal.reason ?? new DOMException("capture request deadline expired", "TimeoutError");
+    }
+    const controller = new AbortController();
+    const abort = () => controller.abort(deadlineSignal?.reason);
+    deadlineSignal?.addEventListener("abort", abort, { once: true });
+    this.requestControllers.add(controller);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+      this.requestControllers.delete(controller);
+      deadlineSignal?.removeEventListener("abort", abort);
+    }
+  }
+
+  private abortRequests(reason?: unknown): void {
+    for (const controller of this.requestControllers) controller.abort(reason);
   }
 
   private heartbeatState(): HelperState {

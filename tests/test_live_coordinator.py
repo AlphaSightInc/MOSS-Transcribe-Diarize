@@ -214,6 +214,49 @@ def test_coordinator_backpressure_leaves_frozen_span_uncommitted_not_dropped():
     assert decoder.calls == []
 
 
+def test_multiple_spans_from_one_frame_reserve_their_full_decode_weight_atomically():
+    class AlternatingSpeech:
+        def observe(self, *, frame, start_sample, end_sample):
+            del frame
+            step = (end_sample - start_sample) // 4
+            return tuple(
+                SpeechObservation(
+                    start_sample=start_sample + index * step,
+                    end_sample=start_sample + (index + 1) * step,
+                    speech_present=index % 2 == 0,
+                )
+                for index in range(4)
+            )
+
+    session = LiveSession(max_retained_samples=8000)
+    arbiter = InferenceArbiter(max_live_canonical_items=3)
+    decoder = RecordingDecoder()
+    live = LiveCoordinator(
+        session_key="session-a",
+        session=session,
+        endpoint_policy=EndpointPolicy(
+            EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1, hard_cap_samples=4000)
+        ),
+        speech_provider=AlternatingSpeech(),
+        decoder=decoder,
+        identity_preparer=PreparingIdentity(),
+        arbiter=arbiter,
+    )
+
+    staged_frame = frame(0, 4000)
+    assert live.preview_frame_work_items(staged_frame) == 3
+    assert session.snapshot().accepted_samples == 0
+    assert arbiter.snapshot().live_canonical == 0
+    accepted = live.accept_frame(staged_frame)
+
+    assert len(accepted.frozen_spans) == 3
+    assert accepted.queued_item_ids == (0,)
+    assert arbiter.snapshot().live_canonical == 3
+    live.process_work_item(arbiter.next_work())
+    assert len(decoder.calls) == 3
+    assert session.snapshot().accounted_samples == 3000
+
+
 def test_coordinator_identity_abstention_publishes_the_span_without_a_speaker():
     """An abstention withholds the label, not the audio.
 

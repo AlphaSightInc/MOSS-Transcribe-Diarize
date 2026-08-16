@@ -23,6 +23,7 @@ class ArbiterWorkItem:
     kind: str
     key: str
     payload: Any
+    weight: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +56,7 @@ class InferenceArbiter:
         self._next_id = 0
         self._batch: deque[ArbiterWorkItem] = deque()
         self._live_canonical: deque[ArbiterWorkItem] = deque()
+        self._live_canonical_weight = 0
         self._live_provisional: OrderedDict[str, ArbiterWorkItem] = OrderedDict()
 
     def submit_batch(self, *, key: str, payload: Any) -> ArbiterAdmission:
@@ -63,10 +65,17 @@ class InferenceArbiter:
         self._batch.append(item)
         return ArbiterAdmission(True, item.id)
 
-    def submit_live_canonical(self, *, key: str, payload: Any) -> ArbiterAdmission:
-        self._ensure_room(self._live_canonical, self.max_live_canonical_items, "live canonical queue is full.")
-        item = self._item(self.LIVE_CANONICAL, key, payload)
+    def submit_live_canonical(self, *, key: str, payload: Any, weight: int = 1) -> ArbiterAdmission:
+        if not isinstance(weight, int) or isinstance(weight, bool) or weight <= 0:
+            raise ValueError("live canonical weight must be a positive integer.")
+        if (
+            self.max_live_canonical_items is not None
+            and self._live_canonical_weight + weight > self.max_live_canonical_items
+        ):
+            raise InferenceArbiterBackpressure("live canonical queue is full.")
+        item = self._item(self.LIVE_CANONICAL, key, payload, weight=weight)
         self._live_canonical.append(item)
+        self._live_canonical_weight += weight
         return ArbiterAdmission(True, item.id)
 
     def submit_live_provisional(self, *, coalesce_key: str, payload: Any) -> ArbiterAdmission:
@@ -81,7 +90,9 @@ class InferenceArbiter:
         if self._batch:
             return self._batch.popleft()
         if self._live_canonical:
-            return self._live_canonical.popleft()
+            item = self._live_canonical.popleft()
+            self._live_canonical_weight -= item.weight
+            return item
         if self._live_provisional:
             _, item = self._live_provisional.popitem(last=False)
             return item
@@ -90,14 +101,14 @@ class InferenceArbiter:
     def snapshot(self) -> ArbiterSnapshot:
         return ArbiterSnapshot(
             batch=len(self._batch),
-            live_canonical=len(self._live_canonical),
+            live_canonical=self._live_canonical_weight,
             live_provisional=len(self._live_provisional),
         )
 
-    def _item(self, kind: str, key: str, payload: Any) -> ArbiterWorkItem:
+    def _item(self, kind: str, key: str, payload: Any, *, weight: int = 1) -> ArbiterWorkItem:
         if not key:
             raise ValueError("arbiter work key must be non-empty.")
-        item = ArbiterWorkItem(self._next_id, kind, key, payload)
+        item = ArbiterWorkItem(self._next_id, kind, key, payload, weight)
         self._next_id += 1
         return item
 

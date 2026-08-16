@@ -464,6 +464,14 @@ def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():
     assert accepted.queued_item_ids == (1,)
     assert accepted.snapshot.pending_work_items == 2
 
+    with pytest.raises(Exception, match="live canonical queue is full"):
+        runtime.accept_frame(
+            created.session_id,
+            _frame(3, byte=b"d"),
+            retryable_queue_backpressure=True,
+        )
+    assert runtime.snapshot(created.session_id).pending_work_items == 2
+
     decoder.release.set()
     assert decoder.finished.wait(timeout=1.0)
     deadline = time.monotonic() + 1.0
@@ -472,6 +480,44 @@ def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():
     drained = runtime.snapshot(created.session_id)
     assert drained.session.accounted_samples == 2000
     assert drained.pending_work_items == 0
+
+
+def test_multi_span_frame_is_rejected_before_mutation_when_weight_exceeds_capacity():
+    class AlternatingSpeech:
+        def observe(self, *, frame, start_sample, end_sample):
+            del frame
+            step = (end_sample - start_sample) // 4
+            return tuple(
+                SpeechObservation(
+                    start_sample=start_sample + index * step,
+                    end_sample=start_sample + (index + 1) * step,
+                    speech_present=index % 2 == 0,
+                )
+                for index in range(4)
+            )
+
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(
+        speech=(),
+        descriptor=_descriptor(max_queue_depth=1, max_retained_samples=8000),
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+    runtime._sessions[created.session_id].coordinator.speech_provider = AlternatingSpeech()
+    staged_frame = AudioFrame(sequence=0, pcm=b"a" * 8000, sample_count=4000)
+
+    for _attempt in range(2):
+        with pytest.raises(Exception, match="live canonical queue is full"):
+            runtime.accept_frame(
+                created.session_id,
+                staged_frame,
+                retryable_queue_backpressure=True,
+            )
+
+    snapshot = runtime.snapshot(created.session_id)
+    assert snapshot.pending_work_items == 0
+    assert snapshot.session.accepted_samples == 0
+    assert snapshot.session.next_frame_sequence == 0
 
 
 def test_manual_canonical_scheduler_is_coalesced_and_deterministic():

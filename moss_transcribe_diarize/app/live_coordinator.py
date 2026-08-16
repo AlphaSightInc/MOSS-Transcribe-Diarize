@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -113,7 +114,7 @@ class LiveIdentityReviser(Protocol):
 @dataclass(frozen=True, slots=True)
 class CanonicalWork:
     session_key: str
-    span: FrozenSpan
+    spans: tuple[FrozenSpan, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +124,13 @@ class CoordinatorFrameResult:
     endpoint_spans: tuple[EndpointSpan, ...]
     frozen_spans: tuple[FrozenSpan, ...]
     queued_item_ids: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _StagedFrame:
+    frame: AudioFrame
+    observations: tuple[SpeechObservation, ...]
+    endpoint_spans: tuple[EndpointSpan, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,17 +231,53 @@ class LiveCoordinator:
         self.identity_preparer = identity_preparer
         self.arbiter = arbiter
         self._pcm = _PcmRetention()
-        self._pending_canonical: deque[FrozenSpan] = deque()
+        self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
+
+    def preview_frame_work_items(self, frame: AudioFrame) -> int:
+        if self._staged_frame is not None:
+            if self._staged_frame.frame != frame:
+                raise LiveCoordinatorError("a different frame arrived while canonical admission was staged.")
+            return len(self._staged_frame.endpoint_spans)
+        snapshot = self.session.snapshot()
+        if frame.sequence != snapshot.next_frame_sequence:
+            raise ValueError(f"expected frame sequence {snapshot.next_frame_sequence}, got {frame.sequence}.")
+        start_sample = snapshot.accepted_samples
+        end_sample = start_sample + frame.sample_count
+        observations = self.speech_provider.observe(
+            frame=frame,
+            start_sample=start_sample,
+            end_sample=end_sample,
+        )
+        preview_policy = deepcopy(self.endpoint_policy)
+        endpoint_spans = self._observe_endpoint_with_policy(
+            preview_policy,
+            observations,
+            start_sample,
+            end_sample,
+        )
+        self._staged_frame = _StagedFrame(frame, observations, endpoint_spans)
+        return len(endpoint_spans)
+
+    def preview_stop_work_items(self) -> int:
+        preview_policy = deepcopy(self.endpoint_policy)
+        return len(preview_policy.stop())
 
     def accept_frame(self, frame: AudioFrame) -> CoordinatorFrameResult:
         ack = self.session.accept_frame(frame)
         self._pcm.append(ack.start_sample, ack.end_sample, frame.pcm)
-        observations = self.speech_provider.observe(
-            frame=frame,
-            start_sample=ack.start_sample,
-            end_sample=ack.end_sample,
-        )
+        staged = self._staged_frame
+        if staged is not None:
+            if staged.frame != frame:
+                raise LiveCoordinatorError("accepted frame does not match staged canonical admission.")
+            observations = staged.observations
+            self._staged_frame = None
+        else:
+            observations = self.speech_provider.observe(
+                frame=frame,
+                start_sample=ack.start_sample,
+                end_sample=ack.end_sample,
+            )
         endpoint_spans = self._observe_endpoint(observations, ack.start_sample, ack.end_sample)
         frozen_spans = tuple(self.session.freeze_until(span.end_sample, reason=span.reason) for span in endpoint_spans)
         queued = self._queue_canonical_batch(frozen_spans)
@@ -254,17 +298,29 @@ class LiveCoordinator:
     def stop_endpoint(self) -> tuple[int, ...]:
         return self._freeze_and_queue(self.endpoint_policy.stop())
 
-    def capture_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkInput:
+    def work_item_span_count(self, item: ArbiterWorkItem) -> int:
+        work = self._canonical_work(item)
+        return len(work.spans)
+
+    def capture_work_item(self, item: ArbiterWorkItem, *, span_index: int = 0) -> CoordinatorWorkInput:
+        work = self._canonical_work(item)
+        try:
+            span = work.spans[span_index]
+        except IndexError as exc:
+            raise LiveCoordinatorError("canonical work span index is out of range.") from exc
+        pcm = self._pcm.extract(span.start_sample, span.end_sample)
+        base_snapshot = self.session.snapshot().identity_snapshot
+        return CoordinatorWorkInput(span=span, pcm=pcm, base_snapshot=base_snapshot)
+
+    def _canonical_work(self, item: ArbiterWorkItem) -> CanonicalWork:
         if item.kind != InferenceArbiter.LIVE_CANONICAL or not isinstance(item.payload, CanonicalWork):
             raise LiveCoordinatorError("work item is not live canonical coordinator work.")
         work = item.payload
         if work.session_key != self.session_key:
             raise LiveCoordinatorError("canonical work belongs to a different live session.")
-
-        span = work.span
-        pcm = self._pcm.extract(span.start_sample, span.end_sample)
-        base_snapshot = self.session.snapshot().identity_snapshot
-        return CoordinatorWorkInput(span=span, pcm=pcm, base_snapshot=base_snapshot)
+        if not work.spans:
+            raise LiveCoordinatorError("canonical work batch must contain at least one span.")
+        return work
 
     def prepare_work_item(self, work: CoordinatorWorkInput) -> CoordinatorPreparedWork:
         span = work.span
@@ -513,12 +569,30 @@ class LiveCoordinator:
         )
 
     def process_work_item(self, item: ArbiterWorkItem) -> CoordinatorWorkResult:
-        work = self.capture_work_item(item)
-        prepared = self.prepare_work_item(work)
-        return self.submit_prepared_work(prepared)
+        result: CoordinatorWorkResult | None = None
+        for span_index in range(self.work_item_span_count(item)):
+            work = self.capture_work_item(item, span_index=span_index)
+            prepared = self.prepare_work_item(work)
+            result = self.submit_prepared_work(prepared)
+        assert result is not None
+        return result
 
     def _observe_endpoint(
         self,
+        observations: tuple[SpeechObservation, ...],
+        start_sample: int,
+        end_sample: int,
+    ) -> tuple[EndpointSpan, ...]:
+        return self._observe_endpoint_with_policy(
+            self.endpoint_policy,
+            observations,
+            start_sample,
+            end_sample,
+        )
+
+    @staticmethod
+    def _observe_endpoint_with_policy(
+        endpoint_policy: EndpointPolicy,
         observations: tuple[SpeechObservation, ...],
         start_sample: int,
         end_sample: int,
@@ -532,7 +606,7 @@ class LiveCoordinator:
                 raise LiveCoordinatorError("speech observations must cover accepted PCM without gaps.")
             if observation.end_sample > end_sample:
                 raise LiveCoordinatorError("speech observation exceeds accepted PCM.")
-            spans.extend(self.endpoint_policy.observe(observation))
+            spans.extend(endpoint_policy.observe(observation))
             expected = observation.end_sample
         if expected != end_sample:
             raise LiveCoordinatorError("speech observations did not cover accepted PCM.")
@@ -543,34 +617,15 @@ class LiveCoordinator:
         return self._queue_canonical_batch(frozen)
 
     def _queue_canonical_batch(self, spans: tuple[FrozenSpan, ...]) -> tuple[int, ...]:
-        self._pending_canonical.extend(spans)
-        queued = self.queue_pending_canonical()
-        if spans and not queued:
-            raise InferenceArbiterBackpressure("live canonical queue is full.")
-        return queued
-
-    def pending_canonical_count(self) -> int:
-        return len(self._pending_canonical)
-
-    def queue_pending_canonical(self) -> tuple[int, ...]:
-        queued: list[int] = []
-        while self._pending_canonical:
-            span = self._pending_canonical[0]
-            try:
-                item_id = self._queue_canonical(span)
-            except InferenceArbiterBackpressure:
-                break
-            self._pending_canonical.popleft()
-            queued.append(item_id)
-        return tuple(queued)
-
-    def _queue_canonical(self, span: FrozenSpan) -> int:
+        if not spans:
+            return ()
         admission = self.arbiter.submit_live_canonical(
-            key=f"{self.session_key}:span-{span.id}",
-            payload=CanonicalWork(session_key=self.session_key, span=span),
+            key=f"{self.session_key}:spans-{spans[0].id}-{spans[-1].id}",
+            payload=CanonicalWork(session_key=self.session_key, spans=spans),
+            weight=len(spans),
         )
         assert admission.item_id is not None
-        return admission.item_id
+        return (admission.item_id,)
 
 
 @dataclass(frozen=True, slots=True)
