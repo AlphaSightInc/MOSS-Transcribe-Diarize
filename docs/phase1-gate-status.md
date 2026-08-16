@@ -306,6 +306,15 @@ substantial implementations on `dev` whose gates are the rows above.
     cannot afford — these probes drive Chrome for minutes. Re-running stays the reviewer's job.
   - Post-fix the check reports **0 violations**, and the broadened pattern demonstrably sees runners
     the old one could not.
+- **T-02's auth mutation battery is not re-runnable from this repo.** Surfaced by the broadened
+  citation check before it was scoped back to repo-relative paths.
+  `evidence/phase1/t2/iteration-05-auth-mutation-battery/harness-sha256.txt` cites
+  `mutation-harness.py` and `rereview-harness.py` at `/tmp/A-025-rr/`, `/tmp/A-025-mut/`, and in the
+  **control-plane** repo (`0.AISIGHT_LOOP/moss-transcribe-diarize/runs/A-025/validation/`). The
+  `/tmp` copies are gone; the control-plane copies are in a different repository. The SHA-256 file
+  proves the copies were byte-identical, so the evidence is honest — but nobody working in this repo
+  can reproduce it. Deliberately *not* a preflight stop condition (it would halt the fleet over a
+  cross-repo artifact); it is a review finding against tracker issue #2.
 - No post-`1db447c` adversarial review has been run, per the AFK3 stop order. New findings are
   follow-up work, **not** grounds to reopen AFK3 reconciliation.
 
