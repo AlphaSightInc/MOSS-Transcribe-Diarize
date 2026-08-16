@@ -6,8 +6,12 @@ Run with a Python environment that has Playwright and Pillow, for example:
     --output evidence/phase1/r1-reference-ui/screenshot-diff
 
 The probe serves both source trees with their Vite toolchains, injects the same
-transcript fixture through each tree's real session-state module, masks only the two exemptions
+transcript fixture through each tree's real session-state module, masks only the exemptions
 ruled in the Phase-1 charter, and exits nonzero when either charter threshold is exceeded.
+
+The exemption set lives in tests/fixtures/reference_ui_screenshot_diff.json and is not the
+probe's to choose: charter §5 rules each one individually, and an exemption whose selector does
+not render is an error here rather than a silent pass (see `selector_box`).
 """
 
 from __future__ import annotations

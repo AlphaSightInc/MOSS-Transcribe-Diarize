@@ -157,12 +157,24 @@ def _runtime_at_descriptor_geometry(frame_samples: int):
     return runtime
 
 
-def _contiguous_progression(records: list[dict]) -> bool:
-    sequences = [record.get("sequence") for record in records]
+def _worklet_emissions_are_contiguous_and_admitted(records: list[dict]) -> bool:
+    """Did the *browser* emit every frame, and did the route admit each one unrenumbered?
+
+    Asserting contiguity of the route-assigned `sequence` proves nothing: strict v2 refuses
+    anything but `next_frame_sequence`, so the admitted set is contiguous by construction and
+    a worklet that stopped producing looks identical to one that never missed a beat.  The
+    load-bearing counter is `emitted_sequence`, which the worklet stamps before the post and
+    the route cannot influence.  A frame the hidden tab produced but failed to deliver leaves
+    `emitted_sequence` running ahead of `sequence`; a frame it never produced leaves a gap in
+    `emitted_sequence` itself.  Both are the G7 failure this probe exists to detect.
+    """
+    emitted = [record.get("emitted_sequence") for record in records]
+    admitted = [record.get("sequence") for record in records]
     return (
-        len(sequences) > 1
-        and all(isinstance(sequence, int) for sequence in sequences)
-        and all(right == left + 1 for left, right in zip(sequences, sequences[1:]))
+        len(emitted) > 1
+        and all(isinstance(sequence, int) for sequence in emitted + admitted)
+        and all(right == left + 1 for left, right in zip(emitted, emitted[1:]))
+        and emitted == admitted
     )
 
 
@@ -247,8 +259,8 @@ def _run(*, chrome_bin: str, frame_samples: int, hidden_seconds: float) -> dict:
             "hidden_route_admissions_match_route_descriptor": all(
                 _route_admissions_match_descriptor(raw_frames[lane], route_descriptor) for lane in _LANES
             ),
-            "each_lane_has_contiguous_hidden_accepted_sequence_progression": all(
-                _contiguous_progression(raw_frames[lane]) for lane in _LANES
+            "each_lane_hidden_worklet_emissions_are_contiguous_and_admitted_unrenumbered": all(
+                _worklet_emissions_are_contiguous_and_admitted(raw_frames[lane]) for lane in _LANES
             ),
             "admitted_frames_approximately_match_hidden_elapsed_cadence": all(
                 abs(cadence[lane]["accepted_minus_elapsed_expected"]) <= 1 for lane in _LANES
@@ -260,9 +272,16 @@ def _run(*, chrome_bin: str, frame_samples: int, hidden_seconds: float) -> dict:
             "hidden_heartbeat_sequences_are_contiguous": not verdict["heartbeat_summary"]["sequence_gaps"],
             "hidden_max_heartbeat_delta_stayed_below_helper_lease": verdict["heartbeat_summary"]["hidden_max_delta_below_lease"],
             "session_stayed_active_after_hidden_phase": verdict["session_active_after_hidden_phase"],
-            "strict_v2_accounting_matches_descriptor_frames": all(
-                v2["lanes"][lane]["accepted_samples"]
-                == v2["lanes"][lane]["next_sequence"] * route_descriptor["frame_samples"]
+            # `accepted_samples == next_sequence * frame_samples` is an identity strict v2
+            # maintains by construction -- it restates the server's own bookkeeping and would
+            # hold even if the hidden tab had gone silent an hour ago.  Tie the server's lane
+            # accounting to the *client's* frame telemetry instead: every frame the worklet
+            # recorded emitting, hidden and visible, must be one the lane counted, with no
+            # lane samples failed along the way.
+            "server_lane_accounting_matches_client_frame_telemetry": all(
+                v2["lanes"][lane]["next_sequence"]
+                == len(raw_frames[lane]) + verdict["visible_frame_cadence"][lane]["count"]
+                and v2["lanes"][lane]["failed_samples"] == 0
                 for lane in _LANES
             ),
         }

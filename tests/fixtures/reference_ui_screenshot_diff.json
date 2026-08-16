@@ -16,6 +16,11 @@
       "id": "mode-segmented-control",
       "reference_selector": "[role='tablist'][aria-label='Session mode']",
       "candidate_selector": "[role='tablist'][aria-label='Session mode']"
+    },
+    {
+      "id": "transcript-summary-toggle",
+      "reference_selector": ".tr-legend-right",
+      "candidate_selector": ".tr-legend-right"
     }
   ]
 }

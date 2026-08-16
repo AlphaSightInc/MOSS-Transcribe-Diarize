@@ -163,14 +163,37 @@ def check_forbidden() -> list[str]:
     # and silently swallowed unparseable files, so it reported OK across fourteen iterations
     # while three cited probes were absent. Scan every artifact as text instead, and treat an
     # unreadable one as a violation rather than a pass.
+    # Second adversarial round (2026-08-16) found two more blind spots, both exploited during
+    # AFK3:
+    #
+    #   1. The citation pattern only matched filenames containing "probe" or "proto". An
+    #      artifact whose generator was named anything else -- run-final-gate.sh,
+    #      regenerate_evidence.py, a measure_*.py -- cited a script this check could not see,
+    #      so deleting that script was invisible. Match any cited runner instead. This stays
+    #      quiet on the overwhelmingly common case: a cited path that exists passes, and
+    #      product source files are cited constantly and do exist.
+    #   2. Only existence was checked, so a probe that had rotted into something that could
+    #      not even load still passed. Compile cited Python runners.
+    #
+    # What (2) does NOT cover, stated plainly because this file is the thing that enforces
+    # stating it: compiling proves the file parses, not that it runs. A probe that imports a
+    # deleted module, needs a fixture nobody committed, or fails against current `dev` still
+    # passes here. Proving re-runnability means running it, which preflight cannot afford --
+    # these probes start servers and drive Chrome for minutes at a time. Re-running remains
+    # the reviewer's job; this check only stops the cheapest lie.
     ev = REPO / "evidence" / "phase1"
     if not ev.is_dir():
         return out
+    runner_suffixes = {".py", ".sh", ".js", ".ts", ".mjs"}
     known: set[str] = set()
-    for path in REPO.rglob("*.py"):
-        if ".git" not in path.parts and ".venv" not in path.parts:
-            known.add(path.name)
-    cited = re.compile(r"[\w./-]*\b(?:probe|proto)[\w./-]*\.py\b")
+    for path in REPO.rglob("*"):
+        if path.is_file() and path.suffix in runner_suffixes:
+            if ".git" not in path.parts and ".venv" not in path.parts and "node_modules" not in path.parts:
+                known.add(path.name)
+    # `(?!:\d)` drops `module.py:88` -- a traceback or log frame, not a claim that anyone can
+    # run that file. Captured vLLM and pytest output is full of them, and every one that names
+    # a file outside this tree would otherwise stop the fleet for no reason.
+    cited = re.compile(r"[\w./-]+\.(?:py|sh|js|ts|mjs)\b(?!:\d)")
     for artifact in sorted(ev.rglob("*")):
         if not artifact.is_file() or artifact.suffix not in {".json", ".txt", ".md"}:
             continue
@@ -179,14 +202,32 @@ def check_forbidden() -> list[str]:
         except Exception as exc:
             out.append(f"{artifact.relative_to(REPO)} is unreadable ({exc}); cannot verify probes")
             continue
-        for ref in set(cited.findall(text)):
-            name = ref.rsplit("/", 1)[-1]
-            if (REPO / ref).exists() or name in known:
+        for ref in sorted(set(cited.findall(text))):
+            # An absolute path outside the repo is a statement about someone else's disk (a
+            # /tmp scratch clone, the control-plane repo), not a citation this tree can honour.
+            # Whether such evidence is re-runnable *here* is a review question, not a per-
+            # iteration stop condition.
+            if ref.startswith("/") and not ref.startswith(f"{REPO}/"):
                 continue
-            out.append(
-                f"{artifact.relative_to(REPO)} cites probe {ref!r} which is not in the tree; "
-                "a gate whose probe was deleted cannot be re-run by anyone"
-            )
+            name = ref.rsplit("/", 1)[-1]
+            resolved = REPO / ref
+            if not resolved.is_file():
+                if name in known:
+                    continue
+                out.append(
+                    f"{artifact.relative_to(REPO)} cites runner {ref!r} which is not in the tree; "
+                    "a gate whose probe was deleted cannot be re-run by anyone"
+                )
+                continue
+            if resolved.suffix != ".py":
+                continue
+            try:
+                compile(resolved.read_text(encoding="utf-8", errors="strict"), str(resolved), "exec")
+            except Exception as exc:
+                out.append(
+                    f"{artifact.relative_to(REPO)} cites runner {ref!r} which does not compile "
+                    f"({type(exc).__name__}: {exc}); a gate whose probe cannot load is not re-runnable"
+                )
     return out
 
 
