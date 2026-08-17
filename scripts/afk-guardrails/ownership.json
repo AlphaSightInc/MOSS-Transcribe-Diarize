@@ -173,5 +173,85 @@
     ],
     "prerequisites": [],
     "blocked_by": []
+  },
+  "y1-file-mode": {
+    "title": "File mode through the new UI, via a client-side adapter over /api/jobs",
+    "owns": [
+      "frontend/src/App.tsx",
+      "frontend/src/api/jobs.ts",
+      "frontend/src/components/FilePanel.tsx"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/jobs.py",
+      "moss_transcribe_diarize/app/server.py",
+      "frontend/src/api/mossPoller.ts",
+      "frontend/src/state/session.ts"
+    ],
+    "prerequisites": [
+      "node_toolchain"
+    ],
+    "blocked_by": []
+  },
+  "y2-transcript-export": {
+    "title": "Live transcript export to file (md, txt, json)",
+    "owns": [
+      "frontend/src/lib/transcriptExport.ts",
+      "frontend/src/components/TranscriptPane.tsx"
+    ],
+    "reads": [
+      "frontend/src/lib/transcriptModel.ts",
+      "frontend/src/state/session.ts"
+    ],
+    "prerequisites": [
+      "node_toolchain"
+    ],
+    "blocked_by": []
+  },
+  "y3-session-reattach": {
+    "title": "G6's two holes: reload mid-capture reattaches, and a viewer learns why its session died",
+    "owns": [
+      "frontend/src/lib/persistence.ts",
+      "frontend/src/state/session.ts",
+      "frontend/src/components/ControlPanel.tsx",
+      "moss_transcribe_diarize/app/live_auth.py"
+    ],
+    "reads": [
+      "frontend/src/capture/captureClient.ts",
+      "moss_transcribe_diarize/app/live_portal.py",
+      "moss_transcribe_diarize/app/live_service_runtime.py"
+    ],
+    "prerequisites": [
+      "node_toolchain"
+    ],
+    "blocked_by": []
+  },
+  "y4-concurrency-cert": {
+    "title": "G4 and G5: sustain the measured bound for 10 minutes, and prove isolation under overload and reconnect",
+    "owns": [
+      "prototypes/streaming-diarization/concurrency/",
+      "evidence/phase1/y4-concurrency-cert/"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_service_runtime.py",
+      "moss_transcribe_diarize/app/live_arbiter.py"
+    ],
+    "prerequisites": [
+      "model_runtime"
+    ],
+    "blocked_by": []
+  },
+  "y5-guardrail-and-floor": {
+    "title": "Adversarial fixtures for the preflight guardrail, and a derived canonical queue-depth floor proved by a failing seam test first",
+    "owns": [
+      "scripts/afk-guardrails/",
+      "moss_transcribe_diarize/app/live_manifest_finalizer.py"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_endpoint.py",
+      "moss_transcribe_diarize/app/live_provider_bundle.py",
+      "moss_transcribe_diarize/app/live_service_runtime.py"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
   }
 }

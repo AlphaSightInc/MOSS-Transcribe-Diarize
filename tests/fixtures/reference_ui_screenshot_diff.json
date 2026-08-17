@@ -21,6 +21,11 @@
       "id": "transcript-summary-toggle",
       "reference_selector": ".tr-legend-right",
       "candidate_selector": ".tr-legend-right"
+    },
+    {
+      "id": "phase1-capture-controls",
+      "reference_selector": "#control-panel .panel-body",
+      "candidate_selector": ".capture-supervisor"
     }
   ]
 }
