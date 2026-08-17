@@ -1,18 +1,18 @@
-import { useRef, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { ControlPanel } from "./components/ControlPanel";
+import { FilePanel } from "./components/FilePanel";
 import { SegmentedControl } from "./components/SegmentedControl";
 import { TranscriptPane } from "./components/TranscriptPane";
-import { sessionStatus, sessionStatusLine } from "./state/session";
+import { resetSessionState, sessionStatus, sessionStatusLine } from "./state/session";
 
 type PhaseOneMode = "live" | "file";
 
 export function App() {
   const [mode, setMode] = useState<PhaseOneMode>("live");
-  const [selectedFileName, setSelectedFileName] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const modeLabel = mode === "live" ? "Live" : "File";
   const status = sessionStatus.value;
+  const modeLocked = status === "active" || status === "closing";
   const statusLabel = sessionStatusLine.value ?? (status === "idle" ? "Standby" : status);
 
   return (
@@ -53,47 +53,24 @@ export function App() {
               <div className="label">Mode</div>
               <SegmentedControl
                 ariaLabel="Session mode"
+                disabled={modeLocked}
                 options={[
                   { value: "live", label: "Live" },
                   { value: "file", label: "File" }
                 ]}
                 value={mode}
-                onChange={setMode}
+                onChange={(nextMode) => {
+                  if (nextMode === mode || modeLocked) return;
+                  resetSessionState();
+                  setMode(nextMode);
+                }}
               />
             </section>
 
             {mode === "live" ? (
               <ControlPanel />
             ) : (
-              <section className="control-section" data-mode="file">
-                <div className="label">File</div>
-                <div className="field field--input-prompt">
-                  <input
-                    aria-label="Selected file"
-                    readOnly
-                    type="text"
-                    value={selectedFileName}
-                    placeholder="No file selected."
-                  />
-                  <button
-                    type="button"
-                    className="field-btn"
-                    aria-label="Choose file"
-                    title="Choose file"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <span aria-hidden="true">↑</span>
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="audio/*"
-                    hidden
-                    onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "")}
-                  />
-                </div>
-                <p className="hint">Select an audio file to prepare it for transcription.</p>
-              </section>
+              <FilePanel />
             )}
           </div>
         </aside>

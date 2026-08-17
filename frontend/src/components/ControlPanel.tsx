@@ -6,12 +6,19 @@ import {
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
 import { resetSessionState } from "../state/session";
+import {
+  clearSessionReattach,
+  loadSessionReattach,
+  saveSessionReattach,
+  sessionReattachStorage
+} from "../lib/persistence";
 
 type CapturePhase =
   | "idle"
   | "configuring"
   | "ready"
   | "active"
+  | "viewing"
   | "stopping"
   | "terminal"
   | "error";
@@ -122,12 +129,17 @@ export function ControlPanel() {
     resetSessionState();
     try {
       const session = await client.createSession();
+      saveSessionReattach(sessionReattachStorage(), {
+        sessionId: session.id,
+        viewToken: session.viewToken
+      });
       const poller = createMossSessionPoller({
         sessionId: session.id,
         accessToken: session.viewToken,
         terminalAccessToken: captureBearer.trim(),
         onError: setMessage,
         onTerminal(terminalMessage) {
+          clearSessionReattach(sessionReattachStorage());
           transition("terminal");
           setMessage(terminalMessage);
         }
@@ -156,6 +168,7 @@ export function ControlPanel() {
   };
 
   const resetCapture = async () => {
+    clearSessionReattach(sessionReattachStorage());
     pollerRef.current?.stop();
     pollerRef.current = null;
     const client = clientRef.current;
@@ -175,12 +188,33 @@ export function ControlPanel() {
     setMessage("Enter the capture bearer to configure both audio lanes.");
   };
 
-  useEffect(() => () => {
-    pollerRef.current?.stop();
-    void clientRef.current?.stop(0).catch(() => undefined);
+  useEffect(() => {
+    const saved = loadSessionReattach(sessionReattachStorage());
+    if (saved) {
+      const poller = createMossSessionPoller({
+        sessionId: saved.sessionId,
+        accessToken: saved.viewToken,
+        onError: setMessage,
+        onTerminal(terminalMessage) {
+          clearSessionReattach(sessionReattachStorage());
+          transition("terminal");
+          setMessage(terminalMessage);
+        }
+      });
+      pollerRef.current = poller;
+      transition("viewing");
+      setMessage("Transcript reattached. Browser capture stopped on reload.");
+      poller.start();
+    }
+
+    return () => {
+      pollerRef.current?.stop();
+      void clientRef.current?.close().catch(() => undefined);
+    };
   }, []);
 
   const configured = clientRef.current !== null;
+  const reattached = phase === "viewing";
   const canStart = phase === "ready" && meters.microphone > 0 && meters.system > 0;
   const canReplace = phase === "ready" || phase === "active";
 
@@ -223,7 +257,7 @@ export function ControlPanel() {
         <LaneMeter label="Shared audio" value={meters.system} />
       </div>
 
-      {!configured ? (
+      {!configured && !reattached ? (
         <button
           type="button"
           className="record-btn"
@@ -253,6 +287,11 @@ export function ControlPanel() {
       {phase === "active" ? (
         <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}>
           <span>Stop and finalize</span>
+        </button>
+      ) : null}
+      {phase === "viewing" ? (
+        <button type="button" className="btn" onClick={() => void resetCapture()}>
+          Detach transcript
         </button>
       ) : null}
       {phase === "stopping" ? <button type="button" className="record-btn" disabled>Finalizing...</button> : null}

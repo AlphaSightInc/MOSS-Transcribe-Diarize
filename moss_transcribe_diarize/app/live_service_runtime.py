@@ -511,14 +511,29 @@ class LiveServiceRuntime:
                 and queue_depth < state.descriptor.bounds.max_queue_depth
             ):
                 required_work_items = state.coordinator.preview_frame_work_items(frame)
+            if (
+                retryable_queue_backpressure
+                and required_work_items > state.descriptor.bounds.max_queue_depth
+            ):
+                failure = LiveServiceTransportPacingFailure(
+                    "frame canonical work exceeds total queue capacity.",
+                    code="frame_work_exceeds_queue_capacity",
+                    retryable=False,
+                    detail={
+                        "queue_depth": queue_depth,
+                        "required_work_items": required_work_items,
+                        "max_queue_depth": state.descriptor.bounds.max_queue_depth,
+                    },
+                )
+                self._fail(state, failure.failure)
+                raise failure
             # V2 retains the staged lane frame for an identical retry. Refuse before mono
             # admission mutates the session; legacy mono leaves this terminal policy disabled.
             if (
                 retryable_queue_backpressure
                 and (
                     queue_depth >= state.descriptor.bounds.max_queue_depth
-                    or queue_depth + required_work_items
-                    > state.descriptor.bounds.max_queue_depth
+                    or queue_depth + required_work_items > state.descriptor.bounds.max_queue_depth
                 )
             ):
                 raise LiveServiceTransportPacingFailure(
@@ -764,10 +779,9 @@ class LiveServiceRuntime:
         the corrected transcript; a closed session is revisable anyway, so this is ordering
         for the reader's benefit rather than a requirement.
 
-        **The abort path deliberately does not do this.** An aborted session is terminal,
-        a terminal session is not viewable, and a correction published to it would reach no
-        reader -- so the only thing a final sweep could add there is work on the one path
-        that must do as little as possible.
+        **The abort path deliberately does not do this.** Terminal viewers retain read-only access,
+        but abort is the path that must do as little as possible; it publishes the failure and the
+        transcript already committed rather than starting a new identity sweep during teardown.
 
         The event is recorded whether or not anything changed. "The last sweep ran and found
         nothing" and "the last sweep never ran" are opposite facts about a meeting, and the

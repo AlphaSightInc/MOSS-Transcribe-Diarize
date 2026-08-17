@@ -825,6 +825,22 @@ describe("browser capture frame contract", () => {
     expect(lane.frameQueue).toHaveLength(0);
   });
 
+  it("stops local capture on a frame that can never fit the server queue", async () => {
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ failure: { code: "frame_work_exceeds_queue_capacity" } }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+
+    expect(client.session).toBeNull();
+    expect((client as unknown as { lanes: Map<string, unknown> }).lanes.size).toBe(0);
+  });
+
   it("sends a heartbeat scheduled at any microtask offset after the previous one", async () => {
     // Regression: clearing the in-flight flag from a `.finally()` on the returned
     // promise leaves a one-microtask window where the drain loop has stopped but the

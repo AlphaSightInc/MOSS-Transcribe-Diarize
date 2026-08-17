@@ -88,9 +88,12 @@ Newly ruled:
   row per T-12).
 - **Errors.** 400 = malformed frame (client bug, do not retry). 409 = sequence conflict or
   terminal session (resync or recreate). 429 on the v2 lane path = **non-terminal backpressure,
-  retry**. Only ever send v2 lane frames — the legacy mono path's 429 is terminal. Never infer
-  cause from Chrome's exception name; `NotAllowedError` covers both gestureless calls and user
-  dismissal. Stop on error and offer a **user-driven** retry, never automatic.
+  retry**. A frame whose previewed canonical work exceeds the queue's total capacity is not
+  backpressure: it fails the session with non-retryable 409
+  `frame_work_exceeds_queue_capacity`, and capture stops. Only ever send v2 lane frames — the
+  legacy mono path's 429 is terminal. Never infer cause from Chrome's exception name;
+  `NotAllowedError` covers both gestureless calls and user dismissal. Stop on error and offer a
+  **user-driven** retry, never automatic.
 - **Lane loss.** Bump `device_epoch` on track replacement/restart; mark `discontinuity`. A failed
   lane contributes exact zero while its sealed peer may still reach mono, so the session
   continues single-lane where the mixer permits.
@@ -110,7 +113,9 @@ A pixel gate nobody can run is worse than an honest one.
   **stubbed transcript fixture**, so both sides render identical content.
 - **Tolerance:** ≤ **2 %** differing pixels per viewport, and no single contiguous differing
   region larger than 1 % of viewport area. A 0-pixel bar is unachievable (antialiasing, subpixel
-  text) and demanding it makes the gate meaningless.
+  text) and demanding it makes the gate meaningless. A pixel differs only when at least one RGB
+  channel differs by more than 1 level; this removes imperceptible cross-context rasterization
+  noise while retaining the fixed 2 % / 1 % acceptance bars.
 - **Exempt regions**, declared in the diff config, not silently ignored: the right-column rail,
   the mode segmented control (two segments vs four), the preflight modal (no reference pixels
   exist), and the transcript pane's `.tr-legend-right` Transcript|Summary toggle.

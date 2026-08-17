@@ -1,5 +1,33 @@
 import type { TranscriptTurn } from "./mergeTranscript";
 
+export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json"] as const;
+export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
+
+export interface TranscriptExportFile {
+  content: string;
+  filename: string;
+  mediaType: string;
+}
+
+export interface TranscriptExportJsonTurn {
+  start: number;
+  end: number;
+  speaker: string;
+  speaker_entity_id: string;
+  display_name: string;
+  speaker_label: string;
+  state: TranscriptTurn["state"];
+  text: string;
+  segment_ids: string[];
+  target_segment_keys: string[];
+  provisional_stale: boolean;
+}
+
+export interface TranscriptExportJsonDocument {
+  version: 1;
+  turns: TranscriptExportJsonTurn[];
+}
+
 export function formatTranscriptClockTime(seconds: number): string {
   const clampedSeconds = Math.max(0, Math.floor(seconds));
   const hours = String(Math.floor(clampedSeconds / 3600)).padStart(2, "0");
@@ -12,11 +40,85 @@ export function buildTranscriptExportText(
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string
 ): string {
-  return turns
-    .map((turn) => {
-      const label = resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
-      return `[${formatTranscriptClockTime(turn.start)}] ${label}:\n${turn.text.trim()}`;
-    })
-    .filter((block) => !block.endsWith(":\n"))
+  return buildExportRows(turns, resolveLabel)
+    .map((row) => `[${row.clockTime}] ${row.label}:\n${row.text}`)
     .join("\n\n");
+}
+
+export function serializeTranscriptExport(
+  format: TranscriptExportFormat,
+  turns: readonly TranscriptTurn[],
+  resolveLabel: (turn: TranscriptTurn) => string
+): TranscriptExportFile {
+  const rows = buildExportRows(turns, resolveLabel);
+  if (format === "md") {
+    return {
+      content: rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n"),
+      filename: "transcript.md",
+      mediaType: "text/markdown;charset=utf-8"
+    };
+  }
+  if (format === "txt") {
+    return {
+      content: buildTranscriptExportText(turns, resolveLabel),
+      filename: "transcript.txt",
+      mediaType: "text/plain;charset=utf-8"
+    };
+  }
+  return {
+    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel), null, 2)}\n`,
+    filename: "transcript.json",
+    mediaType: "application/json;charset=utf-8"
+  };
+}
+
+export function buildTranscriptExportJsonDocument(
+  turns: readonly TranscriptTurn[],
+  resolveLabel: (turn: TranscriptTurn) => string
+): TranscriptExportJsonDocument {
+  return {
+    version: 1,
+    turns: turns.map((turn) => ({
+      start: turn.start,
+      end: turn.end,
+      speaker: turn.speaker,
+      speaker_entity_id: turn.speaker_entity_id,
+      display_name: turn.display_name,
+      speaker_label: resolveExportLabel(turn, resolveLabel),
+      state: turn.state,
+      text: turn.text,
+      segment_ids: [...turn.segment_ids],
+      target_segment_keys: [...turn.target_segment_keys],
+      provisional_stale: turn.provisional_stale
+    }))
+  };
+}
+
+export function triggerTranscriptExportDownload(file: TranscriptExportFile): void {
+  if (typeof document === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
+    throw new Error("Downloads are unavailable in this environment.");
+  }
+  const href = URL.createObjectURL(new Blob([file.content], { type: file.mediaType }));
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.download = file.filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout(() => URL.revokeObjectURL(href), 0);
+}
+
+function buildExportRows(
+  turns: readonly TranscriptTurn[],
+  resolveLabel: (turn: TranscriptTurn) => string
+) {
+  return turns.map((turn) => ({
+    clockTime: formatTranscriptClockTime(turn.start),
+    label: resolveExportLabel(turn, resolveLabel),
+    text: turn.text.trim()
+  })).filter((row) => row.text.length > 0);
+}
+
+function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {
+  return resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
 }

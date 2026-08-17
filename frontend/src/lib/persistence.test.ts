@@ -3,11 +3,14 @@
 // including the session-id round trip the sessionStorage reattach ruling depends on.
 import { describe, expect, it } from "vitest";
 import {
+  clearSessionReattach,
   clearSessionId,
   createMemoryStorage,
   loadBoolean,
+  loadSessionReattach,
   loadSessionId,
   saveBoolean,
+  saveSessionReattach,
   saveSessionId,
   storageKeys
 } from "./persistence";
@@ -39,5 +42,28 @@ describe("persistence helpers", () => {
 
     clearSessionId(storage);
     expect(loadSessionId(storage)).toBeNull();
+  });
+
+  it("round-trips and clears the tab-scoped reattach record", () => {
+    const storage = createMemoryStorage();
+
+    expect(loadSessionReattach(storage)).toBeNull();
+    saveSessionReattach(storage, { sessionId: "session-42", viewToken: "view-only" });
+    expect(loadSessionReattach(storage)).toEqual({
+      sessionId: "session-42",
+      viewToken: "view-only"
+    });
+
+    clearSessionReattach(storage);
+    expect(loadSessionReattach(storage)).toBeNull();
+  });
+
+  it("clears malformed reattach credentials", () => {
+    const storage = createMemoryStorage({
+      [storageKeys.sessionReattach]: JSON.stringify({ sessionId: "session-42" })
+    });
+
+    expect(loadSessionReattach(storage)).toBeNull();
+    expect(storage.getItem(storageKeys.sessionReattach)).toBeNull();
   });
 });

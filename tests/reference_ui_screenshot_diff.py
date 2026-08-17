@@ -353,10 +353,19 @@ def compare_viewport(
 
     width, height = reference.size
     raw_difference = ImageChops.difference(reference, candidate).tobytes()
+    pixel_channel_tolerance = int(config.get("pixel_channel_tolerance", 0))
+    if pixel_channel_tolerance < 0 or pixel_channel_tolerance > 255:
+        raise ValueError(
+            f"pixel_channel_tolerance must be in [0, 255], got {pixel_channel_tolerance}."
+        )
     difference = bytearray(width * height)
     for pixel in range(width * height):
         offset = pixel * 3
-        difference[pixel] = int(raw_difference[offset] != 0 or raw_difference[offset + 1] != 0 or raw_difference[offset + 2] != 0)
+        difference[pixel] = int(
+            raw_difference[offset] > pixel_channel_tolerance
+            or raw_difference[offset + 1] > pixel_channel_tolerance
+            or raw_difference[offset + 2] > pixel_channel_tolerance
+        )
     raw_differing_pixels = sum(difference)
     exemptions = apply_exemptions(
         difference, width, height, config["exemptions"], reference_page, candidate_page
@@ -381,6 +390,7 @@ def compare_viewport(
         "difference_mask": mask_path.name,
         "viewport": {"width": width, "height": height},
         "raw_differing_pixels_before_exemptions": raw_differing_pixels,
+        "pixel_channel_tolerance": pixel_channel_tolerance,
         "differing_pixels_after_exemptions": differing_pixels,
         "different_pixel_percent": differing_percent,
         "largest_four_connected_region_pixels": largest,
@@ -466,6 +476,7 @@ def main() -> int:
         "thresholds": {
             "max_different_pixel_percent": config["max_different_pixel_percent"],
             "max_largest_region_percent": config["max_largest_region_percent"],
+            "pixel_channel_tolerance": config.get("pixel_channel_tolerance", 0),
             "connectivity": config["connectivity"],
         },
         "diagnostic_regions": [

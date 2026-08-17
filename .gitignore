@@ -45,3 +45,7 @@ ops/moss-live.env
 
 # a bare node_modules symlink, not just a directory (same gap as the .venv symlink above)
 frontend/node_modules
+
+# AFK loop runtime coordination. These are process-local, not review evidence.
+scripts/afk*/.lock/
+scripts/afk*/.stop

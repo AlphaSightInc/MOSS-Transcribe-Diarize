@@ -26,6 +26,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceFailureKind,
     LiveServiceProviderConfigFailure,
     LiveServiceRuntime,
+    LiveServiceTransportPacingFailure,
     _ManualCanonicalPumpScheduler,
     _TransientCanonicalPumpScheduler,
     hash_config,
@@ -482,7 +483,7 @@ def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():
     assert drained.pending_work_items == 0
 
 
-def test_multi_span_frame_is_rejected_before_mutation_when_weight_exceeds_capacity():
+def test_impossible_multi_span_frame_fails_without_audio_admission():
     class AlternatingSpeech:
         def observe(self, *, frame, start_sample, end_sample):
             del frame
@@ -506,18 +507,27 @@ def test_multi_span_frame_is_rejected_before_mutation_when_weight_exceeds_capaci
     runtime._sessions[created.session_id].coordinator.speech_provider = AlternatingSpeech()
     staged_frame = AudioFrame(sequence=0, pcm=b"a" * 8000, sample_count=4000)
 
-    for _attempt in range(2):
-        with pytest.raises(Exception, match="live canonical queue is full"):
-            runtime.accept_frame(
-                created.session_id,
-                staged_frame,
-                retryable_queue_backpressure=True,
-            )
+    with pytest.raises(LiveServiceTransportPacingFailure) as refused:
+        runtime.accept_frame(
+            created.session_id,
+            staged_frame,
+            retryable_queue_backpressure=True,
+        )
+
+    assert refused.value.failure.code == "frame_work_exceeds_queue_capacity"
+    assert refused.value.failure.retryable is False
+    assert refused.value.failure.detail == {
+        "queue_depth": 0,
+        "required_work_items": 3,
+        "max_queue_depth": 1,
+    }
 
     snapshot = runtime.snapshot(created.session_id)
     assert snapshot.pending_work_items == 0
     assert snapshot.session.accepted_samples == 0
     assert snapshot.session.next_frame_sequence == 0
+    assert snapshot.session.status == "failed"
+    assert snapshot.terminal_failure == refused.value.failure
 
 
 def test_manual_canonical_scheduler_is_coalesced_and_deterministic():

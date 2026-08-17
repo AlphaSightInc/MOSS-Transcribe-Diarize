@@ -2,7 +2,10 @@ import { Fragment, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   buildTranscriptExportText,
-  formatTranscriptClockTime
+  formatTranscriptClockTime,
+  serializeTranscriptExport,
+  triggerTranscriptExportDownload,
+  type TranscriptExportFormat
 } from "../lib/transcriptExport";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
 import {
@@ -83,6 +86,7 @@ async function copyTextToClipboard(text: string): Promise<void> {
 export function TranscriptPane() {
   const [findOpen, setFindOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [activeSearchMatchIndex, setActiveSearchMatchIndex] = useState(0);
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
@@ -130,16 +134,17 @@ export function TranscriptPane() {
         return;
       }
 
-      if (event.key === "Escape" && findOpen) {
+      if (event.key === "Escape" && (findOpen || exportMenuOpen)) {
         event.preventDefault();
         setFindOpen(false);
+        setExportMenuOpen(false);
         transcriptSearchQuery.value = "";
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [findOpen]);
+  }, [exportMenuOpen, findOpen]);
 
   useEffect(() => {
     if (!findOpen || activeSearchMatchId < 0) {
@@ -183,6 +188,14 @@ export function TranscriptPane() {
     }
   }
 
+  function handleDownload(format: TranscriptExportFormat): void {
+    triggerTranscriptExportDownload(serializeTranscriptExport(
+      format,
+      allTurns,
+      (turn) => resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap)
+    ));
+  }
+
   return (
     <section className="transcript-pane">
       <header className="tr-head">
@@ -207,7 +220,7 @@ export function TranscriptPane() {
         <button type="button" className="tr-speakers-toggle" aria-expanded="false" disabled>
           <span># Speakers</span>
           <span className="tr-speakers-count" id="tr-speakers-count">
-            {legendEntries.length || "Auto"}
+            A
           </span>
         </button>
 
@@ -229,7 +242,9 @@ export function TranscriptPane() {
         {/* Holds the reference's Transcript|Summary toggle, which is a ruled Phase 2 deletion
             (charter §5 exemption). The container stays: `margin-left: auto` is what right-aligns
             this row, so removing it would move everything it anchors. */}
-        <div className="tr-legend-right" />
+        <div className="tr-legend-right" aria-hidden="true">
+          <div className="transcript-view-placeholder" />
+        </div>
       </div>
 
       <div className="tr-body-wrap">
@@ -273,7 +288,44 @@ export function TranscriptPane() {
           >
             Auto-scroll
           </button>
+          <div className="divider" aria-hidden="true" />
+          <button
+            type="button"
+            className="mini-switch transcript-export-trigger"
+            aria-haspopup="menu"
+            aria-expanded={exportMenuOpen}
+            title="Export transcript"
+            disabled={!transcriptAvailable}
+            onClick={() => setExportMenuOpen((open) => !open)}
+          >
+            <span className="mini-switch-track" aria-hidden="true">
+              <span className="mini-switch-thumb" />
+            </span>
+            <span className="mini-switch-label">Export</span>
+          </button>
         </div>
+
+        {exportMenuOpen ? (
+          <div className="transcript-export-menu" role="menu" aria-label="Export transcript format">
+            {([
+              ["md", "Markdown (.md)"],
+              ["txt", "Plain text (.txt)"],
+              ["json", "JSON (.json)"]
+            ] as const).map(([format, label]) => (
+              <button
+                key={format}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setExportMenuOpen(false);
+                  handleDownload(format);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {findOpen ? (
           <div className="tr-find">

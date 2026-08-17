@@ -1518,6 +1518,44 @@ textarea:focus {
   cursor: not-allowed;
 }
 
+.transcript-export-trigger {
+  min-width: 118px;
+}
+
+.transcript-export-menu {
+  position: absolute;
+  top: 56px;
+  right: 26px;
+  z-index: 24;
+  display: grid;
+  min-width: 166px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.transcript-export-menu button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 12px;
+}
+
+.transcript-export-menu button:hover,
+.transcript-export-menu button:focus-visible {
+  outline: none;
+  background: var(--surface-sunk);
+}
+
+.transcript-view-placeholder {
+  width: 184px;
+  height: 41.5px;
+}
+
 .tr-floating-tools .divider {
   width: 1px;
   background: rgba(20, 22, 28, 0.12);

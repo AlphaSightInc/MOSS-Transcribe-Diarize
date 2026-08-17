@@ -808,7 +808,7 @@ class LiveApiTest(unittest.TestCase):
                 0,
             )
 
-    def test_clean_stop_immediately_revokes_view_authority(self):
+    def test_clean_stop_preserves_read_only_terminal_view(self):
         from moss_transcribe_diarize.app.server import create_app
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -841,16 +841,19 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(capture_terminal.json()["capture_phase"], "stopped")
             self.assertEqual(capture_terminal.json()["status_line"], "Audio capture stopped.")
 
-            self.assertEqual(
-                viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
-                401,
-            )
+            terminal_view = viewer.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(terminal_view.status_code, 200)
+            self.assertEqual(terminal_view.json()["snapshot"]["session"]["status"], "closed")
             self.assertEqual(
                 viewer.get(f"/api/live/sessions/{session_id}/events").status_code,
-                401,
+                200,
+            )
+            self.assertEqual(
+                viewer.post(f"/api/live/sessions/{session_id}/stop", json={"deadline": 0.0}).status_code,
+                403,
             )
 
-    def test_failed_stop_revokes_the_view_without_stranding_capture_authority(self):
+    def test_failed_stop_preserves_read_only_view_and_capture_cleanup(self):
         from moss_transcribe_diarize.app.server import create_app
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -881,10 +884,16 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(stopped.json()["snapshot"]["session"]["status"], "failed")
             self.assertEqual(stopped.json()["snapshot"]["terminal_failure"]["kind"], "transport_pacing")
 
-            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
+            failed_view = viewer.get(f"/api/live/sessions/{session_id}/snapshot")
+            self.assertEqual(failed_view.status_code, 200)
+            self.assertEqual(failed_view.json()["snapshot"]["session"]["status"], "failed")
+            self.assertEqual(
+                viewer.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "viewer"}).status_code,
+                403,
+            )
             aborted = client.post(f"/api/live/sessions/{session_id}/abort", json={"reason": "cleanup"})
             self.assertEqual(aborted.status_code, 200)
-            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 401)
+            self.assertEqual(viewer.get(f"/api/live/sessions/{session_id}/snapshot").status_code, 200)
 
     def test_operator_view_revocation_is_loopback_only_and_keeps_capture_streaming(self):
         from fastapi.testclient import TestClient
@@ -2052,7 +2061,7 @@ class LiveApiTest(unittest.TestCase):
             )
 
     def test_terminal_helper_failure_keeps_capture_reason_readable_after_teardown(self):
-        """The capture owner may read the final server status, but the view grant still dies."""
+        """Capture owner and read-only viewer may read the final server status."""
         from moss_transcribe_diarize.app.server import create_app
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2081,7 +2090,7 @@ class LiveApiTest(unittest.TestCase):
 
             self.assertEqual(terminal.status_code, 200)
             self.assertEqual(capture_snapshot.status_code, 200)
-            self.assertEqual(viewer_snapshot.status_code, 401)
+            self.assertEqual(viewer_snapshot.status_code, 200)
             body = capture_snapshot.json()
             self.assertEqual(body["snapshot"]["session"]["status"], "aborted")
             self.assertEqual(body["capture_phase"], "failed")
@@ -2092,6 +2101,14 @@ class LiveApiTest(unittest.TestCase):
             rendered = json.dumps(body, sort_keys=True)
             self.assertNotIn("view_token", rendered)
             self.assertNotIn("device_token", rendered)
+            self.assertEqual(viewer_snapshot.json()["status_line"], body["status_line"])
+            self.assertEqual(
+                viewer.post(
+                    f"/api/live/sessions/{session_id}/abort",
+                    json={"reason": "viewer"},
+                ).status_code,
+                403,
+            )
 
     def test_terminal_capture_reason_survives_the_polling_clients_since_version_tick(self):
         """The portal polls `/snapshot?since_version=<version>`; the reason must not evaporate.

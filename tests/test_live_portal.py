@@ -391,25 +391,8 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertEqual(probe["storageWrites"], [])
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
-    def test_a_viewer_whose_grant_the_server_released_stops_instead_of_reconnecting_forever(self):
-        """The other half of "polled forever", and the half no snapshot contract can reach.
-
-        View authority is derived from the session lifecycle: `live_auth.py` grants a view
-        only while the session status is in `VIEWABLE_SESSION_STATUSES` ({active, closing}).
-        So the instant a session fails terminally, the viewer's very next `/snapshot` and
-        `/events` are 401 -- it never receives the body that would have told it why, no
-        matter what that body says.
-
-        The portal treated that 401 as a transient fault and retried it on a capped backoff
-        with no attempt limit. A meeting that died left a browser sitting on "Reconnecting:
-        HTTP 401" at 0.2 Hz for as long as the tab stayed open, never saying the meeting was
-        over. Both responses replayed below are real refusals off a real route.
-
-        This does not make the failure *reason* visible to a viewer -- that needs
-        `VIEWABLE_SESSION_STATUSES` to admit terminal statuses, in a file this ticket does
-        not own. It stops the endless poll and says the view ended, which is what the portal
-        can honestly know from a 401.
-        """
+    def test_a_terminal_viewer_reads_the_reason_and_stops_without_reconnecting(self):
+        """A scoped viewer receives one terminal snapshot and stops with the server reason."""
 
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -449,10 +432,12 @@ class LivePortalRouteTest(unittest.TestCase):
                 f"/api/live/sessions/{session_id}/snapshot?since_version={cursor}"
             )
             dead_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=0")
-            # The premise, stated as an assertion rather than assumed: the viewer cannot
-            # read the terminal snapshot at all.
-            self.assertEqual(dead_snapshot.status_code, 401)
-            self.assertEqual(dead_events.status_code, 401)
+            self.assertEqual(dead_snapshot.status_code, 200)
+            self.assertEqual(
+                dead_snapshot.json()["snapshot"]["session"]["status"],
+                "failed",
+            )
+            self.assertEqual(dead_events.status_code, 200)
 
             served = [
                 _served(healthy_snapshot),
@@ -465,10 +450,11 @@ class LivePortalRouteTest(unittest.TestCase):
 
         self.assertEqual(len(probe["requests"]), 4)
         self.assertEqual(probe["connectionState"], "disconnected")
+        self.assertEqual(probe["serverState"], "failed")
         self.assertEqual(
-            probe["activeTimersAtEnd"], 0, "the portal kept retrying a view the server released"
+            probe["activeTimersAtEnd"], 0, "the portal kept polling a terminal session"
         )
-        self.assertIn("View ended", probe["statusDetail"])
+        self.assertIn("failure code: backpressure_or_deadline", probe["statusDetail"])
         self.assertNotIn("Reconnecting", probe["statusDetail"])
 
     def test_the_portal_stops_on_exactly_the_statuses_the_server_calls_terminal(self):

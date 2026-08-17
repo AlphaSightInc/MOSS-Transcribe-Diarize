@@ -6,6 +6,7 @@ interface SegmentedControlOption<Value extends string> {
 interface SegmentedControlProps<Value extends string> {
   ariaLabel: string;
   className?: string;
+  disabled?: boolean;
   onChange: (value: Value) => void;
   options: readonly SegmentedControlOption<Value>[];
   value: Value;
@@ -15,6 +16,7 @@ interface SegmentedControlProps<Value extends string> {
 export function SegmentedControl<Value extends string>({
   ariaLabel,
   className,
+  disabled = false,
   onChange,
   options,
   value
@@ -30,8 +32,9 @@ export function SegmentedControl<Value extends string>({
             className={`seg-btn${selected ? " is-active" : ""}`}
             role="tab"
             aria-selected={selected}
+            disabled={disabled}
             onClick={() => {
-              if (!selected) {
+              if (!disabled && !selected) {
                 onChange(option.value);
               }
             }}

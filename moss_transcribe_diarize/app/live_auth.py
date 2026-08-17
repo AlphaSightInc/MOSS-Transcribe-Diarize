@@ -20,10 +20,12 @@ _SHARED_TOKEN_DEVICE_ID = "shared-token"
 CAPTURE_ACTIONS = frozenset({"create", "frame", "heartbeat", "snapshot", "events", "stop", "abort"})
 VIEW_ACTIONS = frozenset({"snapshot", "events", "stop", "abort"})
 
-# View authority lives exactly as long as the session it was bound to is still running.
-# The allowlist fails closed: any status the lifecycle owner adds later revokes the view
-# until it is admitted here deliberately.
+# Active view authority may control the session. Once terminal, the same scoped token
+# may read the immutable outcome but may not perform control actions. Both status sets
+# fail closed when the lifecycle owner adds a new state.
 VIEWABLE_SESSION_STATUSES = frozenset({"active", "closing"})
+TERMINAL_VIEWABLE_SESSION_STATUSES = frozenset({"closed", "failed", "aborted"})
+TERMINAL_VIEW_ACTIONS = frozenset({"snapshot", "events"})
 
 _ALLOWED_PEER_NETWORKS = tuple(
     ipaddress.ip_network(value)
@@ -317,7 +319,14 @@ class LiveAccessRegistry:
             )
         view = self._view_for_digest(digest, now=now)
         if view is not None:
-            if action not in VIEW_ACTIONS:
+            status = self._session_status(view.session_id) if self._session_status is not None else None
+            if status in VIEWABLE_SESSION_STATUSES:
+                allowed_actions = VIEW_ACTIONS
+            elif status in TERMINAL_VIEWABLE_SESSION_STATUSES:
+                allowed_actions = TERMINAL_VIEW_ACTIONS
+            else:
+                raise LiveAccessUnauthorized("invalid bearer authority.")
+            if action not in allowed_actions:
                 raise LiveAccessForbidden("view authority cannot perform this action.")
             if session_id != view.session_id:
                 raise LiveAccessForbidden("view authority is scoped to a different session.")
@@ -461,15 +470,8 @@ class LiveAccessRegistry:
                 continue
             if session.view_revoked or now >= session.view_expires_at:
                 return None
-            if not self._session_is_viewable(session_id):
-                return None
             return ViewPrincipal(session_id=session_id)
         return None
-
-    def _session_is_viewable(self, session_id: str) -> bool:
-        if self._session_status is None:
-            return False
-        return self._session_status(session_id) in VIEWABLE_SESSION_STATUSES
 
     def _load(self) -> None:
         if not self._state_path.exists():

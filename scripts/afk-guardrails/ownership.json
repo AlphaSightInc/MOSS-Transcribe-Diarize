@@ -177,9 +177,10 @@
   "y1-file-mode": {
     "title": "File mode through the new UI, via a client-side adapter over /api/jobs",
     "owns": [
-      "frontend/src/App.tsx",
-      "frontend/src/api/jobs.ts",
-      "frontend/src/components/FilePanel.tsx"
+      "frontend/src/App",
+      "frontend/src/api/jobs",
+      "frontend/src/components/FilePanel",
+      "ProjectResources/Frontend/"
     ],
     "reads": [
       "moss_transcribe_diarize/app/jobs.py",
@@ -195,8 +196,10 @@
   "y2-transcript-export": {
     "title": "Live transcript export to file (md, txt, json)",
     "owns": [
-      "frontend/src/lib/transcriptExport.ts",
-      "frontend/src/components/TranscriptPane.tsx"
+      "frontend/src/lib/transcriptExport",
+      "frontend/src/components/TranscriptPane",
+      "frontend/src/styles/index.css",
+      "ProjectResources/Frontend/"
     ],
     "reads": [
       "frontend/src/lib/transcriptModel.ts",
@@ -210,9 +213,11 @@
   "y3-session-reattach": {
     "title": "G6's two holes: reload mid-capture reattaches, and a viewer learns why its session died",
     "owns": [
-      "frontend/src/lib/persistence.ts",
-      "frontend/src/state/session.ts",
-      "frontend/src/components/ControlPanel.tsx",
+      "frontend/src/App",
+      "frontend/src/api/mossPoller",
+      "frontend/src/lib/persistence",
+      "frontend/src/state/session",
+      "frontend/src/components/ControlPanel",
       "moss_transcribe_diarize/app/live_auth.py"
     ],
     "reads": [

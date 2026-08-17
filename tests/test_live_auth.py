@@ -418,16 +418,37 @@ class LiveAccessRegistryTest(unittest.TestCase):
                         "session-1",
                     )
 
-            # None stands for a session the lifecycle owner no longer knows; the unknown
-            # status stands for anything added later that this registry has not admitted.
-            for status in ("closed", "aborted", "failed", None, "quiesced"):
+            for status in ("closed", "aborted", "failed"):
+                with self.subTest(status=status):
+                    lifecycle.statuses["session-1"] = status
+                    self.assertEqual(
+                        registry.authorize(
+                            LAN_TLS, view.view_token, "snapshot", "session-1", now=2.0
+                        ).principal.session_id,
+                        "session-1",
+                    )
+                    self.assertEqual(
+                        registry.authorize(
+                            LAN_TLS, view.view_token, "events", "session-1", now=2.0
+                        ).principal.session_id,
+                        "session-1",
+                    )
+                    with self.assertRaisesRegex(LiveAccessForbidden, "view authority"):
+                        registry.authorize(
+                            LAN_TLS, view.view_token, "stop", "session-1", now=2.0
+                        )
+
+            for status in (None, "quiesced"):
                 with self.subTest(status=status):
                     lifecycle.statuses["session-1"] = status
                     with self.assertRaisesRegex(LiveAccessUnauthorized, "invalid"):
-                        registry.authorize(LAN_TLS, view.view_token, "snapshot", "session-1", now=2.0)
-                    # Nothing released the session: ownership - and so the capture client's
-                    # ability to abort and clean up - is intact. The view died from the
-                    # lifecycle alone.
+                        registry.authorize(
+                            LAN_TLS, view.view_token, "snapshot", "session-1", now=2.0
+                        )
+
+            for status in ("failed", None):
+                lifecycle.statuses["session-1"] = status
+                with self.subTest(capture_status=status):
                     self.assertEqual(
                         registry.authorize(
                             LAN_TLS, capture.device_token, "abort", "session-1", now=2.0

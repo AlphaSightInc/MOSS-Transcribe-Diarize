@@ -295,9 +295,8 @@ LIVE_PORTAL_HTML = """<!doctype html>
         setText(
           nodes.statusDetail,
           `View ended (${(error && error.message) || "not authorised"}). The server no longer `
-            + `authorises this view. A live session's view is released as soon as the session `
-            + `stops being viewable, so this usually means the meeting is over; a view token `
-            + `also expires on its own. Connect again with a fresh token to watch a live session.`,
+            + `authorises this token. Terminal sessions remain readable, so this means the token `
+            + `expired or was revoked. Connect again with a fresh token to watch a live session.`,
         );
       }
 

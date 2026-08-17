@@ -778,6 +778,16 @@ export class CaptureClient {
     const failure = await this.frameFailure(response);
     if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) return "retry";
     if (response.status === 429) return "dropped";
+    if (response.status === 409 && failure.code === "frame_work_exceeds_queue_capacity") {
+      const error = new Error("capture frame exceeds server queue capacity");
+      this.reportTransportError("frame", error);
+      try {
+        await this.close();
+      } catch (closeError) {
+        this.reportTransportError("frame", closeError);
+      }
+      return "stopped";
+    }
     if (
       response.status === 409 &&
       failure.code === "v2_out_of_order_frame" &&

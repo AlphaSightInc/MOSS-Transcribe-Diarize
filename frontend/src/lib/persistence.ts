@@ -17,8 +17,14 @@ export const storageKeys = {
   controlPanelCollapsed: "lt:ui:controlPanelCollapsed",
   historyPanelCollapsed: "lt:ui:historyPanelCollapsed",
   sessionId: "lt:session:id",
+  sessionReattach: "lt:session:reattach",
   llmSettings: "lt:llm:settings"
 } as const;
+
+export interface SessionReattachRecord {
+  sessionId: string;
+  viewToken: string;
+}
 
 export function browserStorage(): StorageLike {
   if (typeof window === "undefined" || !window.localStorage) {
@@ -26,6 +32,13 @@ export function browserStorage(): StorageLike {
   }
 
   return window.localStorage;
+}
+
+export function sessionReattachStorage(): StorageLike {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return noopStorage;
+  }
+  return window.sessionStorage;
 }
 
 export function createMemoryStorage(seed: Record<string, string> = {}): StorageLike {
@@ -82,4 +95,31 @@ export function saveSessionId(storage: StorageLike, sessionId: string): void {
 
 export function clearSessionId(storage: StorageLike): void {
   storage.removeItem(storageKeys.sessionId);
+}
+
+export function loadSessionReattach(storage: StorageLike): SessionReattachRecord | null {
+  const value = readJson<unknown>(storage, storageKeys.sessionReattach);
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    typeof (value as SessionReattachRecord).sessionId !== "string" ||
+    typeof (value as SessionReattachRecord).viewToken !== "string" ||
+    !(value as SessionReattachRecord).sessionId.trim() ||
+    !(value as SessionReattachRecord).viewToken.trim()
+  ) {
+    storage.removeItem(storageKeys.sessionReattach);
+    return null;
+  }
+  return value as SessionReattachRecord;
+}
+
+export function saveSessionReattach(
+  storage: StorageLike,
+  value: SessionReattachRecord
+): void {
+  writeJson(storage, storageKeys.sessionReattach, value);
+}
+
+export function clearSessionReattach(storage: StorageLike): void {
+  storage.removeItem(storageKeys.sessionReattach);
 }

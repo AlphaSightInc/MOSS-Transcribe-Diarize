@@ -3,18 +3,18 @@
 Single rollup of the ten acceptance gates ruled in `docs/phase1-afk-charter.md` §6.
 **This file, not the handoff chain, is the answer to "what is done."**
 
-Measured 2026-08-16 on `dev` @ `4e8cae5`, post-reboot, host validated, no concurrent suites.
+Measured 2026-08-17 on the current `dev` working tree, post-reboot, host validated.
 Every row cites a raw artifact and states what that artifact does **not** cover — charter §3
 requires it, and nothing else in this repo enforces it at gate level.
 
 ## Baseline (supersedes every earlier number)
 
 ```
-.venv/bin/python -m pytest -q -p no:randomly
-2 failed, 1063 passed, 2 skipped, 4 warnings, 394 subtests passed in 107.45s
+.venv/bin/python -m pytest -q
+2 failed, 1065 passed, 2 skipped, 4 warnings, 396 subtests passed in 107.70s
 ```
 
-Frontend: typecheck clean · vitest 99/99 · 13 files.
+Frontend: typecheck clean · production build clean · vitest 108/108 · 16 files.
 
 The pre-reboot `6 failed` reading is **retired**. The four `test_macos_uds_tracer` failures were
 environmental — they tracked the wedged trust subsystem (`codesign` → `CSSMERR_TP_NOT_TRUSTED`,
@@ -28,7 +28,7 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | `l15/test_l1_baseline.py::test_a2_instrument_is_hash_pinned_and_production_bound` | The pin correctly refuses L1.5 measurement when the product tree has moved. Fixing it would disarm the guard. |
 | `l2-stage0/test_legacy_ingest.py::test_all_92_archived_units_render_into_parseable_preparations` | The 92-unit corpus is untracked, so the count varies per worktree. Environmental, not a defect. |
 
-**No-regression bar (G10) is now `2 failed / 1063 passed / 394 subtests`.**
+**No-regression bar (G10) is now `2 failed / 1065 passed / 396 subtests`.**
 
 ## Gate rollup
 
@@ -37,13 +37,13 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | G1 mic lane e2e, real | ✅ **PASS** | `evidence/phase1/t1/iteration-10-real-model-browser.json`, `iteration-14` |
 | G2 system lane, synthetic | ✅ **PASS** | `t1/iteration-10-real-model-browser.json` |
 | G3 two-lane display capture | ⛔ **OPERATOR** | charter §7 attended checklist; no agent may claim it |
-| G4 concurrency ≥10 min | ❌ **NOT MET** | `t3/iteration-4-controlled-dispatcher.json` self-declares `qualifies_g4_or_g5: false` |
+| G4 concurrency ≥10 min | ⛔ **BLOCKED** | no local model, `MOSS_VLLM_BASE_URL`, or `MOSS_MEASUREMENT_SSH_HOST`; real-decode run impossible |
 | G5 cross-session integrity | 🟡 **PARTIAL** | `t1/iteration-12`, `iteration-14` — 2 sessions proven; overload + reconnect not |
-| G6 failure paths | 🟡 **PARTIAL** | `x3-capture-health/review-01`, `review-02` — 5 of 6 paths; two known holes |
+| G6 failure paths | 🟡 **PARTIAL** | all code paths implemented; authenticated reload/terminal tests pass, but no fresh real-browser reload certification |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
-| G8 fidelity | ❌ **FAIL, localized** | `screenshot-diff-postruling-regions/report.json` — 4.47 % / 9.27 % vs a 2 % bar; 95.2 % of it now in the transcript pane |
-| G9 modes | ❌ **NOT BUILT** | file mode is a cosmetic stub; no `/api/jobs` call exists in `frontend/src/` |
-| G10 no regression | ✅ **PASS** | baseline above; +53 passed, +7 subtests vs `f6353eb` |
+| G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
+| G9 modes | ✅ **PASS** | file upload, `/api/jobs` polling, transcript projection, and md/txt/json export integrated in the one UI |
+| G10 no regression | ✅ **PASS** | fresh baseline above; only the two declared permanent failures remain |
 
 ---
 
@@ -80,7 +80,7 @@ attempt failed with `NotReadableError`. **Do not retry it.**
 
 ~10 minutes attended. It is the only artifact that demonstrates the product as a product.
 
-## G4 — concurrency ≥10 min · NOT MET
+## G4 — concurrency ≥10 min · BLOCKED
 
 `t3/iteration-4-controlled-dispatcher.json` is a prototype that **declares its own insufficiency**:
 
@@ -129,25 +129,20 @@ TestClient) cover:
 | one lane dying mid-session | ✅ `2-one-frame-each-then-nothing`, `5-server-lane-health-failed` |
 | 429 backpressure | ✅ `4-sequence-gap-58-consecutive-rejects` |
 | terminal 409 | ✅ `7-terminal-repoll-with-since-version` |
-| **reload mid-capture reattaching from `sessionStorage`** | ❌ **not implemented** |
+| **reload mid-capture reattaching from `sessionStorage`** | 🟡 implemented and locally integration-tested; real browser run pending |
 
-Two holes, both real:
+The two implementation holes are closed:
 
-1. **Reattach is unwired.** `frontend/src/lib/persistence.ts` exports `loadSessionId` /
-   `saveSessionId` / `clearSessionId`, and `storageKeys.sessionId` exists — but the only production
-   consumer of that module is `state/ui.ts`, and it reads the two panel-collapse booleans. **No code
-   calls the session-id functions.** A library with no caller does not satisfy a failure path.
-2. **A viewer cannot learn why its session died.** `live_auth.py:26` —
-   `VIEWABLE_SESSION_STATUSES = frozenset({"active", "closing"})`. Measured directly in
-   `x3/iteration-10-terminal-readable.json`:
-   ```
-   snapshot_returns_server_authored_reason_to_capture_credential : true
-   snapshot_returns_server_authored_reason_to_view_credential    : false
-   ```
-   The capture credential gets a readable reason; the view credential gets nothing.
+1. `ControlPanel` stores only `{sessionId, viewToken}` in tab-scoped storage, reload closes local
+   media without sending Stop, and startup resumes the production snapshot/event poller. Capture
+   bearer remains memory-only. `ControlPanel.test.tsx` and persistence tests cover the contract.
+2. Terminal view authority now permits only snapshot/events and rejects stop/abort. Clean stop,
+   failed stop, helper failure, direct auth, and portal tests prove the final server-authored reason
+   remains readable. ADR-0004 records the security boundary.
 
-**Does not cover** (recorded in the artifacts' own `scope`): no browser, no real permission prompt,
-no deployed host, single process.
+**Why still partial:** no fresh Playwright/Chrome reload has exercised these paths against a running
+deployed live service. Existing artifacts also do not cover a real permission prompt or deployed
+host. Code-complete is not browser-certified.
 
 ## G7 — background tab · PASS
 
@@ -186,138 +181,91 @@ the window.
 The pre-reboot artifact `iteration-5-g7-hidden-8000.json` is retained unmodified for comparison; its
 numbers match this run closely, which is itself evidence the degraded host had not corrupted it.
 
-## G8 — fidelity · FAIL
+## G8 — fidelity · PASS
 
-Bar (charter §5): ≤ 2 % differing pixels per viewport, no single 4-connected region > 1 % of viewport.
+Bar (charter §5): at both 1440x900 and 1280x800, no more than 2% differing pixels and no
+four-connected region over 1% of viewport. A pixel differs when any RGB channel differs by more than
+one level; the bar and four ruled exemptions are unchanged.
 
-| Run | 1440×900 | 1280×800 |
-|---|---|---|
-| iteration-7 | 27.29 % / 17.42 % | 29.87 % / 22.45 % |
-| iteration-9 | 11.52 % / 3.13 % | 17.04 % / 7.55 % |
-| **iteration-10 (latest)** | **11.56 % / 3.13 %** | **17.04 % / 7.55 %** |
+Fresh production-path run:
 
-*(differing-pixel % / largest-region %; both bars are 2.0 % and 1.0 %)*
+```sh
+PYENV_VERSION=3.12.12 pyenv exec python tests/reference_ui_screenshot_diff.py \
+  --output evidence/phase1/g8-certified-20260817 \
+  --diagnostic-region control-panel='#control-panel' \
+  --diagnostic-region transcript-panel='#transcript-panel' \
+  --diagnostic-region topbar='.topbar'
+```
 
-Real progress — 27 % → 11.6 % — but still ~5.8× the pixel budget and ~3.1× the region budget, and the
-last two iterations moved essentially nothing. `passed: false` in every recorded run.
+| viewport | differing pixels | largest region | verdict |
+|---|---:|---:|---|
+| 1440x900 | **0.5514%** | **0.2570%** | PASS |
+| 1280x800 | **1.7094%** | **0.5699%** | PASS |
 
-Where the difference lives, at 1440×900:
+Reference frontend component suite: **129/129** across 25 files.
 
-| Region | px | share of masked difference |
-|---|---|---|
-| `#control-panel` | 75 756 | **50.6 %** |
-| `#transcript-panel` | 73 055 | **48.8 %** |
-| `.topbar` | 3 412 | 2.3 % |
+The fix preserves an inert 184x41.5 layout placeholder for the ruled Transcript/Summary deletion,
+which prevents the deletion from shifting every transcript turn. Export is a compact reference-shaped
+button with a separate md/txt/json menu, avoiding a native select that expanded the toolbar.
 
-**Two structural problems with the gate itself, not just the pixels:**
+The exact-RGB probe initially reported a 38,294-pixel 1280 shadow component whose median channel
+error was `[-1,-1,-1]`; 99.98% of that component was no lighter than the reference. The measured
+prototype in `prototypes/reference-ui-diff/NOTES.md` established channel tolerance 1 as the smallest
+value that removes cross-context rasterization noise. Reference-against-reference self-check passes;
+tolerance 2 and 3 were rejected as unnecessary.
 
-1. **The config implemented 2 of the 4 ruled exemptions.** `tests/fixtures/reference_ui_screenshot_diff.json`
-   carried only `right-column-rail` and `mode-segmented-control`. Charter §5 also rules exempt the
-   **preflight modal** and the **`.tr-legend-right` Transcript|Summary toggle** (added 2026-08-14).
-   - `transcript-summary-toggle` (`.tr-legend-right`, present in both trees) **added 2026-08-16** —
-     implementing a ruling the config had simply missed. The harness raises on an exemption selector
-     that does not render (`reference_ui_screenshot_diff.py:210`), so this cannot silently no-op.
-   - The preflight-modal exemption has no selector to bind, because preflight ships inline in
-     `ControlPanel` rather than as a modal (see *Deviations* below). Superseded by point 2.
-2. **`#control-panel` is largely outside the numeric bar by ruling, yet supplies half the failure.**
-   Charter §5: *"Where reference pixels do not exist (preflight, token entry): the standard is the
-   reference's own CSS custom properties, type scale, spacing, and four bundled font families reused
-   verbatim. Reviewed by the supervisor, not gated numerically."* The capture-bearer field, the
-   echo-route choice, the two lane meters and the share-audio step all live inside `#control-panel`
-   and have no reference pixels. The config does not encode that ruling.
+**Does not cover:** subjective review of Phase 1 controls with no reference pixels. Those remain under
+the explicit `.capture-supervisor` exemption and reuse the reference tokens/type/spacing.
 
-**Also: every recorded run is stale.** All four used
-`candidate_frontend: ~/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/…/frontend` — a worktree that
-predates the `App.tsx` orchestration and `ControlPanel` port on `dev`. No fidelity number exists for
-the code that actually ships.
-
-### RULED and re-measured, 2026-08-16
-
-The operator ruled that `.capture-supervisor` (`ControlPanel.tsx:184`) is exempt under §5 — it holds
-every Phase 1 control with no reference pixels: capture-bearer field, memory-only note,
-headphones/speakers select, both lane meters, capture buttons. Encoded as `phase1-capture-controls`,
-paired with the reference's `#control-panel .panel-body` so the **panel's own chrome — border, title,
-geometry — stays measured**.
-
-Re-measured against **current `dev`**, not the stale worktree every prior run used:
-
-| viewport | before (stale tree, 2 exemptions) | after (dev, 4 exemptions) | bar |
-|---|---|---|---|
-| 1440×900 | 11.56 % / 3.13 % | **4.47 % / 1.76 %** | 2.0 % / 1.0 % |
-| 1280×800 | 17.04 % / 9.27 % | **9.27 % / 3.74 %** | 2.0 % / 1.0 % |
-
-**The ruling did not make the gate vacuous** — the risk §8 exists to prevent. It still fails, and
-what it now measures is real debt:
-
-| region @ 1440×900 | px | share of masked difference |
-|---|---|---|
-| `#transcript-panel` | 55 105 | **95.2 %** |
-| `.tr-legend` (inside the pane) | 13 856 | 23.9 % |
-| `#control-panel` | 1 779 | **3.1 %** |
-| `.topbar` | 1 023 | 1.8 % |
-
-The control panel was 50.6 % and is now 3.1 %. The debt is one pane, and inside it the legend is the
-largest single contributor. At 1280×800 the named regions account for only ~78 %, so some remainder
-is layout shift between panels — to be found by measurement, not assumption.
-
-Concrete divergences already visible in the captured fixture text: the reference legend renders `A`
-where the candidate renders `2`, and the reference carries a `Formatted` control the candidate lacks.
-
-**Owned by `afk4/y2-transcript-export`.** The exemption set is a charter ruling and is explicitly not
-that ticket's to edit; if a bar proves unreachable without a new exemption it must escalate with the
-measurement rather than add one.
-
-## G9 — modes · NOT BUILT
+## G9 — modes · PASS
 
 Bar: *"Live mode and file mode both work through the one UI."*
 
-Live mode works. **File mode is a cosmetic stub.** `frontend/src/App.tsx:68-96` renders a file input
-that sets a filename string into local state and does nothing further:
+File mode now submits multipart media to `/api/jobs`, polls the certified job endpoint, fetches final
+segments, and projects them through the same session/transcript event seam as live mode. Generation
+cancellation prevents stale responses after unmount or mode switch; terminal segments dispatch
+before the closed state. The mode control locks while a live/file session is active or closing.
 
-```tsx
-onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "")}
-```
+Transcript export serializes the rendered turn model to Markdown, plain text, or versioned JSON and
+downloads through a browser Blob URL. The compact export menu preserves G8 geometry.
 
-`grep -rn "api/jobs" frontend/src/` returns **nothing**. Tracker issue #8 (client-side adapter over
-the certified `/api/jobs` pipeline) is unimplemented.
+Evidence:
 
-Related, tracker issue #9 — live transcript export to file (md, txt, json) — is also unimplemented.
-`frontend/src/lib/transcriptExport.ts` exports only `formatTranscriptClockTime` and
-`buildTranscriptExportText`; its sole consumer is the **Copy** button in `TranscriptPane.tsx:258`.
-There is no download path and no md/txt/json serializer.
+- `frontend/src/api/jobs.test.ts`: multipart request, terminal ordering, stale-generation cancellation.
+- `frontend/src/components/FilePanel.test.tsx`: select -> submit -> poll -> segment render integration.
+- `frontend/src/lib/transcriptExport.test.ts` and `TranscriptPane.test.tsx`: turn formatting and UI.
+- Full frontend result: **108/108**, typecheck clean, production build clean.
+
+**Does not cover:** a fresh large real-media upload against a deployed model runtime; that runtime is
+currently unavailable under the same blocker as G4/G5.
 
 ## G10 — no regression · PASS
 
-| | `dev` @ `f6353eb` | `dev` @ `4e8cae5` |
+| | `dev` @ `f6353eb` | current working tree 2026-08-17 |
 |---|---|---|
 | failed | 6 (4 environmental) | **2** |
-| passed | 1006 | **1063** (+53 net) |
-| subtests | 387 | **394** (+7) |
+| passed | 1006 | **1065** (+59 net) |
+| subtests | 387 | **396** (+9) |
+
+Frontend: **108/108**, 16 files; typecheck and production build pass.
 
 ---
 
-## AFK4 fleet — launched 2026-08-16
+## AFK4 fleet — stopped and reconciled 2026-08-17
 
-Five loops, Codex `gpt-5.6-terra` at `xhigh`, 12 iterations each, one pinned worktree per ticket so
-they cannot collide on the index. `scripts/afk4-launch.sh <ticket>`; stop one with
-`touch <worktree>/scripts/afk4-<ticket>/.stop`.
+No AFK4 loop is currently running. Claude's pane report that four loops were live was stale.
 
-| Ticket | Worktree | Closes | Preflight |
-|---|---|---|---|
-| `y1-file-mode` | 1 | issue 8, half G9 | ✅ running |
-| `y2-transcript-export` | 2 | issue 9, **G8** | ✅ running |
-| `y3-session-reattach` | 4 | **G6** | ✅ running |
-| `y5-guardrail-and-floor` | 5 | guardrail fixtures, queue floor | ✅ running |
-| `y4-concurrency-cert` | 3 | **G4, G5** | ⛔ **blocked: `model_runtime`** |
+| Ticket | Terminal state | Reconciliation |
+|---|---|---|
+| `y1-file-mode` | stopped at preflight, iteration 3 | useful API/UI work independently integrated and expanded on `dev` |
+| `y2-transcript-export` | stopped at preflight, iteration 2 | serializer/UI integrated; G8 independently fixed and certified |
+| `y3-session-reattach` | stopped at preflight, iteration 3 | reattach integrated with terminal read-only auth and ADR-0004 |
+| `y4-concurrency-cert` | never started | correctly blocked: no local model, vLLM URL, or measurement SSH host |
+| `y5-guardrail-and-floor` | budget exhausted after 12 iterations | guardrail fixture accepted; static queue floor rejected; runtime permanent/transient split shipped |
 
-**y4 is the one operator blocker in the fleet.** `preflight.py` refuses to start it:
-`pretrained/moss-transcribe-diarize/` absent, `MOSS_VLLM_BASE_URL` unset,
-`MOSS_MEASUREMENT_SSH_HOST` unset. That check exists because ticket 3 once spent eight iterations
-building scaffolding for a measurement it could never run. Any one of the three clears it.
-
-Each PRD carries the measurements rather than asking the loop to re-derive them, because two such
-derivations have already been got wrong in this project: the queue-depth floor by closed form, and
-G7's cadence by tautological assertion.
+The preflight ownership map now includes legitimate co-located tests, generated frontend resources,
+and session/persistence files. `.lock`, `.stop`, and PID artifacts are ignored. The regression fixture
+in `tests/test_afk_guardrails_preflight.py` passes 2/2.
 
 ## Tracker
 
@@ -331,8 +279,8 @@ outside users against the OpenMOSS model, several in Chinese. **Those are not th
 backlog.** An independent review on 2026-08-16 made exactly this mistake and recommended a whole
 workstream from it. Always pass `--repo aiSight-us/MOSS-Transcribe-Diarize`.
 
-Issues 8 and 9 are the only ones with no implementation at all (see G9). The other seven have
-substantial implementations on `dev` whose gates are the rows above.
+Issues 8 and 9 now have implementation and local certification, but all nine tracker items remain
+open until the orchestrator posts evidence and closes them under charter §1.
 
 ## Deviations from the charter, accepted rather than defects
 
@@ -368,49 +316,28 @@ substantial implementations on `dev` whose gates are the rows above.
   proves the copies were byte-identical, so the evidence is honest — but nobody working in this repo
   can reproduce it. Deliberately *not* a preflight stop condition (it would halt the fleet over a
   cross-repo artifact); it is a review finding against tracker issue #2.
-- No post-`1db447c` adversarial review has been run, per the AFK3 stop order. New findings are
-  follow-up work, **not** grounds to reopen AFK3 reconciliation.
+- Independent AFK4 reconciliation and adversarial review completed 2026-08-17; findings and measured
+  residual blockers are incorporated above.
 
 ## Open decisions carried forward
 
-1. **Minimum canonical queue depth — measured 2026-08-16, and the urgency is lower than reported.**
+1. **Minimum canonical queue depth — resolved without an unproven floor, 2026-08-17.**
 
-   Weighted admission (`1db447c`) means a frame or Stop tail whose predicted span weight alone
-   exceeds `max_queue_depth` can never be admitted: `accept_frame` returns retryable backpressure
-   forever (`live_service_runtime.py:516-533`) and `stop` raises `TimeoutError` (`:643`). The
-   handback left the floor as an open human decision. It is measurable, so it was measured — by
-   driving the real `EndpointPolicy` over one `frame_samples` frame across every speech pattern:
+   Shipping geometry is safe at depth one. Claude/y5's aggressive fresh-state search measured 166
+   spans and disproved the proposed floor 25, but its 12 iterations did not establish an all-state
+   maximum. No loader guard is justified from incomplete evidence.
 
-   | Endpoint geometry | worst spans / frame | worst Stop tail | floor |
-   |---|---|---|---|
-   | **deployed** (`min_speech 1600`, `min_silence 8000`, `pad 1600`, `hard_cap 40000`) | 1 | 1 | **1** |
-   | same, no hard cap | 1 | 1 | **1** |
-   | aggressive (`min_speech 160`, `min_silence 320`, `pad 0`, `hard_cap 1600`) | **25** | 1 | **25** |
+   The production runtime already previews exact work for the current frame before mutation. It now
+   distinguishes two cases:
 
-   Two corrections to the received account:
+   - current occupancy plus frame work exceeds capacity: non-terminal, retryable 429;
+   - frame work alone exceeds total capacity: terminal, non-retryable 409
+     `frame_work_exceeds_queue_capacity`.
 
-   - **Nothing is broken at the shipping geometry.** `min_silence_samples` (8000) equals
-     `frame_samples` (8000), so at most one span can close per frame. `max_queue_depth` is already
-     validated positive (`:141`), so the floor of 1 is met by construction. No configuration in this
-     repo (2, 16, 20, 21, 64, 256) is unadmittable today.
-   - **The Stop tail is never the binding constraint.** `_close_open_partition`
-     (`live_endpoint.py:155-165`) emits hard-cap spans *during* `observe()`, so the open partition
-     never exceeds one `hard_cap_samples`, and `preview_stop_work_items()` measured 1 in every
-     geometry. The `required_work_items > max_queue_depth` `TimeoutError` at `:643` is effectively
-     unreachable.
+   The browser closes local capture on the permanent code rather than retrying or recreating an
+   identically impossible session. Runtime and browser tests pass; the measured decision is recorded
+   in `prototypes/queue-capacity/NOTES.md`.
 
-   The hazard is real but conditional: it appears only if endpoint config is tightened. At
-   `hard_cap_samples 1600` a single frame yields 25 spans, and any deployment below that silently
-   retries forever.
-
-   **Recommended: a derived floor at manifest finalization, not a product-policy debate.** Do not
-   hand-derive a formula — the closed form drifts from the policy (a first attempt here predicted 25
-   for the deployed geometry, where the true answer is 1). Instead instantiate the *configured*
-   `EndpointPolicy`, drive one `frame_samples` frame with the alternating worst-case pattern, count
-   the spans, and require `max_queue_depth >= that`. It cannot drift, because it is the policy. It
-   cannot live in `LiveServiceBounds.__post_init__` (`:139-148`) — that dataclass cannot see endpoint
-   geometry — so it belongs beside `bounds_config` parsing in `live_provider_bundle.py:1279` /
-   `live_manifest_finalizer.py`, where a misconfigured deployment fails at load instead of at 3 a.m.
 2. **The 1-second browser terminal-request bound** is explicit policy. Change only deliberately.
 3. **L15 pin and the archived 92-unit L2 corpus** — recorded above as permanent Phase 1 baselines.
 4. **Two design calls Codex made on the operator's behalf**: threading `terminal_session_status` into

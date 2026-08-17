@@ -5,6 +5,7 @@
   ],
   "max_different_pixel_percent": 2.0,
   "max_largest_region_percent": 1.0,
+  "pixel_channel_tolerance": 1,
   "connectivity": 4,
   "exemptions": [
     {
