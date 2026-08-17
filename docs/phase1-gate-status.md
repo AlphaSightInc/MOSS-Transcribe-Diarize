@@ -41,7 +41,7 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | G5 cross-session integrity | 🟡 **PARTIAL** | `t1/iteration-12`, `iteration-14` — 2 sessions proven; overload + reconnect not |
 | G6 failure paths | 🟡 **PARTIAL** | `x3-capture-health/review-01`, `review-02` — 5 of 6 paths; two known holes |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
-| G8 fidelity | ❌ **FAIL** | `r1-reference-ui/screenshot-diff-iteration-10-blocked/report.json` — 11.56 % / 17.04 % vs a 2 % bar |
+| G8 fidelity | ❌ **FAIL, localized** | `screenshot-diff-postruling-regions/report.json` — 4.47 % / 9.27 % vs a 2 % bar; 95.2 % of it now in the transcript pane |
 | G9 modes | ❌ **NOT BUILT** | file mode is a cosmetic stub; no `/api/jobs` call exists in `frontend/src/` |
 | G10 no regression | ✅ **PASS** | baseline above; +53 passed, +7 subtests vs `f6353eb` |
 
@@ -231,18 +231,41 @@ Where the difference lives, at 1440×900:
 predates the `App.tsx` orchestration and `ControlPanel` port on `dev`. No fidelity number exists for
 the code that actually ships.
 
-**Open decision — not taken unilaterally.** Every Phase 1 control without reference pixels sits
-inside one wrapper, `.capture-supervisor` (`ControlPanel.tsx:184`): capture-bearer field, the
-memory-only note, the headphones/speakers select, both lane meters, and the capture buttons. Exempting
-that one selector would be the faithful reading of §5 — but it masks roughly half of the remaining
-difference and could turn a failing gate into a passing one. Charter §8 forbids weakening a test to
-make a gate pass, so this is the operator's call, not an agent's. **It is a ruling to confirm, not a
-measurement to take.**
+### RULED and re-measured, 2026-08-16
 
-**To close, in order:** confirm (or refuse) the `.capture-supervisor` exemption → re-measure against
-`dev` rather than the stale worktree → then treat whatever remains in `#transcript-panel` as the real
-fidelity debt. Charter §5 is explicit that the transcript-pane exemption is deliberately narrow: it
-covers the toggle's own box and nothing else in the pane.
+The operator ruled that `.capture-supervisor` (`ControlPanel.tsx:184`) is exempt under §5 — it holds
+every Phase 1 control with no reference pixels: capture-bearer field, memory-only note,
+headphones/speakers select, both lane meters, capture buttons. Encoded as `phase1-capture-controls`,
+paired with the reference's `#control-panel .panel-body` so the **panel's own chrome — border, title,
+geometry — stays measured**.
+
+Re-measured against **current `dev`**, not the stale worktree every prior run used:
+
+| viewport | before (stale tree, 2 exemptions) | after (dev, 4 exemptions) | bar |
+|---|---|---|---|
+| 1440×900 | 11.56 % / 3.13 % | **4.47 % / 1.76 %** | 2.0 % / 1.0 % |
+| 1280×800 | 17.04 % / 9.27 % | **9.27 % / 3.74 %** | 2.0 % / 1.0 % |
+
+**The ruling did not make the gate vacuous** — the risk §8 exists to prevent. It still fails, and
+what it now measures is real debt:
+
+| region @ 1440×900 | px | share of masked difference |
+|---|---|---|
+| `#transcript-panel` | 55 105 | **95.2 %** |
+| `.tr-legend` (inside the pane) | 13 856 | 23.9 % |
+| `#control-panel` | 1 779 | **3.1 %** |
+| `.topbar` | 1 023 | 1.8 % |
+
+The control panel was 50.6 % and is now 3.1 %. The debt is one pane, and inside it the legend is the
+largest single contributor. At 1280×800 the named regions account for only ~78 %, so some remainder
+is layout shift between panels — to be found by measurement, not assumption.
+
+Concrete divergences already visible in the captured fixture text: the reference legend renders `A`
+where the candidate renders `2`, and the reference carries a `Formatted` control the candidate lacks.
+
+**Owned by `afk4/y2-transcript-export`.** The exemption set is a charter ruling and is explicitly not
+that ticket's to edit; if a bar proves unreachable without a new exemption it must escalate with the
+measurement rather than add one.
 
 ## G9 — modes · NOT BUILT
 
@@ -273,10 +296,40 @@ There is no download path and no md/txt/json serializer.
 
 ---
 
+## AFK4 fleet — launched 2026-08-16
+
+Five loops, Codex `gpt-5.6-terra` at `xhigh`, 12 iterations each, one pinned worktree per ticket so
+they cannot collide on the index. `scripts/afk4-launch.sh <ticket>`; stop one with
+`touch <worktree>/scripts/afk4-<ticket>/.stop`.
+
+| Ticket | Worktree | Closes | Preflight |
+|---|---|---|---|
+| `y1-file-mode` | 1 | issue 8, half G9 | ✅ running |
+| `y2-transcript-export` | 2 | issue 9, **G8** | ✅ running |
+| `y3-session-reattach` | 4 | **G6** | ✅ running |
+| `y5-guardrail-and-floor` | 5 | guardrail fixtures, queue floor | ✅ running |
+| `y4-concurrency-cert` | 3 | **G4, G5** | ⛔ **blocked: `model_runtime`** |
+
+**y4 is the one operator blocker in the fleet.** `preflight.py` refuses to start it:
+`pretrained/moss-transcribe-diarize/` absent, `MOSS_VLLM_BASE_URL` unset,
+`MOSS_MEASUREMENT_SSH_HOST` unset. That check exists because ticket 3 once spent eight iterations
+building scaffolding for a measurement it could never run. Any one of the three clears it.
+
+Each PRD carries the measurements rather than asking the loop to re-derive them, because two such
+derivations have already been got wrong in this project: the queue-depth floor by closed form, and
+G7's cadence by tautological assertion.
+
 ## Tracker
 
 All **9** implementation issues on `github.com/aiSight-us/MOSS-Transcribe-Diarize` remain **open**.
 Per charter §1 an agent may not close them — comment evidence; the orchestrator closes.
+
+**Note on which tracker.** `gh repo set-default` here resolves to the **upstream**
+`OpenMOSS/MOSS-Transcribe-Diarize`, because this repo is a fork. A bare `gh issue list` therefore
+returns the upstream open-source project's community issues (#21, #26, #34, #35, #36 …) — filed by
+outside users against the OpenMOSS model, several in Chinese. **Those are not this project's
+backlog.** An independent review on 2026-08-16 made exactly this mistake and recommended a whole
+workstream from it. Always pass `--repo aiSight-us/MOSS-Transcribe-Diarize`.
 
 Issues 8 and 9 are the only ones with no implementation at all (see G9). The other seven have
 substantial implementations on `dev` whose gates are the rows above.
