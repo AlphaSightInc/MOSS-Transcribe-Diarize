@@ -309,6 +309,8 @@
     "owns": [
       "moss_transcribe_diarize/",
       "frontend/src/",
+      "ProjectResources/Frontend/app.js",
+      "ProjectResources/Frontend/app.js.map",
       "prototypes/",
       "scripts/g3-attended-session.sh",
       "ops/",

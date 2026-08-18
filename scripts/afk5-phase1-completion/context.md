@@ -13,20 +13,16 @@ Living working memory. Update it every iteration so it matches reality. History 
   16 files at `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`.
 - Gates certified: G1, G2, G7, G8, G10. G6 has its local real-browser bar met (y6: 19/19 assertions,
   all 19 falsified against corrupted observations).
-- Job routes are guarded server-side and proven over real TLS. W1 source now keeps the bearer in
-  `App` memory, passes it to both panels, and sends it on file create/poll/segments requests; it
-  is not written to browser storage or a URL. Focused 11/11 and full frontend 115/115, typecheck,
-  and production build passed. **It is not yet product-landed:** the build changes tracked
-  `ProjectResources/Frontend/{app.js,app.js.map}`, but this ticket's preflight forbids those paths;
-  the generated bundle was reverted rather than bypass the guard.
-- W5 source now names every browser download
-  `transcript-<session_id>-<iso8601>.<ext>`: `TranscriptPane` reads the live `sessionId`, requires
-  it before enabling export, and supplies one click-time `Date` to the serializer. Focused export
-  and pane coverage is **8/8** and typecheck is clean. The contract is source-certified only: W1's
-  served-bundle blocker also prevents this filename behavior from reaching the current browser. The
-  re-runnable G9 audit pins the current served `app.js` by byte size and Git blob, then records both
-  current source and legacy bundle behavior at
-  `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`.
+- W1/W5 are now released in `ProjectResources/Frontend/{app.js,app.js.map}`. The app keeps the
+  bearer in `App` memory, passes it to both panels, and sends it on file create/poll/segments
+  requests; it is not written to browser storage or a URL. Export names are
+  `transcript-<session_id>-<iso8601>.<ext>`. Focused bearer/export coverage (11/11 and 8/8), full
+  frontend 115/115, and typecheck passed before the release; iteration 12 rebuilt the served bundle
+  (77,879 bytes, worktree blob `4ad30bf...a488cb`). The release verifier now fails on legacy upload
+  and static filename signatures, requires `bearerToken`, and regex-checks dynamic session/timestamp
+  interpolation in the generated bundle. It passes only when the generated artifact is committed at
+  `HEAD`. The scope is declared narrowly in `scripts/afk-guardrails/ownership.json` for these two
+  generated artifacts, following the operator-authorized release rather than bypassing preflight.
 - Export caveat lands in md, txt and json, only when a turn is non-final. 4 tests.
 - **W0 local launch PASS:** the recovered real CPU bundle is materialized at the host-local live-data
   path; its manifest was re-finalized for `e1741f904fee942a5eef34e0d40a4d4f848b363d`. Its production
@@ -76,19 +72,15 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W1/W5 release (now authorized)** first invert `verify_g9_served_bundle.py` so green means the
-   bearer and filename contracts are present, then rebuild the tracked served bundle and validate the
-   verifier against it. Keep the verifier and generated bundle in the same commit; do not weaken it to
-   accept the stale bundle.
-2. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
+1. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
    preflight with the exact server-authored remedy wording from `live_capture_status.py:41-44`, sourced
    once, and add a focused test.
-3. **W2 vLLM-only measurement prerequisite** bring the already-audited SSH tunnel launcher from `dev`
-   commit `affeaea` into this branch: it is not an ancestor and `scripts/moss-vllm-tunnel.sh` is absent
-   here. Then make a newly preregistered tunnel-backed runner record pre/post endpoint probes,
-   `/v1/audio/transcriptions` inference, and the mandatory transit/shared GPU limits. The CPU/HF contract
-   and iteration-10 result cannot be reused as gate evidence.
-4. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
+2. **W2 vLLM-only measurement prerequisites** first fix the runner so unexpected frames never persist
+   `pcm_base64` and aggregate diagnostic exemplars, then bring the already-audited SSH tunnel launcher
+   from `dev` commit `affeaea` into this branch. Only then run the preregistered tunnel-backed runner
+   with pre/post endpoint probes, `/v1/audio/transcriptions` inference, and the required transit/shared
+   GPU limits. The CPU/HF contract and iteration-10 result cannot be reused as gate evidence.
+3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.
 
@@ -100,9 +92,6 @@ Living working memory. Update it every iteration so it matches reality. History 
   operator ruling. Run G4/G5 against the tunnel.** Still unobtainable and not to be fabricated: GPU
   OOM/errors, GPU memory/utilisation, vLLM active/queued counts (the tunnel carries inference, not host
   telemetry; the host stays read-only).
-- W1/W5's generated-bundle release is now authorized by the operator, but the mandatory order is
-  verifier polarity first, then rebuild, then one commit. The current served bundle remains stale until
-  the released-bundle verifier passes; never bypass `afk-guardrails` to mask that fact.
 - The monitored tunnel endpoint remains live, but its launcher is absent from this worktree: `affeaea`
   added `scripts/moss-vllm-tunnel.sh` on `dev`, and `git merge-base --is-ancestor affeaea HEAD` returns
   false. Iteration 11 fails closed rather than silently selecting HF; W2 cannot be run from this checkout
@@ -123,9 +112,10 @@ Living working memory. Update it every iteration so it matches reality. History 
 - Iteration 6 closed W0 with a local service, descriptor fetch, and authenticated session lifecycle.
   **It is SERVICE-STARTUP evidence only — never cite it for inference; the local HF runner is off limits.**
   The vLLM endpoint is now live via the tunnel, so G4/G5 are unblocked.
-- G9's audited proof is now refutable: its literal command and unedited output make 12 assertions against
-  the HEAD-pinned 77,166-byte served bundle (blob `8121e270...f9c0d9c`). All pass, preserving the
-  source-certified-only conclusion rather than treating source behavior as released browser behavior.
+- Iteration 12 replaces G9's stale-bundle proof with a release gate: all legacy signatures must be absent,
+  bearer propagation must be present, and the generated bundle must dynamically interpolate session ID and
+  ISO-8601 export time. Its final `HEAD` pin is part of the same verification; no source-only result may
+  stand in for a released artifact.
 
 ## Deployed bounds == local bounds (monitor, 2026-08-18 16:55) — W2 is mostly unblocked
 
@@ -146,14 +136,12 @@ Iteration 9 re-froze the contract before measurement: screens are 1/2/4/8, the s
 soaks for 600 seconds, the final contract records why both safety ceilings are wide, and the harness
 records CPU-local decode RTF, per-session queue depth, and writer overhead.
 
-## `verify_g9_served_bundle.py` polarity flaw (monitor, 2026-08-18 16:55)
+## Resolved iteration 12 — G9 served-bundle release gate
 
-Re-ran it: 12/12 PASS, bundle pinned 77166 bytes / blob `8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c` matching
-HEAD, every needle printed. Falsifiable — debt cleared. **But** two assertions expect ABSENT
-(`bearerToken`, ``filename:`transcript-``), so **green means the defect still exists**. On release it goes FAIL
-and the tempting repair is flipping expectations, which deletes the check. Invert now: assert the bundle
-CONTAINS the new bearer and filename contracts → green = shipped, red = stale, and it becomes the W1/W5
-release gate.
+The old audit green-lit the stale bundle. The release verifier now makes the inverse claim: a stale bundle
+fails six behavior assertions; a rebuilt bundle must remove all four legacy paths, include bearer options,
+and dynamically form `transcript-<session_id>-<iso8601>.<ext>`. It also compares the served artifact to
+`HEAD`, so a local rebuild cannot be cited as released until committed.
 
 ## W2 threshold basis + run shape (monitor, 2026-08-18 17:05; resolved in iteration 9)
 
@@ -201,8 +189,7 @@ The issue is resolved: canonical records are constructed while holding only the 
 then serialized/enqueued after it. A dedicated writer owns one long-lived handle and performs its first
 durability sync after five seconds, then at five-second intervals and shutdown; it records enqueue/write/
 sync/pending-record overhead with every phase. The real-source fixture is 90 seconds and repeats during
-the selected 600-second soak, which the eventual verdict must state. Still open from 16:55: invert
-`verify_g9_served_bundle.py` polarity.
+the selected 600-second soak, which the eventual verdict must state.
 
 ## MODEL ENDPOINT IS LIVE — verified by the monitor, 2026-08-18 17:40
 
@@ -251,17 +238,6 @@ with good client copy rather than adding a new client-authored-copy violation. N
 is dropped. Keep the **exact** wording from `live_capture_status.py:41-44`, sourced from one place rather than
 forked, and add a test asserting it appears at preflight on a silent mic. Then #5 is closeable.
 
-## Bundle release — RULED. The order is mandatory.
-
-Charter T-09 already designs for a committed bundle ("the built bundle is committed, so the deploy host needs
-no Node toolchain"), so this is the intended workflow, not an exceptional release act.
-1. **Invert `verify_g9_served_bundle.py` first** — assert the new bearer and filename contracts are PRESENT,
-   so green = shipped, red = stale.
-2. Rebuild: `npm --prefix frontend run build`.
-3. Commit the inverted verifier and the rebuilt bundle **together**, so the verifier gates the artifact.
-
-**Do not flip expectations to make a stale bundle pass.**
-
 ## Do not commit the 60 MB run-state.json — fix the runner (monitor, 2026-08-18 17:45)
 
 `evidence/phase1/w2-local-concurrency/run-20260818T213600/run-state.json` = 59,992,997 bytes. Traced:
@@ -286,7 +262,33 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Priority order
-1. Invert `verify_g9_served_bundle.py` → rebuild bundle → commit together.
-2. Issue #5 criterion 7: preflight remedy string (exact wording, single-sourced) + test.
+1. Issue #5 criterion 7: preflight remedy string (exact wording, single-sourced) + test.
+2. Fix W2 unexpected-frame evidence recording before any vLLM run.
 3. Bring the reviewed tunnel launcher into this branch, then run W2 against
    `http://127.0.0.1:18000/v1`.
+
+## Resolved iteration 12 — Issue #8 `/studio` continuation documented
+
+The G9 ledger now records the ruled no-bridge design: file jobs write to the shared `runs_dir`; `/studio`
+lists and edits those same job routes. It cites existing app-route coverage and explicitly excludes a new
+browser-hop or real-model claim.
+
+## Verified this cycle, no action needed
+
+- **Fail-closed G3 helper (iteration 11):** behaviourally tested, not just read. No `MOSS_HF_MODEL` /
+  `--backend hf` left; unset endpoint → exit 1, bad endpoint → exit 1 ("probe returned '000'"), nothing starts,
+  nothing left on 7861. Only listener is the SSH tunnel on 18000.
+- **Inverted verifier (iteration 12):** legacy needles now expected-absent and ABSENT; `bearerToken`
+  expected-present and PRESENT; filename contract PASS via regex against the **minified** form (correct — a
+  literal would break on renaming); `served_bundle_matches_HEAD` FAILs only because the rebuild is uncommitted.
+  **#9's in-file caveat is now in the served bundle** (all four markers, previously 0). Frontend 115/115 after rebuild.
+
+## The 60 MB artifact: my note was 2 minutes late, it is already committed
+
+`run-state.json` (59,992,997 B) landed in `227e8ba` at 17:43:42. Still do both:
+(a) **fix the runner** before the vLLM gate run (no `pcm_base64` in results; aggregate
+`unexpected_frame_results` by `(http_status, error_code, lane)` with ~3 exemplars; keep predicate-bearing arrays);
+(b) **trim the committed artifact in a new commit** — your own artifact, so in scope — preserving every array the
+verdict's predicates used, and recording the original sha256 + byte size so the trim is auditable.
+**No history rewriting** (no amend/rebase/force-push). `dev` uses true merge commits, so the history question is
+the operator's call, not yours.

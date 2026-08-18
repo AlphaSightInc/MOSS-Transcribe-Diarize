@@ -53,7 +53,7 @@ is the protected l15 product-tree pin.
 | G6 failure paths | ✅ **PASS** | `y6-browser-reload/iteration-6-assertion-falsification.json` — six paths covered; real local Chrome reload/terminal flow certified |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
-| G9 modes | 🟡 **SOURCE-CERTIFIED, served criteria unmet** | source tests 115/115; the re-runnable `g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt` pins the served bundle and proves it retains legacy file upload and export names |
+| G9 modes | 🟡 **SOURCE-CERTIFIED, served release verified** | source tests 115/115; iteration 12's HEAD-pinned verifier proves the served bundle carries the bearer and session-timestamp export contracts |
 | G10 no regression | ✅ **PASS (certified `dev` baseline)** | `2 failed / 1066 passed / 2 skipped / 396 subtests`; the local worktree result is explicitly non-certifying above |
 
 ---
@@ -268,7 +268,7 @@ genuine solid block.
 number, is what makes it defensible — and because the first plausible-sounding explanation for it
 was wrong.
 
-## G9 — modes · SOURCE-CERTIFIED, served criteria unmet
+## G9 — modes · SOURCE-CERTIFIED, served release verified
 
 Bar: *"Live mode and file mode both work through the one UI."*
 
@@ -280,23 +280,33 @@ dispatch before the closed state. The mode control locks while a live/file sessi
 The tracked source also holds the bearer in `App` memory for both panels and supplies it to every file
 job request. It serializes transcript export to Markdown, plain text, or versioned JSON and names each
 download `transcript-<session_id>-<iso8601>.<ext>` from the live session at click time. The compact
-export menu preserves G8 geometry.
+export menu preserves G8 geometry. Iteration 12 rebuilt and committed that source as the served bundle;
+the release verifier requires the legacy upload/static-name signatures to be absent, bearer propagation
+to be present, and the minified bundle to dynamically interpolate both session ID and ISO-8601 time.
+
+### File upload remains editable in `/studio`
+
+No bridge was added. `FilePanel` posts to the existing `/api/jobs` pipeline; its `JobManager` writes each
+job under the server's configured `runs_dir/<job-id>`. The legacy `/studio` page lists those same jobs via
+`GET /api/jobs` and reads/updates their existing job and segment routes, so the uploaded file is already
+available for subtitle editing and burn-in there. This is the ruled T-07 design, not a second file store.
+`tests/test_app_api.py` covers create/list/segment-edit/download against one `runs_dir`, and its `/studio`
+route check establishes the page remains served. It does not establish a fresh browser hop or a real-model
+upload; no such bridge or new evidence claim is made.
 
 Evidence:
 
 - `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`: full source suite,
   **16 files / 115 tests**.
-- `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`: literal command and
-  unedited result from `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`. It pins the exact
-  served bundle by byte size (**77,166**) and Git blob
-  `8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c`, then makes 12 independently failing assertions: source
-  has the new bearer/filename contracts; the pinned bundle still has legacy `await ur(e)` upload and
-  fixed `transcript.{md,txt,json}` names, while its bearer and session-timestamp filename contracts are absent.
+- `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`: retained stale-artifact
+  proof. It pins the prior 77,166-byte bundle and explains why a source-only result could not close G9.
+- `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`: release gate. It pins the served `app.js`
+  to `HEAD`, rejects the legacy upload and three static export names, requires `bearerToken`, and matches
+  dynamic session/timestamp filename interpolation despite minifier-local variable renaming.
 
-**Does not cover:** the browser product delivering either new behavior: this loop may not update the
-tracked served bundle under `ProjectResources/Frontend/`. It also does not cover a fresh large
-real-media upload against a deployed model runtime; that runtime remains unavailable under the G4/G5
-blocker.
+**Does not cover:** a fresh large real-media browser upload against a deployed model runtime, attended
+capture, or G4/G5 performance. The release only establishes that the exact committed browser artifact
+contains the source-certified file-mode and export contracts.
 
 ## G10 — no regression · PASS on certified `dev` baseline
 

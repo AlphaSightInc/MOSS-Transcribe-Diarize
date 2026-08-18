@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,19 @@ def check(text: str, label: str, needle: str, expected: bool) -> bool:
         f" needle={needle!r}"
     )
     return result
+
+
+def check_regex(text: str, label: str, pattern: str) -> bool:
+    actual = re.search(pattern, text) is not None
+    print(
+        "ASSERT"
+        f" label={label}"
+        " expected=present"
+        f" actual={'present' if actual else 'absent'}"
+        f" result={'PASS' if actual else 'FAIL'}"
+        f" pattern={pattern!r}"
+    )
+    return actual
 
 
 def main() -> int:
@@ -66,12 +80,15 @@ def main() -> int:
         ),
     )
     bundle_checks = (
-        ("served_bundle_legacy_file_upload_without_options", "let t=await ur(e);", True),
-        ("served_bundle_legacy_export_md_filename", "filename:`transcript.md`", True),
-        ("served_bundle_legacy_export_txt_filename", "filename:`transcript.txt`", True),
-        ("served_bundle_legacy_export_json_filename", "filename:`transcript.json`", True),
-        ("served_bundle_new_file_bearer_options", "bearerToken", False),
-        ("served_bundle_new_export_identity", "filename:`transcript-", False),
+        ("served_bundle_legacy_file_upload_without_options", "let t=await ur(e);", False),
+        ("served_bundle_legacy_export_md_filename", "filename:`transcript.md`", False),
+        ("served_bundle_legacy_export_txt_filename", "filename:`transcript.txt`", False),
+        ("served_bundle_legacy_export_json_filename", "filename:`transcript.json`", False),
+        ("served_bundle_new_file_bearer_options", "bearerToken", True),
+    )
+    export_identity_pattern = (
+        r"transcript-\$\{[^}]+\.sessionId\}-"
+        r"\$\{[^}]+\.exportedAt\.toISOString\(\)\}\.\$\{[^}]+\}"
     )
 
     expected_blob = git("rev-parse", f"HEAD:{BUNDLE_PATH.as_posix()}")
@@ -91,6 +108,11 @@ def main() -> int:
         passed = check(source_text, label, needle, expected) and passed
     for label, needle, expected in bundle_checks:
         passed = check(bundle_text, label, needle, expected) and passed
+    passed = check_regex(
+        bundle_text,
+        "served_bundle_new_export_session_timestamp_filename",
+        export_identity_pattern,
+    ) and passed
     print(f"OVERALL={'PASS' if passed else 'FAIL'}")
     return 0 if passed else 1
 

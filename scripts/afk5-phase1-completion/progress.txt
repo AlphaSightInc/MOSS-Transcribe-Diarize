@@ -483,3 +483,60 @@ asserts tunnel guidance, no HF selection, and no certificate generation; learned
 model backend and cannot silently turn a tunnel blip into forbidden CPU/HF evidence; blocker=`affeaea`'s
 reviewed tunnel launcher is on `dev` but not an ancestor of this worktree, so its named path is absent here;
 next=invert and release the G9 served-bundle verifier/artifact, then bring in the launcher before W2.
+
+[monitor 2026-08-18 17:55] TWO VERIFICATIONS, BOTH PASS, AND ONE CARRY-OVER.
+
+1. ITERATION 11's FAIL-CLOSED FIX IS REAL — I tested the behaviour, not the diff. Zero `MOSS_HF_MODEL` or
+   `--backend hf` references remain in `scripts/g3-attended-session.sh`, and both guards fire:
+     manifest+lease set, MOSS_VLLM_BASE_URL unset -> exit 1 "MOSS_VLLM_BASE_URL is required; start
+       ./scripts/moss-vllm-tunnel.sh and retry."
+     bad endpoint (127.0.0.1:59999)              -> exit 1 "probe returned '000'; start ... and retry."
+   Nothing started in either case; nothing left listening on 7861. Silent substitution is now impossible.
+   Only listener on this Mac is the SSH tunnel on 18000, so the "MacStudio must not load the model"
+   constraint holds.
+
+2. ITERATION 12's BUNDLE WORK IS CORRECT AND THE POLARITY IS NOW RIGHT. I ran your inverted verifier:
+     legacy `filename:\`transcript.md/.txt/.json\`` and `let t=await ur(e);` -> expected absent, ABSENT, PASS
+     `bearerToken`                                                          -> expected present, PRESENT, PASS
+     filename contract                                                      -> PASS via regex against the
+       MINIFIED form, which is the right call — a literal needle would have broken on renaming
+     served_bundle_matches_HEAD -> FAIL, correctly, because the rebuild is not committed yet
+   And I checked the thing the verifier does not: **#9's in-file caveat is now IN the served bundle** —
+   "Provisional attribution", "provisional and may be revised", "retrospective sweep" and
+   `provisional_attribution_notice` all present, where all four were 0 before. Frontend suite after the
+   rebuild: 16 files / 115 tests pass. Commit the inverted verifier and the rebuilt bundle together and
+   `served_bundle_matches_HEAD` flips to PASS; green will then mean shipped.
+
+3. STILL OUTSTANDING — issue #8's LAST criterion is not the bundle. It reads: "Verified: a file uploaded
+   through the new UI is still reachable in `/studio` for subtitle editing, since it lands in the same runs
+   directory. Document this; build no bridge." I grepped `docs/*.md`, the gate ledger and the y7/x4 evidence
+   dirs: **no such documentation exists anywhere.** It is a documentation criterion, not code — one short
+   section stating that file-mode uploads land in the same `runs_dir` that `/studio` reads, with the evidence
+   that they do, and explicitly that no bridge was built. Cheap, and it is the difference between #8 closeable
+   and #8 open. Do it in the same iteration as the bundle commit if you can.
+
+4. THE 60 MB ARTIFACT WAS ALREADY COMMITTED BEFORE MY 17:45 NOTE — that timing is on me, not you.
+   `run-state.json` (59,992,997 bytes) landed in `227e8ba` at 17:43:42. Two consequences you should act on:
+     (a) FIX THE RUNNER before the vLLM run, exactly as at 17:45: never record `pcm_base64` in a result
+         (`pcm_len` + short sha prefix instead), aggregate `unexpected_frame_results` by
+         (http_status, error_code, lane) with ~3 verbatim exemplars per bucket, and KEEP the
+         predicate-bearing arrays. The vLLM run is gate evidence and must be reviewable.
+     (b) Trim that committed artifact in a NEW commit — it is your own artifact from this cycle, so trimming
+         it is in scope. Preserve every array the verdict's predicates were computed from, and record the
+         original file's sha256 and byte size in the artifact so the trim is auditable. **Do not rewrite
+         history** — no amend, no rebase, no force-push. `dev` merges with true merge commits, not squashes,
+         so I am flagging the history question to the operator separately; your job is only to stop the
+     working tree from carrying it.
+
+[iteration 12] target=W1/W5 served-bundle release plus Issue #8's existing `/studio` continuation
+documentation; files=`ProjectResources/Frontend/{app.js,app.js.map}`, `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`,
+`scripts/afk-guardrails/ownership.json`, `docs/phase1-gate-status.md`,
+`scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`/opt/homebrew/bin/npm --prefix frontend run build`
+=> PASS (77,879-byte `app.js`), then `.venv/bin/python -m py_compile ... && .venv/bin/python .../verify_g9_served_bundle.py`
+=> all 11 behavior assertions PASS (the HEAD pin correctly fails until this generated artifact is committed), and
+`python3 -m json.tool ... && git diff --check && python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion`
+=> PASS; evidence=`verify_g9_served_bundle.py` requires bearer propagation plus dynamic session/timestamp
+filename semantics in the minified bundle and rejects all four legacy signatures; the ledger documents the
+shared-`runs_dir` no-bridge `/studio` path; learned=green now means the generated browser artifact is shipped,
+not that a stale bundle proves source behavior; next=Issue #5's silent-mic preflight remedy and focused test,
+then repair W2 result recording before the tunnel-backed run.
