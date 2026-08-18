@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
+from moss_transcribe_diarize.app.live_provider_bundle import LiveProviderBundleConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,4 +119,166 @@ def test_preflight_accepts_a_relative_evidence_output_path(monkeypatch, tmp_path
 
     result = measurement.preflight()
 
-    assert result["run_owned_manifest_path"] == str(output / "live-provider-manifest.json")
+    assert result["evidence_manifest_path"] == str(output / "live-provider-manifest.json")
+
+
+def test_ephemeral_execution_manifest_materializes_relative_assets_before_production_preflight(tmp_path):
+    runner = _load_runner()
+    provisioned = tmp_path / "provisioned"
+    run_directory = tmp_path / "evidence-run"
+    identity = provisioned / "assets" / "identity.onnx"
+    golden = provisioned / "golden" / "input.wav"
+    identity.parent.mkdir(parents=True)
+    golden.parent.mkdir(parents=True)
+    identity.write_bytes(b"identity-state")
+    golden.write_bytes(b"golden-input")
+    run_directory.mkdir()
+
+    manifest = run_directory / "live-provider-manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source_revision": "0" * 40,
+                "provider_name": "test-provider",
+                "provider_revision": "test-revision",
+                "provider_license": "test-license",
+                "provider_provenance": "test provenance",
+                "packages": [],
+                "assets": [
+                    {
+                        "name": "identity-state",
+                        "path": "assets/identity.onnx",
+                        "byte_size": identity.stat().st_size,
+                        "sha256": hashlib.sha256(identity.read_bytes()).hexdigest(),
+                        "identity": "test-identity",
+                    }
+                ],
+                "runtime": {
+                    "backend": "webrtc-cpu",
+                    "device": "cpu",
+                    "intra_op_threads": 1,
+                    "inter_op_threads": 1,
+                },
+                "golden": {
+                    "input": {
+                        "name": "golden-input",
+                        "path": "golden/input.wav",
+                        "byte_size": golden.stat().st_size,
+                        "sha256": hashlib.sha256(golden.read_bytes()).hexdigest(),
+                        "identity": "test-golden",
+                    },
+                    "expected_output_identity": "test",
+                    "expected_output_sha256": "0" * 64,
+                },
+                "endpoint_config": {},
+                "identity_config": {},
+                "decoder_config": {},
+                "bounds_config": {},
+                "config_hashes": {},
+                "speech_provider": {},
+                "identity_provider": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    red = LiveProviderBundleConfig.from_manifest(manifest).preflight()
+    assert "asset is not preinstalled: identity-state" in red.failures
+    assert "asset is not preinstalled: golden-input" in red.failures
+
+    materialized = runner._materialize_ephemeral_execution_assets(
+        manifest_path=manifest,
+        source_base_dir=provisioned,
+    )
+
+    green = LiveProviderBundleConfig.from_manifest(manifest).preflight()
+    assert {record["name"] for record in materialized} == {"identity-state", "golden-input"}
+    assert not any("asset is not preinstalled" in failure for failure in green.failures)
+    assert (run_directory / "assets" / "identity.onnx").read_bytes() == identity.read_bytes()
+    assert (run_directory / "golden" / "input.wav").read_bytes() == golden.read_bytes()
+
+
+def test_finalize_keeps_execution_assets_out_of_evidence(monkeypatch, tmp_path):
+    runner = _load_runner()
+    provisioned = tmp_path / "provisioned"
+    provisioned.mkdir()
+    identity = provisioned / "identity.onnx"
+    golden = provisioned / "golden.wav"
+    identity.write_bytes(b"identity-state")
+    golden.write_bytes(b"golden-input")
+    provisional = provisioned / "provisional.json"
+    provisional.write_text(
+        json.dumps(
+            {
+                "identity_config": {"min_match_score": 0.35, "min_match_margin": 0.1},
+                "identity_provider": {"album_admission_seconds": 2.0, "birth_min_seconds": 1.0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "evidence"
+    execution_directory = tmp_path / "ephemeral-execution"
+    execution_directory.mkdir()
+    args = SimpleNamespace(output=output, provisional_manifest=provisional, port=18999)
+    measurement = runner.RemoteVllmMeasurement(args, {}, {})
+    measurement.head_revision = "0" * 40
+    measurement.deployed_descriptor = {
+        "sample_rate": 16000,
+        "frame_samples": 8000,
+        "bounds": {
+            "hard_cap_samples": 40000,
+            "max_events": 1000,
+            "max_frame_samples": 16000,
+            "max_identity_speakers": 16,
+            "max_queue_depth": 16,
+            "max_retained_samples": 960000,
+            "stop_drain_deadline_seconds": 5.0,
+        },
+    }
+
+    def fake_finalize(command, **_kwargs):
+        execution_manifest = Path(command[command.index("--output") + 1])
+        execution_manifest.write_text(
+            json.dumps(
+                {
+                    "source_revision": "0" * 40,
+                    "assets": [{"name": "identity-state", "path": "identity.onnx"}],
+                    "golden": {"input": {"name": "golden-input", "path": "golden.wav"}},
+                }
+            ),
+            encoding="utf-8",
+        )
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    class AvailablePreflight:
+        available = True
+
+        @staticmethod
+        def to_dict():
+            return {"available": True, "failures": []}
+
+    class AvailableBundleConfig:
+        @staticmethod
+        def from_manifest(_path):
+            return SimpleNamespace(preflight=AvailablePreflight)
+
+    import moss_transcribe_diarize.app.live_provider_bundle as live_provider_bundle
+
+    monkeypatch.setattr(runner.tempfile, "mkdtemp", lambda **_kwargs: str(execution_directory))
+    monkeypatch.setattr(runner.subprocess, "check_output", lambda *_args, **_kwargs: "0" * 40)
+    monkeypatch.setattr(runner.subprocess, "run", fake_finalize)
+    monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", AvailableBundleConfig)
+
+    measurement.finalize_manifest()
+
+    assert measurement.execution_manifest is not None
+    assert measurement.execution_manifest.parent == execution_directory
+    assert measurement.evidence_manifest.is_file()
+    assert not list(output.rglob("*.onnx"))
+    assert not list(output.rglob("*.wav"))
+    assert (execution_directory / "identity.onnx").is_file()
+    assert (execution_directory / "golden.wav").is_file()
+
+    measurement.cleanup()
+    assert not execution_directory.exists()

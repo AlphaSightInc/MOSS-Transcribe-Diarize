@@ -84,11 +84,12 @@ and requires a `canonical_processed` event plus a clean stop. The heartbeat cade
 quarter of the explicitly supplied helper lease. It records whether the manifest revision matches `HEAD`;
 a mismatch, or this one-span probe itself, never qualifies W2.
 
-The subsequent tunnel matrix must hash the exact remote-vLLM preregistration and fixture bytes, record
-the selected model plus canonical `/models` identities before and after the run, and write a new finalized
-manifest into its own evidence directory. It must not overwrite the shared local manifest. Its p95 includes
-SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors, and vLLM active/queued counts remain outside
-the available read-only surface.
+The subsequent tunnel matrix must hash the exact remote-vLLM preregistration and fixture bytes and record
+the selected model plus canonical `/models` identities before and after the run. It finalizes an ephemeral
+execution bundle outside the repository, materializes its relative assets there, and copies only the finalized
+manifest plus asset hashes into the evidence directory. It must not overwrite the shared local manifest or add
+model bytes to evidence. Its p95 includes SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors,
+and vLLM active/queued counts remain outside the available read-only surface.
 
 Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
 first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
@@ -105,7 +106,9 @@ process. Use a fresh output directory for the measurement after a successful pre
   --preflight
 ```
 
-Without `--preflight`, the runner writes a new final manifest under that output directory for its captured
-`HEAD`, starts one loopback production route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus
-the selected soak and overload/reconnect sequence, and probes `/health` and `/v1/models` again before issuing
-its verdict. Helper health posts run at one quarter of the explicit lease even while a remote request blocks.
+Without `--preflight`, the runner creates a new ephemeral finalized manifest for its captured `HEAD` outside
+the repository, materializes its declared relative assets only in that temporary execution directory, and
+copies the small manifest record into the requested output directory. It then starts one loopback production
+route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus the selected soak and overload/reconnect
+sequence, and probes `/health` and `/v1/models` again before issuing its verdict. Helper health posts run at
+one quarter of the explicit lease even while a remote request blocks.

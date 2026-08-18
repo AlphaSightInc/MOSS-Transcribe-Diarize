@@ -27,8 +27,18 @@ latency, GPU memory/utilisation/OOM, or vLLM active/queued counts. The 90-second
 `run_remote_vllm_tunnel_measurement.py` is a narrow W2 runner for the frozen contract. Its preflight
 rejects an unhealthy tunnel, a missing selected model, a malformed or credential-bearing endpoint URL, missing
 fixture/provisional inputs, and a malformed deployed descriptor before it starts any local route process. It
-captures `HEAD` once, finalizes only `OUTPUT/live-provider-manifest.json`, asks the production manifest reader
-to admit it, and refuses if the local descriptor does not carry that exact revision or deployed geometry.
+captures `HEAD` once, finalizes an ephemeral execution manifest outside the repository, materializes declared
+relative assets only beside that temporary manifest, and copies only the finalized manifest plus asset hashes
+to `OUTPUT`. It asks the production manifest reader to admit the execution bundle and refuses if the local
+descriptor does not carry that exact revision or deployed geometry. This avoids committing or retaining the
+79 MB ONNX asset in evidence while retaining the exact admitted manifest and hashes.
+
+Iteration 26 repaired the first live attempt's relative-asset locality failure. The focused command
+`.venv/bin/python -m pytest -q tests/test_remote_vllm_tunnel_measurement.py` passes **5/5**. Its new
+counterfactual calls the real `LiveProviderBundleConfig.preflight()` before materialization and observes both
+`identity-state` and `golden-input` absent; after materializing to a disposable execution directory it proves
+neither absence failure remains. The intentionally minimal test manifest remains otherwise inadmissible, so
+this is an asset-resolution proof only, not a replacement for the next real-bundle preflight or W2 matrix.
 
 The runner uses the existing production local-route/vLLM seam, but gives every session a background helper
 heartbeat at `lease / 4`, so a blocked remote transcription cannot make helper presence disappear. It records

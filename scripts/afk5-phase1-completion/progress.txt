@@ -904,3 +904,44 @@ sha `53de815d…c857504`, matrix `[1,2,4,8]` carried over, latency label naming 
 and `does_not_establish` correctly listing the isolated-GPU bound, GPU memory/utilisation, GPU OOM,
 vLLM active/queued counts and attended capture. Baseline holding: frontend 122/122, bundle gate PASS,
 tunnel `/v1/models` 200.
+
+[monitor 2026-08-18 19:53] ***STOP — READ THIS BEFORE YOU COMMIT ITERATION 26. "run-owned asset
+materialization" WILL RECREATE THE 60 MB BLOAT WE JUST SPENT TWO ITERATIONS REMOVING.***
+
+Your diagnosis is exactly right and I verified it independently: `bundle-preflight.json` says
+`available: false` with `["asset is not preinstalled: identity-state", "asset is not preinstalled:
+golden-input"]`, and the run-owned manifest carries the RELATIVE paths `voxceleb_resnet152_LM.onnx` and
+`golden.wav`, which production preflight resolves beside the manifest — i.e. inside the evidence dir, where
+neither exists. Failing closed before any session or inference was the correct behaviour. Good catch, good
+failure mode.
+
+But the repair you announced — materializing the assets into the run directory — copies a **79,158,228-byte
+ONNX plus the golden WAV into `evidence/` on every run**. That is 79 MB per matrix run, in a repo whose
+largest committed evidence file is 2.88 MB, and it is the same class of mistake as the `pcm_base64` blob we
+compacted from 59,992,997 bytes down to 288,007. Do not trade one bloat for another.
+
+DO THIS INSTEAD — the assets already live adjacent to a manifest, in the durable directory:
+    /Users/gao/.local/share/moss-transcribe-diarize/live/
+      voxceleb_resnet152_LM.onnx   79158228 bytes
+      golden.wav
+      live-provider-manifest.json
+  1. Re-finalize the manifest **in place in that durable directory** for the current HEAD
+     (`--source-revision $(git rev-parse HEAD)`). Charter §8 requires per-HEAD finalization and HEAD moves
+     every iteration, so this must happen per run — but it is idempotent and costs nothing.
+     The relative-path invariant then holds because the assets are genuinely adjacent.
+  2. Point the runner at that manifest path.
+  3. Copy ONLY the resulting manifest JSON (3,320 bytes) plus your existing `manifest-finalization.txt` into
+     the run's evidence directory as the record. That preserves full auditability — the manifest carries the
+     asset sha256s, so a reader can verify exactly which bytes were admitted — without duplicating them.
+  4. Keep the fail-closed test. It is the right test and it should stay: a manifest whose assets do not
+     resolve must refuse to start. Assert on the two failure strings above so it cannot pass vacuously.
+
+If you genuinely need a run-owned copy for isolation, materialize into a TEMP directory outside the repo and
+record its path plus the asset sha256s in the artifact — never into `evidence/`. But the durable directory is
+simpler, already correct, and already hash-verified.
+
+Housekeeping while you are in there: that durable directory has accumulated
+`live-provider-manifest.json.backup-20260818T204653Z` and `.backup-20260818T213135Z`. Harmless, but if your
+re-finalization writes a new backup every run they will pile up; prune or stop writing them.
+
+[iteration 26] target=W2 run-owned manifest relative-asset locality without evidence bloat; files=`prototypes/streaming-diarization/concurrency/{run_remote_vllm_tunnel_measurement.py,README.md,NOTES.md}`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/iteration-26-ephemeral-execution-manifest.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=focused runner tests **5 passed**, `py_compile` PASS, `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/iteration-26-ephemeral-execution-manifest.txt`; learned=the production manifest reader correctly treats relative declarations as manifest-adjacent, so the runner now finalizes and materializes an ephemeral bundle outside the repo, copies only the manifest/hash records to evidence, and removes the temporary bundle; the test first observes both required absence failures and then proves neither remains, while a separate test rejects `.onnx`/`.wav` under `--output`; next=run the unchanged frozen vLLM-only matrix from a fresh output directory (or preserve a fail-closed result), never a CPU/HF substitute.
