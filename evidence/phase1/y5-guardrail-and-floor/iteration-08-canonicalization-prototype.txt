@@ -1,0 +1,64 @@
+# Active-candidate state canonicalization — iteration 8
+
+Question: after `EndpointPolicy` has made speech active, can stale
+`_speech_candidate_start` / `_speech_candidate_samples` change future emitted
+spans or the Stop tail?
+
+Prototype command (run before changing the probe key):
+
+    PYTHONPATH=. .venv/bin/python - <<'PY'
+    from itertools import product
+    from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
+    config = EndpointPolicyConfig(min_speech_samples=4, min_silence_samples=3, hard_cap_samples=11)
+    base = EndpointPolicy(config)
+    base.observe(SpeechObservation(0, 4, True))
+    assert base.snapshot().speech_active
+    for pattern in product((False, True), repeat=7):
+        left = EndpointPolicy(config)
+        right = EndpointPolicy(config)
+        for target in (left, right):
+            target._accepted_until = base._accepted_until
+            target._open_start = base._open_start
+            target._speech_active = True
+            target._last_speech_end = base._last_speech_end
+        left._speech_candidate_start = base._speech_candidate_start
+        left._speech_candidate_samples = base._speech_candidate_samples
+        right._speech_candidate_start = -97
+        right._speech_candidate_samples = 101
+        left_out = []
+        right_out = []
+        for bit in pattern:
+            start = left.snapshot().accepted_until_sample
+            left_out.extend(left.observe(SpeechObservation(start, start + 1, bit)))
+            start = right.snapshot().accepted_until_sample
+            right_out.extend(right.observe(SpeechObservation(start, start + 1, bit)))
+        left_out.extend(left.stop())
+        right_out.extend(right.stop())
+        assert left_out == right_out, (pattern, left_out, right_out)
+    print({"active_candidate_variants": 2, "continuation_patterns": 128, "result": "identical spans including stop tail"})
+    PY
+
+Result:
+
+    {'active_candidate_variants': 2, 'continuation_patterns': 128, 'result': 'identical spans including stop tail'}
+
+Source-level reason: after activation, `_observe_speech` cannot enter its
+`if not self._speech_active` branch.  `_reset_speech_state` clears both
+candidate fields before any later activation can inspect them.  `stop()` does
+not read either field.  The probe therefore canonicalizes only those stale
+fields while speech is active; it retains candidate state while inactive and
+last-speech state while active.
+
+Post-change checks:
+
+- Fresh aggressive search: the production replay remains 166 spans / required
+  depth 166, while equivalent terminal states fall from 56 to 28:
+  `iteration-08-fresh-canonicalized.json`.
+- The completed 160-sample, hard-cap-160 reachable toy remains depth 1 and its
+  real `preview_frame_work_items` replay remains 1:
+  `iteration-08-reachable-toy.json`.
+- A controlled 15-second aggressive run ended by SIGTERM (exit 143) completed
+  VAD frame 3 and reached sample 64 of frame 4.  The exactly comparable
+  completed-frame boundary has 51,841 states, down from iteration 7's 90,161
+  (42.5% fewer).  This is progress only, not an all-state floor:
+  `iteration-08-reachable-progress-aggressive-15s.json`.

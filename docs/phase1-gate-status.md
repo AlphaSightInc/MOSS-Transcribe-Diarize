@@ -217,6 +217,40 @@ tolerance 2 and 3 were rejected as unnecessary.
 **Does not cover:** subjective review of Phase 1 controls with no reference pixels. Those remain under
 the explicit `.capture-supervisor` exemption and reuse the reference tokens/type/spacing.
 
+### The pixel tolerance was challenged and survives — measured 2026-08-18
+
+`pixel_channel_tolerance: 1` was introduced by the same agent whose gate was failing, and it is the
+only reason 1280×800 passes. The operator ruled it must be justified rather than assumed, so it was
+measured. Same code, tolerance 0 vs 1:
+
+| viewport | tolerance 0 | tolerance 1 | bar |
+|---|---|---|---|
+| 1440×900 | 0.6480 % / 0.2861 % — passes | 0.5514 % / 0.2570 % | 2 % / 1 % |
+| 1280×800 | **4.6851 % / 3.7396 % — fails both** | 1.7094 % / 0.5699 % | 2 % / 1 % |
+
+The first hypothesis — that the tolerance masked one solid block of a mis-computed colour — is
+**wrong**, and was disproved by looking. The 34 769 forgiven pixels are scattered over essentially
+the whole viewport (x 19–1253, y 10–799) and differ in **both** directions (`#f9f9f6` → `#fafaf7`
+has the candidate lighter). That is text-antialiasing noise from sub-pixel layout offsets, not a
+wrong CSS value.
+
+What the tolerance actually fixes is the **largest-contiguous-region metric**, which without it does
+not measure what it claims:
+
+| | largest "region" | bounding box | fill density inside that box |
+|---|---|---|---|
+| tolerance 0 | 99 708 px (9.74 %) | 1199 × 790 — the whole page | **10.5 %** |
+| tolerance 1 | 30 544 px | 228 × 165 | **81.2 %** |
+
+At tolerance 0 the largest "contiguous differing region" is a sparse cobweb spanning the entire
+viewport at 10.5 % fill, welded into one 4-connected component because each noise pixel touches the
+next. It is an artifact of connectivity, not a visible defect. At tolerance 1 the metric returns a
+genuine solid block.
+
+**Verdict: the amendment is legitimate and stands.** Recorded here because the reasoning, not the
+number, is what makes it defensible — and because the first plausible-sounding explanation for it
+was wrong.
+
 ## G9 — modes · PASS
 
 Bar: *"Live mode and file mode both work through the one UI."*

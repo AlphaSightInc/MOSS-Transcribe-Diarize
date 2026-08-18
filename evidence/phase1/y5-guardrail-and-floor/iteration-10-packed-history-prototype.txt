@@ -1,0 +1,26 @@
+Question: can the carry-aware reachable-state search replace each merged
+state's tuple history of (carried_samples, VAD decision) entries with a
+fixed-width packed integer without changing its retained endpoint states or
+replay histories?
+
+Command:
+  PYTHONPATH=. .venv/bin/python -m py_compile evidence/phase1/y5-guardrail-and-floor/prototype_packed_reachable_history.py
+  PYTHONPATH=. .venv/bin/python evidence/phase1/y5-guardrail-and-floor/prototype_packed_reachable_history.py
+
+Result: PASS
+
+{'case': 'existing_one_vad_frame_toy', 'history_horizon_vad_frames': 3, 'history_symbol_width_bits': 9, 'terminal_equivalent_states': 2, 'identical_policy_keys': True, 'identical_decoded_histories': True, 'tuple_state_map_retained_bytes': 992, 'packed_state_map_retained_bytes': 668, 'saved_bytes': 324, 'saved_percent': 32.66, 'tuple_seconds': 0.0454, 'packed_seconds': 0.045, 'tuple_transition_cache': {'cached_observe_transitions': 13199, 'cached_stop_tails': 0}, 'packed_transition_cache': {'cached_observe_transitions': 13199, 'cached_stop_tails': 0}}
+{'case': 'six_frame_small_horizon', 'history_horizon_vad_frames': 6, 'history_symbol_width_bits': 5, 'terminal_equivalent_states': 1840, 'identical_policy_keys': True, 'identical_decoded_histories': True, 'tuple_state_map_retained_bytes': 731312, 'packed_state_map_retained_bytes': 475648, 'saved_bytes': 255664, 'saved_percent': 34.96, 'tuple_seconds': 0.0556, 'packed_seconds': 0.0545, 'tuple_transition_cache': {'cached_observe_transitions': 3768, 'cached_stop_tails': 0}, 'packed_transition_cache': {'cached_observe_transitions': 3768, 'cached_stop_tails': 0}}
+
+Verdict:
+  The packed representation preserves every terminal production-policy key and
+  every decoded VAD split/decision history in both geometries. It retains
+  32.66% and 34.96% fewer direct Python state-map bytes, respectively, while
+  executing in the same measured time. This is a storage-only candidate: it
+  retains the existing sample-at-a-time transition and merge semantics.
+
+Boundary:
+  This proves the representation on the stated completed-boundary geometries,
+  not the aggressive 12-frame all-state bound. The production probe must run
+  its existing toy replay after absorbing the representation, before a bounded
+  aggressive search is used as progress evidence.

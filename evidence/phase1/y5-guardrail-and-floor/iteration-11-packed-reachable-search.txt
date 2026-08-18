@@ -1,0 +1,37 @@
+# Packed reachable-history probe — iteration 11
+
+Question: does the production reachable-state probe preserve its completed
+toy result and real `preview_frame_work_items` replay after replacing each
+merged state's VAD split/decision tuple history with a fixed-width packed
+integer?
+
+Validation:
+
+    PYTHONPATH=. .venv/bin/python -m py_compile evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py
+
+    PYTHONPATH=. .venv/bin/python evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py \
+      --frame-samples 160 --vad-frame-samples 160 \
+      --min-speech-samples 160 --min-silence-samples 320 --hard-cap-samples 160 \
+      --search-reachable-worst-case \
+      --reachable-progress-output evidence/phase1/y5-guardrail-and-floor/iteration-11-reachable-progress-toy.json \
+      --json-output evidence/phase1/y5-guardrail-and-floor/iteration-11-reachable-toy.json
+
+Result: PASS. The completed toy reports required queue depth 1 and its real
+`LiveCoordinator.preview_frame_work_items` replay returns 1.
+
+Comparable bounded frontier (the `perl` supervisor signals the child after 45
+seconds):
+
+    perl -e 'alarm 45; exec @ARGV' .venv/bin/python evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py \
+      --frame-samples 40000 --vad-frame-samples 160 \
+      --min-speech-samples 160 --min-silence-samples 320 --hard-cap-samples 1600 \
+      --search-reachable-worst-case \
+      --reachable-progress-output evidence/phase1/y5-guardrail-and-floor/iteration-11-reachable-progress-aggressive-45s.json \
+      --json-output evidence/phase1/y5-guardrail-and-floor/iteration-11-reachable-aggressive.json
+
+Result: no final result JSON. The atomically written snapshot completes 4 of
+12 VAD frames and reaches sample 48 of frame 5: 116,080 boundary states,
+139,120 decided states, 106,000 undecided states, and 390,144 cached observe
+transitions. It is bounded progress only: not an all-state floor, and not a
+reliable runtime comparison with iteration 9. The loader and deliberately RED
+queue-depth seam remain unchanged.

@@ -1,0 +1,30 @@
+Question: can the carry-aware search replace its sample-at-a-time reachability
+walk with direct enumeration of each VAD split point without losing the
+intermediate state merging that makes the toy geometry tractable?
+
+Temporary change (reverted before this artifact was committed):
+  _reachable_boundary_states enumerated each `carried_samples` split as one
+  carried-prefix transition plus one frame-completing suffix transition.
+
+Validation command:
+  env PYTHONPATH=. .venv/bin/python \
+    evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py \
+    --frame-samples 160 --vad-frame-samples 160 \
+    --min-speech-samples 160 --min-silence-samples 320 \
+    --hard-cap-samples 1600 --search-reachable-worst-case \
+    --json-output /tmp/iteration-06-reachable-toy.json
+
+Observed result:
+  The direct-split version did not finish the one-VAD-frame toy command or
+  create its JSON.  The first invocation was observed at 01:31 elapsed; an
+  accidental duplicate was at 00:44.  Both were our local probe processes and
+  were stopped with SIGTERM before any result was written.
+
+Verdict:
+  REJECTED and reverted.  The direct form is transition-equivalent, but it
+  delays equivalence merging until a VAD-frame boundary and therefore creates
+  the cross product of the current state set and all 160 split positions.  The
+  retained sample-at-a-time walk merges equivalent intermediate states after
+  each sample; its existing toy result is
+  iteration-05-reachable-toy.json.  A future reduction must preserve that
+  intermediate merge point or first record bounded state-count progress.

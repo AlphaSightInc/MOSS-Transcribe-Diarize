@@ -1,0 +1,17 @@
+{
+  "current_vad_frame": 4,
+  "current_vad_frame_samples": 64,
+  "history_horizon_vad_frames": 12,
+  "last_completed_vad_frames": 3,
+  "method": "sample-at-a-time reachable-state dynamic program",
+  "state_counts": {
+    "boundary": 51841,
+    "decided": 74465,
+    "undecided": 49761
+  },
+  "status": "in_progress",
+  "transition_cache": {
+    "cached_observe_transitions": 250128,
+    "cached_stop_tails": 0
+  }
+}

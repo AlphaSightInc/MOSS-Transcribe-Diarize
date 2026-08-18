@@ -1,0 +1,1021 @@
+{
+  "endpoint_config": {
+    "hard_cap_samples": 160,
+    "min_silence_samples": 320,
+    "min_speech_samples": 160,
+    "post_speech_padding_samples": 0,
+    "pre_speech_padding_samples": 0
+  },
+  "frame_samples": 160,
+  "patterns": [],
+  "question": "Does real WebRTC VAD observation granularity change one-frame queue demand?",
+  "reachable_worst_case_search": {
+    "maximum_frame_span_count": 1,
+    "maximum_stop_tail_count": 1,
+    "method": "exact reachable-state dynamic program over production EndpointPolicy semantics",
+    "reachability": {
+      "boundary_equivalent_states": 2,
+      "layers": [
+        {
+          "completed_vad_frames": 1,
+          "reachable_equivalent_states": 2
+        },
+        {
+          "completed_vad_frames": 2,
+          "reachable_equivalent_states": 2
+        },
+        {
+          "completed_vad_frames": 3,
+          "reachable_equivalent_states": 2
+        }
+      ],
+      "pre_frame_equivalent_states_by_carry": {
+        "0": 2,
+        "1": 2,
+        "10": 2,
+        "100": 2,
+        "101": 2,
+        "102": 2,
+        "103": 2,
+        "104": 2,
+        "105": 2,
+        "106": 2,
+        "107": 2,
+        "108": 2,
+        "109": 2,
+        "11": 2,
+        "110": 2,
+        "111": 2,
+        "112": 2,
+        "113": 2,
+        "114": 2,
+        "115": 2,
+        "116": 2,
+        "117": 2,
+        "118": 2,
+        "119": 2,
+        "12": 2,
+        "120": 2,
+        "121": 2,
+        "122": 2,
+        "123": 2,
+        "124": 2,
+        "125": 2,
+        "126": 2,
+        "127": 2,
+        "128": 2,
+        "129": 2,
+        "13": 2,
+        "130": 2,
+        "131": 2,
+        "132": 2,
+        "133": 2,
+        "134": 2,
+        "135": 2,
+        "136": 2,
+        "137": 2,
+        "138": 2,
+        "139": 2,
+        "14": 2,
+        "140": 2,
+        "141": 2,
+        "142": 2,
+        "143": 2,
+        "144": 2,
+        "145": 2,
+        "146": 2,
+        "147": 2,
+        "148": 2,
+        "149": 2,
+        "15": 2,
+        "150": 2,
+        "151": 2,
+        "152": 2,
+        "153": 2,
+        "154": 2,
+        "155": 2,
+        "156": 2,
+        "157": 2,
+        "158": 2,
+        "159": 2,
+        "16": 2,
+        "17": 2,
+        "18": 2,
+        "19": 2,
+        "2": 2,
+        "20": 2,
+        "21": 2,
+        "22": 2,
+        "23": 2,
+        "24": 2,
+        "25": 2,
+        "26": 2,
+        "27": 2,
+        "28": 2,
+        "29": 2,
+        "3": 2,
+        "30": 2,
+        "31": 2,
+        "32": 2,
+        "33": 2,
+        "34": 2,
+        "35": 2,
+        "36": 2,
+        "37": 2,
+        "38": 2,
+        "39": 2,
+        "4": 2,
+        "40": 2,
+        "41": 2,
+        "42": 2,
+        "43": 2,
+        "44": 2,
+        "45": 2,
+        "46": 2,
+        "47": 2,
+        "48": 2,
+        "49": 2,
+        "5": 2,
+        "50": 2,
+        "51": 2,
+        "52": 2,
+        "53": 2,
+        "54": 2,
+        "55": 2,
+        "56": 2,
+        "57": 2,
+        "58": 2,
+        "59": 2,
+        "6": 2,
+        "60": 2,
+        "61": 2,
+        "62": 2,
+        "63": 2,
+        "64": 2,
+        "65": 2,
+        "66": 2,
+        "67": 2,
+        "68": 2,
+        "69": 2,
+        "7": 2,
+        "70": 2,
+        "71": 2,
+        "72": 2,
+        "73": 2,
+        "74": 2,
+        "75": 2,
+        "76": 2,
+        "77": 2,
+        "78": 2,
+        "79": 2,
+        "8": 2,
+        "80": 2,
+        "81": 2,
+        "82": 2,
+        "83": 2,
+        "84": 2,
+        "85": 2,
+        "86": 2,
+        "87": 2,
+        "88": 2,
+        "89": 2,
+        "9": 2,
+        "90": 2,
+        "91": 2,
+        "92": 2,
+        "93": 2,
+        "94": 2,
+        "95": 2,
+        "96": 2,
+        "97": 2,
+        "98": 2,
+        "99": 2
+      }
+    },
+    "required_queue_depth": 1,
+    "target_layers": [
+      {
+        "initial_carried_samples": 0,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 1,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 2,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 3,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 4,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 5,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 6,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 7,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 8,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 9,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 10,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 11,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 12,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 13,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 14,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 15,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 16,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 17,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 18,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 19,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 20,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 21,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 22,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 23,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 24,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 25,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 26,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 27,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 28,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 29,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 30,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 31,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 32,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 33,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 34,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 35,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 36,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 37,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 38,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 39,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 40,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 41,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 42,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 43,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 44,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 45,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 46,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 47,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 48,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 49,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 50,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 51,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 52,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 53,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 54,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 55,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 56,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 57,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 58,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 59,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 60,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 61,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 62,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 63,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 64,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 65,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 66,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 67,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 68,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 69,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 70,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 71,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 72,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 73,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 74,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 75,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 76,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 77,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 78,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 79,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 80,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 81,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 82,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 83,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 84,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 85,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 86,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 87,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 88,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 89,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 90,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 91,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 92,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 93,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 94,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 95,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 96,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 97,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 98,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 99,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 100,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 101,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 102,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 103,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 104,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 105,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 106,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 107,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 108,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 109,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 110,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 111,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 112,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 113,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 114,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 115,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 116,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 117,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 118,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 119,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 120,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 121,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 122,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 123,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 124,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 125,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 126,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 127,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 128,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 129,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 130,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 131,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 132,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 133,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 134,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 135,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 136,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 137,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 138,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 139,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 140,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 141,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 142,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 143,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 144,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 145,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 146,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 147,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 148,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 149,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 150,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 151,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 152,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 153,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 154,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 155,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 156,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 157,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 158,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      },
+      {
+        "initial_carried_samples": 159,
+        "maximum_frame_spans": 1,
+        "terminal_equivalent_states": 2
+      }
+    ],
+    "witness": {
+      "history_frame_splits": [
+        {
+          "carried_samples": 159,
+          "new_vad_decision": false
+        },
+        {
+          "carried_samples": 159,
+          "new_vad_decision": false
+        },
+        {
+          "carried_samples": 159,
+          "new_vad_decision": false
+        }
+      ],
+      "history_vad_frames": 3,
+      "history_vad_pattern": "000",
+      "initial_carried_samples": 1,
+      "production_preview_frame_work_items": 1,
+      "target_vad_pattern": "0"
+    }
+  },
+  "vad_frame_samples": 160
+}

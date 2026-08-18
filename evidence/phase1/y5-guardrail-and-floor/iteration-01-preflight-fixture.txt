@@ -1,0 +1,11 @@
+Command:
+  pytest -q tests/test_afk_guardrails_preflight.py
+
+Result:
+  ..                                                                       [100%]
+  2 passed in 1.08s
+
+The fixture invokes the historical 4e8cae5 guardrail and the current guardrail
+against complete temporary repositories. The historic command returns 0; the
+current command returns 1 for the missing non-probe runner and unparseable
+Python runner. The current-tree check reports zero forbidden citations.

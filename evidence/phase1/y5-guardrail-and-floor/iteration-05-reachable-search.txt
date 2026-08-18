@@ -1,0 +1,55 @@
+Iteration 05 — reachable pre-frame state search
+
+Question
+========
+
+Can the queue-depth probe maximize a 40,000-sample client frame over every
+legitimate EndpointPolicy state and WebRTC VAD carry state, rather than only a
+fresh provider/policy pair?
+
+Change
+======
+
+`probe_queue_depth_floor.py --search-reachable-worst-case` now models a client
+split at every possible sample in a configured WebRTC VAD frame.  It keeps the
+previous VAD answer until the split completes, then applies the new answer,
+which matches `WebRtcSpeechProvider.observe()`.  Its transition cache
+materializes each unique relative state and executes the production
+`EndpointPolicy` for cache misses.  Its final witness reconstructs the history
+with the production WebRTC adapter and calls
+`LiveCoordinator.preview_frame_work_items()`.
+
+Validation
+==========
+
+    PYTHONPATH=. .venv/bin/python -m py_compile \
+      evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py
+
+PASS.
+
+    PYTHONPATH=. .venv/bin/python \
+      evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py \
+      --frame-samples 160 --vad-frame-samples 160 \
+      --min-speech-samples 160 --min-silence-samples 320 \
+      --hard-cap-samples 160 --search-reachable-worst-case \
+      --json-output evidence/phase1/y5-guardrail-and-floor/iteration-05-reachable-toy.json
+
+PASS.  The small one-VAD-frame geometry reaches required queue depth 1; its
+production `preview_frame_work_items` replay also returns 1.  Raw JSON is
+`iteration-05-reachable-toy.json`.
+
+    PYTHONPATH=. .venv/bin/python -c \
+      'import inspect; from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy; print(inspect.getfile(EndpointPolicy))'
+
+PASS.  The path printed was this worktree's
+`moss_transcribe_diarize/app/live_endpoint.py`, not the editable source repo.
+
+Unresolved boundary
+===================
+
+The aggressive 40,000-sample command was deliberately interrupted after three
+30-second measurement intervals while still constructing reachable boundary
+states.  It produced no JSON artifact and no queue-depth floor.  That is not a
+failed safety assertion and must not be read as a 166- or 25-item all-state
+result.  The next probe must add a bounded progress/state-count artifact or a
+provably equivalent dominance reduction before attempting a config-load guard.

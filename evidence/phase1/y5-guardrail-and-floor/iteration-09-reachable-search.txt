@@ -1,0 +1,25 @@
+# Bounded reachable-state search — iteration 9
+
+Question: does the iteration-8 canonicalized, sample-at-a-time search reach a
+useful further aggressive-geometry frontier without changing its transition or
+merge semantics?
+
+Command (a Python supervisor gave the child 45 seconds, then sent SIGTERM):
+
+    PYTHONPATH=. .venv/bin/python evidence/phase1/y5-guardrail-and-floor/probe_queue_depth_floor.py \
+      --frame-samples 40000 --vad-frame-samples 160 \
+      --min-speech-samples 160 --min-silence-samples 320 --hard-cap-samples 1600 \
+      --search-reachable-worst-case \
+      --reachable-progress-output evidence/phase1/y5-guardrail-and-floor/iteration-09-reachable-progress-aggressive-45s.json \
+      --json-output evidence/phase1/y5-guardrail-and-floor/iteration-09-reachable-aggressive.json
+
+Result: no final result JSON was written. The atomically written final
+progress snapshot reached VAD frame 5, sample 64, after completing 4 of the
+12-frame reachability horizon. It records 116,080 boundary states, 146,800
+decided states, 101,616 undecided states, and 403,728 cached production-policy
+observe transitions.
+
+Verdict: this is a materially further, bounded frontier than iteration 8's
+3-frame / 51,841-boundary-state snapshot, but it is not a completed all-state
+search and establishes no configuration-time queue-depth floor. Leave the
+bundle loader and the deliberately RED 166-depth seam unchanged.

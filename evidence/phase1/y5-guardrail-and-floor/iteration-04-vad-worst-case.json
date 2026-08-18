@@ -1,0 +1,4878 @@
+{
+  "endpoint_config": {
+    "hard_cap_samples": 1600,
+    "min_silence_samples": 320,
+    "min_speech_samples": 160,
+    "post_speech_padding_samples": 0,
+    "pre_speech_padding_samples": 0
+  },
+  "frame_samples": 40000,
+  "patterns": [],
+  "question": "Does real WebRTC VAD observation granularity change one-frame queue demand?",
+  "vad_frame_samples": 160,
+  "worst_case_search": {
+    "fresh_provider_observations": [
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 160,
+        "is_vad_decision": true,
+        "start_sample": 0
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 320,
+        "is_vad_decision": true,
+        "start_sample": 160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 480,
+        "is_vad_decision": true,
+        "start_sample": 320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 640,
+        "is_vad_decision": true,
+        "start_sample": 480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 800,
+        "is_vad_decision": true,
+        "start_sample": 640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 960,
+        "is_vad_decision": true,
+        "start_sample": 800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1120,
+        "is_vad_decision": true,
+        "start_sample": 960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1280,
+        "is_vad_decision": true,
+        "start_sample": 1120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1440,
+        "is_vad_decision": true,
+        "start_sample": 1280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1600,
+        "is_vad_decision": true,
+        "start_sample": 1440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1760,
+        "is_vad_decision": true,
+        "start_sample": 1600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 1920,
+        "is_vad_decision": true,
+        "start_sample": 1760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2080,
+        "is_vad_decision": true,
+        "start_sample": 1920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2240,
+        "is_vad_decision": true,
+        "start_sample": 2080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2400,
+        "is_vad_decision": true,
+        "start_sample": 2240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2560,
+        "is_vad_decision": true,
+        "start_sample": 2400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2720,
+        "is_vad_decision": true,
+        "start_sample": 2560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 2880,
+        "is_vad_decision": true,
+        "start_sample": 2720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3040,
+        "is_vad_decision": true,
+        "start_sample": 2880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3200,
+        "is_vad_decision": true,
+        "start_sample": 3040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3360,
+        "is_vad_decision": true,
+        "start_sample": 3200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3520,
+        "is_vad_decision": true,
+        "start_sample": 3360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3680,
+        "is_vad_decision": true,
+        "start_sample": 3520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 3840,
+        "is_vad_decision": true,
+        "start_sample": 3680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4000,
+        "is_vad_decision": true,
+        "start_sample": 3840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4160,
+        "is_vad_decision": true,
+        "start_sample": 4000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4320,
+        "is_vad_decision": true,
+        "start_sample": 4160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4480,
+        "is_vad_decision": true,
+        "start_sample": 4320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4640,
+        "is_vad_decision": true,
+        "start_sample": 4480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4800,
+        "is_vad_decision": true,
+        "start_sample": 4640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 4960,
+        "is_vad_decision": true,
+        "start_sample": 4800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5120,
+        "is_vad_decision": true,
+        "start_sample": 4960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5280,
+        "is_vad_decision": true,
+        "start_sample": 5120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5440,
+        "is_vad_decision": true,
+        "start_sample": 5280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5600,
+        "is_vad_decision": true,
+        "start_sample": 5440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5760,
+        "is_vad_decision": true,
+        "start_sample": 5600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 5920,
+        "is_vad_decision": true,
+        "start_sample": 5760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6080,
+        "is_vad_decision": true,
+        "start_sample": 5920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6240,
+        "is_vad_decision": true,
+        "start_sample": 6080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6400,
+        "is_vad_decision": true,
+        "start_sample": 6240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6560,
+        "is_vad_decision": true,
+        "start_sample": 6400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6720,
+        "is_vad_decision": true,
+        "start_sample": 6560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 6880,
+        "is_vad_decision": true,
+        "start_sample": 6720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7040,
+        "is_vad_decision": true,
+        "start_sample": 6880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7200,
+        "is_vad_decision": true,
+        "start_sample": 7040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7360,
+        "is_vad_decision": true,
+        "start_sample": 7200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7520,
+        "is_vad_decision": true,
+        "start_sample": 7360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7680,
+        "is_vad_decision": true,
+        "start_sample": 7520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 7840,
+        "is_vad_decision": true,
+        "start_sample": 7680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8000,
+        "is_vad_decision": true,
+        "start_sample": 7840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8160,
+        "is_vad_decision": true,
+        "start_sample": 8000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8320,
+        "is_vad_decision": true,
+        "start_sample": 8160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8480,
+        "is_vad_decision": true,
+        "start_sample": 8320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8640,
+        "is_vad_decision": true,
+        "start_sample": 8480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8800,
+        "is_vad_decision": true,
+        "start_sample": 8640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 8960,
+        "is_vad_decision": true,
+        "start_sample": 8800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9120,
+        "is_vad_decision": true,
+        "start_sample": 8960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9280,
+        "is_vad_decision": true,
+        "start_sample": 9120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9440,
+        "is_vad_decision": true,
+        "start_sample": 9280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9600,
+        "is_vad_decision": true,
+        "start_sample": 9440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9760,
+        "is_vad_decision": true,
+        "start_sample": 9600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 9920,
+        "is_vad_decision": true,
+        "start_sample": 9760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10080,
+        "is_vad_decision": true,
+        "start_sample": 9920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10240,
+        "is_vad_decision": true,
+        "start_sample": 10080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10400,
+        "is_vad_decision": true,
+        "start_sample": 10240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10560,
+        "is_vad_decision": true,
+        "start_sample": 10400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10720,
+        "is_vad_decision": true,
+        "start_sample": 10560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 10880,
+        "is_vad_decision": true,
+        "start_sample": 10720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11040,
+        "is_vad_decision": true,
+        "start_sample": 10880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11200,
+        "is_vad_decision": true,
+        "start_sample": 11040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11360,
+        "is_vad_decision": true,
+        "start_sample": 11200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11520,
+        "is_vad_decision": true,
+        "start_sample": 11360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11680,
+        "is_vad_decision": true,
+        "start_sample": 11520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 11840,
+        "is_vad_decision": true,
+        "start_sample": 11680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12000,
+        "is_vad_decision": true,
+        "start_sample": 11840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12160,
+        "is_vad_decision": true,
+        "start_sample": 12000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12320,
+        "is_vad_decision": true,
+        "start_sample": 12160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12480,
+        "is_vad_decision": true,
+        "start_sample": 12320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12640,
+        "is_vad_decision": true,
+        "start_sample": 12480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12800,
+        "is_vad_decision": true,
+        "start_sample": 12640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 12960,
+        "is_vad_decision": true,
+        "start_sample": 12800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13120,
+        "is_vad_decision": true,
+        "start_sample": 12960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13280,
+        "is_vad_decision": true,
+        "start_sample": 13120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13440,
+        "is_vad_decision": true,
+        "start_sample": 13280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13600,
+        "is_vad_decision": true,
+        "start_sample": 13440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13760,
+        "is_vad_decision": true,
+        "start_sample": 13600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 13920,
+        "is_vad_decision": true,
+        "start_sample": 13760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14080,
+        "is_vad_decision": true,
+        "start_sample": 13920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14240,
+        "is_vad_decision": true,
+        "start_sample": 14080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14400,
+        "is_vad_decision": true,
+        "start_sample": 14240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14560,
+        "is_vad_decision": true,
+        "start_sample": 14400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14720,
+        "is_vad_decision": true,
+        "start_sample": 14560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 14880,
+        "is_vad_decision": true,
+        "start_sample": 14720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15040,
+        "is_vad_decision": true,
+        "start_sample": 14880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15200,
+        "is_vad_decision": true,
+        "start_sample": 15040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15360,
+        "is_vad_decision": true,
+        "start_sample": 15200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15520,
+        "is_vad_decision": true,
+        "start_sample": 15360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15680,
+        "is_vad_decision": true,
+        "start_sample": 15520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 15840,
+        "is_vad_decision": true,
+        "start_sample": 15680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16000,
+        "is_vad_decision": true,
+        "start_sample": 15840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16160,
+        "is_vad_decision": true,
+        "start_sample": 16000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16320,
+        "is_vad_decision": true,
+        "start_sample": 16160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16480,
+        "is_vad_decision": true,
+        "start_sample": 16320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16640,
+        "is_vad_decision": true,
+        "start_sample": 16480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16800,
+        "is_vad_decision": true,
+        "start_sample": 16640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 16960,
+        "is_vad_decision": true,
+        "start_sample": 16800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17120,
+        "is_vad_decision": true,
+        "start_sample": 16960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17280,
+        "is_vad_decision": true,
+        "start_sample": 17120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17440,
+        "is_vad_decision": true,
+        "start_sample": 17280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17600,
+        "is_vad_decision": true,
+        "start_sample": 17440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17760,
+        "is_vad_decision": true,
+        "start_sample": 17600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 17920,
+        "is_vad_decision": true,
+        "start_sample": 17760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18080,
+        "is_vad_decision": true,
+        "start_sample": 17920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18240,
+        "is_vad_decision": true,
+        "start_sample": 18080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18400,
+        "is_vad_decision": true,
+        "start_sample": 18240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18560,
+        "is_vad_decision": true,
+        "start_sample": 18400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18720,
+        "is_vad_decision": true,
+        "start_sample": 18560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 18880,
+        "is_vad_decision": true,
+        "start_sample": 18720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19040,
+        "is_vad_decision": true,
+        "start_sample": 18880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19200,
+        "is_vad_decision": true,
+        "start_sample": 19040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19360,
+        "is_vad_decision": true,
+        "start_sample": 19200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19520,
+        "is_vad_decision": true,
+        "start_sample": 19360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19680,
+        "is_vad_decision": true,
+        "start_sample": 19520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 19840,
+        "is_vad_decision": true,
+        "start_sample": 19680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20000,
+        "is_vad_decision": true,
+        "start_sample": 19840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20160,
+        "is_vad_decision": true,
+        "start_sample": 20000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20320,
+        "is_vad_decision": true,
+        "start_sample": 20160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20480,
+        "is_vad_decision": true,
+        "start_sample": 20320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20640,
+        "is_vad_decision": true,
+        "start_sample": 20480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20800,
+        "is_vad_decision": true,
+        "start_sample": 20640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 20960,
+        "is_vad_decision": true,
+        "start_sample": 20800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21120,
+        "is_vad_decision": true,
+        "start_sample": 20960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21280,
+        "is_vad_decision": true,
+        "start_sample": 21120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21440,
+        "is_vad_decision": true,
+        "start_sample": 21280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21600,
+        "is_vad_decision": true,
+        "start_sample": 21440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21760,
+        "is_vad_decision": true,
+        "start_sample": 21600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 21920,
+        "is_vad_decision": true,
+        "start_sample": 21760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22080,
+        "is_vad_decision": true,
+        "start_sample": 21920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22240,
+        "is_vad_decision": true,
+        "start_sample": 22080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22400,
+        "is_vad_decision": true,
+        "start_sample": 22240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22560,
+        "is_vad_decision": true,
+        "start_sample": 22400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22720,
+        "is_vad_decision": true,
+        "start_sample": 22560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 22880,
+        "is_vad_decision": true,
+        "start_sample": 22720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23040,
+        "is_vad_decision": true,
+        "start_sample": 22880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23200,
+        "is_vad_decision": true,
+        "start_sample": 23040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23360,
+        "is_vad_decision": true,
+        "start_sample": 23200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23520,
+        "is_vad_decision": true,
+        "start_sample": 23360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23680,
+        "is_vad_decision": true,
+        "start_sample": 23520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 23840,
+        "is_vad_decision": true,
+        "start_sample": 23680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24000,
+        "is_vad_decision": true,
+        "start_sample": 23840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24160,
+        "is_vad_decision": true,
+        "start_sample": 24000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24320,
+        "is_vad_decision": true,
+        "start_sample": 24160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24480,
+        "is_vad_decision": true,
+        "start_sample": 24320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24640,
+        "is_vad_decision": true,
+        "start_sample": 24480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24800,
+        "is_vad_decision": true,
+        "start_sample": 24640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 24960,
+        "is_vad_decision": true,
+        "start_sample": 24800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25120,
+        "is_vad_decision": true,
+        "start_sample": 24960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25280,
+        "is_vad_decision": true,
+        "start_sample": 25120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25440,
+        "is_vad_decision": true,
+        "start_sample": 25280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25600,
+        "is_vad_decision": true,
+        "start_sample": 25440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25760,
+        "is_vad_decision": true,
+        "start_sample": 25600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 25920,
+        "is_vad_decision": true,
+        "start_sample": 25760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26080,
+        "is_vad_decision": true,
+        "start_sample": 25920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26240,
+        "is_vad_decision": true,
+        "start_sample": 26080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26400,
+        "is_vad_decision": true,
+        "start_sample": 26240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26560,
+        "is_vad_decision": true,
+        "start_sample": 26400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26720,
+        "is_vad_decision": true,
+        "start_sample": 26560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 26880,
+        "is_vad_decision": true,
+        "start_sample": 26720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27040,
+        "is_vad_decision": true,
+        "start_sample": 26880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27200,
+        "is_vad_decision": true,
+        "start_sample": 27040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27360,
+        "is_vad_decision": true,
+        "start_sample": 27200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27520,
+        "is_vad_decision": true,
+        "start_sample": 27360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27680,
+        "is_vad_decision": true,
+        "start_sample": 27520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 27840,
+        "is_vad_decision": true,
+        "start_sample": 27680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28000,
+        "is_vad_decision": true,
+        "start_sample": 27840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28160,
+        "is_vad_decision": true,
+        "start_sample": 28000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28320,
+        "is_vad_decision": true,
+        "start_sample": 28160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28480,
+        "is_vad_decision": true,
+        "start_sample": 28320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28640,
+        "is_vad_decision": true,
+        "start_sample": 28480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28800,
+        "is_vad_decision": true,
+        "start_sample": 28640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 28960,
+        "is_vad_decision": true,
+        "start_sample": 28800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29120,
+        "is_vad_decision": true,
+        "start_sample": 28960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29280,
+        "is_vad_decision": true,
+        "start_sample": 29120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29440,
+        "is_vad_decision": true,
+        "start_sample": 29280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29600,
+        "is_vad_decision": true,
+        "start_sample": 29440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29760,
+        "is_vad_decision": true,
+        "start_sample": 29600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 29920,
+        "is_vad_decision": true,
+        "start_sample": 29760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30080,
+        "is_vad_decision": true,
+        "start_sample": 29920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30240,
+        "is_vad_decision": true,
+        "start_sample": 30080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30400,
+        "is_vad_decision": true,
+        "start_sample": 30240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30560,
+        "is_vad_decision": true,
+        "start_sample": 30400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30720,
+        "is_vad_decision": true,
+        "start_sample": 30560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 30880,
+        "is_vad_decision": true,
+        "start_sample": 30720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31040,
+        "is_vad_decision": true,
+        "start_sample": 30880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31200,
+        "is_vad_decision": true,
+        "start_sample": 31040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31360,
+        "is_vad_decision": true,
+        "start_sample": 31200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31520,
+        "is_vad_decision": true,
+        "start_sample": 31360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31680,
+        "is_vad_decision": true,
+        "start_sample": 31520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 31840,
+        "is_vad_decision": true,
+        "start_sample": 31680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32000,
+        "is_vad_decision": true,
+        "start_sample": 31840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32160,
+        "is_vad_decision": true,
+        "start_sample": 32000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32320,
+        "is_vad_decision": true,
+        "start_sample": 32160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32480,
+        "is_vad_decision": true,
+        "start_sample": 32320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32640,
+        "is_vad_decision": true,
+        "start_sample": 32480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32800,
+        "is_vad_decision": true,
+        "start_sample": 32640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 32960,
+        "is_vad_decision": true,
+        "start_sample": 32800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33120,
+        "is_vad_decision": true,
+        "start_sample": 32960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33280,
+        "is_vad_decision": true,
+        "start_sample": 33120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33440,
+        "is_vad_decision": true,
+        "start_sample": 33280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33600,
+        "is_vad_decision": true,
+        "start_sample": 33440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33760,
+        "is_vad_decision": true,
+        "start_sample": 33600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 33920,
+        "is_vad_decision": true,
+        "start_sample": 33760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34080,
+        "is_vad_decision": true,
+        "start_sample": 33920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34240,
+        "is_vad_decision": true,
+        "start_sample": 34080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34400,
+        "is_vad_decision": true,
+        "start_sample": 34240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34560,
+        "is_vad_decision": true,
+        "start_sample": 34400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34720,
+        "is_vad_decision": true,
+        "start_sample": 34560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 34880,
+        "is_vad_decision": true,
+        "start_sample": 34720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35040,
+        "is_vad_decision": true,
+        "start_sample": 34880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35200,
+        "is_vad_decision": true,
+        "start_sample": 35040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35360,
+        "is_vad_decision": true,
+        "start_sample": 35200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35520,
+        "is_vad_decision": true,
+        "start_sample": 35360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35680,
+        "is_vad_decision": true,
+        "start_sample": 35520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 35840,
+        "is_vad_decision": true,
+        "start_sample": 35680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36000,
+        "is_vad_decision": true,
+        "start_sample": 35840
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36160,
+        "is_vad_decision": true,
+        "start_sample": 36000
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36320,
+        "is_vad_decision": true,
+        "start_sample": 36160
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36480,
+        "is_vad_decision": true,
+        "start_sample": 36320
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36640,
+        "is_vad_decision": true,
+        "start_sample": 36480
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36800,
+        "is_vad_decision": true,
+        "start_sample": 36640
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 36960,
+        "is_vad_decision": true,
+        "start_sample": 36800
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37120,
+        "is_vad_decision": true,
+        "start_sample": 36960
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37280,
+        "is_vad_decision": true,
+        "start_sample": 37120
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37440,
+        "is_vad_decision": true,
+        "start_sample": 37280
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37600,
+        "is_vad_decision": true,
+        "start_sample": 37440
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37760,
+        "is_vad_decision": true,
+        "start_sample": 37600
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 37920,
+        "is_vad_decision": true,
+        "start_sample": 37760
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38080,
+        "is_vad_decision": true,
+        "start_sample": 37920
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38240,
+        "is_vad_decision": true,
+        "start_sample": 38080
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38400,
+        "is_vad_decision": true,
+        "start_sample": 38240
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38560,
+        "is_vad_decision": true,
+        "start_sample": 38400
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38720,
+        "is_vad_decision": true,
+        "start_sample": 38560
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 38880,
+        "is_vad_decision": true,
+        "start_sample": 38720
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39040,
+        "is_vad_decision": true,
+        "start_sample": 38880
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39200,
+        "is_vad_decision": true,
+        "start_sample": 39040
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39360,
+        "is_vad_decision": true,
+        "start_sample": 39200
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39520,
+        "is_vad_decision": true,
+        "start_sample": 39360
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39680,
+        "is_vad_decision": true,
+        "start_sample": 39520
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 39840,
+        "is_vad_decision": true,
+        "start_sample": 39680
+      },
+      {
+        "carried_answer_repeats_previous_vad_decision": false,
+        "end_sample": 40000,
+        "is_vad_decision": true,
+        "start_sample": 39840
+      }
+    ],
+    "maximum_frame_span_count": 166,
+    "maximum_stop_tail_count": 1,
+    "method": "exact dynamic program over production EndpointPolicy states",
+    "production_adapter_replay": {
+      "observations": [
+        {
+          "end_sample": 160,
+          "speech_present": true,
+          "start_sample": 0
+        },
+        {
+          "end_sample": 320,
+          "speech_present": false,
+          "start_sample": 160
+        },
+        {
+          "end_sample": 480,
+          "speech_present": false,
+          "start_sample": 320
+        },
+        {
+          "end_sample": 640,
+          "speech_present": true,
+          "start_sample": 480
+        },
+        {
+          "end_sample": 800,
+          "speech_present": false,
+          "start_sample": 640
+        },
+        {
+          "end_sample": 960,
+          "speech_present": false,
+          "start_sample": 800
+        },
+        {
+          "end_sample": 1120,
+          "speech_present": true,
+          "start_sample": 960
+        },
+        {
+          "end_sample": 1280,
+          "speech_present": false,
+          "start_sample": 1120
+        },
+        {
+          "end_sample": 1440,
+          "speech_present": false,
+          "start_sample": 1280
+        },
+        {
+          "end_sample": 1600,
+          "speech_present": true,
+          "start_sample": 1440
+        },
+        {
+          "end_sample": 1760,
+          "speech_present": false,
+          "start_sample": 1600
+        },
+        {
+          "end_sample": 1920,
+          "speech_present": false,
+          "start_sample": 1760
+        },
+        {
+          "end_sample": 2080,
+          "speech_present": true,
+          "start_sample": 1920
+        },
+        {
+          "end_sample": 2240,
+          "speech_present": false,
+          "start_sample": 2080
+        },
+        {
+          "end_sample": 2400,
+          "speech_present": false,
+          "start_sample": 2240
+        },
+        {
+          "end_sample": 2560,
+          "speech_present": true,
+          "start_sample": 2400
+        },
+        {
+          "end_sample": 2720,
+          "speech_present": false,
+          "start_sample": 2560
+        },
+        {
+          "end_sample": 2880,
+          "speech_present": false,
+          "start_sample": 2720
+        },
+        {
+          "end_sample": 3040,
+          "speech_present": true,
+          "start_sample": 2880
+        },
+        {
+          "end_sample": 3200,
+          "speech_present": false,
+          "start_sample": 3040
+        },
+        {
+          "end_sample": 3360,
+          "speech_present": false,
+          "start_sample": 3200
+        },
+        {
+          "end_sample": 3520,
+          "speech_present": true,
+          "start_sample": 3360
+        },
+        {
+          "end_sample": 3680,
+          "speech_present": false,
+          "start_sample": 3520
+        },
+        {
+          "end_sample": 3840,
+          "speech_present": false,
+          "start_sample": 3680
+        },
+        {
+          "end_sample": 4000,
+          "speech_present": true,
+          "start_sample": 3840
+        },
+        {
+          "end_sample": 4160,
+          "speech_present": false,
+          "start_sample": 4000
+        },
+        {
+          "end_sample": 4320,
+          "speech_present": false,
+          "start_sample": 4160
+        },
+        {
+          "end_sample": 4480,
+          "speech_present": true,
+          "start_sample": 4320
+        },
+        {
+          "end_sample": 4640,
+          "speech_present": false,
+          "start_sample": 4480
+        },
+        {
+          "end_sample": 4800,
+          "speech_present": false,
+          "start_sample": 4640
+        },
+        {
+          "end_sample": 4960,
+          "speech_present": true,
+          "start_sample": 4800
+        },
+        {
+          "end_sample": 5120,
+          "speech_present": false,
+          "start_sample": 4960
+        },
+        {
+          "end_sample": 5280,
+          "speech_present": false,
+          "start_sample": 5120
+        },
+        {
+          "end_sample": 5440,
+          "speech_present": true,
+          "start_sample": 5280
+        },
+        {
+          "end_sample": 5600,
+          "speech_present": false,
+          "start_sample": 5440
+        },
+        {
+          "end_sample": 5760,
+          "speech_present": false,
+          "start_sample": 5600
+        },
+        {
+          "end_sample": 5920,
+          "speech_present": true,
+          "start_sample": 5760
+        },
+        {
+          "end_sample": 6080,
+          "speech_present": false,
+          "start_sample": 5920
+        },
+        {
+          "end_sample": 6240,
+          "speech_present": false,
+          "start_sample": 6080
+        },
+        {
+          "end_sample": 6400,
+          "speech_present": true,
+          "start_sample": 6240
+        },
+        {
+          "end_sample": 6560,
+          "speech_present": false,
+          "start_sample": 6400
+        },
+        {
+          "end_sample": 6720,
+          "speech_present": false,
+          "start_sample": 6560
+        },
+        {
+          "end_sample": 6880,
+          "speech_present": true,
+          "start_sample": 6720
+        },
+        {
+          "end_sample": 7040,
+          "speech_present": false,
+          "start_sample": 6880
+        },
+        {
+          "end_sample": 7200,
+          "speech_present": false,
+          "start_sample": 7040
+        },
+        {
+          "end_sample": 7360,
+          "speech_present": true,
+          "start_sample": 7200
+        },
+        {
+          "end_sample": 7520,
+          "speech_present": false,
+          "start_sample": 7360
+        },
+        {
+          "end_sample": 7680,
+          "speech_present": false,
+          "start_sample": 7520
+        },
+        {
+          "end_sample": 7840,
+          "speech_present": true,
+          "start_sample": 7680
+        },
+        {
+          "end_sample": 8000,
+          "speech_present": false,
+          "start_sample": 7840
+        },
+        {
+          "end_sample": 8160,
+          "speech_present": false,
+          "start_sample": 8000
+        },
+        {
+          "end_sample": 8320,
+          "speech_present": true,
+          "start_sample": 8160
+        },
+        {
+          "end_sample": 8480,
+          "speech_present": false,
+          "start_sample": 8320
+        },
+        {
+          "end_sample": 8640,
+          "speech_present": false,
+          "start_sample": 8480
+        },
+        {
+          "end_sample": 8800,
+          "speech_present": true,
+          "start_sample": 8640
+        },
+        {
+          "end_sample": 8960,
+          "speech_present": false,
+          "start_sample": 8800
+        },
+        {
+          "end_sample": 9120,
+          "speech_present": false,
+          "start_sample": 8960
+        },
+        {
+          "end_sample": 9280,
+          "speech_present": true,
+          "start_sample": 9120
+        },
+        {
+          "end_sample": 9440,
+          "speech_present": false,
+          "start_sample": 9280
+        },
+        {
+          "end_sample": 9600,
+          "speech_present": false,
+          "start_sample": 9440
+        },
+        {
+          "end_sample": 9760,
+          "speech_present": true,
+          "start_sample": 9600
+        },
+        {
+          "end_sample": 9920,
+          "speech_present": false,
+          "start_sample": 9760
+        },
+        {
+          "end_sample": 10080,
+          "speech_present": false,
+          "start_sample": 9920
+        },
+        {
+          "end_sample": 10240,
+          "speech_present": true,
+          "start_sample": 10080
+        },
+        {
+          "end_sample": 10400,
+          "speech_present": false,
+          "start_sample": 10240
+        },
+        {
+          "end_sample": 10560,
+          "speech_present": false,
+          "start_sample": 10400
+        },
+        {
+          "end_sample": 10720,
+          "speech_present": true,
+          "start_sample": 10560
+        },
+        {
+          "end_sample": 10880,
+          "speech_present": false,
+          "start_sample": 10720
+        },
+        {
+          "end_sample": 11040,
+          "speech_present": false,
+          "start_sample": 10880
+        },
+        {
+          "end_sample": 11200,
+          "speech_present": true,
+          "start_sample": 11040
+        },
+        {
+          "end_sample": 11360,
+          "speech_present": false,
+          "start_sample": 11200
+        },
+        {
+          "end_sample": 11520,
+          "speech_present": false,
+          "start_sample": 11360
+        },
+        {
+          "end_sample": 11680,
+          "speech_present": true,
+          "start_sample": 11520
+        },
+        {
+          "end_sample": 11840,
+          "speech_present": false,
+          "start_sample": 11680
+        },
+        {
+          "end_sample": 12000,
+          "speech_present": false,
+          "start_sample": 11840
+        },
+        {
+          "end_sample": 12160,
+          "speech_present": true,
+          "start_sample": 12000
+        },
+        {
+          "end_sample": 12320,
+          "speech_present": false,
+          "start_sample": 12160
+        },
+        {
+          "end_sample": 12480,
+          "speech_present": false,
+          "start_sample": 12320
+        },
+        {
+          "end_sample": 12640,
+          "speech_present": true,
+          "start_sample": 12480
+        },
+        {
+          "end_sample": 12800,
+          "speech_present": false,
+          "start_sample": 12640
+        },
+        {
+          "end_sample": 12960,
+          "speech_present": false,
+          "start_sample": 12800
+        },
+        {
+          "end_sample": 13120,
+          "speech_present": true,
+          "start_sample": 12960
+        },
+        {
+          "end_sample": 13280,
+          "speech_present": false,
+          "start_sample": 13120
+        },
+        {
+          "end_sample": 13440,
+          "speech_present": false,
+          "start_sample": 13280
+        },
+        {
+          "end_sample": 13600,
+          "speech_present": true,
+          "start_sample": 13440
+        },
+        {
+          "end_sample": 13760,
+          "speech_present": false,
+          "start_sample": 13600
+        },
+        {
+          "end_sample": 13920,
+          "speech_present": false,
+          "start_sample": 13760
+        },
+        {
+          "end_sample": 14080,
+          "speech_present": true,
+          "start_sample": 13920
+        },
+        {
+          "end_sample": 14240,
+          "speech_present": false,
+          "start_sample": 14080
+        },
+        {
+          "end_sample": 14400,
+          "speech_present": false,
+          "start_sample": 14240
+        },
+        {
+          "end_sample": 14560,
+          "speech_present": true,
+          "start_sample": 14400
+        },
+        {
+          "end_sample": 14720,
+          "speech_present": false,
+          "start_sample": 14560
+        },
+        {
+          "end_sample": 14880,
+          "speech_present": false,
+          "start_sample": 14720
+        },
+        {
+          "end_sample": 15040,
+          "speech_present": true,
+          "start_sample": 14880
+        },
+        {
+          "end_sample": 15200,
+          "speech_present": false,
+          "start_sample": 15040
+        },
+        {
+          "end_sample": 15360,
+          "speech_present": false,
+          "start_sample": 15200
+        },
+        {
+          "end_sample": 15520,
+          "speech_present": true,
+          "start_sample": 15360
+        },
+        {
+          "end_sample": 15680,
+          "speech_present": false,
+          "start_sample": 15520
+        },
+        {
+          "end_sample": 15840,
+          "speech_present": false,
+          "start_sample": 15680
+        },
+        {
+          "end_sample": 16000,
+          "speech_present": true,
+          "start_sample": 15840
+        },
+        {
+          "end_sample": 16160,
+          "speech_present": false,
+          "start_sample": 16000
+        },
+        {
+          "end_sample": 16320,
+          "speech_present": false,
+          "start_sample": 16160
+        },
+        {
+          "end_sample": 16480,
+          "speech_present": true,
+          "start_sample": 16320
+        },
+        {
+          "end_sample": 16640,
+          "speech_present": false,
+          "start_sample": 16480
+        },
+        {
+          "end_sample": 16800,
+          "speech_present": false,
+          "start_sample": 16640
+        },
+        {
+          "end_sample": 16960,
+          "speech_present": true,
+          "start_sample": 16800
+        },
+        {
+          "end_sample": 17120,
+          "speech_present": false,
+          "start_sample": 16960
+        },
+        {
+          "end_sample": 17280,
+          "speech_present": false,
+          "start_sample": 17120
+        },
+        {
+          "end_sample": 17440,
+          "speech_present": true,
+          "start_sample": 17280
+        },
+        {
+          "end_sample": 17600,
+          "speech_present": false,
+          "start_sample": 17440
+        },
+        {
+          "end_sample": 17760,
+          "speech_present": false,
+          "start_sample": 17600
+        },
+        {
+          "end_sample": 17920,
+          "speech_present": true,
+          "start_sample": 17760
+        },
+        {
+          "end_sample": 18080,
+          "speech_present": false,
+          "start_sample": 17920
+        },
+        {
+          "end_sample": 18240,
+          "speech_present": false,
+          "start_sample": 18080
+        },
+        {
+          "end_sample": 18400,
+          "speech_present": true,
+          "start_sample": 18240
+        },
+        {
+          "end_sample": 18560,
+          "speech_present": false,
+          "start_sample": 18400
+        },
+        {
+          "end_sample": 18720,
+          "speech_present": false,
+          "start_sample": 18560
+        },
+        {
+          "end_sample": 18880,
+          "speech_present": true,
+          "start_sample": 18720
+        },
+        {
+          "end_sample": 19040,
+          "speech_present": false,
+          "start_sample": 18880
+        },
+        {
+          "end_sample": 19200,
+          "speech_present": false,
+          "start_sample": 19040
+        },
+        {
+          "end_sample": 19360,
+          "speech_present": true,
+          "start_sample": 19200
+        },
+        {
+          "end_sample": 19520,
+          "speech_present": false,
+          "start_sample": 19360
+        },
+        {
+          "end_sample": 19680,
+          "speech_present": false,
+          "start_sample": 19520
+        },
+        {
+          "end_sample": 19840,
+          "speech_present": true,
+          "start_sample": 19680
+        },
+        {
+          "end_sample": 20000,
+          "speech_present": false,
+          "start_sample": 19840
+        },
+        {
+          "end_sample": 20160,
+          "speech_present": false,
+          "start_sample": 20000
+        },
+        {
+          "end_sample": 20320,
+          "speech_present": true,
+          "start_sample": 20160
+        },
+        {
+          "end_sample": 20480,
+          "speech_present": false,
+          "start_sample": 20320
+        },
+        {
+          "end_sample": 20640,
+          "speech_present": false,
+          "start_sample": 20480
+        },
+        {
+          "end_sample": 20800,
+          "speech_present": true,
+          "start_sample": 20640
+        },
+        {
+          "end_sample": 20960,
+          "speech_present": false,
+          "start_sample": 20800
+        },
+        {
+          "end_sample": 21120,
+          "speech_present": false,
+          "start_sample": 20960
+        },
+        {
+          "end_sample": 21280,
+          "speech_present": true,
+          "start_sample": 21120
+        },
+        {
+          "end_sample": 21440,
+          "speech_present": false,
+          "start_sample": 21280
+        },
+        {
+          "end_sample": 21600,
+          "speech_present": false,
+          "start_sample": 21440
+        },
+        {
+          "end_sample": 21760,
+          "speech_present": true,
+          "start_sample": 21600
+        },
+        {
+          "end_sample": 21920,
+          "speech_present": false,
+          "start_sample": 21760
+        },
+        {
+          "end_sample": 22080,
+          "speech_present": false,
+          "start_sample": 21920
+        },
+        {
+          "end_sample": 22240,
+          "speech_present": true,
+          "start_sample": 22080
+        },
+        {
+          "end_sample": 22400,
+          "speech_present": false,
+          "start_sample": 22240
+        },
+        {
+          "end_sample": 22560,
+          "speech_present": false,
+          "start_sample": 22400
+        },
+        {
+          "end_sample": 22720,
+          "speech_present": true,
+          "start_sample": 22560
+        },
+        {
+          "end_sample": 22880,
+          "speech_present": false,
+          "start_sample": 22720
+        },
+        {
+          "end_sample": 23040,
+          "speech_present": false,
+          "start_sample": 22880
+        },
+        {
+          "end_sample": 23200,
+          "speech_present": true,
+          "start_sample": 23040
+        },
+        {
+          "end_sample": 23360,
+          "speech_present": false,
+          "start_sample": 23200
+        },
+        {
+          "end_sample": 23520,
+          "speech_present": false,
+          "start_sample": 23360
+        },
+        {
+          "end_sample": 23680,
+          "speech_present": true,
+          "start_sample": 23520
+        },
+        {
+          "end_sample": 23840,
+          "speech_present": false,
+          "start_sample": 23680
+        },
+        {
+          "end_sample": 24000,
+          "speech_present": false,
+          "start_sample": 23840
+        },
+        {
+          "end_sample": 24160,
+          "speech_present": true,
+          "start_sample": 24000
+        },
+        {
+          "end_sample": 24320,
+          "speech_present": false,
+          "start_sample": 24160
+        },
+        {
+          "end_sample": 24480,
+          "speech_present": false,
+          "start_sample": 24320
+        },
+        {
+          "end_sample": 24640,
+          "speech_present": true,
+          "start_sample": 24480
+        },
+        {
+          "end_sample": 24800,
+          "speech_present": false,
+          "start_sample": 24640
+        },
+        {
+          "end_sample": 24960,
+          "speech_present": false,
+          "start_sample": 24800
+        },
+        {
+          "end_sample": 25120,
+          "speech_present": true,
+          "start_sample": 24960
+        },
+        {
+          "end_sample": 25280,
+          "speech_present": false,
+          "start_sample": 25120
+        },
+        {
+          "end_sample": 25440,
+          "speech_present": false,
+          "start_sample": 25280
+        },
+        {
+          "end_sample": 25600,
+          "speech_present": true,
+          "start_sample": 25440
+        },
+        {
+          "end_sample": 25760,
+          "speech_present": false,
+          "start_sample": 25600
+        },
+        {
+          "end_sample": 25920,
+          "speech_present": false,
+          "start_sample": 25760
+        },
+        {
+          "end_sample": 26080,
+          "speech_present": true,
+          "start_sample": 25920
+        },
+        {
+          "end_sample": 26240,
+          "speech_present": false,
+          "start_sample": 26080
+        },
+        {
+          "end_sample": 26400,
+          "speech_present": false,
+          "start_sample": 26240
+        },
+        {
+          "end_sample": 26560,
+          "speech_present": true,
+          "start_sample": 26400
+        },
+        {
+          "end_sample": 26720,
+          "speech_present": false,
+          "start_sample": 26560
+        },
+        {
+          "end_sample": 26880,
+          "speech_present": false,
+          "start_sample": 26720
+        },
+        {
+          "end_sample": 27040,
+          "speech_present": true,
+          "start_sample": 26880
+        },
+        {
+          "end_sample": 27200,
+          "speech_present": false,
+          "start_sample": 27040
+        },
+        {
+          "end_sample": 27360,
+          "speech_present": false,
+          "start_sample": 27200
+        },
+        {
+          "end_sample": 27520,
+          "speech_present": true,
+          "start_sample": 27360
+        },
+        {
+          "end_sample": 27680,
+          "speech_present": false,
+          "start_sample": 27520
+        },
+        {
+          "end_sample": 27840,
+          "speech_present": false,
+          "start_sample": 27680
+        },
+        {
+          "end_sample": 28000,
+          "speech_present": true,
+          "start_sample": 27840
+        },
+        {
+          "end_sample": 28160,
+          "speech_present": false,
+          "start_sample": 28000
+        },
+        {
+          "end_sample": 28320,
+          "speech_present": false,
+          "start_sample": 28160
+        },
+        {
+          "end_sample": 28480,
+          "speech_present": true,
+          "start_sample": 28320
+        },
+        {
+          "end_sample": 28640,
+          "speech_present": false,
+          "start_sample": 28480
+        },
+        {
+          "end_sample": 28800,
+          "speech_present": false,
+          "start_sample": 28640
+        },
+        {
+          "end_sample": 28960,
+          "speech_present": true,
+          "start_sample": 28800
+        },
+        {
+          "end_sample": 29120,
+          "speech_present": false,
+          "start_sample": 28960
+        },
+        {
+          "end_sample": 29280,
+          "speech_present": false,
+          "start_sample": 29120
+        },
+        {
+          "end_sample": 29440,
+          "speech_present": true,
+          "start_sample": 29280
+        },
+        {
+          "end_sample": 29600,
+          "speech_present": false,
+          "start_sample": 29440
+        },
+        {
+          "end_sample": 29760,
+          "speech_present": false,
+          "start_sample": 29600
+        },
+        {
+          "end_sample": 29920,
+          "speech_present": true,
+          "start_sample": 29760
+        },
+        {
+          "end_sample": 30080,
+          "speech_present": false,
+          "start_sample": 29920
+        },
+        {
+          "end_sample": 30240,
+          "speech_present": false,
+          "start_sample": 30080
+        },
+        {
+          "end_sample": 30400,
+          "speech_present": true,
+          "start_sample": 30240
+        },
+        {
+          "end_sample": 30560,
+          "speech_present": false,
+          "start_sample": 30400
+        },
+        {
+          "end_sample": 30720,
+          "speech_present": false,
+          "start_sample": 30560
+        },
+        {
+          "end_sample": 30880,
+          "speech_present": true,
+          "start_sample": 30720
+        },
+        {
+          "end_sample": 31040,
+          "speech_present": false,
+          "start_sample": 30880
+        },
+        {
+          "end_sample": 31200,
+          "speech_present": false,
+          "start_sample": 31040
+        },
+        {
+          "end_sample": 31360,
+          "speech_present": true,
+          "start_sample": 31200
+        },
+        {
+          "end_sample": 31520,
+          "speech_present": false,
+          "start_sample": 31360
+        },
+        {
+          "end_sample": 31680,
+          "speech_present": false,
+          "start_sample": 31520
+        },
+        {
+          "end_sample": 31840,
+          "speech_present": true,
+          "start_sample": 31680
+        },
+        {
+          "end_sample": 32000,
+          "speech_present": false,
+          "start_sample": 31840
+        },
+        {
+          "end_sample": 32160,
+          "speech_present": false,
+          "start_sample": 32000
+        },
+        {
+          "end_sample": 32320,
+          "speech_present": true,
+          "start_sample": 32160
+        },
+        {
+          "end_sample": 32480,
+          "speech_present": false,
+          "start_sample": 32320
+        },
+        {
+          "end_sample": 32640,
+          "speech_present": false,
+          "start_sample": 32480
+        },
+        {
+          "end_sample": 32800,
+          "speech_present": true,
+          "start_sample": 32640
+        },
+        {
+          "end_sample": 32960,
+          "speech_present": false,
+          "start_sample": 32800
+        },
+        {
+          "end_sample": 33120,
+          "speech_present": false,
+          "start_sample": 32960
+        },
+        {
+          "end_sample": 33280,
+          "speech_present": true,
+          "start_sample": 33120
+        },
+        {
+          "end_sample": 33440,
+          "speech_present": false,
+          "start_sample": 33280
+        },
+        {
+          "end_sample": 33600,
+          "speech_present": false,
+          "start_sample": 33440
+        },
+        {
+          "end_sample": 33760,
+          "speech_present": true,
+          "start_sample": 33600
+        },
+        {
+          "end_sample": 33920,
+          "speech_present": false,
+          "start_sample": 33760
+        },
+        {
+          "end_sample": 34080,
+          "speech_present": false,
+          "start_sample": 33920
+        },
+        {
+          "end_sample": 34240,
+          "speech_present": true,
+          "start_sample": 34080
+        },
+        {
+          "end_sample": 34400,
+          "speech_present": false,
+          "start_sample": 34240
+        },
+        {
+          "end_sample": 34560,
+          "speech_present": false,
+          "start_sample": 34400
+        },
+        {
+          "end_sample": 34720,
+          "speech_present": true,
+          "start_sample": 34560
+        },
+        {
+          "end_sample": 34880,
+          "speech_present": false,
+          "start_sample": 34720
+        },
+        {
+          "end_sample": 35040,
+          "speech_present": false,
+          "start_sample": 34880
+        },
+        {
+          "end_sample": 35200,
+          "speech_present": true,
+          "start_sample": 35040
+        },
+        {
+          "end_sample": 35360,
+          "speech_present": false,
+          "start_sample": 35200
+        },
+        {
+          "end_sample": 35520,
+          "speech_present": false,
+          "start_sample": 35360
+        },
+        {
+          "end_sample": 35680,
+          "speech_present": true,
+          "start_sample": 35520
+        },
+        {
+          "end_sample": 35840,
+          "speech_present": false,
+          "start_sample": 35680
+        },
+        {
+          "end_sample": 36000,
+          "speech_present": false,
+          "start_sample": 35840
+        },
+        {
+          "end_sample": 36160,
+          "speech_present": true,
+          "start_sample": 36000
+        },
+        {
+          "end_sample": 36320,
+          "speech_present": false,
+          "start_sample": 36160
+        },
+        {
+          "end_sample": 36480,
+          "speech_present": false,
+          "start_sample": 36320
+        },
+        {
+          "end_sample": 36640,
+          "speech_present": true,
+          "start_sample": 36480
+        },
+        {
+          "end_sample": 36800,
+          "speech_present": false,
+          "start_sample": 36640
+        },
+        {
+          "end_sample": 36960,
+          "speech_present": false,
+          "start_sample": 36800
+        },
+        {
+          "end_sample": 37120,
+          "speech_present": true,
+          "start_sample": 36960
+        },
+        {
+          "end_sample": 37280,
+          "speech_present": false,
+          "start_sample": 37120
+        },
+        {
+          "end_sample": 37440,
+          "speech_present": false,
+          "start_sample": 37280
+        },
+        {
+          "end_sample": 37600,
+          "speech_present": true,
+          "start_sample": 37440
+        },
+        {
+          "end_sample": 37760,
+          "speech_present": false,
+          "start_sample": 37600
+        },
+        {
+          "end_sample": 37920,
+          "speech_present": false,
+          "start_sample": 37760
+        },
+        {
+          "end_sample": 38080,
+          "speech_present": true,
+          "start_sample": 37920
+        },
+        {
+          "end_sample": 38240,
+          "speech_present": false,
+          "start_sample": 38080
+        },
+        {
+          "end_sample": 38400,
+          "speech_present": false,
+          "start_sample": 38240
+        },
+        {
+          "end_sample": 38560,
+          "speech_present": true,
+          "start_sample": 38400
+        },
+        {
+          "end_sample": 38720,
+          "speech_present": false,
+          "start_sample": 38560
+        },
+        {
+          "end_sample": 38880,
+          "speech_present": false,
+          "start_sample": 38720
+        },
+        {
+          "end_sample": 39040,
+          "speech_present": true,
+          "start_sample": 38880
+        },
+        {
+          "end_sample": 39200,
+          "speech_present": false,
+          "start_sample": 39040
+        },
+        {
+          "end_sample": 39360,
+          "speech_present": false,
+          "start_sample": 39200
+        },
+        {
+          "end_sample": 39520,
+          "speech_present": true,
+          "start_sample": 39360
+        },
+        {
+          "end_sample": 39680,
+          "speech_present": false,
+          "start_sample": 39520
+        },
+        {
+          "end_sample": 39840,
+          "speech_present": false,
+          "start_sample": 39680
+        },
+        {
+          "end_sample": 40000,
+          "speech_present": true,
+          "start_sample": 39840
+        }
+      ],
+      "pattern": "1001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001",
+      "required_queue_depth": 166,
+      "span_count": 166,
+      "span_reasons": {
+        "end_silence": 83,
+        "leading_silence": 83
+      },
+      "spans": [
+        {
+          "end_sample": 160,
+          "reason": "end_silence",
+          "start_sample": 0
+        },
+        {
+          "end_sample": 480,
+          "reason": "leading_silence",
+          "start_sample": 160
+        },
+        {
+          "end_sample": 640,
+          "reason": "end_silence",
+          "start_sample": 480
+        },
+        {
+          "end_sample": 960,
+          "reason": "leading_silence",
+          "start_sample": 640
+        },
+        {
+          "end_sample": 1120,
+          "reason": "end_silence",
+          "start_sample": 960
+        },
+        {
+          "end_sample": 1440,
+          "reason": "leading_silence",
+          "start_sample": 1120
+        },
+        {
+          "end_sample": 1600,
+          "reason": "end_silence",
+          "start_sample": 1440
+        },
+        {
+          "end_sample": 1920,
+          "reason": "leading_silence",
+          "start_sample": 1600
+        },
+        {
+          "end_sample": 2080,
+          "reason": "end_silence",
+          "start_sample": 1920
+        },
+        {
+          "end_sample": 2400,
+          "reason": "leading_silence",
+          "start_sample": 2080
+        },
+        {
+          "end_sample": 2560,
+          "reason": "end_silence",
+          "start_sample": 2400
+        },
+        {
+          "end_sample": 2880,
+          "reason": "leading_silence",
+          "start_sample": 2560
+        },
+        {
+          "end_sample": 3040,
+          "reason": "end_silence",
+          "start_sample": 2880
+        },
+        {
+          "end_sample": 3360,
+          "reason": "leading_silence",
+          "start_sample": 3040
+        },
+        {
+          "end_sample": 3520,
+          "reason": "end_silence",
+          "start_sample": 3360
+        },
+        {
+          "end_sample": 3840,
+          "reason": "leading_silence",
+          "start_sample": 3520
+        },
+        {
+          "end_sample": 4000,
+          "reason": "end_silence",
+          "start_sample": 3840
+        },
+        {
+          "end_sample": 4320,
+          "reason": "leading_silence",
+          "start_sample": 4000
+        },
+        {
+          "end_sample": 4480,
+          "reason": "end_silence",
+          "start_sample": 4320
+        },
+        {
+          "end_sample": 4800,
+          "reason": "leading_silence",
+          "start_sample": 4480
+        },
+        {
+          "end_sample": 4960,
+          "reason": "end_silence",
+          "start_sample": 4800
+        },
+        {
+          "end_sample": 5280,
+          "reason": "leading_silence",
+          "start_sample": 4960
+        },
+        {
+          "end_sample": 5440,
+          "reason": "end_silence",
+          "start_sample": 5280
+        },
+        {
+          "end_sample": 5760,
+          "reason": "leading_silence",
+          "start_sample": 5440
+        },
+        {
+          "end_sample": 5920,
+          "reason": "end_silence",
+          "start_sample": 5760
+        },
+        {
+          "end_sample": 6240,
+          "reason": "leading_silence",
+          "start_sample": 5920
+        },
+        {
+          "end_sample": 6400,
+          "reason": "end_silence",
+          "start_sample": 6240
+        },
+        {
+          "end_sample": 6720,
+          "reason": "leading_silence",
+          "start_sample": 6400
+        },
+        {
+          "end_sample": 6880,
+          "reason": "end_silence",
+          "start_sample": 6720
+        },
+        {
+          "end_sample": 7200,
+          "reason": "leading_silence",
+          "start_sample": 6880
+        },
+        {
+          "end_sample": 7360,
+          "reason": "end_silence",
+          "start_sample": 7200
+        },
+        {
+          "end_sample": 7680,
+          "reason": "leading_silence",
+          "start_sample": 7360
+        },
+        {
+          "end_sample": 7840,
+          "reason": "end_silence",
+          "start_sample": 7680
+        },
+        {
+          "end_sample": 8160,
+          "reason": "leading_silence",
+          "start_sample": 7840
+        },
+        {
+          "end_sample": 8320,
+          "reason": "end_silence",
+          "start_sample": 8160
+        },
+        {
+          "end_sample": 8640,
+          "reason": "leading_silence",
+          "start_sample": 8320
+        },
+        {
+          "end_sample": 8800,
+          "reason": "end_silence",
+          "start_sample": 8640
+        },
+        {
+          "end_sample": 9120,
+          "reason": "leading_silence",
+          "start_sample": 8800
+        },
+        {
+          "end_sample": 9280,
+          "reason": "end_silence",
+          "start_sample": 9120
+        },
+        {
+          "end_sample": 9600,
+          "reason": "leading_silence",
+          "start_sample": 9280
+        },
+        {
+          "end_sample": 9760,
+          "reason": "end_silence",
+          "start_sample": 9600
+        },
+        {
+          "end_sample": 10080,
+          "reason": "leading_silence",
+          "start_sample": 9760
+        },
+        {
+          "end_sample": 10240,
+          "reason": "end_silence",
+          "start_sample": 10080
+        },
+        {
+          "end_sample": 10560,
+          "reason": "leading_silence",
+          "start_sample": 10240
+        },
+        {
+          "end_sample": 10720,
+          "reason": "end_silence",
+          "start_sample": 10560
+        },
+        {
+          "end_sample": 11040,
+          "reason": "leading_silence",
+          "start_sample": 10720
+        },
+        {
+          "end_sample": 11200,
+          "reason": "end_silence",
+          "start_sample": 11040
+        },
+        {
+          "end_sample": 11520,
+          "reason": "leading_silence",
+          "start_sample": 11200
+        },
+        {
+          "end_sample": 11680,
+          "reason": "end_silence",
+          "start_sample": 11520
+        },
+        {
+          "end_sample": 12000,
+          "reason": "leading_silence",
+          "start_sample": 11680
+        },
+        {
+          "end_sample": 12160,
+          "reason": "end_silence",
+          "start_sample": 12000
+        },
+        {
+          "end_sample": 12480,
+          "reason": "leading_silence",
+          "start_sample": 12160
+        },
+        {
+          "end_sample": 12640,
+          "reason": "end_silence",
+          "start_sample": 12480
+        },
+        {
+          "end_sample": 12960,
+          "reason": "leading_silence",
+          "start_sample": 12640
+        },
+        {
+          "end_sample": 13120,
+          "reason": "end_silence",
+          "start_sample": 12960
+        },
+        {
+          "end_sample": 13440,
+          "reason": "leading_silence",
+          "start_sample": 13120
+        },
+        {
+          "end_sample": 13600,
+          "reason": "end_silence",
+          "start_sample": 13440
+        },
+        {
+          "end_sample": 13920,
+          "reason": "leading_silence",
+          "start_sample": 13600
+        },
+        {
+          "end_sample": 14080,
+          "reason": "end_silence",
+          "start_sample": 13920
+        },
+        {
+          "end_sample": 14400,
+          "reason": "leading_silence",
+          "start_sample": 14080
+        },
+        {
+          "end_sample": 14560,
+          "reason": "end_silence",
+          "start_sample": 14400
+        },
+        {
+          "end_sample": 14880,
+          "reason": "leading_silence",
+          "start_sample": 14560
+        },
+        {
+          "end_sample": 15040,
+          "reason": "end_silence",
+          "start_sample": 14880
+        },
+        {
+          "end_sample": 15360,
+          "reason": "leading_silence",
+          "start_sample": 15040
+        },
+        {
+          "end_sample": 15520,
+          "reason": "end_silence",
+          "start_sample": 15360
+        },
+        {
+          "end_sample": 15840,
+          "reason": "leading_silence",
+          "start_sample": 15520
+        },
+        {
+          "end_sample": 16000,
+          "reason": "end_silence",
+          "start_sample": 15840
+        },
+        {
+          "end_sample": 16320,
+          "reason": "leading_silence",
+          "start_sample": 16000
+        },
+        {
+          "end_sample": 16480,
+          "reason": "end_silence",
+          "start_sample": 16320
+        },
+        {
+          "end_sample": 16800,
+          "reason": "leading_silence",
+          "start_sample": 16480
+        },
+        {
+          "end_sample": 16960,
+          "reason": "end_silence",
+          "start_sample": 16800
+        },
+        {
+          "end_sample": 17280,
+          "reason": "leading_silence",
+          "start_sample": 16960
+        },
+        {
+          "end_sample": 17440,
+          "reason": "end_silence",
+          "start_sample": 17280
+        },
+        {
+          "end_sample": 17760,
+          "reason": "leading_silence",
+          "start_sample": 17440
+        },
+        {
+          "end_sample": 17920,
+          "reason": "end_silence",
+          "start_sample": 17760
+        },
+        {
+          "end_sample": 18240,
+          "reason": "leading_silence",
+          "start_sample": 17920
+        },
+        {
+          "end_sample": 18400,
+          "reason": "end_silence",
+          "start_sample": 18240
+        },
+        {
+          "end_sample": 18720,
+          "reason": "leading_silence",
+          "start_sample": 18400
+        },
+        {
+          "end_sample": 18880,
+          "reason": "end_silence",
+          "start_sample": 18720
+        },
+        {
+          "end_sample": 19200,
+          "reason": "leading_silence",
+          "start_sample": 18880
+        },
+        {
+          "end_sample": 19360,
+          "reason": "end_silence",
+          "start_sample": 19200
+        },
+        {
+          "end_sample": 19680,
+          "reason": "leading_silence",
+          "start_sample": 19360
+        },
+        {
+          "end_sample": 19840,
+          "reason": "end_silence",
+          "start_sample": 19680
+        },
+        {
+          "end_sample": 20160,
+          "reason": "leading_silence",
+          "start_sample": 19840
+        },
+        {
+          "end_sample": 20320,
+          "reason": "end_silence",
+          "start_sample": 20160
+        },
+        {
+          "end_sample": 20640,
+          "reason": "leading_silence",
+          "start_sample": 20320
+        },
+        {
+          "end_sample": 20800,
+          "reason": "end_silence",
+          "start_sample": 20640
+        },
+        {
+          "end_sample": 21120,
+          "reason": "leading_silence",
+          "start_sample": 20800
+        },
+        {
+          "end_sample": 21280,
+          "reason": "end_silence",
+          "start_sample": 21120
+        },
+        {
+          "end_sample": 21600,
+          "reason": "leading_silence",
+          "start_sample": 21280
+        },
+        {
+          "end_sample": 21760,
+          "reason": "end_silence",
+          "start_sample": 21600
+        },
+        {
+          "end_sample": 22080,
+          "reason": "leading_silence",
+          "start_sample": 21760
+        },
+        {
+          "end_sample": 22240,
+          "reason": "end_silence",
+          "start_sample": 22080
+        },
+        {
+          "end_sample": 22560,
+          "reason": "leading_silence",
+          "start_sample": 22240
+        },
+        {
+          "end_sample": 22720,
+          "reason": "end_silence",
+          "start_sample": 22560
+        },
+        {
+          "end_sample": 23040,
+          "reason": "leading_silence",
+          "start_sample": 22720
+        },
+        {
+          "end_sample": 23200,
+          "reason": "end_silence",
+          "start_sample": 23040
+        },
+        {
+          "end_sample": 23520,
+          "reason": "leading_silence",
+          "start_sample": 23200
+        },
+        {
+          "end_sample": 23680,
+          "reason": "end_silence",
+          "start_sample": 23520
+        },
+        {
+          "end_sample": 24000,
+          "reason": "leading_silence",
+          "start_sample": 23680
+        },
+        {
+          "end_sample": 24160,
+          "reason": "end_silence",
+          "start_sample": 24000
+        },
+        {
+          "end_sample": 24480,
+          "reason": "leading_silence",
+          "start_sample": 24160
+        },
+        {
+          "end_sample": 24640,
+          "reason": "end_silence",
+          "start_sample": 24480
+        },
+        {
+          "end_sample": 24960,
+          "reason": "leading_silence",
+          "start_sample": 24640
+        },
+        {
+          "end_sample": 25120,
+          "reason": "end_silence",
+          "start_sample": 24960
+        },
+        {
+          "end_sample": 25440,
+          "reason": "leading_silence",
+          "start_sample": 25120
+        },
+        {
+          "end_sample": 25600,
+          "reason": "end_silence",
+          "start_sample": 25440
+        },
+        {
+          "end_sample": 25920,
+          "reason": "leading_silence",
+          "start_sample": 25600
+        },
+        {
+          "end_sample": 26080,
+          "reason": "end_silence",
+          "start_sample": 25920
+        },
+        {
+          "end_sample": 26400,
+          "reason": "leading_silence",
+          "start_sample": 26080
+        },
+        {
+          "end_sample": 26560,
+          "reason": "end_silence",
+          "start_sample": 26400
+        },
+        {
+          "end_sample": 26880,
+          "reason": "leading_silence",
+          "start_sample": 26560
+        },
+        {
+          "end_sample": 27040,
+          "reason": "end_silence",
+          "start_sample": 26880
+        },
+        {
+          "end_sample": 27360,
+          "reason": "leading_silence",
+          "start_sample": 27040
+        },
+        {
+          "end_sample": 27520,
+          "reason": "end_silence",
+          "start_sample": 27360
+        },
+        {
+          "end_sample": 27840,
+          "reason": "leading_silence",
+          "start_sample": 27520
+        },
+        {
+          "end_sample": 28000,
+          "reason": "end_silence",
+          "start_sample": 27840
+        },
+        {
+          "end_sample": 28320,
+          "reason": "leading_silence",
+          "start_sample": 28000
+        },
+        {
+          "end_sample": 28480,
+          "reason": "end_silence",
+          "start_sample": 28320
+        },
+        {
+          "end_sample": 28800,
+          "reason": "leading_silence",
+          "start_sample": 28480
+        },
+        {
+          "end_sample": 28960,
+          "reason": "end_silence",
+          "start_sample": 28800
+        },
+        {
+          "end_sample": 29280,
+          "reason": "leading_silence",
+          "start_sample": 28960
+        },
+        {
+          "end_sample": 29440,
+          "reason": "end_silence",
+          "start_sample": 29280
+        },
+        {
+          "end_sample": 29760,
+          "reason": "leading_silence",
+          "start_sample": 29440
+        },
+        {
+          "end_sample": 29920,
+          "reason": "end_silence",
+          "start_sample": 29760
+        },
+        {
+          "end_sample": 30240,
+          "reason": "leading_silence",
+          "start_sample": 29920
+        },
+        {
+          "end_sample": 30400,
+          "reason": "end_silence",
+          "start_sample": 30240
+        },
+        {
+          "end_sample": 30720,
+          "reason": "leading_silence",
+          "start_sample": 30400
+        },
+        {
+          "end_sample": 30880,
+          "reason": "end_silence",
+          "start_sample": 30720
+        },
+        {
+          "end_sample": 31200,
+          "reason": "leading_silence",
+          "start_sample": 30880
+        },
+        {
+          "end_sample": 31360,
+          "reason": "end_silence",
+          "start_sample": 31200
+        },
+        {
+          "end_sample": 31680,
+          "reason": "leading_silence",
+          "start_sample": 31360
+        },
+        {
+          "end_sample": 31840,
+          "reason": "end_silence",
+          "start_sample": 31680
+        },
+        {
+          "end_sample": 32160,
+          "reason": "leading_silence",
+          "start_sample": 31840
+        },
+        {
+          "end_sample": 32320,
+          "reason": "end_silence",
+          "start_sample": 32160
+        },
+        {
+          "end_sample": 32640,
+          "reason": "leading_silence",
+          "start_sample": 32320
+        },
+        {
+          "end_sample": 32800,
+          "reason": "end_silence",
+          "start_sample": 32640
+        },
+        {
+          "end_sample": 33120,
+          "reason": "leading_silence",
+          "start_sample": 32800
+        },
+        {
+          "end_sample": 33280,
+          "reason": "end_silence",
+          "start_sample": 33120
+        },
+        {
+          "end_sample": 33600,
+          "reason": "leading_silence",
+          "start_sample": 33280
+        },
+        {
+          "end_sample": 33760,
+          "reason": "end_silence",
+          "start_sample": 33600
+        },
+        {
+          "end_sample": 34080,
+          "reason": "leading_silence",
+          "start_sample": 33760
+        },
+        {
+          "end_sample": 34240,
+          "reason": "end_silence",
+          "start_sample": 34080
+        },
+        {
+          "end_sample": 34560,
+          "reason": "leading_silence",
+          "start_sample": 34240
+        },
+        {
+          "end_sample": 34720,
+          "reason": "end_silence",
+          "start_sample": 34560
+        },
+        {
+          "end_sample": 35040,
+          "reason": "leading_silence",
+          "start_sample": 34720
+        },
+        {
+          "end_sample": 35200,
+          "reason": "end_silence",
+          "start_sample": 35040
+        },
+        {
+          "end_sample": 35520,
+          "reason": "leading_silence",
+          "start_sample": 35200
+        },
+        {
+          "end_sample": 35680,
+          "reason": "end_silence",
+          "start_sample": 35520
+        },
+        {
+          "end_sample": 36000,
+          "reason": "leading_silence",
+          "start_sample": 35680
+        },
+        {
+          "end_sample": 36160,
+          "reason": "end_silence",
+          "start_sample": 36000
+        },
+        {
+          "end_sample": 36480,
+          "reason": "leading_silence",
+          "start_sample": 36160
+        },
+        {
+          "end_sample": 36640,
+          "reason": "end_silence",
+          "start_sample": 36480
+        },
+        {
+          "end_sample": 36960,
+          "reason": "leading_silence",
+          "start_sample": 36640
+        },
+        {
+          "end_sample": 37120,
+          "reason": "end_silence",
+          "start_sample": 36960
+        },
+        {
+          "end_sample": 37440,
+          "reason": "leading_silence",
+          "start_sample": 37120
+        },
+        {
+          "end_sample": 37600,
+          "reason": "end_silence",
+          "start_sample": 37440
+        },
+        {
+          "end_sample": 37920,
+          "reason": "leading_silence",
+          "start_sample": 37600
+        },
+        {
+          "end_sample": 38080,
+          "reason": "end_silence",
+          "start_sample": 37920
+        },
+        {
+          "end_sample": 38400,
+          "reason": "leading_silence",
+          "start_sample": 38080
+        },
+        {
+          "end_sample": 38560,
+          "reason": "end_silence",
+          "start_sample": 38400
+        },
+        {
+          "end_sample": 38880,
+          "reason": "leading_silence",
+          "start_sample": 38560
+        },
+        {
+          "end_sample": 39040,
+          "reason": "end_silence",
+          "start_sample": 38880
+        },
+        {
+          "end_sample": 39360,
+          "reason": "leading_silence",
+          "start_sample": 39040
+        },
+        {
+          "end_sample": 39520,
+          "reason": "end_silence",
+          "start_sample": 39360
+        },
+        {
+          "end_sample": 39840,
+          "reason": "leading_silence",
+          "start_sample": 39520
+        }
+      ],
+      "stop_tail": [
+        {
+          "end_sample": 40000,
+          "reason": "stop_flush",
+          "start_sample": 39840
+        }
+      ],
+      "stop_tail_count": 1
+    },
+    "required_queue_depth": 166,
+    "state_layers": [
+      {
+        "completed_vad_decisions": 1,
+        "equivalent_endpoint_states": 2,
+        "max_frame_spans_so_far": 0
+      },
+      {
+        "completed_vad_decisions": 2,
+        "equivalent_endpoint_states": 4,
+        "max_frame_spans_so_far": 1
+      },
+      {
+        "completed_vad_decisions": 3,
+        "equivalent_endpoint_states": 8,
+        "max_frame_spans_so_far": 1
+      },
+      {
+        "completed_vad_decisions": 4,
+        "equivalent_endpoint_states": 13,
+        "max_frame_spans_so_far": 2
+      },
+      {
+        "completed_vad_decisions": 5,
+        "equivalent_endpoint_states": 19,
+        "max_frame_spans_so_far": 3
+      },
+      {
+        "completed_vad_decisions": 6,
+        "equivalent_endpoint_states": 26,
+        "max_frame_spans_so_far": 3
+      },
+      {
+        "completed_vad_decisions": 7,
+        "equivalent_endpoint_states": 34,
+        "max_frame_spans_so_far": 4
+      },
+      {
+        "completed_vad_decisions": 8,
+        "equivalent_endpoint_states": 43,
+        "max_frame_spans_so_far": 5
+      },
+      {
+        "completed_vad_decisions": 9,
+        "equivalent_endpoint_states": 53,
+        "max_frame_spans_so_far": 5
+      },
+      {
+        "completed_vad_decisions": 10,
+        "equivalent_endpoint_states": 55,
+        "max_frame_spans_so_far": 6
+      },
+      {
+        "completed_vad_decisions": 11,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 7
+      },
+      {
+        "completed_vad_decisions": 12,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 7
+      },
+      {
+        "completed_vad_decisions": 13,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 8
+      },
+      {
+        "completed_vad_decisions": 14,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 9
+      },
+      {
+        "completed_vad_decisions": 15,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 9
+      },
+      {
+        "completed_vad_decisions": 16,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 10
+      },
+      {
+        "completed_vad_decisions": 17,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 11
+      },
+      {
+        "completed_vad_decisions": 18,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 11
+      },
+      {
+        "completed_vad_decisions": 19,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 12
+      },
+      {
+        "completed_vad_decisions": 20,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 13
+      },
+      {
+        "completed_vad_decisions": 21,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 13
+      },
+      {
+        "completed_vad_decisions": 22,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 14
+      },
+      {
+        "completed_vad_decisions": 23,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 15
+      },
+      {
+        "completed_vad_decisions": 24,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 15
+      },
+      {
+        "completed_vad_decisions": 25,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 16
+      },
+      {
+        "completed_vad_decisions": 26,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 17
+      },
+      {
+        "completed_vad_decisions": 27,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 17
+      },
+      {
+        "completed_vad_decisions": 28,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 18
+      },
+      {
+        "completed_vad_decisions": 29,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 19
+      },
+      {
+        "completed_vad_decisions": 30,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 19
+      },
+      {
+        "completed_vad_decisions": 31,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 20
+      },
+      {
+        "completed_vad_decisions": 32,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 21
+      },
+      {
+        "completed_vad_decisions": 33,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 21
+      },
+      {
+        "completed_vad_decisions": 34,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 22
+      },
+      {
+        "completed_vad_decisions": 35,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 23
+      },
+      {
+        "completed_vad_decisions": 36,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 23
+      },
+      {
+        "completed_vad_decisions": 37,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 24
+      },
+      {
+        "completed_vad_decisions": 38,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 25
+      },
+      {
+        "completed_vad_decisions": 39,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 25
+      },
+      {
+        "completed_vad_decisions": 40,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 26
+      },
+      {
+        "completed_vad_decisions": 41,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 27
+      },
+      {
+        "completed_vad_decisions": 42,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 27
+      },
+      {
+        "completed_vad_decisions": 43,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 28
+      },
+      {
+        "completed_vad_decisions": 44,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 29
+      },
+      {
+        "completed_vad_decisions": 45,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 29
+      },
+      {
+        "completed_vad_decisions": 46,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 30
+      },
+      {
+        "completed_vad_decisions": 47,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 31
+      },
+      {
+        "completed_vad_decisions": 48,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 31
+      },
+      {
+        "completed_vad_decisions": 49,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 32
+      },
+      {
+        "completed_vad_decisions": 50,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 33
+      },
+      {
+        "completed_vad_decisions": 51,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 33
+      },
+      {
+        "completed_vad_decisions": 52,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 34
+      },
+      {
+        "completed_vad_decisions": 53,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 35
+      },
+      {
+        "completed_vad_decisions": 54,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 35
+      },
+      {
+        "completed_vad_decisions": 55,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 36
+      },
+      {
+        "completed_vad_decisions": 56,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 37
+      },
+      {
+        "completed_vad_decisions": 57,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 37
+      },
+      {
+        "completed_vad_decisions": 58,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 38
+      },
+      {
+        "completed_vad_decisions": 59,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 39
+      },
+      {
+        "completed_vad_decisions": 60,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 39
+      },
+      {
+        "completed_vad_decisions": 61,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 40
+      },
+      {
+        "completed_vad_decisions": 62,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 41
+      },
+      {
+        "completed_vad_decisions": 63,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 41
+      },
+      {
+        "completed_vad_decisions": 64,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 42
+      },
+      {
+        "completed_vad_decisions": 65,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 43
+      },
+      {
+        "completed_vad_decisions": 66,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 43
+      },
+      {
+        "completed_vad_decisions": 67,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 44
+      },
+      {
+        "completed_vad_decisions": 68,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 45
+      },
+      {
+        "completed_vad_decisions": 69,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 45
+      },
+      {
+        "completed_vad_decisions": 70,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 46
+      },
+      {
+        "completed_vad_decisions": 71,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 47
+      },
+      {
+        "completed_vad_decisions": 72,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 47
+      },
+      {
+        "completed_vad_decisions": 73,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 48
+      },
+      {
+        "completed_vad_decisions": 74,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 49
+      },
+      {
+        "completed_vad_decisions": 75,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 49
+      },
+      {
+        "completed_vad_decisions": 76,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 50
+      },
+      {
+        "completed_vad_decisions": 77,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 51
+      },
+      {
+        "completed_vad_decisions": 78,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 51
+      },
+      {
+        "completed_vad_decisions": 79,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 52
+      },
+      {
+        "completed_vad_decisions": 80,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 53
+      },
+      {
+        "completed_vad_decisions": 81,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 53
+      },
+      {
+        "completed_vad_decisions": 82,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 54
+      },
+      {
+        "completed_vad_decisions": 83,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 55
+      },
+      {
+        "completed_vad_decisions": 84,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 55
+      },
+      {
+        "completed_vad_decisions": 85,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 56
+      },
+      {
+        "completed_vad_decisions": 86,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 57
+      },
+      {
+        "completed_vad_decisions": 87,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 57
+      },
+      {
+        "completed_vad_decisions": 88,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 58
+      },
+      {
+        "completed_vad_decisions": 89,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 59
+      },
+      {
+        "completed_vad_decisions": 90,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 59
+      },
+      {
+        "completed_vad_decisions": 91,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 60
+      },
+      {
+        "completed_vad_decisions": 92,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 61
+      },
+      {
+        "completed_vad_decisions": 93,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 61
+      },
+      {
+        "completed_vad_decisions": 94,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 62
+      },
+      {
+        "completed_vad_decisions": 95,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 63
+      },
+      {
+        "completed_vad_decisions": 96,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 63
+      },
+      {
+        "completed_vad_decisions": 97,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 64
+      },
+      {
+        "completed_vad_decisions": 98,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 65
+      },
+      {
+        "completed_vad_decisions": 99,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 65
+      },
+      {
+        "completed_vad_decisions": 100,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 66
+      },
+      {
+        "completed_vad_decisions": 101,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 67
+      },
+      {
+        "completed_vad_decisions": 102,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 67
+      },
+      {
+        "completed_vad_decisions": 103,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 68
+      },
+      {
+        "completed_vad_decisions": 104,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 69
+      },
+      {
+        "completed_vad_decisions": 105,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 69
+      },
+      {
+        "completed_vad_decisions": 106,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 70
+      },
+      {
+        "completed_vad_decisions": 107,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 71
+      },
+      {
+        "completed_vad_decisions": 108,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 71
+      },
+      {
+        "completed_vad_decisions": 109,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 72
+      },
+      {
+        "completed_vad_decisions": 110,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 73
+      },
+      {
+        "completed_vad_decisions": 111,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 73
+      },
+      {
+        "completed_vad_decisions": 112,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 74
+      },
+      {
+        "completed_vad_decisions": 113,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 75
+      },
+      {
+        "completed_vad_decisions": 114,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 75
+      },
+      {
+        "completed_vad_decisions": 115,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 76
+      },
+      {
+        "completed_vad_decisions": 116,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 77
+      },
+      {
+        "completed_vad_decisions": 117,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 77
+      },
+      {
+        "completed_vad_decisions": 118,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 78
+      },
+      {
+        "completed_vad_decisions": 119,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 79
+      },
+      {
+        "completed_vad_decisions": 120,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 79
+      },
+      {
+        "completed_vad_decisions": 121,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 80
+      },
+      {
+        "completed_vad_decisions": 122,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 81
+      },
+      {
+        "completed_vad_decisions": 123,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 81
+      },
+      {
+        "completed_vad_decisions": 124,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 82
+      },
+      {
+        "completed_vad_decisions": 125,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 83
+      },
+      {
+        "completed_vad_decisions": 126,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 83
+      },
+      {
+        "completed_vad_decisions": 127,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 84
+      },
+      {
+        "completed_vad_decisions": 128,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 85
+      },
+      {
+        "completed_vad_decisions": 129,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 85
+      },
+      {
+        "completed_vad_decisions": 130,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 86
+      },
+      {
+        "completed_vad_decisions": 131,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 87
+      },
+      {
+        "completed_vad_decisions": 132,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 87
+      },
+      {
+        "completed_vad_decisions": 133,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 88
+      },
+      {
+        "completed_vad_decisions": 134,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 89
+      },
+      {
+        "completed_vad_decisions": 135,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 89
+      },
+      {
+        "completed_vad_decisions": 136,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 90
+      },
+      {
+        "completed_vad_decisions": 137,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 91
+      },
+      {
+        "completed_vad_decisions": 138,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 91
+      },
+      {
+        "completed_vad_decisions": 139,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 92
+      },
+      {
+        "completed_vad_decisions": 140,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 93
+      },
+      {
+        "completed_vad_decisions": 141,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 93
+      },
+      {
+        "completed_vad_decisions": 142,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 94
+      },
+      {
+        "completed_vad_decisions": 143,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 95
+      },
+      {
+        "completed_vad_decisions": 144,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 95
+      },
+      {
+        "completed_vad_decisions": 145,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 96
+      },
+      {
+        "completed_vad_decisions": 146,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 97
+      },
+      {
+        "completed_vad_decisions": 147,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 97
+      },
+      {
+        "completed_vad_decisions": 148,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 98
+      },
+      {
+        "completed_vad_decisions": 149,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 99
+      },
+      {
+        "completed_vad_decisions": 150,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 99
+      },
+      {
+        "completed_vad_decisions": 151,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 100
+      },
+      {
+        "completed_vad_decisions": 152,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 101
+      },
+      {
+        "completed_vad_decisions": 153,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 101
+      },
+      {
+        "completed_vad_decisions": 154,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 102
+      },
+      {
+        "completed_vad_decisions": 155,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 103
+      },
+      {
+        "completed_vad_decisions": 156,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 103
+      },
+      {
+        "completed_vad_decisions": 157,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 104
+      },
+      {
+        "completed_vad_decisions": 158,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 105
+      },
+      {
+        "completed_vad_decisions": 159,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 105
+      },
+      {
+        "completed_vad_decisions": 160,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 106
+      },
+      {
+        "completed_vad_decisions": 161,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 107
+      },
+      {
+        "completed_vad_decisions": 162,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 107
+      },
+      {
+        "completed_vad_decisions": 163,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 108
+      },
+      {
+        "completed_vad_decisions": 164,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 109
+      },
+      {
+        "completed_vad_decisions": 165,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 109
+      },
+      {
+        "completed_vad_decisions": 166,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 110
+      },
+      {
+        "completed_vad_decisions": 167,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 111
+      },
+      {
+        "completed_vad_decisions": 168,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 111
+      },
+      {
+        "completed_vad_decisions": 169,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 112
+      },
+      {
+        "completed_vad_decisions": 170,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 113
+      },
+      {
+        "completed_vad_decisions": 171,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 113
+      },
+      {
+        "completed_vad_decisions": 172,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 114
+      },
+      {
+        "completed_vad_decisions": 173,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 115
+      },
+      {
+        "completed_vad_decisions": 174,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 115
+      },
+      {
+        "completed_vad_decisions": 175,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 116
+      },
+      {
+        "completed_vad_decisions": 176,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 117
+      },
+      {
+        "completed_vad_decisions": 177,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 117
+      },
+      {
+        "completed_vad_decisions": 178,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 118
+      },
+      {
+        "completed_vad_decisions": 179,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 119
+      },
+      {
+        "completed_vad_decisions": 180,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 119
+      },
+      {
+        "completed_vad_decisions": 181,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 120
+      },
+      {
+        "completed_vad_decisions": 182,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 121
+      },
+      {
+        "completed_vad_decisions": 183,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 121
+      },
+      {
+        "completed_vad_decisions": 184,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 122
+      },
+      {
+        "completed_vad_decisions": 185,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 123
+      },
+      {
+        "completed_vad_decisions": 186,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 123
+      },
+      {
+        "completed_vad_decisions": 187,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 124
+      },
+      {
+        "completed_vad_decisions": 188,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 125
+      },
+      {
+        "completed_vad_decisions": 189,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 125
+      },
+      {
+        "completed_vad_decisions": 190,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 126
+      },
+      {
+        "completed_vad_decisions": 191,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 127
+      },
+      {
+        "completed_vad_decisions": 192,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 127
+      },
+      {
+        "completed_vad_decisions": 193,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 128
+      },
+      {
+        "completed_vad_decisions": 194,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 129
+      },
+      {
+        "completed_vad_decisions": 195,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 129
+      },
+      {
+        "completed_vad_decisions": 196,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 130
+      },
+      {
+        "completed_vad_decisions": 197,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 131
+      },
+      {
+        "completed_vad_decisions": 198,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 131
+      },
+      {
+        "completed_vad_decisions": 199,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 132
+      },
+      {
+        "completed_vad_decisions": 200,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 133
+      },
+      {
+        "completed_vad_decisions": 201,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 133
+      },
+      {
+        "completed_vad_decisions": 202,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 134
+      },
+      {
+        "completed_vad_decisions": 203,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 135
+      },
+      {
+        "completed_vad_decisions": 204,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 135
+      },
+      {
+        "completed_vad_decisions": 205,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 136
+      },
+      {
+        "completed_vad_decisions": 206,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 137
+      },
+      {
+        "completed_vad_decisions": 207,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 137
+      },
+      {
+        "completed_vad_decisions": 208,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 138
+      },
+      {
+        "completed_vad_decisions": 209,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 139
+      },
+      {
+        "completed_vad_decisions": 210,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 139
+      },
+      {
+        "completed_vad_decisions": 211,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 140
+      },
+      {
+        "completed_vad_decisions": 212,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 141
+      },
+      {
+        "completed_vad_decisions": 213,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 141
+      },
+      {
+        "completed_vad_decisions": 214,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 142
+      },
+      {
+        "completed_vad_decisions": 215,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 143
+      },
+      {
+        "completed_vad_decisions": 216,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 143
+      },
+      {
+        "completed_vad_decisions": 217,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 144
+      },
+      {
+        "completed_vad_decisions": 218,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 145
+      },
+      {
+        "completed_vad_decisions": 219,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 145
+      },
+      {
+        "completed_vad_decisions": 220,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 146
+      },
+      {
+        "completed_vad_decisions": 221,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 147
+      },
+      {
+        "completed_vad_decisions": 222,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 147
+      },
+      {
+        "completed_vad_decisions": 223,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 148
+      },
+      {
+        "completed_vad_decisions": 224,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 149
+      },
+      {
+        "completed_vad_decisions": 225,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 149
+      },
+      {
+        "completed_vad_decisions": 226,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 150
+      },
+      {
+        "completed_vad_decisions": 227,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 151
+      },
+      {
+        "completed_vad_decisions": 228,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 151
+      },
+      {
+        "completed_vad_decisions": 229,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 152
+      },
+      {
+        "completed_vad_decisions": 230,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 153
+      },
+      {
+        "completed_vad_decisions": 231,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 153
+      },
+      {
+        "completed_vad_decisions": 232,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 154
+      },
+      {
+        "completed_vad_decisions": 233,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 155
+      },
+      {
+        "completed_vad_decisions": 234,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 155
+      },
+      {
+        "completed_vad_decisions": 235,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 156
+      },
+      {
+        "completed_vad_decisions": 236,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 157
+      },
+      {
+        "completed_vad_decisions": 237,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 157
+      },
+      {
+        "completed_vad_decisions": 238,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 158
+      },
+      {
+        "completed_vad_decisions": 239,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 159
+      },
+      {
+        "completed_vad_decisions": 240,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 159
+      },
+      {
+        "completed_vad_decisions": 241,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 160
+      },
+      {
+        "completed_vad_decisions": 242,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 161
+      },
+      {
+        "completed_vad_decisions": 243,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 161
+      },
+      {
+        "completed_vad_decisions": 244,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 162
+      },
+      {
+        "completed_vad_decisions": 245,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 163
+      },
+      {
+        "completed_vad_decisions": 246,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 163
+      },
+      {
+        "completed_vad_decisions": 247,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 164
+      },
+      {
+        "completed_vad_decisions": 248,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 165
+      },
+      {
+        "completed_vad_decisions": 249,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 165
+      },
+      {
+        "completed_vad_decisions": 250,
+        "equivalent_endpoint_states": 56,
+        "max_frame_spans_so_far": 166
+      }
+    ],
+    "symbolic_patterns_evaluated": "2^250",
+    "terminal_equivalent_endpoint_states": 56,
+    "vad_decision_count": 250,
+    "witness_vad_pattern": "1001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001001"
+  }
+}

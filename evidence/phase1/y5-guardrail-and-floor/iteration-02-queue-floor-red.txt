@@ -1,0 +1,19 @@
+Command:
+  .venv/bin/pytest -q tests/test_live_provider_bundle.py::test_bundle_config_refuses_a_frame_that_is_permanently_too_heavy_for_its_queue
+
+Result:
+  1 failed in 4.29s (expected RED before the guard exists)
+
+Observed live-path state before the expected config-load refusal:
+  - configured max_queue_depth: 24
+  - required_work_items: 25
+  - two identical retryable admissions both returned canonical_queue_full
+  - each rejection retained queue_depth=0; accepted_samples=0; next_frame_sequence=0
+
+The test's final expectation fails because LiveProviderBundleConfig.from_mapping()
+currently accepts this manifest rather than raising:
+  Failed: DID NOT RAISE LiveProviderBundleAdmissionError
+
+The test itself is the re-runnable seam. It constructs the aggressive EndpointPolicy
+through the real bundle/runtime factory and proves the permanent-retry condition before
+asserting that the configuration loader must refuse it.
