@@ -594,3 +594,51 @@ the wording · C6 bearer PASS and now shipping · C7 `type="file"`, no native pi
 auto-cleanup PASS · C9 documented PASS.
 
 [iteration 13] target=Issue #5 criterion 7 server-authored silent-microphone preflight remedy; files=`moss_transcribe_diarize/app/{live_capture_status.py,live_transport.py}`, `frontend/src/{capture/captureClient.ts,capture/captureClient.test.ts,components/ControlPanel.tsx,components/ControlPanel.test.tsx}`, `tests/test_live_api.py`, `ProjectResources/Frontend/{app.js,app.js.map}`, `docs/phase1-gate-status.md`, `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`/opt/homebrew/bin/npm --prefix frontend run typecheck && /opt/homebrew/bin/npm --prefix frontend test -- --run` => 16 files / 117 tests PASS; focused `captureClient` + `ControlPanel` => 33 assertions PASS; `.venv/bin/python -m pytest -q tests/test_live_api.py` => 49 passed / 327 subtests; build => PASS (78,636-byte app.js); evidence=`evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`; learned=the descriptor can carry the exact server-owned remedy before a session exists, so no endpoint or frontend copy is needed; sustained silent mic displays it and blocks session creation; `verify_g9_served_bundle.py` has all behavioral assertions PASS but correctly fails its HEAD pin until the generated bundle is committed; next=Issue #8 criterion 4 upload byte progress/no-resume copy, while #8 criterion 2 awaits an operator lifecycle ruling.
+
+[monitor 2026-08-18 18:15] ITERATION 13's SILENT-MIC REMEDY IS BETTER THAN THE RULING REQUIRED. Verified the
+whole chain, not the summary:
+  - The string is now a single named constant `BROWSER_MICROPHONE_SILENT_STATUS_LINE`
+    (`live_capture_status.py:22`), byte-identical to the old wording, and `_FAILURE_STATUS_LINES` references
+    it. Grep across all `.py/.ts/.tsx` (excluding the bundle): the production string exists in exactly ONE
+    place. The only other hits are the two tests pinning the literal, which is correct.
+  - `live_transport.py` attaches `preflight_status_lines.browser_microphone_silent` to the EXISTING descriptor
+    payload the browser must fetch before capture. So it is still SERVER-AUTHORED — you satisfied criterion 3
+    outright rather than merely "replacing bad client copy with good client copy", and you added no endpoint.
+  - The client parses it with `nonEmptyString(...)` validation, so a server that stops sending it fails loudly
+    instead of silently degrading. Zero hardcoded copy in the client.
+  - Guard ORDER is right: the silent-mic branch precedes the generic `both capture lanes must have non-zero
+    signal` throw, so a detected silent mic yields the remedy, and `createSession` still refuses — charter §4
+    intact.
+  - The tests assert the full chain and are falsifiable at the layer the criterion is about: descriptor parse
+    equality, `onPreflightStatus` called with the remedy, `createSession()` rejects with it, and — the one that
+    matters most — `root.querySelector('[role="status"]')?.textContent` equals the remedy, i.e. the RENDERED
+    DOM. Plus a backend equality assertion in `test_live_api.py`.
+  Issue #5 criterion 7 is met on the evidence. I will close #5 as soon as the tracker is reachable.
+
+  Small follow-up, your call, not a blocker: the generic developer string is still user-visible for the
+  adjacent case — a silent SYSTEM lane, or a mic silent before `silentFrameRun` reaches its threshold. The
+  operator's own rationale ("the app already authors this moment badly") applies there too. One more
+  `preflight_status_lines` entry would finish the thought.
+
+***ONE THING TO GET RIGHT IN THE ITERATION YOU ARE IN NOW.*** Your in-flight criterion-4 work is correct — real
+`XMLHttpRequest` with `request.upload.onprogress` feeding `loaded/total`, injectable via
+`createXmlHttpRequest` for tests, `Uploading file: N / M bytes.`, the bar driven by `loaded/total`, the new
+line "Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.", and you even
+disambiguated the misleading poller message to "Connection interrupted while checking transcription". That
+answers both halves of criterion 4.
+
+BUT the release gate is currently RED because of it, and the wrong repair would gut it:
+    ASSERT label=source_file_upload_passes_options expected=present actual=absent result=FAIL
+           needle='submitJob(selectedFile, options)'
+    OVERALL=FAIL      (served_bundle_matches_HEAD still PASSes)
+You changed the call shape to `submitJob(selectedFile, { ...options, onUploadProgress(...) })`, so the needle
+no longer matches. **UPDATE THE NEEDLE to the new call shape — do not delete the assertion.** That check is the
+source half of the release gate; dropping it would leave the gate blind to a FilePanel that stops passing
+options at all, which is exactly the defect it was written to catch. A regex on
+`submitJob\(\s*selectedFile\s*,` would survive future option changes.
+
+And rebuild the bundle again before you commit — you changed `frontend/src` again, and you have been good about
+this each time. Confirmed you already rebuilt for iteration 13: `preflightStatusLines` is present in the
+committed `app.js`, and `git log -1 -- ProjectResources/Frontend/app.js` is `191853c`.
+
+[iteration 14] target=Issue #8 criterion 4 byte-progress/no-resume upload; files=`frontend/src/{api/jobs.ts,api/jobs.test.ts,components/FilePanel.tsx,components/FilePanel.test.tsx,App.test.tsx}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`, `evidence/phase1/g9-ledger-reconciliation/iteration-14-file-upload-progress.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=typecheck PASS; focused `jobs`/`FilePanel`/`App` 11/11 PASS; full frontend 16 files/118 tests PASS; Vite build PASS (79,582-byte app.js); post-commit served-bundle verifier 16/16 PASS with HEAD pin; preflight PASS; evidence=`evidence/phase1/g9-ledger-reconciliation/iteration-14-file-upload-progress.txt`; learned=XHR keeps multipart boundary handling and bearer auth while exposing real upload bytes, and poll retries must name their distinct post-upload phase; next=repair W2 unexpected-frame evidence recording, then bring in the reviewed tunnel launcher; #8 C2 remains operator-blocked.

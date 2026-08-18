@@ -79,18 +79,16 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Issue #8 criterion 4** replace the `fetch` upload with `XMLHttpRequest.upload.onprogress` so the UI
-   reports upload bytes, and state that a failed upload restarts whole rather than resumes. Keep the existing
-   post-upload job-progress semantics distinct and add focused tests. Criterion 2 still needs a ruling; do
-   not invent nonexistent `starting`/`recording`/`completed` lifecycle values.
-2. **W2 vLLM-only measurement prerequisites** first fix the runner so unexpected frames never persist
+1. **W2 vLLM-only measurement prerequisites** first fix the runner so unexpected frames never persist
    `pcm_base64` and aggregate diagnostic exemplars, then bring the already-audited SSH tunnel launcher
    from `dev` commit `affeaea` into this branch. Only then run the preregistered tunnel-backed runner
    with pre/post endpoint probes, `/v1/audio/transcriptions` inference, and the required transit/shared
    GPU limits. The CPU/HF contract and iteration-10 result cannot be reused as gate evidence.
-3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
+2. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.
+3. **Issue #8 criterion 2 (blocked externally)** needs the lifecycle vocabulary ruling; do not invent
+   nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
 
@@ -267,10 +265,11 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Priority order
-1. Issue #8 criterion 4: real byte progress and clear no-resume upload copy.
-2. Fix W2 unexpected-frame evidence recording before any vLLM run.
-3. Bring the reviewed tunnel launcher into this branch, then run W2 against
+1. Fix W2 unexpected-frame evidence recording before any vLLM run.
+2. Bring the reviewed tunnel launcher into this branch, then run W2 against
    `http://127.0.0.1:18000/v1`.
+3. W3 stays blocked until an operator adds a raw attended-session log.
+4. Issue #8 remains blocked only on the criterion-2 lifecycle ruling.
 
 ## Resolved iteration 12 — Issue #8 `/studio` continuation documented
 
@@ -283,10 +282,9 @@ browser-hop or real-model claim.
 - **Fail-closed G3 helper (iteration 11):** behaviourally tested, not just read. No `MOSS_HF_MODEL` /
   `--backend hf` left; unset endpoint → exit 1, bad endpoint → exit 1 ("probe returned '000'"), nothing starts,
   nothing left on 7861. Only listener is the SSH tunnel on 18000.
-- **Inverted verifier (iteration 12):** legacy needles now expected-absent and ABSENT; `bearerToken`
-  expected-present and PRESENT; filename contract PASS via regex against the **minified** form (correct — a
-  literal would break on renaming); `served_bundle_matches_HEAD` FAILs only because the rebuild is uncommitted.
-  **#9's in-file caveat is now in the served bundle** (all four markers, previously 0). Frontend 115/115 after rebuild.
+- **Served-bundle verifier (iteration 14):** its 16 assertions pass against `HEAD`: bearer ownership and
+  propagation, XHR upload plus byte progress, explicit no-resume copy, removal of legacy upload/static-export
+  signatures, and the dynamic session/timestamp export filename. The shipped frontend suite is 118/118.
 
 ## The 60 MB artifact: my note was 2 minutes late, it is already committed
 
@@ -298,7 +296,7 @@ verdict's predicates used, and recording the original sha256 + byte size so the 
 **No history rewriting** (no amend/rebase/force-push). `dev` uses true merge commits, so the history question is
 the operator's call, not yours.
 
-## Issue #8 is NOT closeable — the bundle was not its last blocker (monitor, 2026-08-18 18:05)
+## Issue #8 — C4 met; C2 is the only remaining blocker
 
 I audited all nine criteria after the release. Bundle verified: verifier `OVERALL=PASS`,
 `served_bundle_matches_HEAD` true, 77,879 B pinned to HEAD; the **committed** bundle (checked via
@@ -307,21 +305,18 @@ and **#9's caveat** — previously all 0. Frontend 115/115. Ownership grant corr
 `/studio` doc is real and its citation checks out (`tests/test_app_api.py` exercises jobs create/list,
 `PUT …/segments`, `…/download?kind=srt`, `GET /studio`).
 
-**C4 UNMET, both halves — ordinary unblocked work:**
-- No upload byte progress, and impossible as built: `submitJob` → `requestJson` → **`fetch`**, and `fetch`
-  cannot report upload progress. **Zero `XMLHttpRequest` in `frontend/src`.** The bar shows `job.progress`
-  (server transcription progress) *after* the POST, not bytes uploaded.
-- No "no resume" copy anywhere (zero matches for "resum"), and `FilePanel.tsx:38` prints
-  "Connection interrupted; retrying: …" which reads as resumability — the implication the criterion forbids.
-Fix: XHR with `upload.onprogress` driving the existing bar + one line of copy that a failed upload restarts
-whole. Tests for both.
+**C4 MET (iteration 14):** `submitJob` uses native multipart `XMLHttpRequest`; it retains the shared bearer,
+reports length-computable `{loaded,total}` through `upload.onprogress`, and `FilePanel` drives the existing bar
+plus its status line from those bytes. Poll retries now explicitly say they are checking transcription. The UI
+permanently says failed uploads restart from the beginning and resume is unavailable in Phase 1. Focused 11/11,
+full frontend 118/118, typecheck, production build, and the 16-assertion HEAD-pinned served-bundle verifier
+pass; see `evidence/phase1/g9-ledger-reconciliation/iteration-14-file-upload-progress.txt`.
 
 **C2 needs an operator RULING — do not silently decide:** criterion names `queued→starting, running→recording,
 done→completed`, but `api/types.ts:3` has `SessionLifecycle = idle|active|closing|closed|failed|aborted`.
 `starting`/`recording` are `capture_phase` vocabulary; `completed` exists nowhere. `lifecycleForJobStatus`
 sends everything non-terminal → `active`, so **queued and running are indistinguishable** and the bar reads 0%
-for both. Write a `docs/rulings/` memo with both readings + your recommendation, queue it, and do C4 in the
-same iteration.
+for both. Write a `docs/rulings/` memo with both readings + your recommendation and queue it for the operator.
 
 Other seven PASS: C1, C3, C5 (507 "Insufficient storage for upload." surfaced, no silent queueing — literal
 "server busy" wording not used), C6, C7, C8, C9.
