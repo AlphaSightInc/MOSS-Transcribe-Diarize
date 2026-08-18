@@ -313,6 +313,7 @@
       "ProjectResources/Frontend/app.js.map",
       "prototypes/",
       "scripts/g3-attended-session.sh",
+      "scripts/moss-vllm-tunnel.sh",
       "ops/",
       "tests/",
       "docs/",

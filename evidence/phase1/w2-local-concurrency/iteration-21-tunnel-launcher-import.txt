@@ -1,0 +1,39 @@
+Iteration 21 — reviewed W2 vLLM tunnel-launcher import
+
+Target
+------
+Bring the reviewed, host-read-only tunnel launcher from dev commit affeaea into
+this Phase 1 branch. This is prerequisite plumbing only; it does not run W2 or
+establish G4/G5.
+
+Source verification
+-------------------
+`git merge-base --is-ancestor affeaea HEAD` exited 1 before this change.
+The source content SHA-256 was:
+5b71bc679c0ef6751017e990dbd7346a3225acd534bd8c0fbf34f585f8d42a92
+
+Validation
+----------
+$ cmp -s scripts/moss-vllm-tunnel.sh <(git show affeaea:scripts/moss-vllm-tunnel.sh)
+PASS exact-content-match affeaea
+
+$ bash -n scripts/moss-vllm-tunnel.sh
+PASS bash -n
+
+$ ./scripts/moss-vllm-tunnel.sh
+tunnel already up on 127.0.0.1:18000
+
+  MOSS_VLLM_BASE_URL=http://127.0.0.1:18000/v1
+
+$ curl -sS -o /dev/null -w 'GET /v1/models status=%{http_code}\n' --max-time 8 http://127.0.0.1:18000/v1/models
+GET /v1/models status=200
+
+The first final preflight rejected the new script because this ticket's narrow
+ownership list did not name it. The ticket now owns exactly
+`scripts/moss-vllm-tunnel.sh`; no scripts directory-wide grant was made.
+
+Limits
+------
+The command reused an existing local SSH tunnel; it did not restart, deploy to,
+or reconfigure the GPU host. A 200 model-list probe proves reachability only.
+It does not prove transcription, latency, GPU telemetry, a W2 run, G4, or G5.

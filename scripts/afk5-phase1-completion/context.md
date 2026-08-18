@@ -86,10 +86,11 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 vLLM-only measurement prerequisites**: iteration 16 compacted the committed CPU/HF diagnostic
-   `run-state.json` from 59,992,997 to 288,007 bytes without raw PCM. Bring audited tunnel launcher
-   `affeaea` from `dev`, then use only the preregistered tunnel-backed runner. The CPU/HF result remains
-   diagnostic, not G4/G5 evidence.
+3. **W2 vLLM-only measurement runner (P1)**: iteration 21 imported the exact reviewed `affeaea` tunnel
+   launcher and proved its existing local endpoint returns `/v1/models` 200. The only runner in this
+   checkout is CPU/HF-local, so first design/prototype a tunnel-backed local-service runner that preserves
+   the frozen matrix, hashes its inputs, and explicitly records missing GPU telemetry. The CPU/HF result
+   remains diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
 5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
@@ -103,10 +104,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   operator ruling. Run G4/G5 against the tunnel.** Still unobtainable and not to be fabricated: GPU
   OOM/errors, GPU memory/utilisation, vLLM active/queued counts (the tunnel carries inference, not host
   telemetry; the host stays read-only).
-- The monitored tunnel endpoint remains live, but its launcher is absent from this worktree: `affeaea`
-  added `scripts/moss-vllm-tunnel.sh` on `dev`, and `git merge-base --is-ancestor affeaea HEAD` returns
-  false. Iteration 11 fails closed rather than silently selecting HF; W2 cannot be run from this checkout
-  until the reviewed launcher is brought in.
+- The tunnel launcher is now present at `scripts/moss-vllm-tunnel.sh`, exact-content matched to reviewed
+  `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
+  remaining W2 blocker is runner support for the remote vLLM path, not tunnel reachability.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -269,13 +269,12 @@ Verified good, no action: the CPU/HF verdict is a clean negative — `screening_
 ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothing on 8899/7861, no model
 process alive.
 
-## Priority order
-1. Trim the already-committed 60 MB CPU/HF diagnostic artifact in a new commit, preserving predicate-bearing
-   arrays and recording original `a28f57e5b5266c429bb1df106417ee6448fed58fb94180c207788e5b4d8986dd` / 59,992,997-byte provenance.
-2. Bring the reviewed tunnel launcher into this branch, then run W2 against
-   `http://127.0.0.1:18000/v1`.
-3. W3 stays blocked until an operator adds a raw attended-session log.
-4. Issue #8 remains blocked only on the criterion-2 lifecycle ruling.
+## Next feasible sequence
+1. Prototype/design the W2 tunnel-backed local-service runner; do not alter frozen gates or use the CPU/HF
+   runner as G4/G5 evidence.
+2. Run the preregistered W2 matrix only after that runner has a measured, fail-closed preflight.
+3. W3 stays blocked until an operator adds a raw attended-session log; Issue #8 remains blocked on the
+   criterion-2 lifecycle ruling; Defect B needs new audited recordings before Defect C.
 
 ## Resolved iteration 12 — Issue #8 `/studio` continuation documented
 
@@ -423,6 +422,14 @@ output limiter samples occurred. The result is an explicit **NO_POLICY_SELECTED*
 for Defect C: the one 59.584 s capture's lane references are identical playback, so it cannot
 attribute transcript recovery to a lane or establish a general threshold. Evidence:
 `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`.
+
+## Resolved iteration 21 — W2 tunnel launcher import
+
+`scripts/moss-vllm-tunnel.sh` now exactly matches reviewed `affeaea` (source SHA-256
+`5b71bc679c0ef6751017e990dbd7346a3225acd534bd8c0fbf34f585f8d42a92`), passes `bash -n`, and reused an
+existing local tunnel whose `/v1/models` returned 200. It never alters the GPU host. This proves only
+launcher availability/reachability; W2 still requires a dedicated remote-vLLM runner and its before/after
+endpoint probes. Evidence: `evidence/phase1/w2-local-concurrency/iteration-21-tunnel-launcher-import.txt`.
 
 ## Verified this cycle, no action
 
