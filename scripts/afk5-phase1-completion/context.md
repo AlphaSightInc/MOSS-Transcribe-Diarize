@@ -79,10 +79,9 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Defect 409 (P1)**: start with a failing route/client test. The four bare terminal-409 sites in
-   `moss_transcribe_diarize/app/live_transport.py` must return the existing typed `failure` envelope; the
-   capture client must render its server-authored line rather than a synthesized HTTP status. This is the
-   next attended-run defect after A's source-and-bundle repair.
+1. **Defect A residual latch (P0)**: add the monitor-specified failing flat-ingress replay before changing
+   the poller. A bounded no-progress watchdog must reset a stale snapshot cursor once when neither cursor
+   moves, then observe the terminal snapshot. Retain the existing ingress-advance fast path.
 2. **Defect B (P1)**: prototype and measure the two input lanes' real-fixture RMS and transcription effect
    before choosing any mixer normalization/AGC/offset policy. Pre-register the success measure; no
    hand-tuned gain constant.
@@ -386,3 +385,34 @@ normalisation / slow AGC / measured offset against accuracy on a two-speaker fix
 Preflight gates only `level >= SILENCE_RMS` (`captureClient.ts:171,739`, `SILENCE_RMS = 1e-4`), so a lane
 20+ dB below its peer passes. Do it **after B**, using B's measurement for a defensible threshold, and source
 user-facing copy from the server exactly as the silent-mic remedy does.
+
+## Defect A: fixed for mid-capture, RESIDUAL latch at stop (monitor, 2026-08-18 18:45)
+
+`168db85` is a real root-cause fix — recovery keyed on an independent signal (cumulative
+`v2_session.lanes[*].accepted_samples`), trigger `deferralIndex !== -1 || (!snapshot && ingressAdvanced)`,
+defensive parse, and the test strengthened to four assertions carrying the operator's real numbers.
+Frontend 16 files / **119 pass**.
+
+**Residual, same shape, and it is the operator's Stop symptom:** recovery requires ingress to ADVANCE. After
+capture stops, `accepted_samples` is flat → `ingressAdvanced` false; no `identity_finalized` → `deferralIndex
+=== -1`; so no re-baseline at `:303`. Terminal detection at `:306` needs a **changed** snapshot the stale
+cursor never produces, and `recoverOwnerTerminal` (`:139`) is reachable only from the 401/403 branch (`:325`).
+A strand beginning at/after the last frame ⇒ "Finalizing…" forever.
+
+**Fix:** bounded no-progress watchdog — N consecutive rounds with no movement in *either* cursor while not
+known-terminal ⇒ re-baseline `snapshotVersion = 0` once, reset counter. Subsumes the heuristic, no new server
+field. **Test with FLAT ingress** (constant `accepted_samples`, stale cursor `unchanged`, server terminal) and
+assert `onTerminal` fires; it must fail before the watchdog exists — if it passes, my reading is wrong, record
+that instead. Keep the ingress signal as the fast path; the watchdog is the floor.
+
+### Resolved iteration 18 — terminal 409 envelope and rendering
+
+All four former bare terminal-409 branches now return a `failure` envelope. When the runtime has a terminal
+record, its exact `code`, `message`, and detail are reused; clean mono/v2 terminal states receive the stable
+`live_session_terminal`/`v2_session_terminal` code. The capture client uses a nonempty server `detail` (or
+the failure message) for every otherwise-unhandled 409, so it reports the server-authored line instead of
+`frame POST failed: HTTP 409`. The route replay creates a real `canonical_decode_failed` failure from a
+decoder seam and proves its OSError detail reaches the 409; the full live API suite and the 120-test frontend
+suite pass. Evidence: `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`.
+
+Next: **Defect A residual latch**, then **B** (measure per-lane RMS first, no hand-tuned constant) → **C**.

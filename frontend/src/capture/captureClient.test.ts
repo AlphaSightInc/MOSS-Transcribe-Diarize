@@ -68,8 +68,14 @@ function testLaneState(): TestLaneState {
   };
 }
 
-function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
-  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+function activeFrameClient(
+  onTransportError?: (route: "frame" | "heartbeat", error: Error) => void,
+): { client: ActiveClient; lane: TestLaneState } {
+  const client = new CaptureClient({
+    captureBearer: "capture-token",
+    helperVersion: "test",
+    onTransportError,
+  });
   const active = client as unknown as ActiveClient;
   const lane = testLaneState();
   active.context = { sampleRate: 4 } as AudioContext;
@@ -835,6 +841,29 @@ describe("browser capture frame contract", () => {
     expect(client.session).toBeNull();
     expect(lane.sequence).toBe(0);
     expect(lane.frameQueue).toHaveLength(0);
+  });
+
+  it("reports the server-authored terminal 409 line instead of a bare HTTP status", async () => {
+    const onTransportError = vi.fn();
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        detail: "canonical decode failed: OSError: decoder device became unavailable",
+        failure: { code: "canonical_decode_failed" },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient(onTransportError);
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+
+    expect(client.session).toBeNull();
+    expect(onTransportError).toHaveBeenCalledWith(
+      "frame",
+      expect.objectContaining({ message: "canonical decode failed: OSError: decoder device became unavailable" }),
+    );
   });
 
   it("stops local capture on a frame that can never fit the server queue", async () => {

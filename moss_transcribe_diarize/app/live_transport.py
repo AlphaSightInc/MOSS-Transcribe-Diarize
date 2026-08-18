@@ -112,6 +112,40 @@ def attach_live_routes(
     app.state.live_tapes = tapes
     app.state.live_helper_presence = helper_presence
     app.state.live_helper_failures = helper_failures
+
+    def terminal_conflict_response(session_id: str, exc: Exception):
+        """Keep terminal 409s as readable, typed transport failures.
+
+        Runtime terminal failures already have the canonical code, message, and detail on
+        the snapshot.  Reusing that record prevents a later frame or Stop request from
+        replacing the decoder's reason with an opaque HTTP status.  A cleanly closed
+        session has no runtime failure record, so retain the same envelope shape with a
+        stable terminal code and the route's existing server-authored detail.
+        """
+        snapshot = _snapshot_payload(runtime, session_id)
+        terminal_failure = snapshot.get("terminal_failure") if snapshot is not None else None
+        if isinstance(terminal_failure, Mapping):
+            failure = dict(terminal_failure)
+        else:
+            failure = {
+                "kind": "integrity",
+                "code": (
+                    "v2_session_terminal"
+                    if isinstance(exc, LiveV2SessionTerminalError)
+                    else "live_session_terminal"
+                ),
+                "message": str(exc) or "live session is terminal.",
+                "retryable": False,
+                "detail": {"error_type": exc.__class__.__name__},
+            }
+        response = {
+            "detail": failure["message"],
+            "failure": failure,
+            "snapshot": snapshot,
+            "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
+        }
+        return JSONResponse(response, status_code=409)
+
     # ADR-0003 D6: the service reaps, at startup too. No session exists yet, so anything
     # under the declared root belongs to a process that is gone -- which is the only moment
     # a tape left by a crash can be reached at all.
@@ -304,9 +338,9 @@ def attach_live_routes(
                 status_code=429,
             )
         except LiveSessionClosed as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return terminal_conflict_response(session_id, exc)
         except LiveV2SessionTerminalError as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return terminal_conflict_response(session_id, exc)
         except ValueError as exc:
             status_code = 409 if str(exc).startswith("expected frame sequence") else 400
             raise HTTPException(status_code=status_code, detail=str(exc)) from exc
@@ -459,9 +493,9 @@ def attach_live_routes(
                 status_code=429,
             )
         except (LiveSessionClosed, LiveSessionFailed) as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return terminal_conflict_response(session_id, exc)
         except LiveV2SessionTerminalError as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return terminal_conflict_response(session_id, exc)
         except LiveMixIntegrityError as exc:
             status, failure = live_v2_mix_failure_response(exc)
             failure["snapshot"] = _snapshot_payload(runtime, session_id)

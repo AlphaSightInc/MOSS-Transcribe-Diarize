@@ -752,3 +752,42 @@ confirmations and one thing worth knowing.
        failed run into a useful control rather than a discarded one.
 
 [iteration 17] target=attended-run Defect A poller cursor latch; files=`frontend/src/api/{mossPoller.ts,mossPoller.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red replay failed with no terminal callback, then focused poller 1/1 PASS, frontend 16 files/119 tests PASS, live API terminal-contract 2 passed, typecheck/build PASS; evidence=`evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt`; learned=an unchanged snapshot plus monotonically advancing server v2 accepted samples proves a stale cursor without a new timer/count policy, so one uncursored reread recovers the version-332 terminal snapshot; next=Defect 409 typed terminal failure envelope and client server-authored rendering; a fresh attended run is still required.
+
+[monitor 2026-08-18 18:45] DEFECT A FIX IS A REAL ROOT-CAUSE FIX AND THE TEST GOT STRONGER, NOT WEAKER.
+Verified: frontend 16 files / 119 tests pass, the red is now green, nothing regressed. You used an
+INDEPENDENT signal rather than patching the symptom — cumulative `v2_session.lanes[*].accepted_samples` from
+the same payload proves the server progressed even when the snapshot cursor answered `unchanged`, so the
+trigger became `deferralIndex !== -1 || (!snapshot && ingressAdvanced)`. `parseIngressAcceptedSamples`
+returns null on missing or malformed data instead of throwing or falsely firing. And the test now asserts
+four things where it asserted one: the exact snapshot URL sequence, `onTerminal` with "Session closed.",
+`freshSnapshotRequests === 2`, and `poller.running() === false`. It even carries the operator's real numbers
+(294 accepted samples, cursor 153, version 332). That is the standard.
+
+***BUT THERE IS A RESIDUAL LATCH IN THE SAME SHAPE, AND IT IS THE OPERATOR'S ACTUAL STOP SYMPTOM.***
+Your recovery is conditioned on ingress ADVANCING. Trace the post-stop case:
+  - capture ends, so `accepted_samples` stops growing -> `ingressAdvanced` is false
+  - no `identity_finalized` pending -> `deferralIndex === -1`
+  - therefore no re-baseline at `mossPoller.ts:303`
+  - and terminal detection at `:306` is `if (snapshot && TERMINAL_STATUSES.has(...))`, which needs a CHANGED
+    snapshot the stale cursor will never produce
+  - `recoverOwnerTerminal` (:139) is only reachable from the 401/403 branch at :325, not from a 200-unchanged
+    path
+So a strand that BEGINS at or after the last frame leaves "Finalizing..." greyed out forever — exactly what
+the operator saw, just with different timing. Your current fix rescues the mid-capture strand (which is what
+happened in that run, and why the fix is right) but not a strand that starts at stop.
+
+Close it with a bounded no-progress watchdog, not more special cases: if N consecutive rounds produce no
+movement in EITHER cursor while the session is not known terminal, re-baseline `snapshotVersion = 0` once and
+reset the counter. That subsumes the ingress heuristic and needs no new server field. Add a test with FLAT
+ingress — `accepted_samples` constant across rounds, stale cursor answered `unchanged`, server terminal — and
+assert `onTerminal` still fires. That test must fail before the watchdog exists; if it passes beforehand, my
+reading is wrong and you should record that instead.
+
+Keep the ingress signal — it recovers faster than a watchdog and it is honest evidence of progress. The
+watchdog is the floor underneath it.
+
+After that: defect 409 (four bare sites at `live_transport.py:307,308,462,463`; typed envelope already at
+`:316,:455,:475`; client falls through at `captureClient.ts:828`), then B (measure per-lane RMS first, no
+hand-tuned constant), then C.
+
+[iteration 18] target=Defect 409 terminal failure envelope and browser rendering; files=`moss_transcribe_diarize/app/live_transport.py`, `tests/test_live_api.py`, `frontend/src/capture/{captureClient.ts,captureClient.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red route replay returned only `live session is failed.` and client replay rendered `frame POST failed: HTTP 409`; then live API 50 passed/327 subtests, capture-client 32 passed, frontend typecheck/build and full 16-file/120-test suite passed, diff check passed; evidence=`evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`; learned=terminal runtime records already contain the exact canonical failure code/message/detail and must be reused on later route requests; clean mono/v2 terminals need an explicit typed fallback; next=the monitor-found Defect A flat-ingress/no-progress watchdog replay before B/C; fresh attended evidence still required.

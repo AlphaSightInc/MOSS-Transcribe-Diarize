@@ -1,0 +1,34 @@
+# Iteration 18 — terminal 409 failure envelope
+
+Target: preserve the runtime's typed terminal failure through a later frame/Stop 409, and render the
+server-authored line in the browser capture client.
+
+Red reproductions before the implementation:
+
+- `/opt/homebrew/bin/npm --prefix frontend test -- src/capture/captureClient.test.ts -t 'reports the server-authored terminal 409 line'`
+  failed because the callback received `frame POST failed: HTTP 409` rather than the response detail.
+- `.venv/bin/python -m pytest tests/test_live_api.py -k 'terminal_failure_envelope' -q`
+  drove a real canonical decode failure with `canonical_decode_failed`; its next v2 frame returned 409 with
+  only `detail: live session is failed.` rather than the decoder failure.
+
+Implemented result:
+
+- `terminal_conflict_response` serves all four formerly bare terminal-409 branches. It reuses the snapshot's
+  `terminal_failure` record when present, including `canonical_decode_failed`, its message, and OSError
+  detail. Terminal states without a runtime record get a typed `live_session_terminal` or
+  `v2_session_terminal` fallback envelope.
+- `CaptureClient` parses the response detail/failure message and reports that server-authored line for every
+  otherwise-unhandled 409; sequence and impossible-queue special handling is unchanged.
+
+Validation after the implementation:
+
+- `.venv/bin/python -m pytest tests/test_live_api.py -q` => 50 passed, 327 subtests passed (one TestClient
+  deprecation warning).
+- `/opt/homebrew/bin/npm --prefix frontend test -- src/capture/captureClient.test.ts` => 32 passed.
+- `/opt/homebrew/bin/npm --prefix frontend run typecheck` => PASS.
+- `/opt/homebrew/bin/npm --prefix frontend run build && /opt/homebrew/bin/npm --prefix frontend test` =>
+  production bundle rebuilt; 16 files / 120 tests passed.
+- `git diff --check` => PASS.
+
+This is source and generated-bundle evidence for the terminal-error repair. It does not replace the required
+fresh attended capture, nor certify G3/G4/G5.

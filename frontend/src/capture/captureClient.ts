@@ -213,6 +213,7 @@ type FramePostResult =
 
 type FrameFailure = Readonly<{
   code: string | null;
+  detail: string | null;
   expectedSequence: number | null;
 }>;
 
@@ -824,7 +825,11 @@ export class CaptureClient {
       state.sequence = failure.expectedSequence;
       return "retry";
     }
-    const error = new Error(`frame POST failed: HTTP ${response.status}`);
+    const error = new Error(
+      response.status === 409 && failure.detail !== null
+        ? failure.detail
+        : `frame POST failed: HTTP ${response.status}`,
+    );
     if (response.status === 409) {
       this.resetSessionForRecreation();
       this.reportTransportError("frame", error);
@@ -866,22 +871,34 @@ export class CaptureClient {
     try {
       const payload = await response.json();
       if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
-        return { code: null, expectedSequence: null };
+        return { code: null, detail: null, expectedSequence: null };
       }
-      const failure = (payload as Record<string, unknown>).failure;
+      const responsePayload = payload as Record<string, unknown>;
+      const responseDetail = responsePayload.detail;
+      const failure = responsePayload.failure;
       if (failure === null || typeof failure !== "object" || Array.isArray(failure)) {
-        return { code: null, expectedSequence: null };
+        return {
+          code: null,
+          detail: typeof responseDetail === "string" && responseDetail.trim() ? responseDetail : null,
+          expectedSequence: null,
+        };
       }
       const fields = failure as Record<string, unknown>;
       return {
         code: typeof fields.code === "string" ? fields.code : null,
+        detail:
+          typeof responseDetail === "string" && responseDetail.trim()
+            ? responseDetail
+            : typeof fields.message === "string" && fields.message.trim()
+              ? fields.message
+              : null,
         expectedSequence:
           Number.isInteger(fields.expected_sequence) && (fields.expected_sequence as number) >= 0
             ? (fields.expected_sequence as number)
             : null,
       };
     } catch {
-      return { code: null, expectedSequence: null };
+      return { code: null, detail: null, expectedSequence: null };
     }
   }
 

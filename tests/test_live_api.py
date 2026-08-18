@@ -826,6 +826,64 @@ class LiveApiTest(unittest.TestCase):
             # `terminal_failure`, nothing else -- stops here.
             self.assertIn(session["status"], LIVE_TERMINAL_SESSION_STATUSES)
 
+    def test_v2_frame_after_canonical_decode_failure_returns_terminal_failure_envelope(self):
+        """A terminal frame refusal preserves the decoder's typed, readable failure."""
+        from moss_transcribe_diarize.app.live_adapters import LiveProviderError
+        from moss_transcribe_diarize.app.server import create_app
+
+        class FailingApiDecoder(ApiDecoder):
+            def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+                del span, pcm
+                raise LiveProviderError(
+                    "canonical decode failed: OSError: decoder device became unavailable",
+                    detail={"cause": "OSError"},
+                )
+
+        scheduler = _ManualCanonicalPumpScheduler()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=8,
+                    max_frame_samples=2,
+                    frame_samples=2,
+                    speech=(True, False),
+                    decoder_factory=FailingApiDecoder,
+                    canonical_scheduler=scheduler,
+                ),
+                **self._live_auth_kwargs(tmpdir),
+            )
+            client = self._paired_client(app)
+            session_id = client.post("/api/live/sessions").json()["id"]
+            frames_url = f"/api/live/sessions/{session_id}/frames"
+
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(0, 2, lane="system")).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(1, 2, lane="system")).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(2, 2, lane="system")).status_code,
+                200,
+            )
+            self.assertEqual(
+                client.post(frames_url, json=v2_frame_payload(3, 2, lane="system")).status_code,
+                200,
+            )
+            self.assertTrue(scheduler.run_one())
+
+            refused = client.post(frames_url, json=v2_frame_payload(4, 2, lane="system"))
+
+            self.assertEqual(refused.status_code, 409)
+            self.assertEqual(refused.json()["detail"], "canonical decode failed: OSError: decoder device became unavailable")
+            self.assertEqual(refused.json()["failure"]["code"], "canonical_decode_failed")
+            self.assertEqual(refused.json()["failure"]["detail"]["cause"], "OSError")
+
     def test_stop_timeout_and_abort_return_terminal_failure_semantics(self):
         from fastapi.testclient import TestClient
         from moss_transcribe_diarize.app.server import create_app
@@ -2053,11 +2111,11 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(failing_heartbeat.status_code, 200)
             self.assertEqual(refused.status_code, 409)
             self.assertEqual(refused.json()["detail"], "v2 system lane is failed.")
-            # Unlike the out-of-order conflict above, this 409 carries no machine-readable code —
-            # the bare detail is the only thing that distinguishes a closed lane from a gap.
-            self.assertNotIn("failure", refused.json())
+            self.assertEqual(refused.json()["failure"]["code"], "v2_session_terminal")
+            self.assertEqual(refused.json()["failure"]["detail"]["error_type"], "LiveV2SessionTerminalError")
             self.assertEqual(identical_retry.status_code, 409)
             self.assertEqual(identical_retry.json()["detail"], "v2 system lane is failed.")
+            self.assertEqual(identical_retry.json()["failure"]["code"], "v2_session_terminal")
             self.assertEqual(peer_frame.status_code, 200)
             self.assertEqual(heartbeat_after_refusal.status_code, 200)
             self.assertIn(session_id, app.state.live_v2_sessions)
