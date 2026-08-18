@@ -1,0 +1,14 @@
+{
+  "chosen_normal_session_bound": null,
+  "does_not_establish": [
+    "deployed GPU p95 transcript lag",
+    "GPU OOM or accelerator errors",
+    "deployed GPU memory or utilisation",
+    "vLLM active or queued request counts",
+    "deployed real-time factor"
+  ],
+  "overload_passes": false,
+  "qualifies_local_g4_g5_portions": false,
+  "screening_passes": [],
+  "soak_passes": false
+}

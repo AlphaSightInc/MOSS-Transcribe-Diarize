@@ -35,6 +35,7 @@ Living working memory. Update it every iteration so it matches reality. History 
   `127.0.0.1:7861`; local descriptor fetch and bearer-authorized session create/abort passed. Raw
   evidence: `evidence/phase1/w0-local-live/iteration-6-local-hf-launch.txt`. The helper uses vLLM
   only when a configured endpoint returns 200; otherwise it requires `MOSS_HF_MODEL` and records HF.
+  **MONITOR 17:40 — that fallback is now FORBIDDEN and must be deleted; see the endpoint section below.**
   This is CPU/WebRTC launch evidence, not a G3 attended run or GPU G4/G5 evidence. Re-finalize before
   using a checkout whose source revision changes.
 - Two-speaker fixture ready: `evidence/phase1/g3-attended/two-speaker-fixture-90s.wav`
@@ -43,7 +44,7 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g3-attended/iteration-7-operator-evidence-inventory.txt` found only that
   fixture and no raw attended-session log. A fixture cannot establish the charter §7
   fresh-gesture two-lane display-capture bar.
-- **W2 CPU/HF-local measurement is re-frozen, not run:**
+- **W2 CPU/HF-local measurement ran once before the 17:40 operator ruling, and is diagnostic only:**
   `cpu_hf_local_preregistration.json` SHA-256 is
   `955a2883ada6cef99be007d1eb3c9838d6be9e227dc1408e06b6f8617fdb9d6c`. It records 120-second
   screens at 1/2/4/8 sessions and one 600-second largest-passing soak, using real decoder/speech,
@@ -51,9 +52,14 @@ Living working memory. Update it every iteration so it matches reality. History 
   retryable session-local v2 429, overload marker isolation, and observer reconnect. Iteration 9's
   harness writes frame/observer/RSS arrays and canonical dispatch events incrementally at
   `run_cpu_hf_local_measurement.py`; input preflight and its asynchronous event-writer smoke passed at
-  `evidence/phase1/w2-local-concurrency/iteration-9-runner-and-refreeze.txt`. The result must use
-  **CPU HF local decode, not the deployed GPU bound** and cannot claim deployed GPU p95, GPU OOM,
-  GPU memory/utilisation, vLLM active/queued counts, or deployed real-time factor.
+  `evidence/phase1/w2-local-concurrency/iteration-9-runner-and-refreeze.txt`. Iteration 10 completed the
+  full 1/2/4/8 matrix at `evidence/phase1/w2-local-concurrency/run-20260818T213600/`: no normal row
+  passed, so no 600-second soak was selected. Screen 1 had p95 `4.95967215 s` but RSS growth
+  `4300292096` bytes (>4 GiB) and an unclosed stop; screens 2/4/8 had p95 `50.0133405` /
+  `79.1572325` / `101.8289666 s`, skew `8` / `4` / `2`, and unclosed stops. The overload row did
+  observe session-local retryable 429, peer acceptance, and eventual retry success, but both stops did
+  not close. The endpoint/operator ruling arrived after this run: **do not use this CPU/HF result for
+  any G4/G5 portion or inference claim**; retain it solely as raw harness/host diagnostic evidence.
 
 ## Environment facts that cost previous cycles real time
 
@@ -70,33 +76,37 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 (runner and preflight ready; not measured)** run the hash-pinned local CPU/HF
-   deployed-geometry measurement: screens 1/2/4/8, then soak its largest passing bound and retain
-   raw state. It can establish local G4/G5 portions only; deployed p95, GPU, vLLM, and deployed-RTF
-   figures remain external.
-2. **W1 (blocked externally)** obtain ownership or a permitted release path for the tracked served
-   bundle, then rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
-3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
+1. **W0 safety constraint** remove the G3 helper's forbidden HF fallback before any further G3/G4/G5
+   run. It must hard-fail when the vLLM tunnel is absent or non-200, naming
+   `./scripts/moss-vllm-tunnel.sh`; add focused coverage that no local-model path can be selected.
+2. **W1/W5 release (now authorized)** first invert `verify_g9_served_bundle.py` so green means the
+   bearer and filename contracts are present, then rebuild the tracked served bundle and validate the
+   verifier against it. Keep the verifier and generated bundle in the same commit; do not weaken it to
+   accept the stale bundle.
+3. **W2 vLLM-only measurement** after the safety fix, make a newly preregistered tunnel-backed runner
+   record pre/post endpoint probes, `/v1/audio/transcriptions` inference, and the mandatory transit/shared
+   GPU limits. The CPU/HF contract and iteration-10 result cannot be reused as gate evidence.
+4. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
+   preflight with the exact server-authored remedy wording from `live_capture_status.py:41-44`, sourced
+   once, and add a focused test.
+5. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.
 
 ## Blockers
 
-- `MOSS_VLLM_BASE_URL` is unset. A completed local HF run can establish only CPU-local G4/G5 portions
-  at matching geometry; it cannot establish deployed p95 lag, GPU OOM/errors, GPU memory/utilisation,
-  vLLM active/queued counts, or deployed real-time factor. Do not fabricate them.
-- `scripts/afk-guardrails/preflight.py afk5-phase1-completion` rejects changes to the tracked served
-  bundle under `ProjectResources/Frontend/`. W1 needs an operator-granted ownership change or a
-  permitted release owner; source tests alone do not update the browser the Python service serves,
-  including W5's export filenames.
-- **Issue #5 criterion 7 is a Lane-B contract question — do NOT build it.** The silent-mic-at-preflight
-  remedy line is unreachable by construction: the copy exists (`live_capture_status.py:41-44`) but
-  rides the authenticated heartbeat, and `captureClient.ts:491-493` refuses `createSession()` before
-  a session can exist, per charter §4. `browser_microphone_silent` is a non-terminal degraded code,
-  not one of the three `PreSessionCaptureFailure` codes (`captureClient.ts:116-122`). The monitor has
-  escalated it on issue #5 with two options; the operator rules. Do not invent a fourth pre-session
-  code with client-authored copy (violates criterion 3 / C11) and do not create a session on a silent
-  mic (violates charter §4).
+- ~~`MOSS_VLLM_BASE_URL` is unset~~ **SUPERSEDED 17:40: the endpoint is LIVE at
+  `http://127.0.0.1:18000/v1` via `./scripts/moss-vllm-tunnel.sh`, monitor-verified including a real
+  transcription. A local HF run may NOT establish any G4/G5 portion — the local runner is off limits by
+  operator ruling. Run G4/G5 against the tunnel.** Still unobtainable and not to be fabricated: GPU
+  OOM/errors, GPU memory/utilisation, vLLM active/queued counts (the tunnel carries inference, not host
+  telemetry; the host stays read-only).
+- W1/W5's generated-bundle release is now authorized by the operator, but the mandatory order is
+  verifier polarity first, then rebuild, then one commit. The current served bundle remains stale until
+  the released-bundle verifier passes; never bypass `afk-guardrails` to mask that fact.
+- Issue #5 criterion 7 is no longer a Lane-B decision: the operator selected the app-side preflight
+  remedy. Keep its wording in one source (the existing `live_capture_status.py:41-44` sentence), do not
+  create a session for a silent mic, and test the exact displayed wording.
 
 
 ## W0 evidence and limits
@@ -107,8 +117,9 @@ Living working memory. Update it every iteration so it matches reality. History 
 - The finalized manifest's golden check passes through the production `LiveProviderBundleConfig`
   readers, with zero failures and manifest hash `84600e8...0599c178`; raw command and output are in
   `evidence/phase1/w0-local-live/iteration-4-provider-preflight.txt`.
-- Iteration 6 closed W0 with a local HF service, descriptor fetch, and authenticated session lifecycle.
-  The absent vLLM endpoint now blocks only G4/G5's GPU evidence.
+- Iteration 6 closed W0 with a local service, descriptor fetch, and authenticated session lifecycle.
+  **It is SERVICE-STARTUP evidence only — never cite it for inference; the local HF runner is off limits.**
+  The vLLM endpoint is now live via the tunnel, so G4/G5 are unblocked.
 - G9's audited proof is now refutable: its literal command and unedited output make 12 assertions against
   the HEAD-pinned 77,166-byte served bundle (blob `8121e270...f9c0d9c`). All pass, preserving the
   source-certified-only conclusion rather than treating source behavior as released browser behavior.
@@ -189,3 +200,61 @@ durability sync after five seconds, then at five-second intervals and shutdown; 
 sync/pending-record overhead with every phase. The real-source fixture is 90 seconds and repeats during
 the selected 600-second soak, which the eventual verdict must state. Still open from 16:55: invert
 `verify_g9_served_bundle.py` polarity.
+
+## MODEL ENDPOINT IS LIVE — verified by the monitor, 2026-08-18 17:40
+
+```
+MOSS_VLLM_BASE_URL=http://127.0.0.1:18000/v1     # SSH tunnel, start via ./scripts/moss-vllm-tunnel.sh
+```
+Liveness has been misreported three times, so I checked the thing that actually matters:
+
+| check | result |
+|---|---|
+| `GET /v1/models` (x2) | 200 · `OpenMOSS-Team/MOSS-Transcribe-Diarize` · `max_model_len 16384` |
+| `GET /health` | 200 |
+| `POST /v1/audio/transcriptions` with real audio | **200 · `{"text":"[humming]","usage":{"type":"duration","seconds":3}}` in 0.42 s** |
+
+The engine decodes — `/models` answering would not have proved that, and the earlier failure was an engine
+GPU-memory crash. Route shape matches the product: `vllm_runner.py:143-147` builds
+`<base>/audio/transcriptions` from a `/v1` base. This server exposes **only** `/health`, `/v1/models`,
+`/v1/audio/transcriptions`, `/v1/audio/translations` — no chat/completions (both 404). Pass `.../v1`, nothing else.
+
+## FIX BEFORE ANY GATE RUN: silent-substitution trap in the G3 helper
+
+`scripts/g3-attended-session.sh:23-41` falls back to `MOSS_HF_MODEL` when the vLLM probe fails. A tunnel blip
+would silently produce evidence with the now-forbidden local runner, announced by one easily-missed line.
+**Remove the fallback:** if `MOSS_VLLM_BASE_URL` is unset or its probe is not 200, fail hard naming
+`./scripts/moss-vllm-tunnel.sh`. No hf path at all.
+
+## W2 — GO. Keep the frozen contract, widen the honesty.
+
+Do not touch gate values or the matrix (`run_started` still false; the contract is good). Add to
+`does_not_establish` and state in the verdict: latency includes **SSH tunnel + tailnet transit**; the GPU is
+**shared with mineru-api at 0.5 utilisation, ~800 MiB free**, so this is not an isolated-GPU bound; the decode
+path is `/v1/audio/transcriptions`. Honest scope, and better evidence than a CPU number.
+
+**Probe the endpoint before AND after the run and record both** — the tunnel is a local process that can die,
+and a mid-run death otherwise reads as a slow model. A run whose closing probe fails is not a passing run.
+
+For #1 criterion 9: the tunnel carries inference, **not host telemetry**. GPU memory/utilisation remain
+unobtainable; the host stays read-only. Do not claim them.
+
+## Issue #5 criterion 7 — OPERATOR HAS RULED. Implement it.
+
+Ship the remedy message **in the app, at preflight, when a silent microphone is detected**. Rationale to
+preserve: the app already authors this moment badly, surfacing the developer string `both capture lanes must
+have non-zero signal before session creation` (`captureClient.ts:491-493`), so this replaces bad client copy
+with good client copy rather than adding a new client-authored-copy violation. No new endpoint; my option (a)
+is dropped. Keep the **exact** wording from `live_capture_status.py:41-44`, sourced from one place rather than
+forked, and add a test asserting it appears at preflight on a silent mic. Then #5 is closeable.
+
+## Bundle release — RULED. The order is mandatory.
+
+Charter T-09 already designs for a committed bundle ("the built bundle is committed, so the deploy host needs
+no Node toolchain"), so this is the intended workflow, not an exceptional release act.
+1. **Invert `verify_g9_served_bundle.py` first** — assert the new bearer and filename contracts are PRESENT,
+   so green = shipped, red = stale.
+2. Rebuild: `npm --prefix frontend run build`.
+3. Commit the inverted verifier and the rebuilt bundle **together**, so the verifier gates the artifact.
+
+**Do not flip expectations to make a stale bundle pass.**

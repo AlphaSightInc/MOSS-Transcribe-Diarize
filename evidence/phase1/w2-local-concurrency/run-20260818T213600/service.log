@@ -1,0 +1,22 @@
+PROTOTYPE production routes listening on http://127.0.0.1:8899/capture-harness
+Loading weights:   0%|          | 0/683 [00:00<?, ?it/s]Loading weights: 100%|██████████| 683/683 [00:00<00:00, 7879.58it/s]
+[transformers] `MossTranscribeDiarizeProcessor` defines `feature_extractor_class = 'AutoFeatureExtractor'`, which is deprecated. Register the correct mapping in `AutoFeatureExtractor` instead.
+live helper terminal: session=6e8651e1613b427cbbdef0193611fffc reason=helper_lease_expired lanes=none
+live helper terminal: session=f7f7f5a22608488ea458eb957b8a4aac reason=helper_lease_expired lanes=none
+live helper terminal: session=781227e9e4d94cb0b75aed28f0b7ea8e reason=helper_lease_expired lanes=none
+live helper terminal: session=e9da86b7ff9244b3b1ac9465f0bb603c reason=helper_lease_expired lanes=none
+live helper terminal: session=e6f661b3e37c4afc8b7a42d1bb4e16d3 reason=helper_lease_expired lanes=none
+live helper terminal: session=e1d8cda2c65e4c10a014ab99a791417e reason=helper_lease_expired lanes=none
+live helper terminal: session=02075ff5d89f44f8a19213f906a78dfc reason=helper_lease_expired lanes=none
+live helper terminal: session=d9d7e145e408400fb0bc322c3f5d091e reason=helper_lease_expired lanes=none
+live helper terminal: session=07153301814141259ba187d2765eb413 reason=helper_lease_expired lanes=none
+live helper terminal: session=31809f99491d41dbbc5c7ab9bc5190b3 reason=helper_lease_expired lanes=none
+live helper terminal: session=46c54035d5e3402d9f3f518d797bb494 reason=helper_lease_expired lanes=none
+live helper terminal: session=b21bf3bc5f3f4de1b55809ceb5be4930 reason=helper_lease_expired lanes=none
+live helper terminal: session=02e7a80502324c80ba077df339454f5c reason=helper_lease_expired lanes=none
+live helper terminal: session=23f93f26f3df401396afafb2af0c887a reason=helper_lease_expired lanes=none
+live helper terminal: session=1f226fd9fd6f4ecfbd4fb14e7dd6878a reason=helper_lease_expired lanes=none
+live helper terminal: session=f3732bed25aa411e951a8b609e9fa697 reason=helper_lease_expired lanes=none
+live helper terminal: session=002dea706418444f911e428d09904e60 reason=helper_lease_expired lanes=none
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
