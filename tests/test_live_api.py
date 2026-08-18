@@ -29,6 +29,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
 )
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LiveIdentityPreparation, LiveIdentitySnapshot
+from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 
 
 FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
@@ -179,6 +180,25 @@ class ApiDecoder:
         del pcm
         seconds = span.sample_count / LIVE_SAMPLE_RATE
         return InferenceTranscript(f"[0][S01]decoded[{seconds:g}]")
+
+
+class JobRouteApiRunner:
+    model_path = "job-route-api-fake"
+
+    def transcribe(self, audio_path, **kwargs) -> TranscriptionResult:
+        callback = kwargs.get("status_callback")
+        if callback is not None:
+            callback("transcribing", 0.5, 1)
+        return TranscriptionResult(
+            text="[0][S01]job route coverage[1]",
+            prompt_len=1,
+            generated_tokens=1,
+            elapsed_sec=0.01,
+            model=self.model_path,
+            audio=str(audio_path),
+            decoding="greedy",
+            temperature=None,
+        )
 
 
 @dataclass
@@ -454,6 +474,68 @@ class LiveApiTest(unittest.TestCase):
                         client.get(f"/api/live/sessions/{session_id}/snapshot").status_code,
                         200,
                     )
+
+    def test_job_routes_require_configured_shared_bearer(self):
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(),
+                live_shared_token="configured-token",
+                **self._live_auth_kwargs(tmpdir),
+            )
+            app.state.manager.model_runner = JobRouteApiRunner()
+            client = TestClient(
+                app,
+                base_url="https://moss.lan",
+                client=("192.168.68.20", 50000),
+            )
+            missing_job = "missing-job"
+
+            def route_statuses(headers: dict[str, str] | None) -> list[int]:
+                return [
+                    client.get("/api/jobs", headers=headers).status_code,
+                    client.post("/api/jobs", headers=headers).status_code,
+                    client.get(f"/api/jobs/{missing_job}", headers=headers).status_code,
+                    client.delete(f"/api/jobs/{missing_job}", headers=headers).status_code,
+                ]
+
+            missing_bearer = route_statuses(None)
+            wrong_bearer = route_statuses({"Authorization": "Bearer wrong-token"})
+            correct_headers = {"Authorization": "Bearer configured-token"}
+            created = client.post(
+                "/api/jobs",
+                headers=correct_headers,
+                files={"file": ("sample.wav", b"audio", "audio/wav")},
+            )
+            created_status = created.status_code
+            job_id = created.json()["id"] if created_status == 200 else missing_job
+
+            job_status = None
+            for _ in range(40):
+                fetched = client.get(f"/api/jobs/{job_id}", headers=correct_headers)
+                if fetched.status_code == 200:
+                    job_status = fetched.json()["status"]
+                    if job_status == "waiting_review":
+                        break
+                time.sleep(0.025)
+
+            admitted_statuses = [
+                created_status,
+                client.get("/api/jobs", headers=correct_headers).status_code,
+                client.get(f"/api/jobs/{job_id}", headers=correct_headers).status_code,
+                client.delete(f"/api/jobs/{job_id}", headers=correct_headers).status_code,
+            ]
+
+            self.assertEqual(job_status, "waiting_review")
+            self.assertEqual(
+                (missing_bearer, wrong_bearer, admitted_statuses),
+                ([401, 401, 401, 401], [401, 401, 401, 401], [200, 200, 200, 200]),
+            )
 
     def test_configured_shared_token_normalizes_bearer_header_padding(self):
         from moss_transcribe_diarize.app.server import create_app

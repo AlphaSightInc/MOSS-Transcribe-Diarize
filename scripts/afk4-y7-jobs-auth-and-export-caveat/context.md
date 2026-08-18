@@ -15,6 +15,12 @@ Living working memory. Update every iteration. History goes in progress.txt.
 - The focused live suite confirms both paths: a no-shared-token app completes pairing and a
   shared-token app admits its bearer (`2 passed, 2 subtests`). This is seam evidence only, not job
   route coverage.
+- `tests/test_live_api.py::LiveApiTest::test_job_routes_require_configured_shared_bearer` is now a
+  focused RED test against the real in-process HTTP route stack. Missing and wrong bearers both
+  reached normal handlers as `[200, 400, 404, 404]` for list/create/get/delete; the configured
+  bearer completed `[200, 200, 200, 200]`. The upload is backed by a deterministic test runner, so
+  the admitted control exercises the real multipart, enqueue, get, and delete paths without model
+  loading.
 - `transcriptExport.ts:23,92` carry `provisional_stale` as a json field only; md and txt have no
   human-readable caveat.
 - `ControlPanel` holds the capture bearer only in its own component state. `FilePanel` currently
@@ -26,15 +32,12 @@ Living working memory. Update every iteration. History goes in progress.txt.
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. RED backend test: no bearer and wrong bearer are rejected while the configured shared bearer
-   reaches each of the four job routes; establish the required no-shared-token response without
-   changing `live_auth.py`.
-2. Guard all four job routes through the existing registry, preserving `_admit_upload_request`, the
+1. Guard all four job routes through the existing registry, preserving `_admit_upload_request`, the
    408 receive-idle timeout, and chunked reads.
-3. Resolve the frontend bearer-propagation scope conflict, then send the memory-only bearer from
+2. Resolve the frontend bearer-propagation scope conflict, then send the memory-only bearer from
    file mode without a query parameter or persistent storage.
-4. Human-readable provisional caveat in md and txt as well as json; absent after finalization.
-5. Evidence against a locally-run service, not only unit tests.
+3. Human-readable provisional caveat in md and txt as well as json; absent after finalization.
+4. Evidence against a locally-run service, not only unit tests.
 
 ## Not yours
 
