@@ -2561,3 +2561,30 @@ two unchanged snapshot rounds, retains the faster ingress-advance path, and has 
 source/released-bundle replays for both the flat-terminal and advancing-event cases. Command and
 raw replay result: `python3 prototypes/streaming-diarization/proto_poller_cursor_watchdog.py`;
 evidence: `evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`.
+
+### Aligned two-lane level experiment (`proto_lane_level_effect.py`, 2026-08-18)
+
+**Question:** on the real 59.584 s aligned Core Audio Tap / room-microphone capture, does
+peer-RMS microphone matching improve quiet-lane transcript quality relative to the production
+fixed-headroom mixer?
+
+**Pre-registration:** committed before the live run as `756ade4`. It pins the aligned WAV and
+reference hashes, uses the production `LiveCompatibilityMixer` and its deployed 8,000-sample
+geometry, sends all variants through the live tunnel vLLM, and defines quiet-lane word error
+rate plus missing reference words before inspecting an outcome. Selection required at least a
+5 pp quiet-lane WER reduction, fewer missing words, no larger limiter fraction, and distinct
+system/microphone lexical references.
+
+**VERDICT: PEER-RMS MATCH REJECTED; NO POLICY SELECTED.** Baseline system RMS was
+-19.577 dBFS and microphone RMS -34.954 dBFS — a measured 15.377 dB disparity. The
+current fixed-headroom mix scored 0.28324 WER with 42 missing reference words. Peer-RMS
+matching derived a 5.87275× microphone gain (not a hand-tuned constant), but produced one
+pre-mix clipped sample, worsened WER to 0.31792 (+3.468 pp), and increased missing words to
+48. Neither output hit the production limiter. The microphone-only control scored 0.28902 WER.
+
+The capture is one room/microphone/pair and both lane references describe the same playback;
+it cannot distinguish which lane supplied a recovered word. It therefore cannot set a general
+warning threshold or authorize normalisation, AGC, or a fixed offset. Next evidence must use
+multiple synchronized recordings with distinct, audited lexical references in each lane.
+Command and raw result:
+`.venv/bin/python prototypes/streaming-diarization/proto_lane_level_effect.py --preregistration prototypes/streaming-diarization/lane-level-preregistration-v2.json --base-url http://127.0.0.1:18000/v1 --output evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`.

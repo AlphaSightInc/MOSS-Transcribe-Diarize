@@ -79,11 +79,13 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Defect B (P1)**: prototype and measure the two input lanes' real-fixture RMS and transcription effect
-   before choosing any mixer normalization/AGC/offset policy. Pre-register the success measure; no
-   hand-tuned gain constant.
-2. **Defect C (P2)**: only after B establishes a measured disparity threshold, source the warning copy
-   from the server and add the client gate.
+1. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
+   rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
+   same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
+   Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
+   normalisation/AGC/offset proposal.
+2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
+   one same-playback fixture.
 3. **W2 vLLM-only measurement prerequisites**: iteration 16 compacted the committed CPU/HF diagnostic
    `run-state.json` from 59,992,997 to 288,007 bytes without raw PCM. Bring audited tunnel launcher
    `affeaea` from `dev`, then use only the preregistered tunnel-backed runner. The CPU/HF result remains
@@ -411,5 +413,21 @@ the failure message) for every otherwise-unhandled 409, so it reports the server
 decoder seam and proves its OSError detail reaches the 409; the full live API suite and the 120-test frontend
 suite pass. Evidence: `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`.
 
-Next: **Defect B** — measure real-fixture per-lane RMS and transcription effect before choosing any mixer
-policy; then Defect C can derive a warning threshold from that evidence.
+## Resolved iteration 20 — Defect B lane-level measurement
+
+The correctly aligned system/mic pair was pre-registered and committed in `756ade4` before the
+live vLLM run. The production mixer measured system -19.577 dBFS, microphone -34.954 dBFS
+(15.377 dB gap). Peer-RMS matching derived 5.87275×, but one pre-mix sample clipped and it
+worsened quiet-lane WER from 0.28324 to 0.31792 (+3.468 pp), with missing words 42→48. No
+output limiter samples occurred. The result is an explicit **NO_POLICY_SELECTED**, not a basis
+for Defect C: the one 59.584 s capture's lane references are identical playback, so it cannot
+attribute transcript recovery to a lane or establish a general threshold. Evidence:
+`evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`.
+
+## Verified this cycle, no action
+
+`43d1034` flat-ingress watchdog: hypothesis confirmed by red replay (4th request stuck at `since_version=153`);
+counter scoped to `!snapshot && snapshotVersion > 0 && !eventCursorAdvanced`, resets on progress and after
+re-baseline; **negative test** added ("does not re-baseline while the event cursor advances", cursors stay
+`{153, 4}`). Frontend **122/122**. Bound 2 chosen by a committed, re-runnable prototype
+(`proto_poller_cursor_watchdog.py`, sweep 1/2/3, rule fixed in advance) — I re-ran it: `chosen_bound: [2]`.

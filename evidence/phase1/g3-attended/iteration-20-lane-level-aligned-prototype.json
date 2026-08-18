@@ -1,0 +1,149 @@
+{
+  "schema": "moss-lane-level-prototype-result.v1",
+  "preregistration_path": "prototypes/streaming-diarization/lane-level-preregistration-v2.json",
+  "preregistration_sha256": "6f6bfb9fbb1952fa117cf83494b55c9e922f230f72641d8a80ad3981f95b4fd2",
+  "scope": "diagnostic prototype only; it does not certify G3, G4, G5, or a production mixer policy",
+  "inputs": {
+    "shared_samples": 953344,
+    "shared_duration_seconds": 59.584,
+    "system": {
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav",
+      "sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d",
+      "rms": 0.10499238688430548,
+      "rms_dbfs": -19.576843819364345,
+      "peak": 0.84906005859375
+    },
+    "microphone": {
+      "path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav",
+      "sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+      "rms": 0.017877886117371032,
+      "rms_dbfs": -34.95367667034791,
+      "peak": 0.172698974609375
+    },
+    "rms_difference_db_system_over_microphone": 15.37683285098356,
+    "system_reference_sha256": "fda7c141c7a5a9c7dc8d445a5fae83acf1e96cf25059c57912d4ce9a9a6c0abe",
+    "system_reference_tokens": 173,
+    "microphone_reference_sha256": "b3acd32f2f1023b328b0ba0634427e035ca8ce32edc0bb101cc9607a2947d880",
+    "microphone_reference_tokens": 173
+  },
+  "vllm": {
+    "base_url": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+  },
+  "variants": {
+    "microphone_only_control": {
+      "microphone_gain": 1.0,
+      "input_clipped_samples": 0,
+      "mixed_audio_sha256": "bb776c4d1a0bef5e51f849b024cce243242db7a41ed63709bc9ced4c90b6e486",
+      "mixer_diagnostics": {
+        "overlap_samples": 0,
+        "limited_samples": 0,
+        "gap_samples": 0,
+        "silent_samples": 953344
+      },
+      "limited_output_fraction": 0.0,
+      "transcription": {
+        "elapsed_seconds": 2.2240210000018124,
+        "generated_tokens": 350,
+        "text": "[1.96][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[7.62][8.22][S01] But deference, a certain amount of deference to authority, is not blind submission.[14.12][14.22][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference,[21.42][21.82][S01] we are given stability, security, and peace, and hopefully prosperity.[26.92][27.12][S02] So there is some element that we have in the West of freedom of the individual,[31.72][31.82][S02] so that a little bit of the rebel is allowed in balance with the deference to authority?[37.82][38.02][S01] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism[42.72][42.92][S01] you see in China?[43.92][44.52][S01] You don't have a sense of self, a sense of the fact that you can find opportunities,[50.42][50.52][S01] you look for opportunities, you drive opportunities. It's all self-motivated.[56.72][57.02][S02] Is there still a young kid?[58.92]"
+      },
+      "system_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 137,
+        "lcs_matches": 130,
+        "missing_reference_words": 43,
+        "word_error_rate": 0.28901734104046245,
+        "word_recall": 0.7514450867052023,
+        "word_precision": 0.948905109489051
+      },
+      "microphone_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 137,
+        "lcs_matches": 130,
+        "missing_reference_words": 43,
+        "word_error_rate": 0.28901734104046245,
+        "word_recall": 0.7514450867052023,
+        "word_precision": 0.948905109489051
+      }
+    },
+    "production_fixed_headroom": {
+      "microphone_gain": 1.0,
+      "input_clipped_samples": 0,
+      "mixed_audio_sha256": "20f01d716d6111f6b508218d9067277820ff2775c4cb6ea8a60f3e1969869aec",
+      "mixer_diagnostics": {
+        "overlap_samples": 853601,
+        "limited_samples": 0,
+        "gap_samples": 0,
+        "silent_samples": 25344
+      },
+      "limited_output_fraction": 0.0,
+      "transcription": {
+        "elapsed_seconds": 1.5459130000090227,
+        "generated_tokens": 366,
+        "text": "[1.94][S01] Kind of the same thing. There's paternalism.[4.99][4.99][S01] They think that they're responsible for you.[8.11][8.11][S01] But deference, a certain amount of deference to authority, is not blind submission.[14.01][14.01][S01] It's been written implicitly in our contract for thousands of years that in exchange[19.57][19.57][S01] for some deference, we are given stability, security, and peace, and hopefully prosperity.[26.57][26.93][S02] So there is some element that we have in the West of freedom of the individual,[31.64][31.64][S02] so that a little bit of the rebel is allowed in balance with the deference to authority?[37.61][37.61][S01] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism[42.76][42.76][S01] you see in China?[44.26][44.26][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[50.12][50.12][S01] you look for opportunities, you drive opportunities, it's all self-motivated.[56.73][56.73][S02] Is there still a young kid?[58.69]"
+      },
+      "system_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 138,
+        "lcs_matches": 131,
+        "missing_reference_words": 42,
+        "word_error_rate": 0.2832369942196532,
+        "word_recall": 0.7572254335260116,
+        "word_precision": 0.9492753623188406
+      },
+      "microphone_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 138,
+        "lcs_matches": 131,
+        "missing_reference_words": 42,
+        "word_error_rate": 0.2832369942196532,
+        "word_recall": 0.7572254335260116,
+        "word_precision": 0.9492753623188406
+      }
+    },
+    "peer_rms_matched_microphone": {
+      "microphone_gain": 5.8727517445303405,
+      "input_clipped_samples": 1,
+      "mixed_audio_sha256": "9e60f42c1a026b280f6d322abc7b3590a1dfe6d9c54fd3eb76500c334996b148",
+      "mixer_diagnostics": {
+        "overlap_samples": 853601,
+        "limited_samples": 0,
+        "gap_samples": 0,
+        "silent_samples": 25344
+      },
+      "limited_output_fraction": 0.0,
+      "transcription": {
+        "elapsed_seconds": 1.7254254999861587,
+        "generated_tokens": 405,
+        "text": "[1.96][S01] Kind of the same thing.[3.12][3.12][S01] There's paternalism.[4.63][4.63][S01] They think that they're responsible for you.[8.11][8.11][S01] But deference, a certain amount of deference to authority is not blind mission.[14.12][14.12][S01] It's been written implicitly in our contract for thousands of years that in exchange for[20.14][20.14][S01] some deference, we are given stability, security, and hopefully prosperity.[26.93][26.93][S02] So there is some element that we have in the West of freedom of the individual?[31.68][31.68][S02] So that a little bit of the rebel is allowed in balance with deference to authority?[37.79][37.79][S01] Yeah, absolutely.[38.79][38.79][S01] Without that, how can you have this radical, dynamic entrepreneurialism?[42.78][42.78][S01] You see it, China.[44.26][44.26][S01] You don't have a sense of self, a sense of the fact that you can find opportunities,[50.21][50.21][S01] you look for opportunities, you drive opportunities.[54.62][54.62][S01] It's all self motivated.[56.73][56.73][S02] Is there still a young kid?[59.12]"
+      },
+      "system_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 134,
+        "lcs_matches": 125,
+        "missing_reference_words": 48,
+        "word_error_rate": 0.3179190751445087,
+        "word_recall": 0.7225433526011561,
+        "word_precision": 0.9328358208955224
+      },
+      "microphone_reference_score": {
+        "reference_tokens": 173,
+        "transcript_tokens": 134,
+        "lcs_matches": 125,
+        "missing_reference_words": 48,
+        "word_error_rate": 0.3179190751445087,
+        "word_recall": 0.7225433526011561,
+        "word_precision": 0.9328358208955224
+      }
+    }
+  },
+  "selection": {
+    "quiet_microphone_wer_reduction_peer_rms_minus_production": -0.034682080924855474,
+    "quiet_microphone_missing_word_reduction_peer_rms_minus_production": -6,
+    "candidate_limiter_not_worse": true,
+    "non_distinct_lane_references": true,
+    "production_policy_selected": false,
+    "verdict": "NO_POLICY_SELECTED",
+    "reason": "record diagnostic result but select no production normalization, AGC, or fixed-offset policy"
+  }
+}

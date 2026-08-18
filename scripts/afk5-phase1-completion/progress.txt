@@ -821,3 +821,42 @@ after capture stops `accepted_samples` goes flat, so `ingressAdvanced` is false,
 neither `:303` nor `:306` can recover. If your replay shows terminal IS observed in that case, then I am
 wrong and the correct output of the iteration is a recorded note saying so, not a watchdog nobody needs.
 Either result is a good iteration. Do not add the watchdog to satisfy me.
+
+[monitor 2026-08-18 19:05] MY HYPOTHESIS WAS RIGHT AND YOU PROVED IT RATHER THAN TAKING IT — that is the
+right order. Verified `43d1034`:
+  - The residual flat-ingress latch was real. Red replay recorded: "the fourth snapshot request remained
+    `since_version=153` instead of the required uncursored `since_version=0`".
+  - The watchdog is properly bounded and correctly scoped: the counter increments ONLY when
+    `!snapshot && snapshotVersion > 0 && !eventCursorAdvanced`, resets on any progress and after each
+    re-baseline, and never fires at `snapshotVersion === 0`. So a healthy session with a quiet snapshot but
+    advancing events does not trigger refreshes.
+  - You added the NEGATIVE test I would have asked for — "does not re-baseline an unchanged snapshot while
+    the event cursor advances", asserting cursors stay `{snapshotVersion: 153, eventSequence: 4}`. That is
+    the guard against an over-eager watchdog, and it fails if anyone loosens the condition.
+  - Frontend 16 files / 122 tests pass.
+
+AND YOU DID NOT HARDCODE THE BOUND. `prototypes/streaming-diarization/proto_poller_cursor_watchdog.py` sweeps
+1/2/3 against two competing costs, with the acceptance rule fixed in advance (refresh share <= 1/3, terminal
+bound <= 6 s), and only bound 2 satisfies both. I re-ran it myself: exit 0, reproduces `chosen_bound: [2]`,
+and the script is COMMITTED, not deleted after producing its artifact — I checked, because this repo has
+lost probes that way before. For a two-line constant most agents would have guessed, you measured. Keep that
+standard for Defect B, where it matters far more.
+
+DEFECT B — YOUR PLAN IS RIGHT AND THE CORPUS IS THE RIGHT ONE. Scoring the production mix against the live
+vLLM path (not a proxy) on the 59.6 s aligned dual-lane capture with references is exactly the measurement
+this needs, and it respects the standing constraint that MacStudio must not load the model. Three things to
+fix BEFORE you measure, because audio policy is the easiest thing in this repo to tune to taste:
+  1. PRE-REGISTER AND COMMIT the metric and the decision rule first — per-lane WER against the references is
+     the obvious metric, plus the count of missing words on the quiet lane, since the observed failure was
+     the operator's mic reduced to "A", "I", "image. Yeah". State what margin counts as better and what would
+     make you REJECT a candidate. Commit that before the first score, exactly as you did for W2.
+  2. REPORT THE BASELINE PER-LANE RMS SEPARATELY from any candidate policy. The defect claim is that the two
+     lanes differ by roughly 20 dB; that number should appear in the artifact as a measured fact, independent
+     of whichever fix wins, because it is what justifies Defect C's threshold later.
+  3. STATE THE FIXTURE'S LIMITS. One 59.6 s capture, one room, one microphone, one speaker pair. A policy
+     tuned to it may not generalise, and the artifact must say so rather than implying a general result.
+     Charter T-06 is silent on inter-lane level matching, so this is unruled ground — if your measurement
+     suggests a policy change beyond normalisation (AGC, per-lane limiter), write the ruling memo instead of
+     shipping it.
+
+[iteration 20] target=Defect B aligned real-lane RMS/vLLM transcription prototype; files=`prototypes/streaming-diarization/{proto_lane_level_effect.py,lane-level-preregistration-v2.json,NOTES.md}`, `docs/design-streaming-diarization.md`, `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=pre-registration committed as `756ade4`, then production-mixer/live-vLLM command PASS with all three variants; evidence=`evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`; learned=the aligned real capture measures 15.377 dB system-over-mic RMS disparity, but derived peer-RMS 5.87275× worsened quiet-lane WER 0.28324→0.31792 (+3.468 pp), missing words 42→48, and clipped one pre-mix sample (no output limiter); result is NO_POLICY_SELECTED because it fails the preregistered improvement rule and both lane references contain the same playback; next=obtain multiple synchronized distinct-reference lane captures before any mixer policy/Defect C threshold, or advance independently to W2's reviewed tunnel-launcher import.
