@@ -42,7 +42,7 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | G6 failure paths | 🟡 **PARTIAL** | all code paths implemented; authenticated reload/terminal tests pass, but no fresh real-browser reload certification |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
-| G9 modes | ✅ **PASS** | file upload, `/api/jobs` polling, transcript projection, and md/txt/json export integrated in the one UI |
+| G9 modes | 🟡 **FUNCTIONAL, criteria unmet** | both modes work in the one UI, but issue #8's bearer requirement and #9's in-file provisional caveat are unimplemented — see y7 |
 | G10 no regression | ✅ **PASS** | fresh baseline above; only the two declared permanent failures remain |
 
 ---

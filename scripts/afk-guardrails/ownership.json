@@ -284,5 +284,24 @@
       "capture_harness"
     ],
     "blocked_by": []
+  },
+  "y7-jobs-auth-and-export-caveat": {
+    "title": "Guard the job routes with the shared bearer, and make exports carry their own provisional caveat",
+    "owns": [
+      "moss_transcribe_diarize/app/server.py",
+      "frontend/src/api/jobs.ts",
+      "frontend/src/api/jobs.test.ts",
+      "frontend/src/lib/transcriptExport.ts",
+      "frontend/src/lib/transcriptExport.test.ts",
+      "evidence/phase1/y7-jobs-auth-and-export-caveat/"
+    ],
+    "reads": [
+      "moss_transcribe_diarize/app/live_auth.py",
+      "moss_transcribe_diarize/app/jobs.py"
+    ],
+    "prerequisites": [
+      "node_toolchain"
+    ],
+    "blocked_by": []
   }
 }

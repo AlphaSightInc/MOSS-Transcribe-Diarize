@@ -22,6 +22,7 @@ case "$TICKET" in
   y4-concurrency-cert)    WT=3 ;;
   y5-guardrail-and-floor) WT=5 ;;
   y6-browser-reload)      WT=6 ;;
+  y7-jobs-auth-and-export-caveat) WT=3 ;;
   *) echo "unknown ticket: $TICKET" >&2; exit 1 ;;
 esac
 
