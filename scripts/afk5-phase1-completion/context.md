@@ -73,6 +73,17 @@ Living working memory. Update it every iteration so it matches reality. History 
   may be measured, but isolated GPU latency, GPU memory/utilisation/OOM, and vLLM active/queued counts
   remain unclaimed. The validator passed before implementation at
   `prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py`.
+- **W2 remote-vLLM runner implemented (iteration 24), not yet measured:**
+  `run_remote_vllm_tunnel_measurement.py` uses the production local-route/`VllmRunner` seam with one
+  loopback process, a fresh evidence-owned finalized manifest bound to the captured HEAD, descriptor
+  equivalence checks, and background helper heartbeats at explicit lease/4 cadence. It fails before
+  service startup if `/health`, selected-model `/models`, fixture/provisional inputs, endpoint URL, or
+  deployed descriptor checks fail; it records canonical model-catalog identity before and after a run,
+  and a failed closing probe makes the verdict non-qualifying. Its first real preflight passed against
+  the live tunnel and read-only deployed descriptor at
+  `evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/preflight.json`
+  (frozen contract `53de...7504`, catalog hash `8467...c2e7`, deployed bounds match the required shape).
+  This proves runner readiness only — it starts no local route process and is not a G4/G5 measurement.
 
 ## Environment facts that cost previous cycles real time
 
@@ -96,15 +107,11 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 vLLM-only measurement runner (P1)**: iteration 22 proved the missing local-route-to-remote-vLLM
-   seam with one real canonical 40,000-sample result and clean stop at
-   `evidence/phase1/w2-local-concurrency/iteration-22-remote-vllm-route-seam-replay.json`. Its first,
-   descriptor-hard-cap-only attempt correctly failed to produce a canonical event; the reusable probe now
-   sends two descriptor-derived caps and derives heartbeat cadence from the explicit lease. This is
-   **non-gating**: its local manifest source revision is stale versus HEAD and it carries no GPU telemetry.
-   Iteration 23 froze the separate tunnel-vLLM contract with exact identity, fail-closed endpoint, run-owned
-   manifest, fixture-reuse, and missing-GPU-telemetry requirements. Next, implement its narrow matrix runner
-   without mutating the shared local manifest. The CPU/HF result remains diagnostic, not G4/G5 evidence.
+3. **W2 vLLM-only matrix measurement (P1)**: iteration 24 implemented and live-preflighted the narrow
+   tunnel-backed runner. Next, run it from a **fresh** output directory with the frozen contract; it will
+   re-finalize only that directory's manifest and either record every 1/2/4/8 screen plus any selected
+   600-second soak and overload/reconnect result, or preserve a fail-closed result. The CPU/HF result
+   remains diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
 5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
@@ -286,9 +293,9 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Next feasible sequence
-1. Implement the W2 tunnel-backed local-service runner against the frozen remote-vLLM contract; do not alter
-   frozen gates or use the CPU/HF runner as G4/G5 evidence.
-2. Run the preregistered W2 matrix only after that runner has a measured, fail-closed preflight.
+1. Run the preregistered W2 matrix using the live-preflighted remote-vLLM runner from a fresh output directory;
+   do not alter frozen gates or use the CPU/HF runner as G4/G5 evidence.
+2. Preserve its after-run endpoint probe and all non-GPU limits when evaluating the raw matrix.
 3. W3 stays blocked until an operator adds a raw attended-session log; Issue #8 remains blocked on the
    criterion-2 lifecycle ruling; Defect B needs new audited recordings before Defect C.
 

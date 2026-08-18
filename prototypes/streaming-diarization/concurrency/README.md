@@ -89,3 +89,23 @@ the selected model plus canonical `/models` identities before and after the run,
 manifest into its own evidence directory. It must not overwrite the shared local manifest. Its p95 includes
 SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors, and vLLM active/queued counts remain outside
 the available read-only surface.
+
+Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
+first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
+process. Use a fresh output directory for the measurement after a successful preflight:
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/run_remote_vllm_tunnel_measurement.py \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 \
+  --port 18999 \
+  --output evidence/phase1/w2-local-concurrency/run-YYYYMMDDTHHMMSS \
+  --preflight
+```
+
+Without `--preflight`, the runner writes a new final manifest under that output directory for its captured
+`HEAD`, starts one loopback production route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus
+the selected soak and overload/reconnect sequence, and probes `/health` and `/v1/models` again before issuing
+its verdict. Helper health posts run at one quarter of the explicit lease even while a remote request blocks.

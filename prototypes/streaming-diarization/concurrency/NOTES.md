@@ -20,6 +20,22 @@ identity before and after the run. Its p95 is explicitly tunnel-inclusive; it ca
 latency, GPU memory/utilisation/OOM, or vLLM active/queued counts. The 90-second source repeats in a
 600-second soak, so the verdict must state that timing limit.
 
+## Remote-vLLM tunnel matrix runner — 2026-08-18
+
+**VERDICT: IMPLEMENTED, NOT YET MEASURED.**
+
+`run_remote_vllm_tunnel_measurement.py` is a narrow W2 runner for the frozen contract. Its preflight
+rejects an unhealthy tunnel, a missing selected model, a malformed or credential-bearing endpoint URL, missing
+fixture/provisional inputs, and a malformed deployed descriptor before it starts any local route process. It
+captures `HEAD` once, finalizes only `OUTPUT/live-provider-manifest.json`, asks the production manifest reader
+to admit it, and refuses if the local descriptor does not carry that exact revision or deployed geometry.
+
+The runner uses the existing production local-route/vLLM seam, but gives every session a background helper
+heartbeat at `lease / 4`, so a blocked remote transcription cannot make helper presence disappear. It records
+the endpoint's canonical `/models` hash before and after the run, and a failed closing probe makes its verdict
+non-qualifying rather than interpreting endpoint loss as slow inference. The runner has not selected a bound or
+produced a G4/G5 result; its planned 90-second speech fixture repeats during a possible 600-second soak.
+
 ## Remote-vLLM local-route seam — 2026-08-18
 
 **VERDICT: PASS for the route/decoder seam; explicitly NON-GATING for W2, G4, and G5.**
