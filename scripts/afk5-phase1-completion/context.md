@@ -43,6 +43,15 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g3-attended/iteration-7-operator-evidence-inventory.txt` found only that
   fixture and no raw attended-session log. A fixture cannot establish the charter §7
   fresh-gesture two-lane display-capture bar.
+- **W2 CPU/HF-local measurement contract is now frozen, not run:**
+  `prototypes/streaming-diarization/concurrency/cpu_hf_local_preregistration.json` has SHA-256
+  `2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba`. It fixes two/four-session
+  screening, a 600-second selected-bound soak, real decoder/speech/local descriptor requirements,
+  p95 `<=10.0 s`, local RSS-growth `<=4 GiB`, zero OOM, skew `<=1`, retryable session-local v2 429,
+  overload marker isolation, and observer reconnect. Raw validation is
+  `evidence/phase1/w2-local-concurrency/iteration-8-cpu-hf-preregistration.txt`. The latency label
+  is exactly **CPU HF local decode, not the deployed GPU bound**; this run can never claim deployed
+  GPU p95, memory, or utilisation.
 
 ## Environment facts that cost previous cycles real time
 
@@ -59,9 +68,9 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 (partly actionable)** pre-register CPU/HF-local thresholds and run the local ≥10-minute
-   deployed-geometry sustain/reconnect measurement. It can establish G5 and all non-GPU portions of G4;
-   deployed p95 lag and GPU memory/utilisation still need the reachable GPU endpoint.
+1. **W2 (ready after iteration 8 preregistration commit)** build and run the hash-pinned local
+   CPU/HF deployed-geometry sustain/reconnect measurement. It can establish G5 and the non-GPU
+   portions of G4; deployed p95 lag and GPU memory/utilisation still need the reachable GPU endpoint.
 2. **W1 (blocked externally)** obtain ownership or a permitted release path for the tracked served
    bundle, then rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
 3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
@@ -127,3 +136,20 @@ HEAD, every needle printed. Falsifiable — debt cleared. **But** two assertions
 and the tempting repair is flipping expectations, which deletes the check. Invert now: assert the bundle
 CONTAINS the new bearer and filename contracts → green = shipped, red = stale, and it becomes the W1/W5
 release gate.
+
+## W2 threshold basis + run shape (monitor, 2026-08-18 17:05)
+
+Validator re-run independently: exit 0, `sha256=2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba`.
+Contract is properly frozen. Two follow-ups **before** the measurement:
+
+1. `gates.latency.maximum_per_session_p95_transcript_lag_seconds: 10.0` is ~40x looser than the only
+   comparable prior CPU observation (`t1/iteration-12`: p50 158 ms, **p95 248 ms**, max 260 ms at concurrency 2).
+   Preregistration fixes *when* a number was chosen, not whether it can fail. **Do not move the gate after
+   measuring.** Instead: record the basis for 10.0 now, and in the verdict report the measured p95 against the
+   248 ms prior and state the headroom, so a pass is not mistaken for a tight bound. Same for the 4 GiB RSS
+   allowance — the tight criterion there is `maximum_oom_or_accelerator_error_count: 0`.
+2. Run shape: 120 s @2 + 120 s @4 + 600 s soak + warmup is ~15 min minimum on CPU with a 1.8 GB model.
+   **Persist raw samples incrementally** to the artifact path so an iteration boundary or stall does not
+   destroy a real 15-minute measurement. Partial raw arrays are still evidence; vanished ones are not.
+
+Still open from 16:55: invert `verify_g9_served_bundle.py` polarity (green = shipped, not green = defect present).

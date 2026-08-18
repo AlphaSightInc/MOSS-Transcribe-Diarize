@@ -1,0 +1,94 @@
+{
+  "schema": "moss-live-concurrency-preregistration.v2",
+  "profile": "cpu-hf-local-deployed-geometry",
+  "ticket": 3,
+  "preregistered_at": "2026-08-18",
+  "run_started": false,
+  "question": "At the live descriptor geometry, can one locally started CPU/HF service sustain the measured two-to-four-session bound for ten minutes while retaining session-local backpressure and text isolation through overload and observer reconnect?",
+  "scope": {
+    "may_establish": [
+      "G5 cross-session text isolation through overload and observer reconnect",
+      "G4 non-GPU duration, round-robin fairness, process-tree growth, and per-session v2 429 semantics"
+    ],
+    "does_not_establish": [
+      "deployed GPU p95 transcript lag",
+      "deployed GPU memory or utilisation"
+    ],
+    "latency_label": "CPU HF local decode, not the deployed GPU bound"
+  },
+  "production_path": {
+    "service": "one locally started FastAPI process with live routes enabled",
+    "decoder": "the real MOSS decoder through the production LiveServiceRuntime path",
+    "backend": "explicit local Hugging Face model directory",
+    "audio": "real human speech replayed at wall-clock rate",
+    "ingress_cadence_seconds": 0.5,
+    "frame_geometry": {
+      "source": "read at run time from both local and read-only deployed /api/live/descriptor endpoints",
+      "comparison": "all deployed bound fields must match exactly before capture begins",
+      "hardcoded_values_allowed": false
+    },
+    "stub_results_qualify": false,
+    "remote_service_mutation_allowed": false,
+    "additional_uvicorn_workers_allowed": false
+  },
+  "matrix": {
+    "screening_session_counts": [
+      2,
+      4
+    ],
+    "screening_measurement_seconds": 120,
+    "chosen_bound_soak_seconds": 600,
+    "overload_session_count": 2,
+    "observer_reconnects_per_session": 1
+  },
+  "gates": {
+    "latency": {
+      "maximum_per_session_p95_transcript_lag_seconds": 10.0,
+      "quantile_method": "linear Type-7",
+      "aggregation": "compute each session independently; the run value is the maximum session p95",
+      "reporting_rule": "record p50, p95, max, and the full per-session arrays under the CPU/HF-local label; never present this figure as deployed GPU latency"
+    },
+    "memory": {
+      "maximum_process_tree_rss_increase_bytes_over_warm_idle": 4294967296,
+      "maximum_oom_or_accelerator_error_count": 0,
+      "gpu_metrics_required": false,
+      "reporting_rule": "record local process-tree RSS samples; missing GPU metrics do not fail this local profile and must remain explicitly unclaimed"
+    },
+    "fairness": {
+      "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1,
+      "evidence": "full canonical_processed dispatch order and per-session counts"
+    },
+    "backpressure": {
+      "lane": "v2",
+      "minimum_session_local_429_cases": 1,
+      "required_behavior": [
+        "one saturated session receives retryable HTTP 429 without terminal failure or sequence consumption",
+        "a concurrently active peer accepts a frame while the saturated session is refused",
+        "the refused frame succeeds after capacity is released"
+      ]
+    },
+    "integrity": {
+      "overload": "all rendered text and canonical_processed events retain only their own session's distinct speech marker while the backpressure case runs",
+      "reconnect": "after each observer reconnects with its prior cursor, its replayed events and snapshot contain no other session's marker"
+    }
+  },
+  "selection_rule": {
+    "candidate_set": [
+      2,
+      4
+    ],
+    "rule": "choose the largest candidate whose screening run passes latency, local-memory, fairness, and integrity gates; only that chosen candidate may enter the 600-second soak",
+    "overload_role": "the two-session overload run proves per-session retryable 429 and text isolation; it does not select the normal concurrency bound",
+    "gate_changes_after_first_measurement_allowed": false
+  },
+  "evidence_requirements": {
+    "raw_arrays": [
+      "per-session transcript-lag samples",
+      "canonical_processed dispatch order",
+      "process-tree RSS samples",
+      "HTTP frame responses including session id and retry outcome",
+      "observer reconnect cursors and returned events"
+    ],
+    "required_negative_statement": "The CPU/HF-local result does not measure deployed GPU p95 lag, GPU memory, or GPU utilisation."
+  }
+}

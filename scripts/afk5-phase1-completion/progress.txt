@@ -233,3 +233,39 @@ bundle is released this script goes FAIL, and the tempting repair is to flip the
 silently deletes the check. Invert it now: assert the bundle CONTAINS the new bearer and filename
 contracts, so green means shipped and red means stale. Then it stops being an audit of a defect and becomes
 the release gate for W1/W5, and it will not tempt anyone into weakening it.
+
+[iteration 8] target=W2 CPU/HF-local concurrency preregistration; files=prototypes/streaming-diarization/concurrency/{cpu_hf_local_preregistration.json,validate_cpu_hf_local_preregistration.py,README.md,NOTES.md},evidence/phase1/w2-local-concurrency/iteration-8-cpu-hf-preregistration.txt,scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=`python3 prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py && python3 -m py_compile prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py && git diff --check && python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion` => PASS, contract SHA-256 `2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba`, PREFLIGHT OK; evidence=evidence/phase1/w2-local-concurrency/iteration-8-cpu-hf-preregistration.txt; learned=the historical vLLM preregistration remains intact, while the separately frozen CPU/HF profile makes deployed geometry descriptor-derived, requires real wall-clock decoder/speech data, fixes two/four-session screening plus a selected 600-second soak and overload/reconnect checks, and explicitly excludes deployed GPU figures; next=after this commit, build/run the hash-pinned local CPU/HF measurement, retaining raw arrays and the mandatory CPU-local latency label.
+
+[monitor 2026-08-18 17:05] W2 PREREGISTRATION IS GOOD — I ran your validator myself, exit 0,
+sha256=2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba. `run_started: false`,
+`gate_changes_after_first_measurement_allowed: false`, `stub_results_qualify: false`,
+`hardcoded_values_allowed: false`, geometry read at run time from BOTH descriptors with exact-match
+required before capture, selection rule fixed in advance, five raw arrays required, and a required
+negative statement about GPU. This is the right shape and it is genuinely frozen before measurement.
+
+ONE THRESHOLD IS EFFECTIVELY UNFAILABLE — fix the record, not the outcome.
+`gates.latency.maximum_per_session_p95_transcript_lag_seconds: 10.0`, while the closest prior CPU
+measurement in this repo is `t1/iteration-12` at p95 **248 ms** (p50 158 ms, max 260 ms, concurrency 2,
+raw arrays retained). Your gate is ~40x looser than the only comparable observation. A pre-registered
+threshold that cannot fail is still a vacuous gate — preregistration fixes WHEN the number was chosen,
+not whether it means anything. Your validator only asserts `> 0`, so it will not catch this either.
+
+I am NOT asking you to move the gate after the fact — that would be worse. Do this instead:
+  1. Record the BASIS for 10.0 in the preregistration or its NOTES now, before the run. If the basis is
+     "4 sessions x 600 s on CPU is unmeasured territory, so allow wide headroom", say exactly that. That
+     is a legitimate reason and it is falsifiable as a claim.
+  2. Report the measured p95 AGAINST the 248 ms prior observation as a secondary comparison in the
+     verdict, and state the headroom explicitly. If you measure ~0.2 s and pass a 10 s gate, the artifact
+     must not read as though a tight bound was demonstrated.
+  3. Same treatment for `maximum_process_tree_rss_increase_bytes_over_warm_idle: 4294967296` (4 GiB).
+     The real criterion there is `maximum_oom_or_accelerator_error_count: 0`, which is tight and good.
+
+RUN-SHAPE WARNING. 120 s screening at 2 sessions + 120 s at 4 + a 600 s soak + warmup is ~15 min of
+wall clock minimum, on CPU, with a 1.8 GB causal LM at up to 4 concurrent sessions — realistically longer.
+Persist raw samples INCREMENTALLY to the artifact path as they are produced, and make the run resumable or
+at least partially salvageable, so an iteration boundary or a stall does not destroy 15 minutes of real
+measurement and force a restart. A half-finished run whose raw arrays survived is still evidence; one that
+vanished is not.
+
+STILL OPEN from 16:55, not yet done: invert `verify_g9_served_bundle.py` polarity so green = bundle shipped
+rather than green = defect still present. It will misfire the moment W1 lands.

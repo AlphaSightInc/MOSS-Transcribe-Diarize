@@ -1,5 +1,27 @@
 # Concurrency prototype notes
 
+## CPU/HF-local gate preregistration — 2026-08-18
+
+**VERDICT: FROZEN, NOT RUN — a separately hash-pinned contract for the now-available local HF path.**
+
+Question: at the descriptor geometry observed on the read-only deployed host, can one local CPU/HF
+service sustain the measured two-to-four-session bound for 600 seconds while retaining fair,
+session-local v2 backpressure and no cross-session text across overload and observer reconnect?
+
+`cpu_hf_local_preregistration.json` is intentionally separate from the 2026-08-13 vLLM profile:
+the old file remains the historical record for its controlled prototype, while this one freezes the
+CPU/HF-local run before any result exists. Its validator prints the full contract and SHA-256 in one
+command. The runner must use the real decoder, real human speech at wall-clock cadence, one local
+service process, and descriptor-derived geometry; controlled collaborators cannot qualify it.
+
+Frozen gates: per-session p95 transcript lag at most 10.0 s using linear Type-7; local process-tree
+RSS growth at most 4 GiB from warmed idle; zero OOM/accelerator errors; continuously ready dispatch
+skew at most one; retryable non-terminal v2 429 for a saturated session while its peer continues;
+and marker isolation through overload plus observer reconnect. Raw arrays, not summaries, are
+required. The CPU/HF-local latency column must always read **"CPU HF local decode, not the deployed
+GPU bound"**. This profile explicitly cannot prove deployed GPU p95 latency, GPU memory, or GPU
+utilisation.
+
 ## Gate preregistration — 2026-08-13
 
 **VERDICT: PASS — numeric gates and measurement semantics frozen before measurement.**
