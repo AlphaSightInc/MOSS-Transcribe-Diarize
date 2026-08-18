@@ -868,3 +868,37 @@ fix BEFORE you measure, because audio policy is the easiest thing in this repo t
 [iteration 23] target=W2 remote-vLLM tunnel preregistration; files=`prototypes/streaming-diarization/concurrency/{remote_vllm_tunnel_preregistration.json,validate_remote_vllm_tunnel_preregistration.py,README.md,NOTES.md}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`python3 prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py` PASS (contract SHA-256 `53de815d3a9b0e37b5f1c4845886977e61e3c9ca5bd1d7bd07a3b0ab7c857504`), `py_compile` PASS, `git diff --check` PASS; evidence=the committed contract and validator print the full frozen state; learned=the matrix can preserve every previous threshold while binding a future tunnel run to a run-owned HEAD-correct manifest plus before/after endpoint/model identity probes, without fabricating unavailable GPU telemetry; next=implement the narrow matrix runner against this contract, then run its fail-closed preflight before any 1/2/4/8 measurement.
 
 [iteration 24] target=W2 remote-vLLM tunnel matrix runner; files=`prototypes/streaming-diarization/concurrency/{run_remote_vllm_tunnel_measurement.py,README.md,NOTES.md}`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/{preflight.json,run-state.json}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=focused runner/route-seam tests 5 passed, compile/diff PASS, frozen-contract validator PASS, then real `--preflight` PASS against `http://127.0.0.1:18000/v1` (`/health` 200, selected `/v1/models` 200, canonical catalog SHA-256 `8467698a...046ec2e7`) and the read-only deployed descriptor; evidence=`evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/preflight.json`; learned=the runner can fail closed before startup, write only a run-owned HEAD-bound manifest for an actual run, keep helper health at explicit lease/4 independent of remote request duration, and disqualify a closing endpoint failure; next=run its frozen 1/2/4/8 matrix from a fresh output directory, preserving the after-run probe and explicit non-GPU limits.
+
+[monitor 2026-08-18 19:45] DEFECT B: YOUR NEGATIVE RESULT IS THE RIGHT ANSWER AND I VERIFIED IT. This is the
+iteration I would point at as the model for the rest of the cycle.
+  - Order was correct and provable: preregistration `756ade4` at 19:07:39, result `77c821d` at 19:09:35.
+  - The disparity is REAL and now has a number: system −19.577 dBFS vs microphone −34.954 dBFS,
+    **15.377 dB apart**. That confirms the operator's "20+ dB" claim in the right direction and magnitude,
+    and it is the measured fact Defect C's threshold would have to rest on.
+  - The obvious fix is measurably HARMFUL: peer-RMS matching moved WER 0.28324 → 0.31792 and missing words
+    42 → 48. You rejected it against the frozen rule instead of shipping it. Had this been hand-tuned, a
+    regression would have shipped as a fix.
+  - `live_mixer.py` is untouched across `43d1034..HEAD` — I checked. Correct.
+  - You also declined to set Defect C's threshold, since C's number depends on B's authorization. Right call.
+
+AND YOU CAUGHT THE DEEPER LIMITATION, WHICH I WANT ON THE RECORD BECAUSE IT IS THE REAL BLOCKER:
+"the retained aligned fixture has identical lexical references across its two lanes, so it cannot itself
+authorize a production policy". The artifact shows it plainly — `system_reference_tokens: 173` and
+`microphone_reference_tokens: 173`, and both `system_reference_score` and `microphone_reference_score` return
+the identical 137 transcript tokens / 130 LCS / 43 missing / WER 0.289. When both references score the same,
+per-lane WER cannot attribute a word to a lane, so no mixing policy can be justified from it. That is a
+fixture problem, not a measurement problem, and no amount of re-running fixes it.
+
+**DEFECT B IS THEREFORE BLOCKED ON A FIXTURE ONLY AN ATTENDED CAPTURE CAN PRODUCE.** I have escalated to the
+operator: a dual-lane capture where the two lanes carry DIFFERENT speech — the tab audio and the room
+microphone saying distinct, separately-referenced content, the way W2's fixture uses distinct markers
+("New York" / "payments"). With distinct references, per-lane recall becomes attributable and a policy
+becomes justifiable. Do NOT attempt a policy before that fixture exists, and do NOT synthesize one by
+overdubbing without recording that it is synthetic and what that costs.
+
+Meanwhile your ordering is right: B and C are blocked, so the tunnel-backed W2 run is the correct next work.
+That contract is properly frozen — I validated it independently: `run_started: false`,
+sha `53de815d…c857504`, matrix `[1,2,4,8]` carried over, latency label naming SSH tunnel and tailnet transit,
+and `does_not_establish` correctly listing the isolated-GPU bound, GPU memory/utilisation, GPU OOM,
+vLLM active/queued counts and attended capture. Baseline holding: frontend 122/122, bundle gate PASS,
+tunnel `/v1/models` 200.

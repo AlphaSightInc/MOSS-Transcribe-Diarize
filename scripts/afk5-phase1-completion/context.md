@@ -461,3 +461,24 @@ counter scoped to `!snapshot && snapshotVersion > 0 && !eventCursorAdvanced`, re
 re-baseline; **negative test** added ("does not re-baseline while the event cursor advances", cursors stay
 `{153, 4}`). Frontend **122/122**. Bound 2 chosen by a committed, re-runnable prototype
 (`proto_poller_cursor_watchdog.py`, sweep 1/2/3, rule fixed in advance) — I re-ran it: `chosen_bound: [2]`.
+
+## Defect B is BLOCKED ON A FIXTURE — do not attempt a policy (monitor, 2026-08-18 19:45)
+
+Measured and verified: system **−19.577 dBFS** vs microphone **−34.954 dBFS** = **15.377 dB** apart — the
+disparity is real. Peer-RMS matching made it **worse** (WER 0.28324 → 0.31792, missing words 42 → 48) and was
+correctly rejected against the frozen rule. `live_mixer.py` untouched across `43d1034..HEAD` — correct.
+
+**The blocker is the fixture, not the method.** Its two lanes carry identical lexical references
+(`system_reference_tokens: 173` / `microphone_reference_tokens: 173`, and both reference scores return the same
+137 tokens / 130 LCS / 43 missing / WER 0.289). Identical scores ⇒ per-lane WER cannot attribute a word to a
+lane ⇒ no mixing policy is justifiable from it. Re-running cannot fix this.
+
+**Needs an attended capture where the two lanes carry DIFFERENT speech**, separately referenced — the way W2's
+fixture uses distinct markers ("New York" / "payments"). Escalated to the operator. Until it exists: attempt no
+policy, and set no Defect C threshold (C's number depends on B's authorization). If you ever synthesize a
+fixture by overdubbing, record that it is synthetic and what that costs.
+
+Correct next work while B/C are blocked: the tunnel-backed W2 run. Contract independently validated —
+`run_started: false`, sha `53de815d…c857504`, matrix `[1,2,4,8]`, latency label names SSH tunnel + tailnet
+transit, `does_not_establish` lists isolated-GPU bound, GPU memory/utilisation, GPU OOM, vLLM queue counts,
+attended capture.
