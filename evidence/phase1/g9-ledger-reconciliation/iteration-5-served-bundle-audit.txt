@@ -1,0 +1,20 @@
+$ .venv/bin/python -m py_compile scripts/afk5-phase1-completion/verify_g9_served_bundle.py && .venv/bin/python scripts/afk5-phase1-completion/verify_g9_served_bundle.py
+G9 served-bundle audit
+repository_head=b831f33f4e5414ff1ebbc8e985f887c2d7e032d2
+bundle_path=ProjectResources/Frontend/app.js
+bundle_byte_size=77166
+bundle_git_blob_at_head=8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c
+bundle_worktree_blob=8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c
+ASSERT label=served_bundle_matches_HEAD expected=true actual=true result=PASS
+ASSERT label=source_file_bearer_owner expected=present actual=present result=PASS needle='const [captureBearer, setCaptureBearer] = useState("");'
+ASSERT label=source_file_bearer_panel_prop expected=present actual=present result=PASS needle='<FilePanel captureBearer={captureBearer} />'
+ASSERT label=source_file_upload_passes_options expected=present actual=present result=PASS needle='submitJob(selectedFile, options)'
+ASSERT label=source_file_request_sets_bearer expected=present actual=present result=PASS needle='headers.set("Authorization", `Bearer ${bearerToken}`)'
+ASSERT label=source_export_session_timestamp_filename expected=present actual=present result=PASS needle='`transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`'
+ASSERT label=served_bundle_legacy_file_upload_without_options expected=present actual=present result=PASS needle='let t=await ur(e);'
+ASSERT label=served_bundle_legacy_export_md_filename expected=present actual=present result=PASS needle='filename:`transcript.md`'
+ASSERT label=served_bundle_legacy_export_txt_filename expected=present actual=present result=PASS needle='filename:`transcript.txt`'
+ASSERT label=served_bundle_legacy_export_json_filename expected=present actual=present result=PASS needle='filename:`transcript.json`'
+ASSERT label=served_bundle_new_file_bearer_options expected=absent actual=absent result=PASS needle='bearerToken'
+ASSERT label=served_bundle_new_export_identity expected=absent actual=absent result=PASS needle='filename:`transcript-'
+OVERALL=PASS

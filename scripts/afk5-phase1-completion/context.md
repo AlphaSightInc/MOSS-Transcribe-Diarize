@@ -24,7 +24,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   it before enabling export, and supplies one click-time `Date` to the serializer. Focused export
   and pane coverage is **8/8** and typecheck is clean. The contract is source-certified only: W1's
   served-bundle blocker also prevents this filename behavior from reaching the current browser. The
-  committed served-bundle proof records both current source and legacy bundle behavior.
+  re-runnable G9 audit pins the current served `app.js` by byte size and Git blob, then records both
+  current source and legacy bundle behavior at
+  `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`.
 - Export caveat lands in md, txt and json, only when a turn is non-final. 4 tests.
 - W0's recovered real CPU bundle is now materialized at the host-local live-data path; its finalized
   manifest (source revision `ab7a998ab6acb805eb30e91477ca3abf22dac83f`) and reproducible raw
@@ -52,16 +54,13 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **G9 evidence repair — UNBLOCKED.** Re-emit the served-bundle proof with its literal command,
-   unedited output, and the tested bundle's byte size plus Git blob hash; preserve its source-only
-   conclusion.
-2. **W1 (blocked)** obtain ownership or a permitted release path for the tracked served bundle, then
+1. **W1 (blocked)** obtain ownership or a permitted release path for the tracked served bundle, then
    rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
-3. **W0 local launch (waiting on endpoint)** run the now-complete G3 helper only when
+2. **W0 local launch (waiting on endpoint)** run the now-complete G3 helper only when
    `MOSS_VLLM_BASE_URL/models` returns 200; then fetch the local descriptor and create a session.
-4. **W3 (waiting on operator)** inspect `evidence/phase1/g3-attended/` for a raw attended-session
+3. **W3 (waiting on operator)** inspect `evidence/phase1/g3-attended/` for a raw attended-session
    log; certify only if the charter's frame, cadence, fetch, and RMS checks are all present.
-5. **W2 (blocked)** G4/G5 certification — needs the endpoint and ticket-3 GPU evidence.
+4. **W2 (blocked)** G4/G5 certification — needs the endpoint and ticket-3 GPU evidence.
 
 ## Blockers
 
@@ -92,5 +91,6 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/w0-local-live/iteration-4-provider-preflight.txt`.
 - `MOSS_VLLM_BASE_URL` remains unset, so no live process can be started, descriptor fetched, or session
   created. This is the only W0 launch blocker. It also blocks G4/G5's real GPU evidence.
-- The G9 static proof needs its command and raw output recorded before it can count as refutable ledger
-  evidence; its behavior conclusion remains source-certified only.
+- G9's audited proof is now refutable: its literal command and unedited output make 12 assertions against
+  the HEAD-pinned 77,166-byte served bundle (blob `8121e270...f9c0d9c`). All pass, preserving the
+  source-certified-only conclusion rather than treating source behavior as released browser behavior.

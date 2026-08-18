@@ -53,7 +53,7 @@ is the protected l15 product-tree pin.
 | G6 failure paths | ✅ **PASS** | `y6-browser-reload/iteration-6-assertion-falsification.json` — six paths covered; real local Chrome reload/terminal flow certified |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
-| G9 modes | 🟡 **SOURCE-CERTIFIED, served criteria unmet** | source tests 115/115; `g9-ledger-reconciliation/iteration-3-served-bundle-proof.txt` proves the served bundle retains legacy file upload and export names |
+| G9 modes | 🟡 **SOURCE-CERTIFIED, served criteria unmet** | source tests 115/115; the re-runnable `g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt` pins the served bundle and proves it retains legacy file upload and export names |
 | G10 no regression | ✅ **PASS (certified `dev` baseline)** | `2 failed / 1066 passed / 2 skipped / 396 subtests`; the local worktree result is explicitly non-certifying above |
 
 ---
@@ -281,9 +281,12 @@ Evidence:
 
 - `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`: full source suite,
   **16 files / 115 tests**.
-- `evidence/phase1/g9-ledger-reconciliation/iteration-3-served-bundle-proof.txt`: source has the new
-  bearer and filename contracts, while `ProjectResources/Frontend/app.js` still has legacy
-  `await ur(e)` upload and `transcript.md` export behavior.
+- `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`: literal command and
+  unedited result from `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`. It pins the exact
+  served bundle by byte size (**77,166**) and Git blob
+  `8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c`, then makes 12 independently failing assertions: source
+  has the new bearer/filename contracts; the pinned bundle still has legacy `await ur(e)` upload and
+  fixed `transcript.{md,txt,json}` names, while its bearer and session-timestamp filename contracts are absent.
 
 **Does not cover:** the browser product delivering either new behavior: this loop may not update the
 tracked served bundle under `ProjectResources/Frontend/`. It also does not cover a fresh large
