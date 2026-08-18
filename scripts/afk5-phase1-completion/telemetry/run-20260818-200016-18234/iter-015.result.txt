@@ -1,0 +1,7 @@
+Iteration 15 committed: `719fbda ralph: iteration 15 - compact W2 frame evidence`.
+
+- W2 failures now aggregate safely; no persisted PCM.
+- Validation: preflight OK; focused test 1 passed; compile/diff checks pass.
+- Next: auditable trim of prior 60 MB artifact, then tunnel-backed W2 run.
+- Only loop telemetry remains unstaged.
+
