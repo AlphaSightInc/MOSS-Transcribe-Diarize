@@ -1,0 +1,8 @@
+Committed `20689a6 ralph: iteration 12 - release served bundle`.
+
+- Served W1/W5 bundle released; #8 `/studio` continuation documented.
+- Frontend: 115/115 pass.
+- G9 verifier: 12/12 pass, HEAD-pinned.
+- Guardrail preflight: pass.
+- Telemetry remains uncommitted. Next: silent-mic preflight remedy/test.
+
