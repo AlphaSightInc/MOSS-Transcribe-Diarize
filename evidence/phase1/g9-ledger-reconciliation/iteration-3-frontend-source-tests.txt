@@ -1,0 +1,15 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/frontend
+
+
+ Test Files  16 passed (16)
+      Tests  115 passed (115)
+   Start at  16:21:35
+   Duration  1.12s (transform 978ms, setup 0ms, import 1.37s, tests 1.64s, environment 1.32s)

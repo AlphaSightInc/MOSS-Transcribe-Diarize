@@ -14,3 +14,86 @@ before burning iterations on blocked items. Issue #5 criterion 7 is Lane-B (oper
 on the issue) — do not build it.
 
 [iteration 2] target=W5 issue #9 export filenames; files=frontend/src/{lib/transcriptExport.ts,lib/transcriptExport.test.ts,components/TranscriptPane.tsx,components/TranscriptPane.test.tsx},scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=initial pane test correctly failed because the menu item was clicked before render, then `/opt/homebrew/bin/npm --prefix frontend test -- --run src/lib/transcriptExport.test.ts src/components/TranscriptPane.test.tsx` => 2 files/8 tests PASS and `/opt/homebrew/bin/npm --prefix frontend run typecheck` => PASS; preflight PASS; evidence=exact all-format filename assertions plus pane assertions that session-less export is disabled and download uses `session-42` plus `2026-08-18T20:00:16.182Z`; learned=export identity must be required by the serializer and supplied from the live session state at click time, but guarded generated frontend resources mean the current served browser still lacks this and W1 behavior; notable probe=`.venv/bin/python -m pytest -q` => 1 failed/1065 passed/4 skipped/488 subtests (only l15 pin), which differs from the protected denominator and makes W4 next; next=reconcile G9/G10 ledger without treating source-only coverage or the changed test denominator as certification.
+
+[monitor 2026-08-18 16:20] BASELINE MEASURED IN BOTH TREES — your `1 failed / 1065 passed` is NOT a
+regression, and the ledger's `1065 passed` for dev is simply wrong. I ran the full suite myself in both:
+
+  main checkout, dev @ cbf4412 : 2 failed, 1066 passed, 2 skipped, 396 subtests  (112.21s)
+  this loop worktree           : 1 failed, 1065 passed, 4 skipped, 488 subtests  (117.07s)
+
+Same 1070 collected. Three named environmental deltas, all accounted for:
+  1. `l2-stage0::test_all_92_archived_units_render_into_parseable_preparations` FAILS in main, PASSES
+     here — the untracked 92-unit cache is valid in this worktree. Its 92 subtests then run, which is
+     the whole 396 -> 488 subtest jump. The pass is NOT vacuous: test_legacy_ingest.py:166,170 assert
+     `len(...) == 92` twice before the subtest loop, so an absent corpus fails rather than trivially
+     passing. I checked, because a vacuous pass here would be indistinguishable from a real one.
+  2/3. Two tests SKIP here that PASS in main, both with explicit reasons:
+     tests/test_live_identity_real_corpus.py:60 "operator-owned real identity corpus is not provisioned"
+     tests/test_live_speaker_accuracy.py:44 "real F-cert corpus is not provisioned in this clean worktree"
+     That is -2 passed, +2 skipped. failed 2->1 and passed 1066->1065 reconcile exactly.
+
+CONSEQUENCE FOR G10, and your instinct to downgrade it was right: this worktree cannot certify a
+no-regression bar, because two real-corpus tests silently do not run here. Certify G10 from the main
+checkout, or from here **while stating in the artifact that those two tests were skipped and why**.
+Do not restate the bar as `1 failed / 1065 passed` — that would bake this worktree's missing corpora
+into the Phase 1 standard. The dev-measured bar is `2 failed / 1066 passed / 2 skipped / 396 subtests`.
+For W4: docs/phase1-gate-status.md:14 and :31 say `1065 passed` and frontend `108/108`. Measured today:
+`1066 passed` on dev, frontend `115/115` across 16 files here after iteration 2. Fix all four numbers.
+
+W5 (export filenames) VERIFIED — good work, and the assertion is exact-equality on the produced name
+(`transcript-session-42-2026-08-18T20:00:16.182Z.md`), which can fail. I also checked the disable you
+added (`transcriptExportAvailable`) does not regress issue #9's "available at all times": file mode
+supplies `session_id: job.id` (api/jobs.ts:187,199,214) so export stays live there, and
+`resetSessionState` clears sessionId and the transcript together, so no state shows a transcript with
+export greyed out. Full frontend suite after your commit: 16 files / 115 tests pass.
+Minor, your call: `toISOString()` puts colons in the filename, which Windows rejects and macOS Finder
+renders oddly. The criterion says iso8601 so you satisfy it as written — but a basic-format stamp
+would survive a download to a Windows box.
+
+[iteration 3] target=W4 ledger reconciliation; files=docs/phase1-gate-status.md,scripts/afk5-phase1-completion/{context.md,progress.txt},evidence/phase1/{g9-ledger-reconciliation,g10-ledger-reconciliation}/iteration-3-*; validation=`.venv/bin/python -m pytest -q` => 1 failed/1065 passed/4 skipped/488 subtests (only protected l15 pin; raw output committed), `/opt/homebrew/bin/npm --prefix frontend test -- --run` => 16 files/115 tests PASS, and served-bundle static proof => source bearer/export contracts present while generated `app.js` retains legacy upload/export behavior; learned=G9 is source-certified but not browser-product certified, and this worktree's valid l2 corpus plus two absent real corpora make it non-certifying for G10 while the certified dev bar remains 2 failed/1066 passed/2 skipped/396 subtests; next=W0 manifest finalization is now actionable with the monitor-recovered real CPU bundle; retain the `MOSS_VLLM_BASE_URL` block for GPU G4/G5 proof.
+
+[monitor 2026-08-18 16:24] ***W0 IS NOT OPERATOR-BLOCKED. I found the real provider bundle.***
+Your context.md says "no provisional or finalized manifest exists in this repo" — true of the repo,
+false of this machine. The t1 canary ran a REAL host-matching bundle and its material survives:
+
+  /Users/gao/.Trash/moss-t1-iteration10.cBpN4M/
+    voxceleb_resnet152_LM.onnx     79158228 bytes  sha256 5b734353b4b410e2...330262a8
+    golden.wav                        67244 bytes  sha256 d101dd44a5976c46...ac0e60aa
+    local-manifest-arm64.json          FINALIZED manifest, schema_version 1
+    local-manifest.json / remote-manifest.json
+  (iteration11.0W26IG and iteration12.LPoJ5k hold the same onnx + golden.)
+
+I verified both hashes with shasum and they match `evidence/phase1/t1/iteration-10-real-model-browser.json`
+byte-for-byte: `provider.identity_asset_sha256` and `provider.golden_input_sha256`. The recovered
+manifest carries provider_name `moss-rtx-webrtc-wespeaker`, provider_revision
+`webrtcvad-wheels-2.0.14+wespeaker-4adba152...`, real bounds, and `runtime.backend webrtc-cpu`. Its
+`source_revision a6b67870d2c8...` is a LOCAL repo revision, not the deployed `fb83ba5e...` — charter §8
+was already being honoured, and you must re-finalize for THIS repo HEAD the same way.
+Also independently reproducible, not just recoverable: the model is live in
+`~/.cache/huggingface/hub/models--Wespeaker--wespeaker-voxceleb-resnet152-LM`.
+
+I copied all five files to a stable location because Trash is volatile:
+  /private/tmp/claude-501/-Users-gao-Desktop-AI-Projects-Github-Projects-MOSS-Transcribe-Diarize/87bdb628-7234-4c4a-b2e7-6da5d8241d82/scratchpad/w0-recovered/
+Copies re-hashed after copying; both match. Use these, not the Trash originals.
+
+W0 recipe, no operator needed: materialize the two assets to a stable tracked-or-documented path,
+rewrite the manifest's `assets[0].path` and `golden.input.path` (they still point at the vanished
+`/tmp/moss-t1-iteration10.cBpN4M/`), then run `ops/finalize-live-provider-manifest.py` with
+`--source-revision $(git rev-parse HEAD)`. The full required arg list is proven in
+`evidence/phase1/t4/iteration-06-provider-manifest-finalization.txt`:
+  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000
+  --min-match-score 0.35 --min-match-margin 0.1 --album-admission-seconds 2.0 --birth-min-seconds 1.0
+Verify against the golden: `golden.expected_output_sha256 c0c36de90d8e8ea5...` is the arm64 value the
+canary recorded as `mac_arm64_golden_output_sha256`, so a correct local bundle reproduces it. That is a
+real falsifiable check — if your finalized bundle does not reproduce it, the bundle is wrong. Do not
+skip it.
+
+DO NOT use `tests/test_live_manifest_finalizer.py::_write_provisional` as your manifest source. I read
+it: `_provisional_payload()` fabricates `sha256: "a"*64`, `"c"*64`, `"d"*64` and byte_size 1024. A live
+service admitted on those hashes is exactly the fabricated-model stub evidence prd.md forbids. It is a
+unit-test fixture, nothing more.
+
+SCOPE LIMIT, state it in whatever you certify: this bundle is `device: cpu` / `backend: webrtc-cpu`.
+It unblocks a LOCAL live service (W0), the G3 recipe, and the model half of W2 — but a CPU G4 run's p95
+lag is a CPU bound, NOT the deployed ticket-3 bound, and it yields no GPU memory/utilisation figures.
+Port 8000 is still required for a GPU-backed number. Pre-register CPU thresholds separately and say so.

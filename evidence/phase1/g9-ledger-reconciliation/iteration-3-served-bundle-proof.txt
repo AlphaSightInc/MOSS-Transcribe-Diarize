@@ -1,0 +1,6 @@
+source_export_filename_contract=present
+source_file_bearer_contract=present
+served_bundle_legacy_export_filename=present
+served_bundle_legacy_file_upload_without_options=present
+served_bundle_new_export_identity=absent
+served_bundle_new_file_bearer_options=absent
