@@ -11,7 +11,10 @@ Then open http://127.0.0.1:8899/capture-harness?autostart=1 in Chrome.
 
 By default the provider is deterministic and does not run a model. Pass both
 ``--model`` and ``--live-provider-manifest`` to exercise the production ModelRunner
-through the manifest-admitted live provider bundle instead.
+through the manifest-admitted live provider bundle instead. Alternatively, pass
+``--vllm-base-url``, ``--vllm-model``, and ``--live-provider-manifest`` to exercise
+the same bundle through the production remote VllmRunner. The latter keeps model
+execution on the read-only provider host while this process owns the live routes.
 The ephemeral capture credential is available only from a loopback prototype route
 and is never printed or persisted.
 """
@@ -265,12 +268,26 @@ def _commit_to_render_summary(
 
 def build_app(
     *,
-    model_path: Path | None = None,
+    model_path: Path | str | None = None,
     live_provider_manifest: Path | None = None,
+    vllm_base_url: str | None = None,
+    vllm_model: str | None = None,
+    vllm_timeout_seconds: float = 600.0,
+    live_helper_lease_seconds: float = LIVE_HELPER_LEASE_SECONDS,
     runtime_factory_override=None,
     canonical_event_log: Path | None = None,
 ):
     from fastapi.responses import FileResponse, JSONResponse
+
+    if vllm_base_url is not None:
+        if live_provider_manifest is None:
+            raise ValueError("--vllm-base-url requires --live-provider-manifest")
+        if not vllm_model and model_path is None:
+            raise ValueError("--vllm-base-url requires --vllm-model or --model")
+    elif vllm_model is not None:
+        raise ValueError("--vllm-model requires --vllm-base-url")
+    if live_helper_lease_seconds <= 0:
+        raise ValueError("--live-helper-lease-seconds must be positive")
 
     helpers = _test_live_api_module()
     scratch = tempfile.TemporaryDirectory(prefix="moss-browser-route-probe-")
@@ -312,6 +329,34 @@ def build_app(
             "real production routes with deterministic fake provider; committed text is runtime output; "
             "provisional text is an explicit read-path fixture; no model inference"
         )
+    elif vllm_base_url is not None and live_provider_manifest is not None:
+        from moss_transcribe_diarize.app.live_provider_bundle import (
+            LiveProviderBundleConfig,
+            build_live_runtime_factory,
+        )
+        from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+
+        config = LiveProviderBundleConfig.from_manifest(live_provider_manifest)
+        runner = VllmRunner(
+            base_url=vllm_base_url,
+            model=vllm_model or str(model_path),
+            timeout=vllm_timeout_seconds,
+        )
+        base_runtime_factory = build_live_runtime_factory(config, runner)
+
+        def runtime_factory():
+            return _instrument_commit_times(
+                base_runtime_factory(),
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
+            )
+
+        provider_scope = (
+            "real production routes with manifest-admitted live provider bundle and remote "
+            "production VllmRunner; the provider host receives inference requests only; "
+            "system lane is synthetic and does not prove display capture"
+        )
     elif model_path is not None and live_provider_manifest is not None:
         from moss_transcribe_diarize.app.live_provider_bundle import (
             LiveProviderBundleConfig,
@@ -343,7 +388,7 @@ def build_app(
         runs_dir=Path(scratch.name) / "runs",
         live_enabled=True,
         live_access_registry=registry,
-        live_helper_lease_seconds=LIVE_HELPER_LEASE_SECONDS,
+        live_helper_lease_seconds=live_helper_lease_seconds,
         live_runtime_factory=runtime_factory,
     )
     app.state.prototype_scratch = scratch
@@ -660,6 +705,26 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=Path)
     parser.add_argument("--live-provider-manifest", type=Path)
+    parser.add_argument(
+        "--vllm-base-url",
+        help="OpenAI-compatible remote vLLM URL; requires --live-provider-manifest and a model name.",
+    )
+    parser.add_argument(
+        "--vllm-model",
+        help="Remote vLLM model name; defaults to --model when that argument is supplied.",
+    )
+    parser.add_argument(
+        "--vllm-timeout-seconds",
+        type=float,
+        default=600.0,
+        help="Per-span remote vLLM request timeout.",
+    )
+    parser.add_argument(
+        "--live-helper-lease-seconds",
+        type=float,
+        default=LIVE_HELPER_LEASE_SECONDS,
+        help="Explicit local helper-presence lease for this route probe.",
+    )
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument(
         "--canonical-event-log",
@@ -670,6 +735,10 @@ def main() -> None:
     app = build_app(
         model_path=args.model,
         live_provider_manifest=args.live_provider_manifest,
+        vllm_base_url=args.vllm_base_url,
+        vllm_model=args.vllm_model,
+        vllm_timeout_seconds=args.vllm_timeout_seconds,
+        live_helper_lease_seconds=args.live_helper_lease_seconds,
         canonical_event_log=args.canonical_event_log,
     )
     print(f"PROTOTYPE production routes listening on http://127.0.0.1:{args.port}/capture-harness")

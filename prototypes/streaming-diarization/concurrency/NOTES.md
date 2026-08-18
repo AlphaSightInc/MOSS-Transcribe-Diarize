@@ -1,5 +1,38 @@
 # Concurrency prototype notes
 
+## Remote-vLLM local-route seam — 2026-08-18
+
+**VERDICT: PASS for the route/decoder seam; explicitly NON-GATING for W2, G4, and G5.**
+
+Question: can one loopback production live-route runtime send a real canonical decode to the
+read-only remote vLLM endpoint without selecting a local HF model, while retaining helper presence
+through the remote request and stopping cleanly?
+
+One command (prints full state and writes the compact artifact):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_remote_vllm_route_seam.py \
+  --manifest "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 \
+  --output evidence/phase1/w2-local-concurrency/iteration-22-remote-vllm-route-seam-replay.json
+```
+
+The probe first rejected an insufficient general rule: one descriptor hard-cap (five frame pairs)
+produced no canonical event in 120 seconds. It now submits two descriptor-derived hard-cap windows
+(ten frame pairs), because the VAD must observe audio beyond a full span boundary before it may close
+that span. No sample count is hard-coded. On the replay, `/v1/models`, bootstrap, session create,
+all 20 frame posts, canonical event polling, and stop returned HTTP 200; one 40,000-sample canonical
+result arrived. The helper heartbeat cadence is derived as one quarter of the explicit lease, not a
+new timing threshold.
+
+The artifact records `manifest_matches_head: false`: the available local manifest names
+`cc8f778a...`, not the then-HEAD `53c63cb...`. It also has no GPU memory, utilisation, OOM/error,
+or vLLM active/queued telemetry. Therefore it proves only the missing local-route-to-remote-vLLM
+seam. A real W2 runner must re-finalize a run-owned manifest for its exact HEAD, preserve the frozen
+1/2/4/8 matrix and its hashes, and keep all GPU-only metrics explicitly unclaimed.
+
 ## CPU/HF-local gate preregistration — 2026-08-18
 
 **VERDICT: FROZEN, NOT RUN — a separately hash-pinned contract for the now-available local HF path.**

@@ -86,11 +86,17 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 vLLM-only measurement runner (P1)**: iteration 21 imported the exact reviewed `affeaea` tunnel
-   launcher and proved its existing local endpoint returns `/v1/models` 200. The only runner in this
-   checkout is CPU/HF-local, so first design/prototype a tunnel-backed local-service runner that preserves
-   the frozen matrix, hashes its inputs, and explicitly records missing GPU telemetry. The CPU/HF result
-   remains diagnostic, not G4/G5 evidence.
+3. **W2 vLLM-only measurement runner (P1)**: iteration 22 proved the missing local-route-to-remote-vLLM
+   seam with one real canonical 40,000-sample result and clean stop at
+   `evidence/phase1/w2-local-concurrency/iteration-22-remote-vllm-route-seam-replay.json`. Its first,
+   descriptor-hard-cap-only attempt correctly failed to produce a canonical event; the reusable probe now
+   sends two descriptor-derived caps and derives heartbeat cadence from the explicit lease. This is
+   **non-gating**: its local manifest source revision is stale versus HEAD and it carries no GPU telemetry.
+   Next, freeze a separate tunnel-vLLM measurement contract that preserves the 1/2/4/8 + selected-600s
+   matrix, hashes the fixture/contract/endpoint model identity, re-finalizes a run-owned manifest for the
+   exact HEAD without mutating the shared local manifest, and explicitly retains the missing-GPU-telemetry
+   boundary. Only then adapt the CPU/HF runner or build its narrow sibling. The CPU/HF result remains
+   diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
 5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
@@ -106,7 +112,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   telemetry; the host stays read-only).
 - The tunnel launcher is now present at `scripts/moss-vllm-tunnel.sh`, exact-content matched to reviewed
   `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
-  remaining W2 blocker is runner support for the remote vLLM path, not tunnel reachability.
+  route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
+  22; the remaining W2 blocker is the hash-pinned matrix runner, not tunnel reachability or basic decoder
+  wiring.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 

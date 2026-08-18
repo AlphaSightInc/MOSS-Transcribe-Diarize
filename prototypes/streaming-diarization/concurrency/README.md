@@ -60,3 +60,19 @@ factor, and service process-tree RSS incrementally. Canonical-event file I/O run
 with a five-second durability sync interval, so disk sync never holds the runtime publication lock. It records
 screening at 1/2/4/8 sessions, then soaks only the largest
 passing bound. The `--preflight` form validates its immutable inputs without starting a service.
+
+Remote-vLLM route seam (one canonical span; not a W2 matrix or G4/G5 result):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_remote_vllm_route_seam.py \
+  --manifest "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 \
+  --output evidence/phase1/w2-local-concurrency/remote-vllm-route-seam.json
+```
+
+It reads `/v1/models`, starts only a loopback route probe, emits descriptor-derived two-lane frames,
+and requires a `canonical_processed` event plus a clean stop. The heartbeat cadence is derived as one
+quarter of the explicitly supplied helper lease. It records whether the manifest revision matches `HEAD`;
+a mismatch, or this one-span probe itself, never qualifies W2.

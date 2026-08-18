@@ -1,0 +1,12 @@
+{
+  "attempt": "first descriptor-hard-cap-only probe",
+  "canonical_timeout_seconds": 120.0,
+  "error": "no canonical_processed event before the canonical timeout",
+  "frame_pairs_attempted_per_lane": 5,
+  "helper_lease_seconds": 30.0,
+  "manifest_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+  "route_seam_passes": false,
+  "schema": "moss-w2-remote-vllm-route-seam.v1",
+  "vllm_base_url": "http://127.0.0.1:18000/v1",
+  "vllm_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+}

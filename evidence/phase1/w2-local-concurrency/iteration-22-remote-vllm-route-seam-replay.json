@@ -1,0 +1,160 @@
+{
+  "canonical_processed_committed_samples": [
+    40000
+  ],
+  "canonical_processed_event_count": 1,
+  "capture_bearer_length": 43,
+  "does_not_establish": [
+    "the W2 1/2/4/8-session matrix or its 600-second soak",
+    "G4 or G5",
+    "GPU memory, utilisation, OOM/errors, or vLLM active/queued counts",
+    "a source-revision-correct measurement when manifest_matches_head is false"
+  ],
+  "fixture": {
+    "clip_id": "new-york",
+    "path": "prototypes/streaming-diarization/dl2-capture/evidence/d3-leading-silence/fixtures/leading-030s.wav",
+    "sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea"
+  },
+  "frame_pairs_attempted_per_lane": 10,
+  "head_revision": "53c63cb8e03f83895a6331a841ecad6fffb2d5d8",
+  "heartbeat_interval_seconds": 7.5,
+  "heartbeat_statuses": [
+    200
+  ],
+  "helper_lease_seconds": 30.0,
+  "local_descriptor": {
+    "frame_samples": 8000,
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000,
+    "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b"
+  },
+  "manifest_matches_head": false,
+  "manifest_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+  "qualifies_w2": false,
+  "question": "Can one local production live-route runtime produce a canonical result through the read-only remote vLLM endpoint without a local HF model?",
+  "remote_vllm_model_ids": [
+    "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+  ],
+  "requests": [
+    {
+      "label": "remote_vllm_models",
+      "status": 200
+    },
+    {
+      "label": "local_bootstrap",
+      "status": 200
+    },
+    {
+      "label": "local_create_session",
+      "status": 200
+    },
+    {
+      "label": "frame_0_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_0_system",
+      "status": 200
+    },
+    {
+      "label": "frame_1_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_1_system",
+      "status": 200
+    },
+    {
+      "label": "frame_2_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_2_system",
+      "status": 200
+    },
+    {
+      "label": "frame_3_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_3_system",
+      "status": 200
+    },
+    {
+      "label": "frame_4_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_4_system",
+      "status": 200
+    },
+    {
+      "label": "frame_5_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_5_system",
+      "status": 200
+    },
+    {
+      "label": "frame_6_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_6_system",
+      "status": 200
+    },
+    {
+      "label": "frame_7_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_7_system",
+      "status": 200
+    },
+    {
+      "label": "frame_8_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_8_system",
+      "status": 200
+    },
+    {
+      "label": "frame_9_microphone",
+      "status": 200
+    },
+    {
+      "label": "frame_9_system",
+      "status": 200
+    },
+    {
+      "label": "local_events",
+      "status": 200
+    },
+    {
+      "label": "local_events",
+      "status": 200
+    },
+    {
+      "label": "local_events",
+      "status": 200
+    },
+    {
+      "label": "local_events",
+      "status": 200
+    },
+    {
+      "label": "local_stop",
+      "status": 200
+    }
+  ],
+  "route_seam_passes": true,
+  "schema": "moss-w2-remote-vllm-route-seam.v1",
+  "session_id": "5bf38eae7ba247e0b860818af29c514f",
+  "stop_http_status": 200,
+  "stop_terminal_status": null,
+  "vllm_base_url": "http://127.0.0.1:18000/v1",
+  "vllm_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+}
