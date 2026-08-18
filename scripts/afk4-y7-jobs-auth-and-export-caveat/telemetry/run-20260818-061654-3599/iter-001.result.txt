@@ -1,0 +1,6 @@
+Iteration 1 committed `5de3887`.
+
+- Mapped existing auth seam; confirmed pairing + shared bearer tests: 2 passed.
+- Recorded file-mode bearer scope conflict.
+- Next: red job-route auth test.
+
