@@ -1,0 +1,6 @@
+Iteration 8 committed: `15ffda3 ralph: iteration 8 - freeze CPU HF concurrency gates`.
+
+Frozen W2 CPU/HF profile; validator + preflight pass. No sustain run/gate claim yet. Evidence: [iteration-8-cpu-hf-preregistration.txt](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/iteration-8-cpu-hf-preregistration.txt:1).
+
+Prototype workflow enforced preregistration before measurement. Launcher telemetry remains unstaged/untouched.
+
