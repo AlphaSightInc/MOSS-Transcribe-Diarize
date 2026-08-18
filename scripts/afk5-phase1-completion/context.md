@@ -33,11 +33,11 @@ Living working memory. Update it every iteration so it matches reality. History 
   preflight passes with `onnxruntime==1.23.2`, cached `webrtcvad-wheels==2.0.14`, and the real golden
   WAV. With the G1/G2-proven local HF snapshot, `scripts/g3-attended-session.sh` started TLS only on
   `127.0.0.1:7861`; local descriptor fetch and bearer-authorized session create/abort passed. Raw
-  evidence: `evidence/phase1/w0-local-live/iteration-6-local-hf-launch.txt`. The helper uses vLLM
-  only when a configured endpoint returns 200; otherwise it requires `MOSS_HF_MODEL` and records HF.
-  **MONITOR 17:40 — that fallback is now FORBIDDEN and must be deleted; see the endpoint section below.**
-  This is CPU/WebRTC launch evidence, not a G3 attended run or GPU G4/G5 evidence. Re-finalize before
-  using a checkout whose source revision changes.
+  evidence: `evidence/phase1/w0-local-live/iteration-6-local-hf-launch.txt`. Iteration 11 makes the
+  helper vLLM-only: an unset or non-200 endpoint now fails before certificates or model startup and names
+  `./scripts/moss-vllm-tunnel.sh`; `tests/test_g3_attended_session.py` proves both paths with a usable HF
+  directory present (3 passed). The historical CPU/HF launch remains SERVICE-STARTUP evidence only, never
+  G3/G4/G5 evidence. Re-finalize before using a checkout whose source revision changes.
 - Two-speaker fixture ready: `evidence/phase1/g3-attended/two-speaker-fixture-90s.wav`
   (90 s, mono, 16 kHz, RMS 1031).
 - **W3 remains operator-blocked:** iteration 7's reproducible inventory at
@@ -76,20 +76,19 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W0 safety constraint** remove the G3 helper's forbidden HF fallback before any further G3/G4/G5
-   run. It must hard-fail when the vLLM tunnel is absent or non-200, naming
-   `./scripts/moss-vllm-tunnel.sh`; add focused coverage that no local-model path can be selected.
-2. **W1/W5 release (now authorized)** first invert `verify_g9_served_bundle.py` so green means the
+1. **W1/W5 release (now authorized)** first invert `verify_g9_served_bundle.py` so green means the
    bearer and filename contracts are present, then rebuild the tracked served bundle and validate the
    verifier against it. Keep the verifier and generated bundle in the same commit; do not weaken it to
    accept the stale bundle.
-3. **W2 vLLM-only measurement** after the safety fix, make a newly preregistered tunnel-backed runner
-   record pre/post endpoint probes, `/v1/audio/transcriptions` inference, and the mandatory transit/shared
-   GPU limits. The CPU/HF contract and iteration-10 result cannot be reused as gate evidence.
-4. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
+2. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
    preflight with the exact server-authored remedy wording from `live_capture_status.py:41-44`, sourced
    once, and add a focused test.
-5. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
+3. **W2 vLLM-only measurement prerequisite** bring the already-audited SSH tunnel launcher from `dev`
+   commit `affeaea` into this branch: it is not an ancestor and `scripts/moss-vllm-tunnel.sh` is absent
+   here. Then make a newly preregistered tunnel-backed runner record pre/post endpoint probes,
+   `/v1/audio/transcriptions` inference, and the mandatory transit/shared GPU limits. The CPU/HF contract
+   and iteration-10 result cannot be reused as gate evidence.
+4. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.
 
@@ -104,6 +103,10 @@ Living working memory. Update it every iteration so it matches reality. History 
 - W1/W5's generated-bundle release is now authorized by the operator, but the mandatory order is
   verifier polarity first, then rebuild, then one commit. The current served bundle remains stale until
   the released-bundle verifier passes; never bypass `afk-guardrails` to mask that fact.
+- The monitored tunnel endpoint remains live, but its launcher is absent from this worktree: `affeaea`
+  added `scripts/moss-vllm-tunnel.sh` on `dev`, and `git merge-base --is-ancestor affeaea HEAD` returns
+  false. Iteration 11 fails closed rather than silently selecting HF; W2 cannot be run from this checkout
+  until the reviewed launcher is brought in.
 - Issue #5 criterion 7 is no longer a Lane-B decision: the operator selected the app-side preflight
   remedy. Keep its wording in one source (the existing `live_capture_status.py:41-44` sentence), do not
   create a session for a silent mic, and test the exact displayed wording.
@@ -219,12 +222,12 @@ GPU-memory crash. Route shape matches the product: `vllm_runner.py:143-147` buil
 `<base>/audio/transcriptions` from a `/v1` base. This server exposes **only** `/health`, `/v1/models`,
 `/v1/audio/transcriptions`, `/v1/audio/translations` — no chat/completions (both 404). Pass `.../v1`, nothing else.
 
-## FIX BEFORE ANY GATE RUN: silent-substitution trap in the G3 helper
+## Resolved iteration 11 — G3 helper cannot substitute a local model
 
-`scripts/g3-attended-session.sh:23-41` falls back to `MOSS_HF_MODEL` when the vLLM probe fails. A tunnel blip
-would silently produce evidence with the now-forbidden local runner, announced by one easily-missed line.
-**Remove the fallback:** if `MOSS_VLLM_BASE_URL` is unset or its probe is not 200, fail hard naming
-`./scripts/moss-vllm-tunnel.sh`. No hf path at all.
+`scripts/g3-attended-session.sh` contains only the vLLM backend. If `MOSS_VLLM_BASE_URL` is unset or
+`/models` is non-200, it exits before TLS/model startup and names `./scripts/moss-vllm-tunnel.sh`.
+`tests/test_g3_attended_session.py` runs both failures while `MOSS_HF_MODEL/config.json` exists, proves
+the helper never reaches certificate generation, and asserts no HF backend remains in the script.
 
 ## W2 — GO. Keep the frozen contract, widen the honesty.
 
@@ -258,3 +261,32 @@ no Node toolchain"), so this is the intended workflow, not an exceptional releas
 3. Commit the inverted verifier and the rebuilt bundle **together**, so the verifier gates the artifact.
 
 **Do not flip expectations to make a stale bundle pass.**
+
+## Do not commit the 60 MB run-state.json — fix the runner (monitor, 2026-08-18 17:45)
+
+`evidence/phase1/w2-local-concurrency/run-20260818T213600/run-state.json` = 59,992,997 bytes. Traced:
+`phases` 51.41 MB (screen-2 5.16, screen-4 16.1, screen-8 30.12); within screen-8,
+**`unexpected_frame_results` alone is 30.08 MB** while every other key in that phase is < 0.05 MB. Each entry
+embeds the full frame payload **including `pcm_base64`**. Repo precedent: largest committed evidence file is
+2.88 MB, largest JSON 1.1 MB. Gzip only reaches 26.9 MB.
+
+The base64 PCM is not diagnostic — status, error, lane, sequence, device_epoch are; and the audio is already
+pinned by `fixture_sha256`. **Fix the runner, since the vLLM run must survive review:**
+1. Never record `pcm_base64` in a result — record `pcm_len` (+ short sha256 prefix if identity matters).
+2. Aggregate `unexpected_frame_results` by `(http_status, error_code, lane)` with counts, keeping ~3 verbatim
+   exemplars per bucket first and last, so the raw shape stays auditable.
+3. **Keep** the predicate-bearing arrays — latency samples, dispatch order, RSS samples, queue depth, 429
+   outcomes. Those are small and they make the verdict falsifiable. Do not prune them.
+4. Then commit. `canonical-processed.jsonl` (197 KB), `verdict.json`, `service.log`, `preflight.json` and the
+   manifest records are fine as-is.
+
+Verified good, no action: the CPU/HF verdict is a clean negative — `screening_passes: []`,
+`qualifies_local_g4_g5_portions: false`, `chosen_normal_session_bound: null` — and it corroborates the operator
+ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothing on 8899/7861, no model
+process alive.
+
+## Priority order
+1. Invert `verify_g9_served_bundle.py` → rebuild bundle → commit together.
+2. Issue #5 criterion 7: preflight remedy string (exact wording, single-sourced) + test.
+3. Bring the reviewed tunnel launcher into this branch, then run W2 against
+   `http://127.0.0.1:18000/v1`.

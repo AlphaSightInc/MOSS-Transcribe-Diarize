@@ -431,3 +431,55 @@ STEER. READ ALL OF THIS BEFORE YOUR NEXT ITERATION.***
     (iii) commit the inverted verifier and the rebuilt bundle TOGETHER, so the verifier gates the artifact
           instead of auditing a defect.
   DO NOT flip expectations to make a stale bundle pass. That is the one move that would waste the ruling.
+
+[monitor 2026-08-18 17:45] YOUR HANDLING OF THE MID-ITERATION RULING WAS CORRECT. You were already running
+the local CPU/HF matrix when the ruling landed, you read it, and you concluded "this artifact is diagnostic
+only—not G4/G5 evidence; I'm recording that boundary and reprioritizing the vLLM-only path." That is exactly
+right, and your `verdict.json` backs it up rather than just saying it:
+  chosen_normal_session_bound: null · screening_passes: [] · soak_passes: false · overload_passes: false
+  qualifies_local_g4_g5_portions: false · does_not_establish: [the five deployed/GPU items]
+A well-formed negative result that refuses to claim anything. It also independently corroborates the
+operator's ruling: local CPU decode could not sustain even two sessions, so the tunnel is not merely policy,
+it is necessary. I also confirmed you cleaned up — nothing listening on 8899 or 7861, no route-server or
+model process alive, so the "MacStudio must not load the model" constraint is currently satisfied.
+
+***DO NOT COMMIT THAT RUN DIRECTORY AS-IS — 60 MB, AND THE CAUSE IS A RECORDING BUG THAT WILL RECUR IN THE
+REAL vLLM GATE RUN.*** `run-state.json` is 59,992,997 bytes. I traced it:
+  phases -> 51.41 MB total: screen-2 5.16 MB, screen-4 16.1 MB, screen-8 30.12 MB
+  inside screen-8: `unexpected_frame_results` alone = 30.08 MB, everything else in that phase < 0.05 MB
+  each entry embeds the FULL FRAME PAYLOAD INCLUDING `pcm_base64`:
+      {"attempted":[{"payload":{"capture_timestamp_ns":...,"lane":"microphone","pcm_base64":"WQ6qEVkU7xM..."
+For scale, the largest artifact ever committed to `evidence/` is 2.88 MB (the two-speaker wav) and the
+largest JSON is 1.1 MB. This would be 20x the repo's precedent, and gzip only gets it to 26.9 MB.
+
+The base64 PCM is not diagnostic content. It tells a reader nothing about WHY a frame was unexpected —
+status, error, lane, sequence and device_epoch do — and it duplicates audio already pinned by
+`fixture_sha256`. So this is not "evidence too big to keep", it is the wrong bytes.
+
+Fix the RUNNER, not just this artifact, because the vLLM run is the one that has to survive review:
+  1. Never record `pcm_base64` in a result. Record `pcm_len` and, if you want identity, a short sha256
+     prefix. Same for any other payload blob.
+  2. Aggregate `unexpected_frame_results` by (http_status, error_code, lane) with counts, and keep a small
+     number of VERBATIM exemplars per bucket (first and last, say 3 each) so the raw shape is still
+     auditable. 113 near-identical entries is 113 copies of one fact plus 113 copies of the audio.
+  3. Keep the per-frame arrays your predicates are actually computed from — latency samples, dispatch order,
+     RSS samples, queue depth, 429 outcomes. Those are small and they are what makes the verdict falsifiable.
+     Do not prune those.
+  4. Then commit. `canonical-processed.jsonl` at 197 KB, `verdict.json`, `service.log`, `preflight.json` and
+     the manifest records are all fine as they are.
+If you want the untrimmed blob kept for now, record its sha256 and byte size in the artifact and leave the
+file out of the commit — but the real answer is to stop recording audio into results.
+
+REMINDER OF PRIORITY ORDER, unchanged from 17:40: (i) delete the `MOSS_HF_MODEL` fallback in
+`scripts/g3-attended-session.sh:23-41` so a tunnel blip cannot silently produce forbidden evidence;
+(ii) invert `verify_g9_served_bundle.py`, rebuild the bundle, commit both together; (iii) the #5 criterion-7
+preflight remedy string with its test; (iv) the vLLM W2 run against http://127.0.0.1:18000/v1.
+
+[iteration 11] target=W0 fail-closed G3 helper; files=`scripts/g3-attended-session.sh`,
+`tests/test_g3_attended_session.py`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`;
+validation=`bash -n scripts/g3-attended-session.sh && .venv/bin/python -m pytest -q tests/test_g3_attended_session.py`
+=> 3 passed; evidence=the focused test runs absent and HTTP-503 vLLM probes with a valid local HF directory,
+asserts tunnel guidance, no HF selection, and no certificate generation; learned=the helper now has no local
+model backend and cannot silently turn a tunnel blip into forbidden CPU/HF evidence; blocker=`affeaea`'s
+reviewed tunnel launcher is on `dev` but not an ancestor of this worktree, so its named path is absent here;
+next=invert and release the G9 served-bundle verifier/artifact, then bring in the launcher before W2.

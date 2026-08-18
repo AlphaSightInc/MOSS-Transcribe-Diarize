@@ -3,7 +3,7 @@
 #
 #   ./scripts/g3-attended-session.sh
 #
-# Requires either a reachable MOSS_VLLM_BASE_URL or an explicit MOSS_HF_MODEL directory.
+# Requires a reachable MOSS_VLLM_BASE_URL. Start ./scripts/moss-vllm-tunnel.sh first.
 # The GPU host is READ-ONLY: we send it inference requests only, and run the service here.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -19,27 +19,19 @@ mkdir -p "$STATE_DIR"; chmod 700 "$STATE_DIR"
 : "${MOSS_LIVE_HELPER_LEASE_SECONDS:?set MOSS_LIVE_HELPER_LEASE_SECONDS to the declared positive helper lease first}"
 
 MODEL_ARGS=()
-MODEL_BACKEND=""
-if [[ -n "${MOSS_VLLM_BASE_URL:-}" ]]; then
-  echo "==> checking the configured vLLM endpoint"
-  code=$(curl -sS -k -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
-  if [[ "$code" == "200" ]]; then
-    MODEL_ARGS=(--backend vllm --vllm-base-url "$MOSS_VLLM_BASE_URL")
-    MODEL_BACKEND="vllm"
-    echo "    OK: using vLLM"
-  else
-    echo "    endpoint returned '$code'; falling back to MOSS_HF_MODEL"
-  fi
+if [[ -z "${MOSS_VLLM_BASE_URL:-}" ]]; then
+  echo "MOSS_VLLM_BASE_URL is required; start ./scripts/moss-vllm-tunnel.sh and retry." >&2
+  exit 1
 fi
 
-if [[ -z "$MODEL_BACKEND" ]]; then
-  : "${MOSS_HF_MODEL:?set MOSS_HF_MODEL to a local Hugging Face model directory when vLLM is unavailable}"
-  [[ -d "$MOSS_HF_MODEL" ]] || { echo "MOSS_HF_MODEL is not a directory: $MOSS_HF_MODEL"; exit 1; }
-  [[ -f "$MOSS_HF_MODEL/config.json" ]] || { echo "MOSS_HF_MODEL has no config.json: $MOSS_HF_MODEL"; exit 1; }
-  MODEL_ARGS=(--backend hf --model "$MOSS_HF_MODEL")
-  MODEL_BACKEND="hf"
-  echo "==> using local HF model: $MOSS_HF_MODEL"
+echo "==> checking the configured vLLM endpoint"
+code=$(curl -sS -k -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
+if [[ "$code" != "200" ]]; then
+  echo "MOSS_VLLM_BASE_URL probe returned '$code'; start ./scripts/moss-vllm-tunnel.sh and retry." >&2
+  exit 1
 fi
+MODEL_ARGS=(--backend vllm --vllm-base-url "$MOSS_VLLM_BASE_URL")
+echo "    OK: using vLLM"
 
 if [[ ! -f "$CERT" ]]; then
   echo "==> generating a self-signed TLS cert (the browser needs a secure context for microphone access)"
