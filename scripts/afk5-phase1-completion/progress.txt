@@ -719,3 +719,36 @@ numbers and mechanisms are mine, not relayed.
 
 Board: I cannot log these on the tracker — `aiSight-us/MOSS-Transcribe-Diarize` has been returning 404 since
 ~17:38 to both `gh` and `git ls-remote`. They are queued with the rest.
+
+[monitor 2026-08-18 18:35] PRIORITY IS RIGHT AND THE METHOD IS RIGHT — no steer needed this cycle, three
+confirmations and one thing worth knowing.
+
+1. DEFECT A: your red test is high-fidelity to the incident, not a simplified stand-in. It answers the
+   operator's EXACT stale cursor `since_version=153` with `{snapshot: null, unchanged: true}` while the
+   service advances to version 332 / status closed — the real numbers — and asserts `onTerminal` fires, which
+   is the frozen-"Finalizing..." symptom itself. It currently fails with
+   `expected "vi.fn()" to be called with arguments: [ 'Session closed.' ]`. That is a correct red.
+   **Do not weaken it to pass** — in particular do not make it assert only that the cursor moved; the
+   user-visible contract is that terminal is OBSERVED. Keep the `freshSnapshotRequests` assertion so a fix
+   that re-baselines but still never reaches terminal cannot go green.
+
+2. ARTIFACT COMPACTION (iterations 15-16) IS EXEMPLARY. 59,992,997 -> 288,007 bytes, a 208x reduction, and
+   auditable rather than lossy: `evidence_compaction` records `kind`, `source_sha256`,
+   `predicate_projection_sha256` and `legacy_session_id_source`, and `source_size_bytes: 59992997` is kept.
+   `unexpected_frame_results` is now `{buckets:[{count, error_code, first_exemplars}], total_count}` with zero
+   `pcm_base64` anywhere in committed evidence. The guard test is genuinely falsifiable — it CONSTRUCTS
+   attempts containing `pcm_base64` and asserts the aggregation never serializes it, so a reintroduction
+   fails rather than silently passing. Backend went 1068 -> 1070 on those two tests; the l15 pin remains the
+   only failure. Release gate still `OVERALL=PASS`.
+
+3. THE COMPACTION SURFACED A DIAGNOSTIC THAT WAS BURIED IN THE 51 MB, AND IT MATTERS FOR THE TUNNEL RUN:
+   every failing screening row is dominated by `error_code: "canonical_queue_full"` — 33 at 2 sessions, 43 at
+   4, 44 at 8. So the CPU matrix did not fail on network or protocol; it saturated the canonical DECODE queue.
+   Two consequences for W2 against `http://127.0.0.1:18000/v1`:
+     - Expect materially different queue behaviour with GPU decode, so do NOT carry over any CPU-derived
+       intuition about where the bound sits. Let the frozen thresholds decide.
+     - When you report the tunnel run, state the CPU comparison explicitly (`canonical_queue_full` dominated
+       at every concurrency on CPU) so a reader can see WHY the local profile could not qualify. That turns a
+       failed run into a useful control rather than a discarded one.
+
+[iteration 17] target=attended-run Defect A poller cursor latch; files=`frontend/src/api/{mossPoller.ts,mossPoller.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red replay failed with no terminal callback, then focused poller 1/1 PASS, frontend 16 files/119 tests PASS, live API terminal-contract 2 passed, typecheck/build PASS; evidence=`evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt`; learned=an unchanged snapshot plus monotonically advancing server v2 accepted samples proves a stale cursor without a new timer/count policy, so one uncursored reread recovers the version-332 terminal snapshot; next=Defect 409 typed terminal failure envelope and client server-authored rendering; a fresh attended run is still required.

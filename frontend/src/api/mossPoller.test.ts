@@ -309,6 +309,63 @@ describe("MOSS session poller", () => {
     expect(poller.cursors().eventSequence).toBe(3);
   });
 
+  it("re-baselines a stale unchanged snapshot cursor so a terminal snapshot is observed", async () => {
+    const onTerminal = vi.fn();
+    let freshSnapshotRequests = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (!url.includes("/snapshot")) return jsonResponse({ events: [] });
+      if (url.endsWith("since_version=153")) {
+        // Reproduces the attended run: the service advances, but this stale cursor is answered
+        // as unchanged. The client must not poll it forever and leave Stop finalizing.
+        return jsonResponse({
+          snapshot: null,
+          unchanged: true,
+          status_line: null,
+          v2_session: v2Session(294)
+        });
+      }
+      freshSnapshotRequests += 1;
+      return jsonResponse({
+        snapshot: {
+          session_id: "session-stale-cursor",
+          descriptor: { sample_rate: 16_000 },
+          session: {
+            status: freshSnapshotRequests === 1 ? "active" : "closed",
+            version: freshSnapshotRequests === 1 ? 153 : 332,
+            failure_reason: null,
+            label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: [] },
+            committed: [],
+            provisional: null
+          }
+        },
+        unchanged: false,
+        status_line: null,
+        v2_session: v2Session(freshSnapshotRequests === 1 ? 153 : 294)
+      });
+    });
+    const poller = createMossSessionPoller({
+      sessionId: "session-stale-cursor",
+      accessToken: "view-token",
+      fetch: fetcher as typeof fetch,
+      onTerminal
+    });
+
+    await poller.poll();
+    await poller.poll();
+    await poller.poll();
+
+    expect(fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/snapshot"))).toEqual([
+      "/api/live/sessions/session-stale-cursor/snapshot?since_version=0",
+      "/api/live/sessions/session-stale-cursor/snapshot?since_version=153",
+      "/api/live/sessions/session-stale-cursor/snapshot?since_version=0"
+    ]);
+    expect(onTerminal).toHaveBeenCalledWith("Session closed.");
+    expect(freshSnapshotRequests).toBe(2);
+    expect(poller.running()).toBe(false);
+  });
+
   it("updates capture health when the transcript snapshot cursor is unchanged", async () => {
     const dispatched: WsEvent[] = [];
     let snapshotRequests = 0;
@@ -435,4 +492,15 @@ function jsonResponse(payload: unknown, status = 200): Response {
     status,
     json: async () => payload
   } as Response;
+}
+
+function v2Session(acceptedSamples: number) {
+  return {
+    status: "active",
+    terminal_reason: null,
+    lanes: {
+      microphone: { accepted_samples: acceptedSamples },
+      system: { accepted_samples: acceptedSamples }
+    }
+  };
 }

@@ -104,6 +104,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   let finalizationSeen = false;
   let lastLabelRevisionVersion = 0;
   let lastSessionState: Pick<MossSnapshot, "sessionId" | "status" | "failureReason"> | null = null;
+  let lastIngressAcceptedSamples: number | null = null;
   const revisedSpanIds = new Set<number>();
   let priorProvisional: { generation: number; items: TranscriptItem[] } | null = null;
 
@@ -209,7 +210,12 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       const runtimeEvents = parseRuntimeEvents(eventsPayload);
       const newEvents = dedupeNewRuntimeEvents(runtimeEvents, eventSequence);
       const captureHealth = parseCaptureHealth(snapshotPayload);
+      const ingressAcceptedSamples = parseIngressAcceptedSamples(snapshotPayload);
       const snapshot = parseSnapshot(snapshotPayload);
+      const ingressAdvanced =
+        ingressAcceptedSamples !== null &&
+        lastIngressAcceptedSamples !== null &&
+        ingressAcceptedSamples > lastIngressAcceptedSamples;
 
       // `/snapshot` and `/events` are fetched in parallel, so an event can arrive in a round
       // where the snapshot came back `unchanged`. An event that cannot be rendered without a
@@ -287,7 +293,13 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       }
       finalizationSeen ||= finalizationArrived;
       eventSequence = consumedSequence;
-      if (deferralIndex !== -1) {
+      if (ingressAcceptedSamples !== null) {
+        lastIngressAcceptedSamples = ingressAcceptedSamples;
+      }
+      if (deferralIndex !== -1 || (!snapshot && ingressAdvanced)) {
+        // The snapshot and v2 ingress cursors are independent. A growing cumulative ingress
+        // count proves the server progressed even when this snapshot cursor was answered as
+        // unchanged, so recover once through the uncursored snapshot instead of latching.
         snapshotVersion = 0;
       }
 
@@ -626,6 +638,29 @@ function parseCaptureHealth(payload: unknown): { phase: string | null; statusLin
     phase: optionalString(response.capture_phase),
     statusLine: optionalString(response.status_line)
   };
+}
+
+function parseIngressAcceptedSamples(payload: unknown): number | null {
+  const response = record(payload, "snapshot response");
+  if (response.v2_session === null || response.v2_session === undefined) {
+    return null;
+  }
+  const v2Session = record(response.v2_session, "v2 session");
+  const lanes = record(v2Session.lanes, "v2 session lanes");
+  let acceptedSamples = 0;
+  for (const lane of Object.values(lanes)) {
+    const laneSnapshot = record(lane, "v2 lane snapshot");
+    const laneAcceptedSamples = laneSnapshot.accepted_samples;
+    if (
+      typeof laneAcceptedSamples !== "number" ||
+      !Number.isFinite(laneAcceptedSamples) ||
+      laneAcceptedSamples < 0
+    ) {
+      return null;
+    }
+    acceptedSamples += laneAcceptedSamples;
+  }
+  return Number.isFinite(acceptedSamples) ? acceptedSamples : null;
 }
 
 function parseRuntimeEvents(payload: unknown): MossRuntimeEvent[] {

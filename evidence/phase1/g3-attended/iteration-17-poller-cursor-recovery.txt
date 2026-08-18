@@ -1,0 +1,61 @@
+# Iteration 17 — attended-run poller cursor recovery
+
+## Question
+
+Can the shipped poller recover when a snapshot cursor is answered `unchanged` even though
+the server's independent v2 ingress facts prove it has accepted more audio?
+
+## Deterministic incident replay
+
+The regression test mirrors the attended incident's cursor and terminal versions:
+
+1. A full snapshot is rendered at version 153 with both v2 lanes at 153 accepted samples.
+2. `since_version=153` returns `{snapshot: null, unchanged: true}` while both lanes have
+   advanced to 294 accepted samples and events remain empty.
+3. The required uncursored reread returns the closed snapshot at version 332.
+
+Before the production change, the replay failed because `onTerminal` was never called:
+
+```
+expected "vi.fn()" to be called with arguments: [ 'Session closed.' ]
+Number of calls: 0
+```
+
+The repair records the cumulative v2 accepted-sample total. It resets the snapshot cursor to
+zero only if that total advanced during an `unchanged` response. This uses server-owned,
+monotonic progress rather than a new polling-count or time threshold.
+
+## Validation
+
+```
+/opt/homebrew/bin/npm --prefix frontend test -- src/api/mossPoller.test.ts \
+  -t 're-baselines a stale unchanged snapshot cursor'
+```
+
+PASS: 1 test. The test requires snapshot requests `0 -> 153 -> 0`, two fresh snapshots,
+and the terminal callback `Session closed.`.
+
+```
+/opt/homebrew/bin/npm --prefix frontend test
+```
+
+PASS: 16 files, 119 tests.
+
+```
+.venv/bin/python -m pytest -q tests/test_live_api.py -k \
+  'polling_viewer_learns_a_session_died_from_one_snapshot_read or terminal_capture_reason_survives_the_polling_clients_since_version_tick'
+```
+
+PASS: 2 tests, 47 deselected. This checks the existing real-route terminal snapshot contract.
+
+```
+/opt/homebrew/bin/npm --prefix frontend run typecheck
+/opt/homebrew/bin/npm --prefix frontend run build
+```
+
+PASS. Build regenerated `ProjectResources/Frontend/app.js` and `app.js.map`.
+
+## Limit
+
+This is a deterministic source/released-bundle regression repair, not a replacement for a
+fresh attended browser run. It does not certify G3, G4, or G5.

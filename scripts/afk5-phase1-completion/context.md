@@ -79,17 +79,22 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 vLLM-only measurement prerequisites** iteration 16 compacted the committed CPU/HF diagnostic
-   `run-state.json` from 59,992,997 to 288,007 bytes. Its source SHA-256, all 1,584 bucket counts, and a
-   SHA-256 projection of every non-failure predicate are pinned in the artifact and tested; it contains no
-   raw PCM. Next bring the already-audited SSH tunnel launcher from `dev` commit `affeaea` into this branch.
-   Only then run the preregistered tunnel-backed runner with pre/post endpoint probes,
-   `/v1/audio/transcriptions` inference, and the required transit/shared-GPU limits. The CPU/HF contract
-   and iteration-10 result cannot be reused as gate evidence.
-2. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
-   the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
-   requirements.
-3. **Issue #8 criterion 2 (blocked externally)** needs the lifecycle vocabulary ruling; do not invent
+1. **Defect 409 (P1)**: start with a failing route/client test. The four bare terminal-409 sites in
+   `moss_transcribe_diarize/app/live_transport.py` must return the existing typed `failure` envelope; the
+   capture client must render its server-authored line rather than a synthesized HTTP status. This is the
+   next attended-run defect after A's source-and-bundle repair.
+2. **Defect B (P1)**: prototype and measure the two input lanes' real-fixture RMS and transcription effect
+   before choosing any mixer normalization/AGC/offset policy. Pre-register the success measure; no
+   hand-tuned gain constant.
+3. **Defect C (P2)**: only after B establishes a measured disparity threshold, source the warning copy
+   from the server and add the client gate.
+4. **W2 vLLM-only measurement prerequisites**: iteration 16 compacted the committed CPU/HF diagnostic
+   `run-state.json` from 59,992,997 to 288,007 bytes without raw PCM. Bring audited tunnel launcher
+   `affeaea` from `dev`, then use only the preregistered tunnel-backed runner. The CPU/HF result remains
+   diagnostic, not G4/G5 evidence.
+5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+   frame/cadence/fetch/RMS validation can run.
+6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -327,3 +332,57 @@ for both. Write a `docs/rulings/` memo with both readings + your recommendation 
 
 Other seven PASS: C1, C3, C5 (507 "Insufficient storage for upload." surfaced, no silent queueing — literal
 "server busy" wording not used), C6, C7, C8, C9.
+
+## ATTENDED-RUN DEFECTS — this is the work now (monitor, 2026-08-18 18:25)
+
+Two attended runs happened. **G3 capture + decode is proven end to end** (transcript, two speaker ids, real
+browser). Four defects came out. Verified against the code by me. Order: **A → 409 → B → C**.
+
+### A (P0) poller cursor latch — one root cause, both frozen symptoms
+Server healthy (294 frames, 0×429, stop 200, final version=332, pending_work=0). Client pinned at
+snapshot `since_version=153` / events `since_seq=210`, 200s forever.
+`frontend/src/api/mossPoller.ts`:
+```js
+const deferralIndex = snapshot ? -1 : newEvents.findIndex(e => eventNeedsSnapshot(e.kind));  // ~:220
+eventSequence = consumedSequence;                                                            // ~:289
+if (deferralIndex !== -1) { snapshotVersion = 0; }                                            //  :291
+function eventNeedsSnapshot(kind) { return kind === "identity_finalized"; }
+```
+**The re-baseline fires only when a null snapshot coincides with a pending `identity_finalized`.** All other
+null-snapshot rounds pin `snapshotVersion` with no recovery. `parseSnapshot` nulls on
+`snapshot === null || unchanged === true`. With `newEvents` empty, `consumedSequence` collapses to the current
+`eventSequence` — event cursor pinned too. The `:216` comment ("a deferral always resolves instead of
+latching") is false for every kind but one. Stop never resolves because the terminal branch needs a *changed*
+snapshot. **Write the failing test first**: serve `unchanged: true` at a stale cursor while the server version
+advances; assert re-baseline and terminal observation. Do not just widen `eventNeedsSnapshot`.
+
+**Resolved in iteration 17 (source and served bundle):** the test first failed with the exact terminal
+callback missing. The poller now retains the server-owned cumulative v2 accepted-sample total and resets only
+an `unchanged` snapshot cursor whose ingress total advanced. The replay requires requests `0 → 153 → 0`, a
+fresh version-332 closed snapshot, and `onTerminal("Session closed.")`; it passes with full frontend 119/119,
+two real-route terminal-contract tests, typecheck, and a rebuilt bundle. Evidence:
+`evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt`. This removes the reproduced latch but
+does not substitute for a fresh attended run or certify G3/G4/G5.
+
+### 409 (P1, cheap, independent) terminal 409 has no `failure.code`
+Browser showed "frame POST failed: HTTP 409" while the server held `canonical_decode_failed`. G6 violation —
+a bare status code is not a status line; same class as the VIEWABLE_SESSION_STATUSES gap y3 fixed.
+**Already-correct pattern lives in the same file**: `live_transport.py:316`, `:475`
+(`{"detail":…, "failure": exc.failure.to_dict(), "snapshot":…}`) and `:455` (`{"failure":{"code":…}}`).
+Bare sites to fix: **`:307`, `:308`, `:462`, `:463`**. Client: `captureClient.ts:809`/`:820` handle only
+`frame_work_exceeds_queue_capacity` and `v2_out_of_order_frame`; `:828` synthesises a raw-status Error —
+render the server line for any unhandled 409. Test for a human-readable UI line, not a status code.
+
+### B (P1, worst real impact) lanes summed with identical gain
+`live_mixer.py:256` `mixed = (system * _HEADROOM_GAIN) + (microphone * _HEADROOM_GAIN)`, `_HEADROOM_GAIN =
+10**(-6/20)` (`:16`). No level matching, so a quiet mic is buried: shared audio gave full sentences while the
+operator's mic gave only "A", "I", "image. Yeah" over 73 s. Charter T-06 is **silent** on inter-lane level
+matching — unruled ground. **Prototype and measure first (AGENTS.md, operator instruction). Do not hand-tune a
+constant.** Measure per-lane RMS on the real fixture, pre-register what "better" means, then evaluate
+normalisation / slow AGC / measured offset against accuracy on a two-speaker fixture. `silent_samples` /
+`overlap_samples` in that file is where per-lane level telemetry belongs.
+
+### C (P2) no warning on lane level disparity
+Preflight gates only `level >= SILENCE_RMS` (`captureClient.ts:171,739`, `SILENCE_RMS = 1e-4`), so a lane
+20+ dB below its peer passes. Do it **after B**, using B's measurement for a defensible threshold, and source
+user-facing copy from the server exactly as the silent-mic remedy does.
