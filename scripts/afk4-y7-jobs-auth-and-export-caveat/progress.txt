@@ -1,0 +1,2 @@
+
+[loop 20260818-061654-3599] start budget=12 agent=codex branch=afk4/y7-jobs-auth-and-export-caveat
