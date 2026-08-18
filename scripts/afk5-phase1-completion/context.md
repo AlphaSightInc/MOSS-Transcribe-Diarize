@@ -9,10 +9,12 @@ Living working memory. Update it every iteration so it matches reality. History 
   corpus). **Never "fix" them** — the l15 pin correctly refuses to run when the product tree moved.
 - Gates certified: G1, G2, G7, G8, G10. G6 has its local real-browser bar met (y6: 19/19 assertions,
   all 19 falsified against corrupted observations).
-- Job routes are guarded server-side and proven over real TLS. W1 now keeps the bearer in `App`
-  memory, passes it to both panels, and sends it on file create/poll/segments requests; it is not
-  written to browser storage or a URL. Focused 11/11 and full frontend 113/113, typecheck, and
-  production build passed.
+- Job routes are guarded server-side and proven over real TLS. W1 source now keeps the bearer in
+  `App` memory, passes it to both panels, and sends it on file create/poll/segments requests; it
+  is not written to browser storage or a URL. Focused 11/11 and full frontend 113/113, typecheck,
+  and production build passed. **It is not yet product-landed:** the build changes tracked
+  `ProjectResources/Frontend/{app.js,app.js.map}`, but this ticket's preflight forbids those paths;
+  the generated bundle was reverted rather than bypass the guard.
 - Export caveat lands in md, txt and json, only when a turn is non-final. 4 tests.
 - **No provider manifest exists in this repo**, so `--live` cannot start locally. W0 blocks G3, G4
   and G5 simultaneously. The local environment also has no `MOSS_VLLM_BASE_URL`; the read-only
@@ -38,13 +40,15 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W0 (blocked)** finalize a local manifest and wire it into the G3 recipe when the operator
+1. **W1 (blocked)** obtain ownership or a permitted release path for the tracked served bundle, then
+   rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
+2. **W0 (blocked)** finalize a local manifest and wire it into the G3 recipe when the operator
    provides the full provisional manifest and a reachable `MOSS_VLLM_BASE_URL`.
-2. **W3 (waiting on operator)** inspect `evidence/phase1/g3-attended/` for a raw attended-session
+3. **W3 (waiting on operator)** inspect `evidence/phase1/g3-attended/` for a raw attended-session
    log; certify only if the charter's frame, cadence, fetch, and RMS checks are all present.
-3. **W4** reconcile the ledger after the next measured gate result; include W1's 113/113 evidence
-   but do not imply a real-model or attended-capture result.
-4. **W2 (blocked)** G4/G5 certification — needs W0 and a reachable `MOSS_VLLM_BASE_URL`.
+4. **W4** reconcile the ledger after the next measured gate result; retain W1's source-test result
+   but state that the served bundle has not been refreshed.
+5. **W2 (blocked)** G4/G5 certification — needs W0 and a reachable `MOSS_VLLM_BASE_URL`.
 
 ## Blockers
 
@@ -53,3 +57,6 @@ Living working memory. Update it every iteration so it matches reality. History 
 - W0 additionally needs an operator-supplied full provisional manifest: the read-only descriptor
   supplies public geometry/provenance only, while finalization validates package and asset paths and
   hashes. Do not copy the remote `source_revision` into a local manifest.
+- `scripts/afk-guardrails/preflight.py afk5-phase1-completion` rejects changes to the tracked served
+  bundle under `ProjectResources/Frontend/`. W1 needs an operator-granted ownership change or a
+  permitted release owner; source tests alone do not update the browser the Python service serves.
