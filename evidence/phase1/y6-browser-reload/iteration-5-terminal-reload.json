@@ -1,0 +1,2287 @@
+{
+  "active": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 2,
+          "max": 0.1414196681379633
+        },
+        "system": {
+          "count": 2,
+          "max": 0.14147127342498542
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 4,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "active",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Capture active. Keep both lane meters moving.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "all_checks_passed": true,
+  "assertions": {
+    "capture_bearer_did_not_survive_reload": true,
+    "every_pre_reload_item_survives_reattach": true,
+    "only_view_credentials_are_stored": true,
+    "owner_can_end_reattached_session_through_real_route": true,
+    "real_control_panel_started_one_session": true,
+    "real_poller_rendered_committed_items_before_reload": true,
+    "real_poller_used_snapshot_and_event_cursors_on_both_sides": true,
+    "reattached_poller_issued_read_only_requests": true,
+    "reattached_state_has_no_duplicate_item_ids": true,
+    "reattached_state_matches_authoritative_committed_spans": true,
+    "reload_after_terminal_starts_idle_without_reattaching": true,
+    "reload_enters_read_only_viewing": true,
+    "same_session_is_retained_in_tab_storage": true,
+    "server_authored_status_remains_readable": true,
+    "server_event_cursor_does_not_regress_across_reload": true,
+    "server_received_no_stop_on_active_reload": true,
+    "session_remains_active_after_reload": true,
+    "terminal_poller_clears_tab_reattach_record": true,
+    "terminal_server_status_remains_readable": true
+  },
+  "backend": {
+    "base_url": "http://127.0.0.1:8090",
+    "proxy_target": "127.0.0.1:8090"
+  },
+  "chrome": {
+    "fresh_profile": true,
+    "headless": true,
+    "microphone": "in-page oscillator MediaStream returned from getUserMedia",
+    "system_lane": "in-page oscillator MediaStream; getDisplayMedia picker was not invoked"
+  },
+  "descriptor": {
+    "frame_samples": 1000,
+    "status": 200
+  },
+  "does_not_cover": [
+    "browser's real permission prompt (media APIs are deterministic test doubles)",
+    "display capture",
+    "model inference",
+    "a deployed host"
+  ],
+  "mounted": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "idle",
+    "reattachFields": [],
+    "statusLine": "Enter the capture bearer to configure both audio lanes.",
+    "storageKeys": []
+  },
+  "post_reload_read_only_requests": [
+    {
+      "cursor": 0,
+      "route": "snapshot",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787036130051
+    },
+    {
+      "cursor": 0,
+      "route": "events",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787036130052
+    }
+  ],
+  "probe": "prototypes/browser-capture-feasibility/probe_g6_browser_reload.py",
+  "ready": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 1,
+          "max": 0.09372450357241213
+        },
+        "system": {
+          "count": 1,
+          "max": 0.09071207941833094
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 2,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "ready",
+    "reattachFields": [],
+    "statusLine": "Both lanes carry audio. Start capture when ready.",
+    "storageKeys": []
+  },
+  "reattach_storage": {
+    "after": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "before": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "key": "lt:session:reattach"
+  },
+  "reattached": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "viewing",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Transcript reattached. Browser capture stopped on reload.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "scope": "real headless Chrome, actual Preact ControlPanel, local Vite proxy, and deterministic production routes; deterministic in-page fake microphone and system MediaStreams",
+  "server_status": {
+    "after_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    },
+    "before_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    }
+  },
+  "session_id": "api-session",
+  "started_at_unix_seconds": 1787036125.71,
+  "stop_requests_before_terminal": [],
+  "terminal_reload": {
+    "owner_stop": {
+      "snapshotStatus": "closed",
+      "status": 200
+    },
+    "read_requests_after_terminal_reload": [],
+    "reloaded_page": {
+      "bearerInputHasValue": false,
+      "mediaDebug": null,
+      "phase": "idle",
+      "reattachFields": [],
+      "statusLine": "Enter the capture bearer to configure both audio lanes.",
+      "storageKeys": []
+    },
+    "reloaded_page_after_settle": {
+      "bearerInputHasValue": false,
+      "mediaDebug": null,
+      "phase": "idle",
+      "reattachFields": [],
+      "statusLine": "Enter the capture bearer to configure both audio lanes.",
+      "storageKeys": []
+    },
+    "server_status": {
+      "capturePhase": "stopped",
+      "snapshotStatus": "closed",
+      "status": 200,
+      "statusLine": "Audio capture stopped."
+    },
+    "stop_requests_for_session": [
+      {
+        "cursor": null,
+        "route": "stop",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036130108
+      }
+    ],
+    "terminal_page": {
+      "bearerInputHasValue": false,
+      "mediaDebug": null,
+      "phase": "terminal",
+      "reattachFields": [],
+      "statusLine": "Session closed.",
+      "storageKeys": []
+    }
+  },
+  "transcript_continuity": {
+    "frontend_after_reload": {
+      "items": [
+        {
+          "id": "0:0",
+          "segmentId": "0:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "1:0",
+          "segmentId": "1:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "2:0",
+          "segmentId": "2:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "3:0",
+          "segmentId": "3:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "4:0",
+          "segmentId": "4:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "5:0",
+          "segmentId": "5:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "6:0",
+          "segmentId": "6:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "7:0",
+          "segmentId": "7:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "8:0",
+          "segmentId": "8:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "9:0",
+          "segmentId": "9:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "10:0",
+          "segmentId": "10:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "11:0",
+          "segmentId": "11:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "12:0",
+          "segmentId": "12:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "13:0",
+          "segmentId": "13:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "14:0",
+          "segmentId": "14:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "15:0",
+          "segmentId": "15:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "16:0",
+          "segmentId": "16:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "17:0",
+          "segmentId": "17:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "18:0",
+          "segmentId": "18:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "19:0",
+          "segmentId": "19:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "20:0",
+          "segmentId": "20:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "21:0",
+          "segmentId": "21:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "22:0",
+          "segmentId": "22:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "23:0",
+          "segmentId": "23:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "24:0",
+          "segmentId": "24:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "25:0",
+          "segmentId": "25:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "26:0",
+          "segmentId": "26:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "27:0",
+          "segmentId": "27:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "28:0",
+          "segmentId": "28:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "29:0",
+          "segmentId": "29:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "30:0",
+          "segmentId": "30:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "31:0",
+          "segmentId": "31:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "32:0",
+          "segmentId": "32:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "33:0",
+          "segmentId": "33:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "34:0",
+          "segmentId": "34:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "35:0",
+          "segmentId": "35:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "36:0",
+          "segmentId": "36:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "37:0",
+          "segmentId": "37:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "38:0",
+          "segmentId": "38:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "39:0",
+          "segmentId": "39:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "40:0",
+          "segmentId": "40:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "41:0",
+          "segmentId": "41:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "42:0",
+          "segmentId": "42:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "43:0",
+          "segmentId": "43:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "44:0",
+          "segmentId": "44:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "45:0",
+          "segmentId": "45:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "46:0",
+          "segmentId": "46:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "47:0",
+          "segmentId": "47:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "48:0",
+          "segmentId": "48:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "49:0",
+          "segmentId": "49:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "50:0",
+          "segmentId": "50:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "51:0",
+          "segmentId": "51:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "52:0",
+          "segmentId": "52:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "53:0",
+          "segmentId": "53:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "54:0",
+          "segmentId": "54:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "55:0",
+          "segmentId": "55:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "56:0",
+          "segmentId": "56:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "57:0",
+          "segmentId": "57:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "58:0",
+          "segmentId": "58:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "59:0",
+          "segmentId": "59:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "60:0",
+          "segmentId": "60:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "61:0",
+          "segmentId": "61:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "62:0",
+          "segmentId": "62:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "63:0",
+          "segmentId": "63:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "64:0",
+          "segmentId": "64:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "65:0",
+          "segmentId": "65:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "66:0",
+          "segmentId": "66:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "67:0",
+          "segmentId": "67:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "68:0",
+          "segmentId": "68:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "69:0",
+          "segmentId": "69:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "70:0",
+          "segmentId": "70:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "71:0",
+          "segmentId": "71:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "72:0",
+          "segmentId": "72:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "73:0",
+          "segmentId": "73:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "74:0",
+          "segmentId": "74:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "75:0",
+          "segmentId": "75:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "76:0",
+          "segmentId": "76:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "77:0",
+          "segmentId": "77:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "78:0",
+          "segmentId": "78:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "79:0",
+          "segmentId": "79:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "80:0",
+          "segmentId": "80:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "81:0",
+          "segmentId": "81:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "82:0",
+          "segmentId": "82:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "83:0",
+          "segmentId": "83:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "84:0",
+          "segmentId": "84:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "85:0",
+          "segmentId": "85:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "86:0",
+          "segmentId": "86:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "87:0",
+          "segmentId": "87:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "88:0",
+          "segmentId": "88:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "89:0",
+          "segmentId": "89:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "90:0",
+          "segmentId": "90:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "91:0",
+          "segmentId": "91:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "92:0",
+          "segmentId": "92:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "93:0",
+          "segmentId": "93:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "prov:1:0",
+          "segmentId": "prov:1:0",
+          "state": "provisional"
+        }
+      ],
+      "renderedTurnCount": 2
+    },
+    "frontend_before_reload": {
+      "items": [
+        {
+          "id": "0:0",
+          "segmentId": "0:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "1:0",
+          "segmentId": "1:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "2:0",
+          "segmentId": "2:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "3:0",
+          "segmentId": "3:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "4:0",
+          "segmentId": "4:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "5:0",
+          "segmentId": "5:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "6:0",
+          "segmentId": "6:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "7:0",
+          "segmentId": "7:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "8:0",
+          "segmentId": "8:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "9:0",
+          "segmentId": "9:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "10:0",
+          "segmentId": "10:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "11:0",
+          "segmentId": "11:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "12:0",
+          "segmentId": "12:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "13:0",
+          "segmentId": "13:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "14:0",
+          "segmentId": "14:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "15:0",
+          "segmentId": "15:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "16:0",
+          "segmentId": "16:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "17:0",
+          "segmentId": "17:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "18:0",
+          "segmentId": "18:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "19:0",
+          "segmentId": "19:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "20:0",
+          "segmentId": "20:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "21:0",
+          "segmentId": "21:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "22:0",
+          "segmentId": "22:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "23:0",
+          "segmentId": "23:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "24:0",
+          "segmentId": "24:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "25:0",
+          "segmentId": "25:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "26:0",
+          "segmentId": "26:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "27:0",
+          "segmentId": "27:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "28:0",
+          "segmentId": "28:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "29:0",
+          "segmentId": "29:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "30:0",
+          "segmentId": "30:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "31:0",
+          "segmentId": "31:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "32:0",
+          "segmentId": "32:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "33:0",
+          "segmentId": "33:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "34:0",
+          "segmentId": "34:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "35:0",
+          "segmentId": "35:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "36:0",
+          "segmentId": "36:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "37:0",
+          "segmentId": "37:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "38:0",
+          "segmentId": "38:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "39:0",
+          "segmentId": "39:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "40:0",
+          "segmentId": "40:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "41:0",
+          "segmentId": "41:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "42:0",
+          "segmentId": "42:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "43:0",
+          "segmentId": "43:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "44:0",
+          "segmentId": "44:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "45:0",
+          "segmentId": "45:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "46:0",
+          "segmentId": "46:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "47:0",
+          "segmentId": "47:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "48:0",
+          "segmentId": "48:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "49:0",
+          "segmentId": "49:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "50:0",
+          "segmentId": "50:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "51:0",
+          "segmentId": "51:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "52:0",
+          "segmentId": "52:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "53:0",
+          "segmentId": "53:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "54:0",
+          "segmentId": "54:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "55:0",
+          "segmentId": "55:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "56:0",
+          "segmentId": "56:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "57:0",
+          "segmentId": "57:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "58:0",
+          "segmentId": "58:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "59:0",
+          "segmentId": "59:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "60:0",
+          "segmentId": "60:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "61:0",
+          "segmentId": "61:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "62:0",
+          "segmentId": "62:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "63:0",
+          "segmentId": "63:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "64:0",
+          "segmentId": "64:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "65:0",
+          "segmentId": "65:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "66:0",
+          "segmentId": "66:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "67:0",
+          "segmentId": "67:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "68:0",
+          "segmentId": "68:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "69:0",
+          "segmentId": "69:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "70:0",
+          "segmentId": "70:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "71:0",
+          "segmentId": "71:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "72:0",
+          "segmentId": "72:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "73:0",
+          "segmentId": "73:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "74:0",
+          "segmentId": "74:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "75:0",
+          "segmentId": "75:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "76:0",
+          "segmentId": "76:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "77:0",
+          "segmentId": "77:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "78:0",
+          "segmentId": "78:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "79:0",
+          "segmentId": "79:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "80:0",
+          "segmentId": "80:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "81:0",
+          "segmentId": "81:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "82:0",
+          "segmentId": "82:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "83:0",
+          "segmentId": "83:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "84:0",
+          "segmentId": "84:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "85:0",
+          "segmentId": "85:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "86:0",
+          "segmentId": "86:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "87:0",
+          "segmentId": "87:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "88:0",
+          "segmentId": "88:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "89:0",
+          "segmentId": "89:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "90:0",
+          "segmentId": "90:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "91:0",
+          "segmentId": "91:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "92:0",
+          "segmentId": "92:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "93:0",
+          "segmentId": "93:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "prov:1:0",
+          "segmentId": "prov:1:0",
+          "state": "provisional"
+        }
+      ],
+      "renderedTurnCount": 2
+    },
+    "pre_reload_poller_reads": [
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036126940
+      },
+      {
+        "cursor": 0,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036126941
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036126999
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036126999
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127063
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127064
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127128
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127129
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127194
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127195
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127258
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127259
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127316
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127317
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127381
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127382
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127444
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127446
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127511
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127514
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127579
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127580
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127641
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127642
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127708
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127710
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127774
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127854
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127915
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127916
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127975
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036127975
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128044
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128045
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128105
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128107
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128169
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128171
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128232
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128233
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128294
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128294
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128355
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128357
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128418
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128420
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128479
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128482
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128547
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128549
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128636
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128637
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128702
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128703
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128767
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128768
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128844
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128845
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128910
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128911
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128951
+      },
+      {
+        "cursor": 0,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128952
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128976
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036128977
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129038
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129038
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129100
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129100
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129160
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129162
+      },
+      {
+        "cursor": 121,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129210
+      },
+      {
+        "cursor": 301,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129212
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129225
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129225
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129287
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129288
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129353
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129355
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129423
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129424
+      },
+      {
+        "cursor": 137,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129467
+      },
+      {
+        "cursor": 341,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129468
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129480
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129482
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129543
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129543
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129610
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129610
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129669
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129669
+      },
+      {
+        "cursor": 153,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129730
+      },
+      {
+        "cursor": 381,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129731
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129736
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129737
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129802
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129803
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129869
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129872
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129936
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129938
+      },
+      {
+        "cursor": 171,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129989
+      },
+      {
+        "cursor": 426,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129990
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036129998
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787036130000
+      }
+    ],
+    "server_cursors_after_reload": {
+      "committedSpanIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93
+      ],
+      "eventSequences": [
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467,
+        468,
+        469,
+        470,
+        471
+      ],
+      "eventsStatus": 200,
+      "snapshotStatus": 200,
+      "snapshotVersion": 189
+    },
+    "server_cursors_before_reload": {
+      "committedSpanIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93
+      ],
+      "eventSequences": [
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467,
+        468,
+        469,
+        470,
+        471
+      ],
+      "eventsStatus": 200,
+      "snapshotStatus": 200,
+      "snapshotVersion": 189
+    }
+  },
+  "vite": {
+    "base_url": "http://127.0.0.1:59845/",
+    "dev_base_override": "/",
+    "served_actual_control_panel": true
+  }
+}

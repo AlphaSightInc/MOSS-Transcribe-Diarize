@@ -61,3 +61,20 @@ cursor-polled both before and after reload; no Stop request. learned: events ret
 so a lower replay bound can advance during navigation; cursor non-regression plus snapshot-backed
 item equality is the correct falsifiable continuity invariant. next: prove terminal-session reload
 clears storage and stays terminal, then deliberately falsify every probe assertion.
+
+[iteration 5] target: terminal-session reload cleanup in the same real Chrome ControlPanel probe.
+files: `prototypes/browser-capture-feasibility/probe_g6_browser_reload.py`,
+`evidence/phase1/y6-browser-reload/iteration-5-terminal-reload.json`,
+`scripts/afk4-y6-browser-reload/context.md`, `scripts/afk4-y6-browser-reload/progress.txt`.
+validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m py_compile
+prototypes/browser-capture-feasibility/probe_g6_browser_reload.py && git diff --check &&
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python
+prototypes/browser-capture-feasibility/probe_g6_browser_reload.py --output
+evidence/phase1/y6-browser-reload/iteration-5-terminal-reload.json` passed (19/19 assertions).
+evidence: the raw artifact records a real proxied owner Stop after the bearer-less reattach,
+server `closed` / `Audio capture stopped.` status, terminal poller storage cleanup, and an actual
+post-terminal navigation that was idle with no session reads. learned: the reattached browser
+correctly cannot stop the session itself because its bearer is gone; the probe retains the
+ephemeral owner credential only outside browser storage to produce terminal state. next:
+deliberately falsify every assertion with dropped storage and stale cursor inputs before G6
+certification.

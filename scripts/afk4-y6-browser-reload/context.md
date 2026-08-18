@@ -4,8 +4,8 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Known state (verified 2026-08-18, dev @ 852d366)
 
-- G6 has real-browser evidence for reattach and cursor/item continuity; terminal-reload cleanup and
-  assertion falsification remain before it can be certified.
+- G6 has real-browser evidence for reattach, cursor/item continuity, and terminal-reload cleanup;
+  deliberate assertion falsification remains before it can be certified.
 - Reattach is implemented: `ControlPanel` stores `{sessionId, viewToken}` in tab-scoped storage,
   reload closes local media without sending Stop, startup resumes the snapshot/event poller, and the
   capture bearer stays in memory only. ADR-0004 records the security boundary.
@@ -40,6 +40,12 @@ Living working memory. Update every iteration so it matches reality. History goe
   authoritative committed span ids. Both read routes used their cursors before/after navigation;
   the bounded 64-event replay window may advance its retained lower bound, so the valid event
   invariant is a non-regressing upper cursor plus the snapshot-backed item equality.
+- `iteration-5-terminal-reload.json` proves the terminal negative case in the same real Chrome
+  session: after reattach, the ephemeral owner ended the session through the real proxied route;
+  the actual poller reached terminal and erased the tab record; a genuine subsequent navigation
+  mounted idle with no stored credentials or snapshot/event reads. The raw terminal snapshot
+  records the server-authored `Audio capture stopped.` status (the UI's terminal summary is
+  `Session closed.`). The bearer remained absent from browser storage throughout.
 - A native Chrome fake-audio input was live but yielded 190 zero-RMS worklet frames in this
   environment; the probe uses the established synthetic MediaStream shape instead. This is a
   launcher/source limitation, not evidence of a product defect.
@@ -48,8 +54,7 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Negative case: reload after session end clears rather than reattaching.
-2. Falsify every assertion against a deliberately broken input before committing.
+1. Falsify every assertion against a deliberately broken input before committing.
 
 ## Not yours
 

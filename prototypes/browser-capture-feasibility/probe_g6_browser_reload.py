@@ -349,6 +349,61 @@ def _server_status(page: _ChromePage, session_id: str) -> dict:
     return status
 
 
+def _stop_as_capture_owner(page: _ChromePage, session_id: str, capture_bearer: str) -> dict:
+    """End the reattached session through its real proxied owner route.
+
+    Reload intentionally discards browser capture authority, so this probe keeps the
+    ephemeral owner credential only in its Python process long enough to create the
+    terminal state.  The CDP result returns no credential or transcript text.
+    """
+    result = page.evaluate(
+        f"""(async () => {{
+          const response = await fetch(
+            '/api/live/sessions/' + encodeURIComponent({session_id!r}) + '/stop',
+            {{
+              method: 'POST',
+              headers: {{
+                Authorization: 'Bearer ' + {capture_bearer!r},
+                'Content-Type': 'application/json',
+              }},
+              body: JSON.stringify({{deadline: 5}}),
+              cache: 'no-store',
+            }}
+          );
+          const body = await response.json();
+          return {{
+            status: response.status,
+            snapshotStatus: body?.snapshot?.session?.status ?? null,
+          }};
+        }})()"""
+    )
+    if not isinstance(result, dict):
+        raise RuntimeError(f"owner Stop response is not an object: {result!r}")
+    return result
+
+
+def _server_status_as_capture_owner(page: _ChromePage, session_id: str, capture_bearer: str) -> dict:
+    """Read a terminal server-authored status without restoring browser storage."""
+    status = page.evaluate(
+        f"""(async () => {{
+          const response = await fetch(
+            '/api/live/sessions/' + encodeURIComponent({session_id!r}) + '/snapshot',
+            {{headers: {{Authorization: 'Bearer ' + {capture_bearer!r}}}, cache: 'no-store'}}
+          );
+          const body = await response.json();
+          return {{
+            status: response.status,
+            capturePhase: body.capture_phase ?? null,
+            statusLine: body.status_line ?? null,
+            snapshotStatus: body.snapshot?.session?.status ?? null,
+          }};
+        }})()"""
+    )
+    if not isinstance(status, dict):
+        raise RuntimeError(f"owner terminal snapshot response is not an object: {status!r}")
+    return status
+
+
 def _frontend_transcript_state(page: _ChromePage) -> dict:
     """Read the actual Vite module singleton that drives the rendered transcript.
 
@@ -596,7 +651,7 @@ def _run(chrome_bin: str) -> dict:
         requests = verdict.get("telemetry", {}).get("live_requests", [])
         if not isinstance(requests, list):
             raise RuntimeError("prototype verdict has no live request telemetry")
-        stop_requests = [
+        stop_requests_before_terminal = [
             request
             for request in requests
             if request.get("route") == "stop" and request.get("session_id") == session_id
@@ -615,6 +670,38 @@ def _run(chrome_bin: str) -> dict:
         authoritative_span_ids = cursors_after_reload.get("committedSpanIds")
         before_event_sequences = cursors_before_reload.get("eventSequences")
         after_event_sequences = cursors_after_reload.get("eventSequences")
+
+        # The reattached page deliberately no longer has a capture bearer, so ending this
+        # first session requires the probe's ephemeral owner credential.  This real route
+        # transition lets the actual reattached poller observe terminal state, clear its
+        # tab record, and makes the following navigation a genuine reload-after-terminal.
+        terminal_stop = _stop_as_capture_owner(page, session_id, capture_bearer)
+        terminal = _wait_for_phase(page, "terminal")
+        terminal_server_status = _server_status_as_capture_owner(page, session_id, capture_bearer)
+        terminal_reload_started_wall_ms = round(time.time() * 1_000)
+        _reload(page)
+        terminal_reloaded = _wait_for_phase(page, "idle")
+        # Give an incorrectly reattached poller time to issue its first request before
+        # taking the telemetry snapshot.  This is a bounded observation, not a sleep used
+        # to manufacture success: the idle phase and absent storage are the primary proof.
+        time.sleep(0.35)
+        terminal_reload_state = _control_state(page)
+        terminal_verdict = _server_verdict(backend_url, session_id)
+        terminal_requests = terminal_verdict.get("telemetry", {}).get("live_requests", [])
+        if not isinstance(terminal_requests, list):
+            raise RuntimeError("prototype verdict has no post-terminal request telemetry")
+        terminal_stop_requests = [
+            request
+            for request in terminal_requests
+            if request.get("route") == "stop" and request.get("session_id") == session_id
+        ]
+        reads_after_terminal_reload = [
+            request
+            for request in terminal_requests
+            if request.get("route") in {"snapshot", "events"}
+            and request.get("session_id") == session_id
+            and request.get("wall_ms", 0) >= terminal_reload_started_wall_ms
+        ]
         assertions = {
             "real_control_panel_started_one_session": active.get("phase") == "active",
             "same_session_is_retained_in_tab_storage": reattach_after.get("sessionId") == session_id,
@@ -632,7 +719,7 @@ def _run(chrome_bin: str) -> dict:
                 reattached.get("phase") == "viewing"
                 and reattached.get("statusLine") == "Transcript reattached. Browser capture stopped on reload."
             ),
-            "server_received_no_stop_on_reload": not stop_requests,
+            "server_received_no_stop_on_active_reload": not stop_requests_before_terminal,
             "session_remains_active_after_reload": server_after_reload.get("snapshotStatus") == "active",
             "server_authored_status_remains_readable": (
                 server_before_reload.get("status") == 200
@@ -668,6 +755,29 @@ def _run(chrome_bin: str) -> dict:
                 and {request.get("route") for request in post_reload_reads} == {"snapshot", "events"}
                 and all(isinstance(request.get("cursor"), int) for request in post_reload_reads)
             ),
+            "owner_can_end_reattached_session_through_real_route": (
+                terminal_stop.get("status") == 200 and terminal_stop.get("snapshotStatus") == "closed"
+            ),
+            "terminal_server_status_remains_readable": (
+                terminal_server_status.get("status") == 200
+                and terminal_server_status.get("snapshotStatus") == "closed"
+                and terminal_server_status.get("capturePhase") == "stopped"
+                and isinstance(terminal_server_status.get("statusLine"), str)
+                and bool(terminal_server_status["statusLine"])
+            ),
+            "terminal_poller_clears_tab_reattach_record": (
+                terminal.get("phase") == "terminal"
+                and terminal.get("storageKeys") == []
+                and terminal.get("reattachFields") == []
+            ),
+            "reload_after_terminal_starts_idle_without_reattaching": (
+                terminal_reloaded.get("phase") == "idle"
+                and terminal_reloaded.get("statusLine") == "Enter the capture bearer to configure both audio lanes."
+                and terminal_reload_state.get("storageKeys") == []
+                and terminal_reload_state.get("reattachFields") == []
+                and terminal_reload_state.get("bearerInputHasValue") is False
+                and not reads_after_terminal_reload
+            ),
         }
         if not all(assertions.values()):
             raise _ProbeFailure(
@@ -688,7 +798,14 @@ def _run(chrome_bin: str) -> dict:
                     "cursors_after_reload": cursors_after_reload,
                     "pre_reload_poller_reads": pre_reload_poller_reads,
                     "post_reload_reads": post_reload_reads,
-                    "stop_requests": stop_requests,
+                    "stop_requests_before_terminal": stop_requests_before_terminal,
+                    "terminal_stop": terminal_stop,
+                    "terminal": terminal,
+                    "terminal_server_status": terminal_server_status,
+                    "terminal_reloaded": terminal_reloaded,
+                    "terminal_reload_state": terminal_reload_state,
+                    "terminal_stop_requests": terminal_stop_requests,
+                    "reads_after_terminal_reload": reads_after_terminal_reload,
                     "assertions": assertions,
                 },
             )
@@ -732,7 +849,16 @@ def _run(chrome_bin: str) -> dict:
                 "pre_reload_poller_reads": pre_reload_poller_reads,
             },
             "post_reload_read_only_requests": post_reload_reads,
-            "stop_requests_for_session": stop_requests,
+            "stop_requests_before_terminal": stop_requests_before_terminal,
+            "terminal_reload": {
+                "owner_stop": terminal_stop,
+                "terminal_page": terminal,
+                "server_status": terminal_server_status,
+                "reloaded_page": terminal_reloaded,
+                "reloaded_page_after_settle": terminal_reload_state,
+                "stop_requests_for_session": terminal_stop_requests,
+                "read_requests_after_terminal_reload": reads_after_terminal_reload,
+            },
             "assertions": assertions,
             "descriptor": {
                 "status": descriptor["status"],
@@ -743,7 +869,6 @@ def _run(chrome_bin: str) -> dict:
                 "display capture",
                 "model inference",
                 "a deployed host",
-                "reload-after-terminal cleanup",
             ],
         }
     finally:
