@@ -21,7 +21,7 @@ import {
   buildTranscriptSearchResults,
   type TranscriptSearchPart
 } from "../lib/transcriptSearch";
-import { sessionTitle, transcript, transcriptSearchQuery } from "../state/session";
+import { sessionId, sessionTitle, transcript, transcriptSearchQuery } from "../state/session";
 import { autoscroll } from "../state/ui";
 
 interface TranscriptLegendEntry {
@@ -109,6 +109,8 @@ export function TranscriptPane() {
       ? Math.min(activeSearchMatchIndex, searchResults.matchCount - 1)
       : -1;
   const transcriptAvailable = allTurns.length > 0;
+  const activeSessionId = sessionId.value;
+  const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
     consecutiveSpeakerMap,
@@ -189,10 +191,14 @@ export function TranscriptPane() {
   }
 
   function handleDownload(format: TranscriptExportFormat): void {
+    if (activeSessionId === null) {
+      return;
+    }
     triggerTranscriptExportDownload(serializeTranscriptExport(
       format,
       allTurns,
-      (turn) => resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap)
+      (turn) => resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap),
+      { sessionId: activeSessionId, exportedAt: new Date() }
     ));
   }
 
@@ -295,7 +301,7 @@ export function TranscriptPane() {
             aria-haspopup="menu"
             aria-expanded={exportMenuOpen}
             title="Export transcript"
-            disabled={!transcriptAvailable}
+            disabled={!transcriptExportAvailable}
             onClick={() => setExportMenuOpen((open) => !open)}
           >
             <span className="mini-switch-track" aria-hidden="true">

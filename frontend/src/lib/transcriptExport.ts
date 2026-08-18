@@ -16,6 +16,11 @@ export interface TranscriptExportFile {
   mediaType: string;
 }
 
+export interface TranscriptExportIdentity {
+  sessionId: string;
+  exportedAt: Date;
+}
+
 export interface TranscriptExportJsonTurn {
   start: number;
   end: number;
@@ -56,10 +61,12 @@ export function buildTranscriptExportText(
 export function serializeTranscriptExport(
   format: TranscriptExportFormat,
   turns: readonly TranscriptTurn[],
-  resolveLabel: (turn: TranscriptTurn) => string
+  resolveLabel: (turn: TranscriptTurn) => string,
+  identity: TranscriptExportIdentity
 ): TranscriptExportFile {
   const rows = buildExportRows(turns, resolveLabel);
   const provisionalAttribution = hasProvisionalAttribution(turns);
+  const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
   if (format === "md") {
     return {
       content: prependProvisionalAttributionCaveat(
@@ -67,7 +74,7 @@ export function serializeTranscriptExport(
         MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
       ),
-      filename: "transcript.md",
+      filename,
       mediaType: "text/markdown;charset=utf-8"
     };
   }
@@ -78,13 +85,13 @@ export function serializeTranscriptExport(
         TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
       ),
-      filename: "transcript.txt",
+      filename,
       mediaType: "text/plain;charset=utf-8"
     };
   }
   return {
     content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel), null, 2)}\n`,
-    filename: "transcript.json",
+    filename,
     mediaType: "application/json;charset=utf-8"
   };
 }
