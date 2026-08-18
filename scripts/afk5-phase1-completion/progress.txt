@@ -191,3 +191,45 @@ create a session. State in the artifact that the decode path is CPU hf, not the 
 [iteration 6] target=W0 local HF fallback and local live-service bar; files=scripts/g3-attended-session.sh,evidence/phase1/w0-local-live/{README.md,live-provider-manifest.json,iteration-6-local-hf-launch.txt},docs/phase1-gate-status.md,scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=real helper launch with no `MOSS_VLLM_BASE_URL` started one TLS Uvicorn process on `127.0.0.1:7861`; local `/api/live/descriptor` returned the re-finalized real provider (`frame_samples=8000`), shared-bearer `POST /api/live/sessions` created an active session, and explicit abort returned `aborted`, followed by clean shutdown; `bash -n` plus tracked/local manifest identity/source/hash assertion PASS and `python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion` => PREFLIGHT OK; evidence=evidence/phase1/w0-local-live/iteration-6-local-hf-launch.txt; learned=the previous vLLM-only helper also omitted the required declared helper lease, so it could never launch; it now uses reachable vLLM or an explicit local HF snapshot and records the selected path. W0 is PASS; CPU/HF launch does not certify G3 attendance or G4/G5 GPU bounds; next=await either a permitted served-bundle release path (W1), an operator-attended G3 log (W3), or a reachable GPU endpoint plus ticket-3 evidence (W2).
 
 [iteration 7] target=W3 operator-evidence inventory; files=evidence/phase1/g3-attended/iteration-7-operator-evidence-inventory.txt,scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=`find evidence/phase1/g3-attended -maxdepth 1 -type f ! -name 'iteration-7-operator-evidence-inventory.txt' -print | sort` => only `two-speaker-fixture-90s.wav`; `python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion` => PREFLIGHT OK; evidence=the new inventory preserves the literal command and raw output; learned=there is no raw attended-session log, so no agent may certify G3. W1 still needs bundle-release ownership and W3 the operator run; concurrent deployed-bound evidence re-ranks W2 as a local preregistered CPU/HF measurement, with only its GPU-specific figures externally blocked; next=run that W2 prototype/measurement.
+
+[monitor 2026-08-18 16:55] W0 LOCAL LAUNCH VERIFIED — you met the PRD bar, and I recomputed the one
+number that could not be faked. `iteration-6-local-hf-launch.txt` is a real console session: uvicorn
+startup, TLS on 127.0.0.1:7861, local descriptor, session `122a2b6c95b84710b5a654e2e3e337d4` created and
+cleanly aborted, access-log lines corroborating all three requests, bearer redacted per charter §1, and an
+explicit "no inference was requested" plus a list of what it does not prove. I independently reloaded the
+manifest and recomputed:
+  source_revision e1741f904fee942a5eef34e0d40a4d4f848b363d   == artifact   (this branch, NOT deployed fb83ba5e)
+  manifest_hash   42ba2567b0c9390b34849811bf821893efdb25bbd82801dfa937f0492029db62  == artifact
+Charter §8 honoured. The service is down now, but the recipe is committed and re-runnable, which is what
+matters — this is not a probe-deleted-after-the-artifact situation.
+
+***NEW FACT THAT SHRINKS THE PORT-8000 BLOCKER FURTHER.*** I probed the deployed descriptor and diffed its
+bounds against your local manifest. They are IDENTICAL:
+  deployed: {hard_cap_samples 40000, max_events 1000, max_frame_samples 16000, max_identity_speakers 16,
+             max_queue_depth 16, max_retained_samples 960000, stop_drain_deadline_seconds 5.0}
+             frame_samples 8000, sample_rate 16000
+  local   : {hard_cap_samples 40000, max_events 1000, max_frame_samples 16000, max_identity_speakers 16,
+             max_queue_depth 16, max_retained_samples 960000, stop_drain_deadline_seconds 5.0}
+             frame_samples 8000, sample_rate 16000
+(If you saw `hard_cap_samples 4000 / max_queue_depth 64 / max_identity_speakers 2` anywhere, that is the
+G7 artifact's `api-fake` provider, not the deployed host. Do not use those.)
+
+Consequence for W2: SPLIT G4/G5 by what the bound actually governs.
+  Reproducible LOCALLY at the real deployed bound, no GPU needed — queue-depth behaviour, per-session vs
+  global 429 semantics, round-robin fairness, marker isolation under overload, reconnect, absence of OOM,
+  and the ten-minute sustain. These depend on queue depth, hard cap and frame geometry, all of which now
+  match production exactly.
+  NEEDS the GPU host — p95 transcript lag as a deployed figure, and GPU memory/utilisation (also issue #1's
+  last unmet criterion).
+So run the ≥10-minute concurrency sustain locally at these bounds, pre-register and COMMIT the thresholds
+before the run as prd.md requires, and label the latency column "CPU hf local decode, not the deployed
+bound". That converts G5 and most of G4 from blocked into done, and leaves a single narrow GPU dependency.
+
+ONE DESIGN FLAW IN `verify_g9_served_bundle.py`, fix the polarity. I re-ran it myself: 12/12 PASS, bundle
+pinned 77166 bytes / blob 8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c matching HEAD, every needle printed —
+the artifact-shape debt is properly cleared and it is genuinely falsifiable. But two assertions expect
+ABSENT (`bearerToken`, ``filename:`transcript-``), so GREEN MEANS THE DEFECT IS STILL THERE. The moment the
+bundle is released this script goes FAIL, and the tempting repair is to flip the expectations — which
+silently deletes the check. Invert it now: assert the bundle CONTAINS the new bearer and filename
+contracts, so green means shipped and red means stale. Then it stops being an audit of a defect and becomes
+the release gate for W1/W5, and it will not tempt anyone into weakening it.

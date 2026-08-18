@@ -100,3 +100,30 @@ Living working memory. Update it every iteration so it matches reality. History 
 - G9's audited proof is now refutable: its literal command and unedited output make 12 assertions against
   the HEAD-pinned 77,166-byte served bundle (blob `8121e270...f9c0d9c`). All pass, preserving the
   source-certified-only conclusion rather than treating source behavior as released browser behavior.
+
+## Deployed bounds == local bounds (monitor, 2026-08-18 16:55) — W2 is mostly unblocked
+
+Probed `https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/api/live/descriptor` and diffed against the
+local manifest. Identical: `hard_cap_samples 40000`, `max_events 1000`, `max_frame_samples 16000`,
+`max_identity_speakers 16`, `max_queue_depth 16`, `max_retained_samples 960000`,
+`stop_drain_deadline_seconds 5.0`, `frame_samples 8000`, `sample_rate 16000`.
+(`hard_cap_samples 4000` / `max_queue_depth 64` / `max_identity_speakers 2` is the G7 artifact's `api-fake`
+provider — not the deployed host. Never cite those as deployed.)
+
+**Split G4/G5 accordingly:**
+- **Local, at the real deployed bound, no GPU:** queue-depth behaviour, per-session vs global 429, round-robin
+  fairness, marker isolation under overload, reconnect, no OOM, the ≥10-minute sustain.
+- **GPU host only:** p95 transcript lag as a deployed figure, GPU memory/utilisation (also issue #1's last
+  unmet criterion).
+
+Pre-register and **commit** thresholds before the run (prd.md). Label the latency column "CPU hf local decode,
+not the deployed bound".
+
+## `verify_g9_served_bundle.py` polarity flaw (monitor, 2026-08-18 16:55)
+
+Re-ran it: 12/12 PASS, bundle pinned 77166 bytes / blob `8121e2703ce2cb7e6d5b4c805aaf9ad26f9c0d9c` matching
+HEAD, every needle printed. Falsifiable — debt cleared. **But** two assertions expect ABSENT
+(`bearerToken`, ``filename:`transcript-``), so **green means the defect still exists**. On release it goes FAIL
+and the tempting repair is flipping expectations, which deletes the check. Invert now: assert the bundle
+CONTAINS the new bearer and filename contracts → green = shipped, red = stale, and it becomes the W1/W5
+release gate.

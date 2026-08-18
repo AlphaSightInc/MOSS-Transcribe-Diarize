@@ -1,0 +1,7 @@
+Iteration 7 committed: `1e7d1d6` — G3 evidence inventory.
+
+- G3 dir has only the fixture; operator attended log still required.
+- Guardrails: PASS.
+- W2 is now next: pre-register CPU/HF-local thresholds, then run local 10-minute sustain/reconnect measurement at deployed geometry.
+- Preserved concurrent monitor edits and telemetry uncommitted.
+
