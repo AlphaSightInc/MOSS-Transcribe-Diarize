@@ -50,9 +50,33 @@ describe("transcriptExport", () => {
       })]
     });
   });
+
+  it.each(["confirmed", "provisional"] as const)(
+    "marks %s exports in every format until finalization",
+    (state) => {
+      const turns = [makeTurn(36, "SPEAKER_02", "Second turn", { state })];
+      const caveat = "Speaker attribution is provisional and may be revised by the retrospective sweep after the session ends.";
+      const resolveLabel = () => "Jamie";
+
+      expect(serializeTranscriptExport("md", turns, resolveLabel).content).toContain(
+        `> **Provisional attribution:** ${caveat}`
+      );
+      expect(serializeTranscriptExport("txt", turns, resolveLabel).content).toContain(
+        `Provisional attribution: ${caveat}`
+      );
+      expect(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel).content)).toMatchObject({
+        provisional_attribution_notice: `Provisional attribution: ${caveat}`
+      });
+    }
+  );
 });
 
-function makeTurn(start: number, displayName: string, text: string): TranscriptTurn {
+function makeTurn(
+  start: number,
+  displayName: string,
+  text: string,
+  overrides: Partial<TranscriptTurn> = {}
+): TranscriptTurn {
   return {
     start,
     end: start + 1,
@@ -63,6 +87,7 @@ function makeTurn(start: number, displayName: string, text: string): TranscriptT
     text,
     segment_ids: [],
     target_segment_keys: [],
-    provisional_stale: false
+    provisional_stale: false,
+    ...overrides
   };
 }
