@@ -73,7 +73,7 @@ Living working memory. Update it every iteration so it matches reality. History 
   may be measured, but isolated GPU latency, GPU memory/utilisation/OOM, and vLLM active/queued counts
   remain unclaimed. The validator passed before implementation at
   `prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py`.
-- **W2 remote-vLLM runner implemented (iteration 24), not yet measured:**
+- **W2 remote-vLLM runner first live attempt (iteration 25), fail-closed before capture:**
   `run_remote_vllm_tunnel_measurement.py` uses the production local-route/`VllmRunner` seam with one
   loopback process, a fresh evidence-owned finalized manifest bound to the captured HEAD, descriptor
   equivalence checks, and background helper heartbeats at explicit lease/4 cadence. It fails before
@@ -83,7 +83,13 @@ Living working memory. Update it every iteration so it matches reality. History 
   the live tunnel and read-only deployed descriptor at
   `evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/preflight.json`
   (frozen contract `53de...7504`, catalog hash `8467...c2e7`, deployed bounds match the required shape).
-  This proves runner readiness only — it starts no local route process and is not a G4/G5 measurement.
+  The first actual run, in
+  `evidence/phase1/w2-local-concurrency/run-20260818T200016-iteration25/`, correctly failed before
+  any session or inference: its fresh run-owned manifest retained relative `identity-state` and
+  `golden-input` paths, which then resolved beside the evidence output rather than the provisioned
+  asset directory. The production preflight recorded both assets absent in `bundle-preflight.json`.
+  Endpoint health and selected model probes were 200 before and after; this is harness failure evidence
+  only, not G4/G5 evidence.
 
 ## Environment facts that cost previous cycles real time
 
@@ -107,14 +113,18 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 vLLM-only matrix measurement (P1)**: iteration 24 implemented and live-preflighted the narrow
-   tunnel-backed runner. Next, run it from a **fresh** output directory with the frozen contract; it will
-   re-finalize only that directory's manifest and either record every 1/2/4/8 screen plus any selected
-   600-second soak and overload/reconnect result, or preserve a fail-closed result. The CPU/HF result
-   remains diagnostic, not G4/G5 evidence.
-4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+3. **W2 run-owned-manifest asset locality repair (P1)**: preserve the fresh evidence-owned manifest and
+   its HEAD binding, but make its declared relative identity and golden assets available at that manifest's
+   resolution base. Add a focused red/green runner test that exercises `LiveProviderBundleConfig.preflight()`;
+   then rerun the frozen matrix from a new output directory. Do not mutate the shared provisioned manifest
+   or substitute a local HF decoder.
+4. **W2 vLLM-only matrix measurement (P1, after locality repair)**: run from a **fresh** output directory
+   with the unchanged frozen contract; record every 1/2/4/8 screen plus any selected 600-second soak and
+   overload/reconnect result, or preserve a fail-closed result. The CPU/HF result remains diagnostic, not
+   G4/G5 evidence.
+5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -128,8 +138,9 @@ Living working memory. Update it every iteration so it matches reality. History 
 - The tunnel launcher is now present at `scripts/moss-vllm-tunnel.sh`, exact-content matched to reviewed
   `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
-  22; iteration 23 froze the hash-pinned matrix contract. The remaining W2 blocker is its implementation,
-  not tunnel reachability, basic decoder wiring, or a missing preregistration.
+  22; iteration 23 froze the hash-pinned matrix contract. Iteration 25 found the remaining W2 blocker:
+  finalizing directly into a fresh evidence directory leaves its relative bundle assets unavailable to the
+  production reader. Tunnel reachability, basic decoder wiring, and preregistration are not blockers.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -478,7 +489,8 @@ fixture uses distinct markers ("New York" / "payments"). Escalated to the operat
 policy, and set no Defect C threshold (C's number depends on B's authorization). If you ever synthesize a
 fixture by overdubbing, record that it is synthetic and what that costs.
 
-Correct next work while B/C are blocked: the tunnel-backed W2 run. Contract independently validated —
+Correct next work while B/C are blocked: repair the W2 runner's run-owned relative-asset locality, with a
+falsifiable production-preflight test, then start a new tunnel-backed matrix run. The contract remains frozen:
 `run_started: false`, sha `53de815d…c857504`, matrix `[1,2,4,8]`, latency label names SSH tunnel + tailnet
 transit, `does_not_establish` lists isolated-GPU bound, GPU memory/utilisation, GPU OOM, vLLM queue counts,
 attended capture.

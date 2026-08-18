@@ -1,0 +1,11 @@
+{
+  "available": false,
+  "command": "LiveProviderBundleConfig.from_manifest(run_owned_manifest).preflight().to_dict()",
+  "failures": [
+    "asset is not preinstalled: identity-state",
+    "asset is not preinstalled: golden-input"
+  ],
+  "manifest_path": "live-provider-manifest.json",
+  "manifest_sha256": "20d50eb03a559ec3eedd4e7b9f2b2628b3549da4cc4f76d42a3ec13dc3b12c57",
+  "source_revision": "8c190f733a76b30e44e940b931b580363641dea8"
+}

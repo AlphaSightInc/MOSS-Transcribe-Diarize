@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/browser-capture-feasibility/production_route_server.py", line 754, in <module>
+    main()
+  File "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/browser-capture-feasibility/production_route_server.py", line 735, in main
+    app = build_app(
+          ^^^^^^^^^^
+  File "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/browser-capture-feasibility/production_route_server.py", line 345, in build_app
+    base_runtime_factory = build_live_runtime_factory(config, runner)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/moss_transcribe_diarize/app/live_provider_bundle.py", line 276, in build_live_runtime_factory
+    raise LiveProviderBundleAdmissionError(
+moss_transcribe_diarize.app.live_provider_bundle.LiveProviderBundleAdmissionError: live provider bundle preflight failed.
