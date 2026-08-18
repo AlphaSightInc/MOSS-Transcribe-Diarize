@@ -1,0 +1,55 @@
+COMMAND
+uv pip install --offline --python .venv/bin/python 'webrtcvad-wheels==2.0.14'
+.venv/bin/python - <<'PY'
+import importlib.metadata
+for name in ('webrtcvad-wheels', 'onnxruntime'):
+    print(f'{name}={importlib.metadata.version(name)}')
+PY
+.venv/bin/python -c 'from moss_transcribe_diarize.app.live_provider_bundle import main; raise SystemExit(main())' \
+  --manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json --json
+
+OUTPUT
+Resolved 1 package in 0.91ms
+Installed 1 package in 2ms
+ + webrtcvad-wheels==2.0.14
+webrtcvad-wheels=2.0.14
+onnxruntime=1.23.2
+{
+  "available": true,
+  "config_hashes": {
+    "bounds_config_hash": "bb7e098d370e94a25fca10a7c56d3bca8a38e9b768a89633acedf54ff40d1c11",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "component_config_hash": "96c6440ec8175ef42f5ff18436bf047a7b181240392bd951ebfce2983fdf8733",
+    "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+    "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+    "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+  },
+  "descriptor": {
+    "identity_provider_kind": "wespeaker_resnet152_lm",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "runtime": {
+      "backend": "webrtc-cpu",
+      "device": "cpu",
+      "embedding_dimension": 256,
+      "inter_op_threads": 1,
+      "intra_op_threads": 1
+    },
+    "sample_rate": 16000,
+    "source_revision": "ab7a998ab6acb805eb30e91477ca3abf22dac83f",
+    "speech_provider_kind": "webrtc"
+  },
+  "failures": [],
+  "manifest_hash": "84600e8e095e3860a60a8d387a0e8a41facdf98044b11af7da5ae0fc0599c178",
+  "schema_version": 1
+}
+
+ASSERTION
+The production `LiveProviderBundleConfig.preflight()` ran the real WebRTC VAD and
+the pinned ONNX WeSpeaker encoder against `golden.wav`. It returned `available: true`
+with zero failures, thereby reproducing the manifest's expected output hash
+`c0c36de90d8e8ea5176e905a5d16e8a1c465bfba84bf0c4ee098380c0bfe9311`.
+
+LIMITS
+`MOSS_VLLM_BASE_URL` was unset, so no service, session, or descriptor request was
+started. This CPU provider check is not GPU-bound G4/G5 evidence and not attended G3 evidence.

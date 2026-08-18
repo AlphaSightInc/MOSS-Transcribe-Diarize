@@ -17,6 +17,7 @@ TOKEN_FILE="${STATE_DIR}/shared-token"
 mkdir -p "$STATE_DIR"; chmod 700 "$STATE_DIR"
 
 : "${MOSS_VLLM_BASE_URL:?set MOSS_VLLM_BASE_URL first, e.g. http://ga0-alienware-rtx4070ti.tailnet.aisight.us:8000/v1}"
+: "${MOSS_LIVE_PROVIDER_MANIFEST:?set MOSS_LIVE_PROVIDER_MANIFEST to the finalized local live-provider-manifest.json first}"
 
 echo "==> checking the model endpoint is reachable"
 code=$(curl -sS -k -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
@@ -49,7 +50,10 @@ echo "Ctrl-C here when the checklist is done."
 echo
 
 exec .venv/bin/python -m moss_transcribe_diarize.app.web_cli \
+  --backend vllm \
+  --vllm-base-url "$MOSS_VLLM_BASE_URL" \
   --live \
+  --live-provider-manifest "$MOSS_LIVE_PROVIDER_MANIFEST" \
   --host 127.0.0.1 --port "$PORT" \
   --live-tls-certfile "$CERT" --live-tls-keyfile "$KEY" \
   --live-auth-state "${STATE_DIR}/live-auth.json" \
