@@ -1,2 +1,12 @@
 
 [loop 20260818-061413-99094] start budget=12 agent=codex branch=afk4/y6-browser-reload
+
+[iteration 1] target: audit and reuse the G7 real-Chrome scaffold without mistaking its prototype
+page for the shipped reload path. files: scripts/afk4-y6-browser-reload/context.md,
+scripts/afk4-y6-browser-reload/progress.txt. validation:
+`PYTHONDONTWRITEBYTECODE="$(pyenv which python)" prototypes/browser-capture-feasibility/probe_g7_hidden_tab.py --help`
+passed (exit 0). evidence: `probe_g7_hidden_tab.py`, `production_route_server.py`,
+`frontend/vite.config.ts`, `frontend/src/components/ControlPanel.tsx`. learned: G7 supplies
+dependency-free CDP and local-route cleanup, but its `/capture-harness` HTML never mounts
+ControlPanel; the real Vite development proxy requires a locally owned backend on 127.0.0.1:8090.
+next: add an actual-frontend bootstrap to the y6 probe, retaining only that reusable scaffold.
