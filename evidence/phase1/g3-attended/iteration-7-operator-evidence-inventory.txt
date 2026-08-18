@@ -1,0 +1,22 @@
+# G3 operator evidence inventory — iteration 7
+
+Captured: 2026-08-18T20:00:16-04:00
+
+Command:
+
+```sh
+find evidence/phase1/g3-attended -maxdepth 1 -type f \
+  ! -name 'iteration-7-operator-evidence-inventory.txt' -print | sort
+```
+
+Raw output:
+
+```text
+evidence/phase1/g3-attended/two-speaker-fixture-90s.wav
+```
+
+Verdict: no raw attended-session log exists. The lone file is the prepared 90 s
+fixture, not evidence of the charter §7 fresh-gesture, two-lane display-capture
+run. An operator must complete that run and preserve its page/session log before
+an agent can validate frame geometry, sequence continuity, capture-timestamp
+cadence, fetch errors, and per-lane RMS.

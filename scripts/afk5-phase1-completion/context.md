@@ -39,6 +39,10 @@ Living working memory. Update it every iteration so it matches reality. History 
   using a checkout whose source revision changes.
 - Two-speaker fixture ready: `evidence/phase1/g3-attended/two-speaker-fixture-90s.wav`
   (90 s, mono, 16 kHz, RMS 1031).
+- **W3 remains operator-blocked:** iteration 7's reproducible inventory at
+  `evidence/phase1/g3-attended/iteration-7-operator-evidence-inventory.txt` found only that
+  fixture and no raw attended-session log. A fixture cannot establish the charter §7
+  fresh-gesture two-lane display-capture bar.
 
 ## Environment facts that cost previous cycles real time
 
@@ -55,17 +59,20 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W1 (blocked)** obtain ownership or a permitted release path for the tracked served bundle, then
-   rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
-2. **W3 (waiting on operator)** inspect `evidence/phase1/g3-attended/` for a raw attended-session
-   log; certify only if the charter's frame, cadence, fetch, and RMS checks are all present.
-3. **W2 (blocked)** G4/G5 certification — needs the reachable GPU endpoint and ticket-3 GPU evidence.
+1. **W2 (partly actionable)** pre-register CPU/HF-local thresholds and run the local ≥10-minute
+   deployed-geometry sustain/reconnect measurement. It can establish G5 and all non-GPU portions of G4;
+   deployed p95 lag and GPU memory/utilisation still need the reachable GPU endpoint.
+2. **W1 (blocked externally)** obtain ownership or a permitted release path for the tracked served
+   bundle, then rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
+3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
+   the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
+   requirements.
 
 ## Blockers
 
-- `MOSS_VLLM_BASE_URL` is unset. The local HF path now satisfies W0, but until a GPU endpoint is
-  reachable, G4/G5 cannot run against the ticket-3 GPU bar. Do not fabricate a model: CPU evidence
-  cannot establish GPU latency, GPU memory, or the deployed bound.
+- `MOSS_VLLM_BASE_URL` is unset. The local HF path can now measure G5 and the non-GPU G4 behaviours at
+  the matching deployed geometry, but it cannot establish deployed p95 lag, GPU memory, or GPU
+  utilisation. Do not fabricate those GPU-only figures.
 - `scripts/afk-guardrails/preflight.py afk5-phase1-completion` rejects changes to the tracked served
   bundle under `ProjectResources/Frontend/`. W1 needs an operator-granted ownership change or a
   permitted release owner; source tests alone do not update the browser the Python service serves,
