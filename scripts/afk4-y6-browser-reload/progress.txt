@@ -92,3 +92,5 @@ learned: these G6 checks reject the named loss/rollback hazards rather than only
 output; the documented local real-browser G6 bar is met. recommended next step: no y6 work remains;
 retain stated exclusions (permission prompt, display capture, model inference, deployed host) for
 their separate gates/certification paths.
+
+[loop 20260818-061413-99094] complete at iteration 6
