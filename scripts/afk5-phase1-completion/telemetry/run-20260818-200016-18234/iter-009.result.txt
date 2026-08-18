@@ -1,0 +1,6 @@
+Committed `5ee0d14`.
+
+W2 runner added; matrix re-frozen to 1/2/4/8. Live descriptor preflight, validator, async writer smoke, diff check, and guardrail passed.
+
+No real model measurement/G4-G5 result yet. Loop telemetry remains uncommitted.
+
