@@ -27,6 +27,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     _ManualCanonicalPumpScheduler,
     hash_config,
 )
+from moss_transcribe_diarize.app.live_capture_status import BROWSER_MICROPHONE_SILENT_STATUS_LINE
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LiveIdentityPreparation, LiveIdentitySnapshot
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
@@ -668,6 +669,10 @@ class LiveApiTest(unittest.TestCase):
             self.assertEqual(descriptor.json()["descriptor"]["live_protocol"]["protocol"], "moss-live-service.v2")
             self.assertEqual(descriptor.json()["descriptor"]["live_protocol"]["min_protocol_version"], 2)
             self.assertFalse(descriptor.json()["descriptor"]["live_protocol"]["capabilities"]["binary"])
+            self.assertEqual(
+                descriptor.json()["preflight_status_lines"]["browser_microphone_silent"],
+                BROWSER_MICROPHONE_SILENT_STATUS_LINE,
+            )
 
             negotiated = client.get(
                 "/api/live/descriptor?client_min_protocol_version=1&client_max_protocol_version=2"

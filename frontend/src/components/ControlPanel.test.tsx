@@ -11,11 +11,27 @@ const mocks = vi.hoisted(() => {
     poll: vi.fn(),
     cursors: vi.fn(() => ({ version: 0, sequence: -1 }))
   };
-  return { poller, createMossSessionPoller: vi.fn((_options: unknown) => poller) };
+  return {
+    poller,
+    createMossSessionPoller: vi.fn((_options: unknown) => poller),
+    captureOptions: null as { onPreflightStatus?: (statusLine: string) => void } | null,
+  };
 });
 
 vi.mock("../api/mossPoller", () => ({
   createMossSessionPoller: mocks.createMossSessionPoller
+}));
+
+vi.mock("../capture/captureClient", () => ({
+  CaptureClient: class {
+    constructor(options: { onPreflightStatus?: (statusLine: string) => void }) {
+      mocks.captureOptions = options;
+    }
+
+    prepare = vi.fn().mockResolvedValue(undefined);
+    startMicrophone = vi.fn().mockResolvedValue(undefined);
+    close = vi.fn().mockResolvedValue(undefined);
+  }
 }));
 
 import { ControlPanel } from "./ControlPanel";
@@ -28,6 +44,7 @@ describe("ControlPanel reattach", () => {
     document.body.append(root);
     window.sessionStorage.clear();
     vi.clearAllMocks();
+    mocks.captureOptions = null;
   });
 
   afterEach(() => {
@@ -61,5 +78,26 @@ describe("ControlPanel reattach", () => {
 
     act(() => render(null, root));
     expect(mocks.poller.stop).toHaveBeenCalledOnce();
+  });
+
+  it("renders the server-supplied remedy at silent-microphone preflight", async () => {
+    const remedy =
+      "No microphone sound was detected. In Chrome, open Settings > Privacy and security > " +
+      "Site settings > Microphone and select the correct default input.";
+
+    await act(async () => {
+      render(<ControlPanel captureBearer="capture-token" onCaptureBearerChange={() => undefined} />, root);
+    });
+    const enableMicrophone = [...root.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Enable microphone",
+    );
+    if (!enableMicrophone) throw new Error("missing enable microphone button");
+    await act(async () => {
+      enableMicrophone.click();
+    });
+
+    act(() => mocks.captureOptions?.onPreflightStatus?.(remedy));
+
+    expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
   });
 });

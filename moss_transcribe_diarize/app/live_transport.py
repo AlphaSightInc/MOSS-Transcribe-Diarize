@@ -17,6 +17,7 @@ from .live_auth import (
     LivePeer,
 )
 from .live_capture_status import (
+    BROWSER_MICROPHONE_SILENT_STATUS_LINE,
     LiveCaptureHealthPolicy,
     LiveCaptureObservationRegistry,
     project_live_capture_status,
@@ -602,7 +603,14 @@ def _descriptor_payload(
     client_min_protocol_version: int | None,
     client_max_protocol_version: int | None,
 ) -> dict[str, Any]:
-    payload = {"descriptor": runtime.descriptor.to_dict()}
+    payload = {
+        "descriptor": runtime.descriptor.to_dict(),
+        # A pre-session condition has no authenticated session route yet. The browser still
+        # gets this server-owned copy from the descriptor it must fetch before capture.
+        "preflight_status_lines": {
+            "browser_microphone_silent": BROWSER_MICROPHONE_SILENT_STATUS_LINE,
+        },
+    }
     if client_min_protocol_version is None and client_max_protocol_version is None:
         return payload
     if client_min_protocol_version is None or client_max_protocol_version is None:

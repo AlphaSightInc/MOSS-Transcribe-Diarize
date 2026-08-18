@@ -71,6 +71,7 @@ export function ControlPanel({ captureBearer, onCaptureBearerChange }: ControlPa
       captureBearer: captureBearer.trim(),
       helperVersion: HELPER_VERSION,
       onMeter: updateMeter,
+      onPreflightStatus: setMessage,
       onPreSessionFailure: reportPreSessionFailure,
       onTransportError: (_route, error) => setMessage(error.message)
     });

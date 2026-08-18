@@ -540,3 +540,57 @@ filename semantics in the minified bundle and rejects all four legacy signatures
 shared-`runs_dir` no-bridge `/studio` path; learned=green now means the generated browser artifact is shipped,
 not that a stale bundle proves source behavior; next=Issue #5's silent-mic preflight remedy and focused test,
 then repair W2 result recording before the tunnel-backed run.
+
+[monitor 2026-08-18 18:05] BUNDLE RELEASE VERIFIED — and then I audited ALL NINE of issue #8's criteria,
+because the bundle was being treated as its last blocker. It is not. Two criteria are still open.
+
+VERIFIED GOOD (iteration 12):
+  - Inverted verifier now OVERALL=PASS with `served_bundle_matches_HEAD` true, bundle 77,879 bytes pinned to
+    HEAD. Green means shipped. Polarity is correct.
+  - The COMMITTED bundle carries all three contracts, which I checked against `git show HEAD:...app.js`, not
+    the worktree: `bearerToken` present, the `transcript-${...sessionId}-${...toISOString()}` filename form
+    present, and **#9's caveat now present** ("Provisional attribution", "retrospective sweep",
+    `provisional_attribution_notice`) where all were 0 before.
+  - Frontend 115/115 after the rebuild. Ownership grant was NARROW and correct — two explicit file paths
+    (`app.js`, `app.js.map`), not the whole directory.
+  - The `/studio` documentation is substantive AND its citation is real: I checked `tests/test_app_api.py`
+    actually exercises `/api/jobs` create/list, `PUT /api/jobs/{id}/segments`, `GET .../download?kind=srt`,
+    and `GET /studio`. It also states its own limits (no fresh browser hop, no real-model upload). Good.
+
+***ISSUE #8 IS STILL NOT CLOSEABLE. CRITERION 4 IS UNMET ON BOTH HALVES.***
+  "Upload shows byte progress. A failed upload retries whole; no resume in Phase 1, and the UI says so
+   rather than implying resumability."
+  (a) There is NO upload byte progress, and it is architecturally impossible as written. `submitJob` builds a
+      `FormData` and hands it to `requestJson`, which calls `fetch` (`api/jobs.ts`). **`fetch` cannot report
+      upload progress** — that needs `XMLHttpRequest.upload.onprogress`, and there is not a single
+      `XMLHttpRequest` anywhere in `frontend/src` (I grepped). What `FilePanel` shows is a static
+      "Uploading file..." then `job.progress`, which is SERVER TRANSCRIPTION progress after the POST
+      completed — a different quantity from bytes uploaded.
+  (b) The UI never says there is no resume. Zero matches for "resum" across `components/` and `App.tsx`.
+      And `FilePanel.tsx:38` prints "Connection interrupted; retrying: ..." which a user reads as
+      resumability — the precise implication the criterion forbids. (It is the poller retrying, not the
+      upload, but the user cannot tell.)
+  Both are ordinary unblocked work: switch the upload to XHR with `upload.onprogress` driving the existing
+  bar, and add one line of copy stating a failed upload restarts from the beginning. Add tests for both.
+
+***AND CRITERION 2 NEEDS A RULING, NOT A GUESS — DO NOT SILENTLY DECIDE IT.***
+  Criterion: "Job state maps to the reference lifecycle: queued->starting, running->recording,
+  done->completed, failed->failed."
+  Reality: `api/types.ts:3` defines `SessionLifecycle = "idle"|"active"|"closing"|"closed"|"failed"|"aborted"`.
+  **`starting`, `recording` and `completed` are not in it** — `starting`/`recording` belong to the server's
+  `capture_phase` vocabulary, a different axis, and `completed` exists nowhere. `lifecycleForJobStatus` maps
+  done/waiting_review->closed, failed->failed, cancelled->aborted, and EVERYTHING ELSE->active, so
+  **queued and running are indistinguishable**. Raw `job.status` does ride through as `state`.
+  Two readings: (i) the criterion's names are stale prose and mapping onto the real enum satisfies it; or
+  (ii) the product genuinely cannot show "queued" versus "transcribing", which is a real gap since the
+  progress bar reads 0% for both. Write a `docs/rulings/` memo with both readings and your recommendation,
+  queue it for the operator, and pick up criterion 4 in the same iteration. Do not mark #8 done.
+
+FOR THE RECORD, the other seven: C1 multipart/408/chunked preserved (`_admit_upload_request` intact, y7's
+401/200 matrix) PASS · C3 same transcript item shape, always `state:"final"`, `provisional_stale:false` PASS ·
+C5 met in substance — `server.py:499` returns 507 "Insufficient storage for upload." and the client throws
+rather than silently queueing; the literal words "server busy" are not used, which I am calling met, flagging
+the wording · C6 bearer PASS and now shipping · C7 `type="file"`, no native picker PASS · C8 no new TTL or
+auto-cleanup PASS · C9 documented PASS.
+
+[iteration 13] target=Issue #5 criterion 7 server-authored silent-microphone preflight remedy; files=`moss_transcribe_diarize/app/{live_capture_status.py,live_transport.py}`, `frontend/src/{capture/captureClient.ts,capture/captureClient.test.ts,components/ControlPanel.tsx,components/ControlPanel.test.tsx}`, `tests/test_live_api.py`, `ProjectResources/Frontend/{app.js,app.js.map}`, `docs/phase1-gate-status.md`, `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`/opt/homebrew/bin/npm --prefix frontend run typecheck && /opt/homebrew/bin/npm --prefix frontend test -- --run` => 16 files / 117 tests PASS; focused `captureClient` + `ControlPanel` => 33 assertions PASS; `.venv/bin/python -m pytest -q tests/test_live_api.py` => 49 passed / 327 subtests; build => PASS (78,636-byte app.js); evidence=`evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`; learned=the descriptor can carry the exact server-owned remedy before a session exists, so no endpoint or frontend copy is needed; sustained silent mic displays it and blocks session creation; `verify_g9_served_bundle.py` has all behavioral assertions PASS but correctly fails its HEAD pin until the generated bundle is committed; next=Issue #8 criterion 4 upload byte progress/no-resume copy, while #8 criterion 2 awaits an operator lifecycle ruling.

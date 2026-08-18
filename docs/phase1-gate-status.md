@@ -16,8 +16,8 @@ requires it, and nothing else in this repo enforces it at gate level.
 2 failed, 1066 passed, 2 skipped, 4 warnings, 396 subtests passed
 ```
 
-The current source-suite result in this loop worktree is **16 files / 115 tests**;
-its captured output is `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`.
+The current source-suite result in this loop worktree is **16 files / 117 tests**;
+its captured output is `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`.
 This is source coverage, not evidence that the generated browser bundle was released.
 
 The pre-reboot `6 failed` reading is **retired**. The four `test_macos_uds_tracer` failures were
@@ -53,7 +53,7 @@ is the protected l15 product-tree pin.
 | G6 failure paths | ✅ **PASS** | `y6-browser-reload/iteration-6-assertion-falsification.json` — six paths covered; real local Chrome reload/terminal flow certified |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
-| G9 modes | 🟡 **SOURCE-CERTIFIED, served release verified** | source tests 115/115; iteration 12's HEAD-pinned verifier proves the served bundle carries the bearer and session-timestamp export contracts |
+| G9 modes | 🟡 **SOURCE-CERTIFIED, served release verified** | source tests 117/117; iteration 12's HEAD-pinned verifier proves the served bundle carries the bearer and session-timestamp export contracts |
 | G10 no regression | ✅ **PASS (certified `dev` baseline)** | `2 failed / 1066 passed / 2 skipped / 396 subtests`; the local worktree result is explicitly non-certifying above |
 
 ---
@@ -296,8 +296,8 @@ upload; no such bridge or new evidence claim is made.
 
 Evidence:
 
-- `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`: full source suite,
-  **16 files / 115 tests**.
+- `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`: current full source
+  suite, **16 files / 117 tests**, including the silent-mic preflight remedy coverage.
 - `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`: retained stale-artifact
   proof. It pins the prior 77,166-byte bundle and explains why a source-only result could not close G9.
 - `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`: release gate. It pins the served `app.js`
@@ -320,7 +320,7 @@ The loop worktree's raw result is deliberately not substituted into that table:
 `iteration-3-root-pytest.txt` has one l15-pin failure, the valid local l2 corpus adds 92 subtests,
 and two real-corpus tests skip because their operator-owned data is absent. It therefore supports the
 environment explanation, but not a local G10 recertification. The current frontend source suite is
-**115/115**; its generated bundle remains outside this iteration's ownership.
+**117/117**; its generated bundle remains outside this iteration's ownership.
 
 ---
 

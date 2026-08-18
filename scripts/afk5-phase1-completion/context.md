@@ -9,8 +9,8 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g10-ledger-reconciliation/iteration-3-root-pytest.txt`: **1 failed / 1065 passed /
   4 skipped / 488 subtests**. The valid local l2 corpus accounts for +92 subtests; two
   operator-owned real-corpus tests skip here. **Never "fix" either baseline guard or replace the
-  certified bar with this worktree's denominator.** The source frontend suite is **115/115** across
-  16 files at `evidence/phase1/g9-ledger-reconciliation/iteration-3-frontend-source-tests.txt`.
+  certified bar with this worktree's denominator.** The current source frontend suite is **117/117** across
+  16 files at `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`.
 - Gates certified: G1, G2, G7, G8, G10. G6 has its local real-browser bar met (y6: 19/19 assertions,
   all 19 falsified against corrupted observations).
 - W1/W5 are now released in `ProjectResources/Frontend/{app.js,app.js.map}`. The app keeps the
@@ -24,6 +24,13 @@ Living working memory. Update it every iteration so it matches reality. History 
   `HEAD`. The scope is declared narrowly in `scripts/afk-guardrails/ownership.json` for these two
   generated artifacts, following the operator-authorized release rather than bypassing preflight.
 - Export caveat lands in md, txt and json, only when a turn is non-final. 4 tests.
+- **Issue #5 criterion 7 is now closeable (iteration 13):** the descriptor's existing request carries the
+  exact server-owned `BROWSER_MICROPHONE_SILENT_STATUS_LINE`; the production literal remains only in
+  `live_capture_status.py`. `CaptureClient` renders that line on sustained pre-session microphone silence
+  and refuses session creation while the condition persists. Focused frontend coverage (33 assertions),
+  live API coverage (49 tests), and the full 16-file frontend suite (117 tests) passed. The rebuilt
+  `ProjectResources/Frontend/{app.js,app.js.map}` is pending this iteration's commit, so the HEAD-pinned
+  served-bundle verifier correctly remains red until then.
 - **W0 local launch PASS:** the recovered real CPU bundle is materialized at the host-local live-data
   path; its manifest was re-finalized for `e1741f904fee942a5eef34e0d40a4d4f848b363d`. Its production
   preflight passes with `onnxruntime==1.23.2`, cached `webrtcvad-wheels==2.0.14`, and the real golden
@@ -72,9 +79,10 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Issue #5 criterion 7 (operator ruled)** replace the current client developer string at silent-mic
-   preflight with the exact server-authored remedy wording from `live_capture_status.py:41-44`, sourced
-   once, and add a focused test.
+1. **Issue #8 criterion 4** replace the `fetch` upload with `XMLHttpRequest.upload.onprogress` so the UI
+   reports upload bytes, and state that a failed upload restarts whole rather than resumes. Keep the existing
+   post-upload job-progress semantics distinct and add focused tests. Criterion 2 still needs a ruling; do
+   not invent nonexistent `starting`/`recording`/`completed` lifecycle values.
 2. **W2 vLLM-only measurement prerequisites** first fix the runner so unexpected frames never persist
    `pcm_base64` and aggregate diagnostic exemplars, then bring the already-audited SSH tunnel launcher
    from `dev` commit `affeaea` into this branch. Only then run the preregistered tunnel-backed runner
@@ -96,9 +104,8 @@ Living working memory. Update it every iteration so it matches reality. History 
   added `scripts/moss-vllm-tunnel.sh` on `dev`, and `git merge-base --is-ancestor affeaea HEAD` returns
   false. Iteration 11 fails closed rather than silently selecting HF; W2 cannot be run from this checkout
   until the reviewed launcher is brought in.
-- Issue #5 criterion 7 is no longer a Lane-B decision: the operator selected the app-side preflight
-  remedy. Keep its wording in one source (the existing `live_capture_status.py:41-44` sentence), do not
-  create a session for a silent mic, and test the exact displayed wording.
+- Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
+  not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
 
 ## W0 evidence and limits
@@ -229,14 +236,12 @@ and a mid-run death otherwise reads as a slow model. A run whose closing probe f
 For #1 criterion 9: the tunnel carries inference, **not host telemetry**. GPU memory/utilisation remain
 unobtainable; the host stays read-only. Do not claim them.
 
-## Issue #5 criterion 7 — OPERATOR HAS RULED. Implement it.
+## Resolved iteration 13 — Issue #5 silent-microphone preflight remedy
 
-Ship the remedy message **in the app, at preflight, when a silent microphone is detected**. Rationale to
-preserve: the app already authors this moment badly, surfacing the developer string `both capture lanes must
-have non-zero signal before session creation` (`captureClient.ts:491-493`), so this replaces bad client copy
-with good client copy rather than adding a new client-authored-copy violation. No new endpoint; my option (a)
-is dropped. Keep the **exact** wording from `live_capture_status.py:41-44`, sourced from one place rather than
-forked, and add a test asserting it appears at preflight on a silent mic. Then #5 is closeable.
+No endpoint was added: the existing descriptor response exposes `preflight_status_lines` from the sole
+`BROWSER_MICROPHONE_SILENT_STATUS_LINE` constant in `live_capture_status.py`. Sustained pre-session microphone
+silence updates the ControlPanel status line with that exact string; a stale-ready state cannot create a
+session until microphone signal recovers. `captureClient.test.ts` and `ControlPanel.test.tsx` cover both facts.
 
 ## Do not commit the 60 MB run-state.json — fix the runner (monitor, 2026-08-18 17:45)
 
@@ -262,7 +267,7 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Priority order
-1. Issue #5 criterion 7: preflight remedy string (exact wording, single-sourced) + test.
+1. Issue #8 criterion 4: real byte progress and clear no-resume upload copy.
 2. Fix W2 unexpected-frame evidence recording before any vLLM run.
 3. Bring the reviewed tunnel launcher into this branch, then run W2 against
    `http://127.0.0.1:18000/v1`.
@@ -292,3 +297,31 @@ browser-hop or real-model claim.
 verdict's predicates used, and recording the original sha256 + byte size so the trim is auditable.
 **No history rewriting** (no amend/rebase/force-push). `dev` uses true merge commits, so the history question is
 the operator's call, not yours.
+
+## Issue #8 is NOT closeable — the bundle was not its last blocker (monitor, 2026-08-18 18:05)
+
+I audited all nine criteria after the release. Bundle verified: verifier `OVERALL=PASS`,
+`served_bundle_matches_HEAD` true, 77,879 B pinned to HEAD; the **committed** bundle (checked via
+`git show HEAD:...app.js`) carries `bearerToken`, the `transcript-${…sessionId}-${…toISOString()}` filename form,
+and **#9's caveat** — previously all 0. Frontend 115/115. Ownership grant correctly narrow (two file paths).
+`/studio` doc is real and its citation checks out (`tests/test_app_api.py` exercises jobs create/list,
+`PUT …/segments`, `…/download?kind=srt`, `GET /studio`).
+
+**C4 UNMET, both halves — ordinary unblocked work:**
+- No upload byte progress, and impossible as built: `submitJob` → `requestJson` → **`fetch`**, and `fetch`
+  cannot report upload progress. **Zero `XMLHttpRequest` in `frontend/src`.** The bar shows `job.progress`
+  (server transcription progress) *after* the POST, not bytes uploaded.
+- No "no resume" copy anywhere (zero matches for "resum"), and `FilePanel.tsx:38` prints
+  "Connection interrupted; retrying: …" which reads as resumability — the implication the criterion forbids.
+Fix: XHR with `upload.onprogress` driving the existing bar + one line of copy that a failed upload restarts
+whole. Tests for both.
+
+**C2 needs an operator RULING — do not silently decide:** criterion names `queued→starting, running→recording,
+done→completed`, but `api/types.ts:3` has `SessionLifecycle = idle|active|closing|closed|failed|aborted`.
+`starting`/`recording` are `capture_phase` vocabulary; `completed` exists nowhere. `lifecycleForJobStatus`
+sends everything non-terminal → `active`, so **queued and running are indistinguishable** and the bar reads 0%
+for both. Write a `docs/rulings/` memo with both readings + your recommendation, queue it, and do C4 in the
+same iteration.
+
+Other seven PASS: C1, C3, C5 (507 "Insufficient storage for upload." surfaced, no silent queueing — literal
+"server busy" wording not used), C6, C7, C8, C9.

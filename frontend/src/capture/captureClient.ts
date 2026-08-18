@@ -63,6 +63,9 @@ export type CaptureLane = "microphone" | "system";
 export type CaptureDescriptor = Readonly<{
   sampleRate: number;
   frameSamples: number;
+  preflightStatusLines: Readonly<{
+    microphoneSilent: string;
+  }>;
 }>;
 
 export type V2Frame = {
@@ -127,6 +130,7 @@ export type CaptureClientOptions = Readonly<{
   captureBearer: string;
   helperVersion: string;
   onMeter?: (lane: CaptureLane, rms: number) => void;
+  onPreflightStatus?: (statusLine: string) => void;
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
   onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
 }>;
@@ -242,6 +246,13 @@ function positiveInteger(value: unknown, field: string): number {
   return value as number;
 }
 
+function nonEmptyString(value: unknown, field: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${field} must be a non-empty string`);
+  }
+  return value;
+}
+
 function record(value: unknown, field: string): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new Error(`${field} must be an object`);
@@ -250,8 +261,13 @@ function record(value: unknown, field: string): Record<string, unknown> {
 }
 
 export function parseCaptureDescriptor(payload: unknown): CaptureDescriptor {
-  const descriptor = record(record(payload, "descriptor response").descriptor, "descriptor");
+  const response = record(payload, "descriptor response");
+  const descriptor = record(response.descriptor, "descriptor");
   const bounds = record(descriptor.bounds, "descriptor.bounds");
+  const preflightStatusLines = record(
+    response.preflight_status_lines,
+    "preflight_status_lines",
+  );
   const sampleRate = positiveInteger(descriptor.sample_rate, "descriptor.sample_rate");
   const frameSamples = positiveInteger(descriptor.frame_samples, "descriptor.frame_samples");
   const maxFrameSamples = positiveInteger(
@@ -261,7 +277,16 @@ export function parseCaptureDescriptor(payload: unknown): CaptureDescriptor {
   if (frameSamples > maxFrameSamples) {
     throw new Error("descriptor.frame_samples exceeds descriptor.bounds.max_frame_samples");
   }
-  return Object.freeze({ sampleRate, frameSamples });
+  return Object.freeze({
+    sampleRate,
+    frameSamples,
+    preflightStatusLines: Object.freeze({
+      microphoneSilent: nonEmptyString(
+        preflightStatusLines.browser_microphone_silent,
+        "preflight_status_lines.browser_microphone_silent",
+      ),
+    }),
+  });
 }
 
 export function pcm16Base64(samples: Float32Array): string {
@@ -488,6 +513,9 @@ export class CaptureClient {
    */
   async createSession(): Promise<CaptureSession> {
     if (this.session) return this.session;
+    if (this.lanes.get("microphone")?.degradedCode === "browser_microphone_silent") {
+      throw new Error((await this.requireDescriptor()).preflightStatusLines.microphoneSilent);
+    }
     if (!this.laneHasSignal.has("microphone") || !this.laneHasSignal.has("system")) {
       throw new Error("both capture lanes must have non-zero signal before session creation");
     }
@@ -1058,9 +1086,18 @@ export class CaptureClient {
 
     state.degradedCode = degraded;
     state.health = degraded === null ? "capturing" : "degraded";
+    if (!this.session && degraded === "browser_microphone_silent") {
+      this.options.onPreflightStatus?.(this.requirePreflightStatusLine("microphoneSilent"));
+    }
     // A condition that just started or just cleared is news; send it now rather than
     // waiting for the next rate-limited worklet heartbeat.
     void this.scheduleHeartbeat(this.heartbeatState());
+  }
+
+  private requirePreflightStatusLine(kind: "microphoneSilent"): string {
+    const descriptor = this.descriptor;
+    if (!descriptor) throw new Error("capture descriptor is unavailable");
+    return descriptor.preflightStatusLines[kind];
   }
 
   private reportTransportError(route: "frame" | "heartbeat", caught: unknown): void {
