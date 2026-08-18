@@ -1,0 +1,8 @@
+Committed `168db85` — stale poller cursor recovery.
+
+- Regression now forces snapshot `0 → 153 → 0`; terminal observed.
+- Validated: frontend 119/119, API 2/2, typecheck/build, preflight, bundle audit PASS.
+- Evidence: [iteration-17-poller-cursor-recovery.txt](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/g3-attended/iteration-17-poller-cursor-recovery.txt)
+- Next: terminal-409 typed failure/status rendering. Fresh attended run still required.
+- Only remaining unstaged file: launcher telemetry.
+
