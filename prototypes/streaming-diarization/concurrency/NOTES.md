@@ -61,6 +61,25 @@ status, typed error, retryability, bounded failure detail, PCM byte length, and 
 prefix. It never serializes `pcm_base64`; predicate-bearing latency, dispatch, RSS, queue-depth, and
 429 arrays remain untouched.
 
+### Historical CPU/HF artifact migration — 2026-08-18
+
+**VERDICT: PASS — compacted diagnostic evidence, still non-gating.**
+
+Question: can the already-committed 59,992,997-byte CPU/HF `run-state.json` be made reviewable without
+changing any predicate-bearing result? The source is pinned as SHA-256
+`a28f57e5b5266c429bb1df106417ee6448fed58fb94180c207788e5b4d8986dd`. Its legacy failure records did
+not carry a root `session_id`; their final response snapshot did. The migration therefore derives the
+exemplar ID only from `attempted[-1].response.json.snapshot.session_id`, after checking it exists on all
+1,584 records. It then applies the absorbed runner's bucketing semantics.
+
+The compacted artifact is 288,007 bytes (SHA-256
+`996559a4912e1ab054adfebfd5fa137076744c8092474f672e924a0689d08bcb`). It retains the exact source
+projection SHA-256 `3c8eaa6a557f3d40292c2a8456fe1289726929aa6921765b53a29b0a69b8e9d2`, all per-screen failure
+counts, and only first/last-three safe exemplars per bucket. The regression rejects raw PCM, a changed
+bucket total, absent exemplar session ID, a file at or above 1 MB, or any changed non-failure predicate.
+This is artifact hygiene only: the CPU/HF result remains explicitly non-gating and cannot be reused for
+G4/G5.
+
 ## Gate preregistration — 2026-08-13
 
 **VERDICT: PASS — numeric gates and measurement semantics frozen before measurement.**

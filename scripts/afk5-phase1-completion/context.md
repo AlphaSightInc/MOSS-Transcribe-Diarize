@@ -79,14 +79,13 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 vLLM-only measurement prerequisites** iteration 15 fixed the runner: unexpected-frame evidence
-   never serializes `pcm_base64`, retains total counts, and bounds diagnostic exemplars by
-   `(http_status, error_code, lane)`. Next trim the committed 60 MB CPU/HF diagnostic artifact in a
-   new commit, preserving predicate-bearing arrays and recording its original hash/size. Then bring the
-   already-audited SSH tunnel launcher from `dev` commit `affeaea` into this branch. Only then run the
-   preregistered tunnel-backed runner with pre/post endpoint probes, `/v1/audio/transcriptions` inference,
-   and the required transit/shared-GPU limits. The CPU/HF contract and iteration-10 result cannot be
-   reused as gate evidence.
+1. **W2 vLLM-only measurement prerequisites** iteration 16 compacted the committed CPU/HF diagnostic
+   `run-state.json` from 59,992,997 to 288,007 bytes. Its source SHA-256, all 1,584 bucket counts, and a
+   SHA-256 projection of every non-failure predicate are pinned in the artifact and tested; it contains no
+   raw PCM. Next bring the already-audited SSH tunnel launcher from `dev` commit `affeaea` into this branch.
+   Only then run the preregistered tunnel-backed runner with pre/post endpoint probes,
+   `/v1/audio/transcriptions` inference, and the required transit/shared-GPU limits. The CPU/HF contract
+   and iteration-10 result cannot be reused as gate evidence.
 2. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.

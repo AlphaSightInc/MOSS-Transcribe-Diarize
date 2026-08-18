@@ -644,3 +644,78 @@ committed `app.js`, and `git log -1 -- ProjectResources/Frontend/app.js` is `191
 [iteration 14] target=Issue #8 criterion 4 byte-progress/no-resume upload; files=`frontend/src/{api/jobs.ts,api/jobs.test.ts,components/FilePanel.tsx,components/FilePanel.test.tsx,App.test.tsx}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`, `evidence/phase1/g9-ledger-reconciliation/iteration-14-file-upload-progress.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=typecheck PASS; focused `jobs`/`FilePanel`/`App` 11/11 PASS; full frontend 16 files/118 tests PASS; Vite build PASS (79,582-byte app.js); post-commit served-bundle verifier 16/16 PASS with HEAD pin; preflight PASS; evidence=`evidence/phase1/g9-ledger-reconciliation/iteration-14-file-upload-progress.txt`; learned=XHR keeps multipart boundary handling and bearer auth while exposing real upload bytes, and poll retries must name their distinct post-upload phase; next=repair W2 unexpected-frame evidence recording, then bring in the reviewed tunnel launcher; #8 C2 remains operator-blocked.
 
 [iteration 15] target=W2 unexpected-frame evidence recording; files=`prototypes/streaming-diarization/concurrency/{run_cpu_hf_local_measurement.py,NOTES.md}`, `tests/test_w2_measurement_evidence.py`, `evidence/phase1/w2-local-concurrency/iteration-15-unexpected-frame-evidence-prototype.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`.venv/bin/python scripts/afk-guardrails/preflight.py afk5-phase1-completion && .venv/bin/python -m pytest -q tests/test_w2_measurement_evidence.py && .venv/bin/python -m py_compile prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py && git diff --check` => preflight OK, 1 passed, compile/diff PASS; evidence=`evidence/phase1/w2-local-concurrency/iteration-15-unexpected-frame-evidence-prototype.txt`; learned=the 59,992,997-byte CPU/HF artifact has 1,584 failures and 36,356,544 bytes of base64 PCM in failure attempts; retained counts collapse to `(429, canonical_queue_full, microphone)=1464` and `(429, canonical_queue_full, system)=120`, with first/last-three safe exemplars; next=trim that already-committed artifact in a separate auditable change, then bring tunnel launcher `affeaea`; #8 C2 and W3 remain externally blocked.
+
+[iteration 16] target=W2 historic CPU/HF artifact compaction; files=`evidence/phase1/w2-local-concurrency/{run-20260818T213600/run-state.json,iteration-16-historical-artifact-compaction.txt}`, `prototypes/streaming-diarization/concurrency/NOTES.md`, `tests/test_w2_measurement_evidence.py`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`.venv/bin/python -m pytest -q tests/test_w2_measurement_evidence.py && git diff --check` => 2 passed / diff PASS; evidence=`evidence/phase1/w2-local-concurrency/iteration-16-historical-artifact-compaction.txt`; learned=the hash-pinned 59,992,997-byte artifact compacted atomically to 288,007 bytes with no `pcm_base64`; all 1,584 failures retain per-screen `(429, canonical_queue_full, lane)` counts and first/last-three safe exemplars, while SHA-256 `3c8eaa6a...b8e9d2` pins every non-failure predicate; next=bring the reviewed tunnel launcher `affeaea`, then perform only the vLLM/tunnel-backed W2 run; #8 C2 and W3 remain externally blocked.
+
+[monitor 2026-08-18 18:25] ***ATTENDED RUNS HAPPENED. G3 CAPTURE + DECODE IS PROVEN END TO END — transcript
+with two speaker ids rendered in a real browser. FOUR REAL DEFECTS CAME OUT OF IT. Drop the ledger polishing
+and work these in the order below.*** I verified every one against the code before writing this; the line
+numbers and mechanisms are mine, not relayed.
+
+--- DEFECT A (P0) — poller cursor latch. ONE root cause behind BOTH the frozen transcript and the frozen
+    "Finalizing..." button. Server was healthy: session 4826ebe0, 294 frames accepted, ZERO 429s, stop 200 OK,
+    final snapshot version=332 pending_work=0 terminal_failure=None. Client stranded at snapshot
+    since_version=153 / events since_seq=210, polling both forever, receiving 200s.
+
+    I found the latch. `frontend/src/api/mossPoller.ts`:
+        const deferralIndex = snapshot ? -1 : newEvents.findIndex((e) => eventNeedsSnapshot(e.kind));   // ~:220
+        ...
+        eventSequence = consumedSequence;                                                               // ~:289
+        if (deferralIndex !== -1) { snapshotVersion = 0; }                                              // :291
+    and
+        function eventNeedsSnapshot(kind: string): boolean { return kind === "identity_finalized"; }
+    **The re-baseline to version 0 fires ONLY when a null snapshot coincides with a pending
+    `identity_finalized` event.** Every other null-snapshot round leaves `snapshotVersion` pinned with no
+    recovery path. `parseSnapshot` returns null on `response.snapshot === null || response.unchanged === true`.
+    And when `newEvents` is empty, `consumedSequence` collapses to the existing `eventSequence`, so the event
+    cursor is pinned too. Both cursors frozen, 200s forever — exactly 153/210 against a server at 332.
+    The comment at :216 claims "a deferral always resolves instead of latching". That claim is false for every
+    kind except `identity_finalized`.
+    Consequence for Stop: the terminal branch (`if (snapshot && TERMINAL_STATUSES.has(snapshot.status))`)
+    needs a CHANGED snapshot, so a pinned cursor can never observe terminal — "Finalizing..." stays greyed
+    out forever. One bug, two symptoms, as the operator said.
+    Fix shape: re-baseline whenever the client is demonstrably behind, not only on `identity_finalized` —
+    e.g. reset `snapshotVersion = 0` after N consecutive rounds with no cursor movement on a non-terminal
+    session, and/or whenever a null snapshot arrives while events indicate progress. Terminal detection must
+    not depend solely on receiving a changed snapshot.
+    **Reproduce it first with a failing test** — a poller test that serves `unchanged: true` at a stale cursor
+    while the server version advances, and asserts the cursor re-baselines and terminal is observed. Do not
+    fix by widening `eventNeedsSnapshot` alone without a test that fails before the change.
+
+--- DEFECT 409 (P1, cheap, independent — bundle it with A) — a terminal 409 carries no `failure.code`, so the
+    browser shows "frame POST failed: HTTP 409" while the server held `canonical_decode_failed` with the full
+    OSError. This is a G6 violation: a bare status code is not a server-authored status line, and it is the
+    same class as the VIEWABLE_SESSION_STATUSES gap y3 fixed for viewers.
+    **This is an inconsistency with a pattern already in the same file, not new design.**
+    Bare, no `failure`: `live_transport.py:307` (LiveSessionClosed), `:308` (LiveV2SessionTerminalError),
+    `:462` (LiveSessionClosed/LiveSessionFailed), `:463` (LiveV2SessionTerminalError).
+    Already correct two lines away: `:316` and `:475` return
+    `{"detail":..., "failure": exc.failure.to_dict(), "snapshot": ...}`, and `:455` returns
+    `{"failure": {"code": "v2_stop_backpressure"}}`.
+    Client: `captureClient.ts:809` and `:820` handle only `frame_work_exceeds_queue_capacity` and
+    `v2_out_of_order_frame`; `:828` falls through to a synthesised raw-status Error.
+    Fix: give those four sites the typed failure envelope, and make the client render the server's line for
+    ANY 409 it does not specifically handle instead of synthesising its own. Test that a terminal session
+    produces a human-readable line in the UI, not a status code.
+
+--- DEFECT B (P1, worst real-world impact — the transcript is WRONG, which is worse than it looks) —
+    `live_mixer.py:256`: `mixed = (system * _HEADROOM_GAIN) + (microphone * _HEADROOM_GAIN)` with
+    `_HEADROOM_GAIN = 10**(-6/20)` (line 16) — an IDENTICAL fixed gain on both lanes and no level matching.
+    A laptop mic at conversational distance sits far below tab audio at full digital scale, so the mic lane is
+    buried. Observed: the shared-audio speaker produced full accurate sentences while the operator's own mic
+    produced only "A", "I", "image. Yeah" across 73 seconds.
+    Charter T-06 rules echo policy and is SILENT on inter-lane level matching, so this is unruled ground.
+    **PROTOTYPE AND MEASURE FIRST, per AGENTS.md and the operator's explicit instruction. Do NOT hand-tune a
+    constant.** Measure per-lane RMS on the real fixture, then evaluate options (per-lane normalisation to a
+    target RMS, slow AGC, or a measured fixed offset) against transcription accuracy on a two-speaker fixture.
+    Pre-register what "better" means before you measure. The existing `silent_samples`/`overlap_samples`
+    accounting in that file gives you a place to record per-lane level telemetry.
+
+--- DEFECT C (P2) — the meters showed the disparity and nothing warned. The preflight gate is only
+    `level >= SILENCE_RMS` with `SILENCE_RMS = 1e-4` (`captureClient.ts:171,739`), so a lane 20+ dB below its
+    peer passes trivially. A predictable transcription failure should be surfaced. This depends on B's
+    measurement for a defensible threshold — do it after B, and source any user-facing copy from the server
+    exactly as you did for the silent-mic remedy.
+
+Board: I cannot log these on the tracker — `aiSight-us/MOSS-Transcribe-Diarize` has been returning 404 since
+~17:38 to both `gh` and `git ls-remote`. They are queued with the rest.
