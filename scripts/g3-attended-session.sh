@@ -79,7 +79,14 @@ BANNER
 echo "  Ctrl-C here when the checklist is done."
 echo
 
+# --backend vllm is load-bearing. Without it the service defaults to the local HF runner and
+# looks for pretrained/moss-transcribe-diarize, which is absent here by operator ruling: this Mac
+# must NOT load the model. Capture then works perfectly and the FIRST decode kills the session
+# with canonical_decode_failed, which surfaces in the browser as an unexplained HTTP 409.
 exec .venv/bin/python -m moss_transcribe_diarize.app.web_cli \
+  --backend vllm \
+  --vllm-base-url "${MOSS_VLLM_BASE_URL}" \
+  --vllm-model "${MOSS_VLLM_MODEL:-OpenMOSS-Team/MOSS-Transcribe-Diarize}" \
   --live \
   --host 0.0.0.0 --port "$PORT" \
   --live-provider-manifest "$MANIFEST" \
