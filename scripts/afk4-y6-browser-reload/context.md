@@ -15,23 +15,31 @@ Living working memory. Update every iteration so it matches reality. History goe
   `ControlPanel`; it cannot certify `sessionStorage` reattach or the real poller. Reuse only its
   local-server lifecycle and dependency-free CDP helpers. The shipped panel is served either by
   the built backend bundle or Vite, whose development `/api` proxy is fixed to `127.0.0.1:8090`.
+- `probe_g6_browser_reload.py` now proves the real frontend bootstrap: a fresh headless Chrome
+  profile mounts the shipped `ControlPanel` through local Vite and reaches the owned deterministic
+  production descriptor through that `/api` proxy (`200`, `frame_samples=1000`); the page starts
+  idle with no tab-scoped keys. Raw result:
+  `evidence/phase1/y6-browser-reload/iteration-2-vite-bootstrap.json`. Vite receives `--base /`
+  in the probe because its production `/static/` base is proxied to the backend; that keeps the
+  source document/modules on Vite while leaving the production `/api` proxy intact.
+- Use `.venv/bin/python` for this probe's production-route server. The standalone pyenv 3.12.12
+  interpreter has an incompatible `transformers` install; this is unrelated to its Playwright
+  availability and the probe uses the established dependency-free CDP client.
 - Chrome launches fine post-reboot (`--headless --dump-dom` exits 0). Playwright is in pyenv 3.12.12.
 - Baseline to protect: pytest 2 failed / 1065 passed / 396 subtests; frontend 108/108.
   The 2 failures are permanent Phase 1 baselines — never "fix" them.
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Add a probe bootstrap that serves the *actual* `ControlPanel` through a local Vite process and
-   the deterministic production-route server at the proxy's owned port; retain G7's process/CDP
-   cleanup discipline.
-2. Minimum viable reload: start a deterministic session from the real Chrome context, reload the
+1. Minimum viable reload: start a deterministic session from the real Chrome context with its
+   fake media device, reload the
    `ControlPanel`, then assert the same session id reattaches and the server received no Stop.
-3. Cursor continuity across the reload — record pre/post rendered item identities and server event
+2. Cursor continuity across the reload — record pre/post rendered item identities and server event
    cursors, then prove neither duplication nor loss.
-4. Negative case: capture bearer must NOT be present after reload; inspect only key names and
+3. Negative case: capture bearer must NOT be present after reload; inspect only key names and
    redacted values in tab-scoped storage.
-5. Negative case: reload after session end clears rather than reattaching.
-6. Falsify every assertion against a deliberately broken input before committing.
+4. Negative case: reload after session end clears rather than reattaching.
+5. Falsify every assertion against a deliberately broken input before committing.
 
 ## Not yours
 

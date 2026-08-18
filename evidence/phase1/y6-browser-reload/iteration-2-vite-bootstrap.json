@@ -1,0 +1,35 @@
+{
+  "all_checks_passed": true,
+  "backend": {
+    "base_url": "http://127.0.0.1:8090",
+    "proxy_target": "127.0.0.1:8090"
+  },
+  "chrome": {
+    "fresh_profile": true,
+    "headless": true
+  },
+  "descriptor": {
+    "frame_samples": 1000,
+    "status": 200
+  },
+  "does_not_cover": [
+    "session creation or reload reattachment",
+    "browser media permission prompts",
+    "display capture",
+    "model inference",
+    "a deployed host"
+  ],
+  "mounted": {
+    "phase": "idle",
+    "statusLine": "Enter the capture bearer to configure both audio lanes.",
+    "storageKeys": []
+  },
+  "probe": "prototypes/browser-capture-feasibility/probe_g6_browser_reload.py",
+  "scope": "real Chrome, actual Preact ControlPanel, local Vite proxy, and deterministic production routes; no model inference, permission prompt, or display capture",
+  "started_at_unix_seconds": 1787034336.456,
+  "vite": {
+    "base_url": "http://127.0.0.1:54423/",
+    "dev_base_override": "/",
+    "served_actual_control_panel": true
+  }
+}
