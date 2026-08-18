@@ -21,6 +21,8 @@ import argparse
 import importlib.util
 import json
 import math
+import os
+import queue
 import sys
 import tempfile
 import threading
@@ -106,18 +108,114 @@ def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) 
     }
 
 
-def _instrument_commit_times(runtime, commit_wall_ns: dict[tuple[str, int], int], lock: threading.Lock):
+class _CanonicalEventLogWriter:
+    """Append raw measurement events off the canonical runtime publication path."""
+
+    _FSYNC_INTERVAL_SECONDS = 5.0
+
+    def __init__(self, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("", encoding="utf-8")
+        self._handle = path.open("a", encoding="utf-8")
+        self._queue: queue.Queue[str | None] = queue.Queue()
+        self._stats_lock = threading.Lock()
+        self._closed = False
+        self._enqueued = 0
+        self._enqueue_elapsed_ns = 0
+        self._write_elapsed_ns = 0
+        self._fsync_elapsed_ns = 0
+        self._fsync_count = 0
+        self._max_queue_depth = 0
+        self._writer = threading.Thread(target=self._run, name="canonical-event-log", daemon=True)
+        self._writer.start()
+
+    def append(self, record: dict) -> None:
+        """Serialize cheaply in the caller, then leave file I/O to the writer thread."""
+        started = time.perf_counter_ns()
+        serialized = json.dumps(record, sort_keys=True) + "\n"
+        self._queue.put(serialized)
+        elapsed = time.perf_counter_ns() - started
+        with self._stats_lock:
+            self._enqueued += 1
+            self._enqueue_elapsed_ns += elapsed
+            self._max_queue_depth = max(self._max_queue_depth, self._queue.qsize())
+
+    def _sync(self) -> None:
+        started = time.perf_counter_ns()
+        self._handle.flush()
+        os.fsync(self._handle.fileno())
+        elapsed = time.perf_counter_ns() - started
+        with self._stats_lock:
+            self._fsync_elapsed_ns += elapsed
+            self._fsync_count += 1
+
+    def _run(self) -> None:
+        last_sync = time.monotonic()
+        while True:
+            item = self._queue.get()
+            if item is None:
+                break
+            started = time.perf_counter_ns()
+            self._handle.write(item)
+            elapsed = time.perf_counter_ns() - started
+            with self._stats_lock:
+                self._write_elapsed_ns += elapsed
+            if time.monotonic() - last_sync >= self._FSYNC_INTERVAL_SECONDS:
+                self._sync()
+                last_sync = time.monotonic()
+        self._sync()
+        self._handle.close()
+
+    def stats(self) -> dict:
+        with self._stats_lock:
+            return {
+                "schema": "moss-canonical-event-log-overhead.v1",
+                "event_count": self._enqueued,
+                "enqueue_elapsed_ns": self._enqueue_elapsed_ns,
+                "write_elapsed_ns": self._write_elapsed_ns,
+                "fsync_elapsed_ns": self._fsync_elapsed_ns,
+                "fsync_count": self._fsync_count,
+                "max_pending_writer_records": self._max_queue_depth,
+                "fsync_interval_seconds": self._FSYNC_INTERVAL_SECONDS,
+            }
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._queue.put(None)
+        self._writer.join()
+
+
+def _instrument_commit_times(
+    runtime,
+    commit_wall_ns: dict[tuple[str, int], int],
+    lock: threading.Lock,
+    *,
+    event_log: _CanonicalEventLogWriter | None = None,
+):
     """Timestamp canonical publication at the real runtime event seam."""
     record_event = runtime._record_event
 
     def measured_record_event(state, kind, payload):
         record_event(state, kind, payload)
-        if kind == "canonical_processed" and payload.get("submitted"):
-            with lock:
+        record = None
+        with lock:
+            if kind == "canonical_processed" and payload.get("submitted"):
                 commit_wall_ns.setdefault(
                     (state.session_id, int(payload["span_id"])),
                     time.time_ns(),
                 )
+            if event_log is not None and kind == "canonical_processed":
+                record = {
+                    "schema": "moss-live-canonical-dispatch-observation.v1",
+                    "observed_wall_ns": time.time_ns(),
+                    "session_id": state.session_id,
+                    "kind": kind,
+                    "payload": payload,
+                }
+        if record is not None:
+            event_log.append(record)
 
     runtime._record_event = measured_record_event
     return runtime
@@ -170,6 +268,7 @@ def build_app(
     model_path: Path | None = None,
     live_provider_manifest: Path | None = None,
     runtime_factory_override=None,
+    canonical_event_log: Path | None = None,
 ):
     from fastapi.responses import FileResponse, JSONResponse
 
@@ -177,6 +276,9 @@ def build_app(
     scratch = tempfile.TemporaryDirectory(prefix="moss-browser-route-probe-")
     measurement_lock = threading.Lock()
     commit_wall_ns: dict[tuple[str, int], int] = {}
+    canonical_event_writer = (
+        None if canonical_event_log is None else _CanonicalEventLogWriter(canonical_event_log)
+    )
     registry = LiveAccessRegistry(
         state_path=Path(scratch.name) / "live-auth.json",
         server_cert_sha256="ab" * 32,
@@ -198,7 +300,12 @@ def build_app(
                 max_frame_samples=6_400,
                 speech=(True, False) * 10_000,
             )
-            _instrument_commit_times(runtime, commit_wall_ns, measurement_lock)
+            _instrument_commit_times(
+                runtime,
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
+            )
             return _ReadPathFixtureRuntime(runtime)
 
         provider_scope = (
@@ -218,7 +325,10 @@ def build_app(
 
         def runtime_factory():
             return _instrument_commit_times(
-                base_runtime_factory(), commit_wall_ns, measurement_lock
+                base_runtime_factory(),
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
             )
 
         provider_scope = (
@@ -240,6 +350,7 @@ def build_app(
     app.state.prototype_capture_bearer = credential.device_token
     app.state.prototype_provider_scope = provider_scope
     app.state.prototype_commit_wall_ns = commit_wall_ns
+    app.state.prototype_canonical_event_writer = canonical_event_writer
     app.state.prototype_telemetry = {
         "accepted_frames": [],
         "lanes": {},
@@ -342,6 +453,11 @@ def build_app(
             },
             headers={"Cache-Control": "no-store"},
         )
+
+    @app.get("/prototype/measurement-instrumentation")
+    def prototype_measurement_instrumentation():
+        writer = app.state.prototype_canonical_event_writer
+        return {"event_log": None if writer is None else writer.stats()}
 
     @app.post("/prototype/telemetry")
     async def prototype_telemetry(request: Request):
@@ -544,13 +660,25 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=Path)
     parser.add_argument("--live-provider-manifest", type=Path)
+    parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument(
+        "--canonical-event-log",
+        type=Path,
+        help="append raw canonical_processed observations for a local measurement harness",
+    )
     args = parser.parse_args()
     app = build_app(
         model_path=args.model,
         live_provider_manifest=args.live_provider_manifest,
+        canonical_event_log=args.canonical_event_log,
     )
-    print(f"PROTOTYPE production routes listening on http://127.0.0.1:{PORT}/capture-harness")
-    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning", proxy_headers=False)
+    print(f"PROTOTYPE production routes listening on http://127.0.0.1:{args.port}/capture-harness")
+    try:
+        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning", proxy_headers=False)
+    finally:
+        writer = app.state.prototype_canonical_event_writer
+        if writer is not None:
+            writer.close()
 
 
 if __name__ == "__main__":

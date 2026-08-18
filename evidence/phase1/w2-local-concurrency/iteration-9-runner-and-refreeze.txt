@@ -1,0 +1,55 @@
+Iteration 9 — W2 CPU/HF-local runner and pre-measurement refreeze
+
+Question
+========
+Can the next iteration make a real, resumable local CPU/HF measurement at the actual deployed
+descriptor geometry without allowing it to be mistaken for deployed-GPU evidence?
+
+Change
+======
+Added `run_cpu_hf_local_measurement.py` and a hash-pinned real-speech fixture. The runner reads the
+deployed descriptor read-only; re-finalizes only the local manifest immediately before starting one
+loopback FastAPI process; sends real 0.5-second v2 PCM pairs plus helper health; and incrementally
+records frame responses, observer cursors/events, process-tree RSS, canonical dispatch order, local
+decode RTF, per-session queue depth, overload/retry, and reconnect evidence. Capture and view bearer
+values are not persisted.
+
+The frozen 1/2/4/8 matrix replaces the insufficient 2/4-only matrix before any result exists:
+
+    sha256=955a2883ada6cef99be007d1eb3c9838d6be9e227dc1408e06b6f8617fdb9d6c
+
+The contract records why the 10.0-second p95 and 4-GiB RSS ceilings are deliberately-wide safety
+headroom, requires comparison with the prior 0.248-second CPU p95, and names the unavailable
+deployed GPU p95/GPU OOM/GPU memory-vLLM-count/deployed-RTF figures explicitly.
+
+The initial per-event `fsync` would have measured its own I/O under the canonical publication lock.
+It was replaced before a measurement with record construction under the short lock, serialization and
+enqueue after it, and a dedicated writer thread with a single long-lived handle. That writer syncs on
+a five-second interval and shutdown; its enqueue/write/sync/pending-record costs are emitted with each
+phase. This preserves raw incremental artifacts without putting disk latency into dispatch fairness.
+
+Validation
+==========
+
+    python3 -m py_compile prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py prototypes/browser-capture-feasibility/production_route_server.py
+    .venv/bin/python prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py
+    .venv/bin/python prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py --help
+    .venv/bin/python prototypes/browser-capture-feasibility/production_route_server.py --help
+    .venv/bin/python prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py --model /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8 --manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json --output /tmp/moss-w2-preflight-iteration-9 --preflight
+    git diff --check
+    python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion
+
+Result: PASS. Read-only live preflight reported frame_samples=8000, sample_rate=16000,
+hard_cap_samples=40000, max_events=1000, max_frame_samples=16000, max_identity_speakers=16,
+max_queue_depth=16, max_retained_samples=960000, and stop_drain_deadline_seconds=5.0. The fixture
+hash was a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea. The prior local manifest
+revision differed from HEAD and was correctly marked for re-finalization before a normal run.
+
+An isolated deterministic-only route-server smoke sent strict paired frames and stop (all HTTP 200),
+observed 13 canonical_processed events through HTTP, and retained 23 canonical records after orderly
+shutdown. Its writer status before stop was 22 events and one five-second sync. This validates the
+instrumentation plumbing only; it was neither model inference nor a W2 result.
+
+No W2 measurement was run in iteration 9. No G4/G5 pass or deployed-GPU claim follows from this artifact.
+The 600-second soak will repeat the 90-second source recording; the future verdict must describe that
+representativeness limit.

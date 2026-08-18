@@ -4,7 +4,7 @@
   "ticket": 3,
   "preregistered_at": "2026-08-18",
   "run_started": false,
-  "question": "At the live descriptor geometry, can one locally started CPU/HF service sustain the measured two-to-four-session bound for ten minutes while retaining session-local backpressure and text isolation through overload and observer reconnect?",
+  "question": "At the live descriptor geometry, can one locally started CPU/HF service record the one-to-eight-session screening matrix and sustain its largest passing bound for ten minutes while retaining session-local backpressure and text isolation through overload and observer reconnect?",
   "scope": {
     "may_establish": [
       "G5 cross-session text isolation through overload and observer reconnect",
@@ -12,7 +12,10 @@
     ],
     "does_not_establish": [
       "deployed GPU p95 transcript lag",
-      "deployed GPU memory or utilisation"
+      "GPU OOM or accelerator errors",
+      "deployed GPU memory or utilisation",
+      "vLLM active or queued request counts",
+      "deployed real-time factor"
     ],
     "latency_label": "CPU HF local decode, not the deployed GPU bound"
   },
@@ -33,8 +36,10 @@
   },
   "matrix": {
     "screening_session_counts": [
+      1,
       2,
-      4
+      4,
+      8
     ],
     "screening_measurement_seconds": 120,
     "chosen_bound_soak_seconds": 600,
@@ -46,13 +51,15 @@
       "maximum_per_session_p95_transcript_lag_seconds": 10.0,
       "quantile_method": "linear Type-7",
       "aggregation": "compute each session independently; the run value is the maximum session p95",
-      "reporting_rule": "record p50, p95, max, and the full per-session arrays under the CPU/HF-local label; never present this figure as deployed GPU latency"
+      "reporting_rule": "record p50, p95, max, and the full per-session arrays under the CPU/HF-local label; never present this figure as deployed GPU latency",
+      "basis": "10.0 seconds preserves ticket #3's pre-existing ceiling because the one-to-eight-session CPU/HF screening matrix and a 600-second selected-bound soak were unmeasured when this profile was frozen. It is deliberately wide headroom, not evidence of a tight CPU bound. The verdict must also compare its observed maximum session p95 against the prior two-session CPU observation of 0.248 seconds and state the resulting headroom."
     },
     "memory": {
       "maximum_process_tree_rss_increase_bytes_over_warm_idle": 4294967296,
       "maximum_oom_or_accelerator_error_count": 0,
       "gpu_metrics_required": false,
-      "reporting_rule": "record local process-tree RSS samples; missing GPU metrics do not fail this local profile and must remain explicitly unclaimed"
+      "reporting_rule": "record local process-tree RSS samples; missing GPU metrics do not fail this local profile and must remain explicitly unclaimed",
+      "basis": "4 GiB is a safety ceiling for an unmeasured selected-bound CPU/HF soak, not a claim that normal growth should approach it. Zero OOM or accelerator errors is the tight memory safety criterion."
     },
     "fairness": {
       "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1,
@@ -74,10 +81,12 @@
   },
   "selection_rule": {
     "candidate_set": [
+      1,
       2,
-      4
+      4,
+      8
     ],
-    "rule": "choose the largest candidate whose screening run passes latency, local-memory, fairness, and integrity gates; only that chosen candidate may enter the 600-second soak",
+    "rule": "record every 1/2/4/8-session screening result, then choose the largest candidate whose screening run passes latency, local-memory, fairness, and integrity gates; only that chosen candidate may enter the 600-second soak",
     "overload_role": "the two-session overload run proves per-session retryable 429 and text isolation; it does not select the normal concurrency bound",
     "gate_changes_after_first_measurement_allowed": false
   },
@@ -88,6 +97,10 @@
       "process-tree RSS samples",
       "HTTP frame responses including session id and retry outcome",
       "observer reconnect cursors and returned events"
+    ],
+    "required_recorded_metrics": [
+      "local CPU/HF canonical decode real-time factor from canonical_processed events",
+      "per-session queue depth from snapshots"
     ],
     "required_negative_statement": "The CPU/HF-local result does not measure deployed GPU p95 lag, GPU memory, or GPU utilisation."
   }

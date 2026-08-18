@@ -24,6 +24,9 @@ def main() -> None:
     assert scope["latency_label"] == "CPU HF local decode, not the deployed GPU bound"
     assert "deployed GPU p95 transcript lag" in scope["does_not_establish"]
     assert "deployed GPU memory or utilisation" in scope["does_not_establish"]
+    assert "GPU OOM or accelerator errors" in scope["does_not_establish"]
+    assert "vLLM active or queued request counts" in scope["does_not_establish"]
+    assert "deployed real-time factor" in scope["does_not_establish"]
 
     path = state["production_path"]
     assert path["ingress_cadence_seconds"] == 0.5
@@ -33,7 +36,7 @@ def main() -> None:
     assert path["frame_geometry"]["hardcoded_values_allowed"] is False
 
     matrix = state["matrix"]
-    assert matrix["screening_session_counts"] == [2, 4]
+    assert matrix["screening_session_counts"] == [1, 2, 4, 8]
     assert matrix["chosen_bound_soak_seconds"] >= 600
     assert matrix["overload_session_count"] >= 2
     assert matrix["observer_reconnects_per_session"] >= 1
@@ -41,17 +44,20 @@ def main() -> None:
     gates = state["gates"]
     assert gates["latency"]["maximum_per_session_p95_transcript_lag_seconds"] > 0
     assert gates["latency"]["quantile_method"] == "linear Type-7"
+    assert "0.248" in gates["latency"]["basis"]
     assert gates["memory"]["maximum_process_tree_rss_increase_bytes_over_warm_idle"] > 0
     assert gates["memory"]["maximum_oom_or_accelerator_error_count"] == 0
     assert gates["memory"]["gpu_metrics_required"] is False
+    assert "Zero OOM" in gates["memory"]["basis"]
     assert gates["fairness"]["maximum_dispatch_count_skew_for_continuously_ready_sessions"] == 1
     assert gates["backpressure"]["lane"] == "v2"
     assert gates["backpressure"]["minimum_session_local_429_cases"] >= 1
     assert len(gates["backpressure"]["required_behavior"]) == 3
 
-    assert state["selection_rule"]["candidate_set"] == [2, 4]
+    assert state["selection_rule"]["candidate_set"] == [1, 2, 4, 8]
     assert state["selection_rule"]["gate_changes_after_first_measurement_allowed"] is False
     assert len(state["evidence_requirements"]["raw_arrays"]) == 5
+    assert len(state["evidence_requirements"]["required_recorded_metrics"]) == 2
 
     print(json.dumps(state, indent=2, sort_keys=True))
     print(f"sha256={hashlib.sha256(raw).hexdigest()}")

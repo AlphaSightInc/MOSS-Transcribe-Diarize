@@ -269,3 +269,85 @@ vanished is not.
 
 STILL OPEN from 16:55, not yet done: invert `verify_g9_served_bundle.py` polarity so green = bundle shipped
 rather than green = defect still present. It will misfire the moment W1 lands.
+
+[monitor 2026-08-18 17:12] ***STOP AND WIDEN THE MATRIX BEFORE YOU BURN 15 MINUTES OF MEASUREMENT.***
+I read issue #3's acceptance criteria against your frozen preregistration. As written, a PERFECT W2 run
+still cannot close #3, because the concurrency set is too narrow:
+
+  issue #3 criterion 2: "Dispatcher concurrency 1, 2 and 4 measured using real 0.5 s ingress and real
+                         speech spans, not synthetic frames"
+  issue #3 criterion 3: "For 1, 2, 4 AND 8 simultaneous meetings, recorded: real-time factor, p95
+                         transcript lag, fairness across sessions, per-session queue depth, GPU
+                         OOM/errors, vLLM active/queued request counts"
+  your matrix:          screening_session_counts [2, 4], overload_session_count 2
+
+You are missing **1** and **8** entirely. 1 is cheap and is the serialized baseline every other number is
+judged against — omitting it is the bigger loss. 8 on CPU may well be infeasible, and that is fine:
+#3 asks for it to be RECORDED, and "8 sessions: gate exceeded at p95 X s, sustained ingress not
+maintainable on CPU HF" is a real measured result that satisfies the criterion. An omitted row does not.
+
+Widen `screening_session_counts` to [1, 2, 4, 8] before the run and re-freeze (the file still has
+`run_started: false`, so this is a legitimate pre-measurement amendment, not moving a goalpost after
+seeing numbers — do it NOW, and record that the monitor requested it and why). Keep the soak on the
+chosen bound only, so the extra cost is two short screening rows, not two more soaks.
+
+Two criteria of #3 remain irreducibly external, and your `does_not_establish` should name them exactly:
+  - "GPU OOM/errors" and "vLLM active/queued request counts" — need the deployed vLLM on :8000.
+  - real-time factor is measurable on CPU, but the DEPLOYED RTF is not.
+Everything else in #3 — preregistered gates, real 0.5 s ingress, real speech, fairness, per-session queue
+depth, bounded-dispatcher selection, cross-session markers under overload and reconnect, per-session 429,
+and no added Uvicorn workers — is yours to establish locally at the matched deployed geometry.
+
+Also still not done, from 17:05 and 16:55:
+  - record the BASIS for the 10.0 s p95 gate (prior comparable CPU observation is 248 ms) before measuring;
+  - invert `verify_g9_served_bundle.py` polarity.
+
+[monitor 2026-08-18 17:22] AMENDMENT ACCEPTED AND IT WAS DONE HONESTLY. I diffed your preregistration
+change: matrix widened to [1,2,4,8] in BOTH `screening_session_counts` and `selection_rule.candidate_set`,
+`does_not_establish` expanded to name GPU OOM/accelerator errors, deployed GPU memory/utilisation, vLLM
+active/queued counts and deployed RTF, `required_recorded_metrics` added for local RTF and per-session queue
+depth, and a `basis` recorded for BOTH loose gates that says outright they are wide headroom rather than a
+tight CPU bound and requires the verdict to compare against the 0.248 s prior. **No gate value moved.** And
+your validator was TIGHTENED to pin the new matrix and to assert the basis text contains "0.248" and
+"Zero OOM", so the freeze is now enforced rather than merely declared. That is the right way to amend a
+frozen contract before measurement.
+
+Fixture verified independently: `leading-030s.wav` sha256
+a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea MATCHES the pin, 90.0 s, 16 kHz, mono, real
+human speech, and the two distinct markers ("New York", "payments") make cross-session isolation falsifiable
+instead of asserted. Note for the artifact: a 600 s soak from a 90 s source means the audio repeats — say so,
+because repeated audio can make decode timing unrepresentative of continuous novel speech.
+
+***ONE REAL PROBLEM, AND IT IS FREE TO FIX BEFORE THE RUN: YOUR INSTRUMENTATION PERTURBS THE METRICS IT
+MEASURES.*** In `production_route_server.py:120-139`, `measured_record_event` now does this:
+
+    with lock:
+        ...
+        if event_log is not None and kind == "canonical_processed":
+            with event_log.open("a") as handle:
+                handle.write(...); handle.flush(); os.fsync(handle.fileno())
+
+The file open, write, flush and **fsync** all happen INSIDE the shared `measurement_lock`, on the runtime's
+canonical publication path, for every session. At 8 sessions and 0.5 s ingress that is ~16 fsyncs/second,
+each typically 1-10 ms on APFS and occasionally far worse, all serialized through one lock held during disk
+I/O.
+
+The latency effect is probably immaterial against a 10 s gate. **The ordering effect is not.** Your tight
+gates are `fairness.maximum_dispatch_count_skew_for_continuously_ready_sessions: 1` and per-session queue
+depth, and lock-held disk I/O on the dispatch path is exactly the kind of thing that reorders dispatch and
+inflates queue depth. You would be measuring your instrument.
+
+Fix, keeping the incremental-persistence property I asked for:
+  1. Build the record inside the lock (cheap, it is just a dict).
+  2. Append OUTSIDE the lock — keep one long-lived handle open instead of reopening per event.
+  3. Drop the per-event `fsync`; rely on the append plus a single `flush()`+`fsync()` at run end and on
+     interruption. If you want crash-durability mid-run, fsync on an interval (say every 5 s), not per event.
+  4. Record the instrumentation overhead in the artifact — even a rough per-event cost — so a reader can
+     judge whether the fairness figure is the system's or the harness's.
+
+If you would rather keep per-event fsync, then you must measure and report its cost and argue the fairness
+number survives it. Cheaper to just move it out of the lock.
+
+Still not done, from 16:55: invert `verify_g9_served_bundle.py` polarity (green = shipped, not green = defect).
+
+[iteration 9] target=W2 local CPU/HF measurement runner plus pre-run matrix/instrumentation correction; files=prototypes/browser-capture-feasibility/production_route_server.py,prototypes/streaming-diarization/concurrency/{run_cpu_hf_local_measurement.py,cpu_hf_local_fixture.json,cpu_hf_local_preregistration.json,validate_cpu_hf_local_preregistration.py,README.md,NOTES.md},evidence/phase1/w2-local-concurrency/iteration-9-runner-and-refreeze.txt,scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=`python3 -m py_compile ... && .venv/bin/python .../validate_cpu_hf_local_preregistration.py && .venv/bin/python .../run_cpu_hf_local_measurement.py --preflight && git diff --check && python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion` => PASS, contract SHA-256 `955a2883ada6cef99be007d1eb3c9838d6be9e227dc1408e06b6f8617fdb9d6c`, deployed descriptor exact-match inputs and real fixture hash verified; evidence=evidence/phase1/w2-local-concurrency/iteration-9-runner-and-refreeze.txt; learned=the pre-run contract needed 1/2/4/8 rows, and canonical-event disk I/O had to leave the publication lock; a dedicated writer now records its own overhead while raw arrays persist; next=run the hash-pinned real CPU/HF measurement, report the repeated-90-second-source limit, and do not claim GPU/vLLM/deployed figures.

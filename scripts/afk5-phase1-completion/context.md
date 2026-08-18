@@ -43,15 +43,17 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g3-attended/iteration-7-operator-evidence-inventory.txt` found only that
   fixture and no raw attended-session log. A fixture cannot establish the charter §7
   fresh-gesture two-lane display-capture bar.
-- **W2 CPU/HF-local measurement contract is now frozen, not run:**
-  `prototypes/streaming-diarization/concurrency/cpu_hf_local_preregistration.json` has SHA-256
-  `2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba`. It fixes two/four-session
-  screening, a 600-second selected-bound soak, real decoder/speech/local descriptor requirements,
-  p95 `<=10.0 s`, local RSS-growth `<=4 GiB`, zero OOM, skew `<=1`, retryable session-local v2 429,
-  overload marker isolation, and observer reconnect. Raw validation is
-  `evidence/phase1/w2-local-concurrency/iteration-8-cpu-hf-preregistration.txt`. The latency label
-  is exactly **CPU HF local decode, not the deployed GPU bound**; this run can never claim deployed
-  GPU p95, memory, or utilisation.
+- **W2 CPU/HF-local measurement is re-frozen, not run:**
+  `cpu_hf_local_preregistration.json` SHA-256 is
+  `955a2883ada6cef99be007d1eb3c9838d6be9e227dc1408e06b6f8617fdb9d6c`. It records 120-second
+  screens at 1/2/4/8 sessions and one 600-second largest-passing soak, using real decoder/speech,
+  descriptor-derived geometry, p95 `<=10.0 s`, local RSS-growth `<=4 GiB`, zero OOM, skew `<=1`,
+  retryable session-local v2 429, overload marker isolation, and observer reconnect. Iteration 9's
+  harness writes frame/observer/RSS arrays and canonical dispatch events incrementally at
+  `run_cpu_hf_local_measurement.py`; input preflight and its asynchronous event-writer smoke passed at
+  `evidence/phase1/w2-local-concurrency/iteration-9-runner-and-refreeze.txt`. The result must use
+  **CPU HF local decode, not the deployed GPU bound** and cannot claim deployed GPU p95, GPU OOM,
+  GPU memory/utilisation, vLLM active/queued counts, or deployed real-time factor.
 
 ## Environment facts that cost previous cycles real time
 
@@ -68,9 +70,10 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 (ready after iteration 8 preregistration commit)** build and run the hash-pinned local
-   CPU/HF deployed-geometry sustain/reconnect measurement. It can establish G5 and the non-GPU
-   portions of G4; deployed p95 lag and GPU memory/utilisation still need the reachable GPU endpoint.
+1. **W2 (runner and preflight ready; not measured)** run the hash-pinned local CPU/HF
+   deployed-geometry measurement: screens 1/2/4/8, then soak its largest passing bound and retain
+   raw state. It can establish local G4/G5 portions only; deployed p95, GPU, vLLM, and deployed-RTF
+   figures remain external.
 2. **W1 (blocked externally)** obtain ownership or a permitted release path for the tracked served
    bundle, then rebuild it from the already-tested source. Do not bypass `afk-guardrails`.
 3. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
@@ -79,9 +82,9 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Blockers
 
-- `MOSS_VLLM_BASE_URL` is unset. The local HF path can now measure G5 and the non-GPU G4 behaviours at
-  the matching deployed geometry, but it cannot establish deployed p95 lag, GPU memory, or GPU
-  utilisation. Do not fabricate those GPU-only figures.
+- `MOSS_VLLM_BASE_URL` is unset. A completed local HF run can establish only CPU-local G4/G5 portions
+  at matching geometry; it cannot establish deployed p95 lag, GPU OOM/errors, GPU memory/utilisation,
+  vLLM active/queued counts, or deployed real-time factor. Do not fabricate them.
 - `scripts/afk-guardrails/preflight.py afk5-phase1-completion` rejects changes to the tracked served
   bundle under `ProjectResources/Frontend/`. W1 needs an operator-granted ownership change or a
   permitted release owner; source tests alone do not update the browser the Python service serves,
@@ -125,8 +128,9 @@ provider — not the deployed host. Never cite those as deployed.)
 - **GPU host only:** p95 transcript lag as a deployed figure, GPU memory/utilisation (also issue #1's last
   unmet criterion).
 
-Pre-register and **commit** thresholds before the run (prd.md). Label the latency column "CPU hf local decode,
-not the deployed bound".
+Iteration 9 re-froze the contract before measurement: screens are 1/2/4/8, the selected bound alone
+soaks for 600 seconds, the final contract records why both safety ceilings are wide, and the harness
+records CPU-local decode RTF, per-session queue depth, and writer overhead.
 
 ## `verify_g9_served_bundle.py` polarity flaw (monitor, 2026-08-18 16:55)
 
@@ -137,19 +141,51 @@ and the tempting repair is flipping expectations, which deletes the check. Inver
 CONTAINS the new bearer and filename contracts → green = shipped, red = stale, and it becomes the W1/W5
 release gate.
 
-## W2 threshold basis + run shape (monitor, 2026-08-18 17:05)
+## W2 threshold basis + run shape (monitor, 2026-08-18 17:05; resolved in iteration 9)
 
-Validator re-run independently: exit 0, `sha256=2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba`.
-Contract is properly frozen. Two follow-ups **before** the measurement:
+Resolved: SHA `955a2883ada6cef99be007d1eb3c9838d6be9e227dc1408e06b6f8617fdb9d6c` records the 10-second and 4-GiB
+bases without moving a gate, requires a comparison to prior 0.248-second p95, and retains raw data every tick.
 
-1. `gates.latency.maximum_per_session_p95_transcript_lag_seconds: 10.0` is ~40x looser than the only
-   comparable prior CPU observation (`t1/iteration-12`: p50 158 ms, **p95 248 ms**, max 260 ms at concurrency 2).
-   Preregistration fixes *when* a number was chosen, not whether it can fail. **Do not move the gate after
-   measuring.** Instead: record the basis for 10.0 now, and in the verdict report the measured p95 against the
-   248 ms prior and state the headroom, so a pass is not mistaken for a tight bound. Same for the 4 GiB RSS
-   allowance — the tight criterion there is `maximum_oom_or_accelerator_error_count: 0`.
-2. Run shape: 120 s @2 + 120 s @4 + 600 s soak + warmup is ~15 min minimum on CPU with a 1.8 GB model.
-   **Persist raw samples incrementally** to the artifact path so an iteration boundary or stall does not
-   destroy a real 15-minute measurement. Partial raw arrays are still evidence; vanished ones are not.
+## W2 matrix widening (monitor, 2026-08-18 17:12; resolved in iteration 9)
 
-Still open from 16:55: invert `verify_g9_served_bundle.py` polarity (green = shipped, not green = defect present).
+Issue #3 criterion 2 requires concurrency **1, 2 and 4**; criterion 3 requires recording for **1, 2, 4 and 8**
+simultaneous meetings. Your frozen matrix is `screening_session_counts [2, 4]`. **A perfect run as specified
+cannot close #3.** Add 1 and 8 and re-freeze while `run_started` is still `false` — a legitimate
+pre-measurement amendment; note that the monitor requested it and why.
+
+- **1** is the serialized baseline every other number is judged against. Cheapest row, biggest loss if omitted.
+- **8** may be infeasible on CPU. That is an acceptable *result*: "8 sessions: gate exceeded at p95 X s,
+  sustained ingress not maintainable on CPU HF" satisfies the criterion. An omitted row does not.
+- Keep the 600 s soak on the chosen bound only — the extra cost is two short screening rows.
+
+Name in `does_not_establish` exactly what stays external: **GPU OOM/errors** and **vLLM active/queued request
+counts** (need :8000), and deployed real-time factor. Everything else #3 asks for is locally establishable at
+the matched deployed geometry.
+
+## W2 instrumentation perturbation (monitor, 2026-08-18 17:22; resolved in iteration 9)
+
+`prototypes/browser-capture-feasibility/production_route_server.py:120-139`: `measured_record_event` performs
+`open` + `write` + `flush` + **`os.fsync`** *inside* the shared `measurement_lock`, on the canonical
+publication path, for every `canonical_processed` event across all sessions. At 8 sessions / 0.5 s ingress
+that is ~16 fsyncs/s, 1-10 ms each on APFS, serialized through one lock held during disk I/O.
+
+Latency impact against a 10 s gate: immaterial. **Ordering impact: material** — the tight gates are
+`fairness.maximum_dispatch_count_skew...: 1` and per-session queue depth, and lock-held disk I/O on the
+dispatch path reorders dispatch and inflates queue depth. That measures the harness, not the system.
+
+Fix while keeping incremental persistence: build the record inside the lock, **append outside it** with one
+long-lived handle, drop the per-event fsync (fsync at run end, on interruption, or on a ~5 s interval), and
+record the instrumentation overhead in the artifact. If you keep per-event fsync, you must measure its cost
+and argue the fairness figure survives it.
+
+Verified good, no action: preregistration amendment moved no gate value and the validator was tightened to
+enforce the new matrix and the basis text. Fixture `leading-030s.wav` sha256 `a42507d9…` matches, 90.0 s real
+speech, two markers make isolation falsifiable. **Note in the artifact that a 600 s soak repeats the 90 s
+source**, since repeated audio can make decode timing unrepresentative.
+
+The issue is resolved: canonical records are constructed while holding only the short publication lock,
+then serialized/enqueued after it. A dedicated writer owns one long-lived handle and performs its first
+durability sync after five seconds, then at five-second intervals and shutdown; it records enqueue/write/
+sync/pending-record overhead with every phase. The real-source fixture is 90 seconds and repeats during
+the selected 600-second soak, which the eventual verdict must state. Still open from 16:55: invert
+`verify_g9_served_bundle.py` polarity.

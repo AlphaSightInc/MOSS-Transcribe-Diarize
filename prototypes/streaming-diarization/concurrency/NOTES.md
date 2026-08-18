@@ -5,7 +5,7 @@
 **VERDICT: FROZEN, NOT RUN — a separately hash-pinned contract for the now-available local HF path.**
 
 Question: at the descriptor geometry observed on the read-only deployed host, can one local CPU/HF
-service sustain the measured two-to-four-session bound for 600 seconds while retaining fair,
+service sustain the measured one-to-eight-session screening matrix and selected 600-second bound while retaining fair,
 session-local v2 backpressure and no cross-session text across overload and observer reconnect?
 
 `cpu_hf_local_preregistration.json` is intentionally separate from the 2026-08-13 vLLM profile:
@@ -21,6 +21,29 @@ and marker isolation through overload plus observer reconnect. Raw arrays, not s
 required. The CPU/HF-local latency column must always read **"CPU HF local decode, not the deployed
 GPU bound"**. This profile explicitly cannot prove deployed GPU p95 latency, GPU memory, or GPU
 utilisation.
+
+The 10.0 s latency ceiling is intentionally wide headroom carried from ticket #3: four concurrent
+CPU/HF sessions over a ten-minute soak are unmeasured, so lowering it based on the prior short run
+would be post-hoc optimism. It is not a tight performance claim. The final verdict must report its
+maximum per-session p95 beside the prior two-session CPU observation (0.248 s p95) and state the
+headroom. Likewise, 4 GiB is a safety ceiling for the unmeasured soak; **zero OOM or accelerator
+errors** is the tight memory criterion.
+
+### W2 pre-measurement matrix correction — 2026-08-18
+
+**VERDICT: RE-FROZEN, NOT RUN.** Before any CPU/HF result, the ticket-3 acceptance criteria were
+rechecked. Its required reporting rows are 1/2/4/8 concurrent meetings, not only 2/4. The frozen
+matrix therefore records all four short screens and keeps the one 600-second soak only for the largest
+screening pass. An 8-session CPU failure is a useful recorded outcome; omitting the row is not.
+
+The new profile also makes the boundary explicit: it records local CPU/HF decode real-time factor and
+local process errors, but cannot establish deployed real-time factor, GPU OOM/accelerator errors, or
+the vLLM active/queued series. The runner preserves those distinctions in its verdict.
+
+The canonical dispatch event writer is deliberately off the runtime publication path: it serializes
+the complete record after the publication lock, sends it to a dedicated writer thread, and syncs that
+file every five seconds plus shutdown. Its cumulative enqueue, write, sync, and pending-record figures
+are retained with every measurement phase, so the artifact exposes observer overhead.
 
 ## Gate preregistration — 2026-08-13
 

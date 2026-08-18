@@ -3,7 +3,7 @@
 Ticket #3's bounded-dispatcher measurement extension. The first artifact freezes the gates and
 metric definitions before any concurrency run.
 
-Question: what is the largest dispatcher concurrency in `{1, 2, 4}` that keeps live transcript
+Question: what is the largest dispatcher concurrency in `{1, 2, 4, 8}` that keeps live transcript
 lag and memory below the frozen gates on the production live path?
 
 One-command preregistration check (prints the full frozen state):
@@ -37,3 +37,26 @@ The CPU/HF-local runner must instead hash-pin `cpu_hf_local_preregistration.json
 descriptor with the read-only deployed descriptor before capture, and retain the raw arrays named in
 that contract. It may establish the local portions of G4 and G5, never deployed GPU latency or GPU
 utilisation.
+
+Its hash-pinned human-speech clip configuration is
+`cpu_hf_local_fixture.json`. The runner uses two different bounded segments from that real recording,
+then checks that each session renders only its own configured marker. The values belong in the fixture
+configuration, never in general runner logic.
+
+Full local CPU/HF measurement (about 19 minutes plus model warm-up):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py \
+  --model /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8 \
+  --manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --output evidence/phase1/w2-local-concurrency/run-YYYYMMDDTHHMMSS
+```
+
+The command first reads the deployed descriptor, re-finalizes only the local manifest for the current
+checkout, starts one loopback FastAPI process through the real `LiveServiceRuntime`, and records raw
+frame responses, observer cursors/events, canonical dispatch order, instrumentation overhead, decode real-time
+factor, and service process-tree RSS incrementally. Canonical-event file I/O runs in a dedicated writer thread,
+with a five-second durability sync interval, so disk sync never holds the runtime publication lock. It records
+screening at 1/2/4/8 sessions, then soaks only the largest
+passing bound. The `--preflight` form validates its immutable inputs without starting a service.
