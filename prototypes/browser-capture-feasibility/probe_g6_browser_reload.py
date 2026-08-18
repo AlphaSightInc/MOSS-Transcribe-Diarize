@@ -3,7 +3,8 @@
 
 Question: can Chrome start the shipped Preact ControlPanel from deterministic fake
 media streams, navigate while the session is active, and reattach its read-only
-transcript view without preserving the capture bearer or issuing Stop?
+transcript view without preserving the capture bearer or issuing Stop?  Does that
+new poller reconstruct every committed transcript item exactly once?
 
 Run (after ``cd frontend && npm ci`` when this worktree has no ignored
 ``node_modules``):
@@ -348,6 +349,148 @@ def _server_status(page: _ChromePage, session_id: str) -> dict:
     return status
 
 
+def _frontend_transcript_state(page: _ChromePage) -> dict:
+    """Read the actual Vite module singleton that drives the rendered transcript.
+
+    DOM turns intentionally coalesce adjacent segments, so inspecting their text alone
+    cannot distinguish two source items from one.  The Preact singleton is the exact
+    state ``TranscriptPane`` renders; importing the already-loaded Vite module lets the
+    probe retain the real browser/poller path while recording stable item identities.
+    """
+    state = page.evaluate(
+        """(async () => {
+          const session = await import('/src/state/session.ts');
+          const items = session.sessionTranscriptItems.value.map((item) => ({
+            id: item.id,
+            segmentId: item.segment_id,
+            state: item.state,
+          }));
+          return {
+            items,
+            renderedTurnCount: document.querySelectorAll('.tr-body .utt').length,
+          };
+        })()"""
+    )
+    if not isinstance(state, dict) or not isinstance(state.get("items"), list):
+        raise RuntimeError(f"frontend transcript state is not inspectable: {state!r}")
+    return state
+
+
+def _server_cursors(page: _ChromePage, session_id: str) -> dict:
+    """Read public snapshot/event cursor facts through the saved view authority.
+
+    No secret leaves Chrome: this only returns versions, event sequences, and committed
+    span ids.  The requests deliberately start at the public origin cursors so the probe
+    can compare the same server history immediately before and after navigation.
+    """
+    cursors = page.evaluate(
+        f"""(async () => {{
+          const raw = sessionStorage.getItem({REATTACH_STORAGE_KEY!r});
+          const record = raw === null ? null : JSON.parse(raw);
+          if (!record?.viewToken) return null;
+          const root = '/api/live/sessions/' + encodeURIComponent({session_id!r});
+          const [snapshotResponse, eventsResponse] = await Promise.all([
+            fetch(root + '/snapshot?since_version=0', {{
+              headers: {{Authorization: 'Bearer ' + record.viewToken}}, cache: 'no-store'
+            }}),
+            fetch(root + '/events?since_seq=-1', {{
+              headers: {{Authorization: 'Bearer ' + record.viewToken}}, cache: 'no-store'
+            }}),
+          ]);
+          const [snapshotBody, eventsBody] = await Promise.all([
+            snapshotResponse.json(), eventsResponse.json()
+          ]);
+          const session = snapshotBody?.snapshot?.session;
+          const events = Array.isArray(eventsBody?.events) ? eventsBody.events : [];
+          return {{
+            snapshotStatus: snapshotResponse.status,
+            eventsStatus: eventsResponse.status,
+            snapshotVersion: session?.version ?? null,
+            committedSpanIds: Array.isArray(session?.committed)
+              ? session.committed.map((commit) => commit?.span_id).filter(Number.isInteger)
+              : [],
+            eventSequences: events.map((event) => event?.seq).filter(Number.isInteger),
+          }};
+        }})()"""
+    )
+    if not isinstance(cursors, dict):
+        raise RuntimeError(f"server cursor read is not an object: {cursors!r}")
+    return cursors
+
+
+def _committed_item_ids(frontend: dict) -> list[str]:
+    items = frontend.get("items")
+    if not isinstance(items, list):
+        return []
+    return [
+        item["id"]
+        for item in items
+        if isinstance(item, dict)
+        and item.get("state") != "provisional"
+        and isinstance(item.get("id"), str)
+        and item["id"]
+    ]
+
+
+def _committed_span_ids(frontend: dict) -> set[int]:
+    """Recover the server span identity encoded in the frontend's stable segment id."""
+    spans = set()
+    items = frontend.get("items")
+    if not isinstance(items, list):
+        return spans
+    for item in items:
+        if not isinstance(item, dict) or item.get("state") == "provisional":
+            continue
+        segment_id = item.get("segmentId")
+        if not isinstance(segment_id, str):
+            continue
+        span, separator, _ = segment_id.partition(":")
+        if separator and span.isdecimal():
+            spans.add(int(span))
+    return spans
+
+
+def _wait_for_committed_render(page: _ChromePage, session_id: str) -> tuple[dict, dict]:
+    """Wait for the real poller to render at least one committed item before reload."""
+    deadline = time.monotonic() + 12.0
+    last = None
+    while time.monotonic() < deadline:
+        frontend = _frontend_transcript_state(page)
+        cursors = _server_cursors(page, session_id)
+        committed_ids = _committed_item_ids(frontend)
+        if (
+            committed_ids
+            and frontend.get("renderedTurnCount", 0) > 0
+            and cursors.get("snapshotStatus") == 200
+            and cursors.get("eventsStatus") == 200
+            and cursors.get("committedSpanIds")
+            and _committed_span_ids(frontend) == set(cursors["committedSpanIds"])
+        ):
+            return frontend, cursors
+        last = {"frontend": frontend, "cursors": cursors}
+        time.sleep(0.05)
+    raise RuntimeError(f"real poller did not render a committed item before reload: {last!r}")
+
+
+def _wait_for_reloaded_continuity(
+    page: _ChromePage,
+    session_id: str,
+    expected_item_ids: set[str],
+) -> tuple[dict, dict]:
+    """Wait until the new browser poller has rebuilt every pre-reload item."""
+    deadline = time.monotonic() + 12.0
+    last = None
+    while time.monotonic() < deadline:
+        frontend = _frontend_transcript_state(page)
+        cursors = _server_cursors(page, session_id)
+        rendered_ids = set(_committed_item_ids(frontend))
+        if expected_item_ids.issubset(rendered_ids):
+            return frontend, cursors
+        last = {"frontend": frontend, "cursors": cursors}
+        time.sleep(0.05)
+    raise RuntimeError(f"reattached poller did not rebuild all pre-reload items: {last!r}")
+
+
 def _server_verdict(backend_url: str, session_id: str) -> dict:
     return _json(f"{backend_url}/prototype/verdict?session_id={quote(session_id, safe='')}")
 
@@ -435,6 +578,7 @@ def _run(chrome_bin: str) -> dict:
         active = _wait_for_phase(page, "active")
         reattach_before = _reattach_record(page, capture_bearer=capture_bearer)
         session_id = reattach_before["sessionId"]
+        frontend_before_reload, cursors_before_reload = _wait_for_committed_render(page, session_id)
         server_before_reload = _server_status(page, session_id)
 
         reload_started_wall_ms = round(time.time() * 1_000)
@@ -442,6 +586,11 @@ def _run(chrome_bin: str) -> dict:
         reattached = _wait_for_phase(page, "viewing")
         reattach_after = _reattach_record(page, capture_bearer=capture_bearer)
         post_reload_reads = _wait_for_post_reload_read(backend_url, session_id, reload_started_wall_ms)
+        frontend_after_reload, cursors_after_reload = _wait_for_reloaded_continuity(
+            page,
+            session_id,
+            set(_committed_item_ids(frontend_before_reload)),
+        )
         server_after_reload = _server_status(page, session_id)
         verdict = _server_verdict(backend_url, session_id)
         requests = verdict.get("telemetry", {}).get("live_requests", [])
@@ -452,6 +601,20 @@ def _run(chrome_bin: str) -> dict:
             for request in requests
             if request.get("route") == "stop" and request.get("session_id") == session_id
         ]
+        pre_reload_poller_reads = [
+            request
+            for request in requests
+            if request.get("route") in {"snapshot", "events"}
+            and request.get("session_id") == session_id
+            and request.get("wall_ms", 0) < reload_started_wall_ms
+            and isinstance(request.get("cursor"), int)
+        ]
+        before_item_ids = _committed_item_ids(frontend_before_reload)
+        after_item_ids = _committed_item_ids(frontend_after_reload)
+        after_span_ids = _committed_span_ids(frontend_after_reload)
+        authoritative_span_ids = cursors_after_reload.get("committedSpanIds")
+        before_event_sequences = cursors_before_reload.get("eventSequences")
+        after_event_sequences = cursors_after_reload.get("eventSequences")
         assertions = {
             "real_control_panel_started_one_session": active.get("phase") == "active",
             "same_session_is_retained_in_tab_storage": reattach_after.get("sessionId") == session_id,
@@ -480,6 +643,31 @@ def _run(chrome_bin: str) -> dict:
                 and bool(server_after_reload["statusLine"])
             ),
             "reattached_poller_issued_read_only_requests": bool(post_reload_reads),
+            "real_poller_rendered_committed_items_before_reload": bool(before_item_ids),
+            "every_pre_reload_item_survives_reattach": set(before_item_ids).issubset(set(after_item_ids)),
+            "reattached_state_has_no_duplicate_item_ids": len(after_item_ids) == len(set(after_item_ids)),
+            "reattached_state_matches_authoritative_committed_spans": (
+                isinstance(authoritative_span_ids, list)
+                and after_span_ids == set(authoritative_span_ids)
+            ),
+            # Events are a bounded replay buffer, so an older retained window can roll
+            # forward during navigation.  The durable transcript invariant is the
+            # authoritative snapshot/item check above; here we prove that the event cursor
+            # itself never regresses while allowing bounded-history eviction.
+            "server_event_cursor_does_not_regress_across_reload": (
+                isinstance(before_event_sequences, list)
+                and isinstance(after_event_sequences, list)
+                and bool(before_event_sequences)
+                and bool(after_event_sequences)
+                and before_event_sequences == sorted(set(before_event_sequences))
+                and after_event_sequences == sorted(set(after_event_sequences))
+                and max(after_event_sequences) >= max(before_event_sequences)
+            ),
+            "real_poller_used_snapshot_and_event_cursors_on_both_sides": (
+                {request.get("route") for request in pre_reload_poller_reads} == {"snapshot", "events"}
+                and {request.get("route") for request in post_reload_reads} == {"snapshot", "events"}
+                and all(isinstance(request.get("cursor"), int) for request in post_reload_reads)
+            ),
         }
         if not all(assertions.values()):
             raise _ProbeFailure(
@@ -494,6 +682,11 @@ def _run(chrome_bin: str) -> dict:
                     "reattach_after": reattach_after,
                     "server_before_reload": server_before_reload,
                     "server_after_reload": server_after_reload,
+                    "frontend_before_reload": frontend_before_reload,
+                    "frontend_after_reload": frontend_after_reload,
+                    "cursors_before_reload": cursors_before_reload,
+                    "cursors_after_reload": cursors_after_reload,
+                    "pre_reload_poller_reads": pre_reload_poller_reads,
                     "post_reload_reads": post_reload_reads,
                     "stop_requests": stop_requests,
                     "assertions": assertions,
@@ -531,6 +724,13 @@ def _run(chrome_bin: str) -> dict:
                 "before_reload": server_before_reload,
                 "after_reload": server_after_reload,
             },
+            "transcript_continuity": {
+                "frontend_before_reload": frontend_before_reload,
+                "frontend_after_reload": frontend_after_reload,
+                "server_cursors_before_reload": cursors_before_reload,
+                "server_cursors_after_reload": cursors_after_reload,
+                "pre_reload_poller_reads": pre_reload_poller_reads,
+            },
             "post_reload_read_only_requests": post_reload_reads,
             "stop_requests_for_session": stop_requests,
             "assertions": assertions,
@@ -543,7 +743,7 @@ def _run(chrome_bin: str) -> dict:
                 "display capture",
                 "model inference",
                 "a deployed host",
-                "cursor continuity or reload-after-terminal cleanup",
+                "reload-after-terminal cleanup",
             ],
         }
     finally:

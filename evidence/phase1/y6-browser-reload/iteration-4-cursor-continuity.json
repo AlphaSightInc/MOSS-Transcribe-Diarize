@@ -1,0 +1,3602 @@
+{
+  "active": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 2,
+          "max": 0.1414196681379633
+        },
+        "system": {
+          "count": 2,
+          "max": 0.14147127342498542
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 4,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "active",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Capture active. Keep both lane meters moving.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "all_checks_passed": true,
+  "assertions": {
+    "capture_bearer_did_not_survive_reload": true,
+    "every_pre_reload_item_survives_reattach": true,
+    "only_view_credentials_are_stored": true,
+    "real_control_panel_started_one_session": true,
+    "real_poller_rendered_committed_items_before_reload": true,
+    "real_poller_used_snapshot_and_event_cursors_on_both_sides": true,
+    "reattached_poller_issued_read_only_requests": true,
+    "reattached_state_has_no_duplicate_item_ids": true,
+    "reattached_state_matches_authoritative_committed_spans": true,
+    "reload_enters_read_only_viewing": true,
+    "same_session_is_retained_in_tab_storage": true,
+    "server_authored_status_remains_readable": true,
+    "server_event_cursor_does_not_regress_across_reload": true,
+    "server_received_no_stop_on_reload": true,
+    "session_remains_active_after_reload": true
+  },
+  "backend": {
+    "base_url": "http://127.0.0.1:8090",
+    "proxy_target": "127.0.0.1:8090"
+  },
+  "chrome": {
+    "fresh_profile": true,
+    "headless": true,
+    "microphone": "in-page oscillator MediaStream returned from getUserMedia",
+    "system_lane": "in-page oscillator MediaStream; getDisplayMedia picker was not invoked"
+  },
+  "descriptor": {
+    "frame_samples": 1000,
+    "status": 200
+  },
+  "does_not_cover": [
+    "browser's real permission prompt (media APIs are deterministic test doubles)",
+    "display capture",
+    "model inference",
+    "a deployed host",
+    "reload-after-terminal cleanup"
+  ],
+  "mounted": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "idle",
+    "reattachFields": [],
+    "statusLine": "Enter the capture bearer to configure both audio lanes.",
+    "storageKeys": []
+  },
+  "post_reload_read_only_requests": [
+    {
+      "cursor": 0,
+      "route": "snapshot",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787035841105
+    },
+    {
+      "cursor": 0,
+      "route": "events",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787035841106
+    }
+  ],
+  "probe": "prototypes/browser-capture-feasibility/probe_g6_browser_reload.py",
+  "ready": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 1,
+          "max": 0.09372450357241213
+        },
+        "system": {
+          "count": 1,
+          "max": 0.09071207941833094
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 2,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "ready",
+    "reattachFields": [],
+    "statusLine": "Both lanes carry audio. Start capture when ready.",
+    "storageKeys": []
+  },
+  "reattach_storage": {
+    "after": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "before": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "key": "lt:session:reattach"
+  },
+  "reattached": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "viewing",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Transcript reattached. Browser capture stopped on reload.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "scope": "real headless Chrome, actual Preact ControlPanel, local Vite proxy, and deterministic production routes; deterministic in-page fake microphone and system MediaStreams",
+  "server_status": {
+    "after_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    },
+    "before_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    }
+  },
+  "session_id": "api-session",
+  "started_at_unix_seconds": 1787035834.674,
+  "stop_requests_for_session": [],
+  "transcript_continuity": {
+    "frontend_after_reload": {
+      "items": [
+        {
+          "id": "0:0",
+          "segmentId": "0:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "1:0",
+          "segmentId": "1:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "2:0",
+          "segmentId": "2:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "3:0",
+          "segmentId": "3:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "4:0",
+          "segmentId": "4:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "5:0",
+          "segmentId": "5:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "6:0",
+          "segmentId": "6:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "7:0",
+          "segmentId": "7:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "8:0",
+          "segmentId": "8:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "9:0",
+          "segmentId": "9:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "10:0",
+          "segmentId": "10:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "11:0",
+          "segmentId": "11:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "12:0",
+          "segmentId": "12:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "13:0",
+          "segmentId": "13:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "14:0",
+          "segmentId": "14:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "15:0",
+          "segmentId": "15:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "16:0",
+          "segmentId": "16:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "17:0",
+          "segmentId": "17:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "18:0",
+          "segmentId": "18:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "19:0",
+          "segmentId": "19:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "20:0",
+          "segmentId": "20:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "21:0",
+          "segmentId": "21:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "22:0",
+          "segmentId": "22:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "23:0",
+          "segmentId": "23:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "24:0",
+          "segmentId": "24:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "25:0",
+          "segmentId": "25:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "26:0",
+          "segmentId": "26:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "27:0",
+          "segmentId": "27:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "28:0",
+          "segmentId": "28:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "29:0",
+          "segmentId": "29:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "30:0",
+          "segmentId": "30:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "31:0",
+          "segmentId": "31:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "32:0",
+          "segmentId": "32:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "33:0",
+          "segmentId": "33:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "34:0",
+          "segmentId": "34:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "35:0",
+          "segmentId": "35:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "36:0",
+          "segmentId": "36:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "37:0",
+          "segmentId": "37:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "38:0",
+          "segmentId": "38:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "39:0",
+          "segmentId": "39:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "40:0",
+          "segmentId": "40:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "41:0",
+          "segmentId": "41:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "42:0",
+          "segmentId": "42:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "43:0",
+          "segmentId": "43:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "44:0",
+          "segmentId": "44:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "45:0",
+          "segmentId": "45:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "46:0",
+          "segmentId": "46:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "47:0",
+          "segmentId": "47:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "48:0",
+          "segmentId": "48:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "49:0",
+          "segmentId": "49:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "50:0",
+          "segmentId": "50:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "51:0",
+          "segmentId": "51:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "52:0",
+          "segmentId": "52:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "53:0",
+          "segmentId": "53:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "54:0",
+          "segmentId": "54:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "55:0",
+          "segmentId": "55:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "56:0",
+          "segmentId": "56:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "57:0",
+          "segmentId": "57:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "58:0",
+          "segmentId": "58:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "59:0",
+          "segmentId": "59:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "60:0",
+          "segmentId": "60:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "61:0",
+          "segmentId": "61:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "62:0",
+          "segmentId": "62:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "63:0",
+          "segmentId": "63:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "64:0",
+          "segmentId": "64:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "65:0",
+          "segmentId": "65:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "66:0",
+          "segmentId": "66:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "67:0",
+          "segmentId": "67:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "68:0",
+          "segmentId": "68:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "69:0",
+          "segmentId": "69:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "70:0",
+          "segmentId": "70:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "71:0",
+          "segmentId": "71:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "72:0",
+          "segmentId": "72:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "73:0",
+          "segmentId": "73:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "74:0",
+          "segmentId": "74:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "75:0",
+          "segmentId": "75:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "76:0",
+          "segmentId": "76:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "77:0",
+          "segmentId": "77:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "78:0",
+          "segmentId": "78:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "79:0",
+          "segmentId": "79:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "80:0",
+          "segmentId": "80:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "81:0",
+          "segmentId": "81:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "82:0",
+          "segmentId": "82:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "83:0",
+          "segmentId": "83:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "84:0",
+          "segmentId": "84:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "85:0",
+          "segmentId": "85:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "86:0",
+          "segmentId": "86:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "87:0",
+          "segmentId": "87:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "88:0",
+          "segmentId": "88:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "89:0",
+          "segmentId": "89:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "90:0",
+          "segmentId": "90:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "91:0",
+          "segmentId": "91:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "92:0",
+          "segmentId": "92:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "93:0",
+          "segmentId": "93:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "94:0",
+          "segmentId": "94:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "95:0",
+          "segmentId": "95:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "96:0",
+          "segmentId": "96:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "97:0",
+          "segmentId": "97:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "98:0",
+          "segmentId": "98:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "99:0",
+          "segmentId": "99:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "100:0",
+          "segmentId": "100:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "101:0",
+          "segmentId": "101:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "102:0",
+          "segmentId": "102:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "103:0",
+          "segmentId": "103:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "104:0",
+          "segmentId": "104:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "105:0",
+          "segmentId": "105:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "106:0",
+          "segmentId": "106:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "107:0",
+          "segmentId": "107:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "108:0",
+          "segmentId": "108:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "109:0",
+          "segmentId": "109:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "110:0",
+          "segmentId": "110:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "111:0",
+          "segmentId": "111:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "112:0",
+          "segmentId": "112:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "113:0",
+          "segmentId": "113:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "114:0",
+          "segmentId": "114:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "115:0",
+          "segmentId": "115:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "116:0",
+          "segmentId": "116:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "117:0",
+          "segmentId": "117:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "118:0",
+          "segmentId": "118:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "119:0",
+          "segmentId": "119:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "120:0",
+          "segmentId": "120:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "121:0",
+          "segmentId": "121:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "122:0",
+          "segmentId": "122:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "123:0",
+          "segmentId": "123:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "124:0",
+          "segmentId": "124:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "125:0",
+          "segmentId": "125:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "126:0",
+          "segmentId": "126:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "127:0",
+          "segmentId": "127:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "128:0",
+          "segmentId": "128:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "129:0",
+          "segmentId": "129:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "130:0",
+          "segmentId": "130:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "131:0",
+          "segmentId": "131:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "132:0",
+          "segmentId": "132:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "133:0",
+          "segmentId": "133:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "134:0",
+          "segmentId": "134:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "135:0",
+          "segmentId": "135:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "136:0",
+          "segmentId": "136:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "137:0",
+          "segmentId": "137:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "138:0",
+          "segmentId": "138:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "139:0",
+          "segmentId": "139:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "140:0",
+          "segmentId": "140:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "141:0",
+          "segmentId": "141:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "142:0",
+          "segmentId": "142:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "143:0",
+          "segmentId": "143:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "144:0",
+          "segmentId": "144:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "145:0",
+          "segmentId": "145:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "146:0",
+          "segmentId": "146:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "147:0",
+          "segmentId": "147:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "148:0",
+          "segmentId": "148:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "149:0",
+          "segmentId": "149:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "150:0",
+          "segmentId": "150:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "151:0",
+          "segmentId": "151:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "152:0",
+          "segmentId": "152:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "153:0",
+          "segmentId": "153:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "154:0",
+          "segmentId": "154:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "155:0",
+          "segmentId": "155:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "156:0",
+          "segmentId": "156:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "157:0",
+          "segmentId": "157:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "158:0",
+          "segmentId": "158:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "159:0",
+          "segmentId": "159:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "160:0",
+          "segmentId": "160:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "161:0",
+          "segmentId": "161:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "prov:1:0",
+          "segmentId": "prov:1:0",
+          "state": "provisional"
+        }
+      ],
+      "renderedTurnCount": 2
+    },
+    "frontend_before_reload": {
+      "items": [
+        {
+          "id": "0:0",
+          "segmentId": "0:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "1:0",
+          "segmentId": "1:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "2:0",
+          "segmentId": "2:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "3:0",
+          "segmentId": "3:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "4:0",
+          "segmentId": "4:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "5:0",
+          "segmentId": "5:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "6:0",
+          "segmentId": "6:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "7:0",
+          "segmentId": "7:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "8:0",
+          "segmentId": "8:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "9:0",
+          "segmentId": "9:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "10:0",
+          "segmentId": "10:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "11:0",
+          "segmentId": "11:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "12:0",
+          "segmentId": "12:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "13:0",
+          "segmentId": "13:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "14:0",
+          "segmentId": "14:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "15:0",
+          "segmentId": "15:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "16:0",
+          "segmentId": "16:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "17:0",
+          "segmentId": "17:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "18:0",
+          "segmentId": "18:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "19:0",
+          "segmentId": "19:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "20:0",
+          "segmentId": "20:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "21:0",
+          "segmentId": "21:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "22:0",
+          "segmentId": "22:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "23:0",
+          "segmentId": "23:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "24:0",
+          "segmentId": "24:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "25:0",
+          "segmentId": "25:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "26:0",
+          "segmentId": "26:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "27:0",
+          "segmentId": "27:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "28:0",
+          "segmentId": "28:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "29:0",
+          "segmentId": "29:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "30:0",
+          "segmentId": "30:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "31:0",
+          "segmentId": "31:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "32:0",
+          "segmentId": "32:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "33:0",
+          "segmentId": "33:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "34:0",
+          "segmentId": "34:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "35:0",
+          "segmentId": "35:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "36:0",
+          "segmentId": "36:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "37:0",
+          "segmentId": "37:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "38:0",
+          "segmentId": "38:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "39:0",
+          "segmentId": "39:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "40:0",
+          "segmentId": "40:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "41:0",
+          "segmentId": "41:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "42:0",
+          "segmentId": "42:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "43:0",
+          "segmentId": "43:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "44:0",
+          "segmentId": "44:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "45:0",
+          "segmentId": "45:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "46:0",
+          "segmentId": "46:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "47:0",
+          "segmentId": "47:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "48:0",
+          "segmentId": "48:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "49:0",
+          "segmentId": "49:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "50:0",
+          "segmentId": "50:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "51:0",
+          "segmentId": "51:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "52:0",
+          "segmentId": "52:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "53:0",
+          "segmentId": "53:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "54:0",
+          "segmentId": "54:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "55:0",
+          "segmentId": "55:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "56:0",
+          "segmentId": "56:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "57:0",
+          "segmentId": "57:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "58:0",
+          "segmentId": "58:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "59:0",
+          "segmentId": "59:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "60:0",
+          "segmentId": "60:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "61:0",
+          "segmentId": "61:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "62:0",
+          "segmentId": "62:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "63:0",
+          "segmentId": "63:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "64:0",
+          "segmentId": "64:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "65:0",
+          "segmentId": "65:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "66:0",
+          "segmentId": "66:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "67:0",
+          "segmentId": "67:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "68:0",
+          "segmentId": "68:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "69:0",
+          "segmentId": "69:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "70:0",
+          "segmentId": "70:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "71:0",
+          "segmentId": "71:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "72:0",
+          "segmentId": "72:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "73:0",
+          "segmentId": "73:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "74:0",
+          "segmentId": "74:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "75:0",
+          "segmentId": "75:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "76:0",
+          "segmentId": "76:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "77:0",
+          "segmentId": "77:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "78:0",
+          "segmentId": "78:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "79:0",
+          "segmentId": "79:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "80:0",
+          "segmentId": "80:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "81:0",
+          "segmentId": "81:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "82:0",
+          "segmentId": "82:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "83:0",
+          "segmentId": "83:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "84:0",
+          "segmentId": "84:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "85:0",
+          "segmentId": "85:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "86:0",
+          "segmentId": "86:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "87:0",
+          "segmentId": "87:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "88:0",
+          "segmentId": "88:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "89:0",
+          "segmentId": "89:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "90:0",
+          "segmentId": "90:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "91:0",
+          "segmentId": "91:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "92:0",
+          "segmentId": "92:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "93:0",
+          "segmentId": "93:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "94:0",
+          "segmentId": "94:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "95:0",
+          "segmentId": "95:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "96:0",
+          "segmentId": "96:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "97:0",
+          "segmentId": "97:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "98:0",
+          "segmentId": "98:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "99:0",
+          "segmentId": "99:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "100:0",
+          "segmentId": "100:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "101:0",
+          "segmentId": "101:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "102:0",
+          "segmentId": "102:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "103:0",
+          "segmentId": "103:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "104:0",
+          "segmentId": "104:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "105:0",
+          "segmentId": "105:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "106:0",
+          "segmentId": "106:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "107:0",
+          "segmentId": "107:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "108:0",
+          "segmentId": "108:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "109:0",
+          "segmentId": "109:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "110:0",
+          "segmentId": "110:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "111:0",
+          "segmentId": "111:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "112:0",
+          "segmentId": "112:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "113:0",
+          "segmentId": "113:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "114:0",
+          "segmentId": "114:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "115:0",
+          "segmentId": "115:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "116:0",
+          "segmentId": "116:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "117:0",
+          "segmentId": "117:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "118:0",
+          "segmentId": "118:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "119:0",
+          "segmentId": "119:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "120:0",
+          "segmentId": "120:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "121:0",
+          "segmentId": "121:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "122:0",
+          "segmentId": "122:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "123:0",
+          "segmentId": "123:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "124:0",
+          "segmentId": "124:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "125:0",
+          "segmentId": "125:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "126:0",
+          "segmentId": "126:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "127:0",
+          "segmentId": "127:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "128:0",
+          "segmentId": "128:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "129:0",
+          "segmentId": "129:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "130:0",
+          "segmentId": "130:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "131:0",
+          "segmentId": "131:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "132:0",
+          "segmentId": "132:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "133:0",
+          "segmentId": "133:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "134:0",
+          "segmentId": "134:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "135:0",
+          "segmentId": "135:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "136:0",
+          "segmentId": "136:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "137:0",
+          "segmentId": "137:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "138:0",
+          "segmentId": "138:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "139:0",
+          "segmentId": "139:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "140:0",
+          "segmentId": "140:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "141:0",
+          "segmentId": "141:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "142:0",
+          "segmentId": "142:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "143:0",
+          "segmentId": "143:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "144:0",
+          "segmentId": "144:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "145:0",
+          "segmentId": "145:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "146:0",
+          "segmentId": "146:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "147:0",
+          "segmentId": "147:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "148:0",
+          "segmentId": "148:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "149:0",
+          "segmentId": "149:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "150:0",
+          "segmentId": "150:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "151:0",
+          "segmentId": "151:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "152:0",
+          "segmentId": "152:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "153:0",
+          "segmentId": "153:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "154:0",
+          "segmentId": "154:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "155:0",
+          "segmentId": "155:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "156:0",
+          "segmentId": "156:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "157:0",
+          "segmentId": "157:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "158:0",
+          "segmentId": "158:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "159:0",
+          "segmentId": "159:0",
+          "state": "confirmed"
+        },
+        {
+          "id": "prov:1:0",
+          "segmentId": "prov:1:0",
+          "state": "provisional"
+        }
+      ],
+      "renderedTurnCount": 2
+    },
+    "pre_reload_poller_reads": [
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035835895
+      },
+      {
+        "cursor": 0,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035835896
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035835945
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035835946
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836009
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836009
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836074
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836075
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836138
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836139
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836201
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836202
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836264
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836265
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836326
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836327
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836391
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836392
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836452
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836454
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836510
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836511
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836576
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836578
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836637
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836638
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836787
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836787
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836851
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836853
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836917
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836918
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836984
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035836985
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837048
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837051
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837116
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837119
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837184
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837186
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837252
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837254
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837316
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837318
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837386
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837388
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837451
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837453
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837519
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837521
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837611
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837612
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837677
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837678
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837743
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837745
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837812
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837813
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837871
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837872
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837909
+      },
+      {
+        "cursor": 0,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837910
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837938
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837939
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035837999
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838000
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838065
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838067
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838129
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838130
+      },
+      {
+        "cursor": 121,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838166
+      },
+      {
+        "cursor": 301,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838168
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838194
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838196
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838256
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838256
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838316
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838320
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838385
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838386
+      },
+      {
+        "cursor": 137,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838423
+      },
+      {
+        "cursor": 341,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838425
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838449
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838449
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838507
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838509
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838569
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838570
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838625
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838627
+      },
+      {
+        "cursor": 153,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838682
+      },
+      {
+        "cursor": 381,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838683
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838688
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838690
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838751
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838752
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838811
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838812
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838873
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838874
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838942
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838943
+      },
+      {
+        "cursor": 421,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838948
+      },
+      {
+        "cursor": 169,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035838950
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839010
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839010
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839069
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839073
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839133
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839136
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839198
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839200
+      },
+      {
+        "cursor": 187,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839206
+      },
+      {
+        "cursor": 466,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839207
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839259
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839261
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839324
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839324
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839388
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839388
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839454
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839456
+      },
+      {
+        "cursor": 205,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839463
+      },
+      {
+        "cursor": 511,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839464
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839523
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839524
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839584
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839585
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839644
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839645
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839711
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839713
+      },
+      {
+        "cursor": 221,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839719
+      },
+      {
+        "cursor": 551,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839721
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839778
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839780
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839839
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839841
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839904
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839906
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839964
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839966
+      },
+      {
+        "cursor": 237,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839978
+      },
+      {
+        "cursor": 591,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035839979
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840034
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840035
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840102
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840103
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840164
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840166
+      },
+      {
+        "cursor": 253,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840236
+      },
+      {
+        "cursor": 631,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840238
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840252
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840252
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840315
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840315
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840380
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840382
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840450
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840450
+      },
+      {
+        "cursor": 269,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840498
+      },
+      {
+        "cursor": 671,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840498
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840511
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840512
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840573
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840575
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840640
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840642
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840709
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840711
+      },
+      {
+        "cursor": 287,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840757
+      },
+      {
+        "cursor": 716,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840759
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840777
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840779
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840847
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840849
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840916
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840917
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840985
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035840987
+      },
+      {
+        "cursor": 303,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035841019
+      },
+      {
+        "cursor": 756,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035841020
+      },
+      {
+        "cursor": 0,
+        "route": "snapshot",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035841055
+      },
+      {
+        "cursor": -1,
+        "route": "events",
+        "session_id": "api-session",
+        "status": 200,
+        "wall_ms": 1787035841056
+      }
+    ],
+    "server_cursors_after_reload": {
+      "committedSpanIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161
+      ],
+      "eventSequences": [
+        748,
+        749,
+        750,
+        751,
+        752,
+        753,
+        754,
+        755,
+        756,
+        757,
+        758,
+        759,
+        760,
+        761,
+        762,
+        763,
+        764,
+        765,
+        766,
+        767,
+        768,
+        769,
+        770,
+        771,
+        772,
+        773,
+        774,
+        775,
+        776,
+        777,
+        778,
+        779,
+        780,
+        781,
+        782,
+        783,
+        784,
+        785,
+        786,
+        787,
+        788,
+        789,
+        790,
+        791,
+        792,
+        793,
+        794,
+        795,
+        796,
+        797,
+        798,
+        799,
+        800,
+        801,
+        802,
+        803,
+        804,
+        805,
+        806,
+        807,
+        808,
+        809,
+        810,
+        811
+      ],
+      "eventsStatus": 200,
+      "snapshotStatus": 200,
+      "snapshotVersion": 325
+    },
+    "server_cursors_before_reload": {
+      "committedSpanIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159
+      ],
+      "eventSequences": [
+        738,
+        739,
+        740,
+        741,
+        742,
+        743,
+        744,
+        745,
+        746,
+        747,
+        748,
+        749,
+        750,
+        751,
+        752,
+        753,
+        754,
+        755,
+        756,
+        757,
+        758,
+        759,
+        760,
+        761,
+        762,
+        763,
+        764,
+        765,
+        766,
+        767,
+        768,
+        769,
+        770,
+        771,
+        772,
+        773,
+        774,
+        775,
+        776,
+        777,
+        778,
+        779,
+        780,
+        781,
+        782,
+        783,
+        784,
+        785,
+        786,
+        787,
+        788,
+        789,
+        790,
+        791,
+        792,
+        793,
+        794,
+        795,
+        796,
+        797,
+        798,
+        799,
+        800,
+        801
+      ],
+      "eventsStatus": 200,
+      "snapshotStatus": 200,
+      "snapshotVersion": 321
+    }
+  },
+  "vite": {
+    "base_url": "http://127.0.0.1:58628/",
+    "dev_base_override": "/",
+    "served_actual_control_panel": true
+  }
+}

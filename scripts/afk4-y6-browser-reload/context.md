@@ -4,7 +4,7 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Known state (verified 2026-08-18, dev @ 852d366)
 
-- G6 has a first real-browser reload measurement; cursor continuity, terminal-reload cleanup, and
+- G6 has real-browser evidence for reattach and cursor/item continuity; terminal-reload cleanup and
   assertion falsification remain before it can be certified.
 - Reattach is implemented: `ControlPanel` stores `{sessionId, viewToken}` in tab-scoped storage,
   reload closes local media without sending Stop, startup resumes the snapshot/event poller, and the
@@ -35,6 +35,11 @@ Living working memory. Update every iteration so it matches reality. History goe
   server; the session stayed active; and both pre/post server-authored status lines were readable.
   It explicitly does not cover a permission prompt, display capture, model inference, deployed host,
   cursor continuity, or terminal reload cleanup.
+- `iteration-4-cursor-continuity.json` now proves that the real poller rendered committed items
+  before reload, reconstructed every prior item once after reload, and exactly matched the
+  authoritative committed span ids. Both read routes used their cursors before/after navigation;
+  the bounded 64-event replay window may advance its retained lower bound, so the valid event
+  invariant is a non-regressing upper cursor plus the snapshot-backed item equality.
 - A native Chrome fake-audio input was live but yielded 190 zero-RMS worklet frames in this
   environment; the probe uses the established synthetic MediaStream shape instead. This is a
   launcher/source limitation, not evidence of a product defect.
@@ -43,10 +48,8 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Cursor continuity across the reload — record pre/post rendered item identities and server event
-   cursors, then prove neither duplication nor loss.
-2. Negative case: reload after session end clears rather than reattaching.
-3. Falsify every assertion against a deliberately broken input before committing.
+1. Negative case: reload after session end clears rather than reattaching.
+2. Falsify every assertion against a deliberately broken input before committing.
 
 ## Not yours
 

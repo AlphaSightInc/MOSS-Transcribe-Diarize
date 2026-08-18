@@ -300,6 +300,12 @@ def build_app(
 
         response = await call_next(request)
         if route is not None:
+            cursor_name = "since_version" if route == "snapshot" else "since_seq" if route == "events" else None
+            raw_cursor = request.query_params.get(cursor_name) if cursor_name is not None else None
+            try:
+                cursor = int(raw_cursor) if raw_cursor is not None else None
+            except ValueError:
+                cursor = None
             with app.state.prototype_lock:
                 app.state.prototype_telemetry["live_requests"].append(
                     {
@@ -307,6 +313,9 @@ def build_app(
                         "session_id": session_id,
                         "status": response.status_code,
                         "wall_ms": round(time.time() * 1_000),
+                        # The reload probe needs the two public replay cursors, but never
+                        # records a bearer, request body, or arbitrary query value.
+                        "cursor": cursor,
                     }
                 )
         if frame is not None and response.status_code == 200:

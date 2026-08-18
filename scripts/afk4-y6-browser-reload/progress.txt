@@ -44,3 +44,20 @@ snapshot/events, and server-authored status lines. learned: Chrome's native fake
 but delivered zero-RMS worklet frames here, so the probe uses deterministic in-page MediaStreams for
 both lanes; it does not exercise a permission or display picker. next: add cursor/item continuity,
 then terminal reload and deliberately broken-input assertion falsification.
+
+[iteration 4] target: cursor/item continuity across a real Chrome reload. files:
+`prototypes/browser-capture-feasibility/probe_g6_browser_reload.py`,
+`prototypes/browser-capture-feasibility/production_route_server.py`,
+`evidence/phase1/y6-browser-reload/iteration-4-cursor-continuity.json`,
+`scripts/afk4-y6-browser-reload/context.md`, `scripts/afk4-y6-browser-reload/progress.txt`.
+validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m py_compile
+prototypes/browser-capture-feasibility/probe_g6_browser_reload.py
+prototypes/browser-capture-feasibility/production_route_server.py && PYTHONDONTWRITEBYTECODE=1
+.venv/bin/python prototypes/browser-capture-feasibility/probe_g6_browser_reload.py --output
+evidence/phase1/y6-browser-reload/iteration-4-cursor-continuity.json && git diff --check` passed.
+evidence: 160 pre-reload and 162 post-reload authoritative committed spans mapped exactly to
+frontend state; every prior item survived with no duplicate id; snapshot/event routes were
+cursor-polled both before and after reload; no Stop request. learned: events retain only 64 records,
+so a lower replay bound can advance during navigation; cursor non-regression plus snapshot-backed
+item equality is the correct falsifiable continuity invariant. next: prove terminal-session reload
+clears storage and stays terminal, then deliberately falsify every probe assertion.
