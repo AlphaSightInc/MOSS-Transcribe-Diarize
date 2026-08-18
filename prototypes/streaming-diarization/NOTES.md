@@ -2543,3 +2543,21 @@ The surviving-lane case stayed `recording`; known codes produced actionable copy
 used a generic line without exposing the raw code or rejecting the heartbeat. The production
 implementation is `live_capture_status.py`; the throwaway probe was deleted. Raw state and focused
 validation: `evidence/phase1/t5/iteration-3-capture-status-projection.txt`.
+
+### Snapshot-cursor no-progress watchdog (`proto_poller_cursor_watchdog.py`, 2026-08-18)
+
+**Question:** how many consecutive flat snapshot/event cursor rounds should pass before a
+post-stop poller forces one uncursored snapshot reread?
+
+**Pre-registered decision:** at the 2 s closing cadence, observe a terminal within 6 s after the
+last changed snapshot, force full snapshots on no more than one third of a healthy quiescent
+session's reads, and never force one while the independent event cursor advances.
+
+**VERDICT: BOUND 2, ABSORBED.** The one-command state trace printed every round: bound 1 observed
+the terminal in 4 s but forced a refresh on 30/60 idle reads (50%); bound 2 observed it in 6 s and
+forced 20/60 (33.3%), while event progress forced zero refreshes; bound 3 reduced refreshes to
+15/60 (25%) but delayed terminal observation to 8 s. The production poller therefore uses exactly
+two unchanged snapshot rounds, retains the faster ingress-advance path, and has deterministic
+source/released-bundle replays for both the flat-terminal and advancing-event cases. Command and
+raw replay result: `python3 prototypes/streaming-diarization/proto_poller_cursor_watchdog.py`;
+evidence: `evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`.

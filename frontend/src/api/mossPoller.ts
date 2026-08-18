@@ -12,6 +12,7 @@ const CAPTURING_POLL_DELAY_MS = 250;
 const IDLE_POLL_DELAY_MS = 2_000;
 const RETRY_DELAYS_MS = [500, 1_000, 2_000, 5_000] as const;
 const POLL_REQUEST_TIMEOUT_MS = 10_000;
+const MAX_UNCHANGED_SNAPSHOT_NO_PROGRESS_ROUNDS = 2;
 const TERMINAL_STATUSES = new Set<SessionLifecycle>(["closed", "failed", "aborted"]);
 
 type JsonObject = Record<string, unknown>;
@@ -105,6 +106,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   let lastLabelRevisionVersion = 0;
   let lastSessionState: Pick<MossSnapshot, "sessionId" | "status" | "failureReason"> | null = null;
   let lastIngressAcceptedSamples: number | null = null;
+  let unchangedSnapshotNoProgressRounds = 0;
   const revisedSpanIds = new Set<number>();
   let priorProvisional: { generation: number; items: TranscriptItem[] } | null = null;
 
@@ -233,6 +235,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       const finalizationArrived = consumedEvents.some(
         (event) => event.kind === "identity_finalized"
       );
+      const eventCursorAdvanced = consumedSequence > eventSequence;
 
       if (snapshot) {
         const isFinalized = finalizationSeen || finalizationArrived;
@@ -296,11 +299,23 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       if (ingressAcceptedSamples !== null) {
         lastIngressAcceptedSamples = ingressAcceptedSamples;
       }
-      if (deferralIndex !== -1 || (!snapshot && ingressAdvanced)) {
+      const immediateRebaseline = deferralIndex !== -1 || (!snapshot && ingressAdvanced);
+      if (immediateRebaseline) {
+        unchangedSnapshotNoProgressRounds = 0;
+      } else if (!snapshot && snapshotVersion > 0 && !eventCursorAdvanced) {
+        unchangedSnapshotNoProgressRounds += 1;
+      } else {
+        unchangedSnapshotNoProgressRounds = 0;
+      }
+      const watchdogRebaseline =
+        unchangedSnapshotNoProgressRounds >= MAX_UNCHANGED_SNAPSHOT_NO_PROGRESS_ROUNDS;
+      if (immediateRebaseline || watchdogRebaseline) {
         // The snapshot and v2 ingress cursors are independent. A growing cumulative ingress
         // count proves the server progressed even when this snapshot cursor was answered as
-        // unchanged, so recover once through the uncursored snapshot instead of latching.
+        // unchanged. If both cursors remain flat after capture stopped, a bounded uncursored
+        // reread prevents a terminal transition behind a stale snapshot cursor from latching.
         snapshotVersion = 0;
+        unchangedSnapshotNoProgressRounds = 0;
       }
 
       if (snapshot && TERMINAL_STATUSES.has(snapshot.status)) {

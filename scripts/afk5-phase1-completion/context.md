@@ -9,8 +9,8 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g10-ledger-reconciliation/iteration-3-root-pytest.txt`: **1 failed / 1065 passed /
   4 skipped / 488 subtests**. The valid local l2 corpus accounts for +92 subtests; two
   operator-owned real-corpus tests skip here. **Never "fix" either baseline guard or replace the
-  certified bar with this worktree's denominator.** The current source frontend suite is **117/117** across
-  16 files at `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`.
+  certified bar with this worktree's denominator.** The current source frontend suite is **122/122** across
+  16 files at `evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`.
 - Gates certified: G1, G2, G7, G8, G10. G6 has its local real-browser bar met (y6: 19/19 assertions,
   all 19 falsified against corrupted observations).
 - W1/W5 are now released in `ProjectResources/Frontend/{app.js,app.js.map}`. The app keeps the
@@ -79,21 +79,18 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Defect A residual latch (P0)**: add the monitor-specified failing flat-ingress replay before changing
-   the poller. A bounded no-progress watchdog must reset a stale snapshot cursor once when neither cursor
-   moves, then observe the terminal snapshot. Retain the existing ingress-advance fast path.
-2. **Defect B (P1)**: prototype and measure the two input lanes' real-fixture RMS and transcription effect
+1. **Defect B (P1)**: prototype and measure the two input lanes' real-fixture RMS and transcription effect
    before choosing any mixer normalization/AGC/offset policy. Pre-register the success measure; no
    hand-tuned gain constant.
-3. **Defect C (P2)**: only after B establishes a measured disparity threshold, source the warning copy
+2. **Defect C (P2)**: only after B establishes a measured disparity threshold, source the warning copy
    from the server and add the client gate.
-4. **W2 vLLM-only measurement prerequisites**: iteration 16 compacted the committed CPU/HF diagnostic
+3. **W2 vLLM-only measurement prerequisites**: iteration 16 compacted the committed CPU/HF diagnostic
    `run-state.json` from 59,992,997 to 288,007 bytes without raw PCM. Bring audited tunnel launcher
    `affeaea` from `dev`, then use only the preregistered tunnel-backed runner. The CPU/HF result remains
    diagnostic, not G4/G5 evidence.
-5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -386,24 +383,23 @@ Preflight gates only `level >= SILENCE_RMS` (`captureClient.ts:171,739`, `SILENC
 20+ dB below its peer passes. Do it **after B**, using B's measurement for a defensible threshold, and source
 user-facing copy from the server exactly as the silent-mic remedy does.
 
-## Defect A: fixed for mid-capture, RESIDUAL latch at stop (monitor, 2026-08-18 18:45)
+## Defect A: full cursor-latch repair (iterations 17 and 19)
 
 `168db85` is a real root-cause fix — recovery keyed on an independent signal (cumulative
 `v2_session.lanes[*].accepted_samples`), trigger `deferralIndex !== -1 || (!snapshot && ingressAdvanced)`,
 defensive parse, and the test strengthened to four assertions carrying the operator's real numbers.
 Frontend 16 files / **119 pass**.
 
-**Residual, same shape, and it is the operator's Stop symptom:** recovery requires ingress to ADVANCE. After
-capture stops, `accepted_samples` is flat → `ingressAdvanced` false; no `identity_finalized` → `deferralIndex
-=== -1`; so no re-baseline at `:303`. Terminal detection at `:306` needs a **changed** snapshot the stale
-cursor never produces, and `recoverOwnerTerminal` (`:139`) is reachable only from the 401/403 branch (`:325`).
-A strand beginning at/after the last frame ⇒ "Finalizing…" forever.
-
-**Fix:** bounded no-progress watchdog — N consecutive rounds with no movement in *either* cursor while not
-known-terminal ⇒ re-baseline `snapshotVersion = 0` once, reset counter. Subsumes the heuristic, no new server
-field. **Test with FLAT ingress** (constant `accepted_samples`, stale cursor `unchanged`, server terminal) and
-assert `onTerminal` fires; it must fail before the watchdog exists — if it passes, my reading is wrong, record
-that instead. Keep the ingress signal as the fast path; the watchdog is the floor.
+**Stop-time residual closed in iteration 19:** when capture has stopped, ingress is flat and the original
+fast path cannot trigger. The new red replay held `accepted_samples` and events constant, answered stale
+`since_version=153` as `unchanged`, and made only the uncursored reread return closed version 332; before
+the repair it kept requesting 153 and never called `onTerminal`. A preregistered state trace selected exactly
+two flat rounds: 6 s maximum terminal observation at the 2 s closing cadence, one forced refresh per three
+healthy quiescent reads, and no refresh while event delivery advances. The poller resets its counter after the
+forced reread and retains the faster ingress-advance route. Focused 14/14, full frontend 122/122, typecheck,
+rebuilt bundle, diff check, and preflight pass. Evidence:
+`evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`. It repairs the source/released
+bundle path but does not replace a fresh attended run.
 
 ### Resolved iteration 18 — terminal 409 envelope and rendering
 
@@ -415,4 +411,5 @@ the failure message) for every otherwise-unhandled 409, so it reports the server
 decoder seam and proves its OSError detail reaches the 409; the full live API suite and the 120-test frontend
 suite pass. Evidence: `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`.
 
-Next: **Defect A residual latch**, then **B** (measure per-lane RMS first, no hand-tuned constant) → **C**.
+Next: **Defect B** — measure real-fixture per-lane RMS and transcription effect before choosing any mixer
+policy; then Defect C can derive a warning threshold from that evidence.

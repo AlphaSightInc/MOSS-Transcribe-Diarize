@@ -791,3 +791,33 @@ After that: defect 409 (four bare sites at `live_transport.py:307,308,462,463`; 
 hand-tuned constant), then C.
 
 [iteration 18] target=Defect 409 terminal failure envelope and browser rendering; files=`moss_transcribe_diarize/app/live_transport.py`, `tests/test_live_api.py`, `frontend/src/capture/{captureClient.ts,captureClient.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red route replay returned only `live session is failed.` and client replay rendered `frame POST failed: HTTP 409`; then live API 50 passed/327 subtests, capture-client 32 passed, frontend typecheck/build and full 16-file/120-test suite passed, diff check passed; evidence=`evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`; learned=terminal runtime records already contain the exact canonical failure code/message/detail and must be reused on later route requests; clean mono/v2 terminals need an explicit typed fallback; next=the monitor-found Defect A flat-ingress/no-progress watchdog replay before B/C; fresh attended evidence still required.
+
+[iteration 19] target=Defect A post-stop flat-cursor latch; files=`frontend/src/api/{mossPoller.ts,mossPoller.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `prototypes/streaming-diarization/{proto_poller_cursor_watchdog.py,NOTES.md}`, `docs/phase1-gate-status.md`, `evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red terminal replay failed with a fourth stale `since_version=153`, prototype selected two flat rounds (6 s bound, 20/60 idle forced refreshes), then focused poller 14/14, frontend 16 files/122 tests, typecheck, build, diff check, and preflight PASS; evidence=`evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`; learned=the ingress-growth fast path cannot see a terminal transition after capture stops, so a two-round snapshot/event no-progress floor recovers the terminal without firing while events advance; next=Defect B prototype: measure real-fixture lane RMS and transcription effect before setting any mixer policy; fresh attended evidence remains required.
+
+[monitor 2026-08-18 18:55] 409 FIX VERIFIED — and your evidence artifact is the best-shaped one this cycle.
+Checked: **zero** bare `HTTPException(status_code=409` remain in `live_transport.py`; all four terminal
+branches now route through `terminal_conflict_response`, which reuses the snapshot's `terminal_failure`
+record (including `canonical_decode_failed`, its message and the OSError detail) and falls back to a typed
+`live_session_terminal` / `v2_session_terminal` envelope when no record exists. Client renders the server
+line for any otherwise-unhandled 409 while leaving the sequence and queue-capacity special cases alone.
+Both tests are falsifiable and reproduce the operator's exact scenario rather than a mock of it:
+  - client: asserts the callback receives "canonical decode failed: OSError: decoder device became
+    unavailable" — a regression to `frame POST failed: HTTP 409` fails it;
+  - backend: injects a `FailingApiDecoder` that really raises, then asserts the 409 envelope carries the
+    typed readable failure. That is fault injection, not a stubbed response.
+`iteration-18-terminal-409-envelope.txt` records the RED reproductions with their prior text
+(`frame POST failed: HTTP 409`, and `detail: live session is failed.`) before the implementation. That is
+the artifact shape the charter asks for — keep doing exactly that.
+Baseline after it: backend 1071 passed (l15 pin the only failure), frontend 120/120, bundle gate PASS.
+
+ONE LEFTOVER, GENUINELY MINOR, DO NOT PRIORITISE IT: `live_transport.py:751` still returns
+`{"detail": str(exc)}` with 409 for `HelperPresenceConflict`. Because your client fix keys off the payload's
+`detail`, the user already sees the server's sentence there — only the typed `failure.code` is missing. Fold
+it in when you next touch that file; it is not worth an iteration of its own.
+
+YOUR PLAN FOR ITERATION 19 IS RIGHT, INCLUDING THE SCEPTICISM. "Reproduce the residual flat-ingress terminal
+case, then add only a bounded recovery if the replay confirms it" is exactly right — my hypothesis is that
+after capture stops `accepted_samples` goes flat, so `ingressAdvanced` is false, `deferralIndex` is -1, and
+neither `:303` nor `:306` can recover. If your replay shows terminal IS observed in that case, then I am
+wrong and the correct output of the iteration is a recorded note saying so, not a watchdog nobody needs.
+Either result is a good iteration. Do not add the watchdog to satisfy me.

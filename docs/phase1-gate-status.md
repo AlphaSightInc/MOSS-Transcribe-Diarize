@@ -161,6 +161,16 @@ broken observation; all 19 return `false`. This includes a reload that drops tab
 event cursor. The artifact records server-authored status lines throughout, and its explicit scope
 excludes the browser permission prompt, display capture, model inference, and a deployed host.
 
+Follow-up source/release repair, 2026-08-18: a deterministic flat-ingress replay first proved a
+separate stop-time latch — snapshot `since_version=153` returned `unchanged` while the server had
+closed at version 332, so `onTerminal` never ran. The poller now forces one uncursored reread after
+two unchanged rounds with neither cursor moving; a measured state-trace rejected one round for
+50% forced idle refreshes and three for an 8 s terminal bound. The exact replay requires
+`0 → 153 → 153 → 0`, observes `Session closed.`, and separately proves advancing events suppress
+the fallback. Source tests (16 files / 122 tests), typecheck, and the rebuilt bundle passed; see
+`evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`. This is a
+source/release regression repair, not a fresh attended-run certification.
+
 ## G7 — background tab · PASS
 
 Re-run 2026-08-16 on the repaired host — the first execution since Chrome could launch again.

@@ -366,6 +366,122 @@ describe("MOSS session poller", () => {
     expect(poller.running()).toBe(false);
   });
 
+  it("re-baselines a flat stale snapshot cursor so a post-stop terminal snapshot is observed", async () => {
+    const onTerminal = vi.fn();
+    let freshSnapshotRequests = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (!url.includes("/snapshot")) return jsonResponse({ events: [] });
+      if (url.endsWith("since_version=153")) {
+        // Capture has already stopped: neither ingress nor event delivery advances, but the
+        // server has completed the terminal transition behind this stale snapshot cursor.
+        return jsonResponse({
+          snapshot: null,
+          unchanged: true,
+          status_line: null,
+          v2_session: v2Session(294)
+        });
+      }
+      freshSnapshotRequests += 1;
+      return jsonResponse({
+        snapshot: {
+          session_id: "session-flat-stale-cursor",
+          descriptor: { sample_rate: 16_000 },
+          session: {
+            status: freshSnapshotRequests === 1 ? "closing" : "closed",
+            version: freshSnapshotRequests === 1 ? 153 : 332,
+            failure_reason: null,
+            label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: [] },
+            committed: [],
+            provisional: null
+          }
+        },
+        unchanged: false,
+        status_line: null,
+        v2_session: v2Session(294)
+      });
+    });
+    const poller = createMossSessionPoller({
+      sessionId: "session-flat-stale-cursor",
+      accessToken: "view-token",
+      fetch: fetcher as typeof fetch,
+      onTerminal
+    });
+
+    await poller.poll();
+    await poller.poll();
+    await poller.poll();
+    await poller.poll();
+
+    expect(fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/snapshot"))).toEqual([
+      "/api/live/sessions/session-flat-stale-cursor/snapshot?since_version=0",
+      "/api/live/sessions/session-flat-stale-cursor/snapshot?since_version=153",
+      "/api/live/sessions/session-flat-stale-cursor/snapshot?since_version=153",
+      "/api/live/sessions/session-flat-stale-cursor/snapshot?since_version=0"
+    ]);
+    expect(onTerminal).toHaveBeenCalledWith("Session closed.");
+    expect(freshSnapshotRequests).toBe(2);
+    expect(poller.running()).toBe(false);
+  });
+
+  it("does not re-baseline an unchanged snapshot while the event cursor advances", async () => {
+    let eventSequence = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/events")) {
+        eventSequence += 1;
+        return jsonResponse({
+          events: [{ seq: eventSequence, session_id: "session-event-progress", kind: "stop", payload: {} }]
+        });
+      }
+      if (url.endsWith("since_version=153")) {
+        return jsonResponse({
+          snapshot: null,
+          unchanged: true,
+          status_line: null,
+          v2_session: v2Session(294)
+        });
+      }
+      return jsonResponse({
+        snapshot: {
+          session_id: "session-event-progress",
+          descriptor: { sample_rate: 16_000 },
+          session: {
+            status: "closing",
+            version: 153,
+            failure_reason: null,
+            label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: [] },
+            committed: [],
+            provisional: null
+          }
+        },
+        unchanged: false,
+        status_line: null,
+        v2_session: v2Session(294)
+      });
+    });
+    const poller = createMossSessionPoller({
+      sessionId: "session-event-progress",
+      accessToken: "view-token",
+      fetch: fetcher as typeof fetch
+    });
+
+    await poller.poll();
+    await poller.poll();
+    await poller.poll();
+    await poller.poll();
+
+    expect(fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/snapshot"))).toEqual([
+      "/api/live/sessions/session-event-progress/snapshot?since_version=0",
+      "/api/live/sessions/session-event-progress/snapshot?since_version=153",
+      "/api/live/sessions/session-event-progress/snapshot?since_version=153",
+      "/api/live/sessions/session-event-progress/snapshot?since_version=153"
+    ]);
+    expect(poller.cursors()).toEqual({ snapshotVersion: 153, eventSequence: 4 });
+  });
+
   it("updates capture health when the transcript snapshot cursor is unchanged", async () => {
     const dispatched: WsEvent[] = [];
     let snapshotRequests = 0;
