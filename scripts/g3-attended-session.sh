@@ -27,11 +27,26 @@ TAILNET_IP="$(ifconfig 2>/dev/null | awk '/inet 100\./{print $2; exit}')"
 LAN_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
 
 echo "==> ensuring the SSH tunnel to the GPU host's vLLM"
-./scripts/moss-vllm-tunnel.sh >/dev/null 2>&1
-: "${MOSS_VLLM_BASE_URL:=http://127.0.0.1:${TUNNEL_PORT}/v1}"
+# Only assume the tunnel endpoint if the tunnel helper is actually present and starts. Defaulting
+# blind would make this script adopt whatever happens to be listening on the local port, which is
+# how a run can silently transcribe against something other than the GPU host.
+if [[ -x ./scripts/moss-vllm-tunnel.sh ]] && ./scripts/moss-vllm-tunnel.sh >/dev/null 2>&1; then
+  : "${MOSS_VLLM_BASE_URL:=http://127.0.0.1:${TUNNEL_PORT}/v1}"
+fi
+if [[ -z "${MOSS_VLLM_BASE_URL:-}" ]]; then
+  echo "    no model endpoint: MOSS_VLLM_BASE_URL is unset and the tunnel could not be started." >&2
+  echo "    Start it with ./scripts/moss-vllm-tunnel.sh and retry." >&2
+  exit 1
+fi
 export MOSS_VLLM_BASE_URL
 code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
-[[ "$code" == "200" ]] || { echo "    model endpoint returned '$code'. Run ./scripts/moss-vllm-tunnel.sh and retry."; exit 1; }
+[[ "$code" == "200" ]] || {
+  # stderr, and it must name the tunnel script: refusing here is what stops a silent fall back to
+  # the local HF runner, which is exactly how the first attended run died with an unexplained 409.
+  echo "    model endpoint returned '$code', expected 200." >&2
+  echo "    Start the tunnel with ./scripts/moss-vllm-tunnel.sh and retry." >&2
+  exit 1
+}
 echo "    OK - model reachable at ${MOSS_VLLM_BASE_URL}"
 
 [[ -f "$MANIFEST" ]] || { echo "FATAL: provider manifest missing at $MANIFEST"; exit 1; }
