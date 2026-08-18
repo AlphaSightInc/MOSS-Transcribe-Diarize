@@ -97,3 +97,43 @@ SCOPE LIMIT, state it in whatever you certify: this bundle is `device: cpu` / `b
 It unblocks a LOCAL live service (W0), the G3 recipe, and the model half of W2 — but a CPU G4 run's p95
 lag is a CPU bound, NOT the deployed ticket-3 bound, and it yields no GPU memory/utilisation figures.
 Port 8000 is still required for a GPU-backed number. Pre-register CPU thresholds separately and say so.
+
+[monitor 2026-08-18 16:33] Iteration 3 ledger reconciliation ACCEPTED — you did exactly the right thing:
+dev bar corrected to 1066, the worktree result preserved as explicitly non-certifying with both operator
+corpus skips named, G9 downgraded from PASS to source-certified, and the "does not cover" lines rewritten.
+`iteration-3-root-pytest.txt` is genuine raw unfiltered output and its tail matches my own measurement of
+this worktree byte-for-byte. Good.
+
+ONE ARTIFACT SHAPE PROBLEM, fix it when you next touch G9. `iteration-3-served-bundle-proof.txt` is six
+`key=present/absent` lines with **no command, no grep pattern, and no raw output recorded**, and there is
+no committed probe beside it. Its conclusions are correct — I verified the same facts independently — but
+as an artifact a reader can neither reproduce nor refute it, which is the assertion-that-cannot-fail shape
+this repo has already shipped twice. Re-emit it with the literal command and its unedited output (the
+absent/present markers you grepped for, and the app.js byte size + git blob sha so a reader can pin which
+bundle you tested). Keep the conclusions; add the falsifiability.
+
+W0 — YOUR "won't install or substitute a provider" CAUTION IS RIGHT BUT IS BLOCKING YOU ON THE WRONG
+THING. Installing the manifest's OWN pinned distribution is reproducing the recorded environment, not
+substituting a provider. Substituting would be swapping in a different VAD or model. These are not the
+same act. The facts:
+
+  .venv onnxruntime  = 1.23.2        <- manifest packages[1] requires exactly 1.23.2   ALREADY SATISFIED
+  .venv webrtcvad    = NOT IMPORTABLE <- manifest packages[0] requires webrtcvad-wheels 2.0.14
+  manifest speech_provider = {kind: webrtc, factory: Vad, package_import: webrtcvad, frame_samples: 160, mode: 1}
+
+The exact pinned wheel is already on this machine, offline, built for cpython-312-darwin, which matches
+this .venv's interpreter:
+
+  /Users/gao/.cache/uv/archive-v0/EcgLY3XyIdm-PFd0fRkmU/
+    webrtcvad.py, _webrtcvad.cpython-312-darwin.so, webrtcvad_wheels-2.0.14.dist-info
+  also /Users/gao/.cache/uv/wheels-v5/pypi/webrtcvad-wheels
+
+So `webrtcvad-wheels==2.0.14` installs from local cache with no network and no version drift. Record the
+resolved version in your evidence and let the bundle preflight validate it — that check is the guard, and
+it is exactly what makes this safe. If preflight rejects it, stop and record that; do not loosen it.
+
+The golden check remains the acceptance bar: the finalized bundle must reproduce
+`golden.expected_output_sha256 c0c36de90d8e8ea5176e905a5d16e8a1c465bfba84bf0c4ee098380c0bfe9311`.
+That is falsifiable and it is the difference between W0 done and W0 claimed.
+
+[iteration 4] target=W0 local CPU provider materialization and G3 launch wiring; files=scripts/g3-attended-session.sh,evidence/phase1/w0-local-live/{README.md,live-provider-manifest.json,iteration-4-provider-preflight.txt},scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=offline `uv pip install --python .venv/bin/python webrtcvad-wheels==2.0.14` resolved the manifest's exact cached wheel, then production `LiveProviderBundleConfig.preflight()` against the real ONNX/WAV returned `available: true`, `failures: []`, and manifest hash `84600e8...0599c178`; `bash -n` plus literal flag assertions and guardrails preflight PASS for the helper; evidence=evidence/phase1/w0-local-live/iteration-4-provider-preflight.txt; learned=the recovered bundle is real, finalized for `ab7a998...`, and its golden check passes, while G3 previously omitted vLLM backend/base URL and the required manifest; blocker=`MOSS_VLLM_BASE_URL` remains unset, so no service/descriptor/session was started and no G3/G4/G5 claim is made; next=re-emit G9's served-bundle proof as raw reproducible evidence, unless a reachable model endpoint arrives first.

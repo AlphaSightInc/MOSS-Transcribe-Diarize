@@ -1,0 +1,7 @@
+Iteration 4 committed: `98004ee`.
+
+- W0 real CPU bundle finalized; golden preflight `available: true`, zero failures.
+- G3 helper now passes manifest + vLLM endpoint correctly.
+- Blocked: `MOSS_VLLM_BASE_URL` unset; no live service/session claimed.
+- Next: repair G9 raw served-bundle evidence.
+
