@@ -180,7 +180,10 @@
       "frontend/src/App",
       "frontend/src/api/jobs",
       "frontend/src/components/FilePanel",
-      "ProjectResources/Frontend/"
+      "ProjectResources/Frontend/",
+      "frontend/src/api/jobs.test.ts",
+      "frontend/src/components/FilePanel.test.tsx",
+      "frontend/src/App.test.tsx"
     ],
     "reads": [
       "moss_transcribe_diarize/app/jobs.py",
@@ -199,7 +202,9 @@
       "frontend/src/lib/transcriptExport",
       "frontend/src/components/TranscriptPane",
       "frontend/src/styles/index.css",
-      "ProjectResources/Frontend/"
+      "ProjectResources/Frontend/",
+      "frontend/src/lib/transcriptExport.test.ts",
+      "frontend/src/components/TranscriptPane.test.tsx"
     ],
     "reads": [
       "frontend/src/lib/transcriptModel.ts",
@@ -218,7 +223,9 @@
       "frontend/src/lib/persistence",
       "frontend/src/state/session",
       "frontend/src/components/ControlPanel",
-      "moss_transcribe_diarize/app/live_auth.py"
+      "moss_transcribe_diarize/app/live_auth.py",
+      "frontend/src/lib/persistence.test.ts",
+      "frontend/src/components/ControlPanel.test.tsx"
     ],
     "reads": [
       "frontend/src/capture/captureClient.ts",
@@ -249,7 +256,9 @@
     "title": "Adversarial fixtures for the preflight guardrail, and a derived canonical queue-depth floor proved by a failing seam test first",
     "owns": [
       "scripts/afk-guardrails/",
-      "moss_transcribe_diarize/app/live_manifest_finalizer.py"
+      "moss_transcribe_diarize/app/live_manifest_finalizer.py",
+      "tests/test_afk_guardrails_preflight.py",
+      "prototypes/queue-capacity/"
     ],
     "reads": [
       "moss_transcribe_diarize/app/live_endpoint.py",
@@ -257,6 +266,23 @@
       "moss_transcribe_diarize/app/live_service_runtime.py"
     ],
     "prerequisites": [],
+    "blocked_by": []
+  },
+  "y6-browser-reload": {
+    "title": "Certify G6's reload path in a real browser",
+    "owns": [
+      "prototypes/browser-capture-feasibility/",
+      "evidence/phase1/y6-browser-reload/"
+    ],
+    "reads": [
+      "frontend/src/components/ControlPanel.tsx",
+      "frontend/src/lib/persistence.ts",
+      "moss_transcribe_diarize/app/live_auth.py",
+      "docs/adr/0004-browser-session-reattach.md"
+    ],
+    "prerequisites": [
+      "capture_harness"
+    ],
     "blocked_by": []
   }
 }

@@ -21,6 +21,7 @@ case "$TICKET" in
   y3-session-reattach)    WT=4 ;;
   y4-concurrency-cert)    WT=3 ;;
   y5-guardrail-and-floor) WT=5 ;;
+  y6-browser-reload)      WT=6 ;;
   *) echo "unknown ticket: $TICKET" >&2; exit 1 ;;
 esac
 
