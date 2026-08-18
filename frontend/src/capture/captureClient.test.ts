@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   CaptureClient,
+  type CaptureDescriptor,
   type CaptureLane,
   type PreSessionCaptureFailure,
   V2_FRAME_KEYS,
@@ -34,7 +35,7 @@ type TestLaneState = {
 
 type ActiveClient = {
   context: AudioContext | null;
-  descriptor: { sampleRate: number; frameSamples: number } | null;
+  descriptor: CaptureDescriptor | null;
   session: { id: string; viewToken: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<string, TestLaneState>;
@@ -67,12 +68,22 @@ function testLaneState(): TestLaneState {
   };
 }
 
-function activeFrameClient(): { client: ActiveClient; lane: TestLaneState } {
-  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+function activeFrameClient(
+  onTransportError?: (route: "frame" | "heartbeat", error: Error) => void,
+): { client: ActiveClient; lane: TestLaneState } {
+  const client = new CaptureClient({
+    captureBearer: "capture-token",
+    helperVersion: "test",
+    onTransportError,
+  });
   const active = client as unknown as ActiveClient;
   const lane = testLaneState();
   active.context = { sampleRate: 4 } as AudioContext;
-  active.descriptor = { sampleRate: 4, frameSamples: 2 };
+  active.descriptor = {
+    sampleRate: 4,
+    frameSamples: 2,
+    preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy },
+  };
   active.session = { id: "session", viewToken: "view-only" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   active.lanes.set("microphone", lane);
@@ -204,6 +215,9 @@ function deliverSamples(
 const fullScale = () => new Float32Array([1, -1]);
 const clean = () => new Float32Array([0.5, -0.5]);
 const silent = () => new Float32Array([0, 0]);
+const silentMicrophoneRemedy =
+  "No microphone sound was detected. In Chrome, open Settings > Privacy and security > " +
+  "Site settings > Microphone and select the correct default input.";
 
 function heartbeatBodies(fetchSpy: ReturnType<typeof vi.fn>): Array<Record<string, any>> {
   return fetchSpy.mock.calls
@@ -223,7 +237,9 @@ describe("browser capture frame contract", () => {
         frame_samples: 4,
         bounds: { max_frame_samples: 8 },
       },
+      preflight_status_lines: { browser_microphone_silent: silentMicrophoneRemedy },
     });
+    expect(descriptor.preflightStatusLines.microphoneSilent).toBe(silentMicrophoneRemedy);
     const frame = makeV2Frame(
       "system",
       9,
@@ -260,6 +276,7 @@ describe("browser capture frame contract", () => {
         frame_samples: 4,
         bounds: { max_frame_samples: 4 },
       },
+      preflight_status_lines: { browser_microphone_silent: silentMicrophoneRemedy },
     });
 
     expect(() =>
@@ -508,6 +525,7 @@ describe("browser capture frame contract", () => {
           frame_samples: 2,
           bounds: { max_frame_samples: 2 },
         },
+        preflight_status_lines: { browser_microphone_silent: silentMicrophoneRemedy },
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
@@ -825,6 +843,29 @@ describe("browser capture frame contract", () => {
     expect(lane.frameQueue).toHaveLength(0);
   });
 
+  it("reports the server-authored terminal 409 line instead of a bare HTTP status", async () => {
+    const onTransportError = vi.fn();
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        detail: "canonical decode failed: OSError: decoder device became unavailable",
+        failure: { code: "canonical_decode_failed" },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient(onTransportError);
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+
+    expect(client.session).toBeNull();
+    expect(onTransportError).toHaveBeenCalledWith(
+      "frame",
+      expect.objectContaining({ message: "canonical decode failed: OSError: decoder device became unavailable" }),
+    );
+  });
+
   it("stops local capture on a frame that can never fit the server queue", async () => {
     const fetchSpy = vi.fn().mockResolvedValueOnce({
       ok: false,
@@ -952,6 +993,36 @@ describe("browser capture frame contract", () => {
       state: "capturing",
       failure_code: null,
     });
+  });
+
+  it("reports the server-authored silent-microphone remedy during preflight and refuses session creation", async () => {
+    const onPreflightStatus = vi.fn<(statusLine: string) => void>();
+    const client = new CaptureClient({
+      captureBearer: "capture-token",
+      helperVersion: "test",
+      onPreflightStatus,
+    });
+    const active = client as unknown as ActiveClient;
+    active.context = { sampleRate: 4 } as AudioContext;
+    active.descriptor = {
+      sampleRate: 4,
+      frameSamples: 2,
+      preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy },
+    };
+    active.session = null;
+    active.lanes.set("microphone", testLaneState());
+    active.lanes.set("system", testLaneState());
+
+    for (let index = 0; index < 20; index += 1) {
+      active.onWorkletFrame("microphone", {
+        type: "frame",
+        lane: "microphone",
+        samples: silent(),
+        startFrame: index * 2,
+      });
+    }
+    await vi.waitFor(() => expect(onPreflightStatus).toHaveBeenCalledWith(silentMicrophoneRemedy));
+    await expect(client.createSession()).rejects.toThrow(silentMicrophoneRemedy);
   });
 
   it("never reports a metered condition as `failed`, which would seal the lane server-side", async () => {

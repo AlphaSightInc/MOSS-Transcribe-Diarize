@@ -9,6 +9,7 @@ type PhaseOneMode = "live" | "file";
 
 export function App() {
   const [mode, setMode] = useState<PhaseOneMode>("live");
+  const [captureBearer, setCaptureBearer] = useState("");
 
   const modeLabel = mode === "live" ? "Live" : "File";
   const status = sessionStatus.value;
@@ -68,9 +69,12 @@ export function App() {
             </section>
 
             {mode === "live" ? (
-              <ControlPanel />
+              <ControlPanel
+                captureBearer={captureBearer}
+                onCaptureBearerChange={setCaptureBearer}
+              />
             ) : (
-              <FilePanel />
+              <FilePanel captureBearer={captureBearer} />
             )}
           </div>
         </aside>

@@ -1,0 +1,48 @@
+# W0 local HF live-service proof — 2026-08-18
+
+Question: can the committed G3 helper start this worktree's real provider-backed service
+locally over TLS when no vLLM endpoint is configured, expose its local descriptor, and
+create an authenticated session?
+
+The commands below ran from this worktree. The helper generated a random bearer in its
+ignored private state directory; it is deliberately redacted here under charter §1 and
+never written to browser storage or this repository.
+
+```console
+$ env MOSS_HF_MODEL=/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8 MOSS_LIVE_PROVIDER_MANIFEST=/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json MOSS_LIVE_HELPER_LEASE_SECONDS=30 ./scripts/g3-attended-session.sh
+==> using local HF model: /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8
+
+============================================================
+  OPEN THIS:      https://localhost:7861/
+  CAPTURE BEARER: [redacted: generated private shared token]
+  PLAY THIS in the shared tab:
+     evidence/phase1/g3-attended/two-speaker-fixture-90s.wav
+============================================================
+
+INFO:     Started server process [83611]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on https://127.0.0.1:7861 (Press CTRL+C to quit)
+
+$ curl -sSk --fail https://127.0.0.1:7861/api/live/descriptor
+{"descriptor":{"source_revision":"e1741f904fee942a5eef34e0d40a4d4f848b363d","provider_name":"moss-rtx-webrtc-wespeaker","provider_revision":"webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112","provider_manifest_hash":"42ba2567b0c9390b34849811bf821893efdb25bbd82801dfa937f0492029db62","config_hashes":{"endpoint_config_hash":"9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222","identity_config_hash":"4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89","decoder_config_hash":"20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c","combined_config_hash":"431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"},"bounds":{"max_frame_samples":16000,"max_queue_depth":16,"max_retained_samples":960000,"max_identity_speakers":16,"max_events":1000,"hard_cap_samples":40000,"stop_drain_deadline_seconds":5.0},"schema_version":1,"live_protocol_version":"moss-live-service.v1","live_protocol":{"protocol":"moss-live-service.v2","min_protocol_version":2,"max_protocol_version":2,"capabilities":{"lanes":true,"binary":false,"idempotent_frames":true,"resumable":true}},"sample_rate":16000,"frame_samples":8000,"feature_enabled":true}}
+
+$ MOSS_G3_TOKEN="$(< /Users/gao/.local/share/moss-transcribe-diarize/g3/shared-token)"
+$ curl -sSk --fail-with-body -X POST -H "Authorization: Bearer $MOSS_G3_TOKEN" -H 'Content-Type: application/json' --data '{"echo_mode":"headphones"}' https://127.0.0.1:7861/api/live/sessions | .venv/bin/python -c 'import json, sys; payload=json.load(sys.stdin); snapshot=payload["snapshot"]; descriptor=payload["descriptor"]; assert payload["id"] and payload["view_token"]; assert descriptor["frame_samples"] == 8000; assert snapshot["session"]["status"] == "active"; print({"session_created": True, "session_id": payload["id"], "view_token_present": True, "session_status": snapshot["session"]["status"], "frame_samples": descriptor["frame_samples"]})'
+{'session_created': True, 'session_id': '122a2b6c95b84710b5a654e2e3e337d4', 'view_token_present': True, 'session_status': 'active', 'frame_samples': 8000}
+
+$ curl -sSk --fail-with-body -X POST -H "Authorization: Bearer $MOSS_G3_TOKEN" https://127.0.0.1:7861/api/live/sessions/122a2b6c95b84710b5a654e2e3e337d4/abort | .venv/bin/python -c 'import json, sys; payload=json.load(sys.stdin); snapshot=payload["snapshot"]; assert snapshot["session"]["status"] == "aborted"; print({"session_aborted": True, "session_status": snapshot["session"]["status"]})'
+{'session_aborted': True, 'session_status': 'aborted'}
+
+INFO:     127.0.0.1:57436 - "GET /api/live/descriptor HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57484 - "POST /api/live/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57498 - "POST /api/live/sessions/122a2b6c95b84710b5a654e2e3e337d4/abort HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Application shutdown complete.
+```
+
+Verdict: PASS for W0's local launch bar. The service listened only on `127.0.0.1:7861`,
+served TLS, exposed the local descriptor, and accepted then cleanly aborted one bearer-authorized
+session. No inference was requested in this startup/session check. The model runner is local HF
+on CPU, and this artifact does not prove attended display capture (G3), GPU latency/memory,
+the G4 ten-minute concurrency bound, or the G5 overload/reconnect bar.

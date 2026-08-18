@@ -1,0 +1,7 @@
+Iteration 5 committed: `a13c52c ralph: iteration 5 - audit served bundle`.
+
+- G9 audit now reproducible: [verifier](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/scripts/afk5-phase1-completion/verify_g9_served_bundle.py) + raw [evidence](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt).
+- Validation: 12/12 assertions PASS; bundle pinned at 77,166 bytes / blob `8121e270…`; guardrails PASS.
+- G9 remains source-only; served bundle release ownership still blocks W1/W5.
+- Preserved monitor-added, uncommitted W0/HF follow-up notes for next iteration.
+

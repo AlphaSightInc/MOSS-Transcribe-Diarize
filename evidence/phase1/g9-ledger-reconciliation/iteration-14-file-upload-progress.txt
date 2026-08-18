@@ -1,0 +1,18 @@
+Iteration 14 — Issue #8 criterion 4: file-upload byte progress and no-resume limit
+
+Implementation proof:
+- `submitJob` uses native multipart XMLHttpRequest with `upload.onprogress` and preserves the shared bearer.
+- FilePanel shows `Uploading file: <loaded> / <total> bytes.`, drives the existing progress bar, and states
+  `Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.`
+- Poll failures now say they occur while checking transcription, rather than implying an upload resume.
+
+Validation executed 2026-08-18:
+- `/opt/homebrew/bin/npm --prefix frontend run typecheck` => PASS.
+- `/opt/homebrew/bin/npm --prefix frontend test -- --run src/api/jobs.test.ts src/components/FilePanel.test.tsx src/App.test.tsx` => 3 files, 11 tests PASS.
+- `/opt/homebrew/bin/npm --prefix frontend test -- --run && /opt/homebrew/bin/npm --prefix frontend run build` => 16 files, 118 tests PASS; production bundle built (79,582 bytes).
+- `.venv/bin/python scripts/afk5-phase1-completion/verify_g9_served_bundle.py` => OVERALL=PASS; 16 assertions, including HEAD pin, XHR, byte-progress, bearer, and no-resume copy.
+- `scripts/afk-guardrails/preflight.py afk5-phase1-completion` => PREFLIGHT OK.
+
+Limits:
+- This is source and exact-served-artifact evidence, not a fresh real-media browser upload or a real-model transcription run.
+- Issue #8 criterion 2 still needs the operator's lifecycle-vocabulary ruling.

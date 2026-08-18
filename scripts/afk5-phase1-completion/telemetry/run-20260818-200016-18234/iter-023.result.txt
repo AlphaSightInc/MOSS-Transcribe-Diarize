@@ -1,0 +1,6 @@
+Iteration 23 committed: `6f06356`.
+
+Frozen tunnel-backed W2 contract: [contract](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/concurrency/remote_vllm_tunnel_preregistration.json:1), [validator](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py:1).
+
+Validated: contract SHA `53de815d…c857504`, compile, diff check, and AFK preflight all pass. No G4/G5 claim; next is runner implementation. Only remaining dirty file is launcher telemetry, untouched.
+

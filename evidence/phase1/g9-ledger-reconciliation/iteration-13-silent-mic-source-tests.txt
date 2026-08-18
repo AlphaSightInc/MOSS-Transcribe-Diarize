@@ -1,0 +1,16 @@
+Iteration 13 — silent-microphone preflight remedy
+
+Validation command:
+  /opt/homebrew/bin/npm --prefix frontend run typecheck
+  /opt/homebrew/bin/npm --prefix frontend test -- --run
+
+Result:
+  typecheck: PASS
+  Test Files  16 passed (16)
+  Tests  117 passed (117)
+
+Scope:
+  This source-suite run includes the focused capture-client assertion that sustained pre-session
+  microphone silence emits the descriptor-supplied server wording and refuses session creation, plus
+  the ControlPanel assertion that the preflight status line is rendered. It is source evidence; the
+  generated bundle is release-verified separately by verify_g9_served_bundle.py after commit.

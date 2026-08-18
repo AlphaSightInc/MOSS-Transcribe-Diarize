@@ -1,0 +1,7 @@
+Iteration 3 committed: `a0df595`.
+
+- G9 now correctly marked source-certified only; served bundle remains legacy.
+- G10 restored to certified dev bar: `2 failed / 1066 passed / 2 skipped / 396 subtests`.
+- Local raw evidence: pytest `1/1065/4/488`; frontend `115/115`; preflight passes.
+- W0 is now next: recovered real CPU provider bundle enables manifest finalization. Launcher telemetry remains uncommitted.
+

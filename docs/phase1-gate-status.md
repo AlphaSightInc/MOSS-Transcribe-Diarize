@@ -3,18 +3,22 @@
 Single rollup of the ten acceptance gates ruled in `docs/phase1-afk-charter.md` §6.
 **This file, not the handoff chain, is the answer to "what is done."**
 
-Measured 2026-08-17 on the current `dev` working tree, post-reboot, host validated.
+Reconciled 2026-08-18. The certified `dev` baseline and this loop worktree are
+kept separate below: the latter lacks two operator-owned real corpora, so it
+cannot silently replace the former.
 Every row cites a raw artifact and states what that artifact does **not** cover — charter §3
 requires it, and nothing else in this repo enforces it at gate level.
 
-## Baseline (supersedes every earlier number)
+## Certified `dev` baseline
 
 ```
 .venv/bin/python -m pytest -q
-2 failed, 1065 passed, 2 skipped, 4 warnings, 396 subtests passed in 107.70s
+2 failed, 1066 passed, 2 skipped, 4 warnings, 396 subtests passed
 ```
 
-Frontend: typecheck clean · production build clean · vitest 108/108 · 16 files.
+The current source-suite result in this loop worktree is **16 files / 117 tests**;
+its captured output is `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`.
+This is source coverage, not evidence that the generated browser bundle was released.
 
 The pre-reboot `6 failed` reading is **retired**. The four `test_macos_uds_tracer` failures were
 environmental — they tracked the wedged trust subsystem (`codesign` → `CSSMERR_TP_NOT_TRUSTED`,
@@ -28,7 +32,14 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | `l15/test_l1_baseline.py::test_a2_instrument_is_hash_pinned_and_production_bound` | The pin correctly refuses L1.5 measurement when the product tree has moved. Fixing it would disarm the guard. |
 | `l2-stage0/test_legacy_ingest.py::test_all_92_archived_units_render_into_parseable_preparations` | The 92-unit corpus is untracked, so the count varies per worktree. Environmental, not a defect. |
 
-**No-regression bar (G10) is now `2 failed / 1065 passed / 396 subtests`.**
+**No-regression bar (G10) remains `2 failed / 1066 passed / 2 skipped / 396 subtests`.**
+
+The local loop result is separately preserved at
+`evidence/phase1/g10-ledger-reconciliation/iteration-3-root-pytest.txt`:
+`1 failed / 1065 passed / 4 skipped / 488 subtests`. It is not a new bar or a
+G10 recertification. Here the untracked 92-unit l2 corpus is valid (so its 92
+subtests run) while two operator-owned real-corpus tests skip; the only failure
+is the protected l15 product-tree pin.
 
 ## Gate rollup
 
@@ -42,8 +53,8 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | G6 failure paths | ✅ **PASS** | `y6-browser-reload/iteration-6-assertion-falsification.json` — six paths covered; real local Chrome reload/terminal flow certified |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
-| G9 modes | 🟡 **FUNCTIONAL, criteria unmet** | both modes work in the one UI, but issue #8's bearer requirement and #9's in-file provisional caveat are unimplemented — see y7 |
-| G10 no regression | ✅ **PASS** | fresh baseline above; only the two declared permanent failures remain |
+| G9 modes | 🟡 **SOURCE-CERTIFIED, served release verified** | source tests 117/117; iteration 12's HEAD-pinned verifier proves the served bundle carries the bearer and session-timestamp export contracts |
+| G10 no regression | ✅ **PASS (certified `dev` baseline)** | `2 failed / 1066 passed / 2 skipped / 396 subtests`; the local worktree result is explicitly non-certifying above |
 
 ---
 
@@ -77,6 +88,11 @@ G2 must state it does not prove G3.
 Deferred to charter §7 by ruling. Charter §1 forbids automating the display chooser: the standard
 requires a fresh user gesture per capture and permits no persistent grant; the 2026-08-03 CDP-flag
 attempt failed with `NotReadableError`. **Do not retry it.**
+
+The local service prerequisite is ready: `w0-local-live/iteration-6-local-hf-launch.txt` proves
+`scripts/g3-attended-session.sh` started TLS on `127.0.0.1:7861`, returned the local descriptor,
+and accepted a shared-bearer session using the real local provider bundle and cached HF model. Its
+decode path is CPU/HF; it does not substitute for the attended run or a GPU performance result.
 
 ~10 minutes attended. It is the only artifact that demonstrates the product as a product.
 
@@ -144,6 +160,16 @@ The fresh local Chrome run passes all 19 G6 assertions, then reruns each predica
 broken observation; all 19 return `false`. This includes a reload that drops tab storage and a stale
 event cursor. The artifact records server-authored status lines throughout, and its explicit scope
 excludes the browser permission prompt, display capture, model inference, and a deployed host.
+
+Follow-up source/release repair, 2026-08-18: a deterministic flat-ingress replay first proved a
+separate stop-time latch — snapshot `since_version=153` returned `unchanged` while the server had
+closed at version 332, so `onTerminal` never ran. The poller now forces one uncursored reread after
+two unchanged rounds with neither cursor moving; a measured state-trace rejected one round for
+50% forced idle refreshes and three for an 8 s terminal bound. The exact replay requires
+`0 → 153 → 153 → 0`, observes `Session closed.`, and separately proves advancing events suppress
+the fallback. Source tests (16 files / 122 tests), typecheck, and the rebuilt bundle passed; see
+`evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`. This is a
+source/release regression repair, not a fresh attended-run certification.
 
 ## G7 — background tab · PASS
 
@@ -252,37 +278,59 @@ genuine solid block.
 number, is what makes it defensible — and because the first plausible-sounding explanation for it
 was wrong.
 
-## G9 — modes · PASS
+## G9 — modes · SOURCE-CERTIFIED, served release verified
 
 Bar: *"Live mode and file mode both work through the one UI."*
 
-File mode now submits multipart media to `/api/jobs`, polls the certified job endpoint, fetches final
-segments, and projects them through the same session/transcript event seam as live mode. Generation
-cancellation prevents stale responses after unmount or mode switch; terminal segments dispatch
-before the closed state. The mode control locks while a live/file session is active or closing.
+The tracked source submits multipart media to `/api/jobs`, polls the certified job endpoint, fetches
+final segments, and projects them through the same session/transcript event seam as live mode.
+Generation cancellation prevents stale responses after unmount or mode switch; terminal segments
+dispatch before the closed state. The mode control locks while a live/file session is active or closing.
 
-Transcript export serializes the rendered turn model to Markdown, plain text, or versioned JSON and
-downloads through a browser Blob URL. The compact export menu preserves G8 geometry.
+The tracked source also holds the bearer in `App` memory for both panels and supplies it to every file
+job request. It serializes transcript export to Markdown, plain text, or versioned JSON and names each
+download `transcript-<session_id>-<iso8601>.<ext>` from the live session at click time. The compact
+export menu preserves G8 geometry. Iteration 12 rebuilt and committed that source as the served bundle;
+the release verifier requires the legacy upload/static-name signatures to be absent, bearer propagation
+to be present, and the minified bundle to dynamically interpolate both session ID and ISO-8601 time.
+
+### File upload remains editable in `/studio`
+
+No bridge was added. `FilePanel` posts to the existing `/api/jobs` pipeline; its `JobManager` writes each
+job under the server's configured `runs_dir/<job-id>`. The legacy `/studio` page lists those same jobs via
+`GET /api/jobs` and reads/updates their existing job and segment routes, so the uploaded file is already
+available for subtitle editing and burn-in there. This is the ruled T-07 design, not a second file store.
+`tests/test_app_api.py` covers create/list/segment-edit/download against one `runs_dir`, and its `/studio`
+route check establishes the page remains served. It does not establish a fresh browser hop or a real-model
+upload; no such bridge or new evidence claim is made.
 
 Evidence:
 
-- `frontend/src/api/jobs.test.ts`: multipart request, terminal ordering, stale-generation cancellation.
-- `frontend/src/components/FilePanel.test.tsx`: select -> submit -> poll -> segment render integration.
-- `frontend/src/lib/transcriptExport.test.ts` and `TranscriptPane.test.tsx`: turn formatting and UI.
-- Full frontend result: **108/108**, typecheck clean, production build clean.
+- `evidence/phase1/g9-ledger-reconciliation/iteration-13-silent-mic-source-tests.txt`: current full source
+  suite, **16 files / 117 tests**, including the silent-mic preflight remedy coverage.
+- `evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt`: retained stale-artifact
+  proof. It pins the prior 77,166-byte bundle and explains why a source-only result could not close G9.
+- `scripts/afk5-phase1-completion/verify_g9_served_bundle.py`: release gate. It pins the served `app.js`
+  to `HEAD`, rejects the legacy upload and three static export names, requires `bearerToken`, and matches
+  dynamic session/timestamp filename interpolation despite minifier-local variable renaming.
 
-**Does not cover:** a fresh large real-media upload against a deployed model runtime; that runtime is
-currently unavailable under the same blocker as G4/G5.
+**Does not cover:** a fresh large real-media browser upload against a deployed model runtime, attended
+capture, or G4/G5 performance. The release only establishes that the exact committed browser artifact
+contains the source-certified file-mode and export contracts.
 
-## G10 — no regression · PASS
+## G10 — no regression · PASS on certified `dev` baseline
 
-| | `dev` @ `f6353eb` | current working tree 2026-08-17 |
+| | `dev` @ `f6353eb` | certified `dev` 2026-08-18 |
 |---|---|---|
 | failed | 6 (4 environmental) | **2** |
-| passed | 1006 | **1065** (+59 net) |
+| passed | 1006 | **1066** (+60 net) |
 | subtests | 387 | **396** (+9) |
 
-Frontend: **108/108**, 16 files; typecheck and production build pass.
+The loop worktree's raw result is deliberately not substituted into that table:
+`iteration-3-root-pytest.txt` has one l15-pin failure, the valid local l2 corpus adds 92 subtests,
+and two real-corpus tests skip because their operator-owned data is absent. It therefore supports the
+environment explanation, but not a local G10 recertification. The current frontend source suite is
+**117/117**; its generated bundle remains outside this iteration's ownership.
 
 ---
 
@@ -314,8 +362,9 @@ outside users against the OpenMOSS model, several in Chinese. **Those are not th
 backlog.** An independent review on 2026-08-16 made exactly this mistake and recommended a whole
 workstream from it. Always pass `--repo aiSight-us/MOSS-Transcribe-Diarize`.
 
-Issues 8 and 9 now have implementation and local certification, but all nine tracker items remain
-open until the orchestrator posts evidence and closes them under charter §1.
+Issues 8 and 9 have source implementation and local coverage, but their behavior is not in the served
+bundle; all nine tracker items remain open until the orchestrator posts evidence and closes them under
+charter §1.
 
 ## Deviations from the charter, accepted rather than defects
 

@@ -1,0 +1,73 @@
+{
+  "active_sessions": {},
+  "captured_head_revision": "acfaea79f3768dd275f39d0d21c579e5c40b7162",
+  "contract_sha256": "53de815d3a9b0e37b5f1c4845886977e61e3c9ca5bd1d7bd07a3b0ab7c857504",
+  "deployed_descriptor": {
+    "bounds": {
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "stop_drain_deadline_seconds": 5.0
+    },
+    "config_hashes": {
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+    },
+    "feature_enabled": true,
+    "frame_samples": 8000,
+    "live_protocol": {
+      "capabilities": {
+        "binary": false,
+        "idempotent_frames": true,
+        "lanes": true,
+        "resumable": true
+      },
+      "max_protocol_version": 2,
+      "min_protocol_version": 2,
+      "protocol": "moss-live-service.v2"
+    },
+    "live_protocol_version": "moss-live-service.v1",
+    "provider_manifest_hash": "92986060f632bc671024ca6a909b5be08f5b1475493ce08fc9dd027499d2bfc3",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000,
+    "schema_version": 1,
+    "source_revision": "fb83ba5ee60c44688e2580a398bfa388dcf5e67a"
+  },
+  "endpoint_probe_errors": {},
+  "endpoint_probes": {
+    "before": {
+      "base_url": "http://127.0.0.1:18000/v1",
+      "health_status": 200,
+      "health_url": "http://127.0.0.1:18000/health",
+      "model_ids": [
+        "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+      ],
+      "models_canonical_json_sha256": "8467698af53b5bd18ea0f2a3a3f183211b10529d3bfcde375b9b3771046ec2e7",
+      "models_status": 200,
+      "models_url": "http://127.0.0.1:18000/v1/models",
+      "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    }
+  },
+  "error": null,
+  "fixture_manifest_sha256": "8e5eed2421482ab626e322a6242eb5ab57b43a091034bfc61bab7aef8d869155",
+  "fixture_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+  "head_revision": "acfaea79f3768dd275f39d0d21c579e5c40b7162",
+  "heartbeat_outcomes": {},
+  "latency_label": "loopback production routes with remote vLLM over the SSH tunnel and tailnet; transcript lag includes network transit",
+  "local_descriptor": null,
+  "phases": [],
+  "required_negative_statement": "This remote-vLLM tunnel result does not measure isolated-GPU latency, GPU memory or utilisation, GPU OOM/errors, or vLLM active/queued request counts.",
+  "run_owned_manifest": "evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/live-provider-manifest.json",
+  "run_owned_manifest_sha256": null,
+  "schema": "moss-remote-vllm-tunnel-concurrency-measurement.v1",
+  "started_wall_ns": 1787096532937914000,
+  "terminal": "preflight",
+  "updated_wall_ns": 1787096533007297000,
+  "warm_idle_process_tree_rss_bytes": null
+}

@@ -1,0 +1,8 @@
+Committed `93996ed` — remote vLLM route seam.
+
+Live probe: models/session/20 frames/canonical/stop all 200. Still non-qualifying: manifest stale vs HEAD; no GPU telemetry.
+
+Validation: focused tests 2 passed; compile + AFK preflight passed. Only loop telemetry remains dirty.
+
+Next: freeze hash-pinned tunnel W2 matrix contract, run-owned manifest, then runner.
+

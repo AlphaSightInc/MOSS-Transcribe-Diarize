@@ -1,0 +1,41 @@
+W2 CPU/HF-local concurrency preregistration — iteration 8
+
+Question
+========
+At the descriptor geometry, can one locally started CPU/HF live service sustain the
+two-to-four-session bound for ten minutes while preserving fair service, per-session v2
+backpressure, and text isolation through overload and observer reconnect?
+
+This is preregistration evidence only. No screening, soak, overload, reconnect, model inference,
+or GPU measurement was run in this iteration.
+
+Validation command
+==================
+python3 prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py && python3 -m py_compile prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py && git diff --check && python3 scripts/afk-guardrails/preflight.py afk5-phase1-completion
+
+Observed result
+===============
+The validator printed the complete frozen state from
+`prototypes/streaming-diarization/concurrency/cpu_hf_local_preregistration.json` and returned:
+
+sha256=2a57363445099a417c425754e138b2944131f44b6594684d06f922ebf85b1eba
+PASS: CPU/HF-local concurrency gates and measurement contract are frozen before measurement
+PREFLIGHT OK [afk5-phase1-completion] prerequisites present, ownership clean, no banned patterns
+
+Frozen decision
+===============
+- Runtime: one local FastAPI process, real MOSS decoder, explicit local Hugging Face model, real
+  human speech at 0.5-second wall-clock cadence, descriptor-derived geometry only.
+- Candidate normal-session counts: 2 and 4; screen each for 120 seconds, then soak only the largest
+  passing count for 600 seconds.
+- Gates: maximum session p95 transcript lag 10.0 seconds (linear Type-7), maximum local process-tree
+  RSS growth 4 GiB from warm idle, zero OOM/accelerator errors, maximum fair-dispatch skew 1.
+- Overload: one v2 429 must leave the saturated session non-terminal and unconsumed, allow its peer,
+  then accept the retried frame once capacity is available.
+- Integrity: distinct speech markers must remain isolated through overload and one cursor-based
+  observer reconnect per session. The subsequent runner must retain all declared raw arrays.
+
+Required limit
+==============
+Any measured latency is labelled "CPU HF local decode, not the deployed GPU bound". This profile
+cannot establish deployed GPU p95 latency, GPU memory, or GPU utilisation.

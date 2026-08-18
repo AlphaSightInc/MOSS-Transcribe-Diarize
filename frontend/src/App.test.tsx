@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
 const currentSourceRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -77,6 +77,48 @@ describe("App shell", () => {
     expect(root.querySelector('input[type="file"]')).not.toBeNull();
   });
 
+  it("retains the in-memory bearer when switching from Live to File", async () => {
+    const upload = fakeUploadRequest({ id: "job-9", status: "queued", progress: 0, error: null });
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(response({ id: "job-9", status: "waiting_review", progress: 1, error: null }))
+      .mockResolvedValueOnce(response({ segments: [] }));
+    vi.stubGlobal("fetch", fetcher);
+    vi.stubGlobal("XMLHttpRequest", vi.fn(function FakeXmlHttpRequest() { return upload; }));
+    const root = document.createElement("div");
+    document.body.append(root);
+    render(<App />, root);
+
+    const bearer = root.querySelector<HTMLInputElement>('[aria-label="Capture bearer"]');
+    if (!bearer) throw new Error("capture bearer missing");
+    bearer.value = "shared-bearer";
+    act(() => {
+      bearer.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    const fileTab = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+      .find((tab) => tab.textContent === "File");
+    if (!fileTab) throw new Error("file tab missing");
+    act(() => {
+      fileTab.click();
+    });
+
+    const input = root.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("file input missing");
+    Object.defineProperty(input, "files", { value: [new File(["audio"], "sample.wav")] });
+    act(() => {
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const start = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Start transcription");
+    if (!start) throw new Error("start button missing");
+    await act(async () => { start.click(); });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer shared-bearer");
+    expect(upload.setRequestHeader).toHaveBeenCalledWith("Authorization", "Bearer shared-bearer");
+  });
+
   it("records source-tree counts and rendered collapsed-rail evidence", async () => {
     const root = document.createElement("div");
     document.body.append(root);
@@ -107,3 +149,23 @@ describe("App shell", () => {
     console.info("REFERENCE_UI_RENDERED_RAIL", JSON.stringify(railEvidence));
   });
 });
+
+function response(payload: unknown, status = 200): Response {
+  return { ok: status >= 200 && status < 300, status, json: async () => payload } as Response;
+}
+
+function fakeUploadRequest(payload: unknown) {
+  const request = {
+    status: 200,
+    responseText: JSON.stringify(payload),
+    open: vi.fn(),
+    send: vi.fn(),
+    setRequestHeader: vi.fn(),
+    upload: { onprogress: null as ((event: ProgressEvent<EventTarget>) => void) | null },
+    onload: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    onabort: null as (() => void) | null
+  };
+  request.send.mockImplementation(() => request.onload?.());
+  return request;
+}

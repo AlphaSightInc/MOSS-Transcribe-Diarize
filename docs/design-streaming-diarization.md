@@ -294,6 +294,19 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   evidentiary value. Family-verdict evidence-manifest SHA-256:
   `03bc9919c539c1fd4cc012333e6abcd85450bdbcee8e955f1986fdd75f19e942`.
 
+- **Mixer lane-level experiment — no policy selected (2026-08-18).** A preregistered,
+  committed-before-run experiment drove the real 59.584 s aligned Core Audio Tap and room-mic
+  capture through the production `LiveCompatibilityMixer` and the live vLLM endpoint. System
+  RMS was -19.577 dBFS versus microphone -34.954 dBFS (15.377 dB disparity). The current
+  fixed-headroom mix scored 0.28324 word error rate / 42 missing words against the quiet-lane
+  reference. A derived peer-RMS match (5.87275×, not hand-tuned) scored 0.31792 / 48 and clipped
+  one input sample; neither arm reached the output limiter. It therefore fails the frozen
+  5 pp WER-improvement and missing-word rules. Both lane references describe the same playback,
+  so the one-capture result cannot attribute recovered text to a lane or define a general warning
+  threshold. No normalisation, AGC, or fixed-offset production change is authorized. Raw result:
+  `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`; preregistration:
+  `prototypes/streaming-diarization/lane-level-preregistration-v2.json`.
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

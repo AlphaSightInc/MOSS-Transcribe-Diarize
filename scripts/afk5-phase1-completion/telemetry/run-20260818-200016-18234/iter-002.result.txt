@@ -1,0 +1,6 @@
+Committed `2a7a534`.
+
+W5: exports now use `transcript-<session_id>-<iso8601>.<ext>`; session-less export disabled. Focused 8/8, typecheck, preflight pass.
+
+Blocked: served frontend bundle ownership. Next: W4 ledger reconciliation. Launch telemetry remains untracked.
+

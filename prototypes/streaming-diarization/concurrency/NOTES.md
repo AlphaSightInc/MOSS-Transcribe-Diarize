@@ -1,5 +1,154 @@
 # Concurrency prototype notes
 
+## Remote-vLLM tunnel matrix contract — 2026-08-18
+
+**VERDICT: FROZEN before measurement; no W2, G4, or G5 result yet.**
+
+Question: can the local production live routes use the already-proven read-only remote-vLLM seam
+for the 1/2/4/8 matrix and selected 600-second soak without silently carrying over CPU/HF claims?
+
+The one-command contract check prints every field and its SHA-256:
+
+```bash
+python3 prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py
+```
+
+The next runner must re-finalize a new evidence-owned manifest to its captured `HEAD`, derive all
+geometry/calibration from the descriptor and provisional manifest, and refuse a preflight or closing
+endpoint failure. It must record the contract/fixture/manifest hashes and the selected-model catalog
+identity before and after the run. Its p95 is explicitly tunnel-inclusive; it cannot claim isolated-GPU
+latency, GPU memory/utilisation/OOM, or vLLM active/queued counts. The 90-second source repeats in a
+600-second soak, so the verdict must state that timing limit.
+
+## Remote-vLLM tunnel matrix runner — 2026-08-18
+
+**VERDICT: IMPLEMENTED, NOT YET MEASURED.**
+
+`run_remote_vllm_tunnel_measurement.py` is a narrow W2 runner for the frozen contract. Its preflight
+rejects an unhealthy tunnel, a missing selected model, a malformed or credential-bearing endpoint URL, missing
+fixture/provisional inputs, and a malformed deployed descriptor before it starts any local route process. It
+captures `HEAD` once, finalizes only `OUTPUT/live-provider-manifest.json`, asks the production manifest reader
+to admit it, and refuses if the local descriptor does not carry that exact revision or deployed geometry.
+
+The runner uses the existing production local-route/vLLM seam, but gives every session a background helper
+heartbeat at `lease / 4`, so a blocked remote transcription cannot make helper presence disappear. It records
+the endpoint's canonical `/models` hash before and after the run, and a failed closing probe makes its verdict
+non-qualifying rather than interpreting endpoint loss as slow inference. The runner has not selected a bound or
+produced a G4/G5 result; its planned 90-second speech fixture repeats during a possible 600-second soak.
+
+## Remote-vLLM local-route seam — 2026-08-18
+
+**VERDICT: PASS for the route/decoder seam; explicitly NON-GATING for W2, G4, and G5.**
+
+Question: can one loopback production live-route runtime send a real canonical decode to the
+read-only remote vLLM endpoint without selecting a local HF model, while retaining helper presence
+through the remote request and stopping cleanly?
+
+One command (prints full state and writes the compact artifact):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_remote_vllm_route_seam.py \
+  --manifest "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json" \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 \
+  --output evidence/phase1/w2-local-concurrency/iteration-22-remote-vllm-route-seam-replay.json
+```
+
+The probe first rejected an insufficient general rule: one descriptor hard-cap (five frame pairs)
+produced no canonical event in 120 seconds. It now submits two descriptor-derived hard-cap windows
+(ten frame pairs), because the VAD must observe audio beyond a full span boundary before it may close
+that span. No sample count is hard-coded. On the replay, `/v1/models`, bootstrap, session create,
+all 20 frame posts, canonical event polling, and stop returned HTTP 200; one 40,000-sample canonical
+result arrived. The helper heartbeat cadence is derived as one quarter of the explicit lease, not a
+new timing threshold.
+
+The artifact records `manifest_matches_head: false`: the available local manifest names
+`cc8f778a...`, not the then-HEAD `53c63cb...`. It also has no GPU memory, utilisation, OOM/error,
+or vLLM active/queued telemetry. Therefore it proves only the missing local-route-to-remote-vLLM
+seam. A real W2 runner must re-finalize a run-owned manifest for its exact HEAD, preserve the frozen
+1/2/4/8 matrix and its hashes, and keep all GPU-only metrics explicitly unclaimed.
+
+## CPU/HF-local gate preregistration — 2026-08-18
+
+**VERDICT: FROZEN, NOT RUN — a separately hash-pinned contract for the now-available local HF path.**
+
+Question: at the descriptor geometry observed on the read-only deployed host, can one local CPU/HF
+service sustain the measured one-to-eight-session screening matrix and selected 600-second bound while retaining fair,
+session-local v2 backpressure and no cross-session text across overload and observer reconnect?
+
+`cpu_hf_local_preregistration.json` is intentionally separate from the 2026-08-13 vLLM profile:
+the old file remains the historical record for its controlled prototype, while this one freezes the
+CPU/HF-local run before any result exists. Its validator prints the full contract and SHA-256 in one
+command. The runner must use the real decoder, real human speech at wall-clock cadence, one local
+service process, and descriptor-derived geometry; controlled collaborators cannot qualify it.
+
+Frozen gates: per-session p95 transcript lag at most 10.0 s using linear Type-7; local process-tree
+RSS growth at most 4 GiB from warmed idle; zero OOM/accelerator errors; continuously ready dispatch
+skew at most one; retryable non-terminal v2 429 for a saturated session while its peer continues;
+and marker isolation through overload plus observer reconnect. Raw arrays, not summaries, are
+required. The CPU/HF-local latency column must always read **"CPU HF local decode, not the deployed
+GPU bound"**. This profile explicitly cannot prove deployed GPU p95 latency, GPU memory, or GPU
+utilisation.
+
+The 10.0 s latency ceiling is intentionally wide headroom carried from ticket #3: four concurrent
+CPU/HF sessions over a ten-minute soak are unmeasured, so lowering it based on the prior short run
+would be post-hoc optimism. It is not a tight performance claim. The final verdict must report its
+maximum per-session p95 beside the prior two-session CPU observation (0.248 s p95) and state the
+headroom. Likewise, 4 GiB is a safety ceiling for the unmeasured soak; **zero OOM or accelerator
+errors** is the tight memory criterion.
+
+### W2 pre-measurement matrix correction — 2026-08-18
+
+**VERDICT: RE-FROZEN, NOT RUN.** Before any CPU/HF result, the ticket-3 acceptance criteria were
+rechecked. Its required reporting rows are 1/2/4/8 concurrent meetings, not only 2/4. The frozen
+matrix therefore records all four short screens and keeps the one 600-second soak only for the largest
+screening pass. An 8-session CPU failure is a useful recorded outcome; omitting the row is not.
+
+The new profile also makes the boundary explicit: it records local CPU/HF decode real-time factor and
+local process errors, but cannot establish deployed real-time factor, GPU OOM/accelerator errors, or
+the vLLM active/queued series. The runner preserves those distinctions in its verdict.
+
+The canonical dispatch event writer is deliberately off the runtime publication path: it serializes
+the complete record after the publication lock, sends it to a dedicated writer thread, and syncs that
+file every five seconds plus shutdown. Its cumulative enqueue, write, sync, and pending-record figures
+are retained with every measurement phase, so the artifact exposes observer overhead.
+
+### Unexpected-frame evidence compaction — 2026-08-18
+
+**VERDICT: PASS — absorbed into the runner before the tunnel-backed W2 run.**
+
+Question: can failure evidence retain counts and request/response diagnostics without retaining PCM
+or one full result per repeat? The throwaway prototype ran against
+`run-20260818T213600/run-state.json`: 1,584 failures contained 36,356,544 base64-PCM bytes inside the
+59,992,997-byte artifact. They collapsed into two `(http_status, error_code, lane)` buckets:
+`(429, canonical_queue_full, microphone)=1,464` and `(429, canonical_queue_full, system)=120`.
+
+The absorbed runner records the total and every bucket count, plus the first and last three exemplars
+per bucket. Each exemplar retains session ID, sequence, device epoch, timing/shape metadata, HTTP
+status, typed error, retryability, bounded failure detail, PCM byte length, and a 16-character SHA-256
+prefix. It never serializes `pcm_base64`; predicate-bearing latency, dispatch, RSS, queue-depth, and
+429 arrays remain untouched.
+
+### Historical CPU/HF artifact migration — 2026-08-18
+
+**VERDICT: PASS — compacted diagnostic evidence, still non-gating.**
+
+Question: can the already-committed 59,992,997-byte CPU/HF `run-state.json` be made reviewable without
+changing any predicate-bearing result? The source is pinned as SHA-256
+`a28f57e5b5266c429bb1df106417ee6448fed58fb94180c207788e5b4d8986dd`. Its legacy failure records did
+not carry a root `session_id`; their final response snapshot did. The migration therefore derives the
+exemplar ID only from `attempted[-1].response.json.snapshot.session_id`, after checking it exists on all
+1,584 records. It then applies the absorbed runner's bucketing semantics.
+
+The compacted artifact is 288,007 bytes (SHA-256
+`996559a4912e1ab054adfebfd5fa137076744c8092474f672e924a0689d08bcb`). It retains the exact source
+projection SHA-256 `3c8eaa6a557f3d40292c2a8456fe1289726929aa6921765b53a29b0a69b8e9d2`, all per-screen failure
+counts, and only first/last-three safe exemplars per bucket. The regression rejects raw PCM, a changed
+bucket total, absent exemplar session ID, a file at or above 1 MB, or any changed non-failure predicate.
+This is artifact hygiene only: the CPU/HF result remains explicitly non-gating and cannot be reused for
+G4/G5.
+
 ## Gate preregistration — 2026-08-13
 
 **VERDICT: PASS — numeric gates and measurement semantics frozen before measurement.**

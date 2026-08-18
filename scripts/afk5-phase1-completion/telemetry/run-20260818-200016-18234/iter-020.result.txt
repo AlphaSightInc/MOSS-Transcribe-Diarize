@@ -1,0 +1,11 @@
+Iteration 20 done; no mixer policy changed.
+
+- Pre-reg commit: `756ade4`; result commit: `77c821d`.
+- Real aligned lanes: system 15.377 dB above mic.
+- Peer-RMS gain worsened WER 0.28324→0.31792; missing words 42→48; one input clip.
+- Evidence: [result](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json), [prototype](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/proto_lane_level_effect.py).
+- Validation: live vLLM run, result-integrity PASS, preflight PASS.
+- Next: distinct-reference dual-lane captures before Defect C threshold.
+
+Only remaining modification is loop-owned telemetry.
+

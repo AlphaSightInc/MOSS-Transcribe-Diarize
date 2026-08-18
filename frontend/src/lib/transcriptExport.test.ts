@@ -23,20 +23,24 @@ describe("transcriptExport", () => {
   it("serializes Markdown, text, and versioned JSON with resolved labels", () => {
     const turns = [makeTurn(36, "SPEAKER_02", "Second turn")];
     const resolveLabel = () => "Jamie";
+    const identity = {
+      sessionId: "session-42",
+      exportedAt: new Date("2026-08-18T20:00:16.182Z")
+    };
 
-    expect(serializeTranscriptExport("md", turns, resolveLabel)).toEqual({
+    expect(serializeTranscriptExport("md", turns, resolveLabel, identity)).toEqual({
       content: "## [00:00:36] Jamie\n\nSecond turn",
-      filename: "transcript.md",
+      filename: "transcript-session-42-2026-08-18T20:00:16.182Z.md",
       mediaType: "text/markdown;charset=utf-8"
     });
-    expect(serializeTranscriptExport("txt", turns, resolveLabel)).toEqual({
+    expect(serializeTranscriptExport("txt", turns, resolveLabel, identity)).toEqual({
       content: "[00:00:36] Jamie:\nSecond turn",
-      filename: "transcript.txt",
+      filename: "transcript-session-42-2026-08-18T20:00:16.182Z.txt",
       mediaType: "text/plain;charset=utf-8"
     });
 
-    const json = serializeTranscriptExport("json", turns, resolveLabel);
-    expect(json.filename).toBe("transcript.json");
+    const json = serializeTranscriptExport("json", turns, resolveLabel, identity);
+    expect(json.filename).toBe("transcript-session-42-2026-08-18T20:00:16.182Z.json");
     expect(json.mediaType).toBe("application/json;charset=utf-8");
     expect(JSON.parse(json.content)).toEqual({
       version: 1,
@@ -57,14 +61,18 @@ describe("transcriptExport", () => {
       const turns = [makeTurn(36, "SPEAKER_02", "Second turn", { state })];
       const caveat = "Speaker attribution is provisional and may be revised by the retrospective sweep after the session ends.";
       const resolveLabel = () => "Jamie";
+      const identity = {
+        sessionId: "session-42",
+        exportedAt: new Date("2026-08-18T20:00:16.182Z")
+      };
 
-      expect(serializeTranscriptExport("md", turns, resolveLabel).content).toContain(
+      expect(serializeTranscriptExport("md", turns, resolveLabel, identity).content).toContain(
         `> **Provisional attribution:** ${caveat}`
       );
-      expect(serializeTranscriptExport("txt", turns, resolveLabel).content).toContain(
+      expect(serializeTranscriptExport("txt", turns, resolveLabel, identity).content).toContain(
         `Provisional attribution: ${caveat}`
       );
-      expect(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel).content)).toMatchObject({
+      expect(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel, identity).content)).toMatchObject({
         provisional_attribution_notice: `Provisional attribution: ${caveat}`
       });
     }

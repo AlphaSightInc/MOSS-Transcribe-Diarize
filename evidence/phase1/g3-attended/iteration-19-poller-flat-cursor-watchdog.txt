@@ -1,0 +1,65 @@
+# Iteration 19 — post-stop flat-cursor terminal recovery
+
+## Question
+
+Can the released poller observe a terminal transition when capture has already stopped, both
+`v2_session.lanes[*].accepted_samples` and the event cursor stay flat, and the server answers a
+stale snapshot cursor as `unchanged`?
+
+## Red replay
+
+```sh
+/opt/homebrew/bin/npm --prefix frontend test -- src/api/mossPoller.test.ts \
+  -t 're-baselines a flat stale snapshot cursor'
+```
+
+Before the repair, one test failed: the fourth snapshot request remained
+`since_version=153` instead of the required uncursored `since_version=0`; consequently the
+version-332 closed response was never read and `onTerminal("Session closed.")` did not fire.
+
+## Bound prototype
+
+```sh
+python3 prototypes/streaming-diarization/proto_poller_cursor_watchdog.py
+```
+
+The full state trace passed its preregistered choice with **bound 2** only:
+
+| bound | terminal observed after last changed snapshot | forced full reads in 60 flat idle rounds | verdict |
+|---:|---:|---:|---|
+| 1 | 4 s | 30 (50.0%) | reject: refresh share > 1/3 |
+| 2 | 6 s | 20 (33.3%) | choose |
+| 3 | 8 s | 15 (25.0%) | reject: terminal bound > 6 s |
+
+All candidates recorded zero forced refreshes while the event cursor advanced. The script asserts
+this choice and prints every state transition.
+
+## Repair and validation
+
+`mossPoller.ts` keeps the ingress-advance fast path and adds a two-round counter only for an
+unchanged nonzero snapshot cursor with no event-cursor movement. Re-baselining resets the counter.
+
+```sh
+/opt/homebrew/bin/npm --prefix frontend test -- src/api/mossPoller.test.ts
+# PASS: 1 file, 14 tests
+/opt/homebrew/bin/npm --prefix frontend test
+# PASS: 16 files, 122 tests
+/opt/homebrew/bin/npm --prefix frontend run typecheck
+# PASS
+/opt/homebrew/bin/npm --prefix frontend run build
+# PASS: regenerated ProjectResources/Frontend/app.js and app.js.map
+git diff --check
+# PASS
+scripts/afk-guardrails/preflight.py afk5-phase1-completion
+# PREFLIGHT OK
+```
+
+The flat replay requires snapshot requests `0 → 153 → 153 → 0`, exactly two fresh snapshots,
+`onTerminal("Session closed.")`, and a stopped poller. A companion replay keeps the stale
+snapshot cursor at 153 through four polls when the event cursor advances, proving the watchdog
+does not add unnecessary full reads to that healthy path.
+
+## Limit
+
+This is deterministic source/released-bundle coverage. It does not substitute for an operator's
+fresh attended display-capture run and does not certify G3, G4, or G5.

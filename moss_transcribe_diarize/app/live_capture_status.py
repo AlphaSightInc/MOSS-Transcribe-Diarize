@@ -17,6 +17,11 @@ _NANOSECONDS_PER_SECOND = 1_000_000_000
 _CAPTURE_HEALTH_FRAME_PERIODS = 4
 _SUSTAINED_REJECTION_OUTCOMES = 4
 
+BROWSER_MICROPHONE_SILENT_STATUS_LINE = (
+    "No microphone sound was detected. In Chrome, open Settings > Privacy and security > "
+    "Site settings > Microphone and select the correct default input."
+)
+
 _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     "browser_microphone_permission_denied": (
         "Microphone access was denied. Allow microphone access in Chrome and try again."
@@ -38,10 +43,7 @@ _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
         "microphone": "Microphone audio is too loud and may sound distorted.",
         "system": "Shared audio is too loud and may sound distorted.",
     },
-    "browser_microphone_silent": (
-        "No microphone sound was detected. In Chrome, open Settings > Privacy and security > "
-        "Site settings > Microphone and select the correct default input."
-    ),
+    "browser_microphone_silent": BROWSER_MICROPHONE_SILENT_STATUS_LINE,
 }
 BROWSER_CAPTURE_FAILURE_CODES = frozenset(_FAILURE_STATUS_LINES)
 

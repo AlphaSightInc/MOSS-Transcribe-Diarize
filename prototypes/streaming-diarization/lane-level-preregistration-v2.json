@@ -1,0 +1,62 @@
+{
+  "schema": "moss-lane-level-prototype-preregistration.v2",
+  "question": "On the aligned real system/microphone capture, does peer-RMS matching change quiet-microphone transcription error relative to the current production fixed-headroom mixer, and is the fixture sufficient to select a production level policy?",
+  "scope": "diagnostic prototype only; it does not certify G3, G4, G5, or a production mixer policy",
+  "production_path": {
+    "mixer": "moss_transcribe_diarize.app.live_mixer.LiveCompatibilityMixer",
+    "current_rule": "(system * _HEADROOM_GAIN) + (microphone * _HEADROOM_GAIN), followed by the production limiter",
+    "frame_samples": 8000,
+    "frame_samples_source": "2026-08-18 deployed /api/live/descriptor",
+    "sample_rate": 16000
+  },
+  "inputs": {
+    "system": {
+      "audio_path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/remote.wav",
+      "sha256": "5299e742325fa9d3c58946222262a8262bd7e47863c97d0f0a772956050c1c1d",
+      "reference_jsonl": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/reference_system_audio.jsonl",
+      "reference_sha256": "fda7c141c7a5a9c7dc8d445a5fae83acf1e96cf25059c57912d4ce9a9a6c0abe",
+      "provenance": "real aligned Core Audio Tap/system-audio capture"
+    },
+    "microphone": {
+      "audio_path": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/local.wav",
+      "sha256": "830a5558cf90fe7f5571dc2cfc6e0708d1e09194b5b716532d6d6902bf953251",
+      "reference_jsonl": "prototypes/streaming-diarization/l15/data/dual_lane_diarization/cases/pending_source_separation_001/reference_microphone.jsonl",
+      "reference_sha256": "b3acd32f2f1023b328b0ba0634427e035ca8ce32edc0bb101cc9607a2947d880",
+      "provenance": "real aligned room-microphone capture"
+    }
+  },
+  "variants": [
+    {
+      "id": "microphone_only_control",
+      "system_mode": "silent",
+      "microphone_gain_rule": "1.0"
+    },
+    {
+      "id": "production_fixed_headroom",
+      "system_mode": "recorded",
+      "microphone_gain_rule": "1.0"
+    },
+    {
+      "id": "peer_rms_matched_microphone",
+      "system_mode": "recorded",
+      "microphone_gain_rule": "system_full_track_rms / microphone_full_track_rms"
+    }
+  ],
+  "scoring": {
+    "references": "per-lane reference JSONLs",
+    "metrics": [
+      "word error rate = Levenshtein(reference_tokens, transcript_tokens) / reference_tokens",
+      "missing reference words = reference_tokens - LCS(reference_tokens, transcript_tokens)"
+    ],
+    "normalizer": "moss_transcribe_diarize.speaker_reference.normalize_reference_text",
+    "model_path": "live MOSS vLLM endpoint discovered via GET /v1/models"
+  },
+  "selection_rule": {
+    "candidate": "peer_rms_matched_microphone",
+    "minimum_quiet_microphone_wer_reduction_fraction": 0.05,
+    "required_missing_word_reduction": true,
+    "required_system_reference": "a lexical system-lane reference different from the microphone reference",
+    "required_limiter_check": "candidate limited-output fraction must not exceed production fixed-headroom fraction",
+    "if_any_requirement_is_missing": "record diagnostic result but select no production normalization, AGC, or fixed-offset policy"
+  }
+}

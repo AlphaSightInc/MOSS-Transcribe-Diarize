@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { createFileJobPoller, submitJob, type FileJobPoller } from "../api/jobs";
 import { resetSessionState } from "../state/session";
 
-export function FilePanel() {
+interface FilePanelProps {
+  captureBearer: string;
+}
+
+export function FilePanel({ captureBearer }: FilePanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [message, setMessage] = useState("Select an audio or video file to transcribe.");
   const [progress, setProgress] = useState(0);
@@ -20,16 +24,24 @@ export function FilePanel() {
     setProgress(0);
     setMessage("Uploading file...");
     try {
-      const created = await submitJob(selectedFile);
+      const options = { bearerToken: captureBearer.trim() };
+      const created = await submitJob(selectedFile, {
+        ...options,
+        onUploadProgress({ loaded, total }) {
+          setProgress(loaded / total);
+          setMessage(`Uploading file: ${loaded} / ${total} bytes.`);
+        }
+      });
       setMessage("Queued for transcription.");
       const poller = createFileJobPoller({
         jobId: created.id,
+        ...options,
         onProgress(job) {
           setProgress(job.progress);
           setMessage(job.error ?? job.status.replaceAll("_", " "));
         },
         onError(error) {
-          setMessage(`Connection interrupted; retrying: ${error}`);
+          setMessage(`Connection interrupted while checking transcription; retrying: ${error}`);
         },
         onTerminal(job) {
           setRunning(false);
@@ -93,6 +105,7 @@ export function FilePanel() {
         <div className="bar" style={{ width: `${Math.max(0, Math.min(100, progress * 100))}%` }} />
       </div>
       <p className="capture-status" role="status">{message}</p>
+      <p className="capture-status">Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.</p>
     </section>
   );
 }

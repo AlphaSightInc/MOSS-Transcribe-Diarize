@@ -11,7 +11,10 @@ Then open http://127.0.0.1:8899/capture-harness?autostart=1 in Chrome.
 
 By default the provider is deterministic and does not run a model. Pass both
 ``--model`` and ``--live-provider-manifest`` to exercise the production ModelRunner
-through the manifest-admitted live provider bundle instead.
+through the manifest-admitted live provider bundle instead. Alternatively, pass
+``--vllm-base-url``, ``--vllm-model``, and ``--live-provider-manifest`` to exercise
+the same bundle through the production remote VllmRunner. The latter keeps model
+execution on the read-only provider host while this process owns the live routes.
 The ephemeral capture credential is available only from a loopback prototype route
 and is never printed or persisted.
 """
@@ -21,6 +24,8 @@ import argparse
 import importlib.util
 import json
 import math
+import os
+import queue
 import sys
 import tempfile
 import threading
@@ -106,18 +111,114 @@ def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) 
     }
 
 
-def _instrument_commit_times(runtime, commit_wall_ns: dict[tuple[str, int], int], lock: threading.Lock):
+class _CanonicalEventLogWriter:
+    """Append raw measurement events off the canonical runtime publication path."""
+
+    _FSYNC_INTERVAL_SECONDS = 5.0
+
+    def __init__(self, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("", encoding="utf-8")
+        self._handle = path.open("a", encoding="utf-8")
+        self._queue: queue.Queue[str | None] = queue.Queue()
+        self._stats_lock = threading.Lock()
+        self._closed = False
+        self._enqueued = 0
+        self._enqueue_elapsed_ns = 0
+        self._write_elapsed_ns = 0
+        self._fsync_elapsed_ns = 0
+        self._fsync_count = 0
+        self._max_queue_depth = 0
+        self._writer = threading.Thread(target=self._run, name="canonical-event-log", daemon=True)
+        self._writer.start()
+
+    def append(self, record: dict) -> None:
+        """Serialize cheaply in the caller, then leave file I/O to the writer thread."""
+        started = time.perf_counter_ns()
+        serialized = json.dumps(record, sort_keys=True) + "\n"
+        self._queue.put(serialized)
+        elapsed = time.perf_counter_ns() - started
+        with self._stats_lock:
+            self._enqueued += 1
+            self._enqueue_elapsed_ns += elapsed
+            self._max_queue_depth = max(self._max_queue_depth, self._queue.qsize())
+
+    def _sync(self) -> None:
+        started = time.perf_counter_ns()
+        self._handle.flush()
+        os.fsync(self._handle.fileno())
+        elapsed = time.perf_counter_ns() - started
+        with self._stats_lock:
+            self._fsync_elapsed_ns += elapsed
+            self._fsync_count += 1
+
+    def _run(self) -> None:
+        last_sync = time.monotonic()
+        while True:
+            item = self._queue.get()
+            if item is None:
+                break
+            started = time.perf_counter_ns()
+            self._handle.write(item)
+            elapsed = time.perf_counter_ns() - started
+            with self._stats_lock:
+                self._write_elapsed_ns += elapsed
+            if time.monotonic() - last_sync >= self._FSYNC_INTERVAL_SECONDS:
+                self._sync()
+                last_sync = time.monotonic()
+        self._sync()
+        self._handle.close()
+
+    def stats(self) -> dict:
+        with self._stats_lock:
+            return {
+                "schema": "moss-canonical-event-log-overhead.v1",
+                "event_count": self._enqueued,
+                "enqueue_elapsed_ns": self._enqueue_elapsed_ns,
+                "write_elapsed_ns": self._write_elapsed_ns,
+                "fsync_elapsed_ns": self._fsync_elapsed_ns,
+                "fsync_count": self._fsync_count,
+                "max_pending_writer_records": self._max_queue_depth,
+                "fsync_interval_seconds": self._FSYNC_INTERVAL_SECONDS,
+            }
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._queue.put(None)
+        self._writer.join()
+
+
+def _instrument_commit_times(
+    runtime,
+    commit_wall_ns: dict[tuple[str, int], int],
+    lock: threading.Lock,
+    *,
+    event_log: _CanonicalEventLogWriter | None = None,
+):
     """Timestamp canonical publication at the real runtime event seam."""
     record_event = runtime._record_event
 
     def measured_record_event(state, kind, payload):
         record_event(state, kind, payload)
-        if kind == "canonical_processed" and payload.get("submitted"):
-            with lock:
+        record = None
+        with lock:
+            if kind == "canonical_processed" and payload.get("submitted"):
                 commit_wall_ns.setdefault(
                     (state.session_id, int(payload["span_id"])),
                     time.time_ns(),
                 )
+            if event_log is not None and kind == "canonical_processed":
+                record = {
+                    "schema": "moss-live-canonical-dispatch-observation.v1",
+                    "observed_wall_ns": time.time_ns(),
+                    "session_id": state.session_id,
+                    "kind": kind,
+                    "payload": payload,
+                }
+        if record is not None:
+            event_log.append(record)
 
     runtime._record_event = measured_record_event
     return runtime
@@ -167,16 +268,34 @@ def _commit_to_render_summary(
 
 def build_app(
     *,
-    model_path: Path | None = None,
+    model_path: Path | str | None = None,
     live_provider_manifest: Path | None = None,
+    vllm_base_url: str | None = None,
+    vllm_model: str | None = None,
+    vllm_timeout_seconds: float = 600.0,
+    live_helper_lease_seconds: float = LIVE_HELPER_LEASE_SECONDS,
     runtime_factory_override=None,
+    canonical_event_log: Path | None = None,
 ):
     from fastapi.responses import FileResponse, JSONResponse
+
+    if vllm_base_url is not None:
+        if live_provider_manifest is None:
+            raise ValueError("--vllm-base-url requires --live-provider-manifest")
+        if not vllm_model and model_path is None:
+            raise ValueError("--vllm-base-url requires --vllm-model or --model")
+    elif vllm_model is not None:
+        raise ValueError("--vllm-model requires --vllm-base-url")
+    if live_helper_lease_seconds <= 0:
+        raise ValueError("--live-helper-lease-seconds must be positive")
 
     helpers = _test_live_api_module()
     scratch = tempfile.TemporaryDirectory(prefix="moss-browser-route-probe-")
     measurement_lock = threading.Lock()
     commit_wall_ns: dict[tuple[str, int], int] = {}
+    canonical_event_writer = (
+        None if canonical_event_log is None else _CanonicalEventLogWriter(canonical_event_log)
+    )
     registry = LiveAccessRegistry(
         state_path=Path(scratch.name) / "live-auth.json",
         server_cert_sha256="ab" * 32,
@@ -198,12 +317,45 @@ def build_app(
                 max_frame_samples=6_400,
                 speech=(True, False) * 10_000,
             )
-            _instrument_commit_times(runtime, commit_wall_ns, measurement_lock)
+            _instrument_commit_times(
+                runtime,
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
+            )
             return _ReadPathFixtureRuntime(runtime)
 
         provider_scope = (
             "real production routes with deterministic fake provider; committed text is runtime output; "
             "provisional text is an explicit read-path fixture; no model inference"
+        )
+    elif vllm_base_url is not None and live_provider_manifest is not None:
+        from moss_transcribe_diarize.app.live_provider_bundle import (
+            LiveProviderBundleConfig,
+            build_live_runtime_factory,
+        )
+        from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+
+        config = LiveProviderBundleConfig.from_manifest(live_provider_manifest)
+        runner = VllmRunner(
+            base_url=vllm_base_url,
+            model=vllm_model or str(model_path),
+            timeout=vllm_timeout_seconds,
+        )
+        base_runtime_factory = build_live_runtime_factory(config, runner)
+
+        def runtime_factory():
+            return _instrument_commit_times(
+                base_runtime_factory(),
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
+            )
+
+        provider_scope = (
+            "real production routes with manifest-admitted live provider bundle and remote "
+            "production VllmRunner; the provider host receives inference requests only; "
+            "system lane is synthetic and does not prove display capture"
         )
     elif model_path is not None and live_provider_manifest is not None:
         from moss_transcribe_diarize.app.live_provider_bundle import (
@@ -218,7 +370,10 @@ def build_app(
 
         def runtime_factory():
             return _instrument_commit_times(
-                base_runtime_factory(), commit_wall_ns, measurement_lock
+                base_runtime_factory(),
+                commit_wall_ns,
+                measurement_lock,
+                event_log=canonical_event_writer,
             )
 
         provider_scope = (
@@ -233,13 +388,14 @@ def build_app(
         runs_dir=Path(scratch.name) / "runs",
         live_enabled=True,
         live_access_registry=registry,
-        live_helper_lease_seconds=LIVE_HELPER_LEASE_SECONDS,
+        live_helper_lease_seconds=live_helper_lease_seconds,
         live_runtime_factory=runtime_factory,
     )
     app.state.prototype_scratch = scratch
     app.state.prototype_capture_bearer = credential.device_token
     app.state.prototype_provider_scope = provider_scope
     app.state.prototype_commit_wall_ns = commit_wall_ns
+    app.state.prototype_canonical_event_writer = canonical_event_writer
     app.state.prototype_telemetry = {
         "accepted_frames": [],
         "lanes": {},
@@ -342,6 +498,11 @@ def build_app(
             },
             headers={"Cache-Control": "no-store"},
         )
+
+    @app.get("/prototype/measurement-instrumentation")
+    def prototype_measurement_instrumentation():
+        writer = app.state.prototype_canonical_event_writer
+        return {"event_log": None if writer is None else writer.stats()}
 
     @app.post("/prototype/telemetry")
     async def prototype_telemetry(request: Request):
@@ -544,13 +705,49 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=Path)
     parser.add_argument("--live-provider-manifest", type=Path)
+    parser.add_argument(
+        "--vllm-base-url",
+        help="OpenAI-compatible remote vLLM URL; requires --live-provider-manifest and a model name.",
+    )
+    parser.add_argument(
+        "--vllm-model",
+        help="Remote vLLM model name; defaults to --model when that argument is supplied.",
+    )
+    parser.add_argument(
+        "--vllm-timeout-seconds",
+        type=float,
+        default=600.0,
+        help="Per-span remote vLLM request timeout.",
+    )
+    parser.add_argument(
+        "--live-helper-lease-seconds",
+        type=float,
+        default=LIVE_HELPER_LEASE_SECONDS,
+        help="Explicit local helper-presence lease for this route probe.",
+    )
+    parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument(
+        "--canonical-event-log",
+        type=Path,
+        help="append raw canonical_processed observations for a local measurement harness",
+    )
     args = parser.parse_args()
     app = build_app(
         model_path=args.model,
         live_provider_manifest=args.live_provider_manifest,
+        vllm_base_url=args.vllm_base_url,
+        vllm_model=args.vllm_model,
+        vllm_timeout_seconds=args.vllm_timeout_seconds,
+        live_helper_lease_seconds=args.live_helper_lease_seconds,
+        canonical_event_log=args.canonical_event_log,
     )
-    print(f"PROTOTYPE production routes listening on http://127.0.0.1:{PORT}/capture-harness")
-    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning", proxy_headers=False)
+    print(f"PROTOTYPE production routes listening on http://127.0.0.1:{args.port}/capture-harness")
+    try:
+        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning", proxy_headers=False)
+    finally:
+        writer = app.state.prototype_canonical_event_writer
+        if writer is not None:
+            writer.close()
 
 
 if __name__ == "__main__":
