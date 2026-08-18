@@ -86,7 +86,7 @@
     "intra_op_threads": 1
   },
   "schema_version": 1,
-  "source_revision": "ab7a998ab6acb805eb30e91477ca3abf22dac83f",
+  "source_revision": "e1741f904fee942a5eef34e0d40a4d4f848b363d",
   "speech_provider": {
     "factory": "Vad",
     "frame_samples": 160,

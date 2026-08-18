@@ -89,6 +89,11 @@ Deferred to charter §7 by ruling. Charter §1 forbids automating the display ch
 requires a fresh user gesture per capture and permits no persistent grant; the 2026-08-03 CDP-flag
 attempt failed with `NotReadableError`. **Do not retry it.**
 
+The local service prerequisite is ready: `w0-local-live/iteration-6-local-hf-launch.txt` proves
+`scripts/g3-attended-session.sh` started TLS on `127.0.0.1:7861`, returned the local descriptor,
+and accepted a shared-bearer session using the real local provider bundle and cached HF model. Its
+decode path is CPU/HF; it does not substitute for the attended run or a GPU performance result.
+
 ~10 minutes attended. It is the only artifact that demonstrates the product as a product.
 
 ## G4 — concurrency ≥10 min · BLOCKED

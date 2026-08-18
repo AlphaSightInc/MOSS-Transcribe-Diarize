@@ -3,8 +3,7 @@
 #
 #   ./scripts/g3-attended-session.sh
 #
-# Requires MOSS_VLLM_BASE_URL to point at a reachable model, because charter section 7
-# step 6 asks the operator to confirm real transcript text with distinct speaker ids.
+# Requires either a reachable MOSS_VLLM_BASE_URL or an explicit MOSS_HF_MODEL directory.
 # The GPU host is READ-ONLY: we send it inference requests only, and run the service here.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -16,13 +15,31 @@ KEY="${STATE_DIR}/live-key.pem"
 TOKEN_FILE="${STATE_DIR}/shared-token"
 mkdir -p "$STATE_DIR"; chmod 700 "$STATE_DIR"
 
-: "${MOSS_VLLM_BASE_URL:?set MOSS_VLLM_BASE_URL first, e.g. http://ga0-alienware-rtx4070ti.tailnet.aisight.us:8000/v1}"
 : "${MOSS_LIVE_PROVIDER_MANIFEST:?set MOSS_LIVE_PROVIDER_MANIFEST to the finalized local live-provider-manifest.json first}"
+: "${MOSS_LIVE_HELPER_LEASE_SECONDS:?set MOSS_LIVE_HELPER_LEASE_SECONDS to the declared positive helper lease first}"
 
-echo "==> checking the model endpoint is reachable"
-code=$(curl -sS -k -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
-[[ "$code" == "200" ]] || { echo "model endpoint returned '$code', expected 200. Is port 8000 published on the tailnet?"; exit 1; }
-echo "    OK"
+MODEL_ARGS=()
+MODEL_BACKEND=""
+if [[ -n "${MOSS_VLLM_BASE_URL:-}" ]]; then
+  echo "==> checking the configured vLLM endpoint"
+  code=$(curl -sS -k -o /dev/null -w '%{http_code}' --max-time 8 "${MOSS_VLLM_BASE_URL%/}/models" 2>/dev/null)
+  if [[ "$code" == "200" ]]; then
+    MODEL_ARGS=(--backend vllm --vllm-base-url "$MOSS_VLLM_BASE_URL")
+    MODEL_BACKEND="vllm"
+    echo "    OK: using vLLM"
+  else
+    echo "    endpoint returned '$code'; falling back to MOSS_HF_MODEL"
+  fi
+fi
+
+if [[ -z "$MODEL_BACKEND" ]]; then
+  : "${MOSS_HF_MODEL:?set MOSS_HF_MODEL to a local Hugging Face model directory when vLLM is unavailable}"
+  [[ -d "$MOSS_HF_MODEL" ]] || { echo "MOSS_HF_MODEL is not a directory: $MOSS_HF_MODEL"; exit 1; }
+  [[ -f "$MOSS_HF_MODEL/config.json" ]] || { echo "MOSS_HF_MODEL has no config.json: $MOSS_HF_MODEL"; exit 1; }
+  MODEL_ARGS=(--backend hf --model "$MOSS_HF_MODEL")
+  MODEL_BACKEND="hf"
+  echo "==> using local HF model: $MOSS_HF_MODEL"
+fi
 
 if [[ ! -f "$CERT" ]]; then
   echo "==> generating a self-signed TLS cert (the browser needs a secure context for microphone access)"
@@ -50,11 +67,11 @@ echo "Ctrl-C here when the checklist is done."
 echo
 
 exec .venv/bin/python -m moss_transcribe_diarize.app.web_cli \
-  --backend vllm \
-  --vllm-base-url "$MOSS_VLLM_BASE_URL" \
+  "${MODEL_ARGS[@]}" \
   --live \
   --live-provider-manifest "$MOSS_LIVE_PROVIDER_MANIFEST" \
   --host 127.0.0.1 --port "$PORT" \
   --live-tls-certfile "$CERT" --live-tls-keyfile "$KEY" \
   --live-auth-state "${STATE_DIR}/live-auth.json" \
-  --live-shared-token-file "$TOKEN_FILE"
+  --live-shared-token-file "$TOKEN_FILE" \
+  --live-helper-lease-seconds "$MOSS_LIVE_HELPER_LEASE_SECONDS"
