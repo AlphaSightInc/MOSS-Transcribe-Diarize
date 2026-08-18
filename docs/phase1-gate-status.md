@@ -39,7 +39,7 @@ The two remaining failures are deliberate and permanent for Phase 1:
 | G3 two-lane display capture | ⛔ **OPERATOR** | charter §7 attended checklist; no agent may claim it |
 | G4 concurrency ≥10 min | ⛔ **BLOCKED** | no local model, `MOSS_VLLM_BASE_URL`, or `MOSS_MEASUREMENT_SSH_HOST`; real-decode run impossible |
 | G5 cross-session integrity | 🟡 **PARTIAL** | `t1/iteration-12`, `iteration-14` — 2 sessions proven; overload + reconnect not |
-| G6 failure paths | 🟡 **PARTIAL** | all code paths implemented; authenticated reload/terminal tests pass, but no fresh real-browser reload certification |
+| G6 failure paths | ✅ **PASS** | `y6-browser-reload/iteration-6-assertion-falsification.json` — six paths covered; real local Chrome reload/terminal flow certified |
 | G7 background tab | ✅ **PASS** | `x1-frame-drop/postreboot-g7-hidden-8000.json` — reproduced 2026-08-16 on the repaired host, tautological assertions replaced first |
 | G8 fidelity | ✅ **PASS** | `g8-certified-20260817/report.json` — 0.55 % / 0.26 % and 1.71 % / 0.57 % |
 | G9 modes | 🟡 **FUNCTIONAL, criteria unmet** | both modes work in the one UI, but issue #8's bearer requirement and #9's in-file provisional caveat are unimplemented — see y7 |
@@ -116,7 +116,7 @@ domain, so the historical `403` cross-read result is **not** a criterion.
 **Does not cover:** overload, or reconnect. Both are named in the charter bar. Two sessions is not
 overload. Closing G5 most likely rides along with the G4 run.
 
-## G6 — failure paths · PARTIAL
+## G6 — failure paths · PASS
 
 `x3-capture-health/review-01-five-scenario-route.json` (`all_checks_passed: true`) and
 `review-02-live-uvicorn-wire.json` (`all_checks_passed: true`, real TLS socket, own uvicorn, no
@@ -129,7 +129,7 @@ TestClient) cover:
 | one lane dying mid-session | ✅ `2-one-frame-each-then-nothing`, `5-server-lane-health-failed` |
 | 429 backpressure | ✅ `4-sequence-gap-58-consecutive-rejects` |
 | terminal 409 | ✅ `7-terminal-repoll-with-since-version` |
-| **reload mid-capture reattaching from `sessionStorage`** | 🟡 implemented and locally integration-tested; real browser run pending |
+| **reload mid-capture reattaching from `sessionStorage`** | ✅ `y6-browser-reload/iteration-6-assertion-falsification.json` — actual `ControlPanel` in real local Chrome, same-session read-only reattach, cursor/item continuity, no reload Stop, terminal cleanup |
 
 The two implementation holes are closed:
 
@@ -140,9 +140,10 @@ The two implementation holes are closed:
    failed stop, helper failure, direct auth, and portal tests prove the final server-authored reason
    remains readable. ADR-0004 records the security boundary.
 
-**Why still partial:** no fresh Playwright/Chrome reload has exercised these paths against a running
-deployed live service. Existing artifacts also do not cover a real permission prompt or deployed
-host. Code-complete is not browser-certified.
+The fresh local Chrome run passes all 19 G6 assertions, then reruns each predicate against a named
+broken observation; all 19 return `false`. This includes a reload that drops tab storage and a stale
+event cursor. The artifact records server-authored status lines throughout, and its explicit scope
+excludes the browser permission prompt, display capture, model inference, and a deployed host.
 
 ## G7 — background tab · PASS
 

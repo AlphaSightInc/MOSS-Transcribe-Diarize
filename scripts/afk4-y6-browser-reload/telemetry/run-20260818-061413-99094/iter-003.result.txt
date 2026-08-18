@@ -1,0 +1,8 @@
+Committed `1f6f696` — real Chrome reload probe.
+
+Passes: same session reattaches, bearer absent, no Stop, active server session, read-only poller resumes.
+
+Remaining: cursor continuity, terminal reload cleanup, assertion falsification.
+
+Launcher telemetry remains unstaged.
+

@@ -1,0 +1,6 @@
+Committed `5ae72fa` — real Chrome/Vite G6 bootstrap.
+
+PASS: actual ControlPanel mounts idle, empty session storage; `/api` proxy descriptor `200`, `frame_samples=1000`.
+
+G6 remains open: session/reload/no-Stop assertions next. Launcher telemetry remains untracked.
+

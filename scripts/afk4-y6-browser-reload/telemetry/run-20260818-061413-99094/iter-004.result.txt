@@ -1,0 +1,7 @@
+Committed `42ac99a` — real-Chrome reload continuity.
+
+- 15/15 probe assertions pass; 160 pre-reload items retained, 162 post-reload authoritative spans matched.
+- Evidence: [iteration-4-cursor-continuity.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/6/MOSS-Transcribe-Diarize/evidence/phase1/y6-browser-reload/iteration-4-cursor-continuity.json)
+- Next: terminal reload cleanup, assertion falsification.
+- Remaining uncommitted: loop telemetry only.
+
