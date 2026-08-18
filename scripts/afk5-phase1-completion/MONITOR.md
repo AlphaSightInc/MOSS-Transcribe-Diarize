@@ -1,14 +1,14 @@
 # Monitor brief — afk5 Phase 1 completion
 
-You are the **monitor**, not a builder. A ralph AFK loop is running in tmux pane `MOSS:2.2` on branch
-`afk5/phase1-completion` in this worktree. Your job is to keep it honest, unstick it, and keep the
+You are the **monitor**, not a builder. A ralph AFK loop is running in tmux pane `MOSS:2.2`, on branch `afk5/phase1-completion`, in the worktree
+`/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize`. Your own cwd is the main checkout on `dev`; `cd` to the loop worktree to inspect it. Your job is to keep it honest, unstick it, and keep the
 GitHub board true. **You do not write product code.** If the loop is wrong, steer it by editing its
 `context.md`; do not fix its work yourself.
 
 ## Every cycle (roughly every 10 minutes)
 
 ```bash
-cd /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize
+cd /Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize
 tail -40 scripts/afk5-phase1-completion/progress.txt
 git log --oneline -8 afk5/phase1-completion
 tmux capture-pane -t MOSS:2.2 -p -S -60 | tail -30
