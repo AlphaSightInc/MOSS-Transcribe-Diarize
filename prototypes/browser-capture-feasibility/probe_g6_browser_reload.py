@@ -24,6 +24,7 @@ inference or deployed host.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import socket
 import subprocess
@@ -579,6 +580,188 @@ def _reload(page: _ChromePage) -> None:
             raise
 
 
+def _reload_assertions(facts: dict) -> dict[str, bool]:
+    """Evaluate the G6 claims from observations, so broken observations can reject them."""
+    reattach_before = facts["reattach_before"]
+    reattach_after = facts["reattach_after"]
+    reattached = facts["reattached"]
+    terminal = facts["terminal"]
+    terminal_reloaded = facts["terminal_reloaded"]
+    terminal_reload_state = facts["terminal_reload_state"]
+    before_event_sequences = facts["before_event_sequences"]
+    after_event_sequences = facts["after_event_sequences"]
+    return {
+        "real_control_panel_started_one_session": facts["active"].get("phase") == "active",
+        "same_session_is_retained_in_tab_storage": reattach_after.get("sessionId") == facts["session_id"],
+        "only_view_credentials_are_stored": (
+            reattach_before.get("recordFields") == ["sessionId", "viewToken"]
+            and reattach_after.get("recordFields") == ["sessionId", "viewToken"]
+            and reattach_after.get("viewTokenPresent") is True
+        ),
+        "capture_bearer_did_not_survive_reload": (
+            reattach_before.get("captureBearerAbsent") is True
+            and reattach_after.get("captureBearerAbsent") is True
+            and reattached.get("bearerInputHasValue") is False
+        ),
+        "reload_enters_read_only_viewing": (
+            reattached.get("phase") == "viewing"
+            and reattached.get("statusLine") == "Transcript reattached. Browser capture stopped on reload."
+        ),
+        "server_received_no_stop_on_active_reload": not facts["stop_requests_before_terminal"],
+        "session_remains_active_after_reload": facts["server_after_reload"].get("snapshotStatus") == "active",
+        "server_authored_status_remains_readable": (
+            facts["server_before_reload"].get("status") == 200
+            and isinstance(facts["server_before_reload"].get("statusLine"), str)
+            and bool(facts["server_before_reload"]["statusLine"])
+            and facts["server_after_reload"].get("status") == 200
+            and isinstance(facts["server_after_reload"].get("statusLine"), str)
+            and bool(facts["server_after_reload"]["statusLine"])
+        ),
+        "reattached_poller_issued_read_only_requests": bool(facts["post_reload_reads"]),
+        "real_poller_rendered_committed_items_before_reload": bool(facts["before_item_ids"]),
+        "every_pre_reload_item_survives_reattach": set(facts["before_item_ids"]).issubset(
+            set(facts["after_item_ids"])
+        ),
+        "reattached_state_has_no_duplicate_item_ids": len(facts["after_item_ids"]) == len(
+            set(facts["after_item_ids"])
+        ),
+        "reattached_state_matches_authoritative_committed_spans": (
+            isinstance(facts["authoritative_span_ids"], list)
+            and facts["after_span_ids"] == set(facts["authoritative_span_ids"])
+        ),
+        # Events are a bounded replay buffer, so an older retained window can roll
+        # forward during navigation.  The durable transcript invariant is the
+        # authoritative snapshot/item check above; here we prove that the event cursor
+        # itself never regresses while allowing bounded-history eviction.
+        "server_event_cursor_does_not_regress_across_reload": (
+            isinstance(before_event_sequences, list)
+            and isinstance(after_event_sequences, list)
+            and bool(before_event_sequences)
+            and bool(after_event_sequences)
+            and before_event_sequences == sorted(set(before_event_sequences))
+            and after_event_sequences == sorted(set(after_event_sequences))
+            and max(after_event_sequences) >= max(before_event_sequences)
+        ),
+        "real_poller_used_snapshot_and_event_cursors_on_both_sides": (
+            {request.get("route") for request in facts["pre_reload_poller_reads"]} == {"snapshot", "events"}
+            and {request.get("route") for request in facts["post_reload_reads"]} == {"snapshot", "events"}
+            and all(isinstance(request.get("cursor"), int) for request in facts["post_reload_reads"])
+        ),
+        "owner_can_end_reattached_session_through_real_route": (
+            facts["terminal_stop"].get("status") == 200
+            and facts["terminal_stop"].get("snapshotStatus") == "closed"
+        ),
+        "terminal_server_status_remains_readable": (
+            facts["terminal_server_status"].get("status") == 200
+            and facts["terminal_server_status"].get("snapshotStatus") == "closed"
+            and facts["terminal_server_status"].get("capturePhase") == "stopped"
+            and isinstance(facts["terminal_server_status"].get("statusLine"), str)
+            and bool(facts["terminal_server_status"]["statusLine"])
+        ),
+        "terminal_poller_clears_tab_reattach_record": (
+            terminal.get("phase") == "terminal"
+            and terminal.get("storageKeys") == []
+            and terminal.get("reattachFields") == []
+        ),
+        "reload_after_terminal_starts_idle_without_reattaching": (
+            terminal_reloaded.get("phase") == "idle"
+            and terminal_reloaded.get("statusLine") == "Enter the capture bearer to configure both audio lanes."
+            and terminal_reload_state.get("storageKeys") == []
+            and terminal_reload_state.get("reattachFields") == []
+            and terminal_reload_state.get("bearerInputHasValue") is False
+            and not facts["reads_after_terminal_reload"]
+        ),
+    }
+
+
+def _falsify_reload_assertions(facts: dict) -> dict[str, dict[str, object]]:
+    """Run every predicate against a specific broken observation before accepting G6.
+
+    These are in-memory counterfactuals of the measured browser observations: no product
+    behavior is mocked or altered.  They prove the predicates reject the two G6 hazards
+    (lost tab storage and a stale event cursor) as well as every other recorded claim.
+    """
+    def set_path(path: tuple[str, ...], value: object):
+        def mutate(candidate: dict) -> None:
+            target = candidate
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = value
+
+        return mutate
+
+    def add_stop_request(candidate: dict) -> None:
+        candidate["stop_requests_before_terminal"].append({"route": "stop"})
+
+    def duplicate_after_item(candidate: dict) -> None:
+        candidate["after_item_ids"].append(candidate["after_item_ids"][0])
+
+    def stale_event_cursor(candidate: dict) -> None:
+        candidate["before_event_sequences"] = [1]
+        candidate["after_event_sequences"] = [0]
+
+    def incomplete_post_reload_reads(candidate: dict) -> None:
+        candidate["post_reload_reads"] = [{"route": "snapshot", "cursor": 1}]
+
+    def dropped_tab_storage(candidate: dict) -> None:
+        candidate["reattach_after"].update(
+            {"sessionId": None, "viewTokenPresent": False, "recordFields": []}
+        )
+
+    cases = {
+        "real_control_panel_started_one_session": ("active_phase_lost", set_path(("active", "phase"), "idle")),
+        "same_session_is_retained_in_tab_storage": ("reload_dropped_tab_storage", dropped_tab_storage),
+        "only_view_credentials_are_stored": ("reload_dropped_tab_storage", dropped_tab_storage),
+        "capture_bearer_did_not_survive_reload": (
+            "capture_bearer_restored", set_path(("reattached", "bearerInputHasValue"), True)
+        ),
+        "reload_enters_read_only_viewing": ("reattach_viewing_lost", set_path(("reattached", "phase"), "idle")),
+        "server_received_no_stop_on_active_reload": ("server_received_stop", add_stop_request),
+        "session_remains_active_after_reload": (
+            "server_session_closed", set_path(("server_after_reload", "snapshotStatus"), "closed")
+        ),
+        "server_authored_status_remains_readable": (
+            "server_status_unreadable", set_path(("server_after_reload", "status"), 500)
+        ),
+        "reattached_poller_issued_read_only_requests": ("reattached_poller_silent", set_path(("post_reload_reads",), [])),
+        "real_poller_rendered_committed_items_before_reload": (
+            "pre_reload_items_missing", set_path(("before_item_ids",), [])
+        ),
+        "every_pre_reload_item_survives_reattach": (
+            "reattach_dropped_item", set_path(("after_item_ids",), [])
+        ),
+        "reattached_state_has_no_duplicate_item_ids": ("reattach_duplicate_item", duplicate_after_item),
+        "reattached_state_matches_authoritative_committed_spans": (
+            "authoritative_span_mismatch", set_path(("authoritative_span_ids",), [])
+        ),
+        "server_event_cursor_does_not_regress_across_reload": ("stale_event_cursor", stale_event_cursor),
+        "real_poller_used_snapshot_and_event_cursors_on_both_sides": (
+            "post_reload_event_cursor_missing", incomplete_post_reload_reads
+        ),
+        "owner_can_end_reattached_session_through_real_route": (
+            "owner_stop_rejected", set_path(("terminal_stop", "status"), 403)
+        ),
+        "terminal_server_status_remains_readable": (
+            "terminal_status_unreadable", set_path(("terminal_server_status", "status"), 500)
+        ),
+        "terminal_poller_clears_tab_reattach_record": (
+            "terminal_storage_not_cleared", set_path(("terminal", "storageKeys"), [REATTACH_STORAGE_KEY])
+        ),
+        "reload_after_terminal_starts_idle_without_reattaching": (
+            "terminal_reload_reattached", set_path(("terminal_reloaded", "phase"), "viewing")
+        ),
+    }
+    results = {}
+    for assertion_name, (counterfactual, mutate) in cases.items():
+        candidate = copy.deepcopy(facts)
+        mutate(candidate)
+        results[assertion_name] = {
+            "counterfactual": counterfactual,
+            "observed_result": _reload_assertions(candidate)[assertion_name],
+        }
+    return results
+
+
 def _run(chrome_bin: str) -> dict:
     app = build_app()
     backend_url = None
@@ -702,86 +885,37 @@ def _run(chrome_bin: str) -> dict:
             and request.get("session_id") == session_id
             and request.get("wall_ms", 0) >= terminal_reload_started_wall_ms
         ]
-        assertions = {
-            "real_control_panel_started_one_session": active.get("phase") == "active",
-            "same_session_is_retained_in_tab_storage": reattach_after.get("sessionId") == session_id,
-            "only_view_credentials_are_stored": (
-                reattach_before.get("recordFields") == ["sessionId", "viewToken"]
-                and reattach_after.get("recordFields") == ["sessionId", "viewToken"]
-                and reattach_after.get("viewTokenPresent") is True
-            ),
-            "capture_bearer_did_not_survive_reload": (
-                reattach_before.get("captureBearerAbsent") is True
-                and reattach_after.get("captureBearerAbsent") is True
-                and reattached.get("bearerInputHasValue") is False
-            ),
-            "reload_enters_read_only_viewing": (
-                reattached.get("phase") == "viewing"
-                and reattached.get("statusLine") == "Transcript reattached. Browser capture stopped on reload."
-            ),
-            "server_received_no_stop_on_active_reload": not stop_requests_before_terminal,
-            "session_remains_active_after_reload": server_after_reload.get("snapshotStatus") == "active",
-            "server_authored_status_remains_readable": (
-                server_before_reload.get("status") == 200
-                and isinstance(server_before_reload.get("statusLine"), str)
-                and bool(server_before_reload["statusLine"])
-                and server_after_reload.get("status") == 200
-                and isinstance(server_after_reload.get("statusLine"), str)
-                and bool(server_after_reload["statusLine"])
-            ),
-            "reattached_poller_issued_read_only_requests": bool(post_reload_reads),
-            "real_poller_rendered_committed_items_before_reload": bool(before_item_ids),
-            "every_pre_reload_item_survives_reattach": set(before_item_ids).issubset(set(after_item_ids)),
-            "reattached_state_has_no_duplicate_item_ids": len(after_item_ids) == len(set(after_item_ids)),
-            "reattached_state_matches_authoritative_committed_spans": (
-                isinstance(authoritative_span_ids, list)
-                and after_span_ids == set(authoritative_span_ids)
-            ),
-            # Events are a bounded replay buffer, so an older retained window can roll
-            # forward during navigation.  The durable transcript invariant is the
-            # authoritative snapshot/item check above; here we prove that the event cursor
-            # itself never regresses while allowing bounded-history eviction.
-            "server_event_cursor_does_not_regress_across_reload": (
-                isinstance(before_event_sequences, list)
-                and isinstance(after_event_sequences, list)
-                and bool(before_event_sequences)
-                and bool(after_event_sequences)
-                and before_event_sequences == sorted(set(before_event_sequences))
-                and after_event_sequences == sorted(set(after_event_sequences))
-                and max(after_event_sequences) >= max(before_event_sequences)
-            ),
-            "real_poller_used_snapshot_and_event_cursors_on_both_sides": (
-                {request.get("route") for request in pre_reload_poller_reads} == {"snapshot", "events"}
-                and {request.get("route") for request in post_reload_reads} == {"snapshot", "events"}
-                and all(isinstance(request.get("cursor"), int) for request in post_reload_reads)
-            ),
-            "owner_can_end_reattached_session_through_real_route": (
-                terminal_stop.get("status") == 200 and terminal_stop.get("snapshotStatus") == "closed"
-            ),
-            "terminal_server_status_remains_readable": (
-                terminal_server_status.get("status") == 200
-                and terminal_server_status.get("snapshotStatus") == "closed"
-                and terminal_server_status.get("capturePhase") == "stopped"
-                and isinstance(terminal_server_status.get("statusLine"), str)
-                and bool(terminal_server_status["statusLine"])
-            ),
-            "terminal_poller_clears_tab_reattach_record": (
-                terminal.get("phase") == "terminal"
-                and terminal.get("storageKeys") == []
-                and terminal.get("reattachFields") == []
-            ),
-            "reload_after_terminal_starts_idle_without_reattaching": (
-                terminal_reloaded.get("phase") == "idle"
-                and terminal_reloaded.get("statusLine") == "Enter the capture bearer to configure both audio lanes."
-                and terminal_reload_state.get("storageKeys") == []
-                and terminal_reload_state.get("reattachFields") == []
-                and terminal_reload_state.get("bearerInputHasValue") is False
-                and not reads_after_terminal_reload
-            ),
+        assertion_facts = {
+            "active": active,
+            "session_id": session_id,
+            "reattach_before": reattach_before,
+            "reattach_after": reattach_after,
+            "reattached": reattached,
+            "stop_requests_before_terminal": stop_requests_before_terminal,
+            "server_before_reload": server_before_reload,
+            "server_after_reload": server_after_reload,
+            "post_reload_reads": post_reload_reads,
+            "before_item_ids": before_item_ids,
+            "after_item_ids": after_item_ids,
+            "after_span_ids": after_span_ids,
+            "authoritative_span_ids": authoritative_span_ids,
+            "before_event_sequences": before_event_sequences,
+            "after_event_sequences": after_event_sequences,
+            "pre_reload_poller_reads": pre_reload_poller_reads,
+            "terminal_stop": terminal_stop,
+            "terminal_server_status": terminal_server_status,
+            "terminal": terminal,
+            "terminal_reloaded": terminal_reloaded,
+            "terminal_reload_state": terminal_reload_state,
+            "reads_after_terminal_reload": reads_after_terminal_reload,
         }
-        if not all(assertions.values()):
+        assertions = _reload_assertions(assertion_facts)
+        assertion_falsifications = _falsify_reload_assertions(assertion_facts)
+        if not all(assertions.values()) or any(
+            result["observed_result"] is not False for result in assertion_falsifications.values()
+        ):
             raise _ProbeFailure(
-                "minimum reload assertions failed",
+                "reload assertion or falsification failed",
                 {
                     "mounted": mounted,
                     "ready": ready,
@@ -807,6 +941,7 @@ def _run(chrome_bin: str) -> dict:
                     "terminal_stop_requests": terminal_stop_requests,
                     "reads_after_terminal_reload": reads_after_terminal_reload,
                     "assertions": assertions,
+                    "assertion_falsifications": assertion_falsifications,
                 },
             )
         return {
@@ -860,6 +995,7 @@ def _run(chrome_bin: str) -> dict:
                 "read_requests_after_terminal_reload": reads_after_terminal_reload,
             },
             "assertions": assertions,
+            "assertion_falsifications": assertion_falsifications,
             "descriptor": {
                 "status": descriptor["status"],
                 "frame_samples": negotiated_descriptor["frame_samples"],

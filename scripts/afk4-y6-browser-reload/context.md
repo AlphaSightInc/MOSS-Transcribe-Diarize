@@ -4,8 +4,10 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Known state (verified 2026-08-18, dev @ 852d366)
 
-- G6 has real-browser evidence for reattach, cursor/item continuity, and terminal-reload cleanup;
-  deliberate assertion falsification remains before it can be certified.
+- G6 now meets its local real-browser bar: `iteration-6-assertion-falsification.json` records the
+  actual `ControlPanel` in fresh headless Chrome through local Vite and real production routes;
+  same-session reattach, cursor/item continuity, no reload Stop, bearer absence, readable
+  server-authored status, and terminal reload cleanup all passed.
 - Reattach is implemented: `ControlPanel` stores `{sessionId, viewToken}` in tab-scoped storage,
   reload closes local media without sending Stop, startup resumes the snapshot/event poller, and the
   capture bearer stays in memory only. ADR-0004 records the security boundary.
@@ -46,6 +48,10 @@ Living working memory. Update every iteration so it matches reality. History goe
   mounted idle with no stored credentials or snapshot/event reads. The raw terminal snapshot
   records the server-authored `Audio capture stopped.` status (the UI's terminal summary is
   `Session closed.`). The bearer remained absent from browser storage throughout.
+- `iteration-6-assertion-falsification.json` has all 19 G6 assertions true and reruns every
+  predicate against a named corrupted observation. All 19 returned `false`, including
+  `reload_dropped_tab_storage` and `stale_event_cursor`; the checks are therefore not tautologies.
+  The scope still excludes a permission prompt, display capture, model inference, and deployed host.
 - A native Chrome fake-audio input was live but yielded 190 zero-RMS worklet frames in this
   environment; the probe uses the established synthetic MediaStream shape instead. This is a
   launcher/source limitation, not evidence of a product defect.
@@ -54,7 +60,7 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Falsify every assertion against a deliberately broken input before committing.
+No open candidate: the PRD acceptance bar is met and recorded in `progress.txt`.
 
 ## Not yours
 

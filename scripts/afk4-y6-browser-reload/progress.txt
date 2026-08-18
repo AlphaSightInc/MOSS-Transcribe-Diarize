@@ -78,3 +78,17 @@ correctly cannot stop the session itself because its bearer is gone; the probe r
 ephemeral owner credential only outside browser storage to produce terminal state. next:
 deliberately falsify every assertion with dropped storage and stale cursor inputs before G6
 certification.
+
+[iteration 6] target: falsify every G6 assertion against a deliberately broken observation before
+certification. files: `prototypes/browser-capture-feasibility/probe_g6_browser_reload.py`,
+`evidence/phase1/y6-browser-reload/iteration-6-assertion-falsification.json`,
+`docs/phase1-gate-status.md`, `scripts/afk4-y6-browser-reload/context.md`,
+`scripts/afk4-y6-browser-reload/progress.txt`. validation: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python
+prototypes/browser-capture-feasibility/probe_g6_browser_reload.py --output
+evidence/phase1/y6-browser-reload/iteration-6-assertion-falsification.json` passed; 19/19 measured
+assertions true and all 19 named corrupted observations returned false. evidence: the raw artifact
+records `reload_dropped_tab_storage`, `stale_event_cursor`, and every other assertion falsifier.
+learned: these G6 checks reject the named loss/rollback hazards rather than only describing good
+output; the documented local real-browser G6 bar is met. recommended next step: no y6 work remains;
+retain stated exclusions (permission prompt, display capture, model inference, deployed host) for
+their separate gates/certification paths.
