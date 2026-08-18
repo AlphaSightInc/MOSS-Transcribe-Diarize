@@ -1,0 +1,8 @@
+Committed `4cbbee1` — scope blocker recorded.
+
+Focused checks: backend 1 passed; export 4 passed.
+
+Remaining frontend bearer propagation needs authority for `App.tsx`, `ControlPanel.tsx`, `FilePanel.tsx`; no safe allowed-file-only fix. Launcher telemetry left untouched.
+
+
+<promise>COMPLETE</promise>

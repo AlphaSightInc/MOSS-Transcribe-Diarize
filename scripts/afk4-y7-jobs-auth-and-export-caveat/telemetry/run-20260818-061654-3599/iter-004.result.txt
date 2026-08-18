@@ -1,0 +1,4 @@
+Committed `7c5f230` — bearer scope blocker documented.
+
+Correct fix needs `App.tsx` + both panels; mode switch destroys bearer. `vitest` unavailable locally. Launcher telemetry left unstaged. Next: export caveat.
+

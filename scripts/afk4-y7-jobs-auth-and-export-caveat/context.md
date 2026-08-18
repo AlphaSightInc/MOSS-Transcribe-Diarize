@@ -4,25 +4,50 @@ Living working memory. Update every iteration. History goes in progress.txt.
 
 ## Known state (verified 2026-08-18, dev @ 852d366)
 
-- `POST /api/jobs` at `server.py:198` has no auth dependency. `grep middleware server.py` → nothing.
-  `grep "api/jobs" tests/*.py | grep -i auth` → nothing. The route is open.
 - Existing auth seam lives in `moss_transcribe_diarize/app/live_auth.py` and already backs the live
-  routes. Reuse it.
-- `transcriptExport.ts:23,92` carry `provisional_stale` as a json field only; md and txt have no
-  human-readable caveat.
-- Frontend already holds the capture bearer in memory (never localStorage) — `ControlPanel`.
+  routes. `LiveAccessRegistry.authorize(peer, bearer, action, session_id, now)` rejects an absent
+  bearer with 401 and accepts the configured shared bearer as capture authority; `"create"` is the
+  applicable existing capture action for an unscoped write. `server.py` constructs and stores that
+  registry only when `live_enabled=True`; `web_cli.py` accepts the shared-token file only with
+  `--live`. The default non-live CLI bind is loopback (`127.0.0.1`). Reuse the registry and its
+  comparison/revocation path; do not edit `live_auth.py`.
+- All four named job routes now call `_authorize_job_request` before handler work when a live access
+  registry is configured. It builds the same peer/bearer inputs as live routes and calls
+  `authorize(..., "create", None, ...)`; missing and wrong bearers return `[401, 401, 401, 401]`,
+  while the configured bearer completes `[200, 200, 200, 200]` for create/list/get/delete. Auth is
+  before `_admit_upload_request`, so rejected uploads do not read a body or reserve disk. The
+  deterministic runner keeps the admitted control on real multipart/enqueue/get/delete paths.
+- Focused validation: the job-route test passes; `tests/test_large_upload.py` remains `11 passed,
+  2 skipped`; and the no-shared-token pairing/live path passes. The re-runnable local Uvicorn TLS
+  probe now supplies the required service evidence: missing and wrong bearer each receive four
+  401s, while the configured bearer completes multipart create/list/get/delete with a
+  `waiting_review` job. It uses the production app, JobManager, and LiveAccessRegistry with a
+  deterministic transcriber only to avoid a model/GPU requirement; it explicitly does not claim a
+  real decode.
+- Transcript exports now add the exact human-readable caveat, "Speaker attribution is provisional
+  and may be revised by the retrospective sweep after the session ends," before Markdown and text
+  content and as `provisional_attribution_notice` in JSON whenever any turn is `confirmed` or
+  `provisional`. Fully `final` exports omit it. Focused Vitest evidence passes 4/4, and frontend
+  typecheck passes.
+- Frontend bearer propagation is blocked on scope, not an API-adapter gap. `App.tsx` conditionally
+  unmounts `ControlPanel` when file mode is selected; `ControlPanel` owns `captureBearer` in local
+  state, and `FilePanel` calls `submitJob(selectedFile)` with no options. Thus no memory-only bearer
+  survives the mode switch. The smallest correct repair needs an authority grant for `App.tsx` plus
+  both components to lift and pass that state; an API-side/global workaround would either have no
+  source or invent an unsafe token store. Do not claim the frontend requirement complete without that
+  grant and a component integration test. Iteration 7 re-read all four files and re-ran the focused
+  backend/export checks; no permitted-file change can establish the missing client path.
 - Baseline to protect: pytest 2 failed / 1065 passed / 396 subtests; frontend 108/108.
   The 2 failures are permanent Phase 1 baselines — never "fix" them.
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Read `live_auth.py` and how the live routes attach it. Reuse, do not reinvent.
-2. RED test first: unauthenticated `POST /api/jobs` must be rejected. Watch it fail.
-3. Guard all four job routes; keep `_admit_upload_request`, 408 idle timeout, chunked reads intact.
-4. Send the in-memory bearer from the file-mode client; never a query param, never localStorage.
-5. Human-readable provisional caveat in md and txt as well as json; absent after finalization.
-6. Evidence against a locally-run service, not only unit tests.
+1. Blocked: frontend bearer propagation requires authority to modify `frontend/src/App.tsx` and
+   `frontend/src/components/{ControlPanel.tsx,FilePanel.tsx}`. On grant, lift the current in-memory
+   bearer to `App`, pass it into both mode panels, add the Authorization header through `jobs.ts`,
+   and prove no persistent/query token path.
 
 ## Not yours
 
-`live_auth.py` (read-only, reuse its seam) · `frontend/src/components/` · `live_service_runtime.py`
+`live_auth.py` (read-only, reuse its seam) · `frontend/src/App.tsx` · `frontend/src/components/` ·
+`live_service_runtime.py`

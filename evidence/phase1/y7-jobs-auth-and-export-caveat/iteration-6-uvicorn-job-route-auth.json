@@ -1,0 +1,29 @@
+{
+  "auth_seam": "production LiveAccessRegistry shared bearer",
+  "checks": {
+    "configured_bearer_statuses": {
+      "create": 200,
+      "delete": 200,
+      "get": 200,
+      "list": 200,
+      "observed_job_status_before_delete": "waiting_review"
+    },
+    "missing_bearer_statuses": {
+      "create": 401,
+      "delete": 401,
+      "get": 401,
+      "list": 401
+    },
+    "wrong_bearer_statuses": {
+      "create": 401,
+      "delete": 401,
+      "get": 401,
+      "list": 401
+    }
+  },
+  "job_execution": "deterministic runner; proves admission and JobManager lifecycle, not a model decode",
+  "probe": "scripts/afk4-y7-jobs-auth-and-export-caveat/probe_uvicorn_job_route_auth.py",
+  "server_stopped": true,
+  "success": true,
+  "transport": "locally-run Uvicorn over TLS HTTP/1.1 on loopback"
+}

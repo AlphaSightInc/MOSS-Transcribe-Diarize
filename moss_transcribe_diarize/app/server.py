@@ -1,6 +1,7 @@
 import asyncio
 import json
 import shutil
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -9,7 +10,7 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 from .ffmpeg import detect_ffmpeg
 from .jobs import JobManager
 from .live_session import LIVE_SAMPLE_RATE
-from .live_auth import LiveAccessRegistry
+from .live_auth import LiveAccessError, LiveAccessRegistry, LivePeer
 from .live_helper_failure import LiveHelperLeaseConfigError
 from .live_portal import attach_live_portal
 from .live_service_runtime import LiveServiceRuntime
@@ -192,7 +193,8 @@ def create_app(
         }
 
     @app.get("/api/jobs")
-    def list_jobs():
+    def list_jobs(request: Request):
+        _authorize_job_request(request, live_access_registry)
         return {"jobs": [job.to_dict() for job in manager.list_jobs()]}
 
     @app.post("/api/jobs")
@@ -206,6 +208,7 @@ def create_app(
         temperature: Any = None,
     ):
         if request is not None:
+            _authorize_job_request(request, live_access_registry)
             _admit_upload_request(request, manager.runs_dir)
             try:
                 _install_receive_idle_timeout(request)
@@ -271,14 +274,16 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.get("/api/jobs/{job_id}")
-    def get_job(job_id: str):
+    def get_job(job_id: str, request: Request):
+        _authorize_job_request(request, live_access_registry)
         try:
             return manager.get_job(job_id).to_dict()
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.delete("/api/jobs/{job_id}")
-    def delete_job(job_id: str):
+    def delete_job(job_id: str, request: Request):
+        _authorize_job_request(request, live_access_registry)
         try:
             manager.delete_job(job_id)
             return {"ok": True}
@@ -493,6 +498,28 @@ def _admit_upload_request(request, runs_dir: Path) -> int:
     if shutil.disk_usage(runs_dir).free < required_free:
         raise HTTPException(status_code=507, detail="Insufficient storage for upload.")
     return content_length
+
+
+def _authorize_job_request(request, access: LiveAccessRegistry | None) -> None:
+    if access is None:
+        return
+    client = request.client
+    peer = LivePeer(
+        host="" if client is None else client.host,
+        scheme=str(request.scope.get("scheme") or "http"),
+    )
+    header = request.headers.get("authorization")
+    if header is None:
+        bearer = None
+    else:
+        scheme, _, token = header.partition(" ")
+        bearer = token if scheme.lower() == "bearer" and token else None
+    try:
+        access.authorize(peer, bearer, "create", None, now=time.time())
+    except LiveAccessError as exc:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 def _optional_form_text(value: Any) -> str | None:
