@@ -1,0 +1,2 @@
+
+[loop 20260818-061413-99094] start budget=12 agent=codex branch=afk4/y6-browser-reload
