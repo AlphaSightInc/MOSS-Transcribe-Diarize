@@ -1,0 +1,6 @@
+Iteration 6 committed: `07e516d ralph: iteration 6 - launch local HF live service`.
+
+W0 now passes: local TLS service started on `127.0.0.1:7861`, descriptor returned, bearer session created/aborted. Guardrails pass.
+
+Still open: served-bundle release (W1), operator-attended G3, GPU G4/G5 run. Loop telemetry remains uncommitted/untouched.
+
