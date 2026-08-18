@@ -94,3 +94,32 @@ Living working memory. Update it every iteration so it matches reality. History 
 - G9's audited proof is now refutable: its literal command and unedited output make 12 assertions against
   the HEAD-pinned 77,166-byte served bundle (blob `8121e270...f9c0d9c`). All pass, preserving the
   source-certified-only conclusion rather than treating source behavior as released browser behavior.
+
+## G3/W0 DO NOT NEED vLLM — the model is local (monitor, 2026-08-18 16:45)
+
+`scripts/g3-attended-session.sh:19,53-54` now hard-requires `MOSS_VLLM_BASE_URL` and `--backend vllm`.
+Remove that requirement — it blocks G3 on port 8000 for no reason. The canary's exact weights are cached:
+
+```
+~/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8/
+  model-00000-of-00001.safetensors -> blobs/9a0ceb4ab7330357db3ff583dba8d83625d5b733b00e1d55d6970e11b07026c4  (1.82 GB, present)
+```
+The snapshot id equals `t1/iteration-10`'s `model.snapshot_revision`; HF names blobs by sha256, so the blob
+name equals that artifact's `model.weight_sha256`. Same weights, no download.
+
+`web_cli.py:16` already has `--backend {hf,vllm}` defaulting to **hf**; `ModelRunner` loads via
+`AutoModelForCausalLM.from_pretrained` (`model_runner.py:169`) and accepts a local snapshot dir. The reason
+the default fails is only that `DEFAULT_MODEL` = `<repo>/pretrained/moss-transcribe-diarize`, which does not
+exist here. So:
+
+```
+--backend hf --model ~/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8 \
+--live --live-provider-manifest ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+```
+
+Make vLLM optional: use it when set and reachable, else local hf, and record which path ran. Not a lowered
+bar — it is the configuration `t1/iteration-10` certified G1/G2 on, at 158/248 ms p50/p95 CPU
+commit-to-render (`t1/iteration-12`), fast enough for an attended run.
+
+**Then finish W0's actual PRD bar:** service on 127.0.0.1:7861 over TLS, `/api/live/descriptor` fetched from
+the LOCAL service, and a session created. Say plainly that the decode path is CPU hf, not the deployed bound.

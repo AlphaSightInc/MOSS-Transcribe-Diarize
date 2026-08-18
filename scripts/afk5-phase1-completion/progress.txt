@@ -139,3 +139,51 @@ That is falsifiable and it is the difference between W0 done and W0 claimed.
 [iteration 4] target=W0 local CPU provider materialization and G3 launch wiring; files=scripts/g3-attended-session.sh,evidence/phase1/w0-local-live/{README.md,live-provider-manifest.json,iteration-4-provider-preflight.txt},scripts/afk5-phase1-completion/{context.md,progress.txt}; validation=offline `uv pip install --python .venv/bin/python webrtcvad-wheels==2.0.14` resolved the manifest's exact cached wheel, then production `LiveProviderBundleConfig.preflight()` against the real ONNX/WAV returned `available: true`, `failures: []`, and manifest hash `84600e8...0599c178`; `bash -n` plus literal flag assertions and guardrails preflight PASS for the helper; evidence=evidence/phase1/w0-local-live/iteration-4-provider-preflight.txt; learned=the recovered bundle is real, finalized for `ab7a998...`, and its golden check passes, while G3 previously omitted vLLM backend/base URL and the required manifest; blocker=`MOSS_VLLM_BASE_URL` remains unset, so no service/descriptor/session was started and no G3/G4/G5 claim is made; next=re-emit G9's served-bundle proof as raw reproducible evidence, unless a reachable model endpoint arrives first.
 
 [iteration 5] target=G9 served-bundle evidence repair; files=scripts/afk5-phase1-completion/{verify_g9_served_bundle.py,context.md,progress.txt},docs/phase1-gate-status.md,evidence/phase1/g9-ledger-reconciliation/iteration-5-served-bundle-audit.txt; validation=`.venv/bin/python -m py_compile scripts/afk5-phase1-completion/verify_g9_served_bundle.py && .venv/bin/python scripts/afk5-phase1-completion/verify_g9_served_bundle.py` => PASS (12/12 assertions): exact HEAD bundle pinned at 77,166 bytes / Git blob `8121e270...f9c0d9c`, source has bearer/session-timestamp contracts, served bundle proves their legacy absence; evidence=iteration-5-served-bundle-audit.txt contains the literal command and unedited output; learned=G9 is now refutably source-certified-only, not browser-product certified; next=W1 needs a permitted served-bundle release path, otherwise wait for W0 endpoint or W3 operator evidence.
+
+[monitor 2026-08-18 16:45] Iteration 4 W0 provider half VERIFIED REAL, and I traced the golden claim to
+its mechanism rather than trusting the wording. Your ASSERTION paragraph says `available: true` implies
+the golden hash was reproduced — that inference is SOUND. `_collect_preflight_failures`
+(live_provider_bundle.py:1055) runs `_golden_failures` only after every cheaper check passes, and
+`_golden_failures` (:1150-1176) actually executes the WebRTC VAD observations and the ONNX WeSpeaker
+embedding over golden.wav, hashes the result, and compares to `expected_output_sha256`, appending
+"golden expected_output_sha256 mismatch" on failure — which would have flipped `available` to false.
+So `failures: []` really does entail the golden match. I also re-hashed the durable assets myself:
+  ~/.local/share/moss-transcribe-diarize/live/voxceleb_resnet152_LM.onnx  5b734353...330262a8  MATCH
+  ~/.local/share/moss-transcribe-diarize/live/golden.wav                  d101dd44...ac0e60aa  MATCH
+and the committed manifest's `source_revision ab7a998...` is this branch, not the deployed `fb83ba5e...`.
+Charter §8 honoured. This is good work.
+
+***BUT YOU WIRED G3 THE WRONG WAY, AND IT IS SELF-INFLICTED BLOCKAGE.*** You made
+`scripts/g3-attended-session.sh` HARD-REQUIRE vLLM:
+  :19  : "${MOSS_VLLM_BASE_URL:?set MOSS_VLLM_BASE_URL first...}"
+  :53  --backend vllm   :54 --vllm-base-url "$MOSS_VLLM_BASE_URL"
+That makes G3 permanently blocked on port 8000. It does not need to be. The model is already on this
+machine, and it is the SAME weights the canary used:
+
+  /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/
+      e8681d68e7042738ffca8ac8212bc8fcb1131ab8/
+    model-00000-of-00001.safetensors -> ../../blobs/9a0ceb4ab7330357db3ff583dba8d83625d5b733b00e1d55d6970e11b07026c4
+    (1817113576 bytes, blob present)
+
+That snapshot id is `iteration-10-real-model-browser.json`'s `model.snapshot_revision`, and HF names blobs
+by sha256, so the blob filename IS that artifact's `model.weight_sha256`. Same weights, hash-identified,
+no download.
+
+`web_cli.py:16` already offers `--backend {hf,vllm}` with `hf` as the DEFAULT, and `ModelRunner` loads via
+`AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True)` (model_runner.py:169), which
+accepts a local snapshot directory. `DEFAULT_MODEL` resolves to `<repo>/pretrained/moss-transcribe-diarize`
+which does NOT exist here — that is why the default fails and why vLLM looked mandatory. Pass the snapshot
+path explicitly instead:
+
+  --backend hf --model /Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8 \
+  --live --live-provider-manifest ~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+
+Make `MOSS_VLLM_BASE_URL` OPTIONAL in the G3 script: use vLLM when it is set and reachable, otherwise fall
+back to the local hf backend and record which path ran in the artifact. This is not a lowered bar — it is
+the exact configuration `evidence/phase1/t1/iteration-10` certified G1/G2 on, and its CPU commit-to-render
+was 158/248 ms p50/p95 (iteration-12), so it is fast enough for an attended run.
+
+That change turns G3 from "blocked on the operator's network" into "ready for the operator's 10 minutes",
+which is the single highest-value thing left in this loop. Do it next, then finish W0's real PRD bar:
+start the service on 127.0.0.1:7861 over TLS, fetch `/api/live/descriptor` from the LOCAL service, and
+create a session. State in the artifact that the decode path is CPU hf, not the deployed GPU bound.
