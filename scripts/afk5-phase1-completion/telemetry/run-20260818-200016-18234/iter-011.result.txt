@@ -1,0 +1,6 @@
+Iteration 11 committed: `485f1c8`.
+
+- G3 helper now fails closed on unset/non-200 vLLM; no HF fallback.
+- Added 3 focused tests; syntax + guardrail preflight pass.
+- Recorded W2 blocker: tunnel launcher exists on `dev` `affeaea`, absent here.
+
