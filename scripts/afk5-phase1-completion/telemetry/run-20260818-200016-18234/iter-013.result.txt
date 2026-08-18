@@ -1,0 +1,7 @@
+Iteration 13 committed: `191853c ralph: iteration 13 - silent mic remedy`.
+
+- Server-owned silent-mic remedy now flows via existing descriptor; client shows it pre-session and blocks session creation while silent.
+- Validation: frontend 117/117; live status/API 63 passed; served-bundle audit PASS; guardrails PASS.
+- Next: Issue #8 upload byte progress/no-resume copy. Criterion 2 awaits operator ruling.
+- Only loop telemetry remains uncommitted.
+
