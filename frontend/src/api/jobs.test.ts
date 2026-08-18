@@ -3,31 +3,40 @@ import { createFileJobPoller, submitJob } from "./jobs";
 import type { WsEvent } from "./types";
 
 describe("file jobs adapter", () => {
-  it("submits the selected file using the server multipart contract", async () => {
+  it("submits multipart through XHR and reports byte progress", async () => {
     const file = new File(["audio"], "interview.wav", { type: "audio/wav" });
-    const fetcher = vi.fn(async () => response(job("queued", 0)));
+    const request = fakeUploadRequest(job("queued", 0), [
+      { loaded: 2, total: 5 },
+      { loaded: 5, total: 5 }
+    ]);
+    const onUploadProgress = vi.fn();
 
-    await submitJob(file, { fetch: fetcher as typeof fetch, bearerToken: "shared-bearer" });
+    await submitJob(file, {
+      bearerToken: "shared-bearer",
+      createXmlHttpRequest: () => request,
+      onUploadProgress
+    });
 
-    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("/api/jobs");
-    expect(init.method).toBe("POST");
-    expect((init.body as FormData).get("file")).toBe(file);
-    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer shared-bearer");
+    expect(request.open).toHaveBeenCalledWith("POST", "/api/jobs", true);
+    expect(request.send).toHaveBeenCalledWith(expect.any(FormData));
+    expect((request.send.mock.calls[0][0] as FormData).get("file")).toBe(file);
+    expect(request.setRequestHeader).toHaveBeenCalledWith("Authorization", "Bearer shared-bearer");
+    expect(request.setRequestHeader).not.toHaveBeenCalledWith("Content-Type", expect.anything());
+    expect(onUploadProgress).toHaveBeenNthCalledWith(1, { loaded: 2, total: 5 });
+    expect(onUploadProgress).toHaveBeenNthCalledWith(2, { loaded: 5, total: 5 });
   });
 
   it("reports a refused unauthenticated upload", async () => {
     const file = new File(["audio"], "interview.wav", { type: "audio/wav" });
-    const fetcher = vi.fn(async () => response({ detail: "capture bearer required" }, 401));
+    const request = fakeUploadRequest({ detail: "capture bearer required" }, [], 401);
 
-    await expect(submitJob(file, { fetch: fetcher as typeof fetch })).rejects.toMatchObject({
+    await expect(submitJob(file, { createXmlHttpRequest: () => request })).rejects.toMatchObject({
       name: "JobsApiError",
       status: 401,
       message: "capture bearer required"
     });
 
-    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
-    expect(new Headers(init.headers).has("Authorization")).toBe(false);
+    expect(request.setRequestHeader).not.toHaveBeenCalledWith("Authorization", expect.anything());
   });
 
   it("publishes a completed segment snapshot before closing file state", async () => {
@@ -84,4 +93,29 @@ function response(payload: unknown, status = 200): Response {
     status,
     json: async () => payload
   } as Response;
+}
+
+function fakeUploadRequest(
+  payload: unknown,
+  progressEvents: readonly { loaded: number; total: number }[],
+  status = 200
+): XMLHttpRequest & { open: ReturnType<typeof vi.fn>; send: ReturnType<typeof vi.fn>; setRequestHeader: ReturnType<typeof vi.fn> } {
+  const request = {
+    status,
+    responseText: JSON.stringify(payload),
+    open: vi.fn(),
+    send: vi.fn(),
+    setRequestHeader: vi.fn(),
+    upload: { onprogress: null as ((event: ProgressEvent<EventTarget>) => void) | null },
+    onload: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    onabort: null as (() => void) | null
+  };
+  request.send.mockImplementation(() => {
+    for (const progress of progressEvents) {
+      request.upload.onprogress?.({ lengthComputable: true, ...progress } as ProgressEvent<EventTarget>);
+    }
+    request.onload?.();
+  });
+  return request as unknown as XMLHttpRequest & typeof request;
 }

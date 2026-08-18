@@ -78,11 +78,12 @@ describe("App shell", () => {
   });
 
   it("retains the in-memory bearer when switching from Live to File", async () => {
+    const upload = fakeUploadRequest({ id: "job-9", status: "queued", progress: 0, error: null });
     const fetcher = vi.fn()
-      .mockResolvedValueOnce(response({ id: "job-9", status: "queued", progress: 0, error: null }))
       .mockResolvedValueOnce(response({ id: "job-9", status: "waiting_review", progress: 1, error: null }))
       .mockResolvedValueOnce(response({ segments: [] }));
     vi.stubGlobal("fetch", fetcher);
+    vi.stubGlobal("XMLHttpRequest", vi.fn(function FakeXmlHttpRequest() { return upload; }));
     const root = document.createElement("div");
     document.body.append(root);
     render(<App />, root);
@@ -115,6 +116,7 @@ describe("App shell", () => {
 
     const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer shared-bearer");
+    expect(upload.setRequestHeader).toHaveBeenCalledWith("Authorization", "Bearer shared-bearer");
   });
 
   it("records source-tree counts and rendered collapsed-rail evidence", async () => {
@@ -150,4 +152,20 @@ describe("App shell", () => {
 
 function response(payload: unknown, status = 200): Response {
   return { ok: status >= 200 && status < 300, status, json: async () => payload } as Response;
+}
+
+function fakeUploadRequest(payload: unknown) {
+  const request = {
+    status: 200,
+    responseText: JSON.stringify(payload),
+    open: vi.fn(),
+    send: vi.fn(),
+    setRequestHeader: vi.fn(),
+    upload: { onprogress: null as ((event: ProgressEvent<EventTarget>) => void) | null },
+    onload: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    onabort: null as (() => void) | null
+  };
+  request.send.mockImplementation(() => request.onload?.());
+  return request;
 }

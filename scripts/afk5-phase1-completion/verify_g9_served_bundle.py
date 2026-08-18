@@ -63,13 +63,25 @@ def main() -> int:
         (
             "source_file_upload_passes_options",
             Path("frontend/src/components/FilePanel.tsx"),
-            "submitJob(selectedFile, options)",
+            "submitJob(selectedFile, {",
             True,
         ),
         (
-            "source_file_request_sets_bearer",
+            "source_file_upload_sets_bearer",
             Path("frontend/src/api/jobs.ts"),
-            'headers.set("Authorization", `Bearer ${bearerToken}`)',
+            'request.setRequestHeader("Authorization", `Bearer ${bearerToken}`)',
+            True,
+        ),
+        (
+            "source_file_upload_reports_bytes",
+            Path("frontend/src/components/FilePanel.tsx"),
+            "onUploadProgress({ loaded, total })",
+            True,
+        ),
+        (
+            "source_file_upload_declares_no_resume",
+            Path("frontend/src/components/FilePanel.tsx"),
+            "Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.",
             True,
         ),
         (
@@ -85,6 +97,13 @@ def main() -> int:
         ("served_bundle_legacy_export_txt_filename", "filename:`transcript.txt`", False),
         ("served_bundle_legacy_export_json_filename", "filename:`transcript.json`", False),
         ("served_bundle_new_file_bearer_options", "bearerToken", True),
+        ("served_bundle_new_file_xhr_upload", "XMLHttpRequest", True),
+        ("served_bundle_new_file_upload_progress", "onprogress", True),
+        (
+            "served_bundle_file_upload_declares_no_resume",
+            "Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.",
+            True,
+        ),
     )
     export_identity_pattern = (
         r"transcript-\$\{[^}]+\.sessionId\}-"

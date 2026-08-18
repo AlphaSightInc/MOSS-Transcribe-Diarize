@@ -26,6 +26,16 @@ export interface JobsApiOptions {
   baseUrl?: string;
   bearerToken?: string;
   fetch?: typeof globalThis.fetch;
+  createXmlHttpRequest?: () => XMLHttpRequest;
+}
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+}
+
+export interface SubmitJobOptions extends JobsApiOptions {
+  onUploadProgress?: (progress: UploadProgress) => void;
 }
 
 export interface FileJobPollerOptions extends JobsApiOptions {
@@ -50,10 +60,10 @@ export class JobsApiError extends Error {
   }
 }
 
-export async function submitJob(file: File, options: JobsApiOptions = {}): Promise<FileJob> {
+export async function submitJob(file: File, options: SubmitJobOptions = {}): Promise<FileJob> {
   const form = new FormData();
   form.append("file", file);
-  return parseJob(await requestJson(options, "/api/jobs", { method: "POST", body: form }));
+  return parseJob(await uploadJob(options, form));
 }
 
 export async function getJob(jobId: string, options: JobsApiOptions = {}): Promise<FileJob> {
@@ -243,6 +253,43 @@ function lifecycleForJobStatus(status: string): SessionLifecycle {
   if (status === "failed") return "failed";
   if (status === "cancelled") return "aborted";
   return "active";
+}
+
+function uploadJob(options: SubmitJobOptions, form: FormData): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const request = (options.createXmlHttpRequest ?? (() => new XMLHttpRequest()))();
+    request.open("POST", `${baseUrl(options)}/api/jobs`, true);
+    const bearerToken = options.bearerToken?.trim();
+    if (bearerToken) request.setRequestHeader("Authorization", `Bearer ${bearerToken}`);
+
+    request.upload.onprogress = (event) => {
+      if (!event.lengthComputable || event.total <= 0) return;
+      options.onUploadProgress?.({ loaded: event.loaded, total: event.total });
+    };
+    request.onerror = () => reject(new JobsApiError("Upload failed.", request.status));
+    request.onabort = () => reject(new JobsApiError("Upload cancelled.", request.status));
+    request.onload = () => {
+      let payload: unknown;
+      try {
+        payload = JSON.parse(request.responseText);
+      } catch {
+        reject(new Error("Invalid JSON response."));
+        return;
+      }
+      if (request.status < 200 || request.status >= 300) {
+        const detail = payload && typeof payload === "object" && !Array.isArray(payload)
+          ? (payload as { detail?: unknown }).detail
+          : null;
+        reject(new JobsApiError(
+          typeof detail === "string" && detail.length > 0 ? detail : "Request failed.",
+          request.status
+        ));
+        return;
+      }
+      resolve(payload);
+    };
+    request.send(form);
+  });
 }
 
 async function requestJson(options: JobsApiOptions, path: string, init: RequestInit): Promise<unknown> {

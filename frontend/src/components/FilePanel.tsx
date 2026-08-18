@@ -25,7 +25,13 @@ export function FilePanel({ captureBearer }: FilePanelProps) {
     setMessage("Uploading file...");
     try {
       const options = { bearerToken: captureBearer.trim() };
-      const created = await submitJob(selectedFile, options);
+      const created = await submitJob(selectedFile, {
+        ...options,
+        onUploadProgress({ loaded, total }) {
+          setProgress(loaded / total);
+          setMessage(`Uploading file: ${loaded} / ${total} bytes.`);
+        }
+      });
       setMessage("Queued for transcription.");
       const poller = createFileJobPoller({
         jobId: created.id,
@@ -35,7 +41,7 @@ export function FilePanel({ captureBearer }: FilePanelProps) {
           setMessage(job.error ?? job.status.replaceAll("_", " "));
         },
         onError(error) {
-          setMessage(`Connection interrupted; retrying: ${error}`);
+          setMessage(`Connection interrupted while checking transcription; retrying: ${error}`);
         },
         onTerminal(job) {
           setRunning(false);
@@ -99,6 +105,7 @@ export function FilePanel({ captureBearer }: FilePanelProps) {
         <div className="bar" style={{ width: `${Math.max(0, Math.min(100, progress * 100))}%` }} />
       </div>
       <p className="capture-status" role="status">{message}</p>
+      <p className="capture-status">Failed uploads restart from the beginning; upload resume is unavailable in Phase 1.</p>
     </section>
   );
 }
