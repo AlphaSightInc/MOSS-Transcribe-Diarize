@@ -45,6 +45,22 @@ the complete record after the publication lock, sends it to a dedicated writer t
 file every five seconds plus shutdown. Its cumulative enqueue, write, sync, and pending-record figures
 are retained with every measurement phase, so the artifact exposes observer overhead.
 
+### Unexpected-frame evidence compaction — 2026-08-18
+
+**VERDICT: PASS — absorbed into the runner before the tunnel-backed W2 run.**
+
+Question: can failure evidence retain counts and request/response diagnostics without retaining PCM
+or one full result per repeat? The throwaway prototype ran against
+`run-20260818T213600/run-state.json`: 1,584 failures contained 36,356,544 base64-PCM bytes inside the
+59,992,997-byte artifact. They collapsed into two `(http_status, error_code, lane)` buckets:
+`(429, canonical_queue_full, microphone)=1,464` and `(429, canonical_queue_full, system)=120`.
+
+The absorbed runner records the total and every bucket count, plus the first and last three exemplars
+per bucket. Each exemplar retains session ID, sequence, device epoch, timing/shape metadata, HTTP
+status, typed error, retryability, bounded failure detail, PCM byte length, and a 16-character SHA-256
+prefix. It never serializes `pcm_base64`; predicate-bearing latency, dispatch, RSS, queue-depth, and
+429 arrays remain untouched.
+
 ## Gate preregistration — 2026-08-13
 
 **VERDICT: PASS — numeric gates and measurement semantics frozen before measurement.**

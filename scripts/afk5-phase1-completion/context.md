@@ -79,11 +79,14 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 vLLM-only measurement prerequisites** first fix the runner so unexpected frames never persist
-   `pcm_base64` and aggregate diagnostic exemplars, then bring the already-audited SSH tunnel launcher
-   from `dev` commit `affeaea` into this branch. Only then run the preregistered tunnel-backed runner
-   with pre/post endpoint probes, `/v1/audio/transcriptions` inference, and the required transit/shared
-   GPU limits. The CPU/HF contract and iteration-10 result cannot be reused as gate evidence.
+1. **W2 vLLM-only measurement prerequisites** iteration 15 fixed the runner: unexpected-frame evidence
+   never serializes `pcm_base64`, retains total counts, and bounds diagnostic exemplars by
+   `(http_status, error_code, lane)`. Next trim the committed 60 MB CPU/HF diagnostic artifact in a
+   new commit, preserving predicate-bearing arrays and recording its original hash/size. Then bring the
+   already-audited SSH tunnel launcher from `dev` commit `affeaea` into this branch. Only then run the
+   preregistered tunnel-backed runner with pre/post endpoint probes, `/v1/audio/transcriptions` inference,
+   and the required transit/shared-GPU limits. The CPU/HF contract and iteration-10 result cannot be
+   reused as gate evidence.
 2. **W3 (blocked externally)** an operator must add a raw attended-session log; iteration 7 confirms
    the directory contains only the fixture. Then validate the charter's frame, cadence, fetch, and RMS
    requirements.
@@ -241,7 +244,7 @@ No endpoint was added: the existing descriptor response exposes `preflight_statu
 silence updates the ControlPanel status line with that exact string; a stale-ready state cannot create a
 session until microphone signal recovers. `captureClient.test.ts` and `ControlPanel.test.tsx` cover both facts.
 
-## Do not commit the 60 MB run-state.json — fix the runner (monitor, 2026-08-18 17:45)
+## 60 MB run-state.json — runner fixed; committed diagnostic needs trim
 
 `evidence/phase1/w2-local-concurrency/run-20260818T213600/run-state.json` = 59,992,997 bytes. Traced:
 `phases` 51.41 MB (screen-2 5.16, screen-4 16.1, screen-8 30.12); within screen-8,
@@ -250,14 +253,14 @@ embeds the full frame payload **including `pcm_base64`**. Repo precedent: larges
 2.88 MB, largest JSON 1.1 MB. Gzip only reaches 26.9 MB.
 
 The base64 PCM is not diagnostic — status, error, lane, sequence, device_epoch are; and the audio is already
-pinned by `fixture_sha256`. **Fix the runner, since the vLLM run must survive review:**
+pinned by `fixture_sha256`. **Runner repair, completed in iteration 15 before the vLLM run:**
 1. Never record `pcm_base64` in a result — record `pcm_len` (+ short sha256 prefix if identity matters).
 2. Aggregate `unexpected_frame_results` by `(http_status, error_code, lane)` with counts, keeping ~3 verbatim
    exemplars per bucket first and last, so the raw shape stays auditable.
 3. **Keep** the predicate-bearing arrays — latency samples, dispatch order, RSS samples, queue depth, 429
    outcomes. Those are small and they make the verdict falsifiable. Do not prune them.
-4. Then commit. `canonical-processed.jsonl` (197 KB), `verdict.json`, `service.log`, `preflight.json` and the
-   manifest records are fine as-is.
+4. `canonical-processed.jsonl` (197 KB), `verdict.json`, `service.log`, `preflight.json` and the manifest
+   records are fine as-is. Trim only the committed `run-state.json` in the next, separate change.
 
 Verified good, no action: the CPU/HF verdict is a clean negative — `screening_passes: []`,
 `qualifies_local_g4_g5_portions: false`, `chosen_normal_session_bound: null` — and it corroborates the operator
@@ -265,7 +268,8 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Priority order
-1. Fix W2 unexpected-frame evidence recording before any vLLM run.
+1. Trim the already-committed 60 MB CPU/HF diagnostic artifact in a new commit, preserving predicate-bearing
+   arrays and recording original `a28f57e5b5266c429bb1df106417ee6448fed58fb94180c207788e5b4d8986dd` / 59,992,997-byte provenance.
 2. Bring the reviewed tunnel launcher into this branch, then run W2 against
    `http://127.0.0.1:18000/v1`.
 3. W3 stays blocked until an operator adds a raw attended-session log.
@@ -285,13 +289,17 @@ browser-hop or real-model claim.
 - **Served-bundle verifier (iteration 14):** its 16 assertions pass against `HEAD`: bearer ownership and
   propagation, XHR upload plus byte progress, explicit no-resume copy, removal of legacy upload/static-export
   signatures, and the dynamic session/timestamp export filename. The shipped frontend suite is 118/118.
+- **W2 unexpected-frame evidence (iteration 15):** the runner stores total counts and the first/last three
+  diagnostic exemplars per `(http_status, error_code, lane)` bucket. It retains safe frame metadata, `pcm_len`,
+  and a 16-character PCM SHA-256 prefix, never raw PCM. Focused regression and afk5 preflight pass; the historic
+  oversized artifact remains deliberately unmodified for the next, separate trim.
 
 ## The 60 MB artifact: my note was 2 minutes late, it is already committed
 
-`run-state.json` (59,992,997 B) landed in `227e8ba` at 17:43:42. Still do both:
-(a) **fix the runner** before the vLLM gate run (no `pcm_base64` in results; aggregate
-`unexpected_frame_results` by `(http_status, error_code, lane)` with ~3 exemplars; keep predicate-bearing arrays);
-(b) **trim the committed artifact in a new commit** — your own artifact, so in scope — preserving every array the
+`run-state.json` (59,992,997 B) landed in `227e8ba` at 17:43:42. Iteration 15 completed (a): the runner never
+persists `pcm_base64`, aggregates `unexpected_frame_results` by `(http_status, error_code, lane)` with three
+first/last exemplars, and retains predicate-bearing arrays. Still do (b): **trim the committed artifact in a new
+commit** — your own artifact, so in scope — preserving every array the
 verdict's predicates used, and recording the original sha256 + byte size so the trim is auditable.
 **No history rewriting** (no amend/rebase/force-push). `dev` uses true merge commits, so the history question is
 the operator's call, not yours.

@@ -186,6 +186,93 @@ def _wrapped_frame(pcm: bytes, *, sequence: int, frame_samples: int) -> bytes:
     return left + pcm[: right_samples * 2]
 
 
+_UNEXPECTED_FRAME_EXEMPLARS_PER_BUCKET = 3
+
+
+def _frame_payload_evidence(payload: dict[str, Any]) -> dict[str, Any]:
+    """Keep request metadata and a PCM fingerprint, never the PCM itself."""
+    encoded_pcm = payload.get("pcm_base64")
+    if not isinstance(encoded_pcm, str):
+        raise MeasurementError("measurement frame payload lacks pcm_base64")
+    pcm = base64.b64decode(encoded_pcm, validate=True)
+    return {
+        "lane": payload["lane"],
+        "sequence": payload["sequence"],
+        "capture_timestamp_ns": payload["capture_timestamp_ns"],
+        "device_epoch": payload["device_epoch"],
+        "silent": payload["silent"],
+        "discontinuity": payload["discontinuity"],
+        "sample_rate": payload["sample_rate"],
+        "sample_count": payload["sample_count"],
+        "pcm_len": len(pcm),
+        "pcm_sha256_prefix": hashlib.sha256(pcm).hexdigest()[:16],
+    }
+
+
+def _frame_response_evidence(response: dict[str, Any]) -> dict[str, Any]:
+    body = response.get("json")
+    body = body if isinstance(body, dict) else {}
+    failure = body.get("failure")
+    failure = failure if isinstance(failure, dict) else {}
+    error_code = failure.get("code")
+    return {
+        "http_status": response["status"],
+        "error_code": error_code if isinstance(error_code, str) and error_code else "unspecified",
+        "detail": body.get("detail") if isinstance(body.get("detail"), str) else None,
+        "retryable": failure.get("retryable") if isinstance(failure.get("retryable"), bool) else None,
+        "failure_detail": failure.get("detail") if isinstance(failure.get("detail"), dict) else None,
+    }
+
+
+def _new_unexpected_frame_results() -> dict[str, Any]:
+    return {"total_count": 0, "buckets": []}
+
+
+def _record_unexpected_frame_result(results: dict[str, Any], failure: dict[str, Any]) -> None:
+    """Aggregate repeated frame failures without allowing raw PCM to bloat evidence."""
+    attempted = failure["attempted"]
+    failed_attempt = attempted[-1]
+    failed_frame = _frame_payload_evidence(failed_attempt["payload"])
+    failed_response = _frame_response_evidence(failed_attempt["response"])
+    key = (failed_response["http_status"], failed_response["error_code"], failed_frame["lane"])
+    buckets = results["buckets"]
+    bucket = next(
+        (
+            candidate
+            for candidate in buckets
+            if (candidate["http_status"], candidate["error_code"], candidate["lane"]) == key
+        ),
+        None,
+    )
+    if bucket is None:
+        bucket = {
+            "http_status": key[0],
+            "error_code": key[1],
+            "lane": key[2],
+            "count": 0,
+            "first_exemplars": [],
+            "last_exemplars": [],
+        }
+        buckets.append(bucket)
+    exemplar = {
+        "session_id": failure["session_id"],
+        "sequence": failure["sequence"],
+        "attempted": [
+            {
+                "frame": _frame_payload_evidence(attempt["payload"]),
+                "response": _frame_response_evidence(attempt["response"]),
+            }
+            for attempt in attempted
+        ],
+    }
+    results["total_count"] += 1
+    bucket["count"] += 1
+    if len(bucket["first_exemplars"]) < _UNEXPECTED_FRAME_EXEMPLARS_PER_BUCKET:
+        bucket["first_exemplars"].append(exemplar)
+    bucket["last_exemplars"].append(exemplar)
+    del bucket["last_exemplars"][:-_UNEXPECTED_FRAME_EXEMPLARS_PER_BUCKET]
+
+
 @dataclass
 class SessionRun:
     session_id: str
@@ -489,7 +576,7 @@ class Measurement:
             outcome = self.post_frame(session, payload)
             attempted.append({"payload": payload, **outcome})
             if outcome["response"]["status"] != 200:
-                return False, {"sequence": sequence, "attempted": attempted}
+                return False, {"session_id": session.session_id, "sequence": sequence, "attempted": attempted}
         assert self.local_descriptor is not None
         end_sample = (sequence + 1) * int(self.local_descriptor["frame_samples"])
         session.frame_end_wall_ns[end_sample] = time.time_ns()
@@ -597,7 +684,7 @@ class Measurement:
             "duration_seconds": duration_seconds,
             "sessions": [session.session_id for session in sessions],
             "started_wall_ns": time.time_ns(),
-            "unexpected_frame_results": [],
+            "unexpected_frame_results": _new_unexpected_frame_results(),
         }
         deadline = time.monotonic() + duration_seconds
         tick = time.monotonic()
@@ -607,7 +694,7 @@ class Measurement:
                 self.heartbeat(session)
                 accepted, failure = self.send_pair(session)
                 if not accepted and failure is not None:
-                    phase["unexpected_frame_results"].append(failure)
+                    _record_unexpected_frame_result(phase["unexpected_frame_results"], failure)
             for session in sessions:
                 self.poll(session)
             if not reconnect_done and time.monotonic() >= deadline - duration_seconds / 2:
@@ -703,7 +790,7 @@ class Measurement:
                 and rss_growth <= memory_gate
                 and oom_count == 0
                 and stops_closed
-                and not phase["unexpected_frame_results"]
+                and phase["unexpected_frame_results"]["total_count"] == 0
                 and all(all(check.values()) for check in marker_checks.values())
             ),
         }
