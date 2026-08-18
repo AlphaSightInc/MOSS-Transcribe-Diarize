@@ -1,0 +1,204 @@
+{
+  "active": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 2,
+          "max": 0.1414196681379633
+        },
+        "system": {
+          "count": 2,
+          "max": 0.14147127342498542
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 4,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "active",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Capture active. Keep both lane meters moving.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "all_checks_passed": true,
+  "assertions": {
+    "capture_bearer_did_not_survive_reload": true,
+    "only_view_credentials_are_stored": true,
+    "real_control_panel_started_one_session": true,
+    "reattached_poller_issued_read_only_requests": true,
+    "reload_enters_read_only_viewing": true,
+    "same_session_is_retained_in_tab_storage": true,
+    "server_authored_status_remains_readable": true,
+    "server_received_no_stop_on_reload": true,
+    "session_remains_active_after_reload": true
+  },
+  "backend": {
+    "base_url": "http://127.0.0.1:8090",
+    "proxy_target": "127.0.0.1:8090"
+  },
+  "chrome": {
+    "fresh_profile": true,
+    "headless": true,
+    "microphone": "in-page oscillator MediaStream returned from getUserMedia",
+    "system_lane": "in-page oscillator MediaStream; getDisplayMedia picker was not invoked"
+  },
+  "descriptor": {
+    "frame_samples": 1000,
+    "status": 200
+  },
+  "does_not_cover": [
+    "browser's real permission prompt (media APIs are deterministic test doubles)",
+    "display capture",
+    "model inference",
+    "a deployed host",
+    "cursor continuity or reload-after-terminal cleanup"
+  ],
+  "mounted": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "idle",
+    "reattachFields": [],
+    "statusLine": "Enter the capture bearer to configure both audio lanes.",
+    "storageKeys": []
+  },
+  "post_reload_read_only_requests": [
+    {
+      "route": "snapshot",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787035293454
+    },
+    {
+      "route": "events",
+      "session_id": "api-session",
+      "status": 200,
+      "wall_ms": 1787035293455
+    }
+  ],
+  "probe": "prototypes/browser-capture-feasibility/probe_g6_browser_reload.py",
+  "ready": {
+    "bearerInputHasValue": true,
+    "mediaDebug": {
+      "laneRms": {
+        "microphone": {
+          "count": 1,
+          "max": 0.09372450357241213
+        },
+        "system": {
+          "count": 1,
+          "max": 0.09071207941833094
+        }
+      },
+      "microphone": {
+        "calls": 1,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "system": {
+        "calls": 2,
+        "contextState": "running",
+        "source": "oscillator",
+        "trackReadyState": "live"
+      },
+      "workletMessages": 2,
+      "workletNodes": [
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        },
+        {
+          "contextState": "running",
+          "name": "lane-framer"
+        }
+      ]
+    },
+    "phase": "ready",
+    "reattachFields": [],
+    "statusLine": "Both lanes carry audio. Start capture when ready.",
+    "storageKeys": []
+  },
+  "reattach_storage": {
+    "after": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "before": {
+      "captureBearerAbsent": true,
+      "recordFields": [
+        "sessionId",
+        "viewToken"
+      ],
+      "sessionId": "api-session",
+      "viewTokenPresent": true
+    },
+    "key": "lt:session:reattach"
+  },
+  "reattached": {
+    "bearerInputHasValue": false,
+    "mediaDebug": null,
+    "phase": "viewing",
+    "reattachFields": [
+      "sessionId",
+      "viewToken"
+    ],
+    "statusLine": "Transcript reattached. Browser capture stopped on reload.",
+    "storageKeys": [
+      "lt:session:reattach"
+    ]
+  },
+  "scope": "real headless Chrome, actual Preact ControlPanel, local Vite proxy, and deterministic production routes; deterministic in-page fake microphone and system MediaStreams",
+  "server_status": {
+    "after_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    },
+    "before_reload": {
+      "capturePhase": "recording",
+      "snapshotStatus": "active",
+      "status": 200,
+      "statusLine": "Capturing microphone and shared audio."
+    }
+  },
+  "session_id": "api-session",
+  "started_at_unix_seconds": 1787035292.023,
+  "stop_requests_for_session": [],
+  "vite": {
+    "base_url": "http://127.0.0.1:56866/",
+    "dev_base_override": "/",
+    "served_actual_control_panel": true
+  }
+}

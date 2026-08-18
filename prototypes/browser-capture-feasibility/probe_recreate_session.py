@@ -228,7 +228,7 @@ class _DevToolsSocket:
 
 
 class _ChromePage:
-    def __init__(self, *, chrome_bin: str, url: str):
+    def __init__(self, *, chrome_bin: str, url: str, extra_args: tuple[str, ...] = ()):
         self._profile = tempfile.TemporaryDirectory(prefix="moss-x1-recreate-")
         self._process = subprocess.Popen(
             [
@@ -238,6 +238,7 @@ class _ChromePage:
                 "--no-default-browser-check",
                 "--remote-debugging-port=0",
                 f"--user-data-dir={self._profile.name}",
+                *extra_args,
                 url,
             ],
             stdin=subprocess.DEVNULL,

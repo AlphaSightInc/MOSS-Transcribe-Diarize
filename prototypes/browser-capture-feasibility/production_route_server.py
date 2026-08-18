@@ -248,14 +248,29 @@ def build_app(
         "probes": [],
         "renders": [],
         "heartbeats": [],
+        "live_requests": [],
     }
     app.state.prototype_lock = threading.Lock()
 
     @app.middleware("http")
     async def record_strict_v2_frame_acceptance(request: Request, call_next):
-        """Keep only successful strict-v2 frame admissions for browser-probe joins."""
+        """Record route outcomes without persisting headers or request bodies."""
         parts = request.url.path.split("/")
         frame = None
+        route = None
+        session_id = None
+        if request.method == "POST" and request.url.path == "/api/live/sessions":
+            route = "create"
+        elif len(parts) == 6 and parts[:4] == ["", "api", "live", "sessions"]:
+            session_id = parts[4]
+            route = {
+                ("POST", "frames"): "frame",
+                ("POST", "heartbeat"): "heartbeat",
+                ("POST", "stop"): "stop",
+                ("POST", "abort"): "abort",
+                ("GET", "snapshot"): "snapshot",
+                ("GET", "events"): "events",
+            }.get((request.method, parts[5]))
         if (
             request.method == "POST"
             and len(parts) == 6
@@ -284,6 +299,16 @@ def build_app(
                 }
 
         response = await call_next(request)
+        if route is not None:
+            with app.state.prototype_lock:
+                app.state.prototype_telemetry["live_requests"].append(
+                    {
+                        "route": route,
+                        "session_id": session_id,
+                        "status": response.status_code,
+                        "wall_ms": round(time.time() * 1_000),
+                    }
+                )
         if frame is not None and response.status_code == 200:
             with app.state.prototype_lock:
                 app.state.prototype_telemetry["accepted_frames"].append(

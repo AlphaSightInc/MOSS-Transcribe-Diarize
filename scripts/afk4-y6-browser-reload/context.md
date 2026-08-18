@@ -4,7 +4,8 @@ Living working memory. Update every iteration so it matches reality. History goe
 
 ## Known state (verified 2026-08-18, dev @ 852d366)
 
-- G6 is 5/6 certified. Only the reload path lacks a browser run.
+- G6 has a first real-browser reload measurement; cursor continuity, terminal-reload cleanup, and
+  assertion falsification remain before it can be certified.
 - Reattach is implemented: `ControlPanel` stores `{sessionId, viewToken}` in tab-scoped storage,
   reload closes local media without sending Stop, startup resumes the snapshot/event poller, and the
   capture bearer stays in memory only. ADR-0004 records the security boundary.
@@ -26,20 +27,26 @@ Living working memory. Update every iteration so it matches reality. History goe
   interpreter has an incompatible `transformers` install; this is unrelated to its Playwright
   availability and the probe uses the established dependency-free CDP client.
 - Chrome launches fine post-reboot (`--headless --dump-dom` exits 0). Playwright is in pyenv 3.12.12.
+- `probe_g6_browser_reload.py` now starts the actual `ControlPanel` in a fresh real Chrome profile
+  from deterministic in-page fake MediaStreams, creates one live session, and performs a real
+  navigation. Raw `iteration-3-live-reload.json` proves the same `session_id` reattached from the
+  sole tab-scoped `{sessionId, viewToken}` record; the bearer was absent from storage and the input
+  after reload; the reattached poller made read-only snapshot/events calls; no Stop reached the
+  server; the session stayed active; and both pre/post server-authored status lines were readable.
+  It explicitly does not cover a permission prompt, display capture, model inference, deployed host,
+  cursor continuity, or terminal reload cleanup.
+- A native Chrome fake-audio input was live but yielded 190 zero-RMS worklet frames in this
+  environment; the probe uses the established synthetic MediaStream shape instead. This is a
+  launcher/source limitation, not evidence of a product defect.
 - Baseline to protect: pytest 2 failed / 1065 passed / 396 subtests; frontend 108/108.
   The 2 failures are permanent Phase 1 baselines — never "fix" them.
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Minimum viable reload: start a deterministic session from the real Chrome context with its
-   fake media device, reload the
-   `ControlPanel`, then assert the same session id reattaches and the server received no Stop.
-2. Cursor continuity across the reload — record pre/post rendered item identities and server event
+1. Cursor continuity across the reload — record pre/post rendered item identities and server event
    cursors, then prove neither duplication nor loss.
-3. Negative case: capture bearer must NOT be present after reload; inspect only key names and
-   redacted values in tab-scoped storage.
-4. Negative case: reload after session end clears rather than reattaching.
-5. Falsify every assertion against a deliberately broken input before committing.
+2. Negative case: reload after session end clears rather than reattaching.
+3. Falsify every assertion against a deliberately broken input before committing.
 
 ## Not yours
 
