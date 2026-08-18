@@ -63,6 +63,16 @@ Living working memory. Update it every iteration so it matches reality. History 
   observe session-local retryable 429, peer acceptance, and eventual retry success, but both stops did
   not close. The endpoint/operator ruling arrived after this run: **do not use this CPU/HF result for
   any G4/G5 portion or inference claim**; retain it solely as raw harness/host diagnostic evidence.
+- **W2 remote-vLLM contract frozen (iteration 23):**
+  `remote_vllm_tunnel_preregistration.json` SHA-256
+  `53de815d3a9b0e37b5f1c4845886977e61e3c9ca5bd1d7bd07a3b0ab7c857504` preserves the existing
+  1/2/4/8 + selected-600-second matrix and gate values before any tunnel matrix run. It requires a
+  run-owned manifest re-finalized to the exact captured `HEAD`, descriptor-derived geometry, and
+  endpoint `/health` plus selected-model `/models` probes before *and* after the run. It hashes the
+  contract, fixture, run-owned manifest, and endpoint model catalog identity. Tunnel-inclusive latency
+  may be measured, but isolated GPU latency, GPU memory/utilisation/OOM, and vLLM active/queued counts
+  remain unclaimed. The validator passed before implementation at
+  `prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py`.
 
 ## Environment facts that cost previous cycles real time
 
@@ -92,11 +102,9 @@ Living working memory. Update it every iteration so it matches reality. History 
    descriptor-hard-cap-only attempt correctly failed to produce a canonical event; the reusable probe now
    sends two descriptor-derived caps and derives heartbeat cadence from the explicit lease. This is
    **non-gating**: its local manifest source revision is stale versus HEAD and it carries no GPU telemetry.
-   Next, freeze a separate tunnel-vLLM measurement contract that preserves the 1/2/4/8 + selected-600s
-   matrix, hashes the fixture/contract/endpoint model identity, re-finalizes a run-owned manifest for the
-   exact HEAD without mutating the shared local manifest, and explicitly retains the missing-GPU-telemetry
-   boundary. Only then adapt the CPU/HF runner or build its narrow sibling. The CPU/HF result remains
-   diagnostic, not G4/G5 evidence.
+   Iteration 23 froze the separate tunnel-vLLM contract with exact identity, fail-closed endpoint, run-owned
+   manifest, fixture-reuse, and missing-GPU-telemetry requirements. Next, implement its narrow matrix runner
+   without mutating the shared local manifest. The CPU/HF result remains diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
 5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
@@ -113,8 +121,8 @@ Living working memory. Update it every iteration so it matches reality. History 
 - The tunnel launcher is now present at `scripts/moss-vllm-tunnel.sh`, exact-content matched to reviewed
   `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
-  22; the remaining W2 blocker is the hash-pinned matrix runner, not tunnel reachability or basic decoder
-  wiring.
+  22; iteration 23 froze the hash-pinned matrix contract. The remaining W2 blocker is its implementation,
+  not tunnel reachability, basic decoder wiring, or a missing preregistration.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -278,8 +286,8 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Next feasible sequence
-1. Prototype/design the W2 tunnel-backed local-service runner; do not alter frozen gates or use the CPU/HF
-   runner as G4/G5 evidence.
+1. Implement the W2 tunnel-backed local-service runner against the frozen remote-vLLM contract; do not alter
+   frozen gates or use the CPU/HF runner as G4/G5 evidence.
 2. Run the preregistered W2 matrix only after that runner has a measured, fail-closed preflight.
 3. W3 stays blocked until an operator adds a raw attended-session log; Issue #8 remains blocked on the
    criterion-2 lifecycle ruling; Defect B needs new audited recordings before Defect C.

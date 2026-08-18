@@ -19,6 +19,13 @@ this profile deliberately does not claim GPU figures):
 python3 prototypes/streaming-diarization/concurrency/validate_cpu_hf_local_preregistration.py
 ```
 
+Remote-vLLM tunnel preregistration (the future runner must use a run-owned manifest finalized
+for its exact `HEAD`, probe the endpoint before and after, and never claim unavailable GPU telemetry):
+
+```bash
+python3 prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py
+```
+
 Controlled scheduler/queue probe (about 40 seconds; prints full state):
 
 ```bash
@@ -76,3 +83,9 @@ It reads `/v1/models`, starts only a loopback route probe, emits descriptor-deri
 and requires a `canonical_processed` event plus a clean stop. The heartbeat cadence is derived as one
 quarter of the explicitly supplied helper lease. It records whether the manifest revision matches `HEAD`;
 a mismatch, or this one-span probe itself, never qualifies W2.
+
+The subsequent tunnel matrix must hash the exact remote-vLLM preregistration and fixture bytes, record
+the selected model plus canonical `/models` identities before and after the run, and write a new finalized
+manifest into its own evidence directory. It must not overwrite the shared local manifest. Its p95 includes
+SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors, and vLLM active/queued counts remain outside
+the available read-only surface.

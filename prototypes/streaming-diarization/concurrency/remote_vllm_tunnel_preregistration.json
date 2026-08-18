@@ -1,0 +1,142 @@
+{
+  "schema": "moss-live-concurrency-preregistration.v3",
+  "profile": "remote-vllm-tunnel-local-live-routes",
+  "ticket": 3,
+  "preregistered_at": "2026-08-18",
+  "run_started": false,
+  "question": "At the deployed descriptor geometry, can one locally owned production live-route process use the read-only remote vLLM endpoint over the existing SSH tunnel to record the one-to-eight-session matrix and sustain its largest passing bound for ten minutes, without crossing text between sessions during overload or observer reconnect?",
+  "scope": {
+    "may_establish": [
+      "G4 local-route duration, round-robin fairness, session-local v2 429 semantics, and tunnel-inclusive transcript lag",
+      "G5 cross-session text isolation through overload and observer reconnect"
+    ],
+    "does_not_establish": [
+      "an isolated-GPU transcript-lag bound",
+      "GPU memory or utilisation",
+      "GPU OOM or accelerator errors",
+      "vLLM active or queued request counts",
+      "human-attended display capture"
+    ],
+    "latency_label": "loopback production routes with remote vLLM over the SSH tunnel and tailnet; transcript lag includes network transit"
+  },
+  "production_path": {
+    "service": "one locally started loopback FastAPI process with live routes enabled",
+    "decoder": "the real MOSS decoder through the production LiveServiceRuntime path",
+    "backend": "the production VllmRunner with an explicitly supplied OpenAI-compatible vLLM base URL and model id",
+    "audio": "hash-pinned real human speech replayed at wall-clock rate",
+    "ingress_cadence_seconds": 0.5,
+    "frame_geometry": {
+      "source": "read at run time from both the run-owned local /api/live/descriptor and the read-only deployed /api/live/descriptor",
+      "comparison": "all deployed bound fields must match exactly before capture begins",
+      "hardcoded_values_allowed": false
+    },
+    "stub_results_qualify": false,
+    "remote_service_mutation_allowed": false,
+    "remote_host_read_only": true,
+    "additional_uvicorn_workers_allowed": false
+  },
+  "run_owned_manifest": {
+    "input": "a provisional local provider manifest with the existing calibrated identity values",
+    "output": "a new finalized manifest inside the run evidence directory",
+    "source_revision": "the exact 40-character git HEAD at run start",
+    "finalizer": "ops/finalize-live-provider-manifest.py",
+    "bounds_and_calibration": "derive all finalizer arguments from the read-only deployed descriptor and provisional manifest; do not duplicate geometry or identity constants in runner code",
+    "shared_manifest_overwrite_allowed": false,
+    "required_checks": [
+      "the finalized manifest source_revision equals the captured git HEAD",
+      "the production LiveProviderBundleConfig reader admits the finalized manifest",
+      "the local descriptor source_revision equals the captured git HEAD",
+      "the finalized manifest SHA-256 is recorded"
+    ]
+  },
+  "endpoint_preflight": {
+    "before_and_after_run": true,
+    "health": "GET the endpoint origin /health and require HTTP 200",
+    "models": "GET <explicit-vllm-base-url>/models and require HTTP 200",
+    "required_checks": [
+      "the explicitly supplied selected model id appears in the /models response before the run",
+      "record a SHA-256 of canonical JSON for the before and after /models responses",
+      "record the explicit base URL and selected model id without recording credentials",
+      "a failed preflight aborts before local service startup",
+      "a failed closing probe makes the measurement non-passing rather than a slow-model result"
+    ]
+  },
+  "matrix": {
+    "screening_session_counts": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "screening_measurement_seconds": 120,
+    "chosen_bound_soak_seconds": 600,
+    "overload_session_count": 2,
+    "observer_reconnects_per_session": 1
+  },
+  "gates": {
+    "latency": {
+      "maximum_per_session_p95_transcript_lag_seconds": 10.0,
+      "quantile_method": "linear Type-7",
+      "aggregation": "compute each session independently; the run value is the maximum session p95",
+      "reporting_rule": "record p50, p95, max, and full per-session arrays under the tunnel-inclusive label; never present this figure as an isolated-GPU bound",
+      "basis": "10.0 seconds retains ticket #3's frozen ceiling without moving a gate after endpoint availability. The result must state that its timing includes SSH tunnel and tailnet transit."
+    },
+    "memory": {
+      "maximum_local_process_tree_rss_increase_bytes_over_warm_idle": 4294967296,
+      "maximum_local_oom_or_accelerator_error_count": 0,
+      "gpu_metrics_required": false,
+      "reporting_rule": "record local process-tree RSS samples and remote errors observable through the live routes; missing GPU telemetry remains explicitly unclaimed",
+      "basis": "4 GiB and zero locally observable OOM or accelerator errors retain the existing local safety ceiling. They do not claim remote GPU memory, utilisation, or host-level OOM evidence."
+    },
+    "fairness": {
+      "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1,
+      "evidence": "full canonical_processed dispatch order and per-session counts"
+    },
+    "backpressure": {
+      "lane": "v2",
+      "minimum_session_local_429_cases": 1,
+      "required_behavior": [
+        "one saturated session receives retryable HTTP 429 without terminal failure or sequence consumption",
+        "a concurrently active peer accepts a frame while the saturated session is refused",
+        "the refused frame succeeds after capacity is released"
+      ]
+    },
+    "integrity": {
+      "overload": "all rendered text and canonical_processed events retain only their own session's distinct speech marker while the backpressure case runs",
+      "reconnect": "after each observer reconnects with its prior cursor, its replayed events and snapshot contain no other session's marker"
+    }
+  },
+  "selection_rule": {
+    "candidate_set": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "rule": "record every 1/2/4/8-session screening result, then choose the largest candidate whose screening run passes latency, local-memory, fairness, and integrity gates; only that chosen candidate may enter the 600-second soak",
+    "overload_role": "the two-session overload run proves per-session retryable 429 and text isolation; it does not select the normal concurrency bound",
+    "gate_changes_after_first_measurement_allowed": false
+  },
+  "evidence_requirements": {
+    "raw_arrays": [
+      "per-session transcript-lag samples",
+      "canonical_processed dispatch order",
+      "local process-tree RSS samples",
+      "HTTP frame responses including session id and retry outcome",
+      "observer reconnect cursors and returned events"
+    ],
+    "identity_records": [
+      "SHA-256 of the exact preregistration bytes",
+      "SHA-256 of the fixture manifest and human-speech WAV",
+      "captured git HEAD and SHA-256 of the run-owned finalized manifest",
+      "endpoint base URL, selected model id, and canonical before/after /models response SHA-256 values"
+    ],
+    "required_recorded_metrics": [
+      "tunnel-inclusive canonical decode real-time factor from canonical_processed events",
+      "per-session queue depth from snapshots",
+      "instrumentation enqueue/write/sync overhead"
+    ],
+    "required_negative_statement": "This remote-vLLM tunnel result does not measure isolated-GPU latency, GPU memory or utilisation, GPU OOM/errors, or vLLM active/queued request counts.",
+    "fixture_limit_statement": "The 90-second real-speech source repeats during a selected 600-second soak and may make decode timing unrepresentative."
+  }
+}

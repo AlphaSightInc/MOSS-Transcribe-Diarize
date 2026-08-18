@@ -1,5 +1,25 @@
 # Concurrency prototype notes
 
+## Remote-vLLM tunnel matrix contract — 2026-08-18
+
+**VERDICT: FROZEN before measurement; no W2, G4, or G5 result yet.**
+
+Question: can the local production live routes use the already-proven read-only remote-vLLM seam
+for the 1/2/4/8 matrix and selected 600-second soak without silently carrying over CPU/HF claims?
+
+The one-command contract check prints every field and its SHA-256:
+
+```bash
+python3 prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py
+```
+
+The next runner must re-finalize a new evidence-owned manifest to its captured `HEAD`, derive all
+geometry/calibration from the descriptor and provisional manifest, and refuse a preflight or closing
+endpoint failure. It must record the contract/fixture/manifest hashes and the selected-model catalog
+identity before and after the run. Its p95 is explicitly tunnel-inclusive; it cannot claim isolated-GPU
+latency, GPU memory/utilisation/OOM, or vLLM active/queued counts. The 90-second source repeats in a
+600-second soak, so the verdict must state that timing limit.
+
 ## Remote-vLLM local-route seam — 2026-08-18
 
 **VERDICT: PASS for the route/decoder seam; explicitly NON-GATING for W2, G4, and G5.**
