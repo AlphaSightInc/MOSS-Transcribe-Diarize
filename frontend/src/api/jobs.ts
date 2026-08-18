@@ -24,6 +24,7 @@ export interface FileJobSegment {
 
 export interface JobsApiOptions {
   baseUrl?: string;
+  bearerToken?: string;
   fetch?: typeof globalThis.fetch;
 }
 
@@ -246,7 +247,14 @@ function lifecycleForJobStatus(status: string): SessionLifecycle {
 
 async function requestJson(options: JobsApiOptions, path: string, init: RequestInit): Promise<unknown> {
   const fetcher = options.fetch ?? globalThis.fetch;
-  const response = await fetcher(`${baseUrl(options)}${path}`, { ...init, credentials: "same-origin" });
+  const headers = new Headers(init.headers);
+  const bearerToken = options.bearerToken?.trim();
+  if (bearerToken) headers.set("Authorization", `Bearer ${bearerToken}`);
+  const response = await fetcher(`${baseUrl(options)}${path}`, {
+    ...init,
+    headers,
+    credentials: "same-origin"
+  });
   let payload: unknown;
   try {
     payload = await response.json();

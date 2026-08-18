@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { createFileJobPoller, submitJob, type FileJobPoller } from "../api/jobs";
 import { resetSessionState } from "../state/session";
 
-export function FilePanel() {
+interface FilePanelProps {
+  captureBearer: string;
+}
+
+export function FilePanel({ captureBearer }: FilePanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [message, setMessage] = useState("Select an audio or video file to transcribe.");
   const [progress, setProgress] = useState(0);
@@ -20,10 +24,12 @@ export function FilePanel() {
     setProgress(0);
     setMessage("Uploading file...");
     try {
-      const created = await submitJob(selectedFile);
+      const options = { bearerToken: captureBearer.trim() };
+      const created = await submitJob(selectedFile, options);
       setMessage("Queued for transcription.");
       const poller = createFileJobPoller({
         jobId: created.id,
+        ...options,
         onProgress(job) {
           setProgress(job.progress);
           setMessage(job.error ?? job.status.replaceAll("_", " "));

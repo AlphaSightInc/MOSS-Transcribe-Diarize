@@ -28,8 +28,12 @@ type LaneMeters = Record<CaptureLane, number>;
 const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
 
-export function ControlPanel() {
-  const [captureBearer, setCaptureBearer] = useState("");
+interface ControlPanelProps {
+  captureBearer: string;
+  onCaptureBearerChange: (captureBearer: string) => void;
+}
+
+export function ControlPanel({ captureBearer, onCaptureBearerChange }: ControlPanelProps) {
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
@@ -182,7 +186,7 @@ export function ControlPanel() {
     }
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
-    setCaptureBearer("");
+    onCaptureBearerChange("");
     resetSessionState();
     transition("idle");
     setMessage("Enter the capture bearer to configure both audio lanes.");
@@ -230,7 +234,7 @@ export function ControlPanel() {
           autoComplete="off"
           value={captureBearer}
           disabled={configured}
-          onInput={(event) => setCaptureBearer(event.currentTarget.value)}
+          onInput={(event) => onCaptureBearerChange(event.currentTarget.value)}
         />
       </div>
       <p className="capture-security-note">Memory only; never saved in browser storage.</p>

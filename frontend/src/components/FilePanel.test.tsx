@@ -24,7 +24,7 @@ describe("FilePanel", () => {
     vi.stubGlobal("fetch", fetcher);
     const root = document.createElement("div");
     document.body.append(root);
-    render(<FilePanel />, root);
+    render(<FilePanel captureBearer="shared-bearer" />, root);
 
     const input = root.querySelector<HTMLInputElement>('input[type="file"]');
     if (!input) throw new Error("file input missing");
@@ -44,12 +44,39 @@ describe("FilePanel", () => {
       "/api/jobs/job-9",
       "/api/jobs/job-9/segments"
     ]);
+    expect(fetcher.mock.calls.map(([, init]) => new Headers((init as RequestInit).headers).get("Authorization")))
+      .toEqual(["Bearer shared-bearer", "Bearer shared-bearer", "Bearer shared-bearer"]);
     expect(sessionStatus.value).toBe("closed");
     expect(transcript.value).toEqual([expect.objectContaining({ text: "File transcript", state: "final" })]);
     expect(root.textContent).toContain("Transcript ready.");
   });
+
+  it("surfaces a server refusal when no bearer was retained", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ detail: "capture bearer required" }, 401));
+    vi.stubGlobal("fetch", fetcher);
+    const root = document.createElement("div");
+    document.body.append(root);
+    render(<FilePanel captureBearer="" />, root);
+
+    const input = root.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("file input missing");
+    Object.defineProperty(input, "files", { value: [new File(["audio"], "sample.wav")] });
+    act(() => {
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    const start = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Start transcription");
+    if (!start) throw new Error("start button missing");
+    await act(async () => { start.click(); });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).has("Authorization")).toBe(false);
+    await vi.waitFor(() => expect(root.textContent).toContain("capture bearer required"));
+  });
 });
 
-function response(payload: unknown): Response {
-  return { ok: true, status: 200, json: async () => payload } as Response;
+function response(payload: unknown, status = 200): Response {
+  return { ok: status >= 200 && status < 300, status, json: async () => payload } as Response;
 }

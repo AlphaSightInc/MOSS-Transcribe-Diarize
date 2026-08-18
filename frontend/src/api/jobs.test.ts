@@ -7,12 +7,27 @@ describe("file jobs adapter", () => {
     const file = new File(["audio"], "interview.wav", { type: "audio/wav" });
     const fetcher = vi.fn(async () => response(job("queued", 0)));
 
-    await submitJob(file, { fetch: fetcher as typeof fetch });
+    await submitJob(file, { fetch: fetcher as typeof fetch, bearerToken: "shared-bearer" });
 
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("/api/jobs");
     expect(init.method).toBe("POST");
     expect((init.body as FormData).get("file")).toBe(file);
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer shared-bearer");
+  });
+
+  it("reports a refused unauthenticated upload", async () => {
+    const file = new File(["audio"], "interview.wav", { type: "audio/wav" });
+    const fetcher = vi.fn(async () => response({ detail: "capture bearer required" }, 401));
+
+    await expect(submitJob(file, { fetch: fetcher as typeof fetch })).rejects.toMatchObject({
+      name: "JobsApiError",
+      status: 401,
+      message: "capture bearer required"
+    });
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).has("Authorization")).toBe(false);
   });
 
   it("publishes a completed segment snapshot before closing file state", async () => {

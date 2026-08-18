@@ -42,7 +42,7 @@ describe("ControlPanel reattach", () => {
     );
 
     await act(async () => {
-      render(<ControlPanel />, root);
+      render(<ControlPanel captureBearer="" onCaptureBearerChange={() => undefined} />, root);
     });
 
     expect(mocks.poller.start).toHaveBeenCalledOnce();
