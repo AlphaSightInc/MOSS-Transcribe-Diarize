@@ -22,20 +22,26 @@ Living working memory. Update every iteration. History goes in progress.txt.
   the required locally-run service artifact remains open.
 - `transcriptExport.ts:23,92` carry `provisional_stale` as a json field only; md and txt have no
   human-readable caveat.
-- `ControlPanel` holds the capture bearer only in its own component state. `FilePanel` currently
-  calls `submitJob` without options and no owned file can pass that in-memory bearer across the mode
-  boundary. The PRD permits `frontend/src/api/jobs.ts` but marks `frontend/src/components/` not ours:
-  resolve this authority/scope conflict before claiming the frontend requirement complete.
+- Frontend bearer propagation is blocked on scope, not an API-adapter gap. `App.tsx` conditionally
+  unmounts `ControlPanel` when file mode is selected; `ControlPanel` owns `captureBearer` in local
+  state, and `FilePanel` calls `submitJob(selectedFile)` with no options. Thus no memory-only bearer
+  survives the mode switch. The smallest correct repair needs an authority grant for `App.tsx` plus
+  both components to lift and pass that state; an API-side/global workaround would either have no
+  source or invent an unsafe token store. Do not claim the frontend requirement complete without that
+  grant and a component integration test.
 - Baseline to protect: pytest 2 failed / 1065 passed / 396 subtests; frontend 108/108.
   The 2 failures are permanent Phase 1 baselines — never "fix" them.
 
 ## Candidates (ranked; re-rank as you learn)
 
-1. Resolve the frontend bearer-propagation scope conflict, then send the memory-only bearer from
-   file mode without a query parameter or persistent storage.
-2. Human-readable provisional caveat in md and txt as well as json; absent after finalization.
-3. Evidence against a locally-run service, not only unit tests.
+1. Human-readable provisional caveat in md and txt as well as json; absent after finalization.
+2. Evidence against a locally-run service, not only unit tests.
+3. Blocked: frontend bearer propagation requires authority to modify `frontend/src/App.tsx` and
+   `frontend/src/components/{ControlPanel.tsx,FilePanel.tsx}`. On grant, lift the current in-memory
+   bearer to `App`, pass it into both mode panels, add the Authorization header through `jobs.ts`,
+   and prove no persistent/query token path.
 
 ## Not yours
 
-`live_auth.py` (read-only, reuse its seam) · `frontend/src/components/` · `live_service_runtime.py`
+`live_auth.py` (read-only, reuse its seam) · `frontend/src/App.tsx` · `frontend/src/components/` ·
+`live_service_runtime.py`
