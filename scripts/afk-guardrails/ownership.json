@@ -303,5 +303,23 @@
       "node_toolchain"
     ],
     "blocked_by": []
+  },
+  "afk5-phase1-completion": {
+    "title": "Complete Phase 1: local live service, file-mode bearer, G4/G5 certification, ledger truth",
+    "owns": [
+      "moss_transcribe_diarize/",
+      "frontend/src/",
+      "prototypes/",
+      "scripts/g3-attended-session.sh",
+      "ops/",
+      "tests/",
+      "docs/",
+      "evidence/phase1/"
+    ],
+    "reads": [
+      "all"
+    ],
+    "prerequisites": [],
+    "blocked_by": []
   }
 }
