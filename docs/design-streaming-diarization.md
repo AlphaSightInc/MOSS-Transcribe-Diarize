@@ -307,6 +307,23 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`; preregistration:
   `prototypes/streaming-diarization/lane-level-preregistration-v2.json`.
 
+- **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
+  bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
+  lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48
+  records and the evaluator failed closed; the existing writer-close barrier made all 48 records readable and
+  fairness pass at skew 1. The next change must add a writer-owned drain barrier before evidence evaluation;
+  it must not change fairness, stop-drain, latency, or scheduler values. Raw artifact:
+  `evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json`.
+
+- **W2 rendered-ownership wait — no reconnect policy selected (2026-08-19).** A live single-overload probe kept
+  the production loopback live routes and read-only vLLM endpoint, but ordinarily polled each observer before
+  allowing one reconnect. Its exploratory 120 s bound expired with both canonical own markers present and no
+  foreign marker, yet one peer's rendered own marker still absent. Session-local 429, peer acceptance, retry,
+  peer replay, and both clean stops passed. The probe therefore did not reconnect and fails closed; it is not
+  evidence for moving reconnect later or lengthening a timeout. Raw artifact:
+  `evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait/overload-rendered-ownership-wait.json`.
+  It establishes no G4/G5 result or rendered-publication product defect.
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

@@ -111,6 +111,13 @@ def _visibility_cadence(records: list[dict], visibility: str, *, time_key: str) 
     }
 
 
+class _CanonicalEventLogDrain:
+    """Acknowledge that every earlier event is durable without closing the writer."""
+
+    def __init__(self):
+        self.completed = threading.Event()
+
+
 class _CanonicalEventLogWriter:
     """Append raw measurement events off the canonical runtime publication path."""
 
@@ -120,7 +127,7 @@ class _CanonicalEventLogWriter:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("", encoding="utf-8")
         self._handle = path.open("a", encoding="utf-8")
-        self._queue: queue.Queue[str | None] = queue.Queue()
+        self._queue: queue.Queue[object] = queue.Queue()
         self._stats_lock = threading.Lock()
         self._closed = False
         self._enqueued = 0
@@ -158,6 +165,16 @@ class _CanonicalEventLogWriter:
             item = self._queue.get()
             if item is None:
                 break
+            if isinstance(item, _CanonicalEventLogDrain):
+                # Queue ordering makes all earlier events durable before the
+                # evaluator is allowed to read. Keep the writer alive so later
+                # measurement phases can append to the same log.
+                self._sync()
+                item.completed.set()
+                last_sync = time.monotonic()
+                continue
+            if not isinstance(item, str):
+                raise RuntimeError(f"unsupported canonical event-log item {item!r}")
             started = time.perf_counter_ns()
             self._handle.write(item)
             elapsed = time.perf_counter_ns() - started
@@ -182,6 +199,16 @@ class _CanonicalEventLogWriter:
                 "fsync_interval_seconds": self._FSYNC_INTERVAL_SECONDS,
             }
 
+    def drain(self, *, timeout_seconds: float) -> bool:
+        """Wait for a writer-owned durable boundary without accepting partial reads."""
+        if timeout_seconds <= 0:
+            raise ValueError("canonical event-log drain timeout must be positive")
+        if self._closed or not self._writer.is_alive():
+            return False
+        barrier = _CanonicalEventLogDrain()
+        self._queue.put(barrier)
+        return barrier.completed.wait(timeout_seconds)
+
     def close(self) -> None:
         if self._closed:
             return
@@ -197,7 +224,15 @@ def _instrument_commit_times(
     *,
     event_log: _CanonicalEventLogWriter | None = None,
 ):
-    """Timestamp canonical publication at the real runtime event seam."""
+    """Timestamp publication and retain the complete canonical scheduling lifecycle.
+
+    ``canonical_processed`` alone cannot establish the preregistered fairness
+    predicate: sessions may legitimately emit different numbers of spans as VAD
+    closes them. The measurement log therefore records queue, dispatch-start,
+    and publication events in runtime order. The writer remains off the
+    publication path; it receives one compact metadata record after the runtime
+    has recorded its own event.
+    """
     record_event = runtime._record_event
 
     def measured_record_event(state, kind, payload):
@@ -209,13 +244,31 @@ def _instrument_commit_times(
                     (state.session_id, int(payload["span_id"])),
                     time.time_ns(),
                 )
-            if event_log is not None and kind == "canonical_processed":
+            if event_log is not None and kind in {
+                "canonical_queued",
+                "canonical_started",
+                "canonical_processed",
+            }:
+                measured_payload = dict(payload)
+                if kind == "canonical_processed" and payload.get("submitted"):
+                    session = getattr(state, "session", None)
+                    snapshot = session.snapshot() if session is not None else None
+                    span_id = payload.get("span_id")
+                    for commit in getattr(snapshot, "committed", ()):
+                        if getattr(commit, "span_id", None) != span_id:
+                            continue
+                        transcript = getattr(commit, "revised_transcript", None) or getattr(
+                            commit, "transcript", None
+                        )
+                        if isinstance(transcript, str):
+                            measured_payload["rendered_transcript"] = transcript
+                        break
                 record = {
-                    "schema": "moss-live-canonical-dispatch-observation.v1",
+                    "schema": "moss-live-canonical-dispatch-observation.v2",
                     "observed_wall_ns": time.time_ns(),
                     "session_id": state.session_id,
                     "kind": kind,
-                    "payload": payload,
+                    "payload": measured_payload,
                 }
         if record is not None:
             event_log.append(record)
@@ -504,6 +557,28 @@ def build_app(
         writer = app.state.prototype_canonical_event_writer
         return {"event_log": None if writer is None else writer.stats()}
 
+    @app.post("/prototype/measurement-event-log/drain")
+    async def prototype_measurement_event_log_drain(request: Request):
+        """Expose a bounded writer-owned read barrier to the local measurement runner."""
+        writer = app.state.prototype_canonical_event_writer
+        if writer is None:
+            return JSONResponse({"error": "canonical event log is disabled"}, status_code=409)
+        try:
+            body = await request.json()
+            timeout_seconds = body.get("timeout_seconds")
+        except (json.JSONDecodeError, AttributeError):
+            return JSONResponse({"error": "drain request must be a JSON object"}, status_code=400)
+        if (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, (int, float))
+            or not math.isfinite(timeout_seconds)
+            or timeout_seconds <= 0
+        ):
+            return JSONResponse({"error": "timeout_seconds must be a positive finite number"}, status_code=400)
+        drained = writer.drain(timeout_seconds=float(timeout_seconds))
+        payload = {"drained": drained, "event_log": writer.stats()}
+        return JSONResponse(payload, status_code=200 if drained else 503)
+
     @app.post("/prototype/telemetry")
     async def prototype_telemetry(request: Request):
         body = await request.json()
@@ -729,7 +804,7 @@ def main() -> None:
     parser.add_argument(
         "--canonical-event-log",
         type=Path,
-        help="append raw canonical_processed observations for a local measurement harness",
+        help="append raw canonical queue/start/publication observations for a local measurement harness",
     )
     args = parser.parse_args()
     app = build_app(

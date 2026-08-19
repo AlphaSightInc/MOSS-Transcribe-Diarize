@@ -1,0 +1,97 @@
+{
+  "event_log": {
+    "phase_attributed_record_count": 5338,
+    "raw_line_count": 5338,
+    "terminal_counter_matches_raw_log": true,
+    "terminal_writer_counter": 5338
+  },
+  "inputs": {
+    "event_log_sha256": "c29278a0cf4f9b69af053535483e53012b1530783a62ec5ccd3f4d3230823883",
+    "run_directory": "evidence/phase1/w2-local-concurrency/run-20260819T020000-iteration37",
+    "run_state_sha256": "dbff103703900547f81030db8775f48191bfe474a9182ddf52b076cb6d46d24c"
+  },
+  "oracle_history": {
+    "lesson": "A confident derived number is unusable unless its source evidence is complete and its predicate measures only the behavior it names.",
+    "named_degenerate_oracles": [
+      "repeated-marker integrity oracle",
+      "unscoped fairness counter",
+      "writer/evaluator observation race"
+    ]
+  },
+  "phase_records": [
+    {
+      "actual_phase_records": 202,
+      "complete": true,
+      "expected_cumulative_writer_records": 202,
+      "expected_phase_records": 202,
+      "phase_index": 0,
+      "phase_kind": "normal",
+      "phase_name": "screen-1",
+      "session_count": 1
+    },
+    {
+      "actual_phase_records": 346,
+      "complete": true,
+      "expected_cumulative_writer_records": 548,
+      "expected_phase_records": 346,
+      "phase_index": 1,
+      "phase_kind": "normal",
+      "phase_name": "screen-2",
+      "session_count": 2
+    },
+    {
+      "actual_phase_records": 637,
+      "complete": true,
+      "expected_cumulative_writer_records": 1185,
+      "expected_phase_records": 637,
+      "phase_index": 2,
+      "phase_kind": "normal",
+      "phase_name": "screen-4",
+      "session_count": 4
+    },
+    {
+      "actual_phase_records": 1074,
+      "complete": true,
+      "expected_cumulative_writer_records": 2259,
+      "expected_phase_records": 1074,
+      "phase_index": 3,
+      "phase_kind": "normal",
+      "phase_name": "screen-8",
+      "session_count": 8
+    },
+    {
+      "actual_phase_records": 3028,
+      "complete": true,
+      "expected_cumulative_writer_records": 5287,
+      "expected_phase_records": 3028,
+      "phase_index": 4,
+      "phase_kind": "normal",
+      "phase_name": "chosen-bound-soak",
+      "session_count": 4
+    },
+    {
+      "actual_phase_records": 51,
+      "complete": true,
+      "expected_cumulative_writer_records": 5338,
+      "expected_phase_records": 51,
+      "phase_index": 5,
+      "phase_kind": "overload",
+      "phase_name": "overload",
+      "session_count": 2
+    }
+  ],
+  "question": "Is a saved asynchronous canonical lifecycle log complete enough to re-score its fairness or stop-drain predicates without another live matrix run?",
+  "schema": "moss-saved-lifecycle-completeness-prototype.v1",
+  "validation_errors": [],
+  "verdict": {
+    "does_not_establish": [
+      "scheduler fairness",
+      "stop-drain correctness",
+      "G4",
+      "G5",
+      "any new live service or inference result"
+    ],
+    "required_next_step": "Saved lifecycle evidence is complete; re-score only with the current separated predicates.",
+    "rescore_permitted": true
+  }
+}

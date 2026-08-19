@@ -1,0 +1,23 @@
+{
+  "assets": [
+    {
+      "byte_size": 79158228,
+      "declared_path": "voxceleb_resnet152_LM.onnx",
+      "materialization": "hardlink",
+      "name": "identity-state",
+      "sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+    },
+    {
+      "byte_size": 67244,
+      "declared_path": "golden.wav",
+      "materialization": "hardlink",
+      "name": "golden-input",
+      "sha256": "d101dd44a5976c466d254df218f4e28b60091aba00b1ce2e9110a677ac0e60aa"
+    }
+  ],
+  "evidence_manifest_sha256": "9c0f2774733cf8658ecb7f6535edb115413a709bc8e062f2560d457967c65566",
+  "execution_bundle_is_ephemeral_outside_evidence": true,
+  "execution_manifest_path": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-w2-remote-vllm-bundle-65w6unwp/live-provider-manifest.json",
+  "execution_manifest_sha256": "9c0f2774733cf8658ecb7f6535edb115413a709bc8e062f2560d457967c65566",
+  "schema": "moss-run-owned-manifest-asset-materialization.v1"
+}

@@ -1,0 +1,8 @@
+Implemented and committed `b7b6d82`.
+
+- W2 execution assets now live only in an ephemeral temp bundle; evidence retains manifest/hash records.
+- Focused tests: 5 passed; compile/diff checks passed.
+- Loop telemetry remains unstaged.
+
+Next: fresh tunnel-backed W2 matrix run.
+

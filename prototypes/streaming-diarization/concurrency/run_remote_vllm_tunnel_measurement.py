@@ -14,8 +14,10 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -32,6 +34,8 @@ from run_cpu_hf_local_measurement import (  # Reuse the established live-route b
     MeasurementError,
     SessionRun,
     _atomic_json,
+    _canonical_lifecycle_fairness,
+    _canonical_lifecycle_stop_drain,
     _descriptor_fields,
     _process_tree_rss_bytes,
     _read_json,
@@ -42,6 +46,71 @@ from run_cpu_hf_local_measurement import (  # Reuse the established live-route b
 
 
 CONTRACT_PATH = Path(__file__).with_name("remote_vllm_tunnel_preregistration.json")
+
+
+def _materialize_ephemeral_execution_assets(
+    *, manifest_path: Path, source_base_dir: Path
+) -> list[dict[str, Any]]:
+    """Make a finalized manifest's relative assets resolvable in its ephemeral execution directory.
+
+    Finalization intentionally preserves asset declarations; the production reader resolves a
+    relative declaration beside the finalized manifest.  The ephemeral execution manifest
+    therefore needs its own immutable links (or copies when linking is unavailable), not a
+    changed declaration pointing back to the host-provisioned bundle.
+    """
+    payload = _read_json(manifest_path)
+    raw_assets = payload.get("assets")
+    golden = payload.get("golden")
+    if not isinstance(raw_assets, list) or not isinstance(golden, dict):
+        raise MeasurementError("finalized manifest lacks declared provider or golden assets")
+    golden_input = golden.get("input")
+    if not isinstance(golden_input, dict):
+        raise MeasurementError("finalized manifest lacks its golden input asset")
+
+    records: list[dict[str, Any]] = []
+    for raw_asset in [*raw_assets, golden_input]:
+        if not isinstance(raw_asset, dict):
+            raise MeasurementError("finalized manifest asset declaration must be an object")
+        name = raw_asset.get("name")
+        raw_path = raw_asset.get("path")
+        if not isinstance(name, str) or not name or not isinstance(raw_path, str) or not raw_path:
+            raise MeasurementError("finalized manifest asset declaration lacks name or path")
+        declared_path = Path(raw_path)
+        if declared_path.is_absolute():
+            records.append(
+                {
+                    "name": name,
+                    "declared_path": raw_path,
+                    "materialization": "not-needed-absolute-path",
+                }
+            )
+            continue
+        if not declared_path.parts or any(part in {"", ".", ".."} for part in declared_path.parts):
+            raise MeasurementError("execution manifest asset paths must be confined relative paths")
+
+        source = source_base_dir / declared_path
+        destination = manifest_path.parent / declared_path
+        if not source.is_file():
+            raise MeasurementError(f"provisioned asset is absent for execution manifest: {name}")
+        if destination.exists():
+            raise MeasurementError(f"execution manifest asset destination already exists: {name}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(source, destination)
+            materialization = "hardlink"
+        except OSError:
+            shutil.copy2(source, destination)
+            materialization = "copy"
+        records.append(
+            {
+                "name": name,
+                "declared_path": raw_path,
+                "materialization": materialization,
+                "byte_size": destination.stat().st_size,
+                "sha256": _sha256(destination),
+            }
+        )
+    return records
 
 
 def _canonical_json_sha256(value: Any) -> str:
@@ -176,7 +245,9 @@ class RemoteVllmMeasurement(Measurement):
     def __init__(self, args: argparse.Namespace, contract: dict[str, Any], fixture: dict[str, Any]):
         super().__init__(args, contract, fixture)
         self.head_revision: str | None = None
-        self.run_manifest = self.output / "live-provider-manifest.json"
+        self.evidence_manifest = self.output / "live-provider-manifest.json"
+        self.execution_bundle_dir: Path | None = None
+        self.execution_manifest: Path | None = None
         self.endpoint_probes: dict[str, dict[str, Any]] = {}
         self.endpoint_probe_errors: dict[str, str] = {}
         self._heartbeats: dict[str, _RemoteHeartbeat] = {}
@@ -192,10 +263,16 @@ class RemoteVllmMeasurement(Measurement):
                 "fixture_manifest_sha256": _sha256(self.args.fixture),
                 "fixture_sha256": _sha256(ROOT / self.fixture["audio"]["path"]),
                 "captured_head_revision": self.head_revision,
-                "run_owned_manifest": str(self.run_manifest),
-                "run_owned_manifest_sha256": _sha256(self.run_manifest)
-                if self.run_manifest.is_file()
+                "evidence_manifest": str(self.evidence_manifest),
+                "evidence_manifest_sha256": _sha256(self.evidence_manifest)
+                if self.evidence_manifest.is_file()
                 else None,
+                "execution_manifest": None
+                if self.execution_manifest is None
+                else str(self.execution_manifest),
+                "execution_manifest_sha256": None
+                if self.execution_manifest is None or not self.execution_manifest.is_file()
+                else _sha256(self.execution_manifest),
                 "endpoint_probes": self.endpoint_probes,
                 "endpoint_probe_errors": self.endpoint_probe_errors,
                 "heartbeat_outcomes": self._heartbeat_outcomes,
@@ -233,8 +310,7 @@ class RemoteVllmMeasurement(Measurement):
         ):
             raise MeasurementError("provisional manifest lacks calibrated identity configuration")
         fixture_audio = ROOT / self.fixture["audio"]["path"]
-        _wav_clip(self.fixture, self.fixture["clips"][0])
-        _wav_clip(self.fixture, self.fixture["clips"][1])
+        self.validate_fixture_phase_capacities()
         self.head_revision = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip()
@@ -259,7 +335,7 @@ class RemoteVllmMeasurement(Measurement):
             "fixture_sha256": _sha256(fixture_audio),
             "fixture_clip_ids": [clip["id"] for clip in self.fixture["clips"]],
             "captured_head_revision": self.head_revision,
-            "run_owned_manifest_path": str(self.run_manifest),
+            "evidence_manifest_path": str(self.evidence_manifest),
             "deployed_bound_fields": _descriptor_fields(descriptor),
             "endpoint_before": remote,
             "gpu_claims_permitted": False,
@@ -278,12 +354,16 @@ class RemoteVllmMeasurement(Measurement):
         provisional = _read_json(self.args.provisional_manifest)
         identity = provisional["identity_config"]
         provider = provisional["identity_provider"]
+        self.execution_bundle_dir = Path(
+            tempfile.mkdtemp(prefix="moss-w2-remote-vllm-bundle-")
+        )
+        self.execution_manifest = self.execution_bundle_dir / "live-provider-manifest.json"
         command = [
             str(FINALIZER_PATH),
             "--input",
             str(self.args.provisional_manifest),
             "--output",
-            str(self.run_manifest),
+            str(self.execution_manifest),
             "--source-revision",
             self.head_revision,
             "--hard-cap-samples",
@@ -308,19 +388,52 @@ class RemoteVllmMeasurement(Measurement):
             encoding="utf-8",
         )
         if completed.returncode != 0:
-            raise MeasurementError("run-owned manifest finalization failed")
-        finalized = _read_json(self.run_manifest)
+            raise MeasurementError("ephemeral execution manifest finalization failed")
+        finalized = _read_json(self.execution_manifest)
         if finalized.get("source_revision") != self.head_revision:
-            raise MeasurementError("finalizer did not bind the run-owned manifest to captured HEAD")
+            raise MeasurementError("finalizer did not bind the execution manifest to captured HEAD")
         from moss_transcribe_diarize.app.live_provider_bundle import LiveProviderBundleConfig
 
         try:
-            LiveProviderBundleConfig.from_manifest(self.run_manifest)
+            self.output.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(self.execution_manifest, self.evidence_manifest)
+            assets = _materialize_ephemeral_execution_assets(
+                manifest_path=self.execution_manifest,
+                source_base_dir=self.args.provisional_manifest.parent,
+            )
+            _atomic_json(
+                self.output / "run-owned-asset-materialization.json",
+                {
+                    "schema": "moss-run-owned-manifest-asset-materialization.v1",
+                    "execution_bundle_is_ephemeral_outside_evidence": True,
+                    "execution_manifest_path": str(self.execution_manifest),
+                    "execution_manifest_sha256": _sha256(self.execution_manifest),
+                    "evidence_manifest_sha256": _sha256(self.evidence_manifest),
+                    "assets": assets,
+                },
+            )
+            preflight = LiveProviderBundleConfig.from_manifest(self.execution_manifest).preflight()
+            _atomic_json(
+                self.output / "run-owned-manifest-preflight.json",
+                {
+                    "execution_manifest_path": str(self.execution_manifest),
+                    "evidence_manifest_path": self.evidence_manifest.name,
+                    **preflight.to_dict(),
+                },
+            )
+            if not preflight.available:
+                raise MeasurementError("production provider preflight rejected the execution manifest")
         except Exception as error:  # The production reader is the contract here.
-            raise MeasurementError("production provider reader rejected the run-owned manifest") from error
+            if isinstance(error, MeasurementError):
+                raise
+            raise MeasurementError("production provider reader rejected the execution manifest") from error
 
     def start_service(self) -> str:
-        if self.deployed_descriptor is None or self.head_revision is None:
+        if (
+            self.deployed_descriptor is None
+            or self.head_revision is None
+            or self.execution_manifest is None
+        ):
             raise MeasurementError("preflight must complete before service startup")
         self.event_log.write_text("", encoding="utf-8")
         log_handle = self.service_log.open("wb")
@@ -328,7 +441,7 @@ class RemoteVllmMeasurement(Measurement):
             sys.executable,
             str(SERVER_PATH),
             "--live-provider-manifest",
-            str(self.run_manifest),
+            str(self.execution_manifest),
             "--vllm-base-url",
             self.endpoint_probes["before"]["base_url"],
             "--vllm-model",
@@ -514,6 +627,10 @@ class RemoteVllmMeasurement(Measurement):
             heartbeat.close()
         self._heartbeats.clear()
         super().cleanup()
+        if self.execution_bundle_dir is not None:
+            shutil.rmtree(self.execution_bundle_dir, ignore_errors=True)
+            self.execution_bundle_dir = None
+            self.execution_manifest = None
 
 
 def parse_args() -> argparse.Namespace:

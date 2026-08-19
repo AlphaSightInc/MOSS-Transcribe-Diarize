@@ -17,6 +17,102 @@ describe("MOSS session poller", () => {
     resetSessionState();
   });
 
+  it.each([
+    [
+      "a canonical silence span",
+      {
+        committed: [
+          { span_id: 12, start_sample: 0, transcript: "", revised_transcript: null }
+        ],
+        provisional: null
+      }
+    ],
+    [
+      "an empty provisional tail",
+      {
+        committed: [],
+        provisional: { generation: 9, start_sample: 32_000, transcript: "" }
+      }
+    ]
+  ])("accepts %s without aborting the poll round", async (_scenario, transcriptState) => {
+    const dispatched: WsEvent[] = [];
+    const onError = vi.fn();
+    const poller = createMossSessionPoller({
+      sessionId: "session-empty-text",
+      accessToken: "view-token",
+      onError,
+      dispatch: (event) => dispatched.push(event),
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) return jsonResponse({ events: [] });
+        return jsonResponse({
+          snapshot: {
+            session_id: "session-empty-text",
+            descriptor: { sample_rate: 16_000 },
+            session: {
+              status: "active",
+              version: 4,
+              failure_reason: null,
+              label_revision_version: 0,
+              identity_snapshot: { canonical_speakers: [] },
+              ...transcriptState
+            }
+          },
+          unchanged: false,
+          status_line: null
+        });
+      }) as typeof fetch
+    });
+
+    await poller.poll();
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(dispatched.map((event) => event.type)).toEqual(["session_state", "transcript_update"]);
+    expect(poller.cursors()).toEqual({ snapshotVersion: 4, eventSequence: 0 });
+  });
+
+  it.each([
+    [
+      "canonical",
+      { committed: [{ span_id: 12, start_sample: 0, transcript: null }], provisional: null },
+      "Malformed MOSS canonical commit transcript."
+    ],
+    [
+      "provisional",
+      { committed: [], provisional: { generation: 9, start_sample: 32_000, transcript: null } },
+      "Malformed MOSS provisional transcript."
+    ]
+  ])("still rejects a non-string %s transcript", async (_field, transcriptState, expectedError) => {
+    const onError = vi.fn();
+    const poller = createMossSessionPoller({
+      sessionId: "session-non-text",
+      accessToken: "view-token",
+      onError,
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) return jsonResponse({ events: [] });
+        return jsonResponse({
+          snapshot: {
+            session_id: "session-non-text",
+            descriptor: { sample_rate: 16_000 },
+            session: {
+              status: "active",
+              version: 4,
+              failure_reason: null,
+              label_revision_version: 0,
+              identity_snapshot: { canonical_speakers: [] },
+              ...transcriptState
+            }
+          },
+          unchanged: false,
+          status_line: null
+        });
+      }) as typeof fetch
+    });
+
+    await poller.poll();
+
+    expect(onError).toHaveBeenCalledWith(expectedError);
+  });
+
   it("replaces transcript state from a raw snapshot, maps revisions/finalization, and advances replay cursors only after dispatch", async () => {
     const dispatched: WsEvent[] = [];
     const cursorsDuringDispatch: Array<ReturnType<MossSessionPoller["cursors"]>> = [];

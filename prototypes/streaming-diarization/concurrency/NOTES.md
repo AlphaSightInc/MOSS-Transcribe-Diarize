@@ -1,5 +1,30 @@
 # Concurrency prototype notes
 
+## W2 lifecycle fairness repair — 2026-08-19
+
+**VERDICT: PASS for the measurement rule; the iteration-27 `skew=30` is not a
+scheduler finding.**
+
+Question: did the tunnel matrix establish unfair dispatch, or did its
+`canonical_processed`-only metric count VAD-dependent work after another session
+had stopped being ready?
+
+The prior log carried only publication events. Its two sessions completed 46 and
+76 items, so the all-completions prefix calculation reported 30 despite no record
+of which sessions were eligible when each item was selected. That cannot measure
+the preregistered condition, which is explicitly limited to *continuously ready*
+sessions. The production-route instrument now writes the compact, ordered
+`canonical_queued` -> `canonical_started` -> `canonical_processed` lifecycle.
+The evaluator fails closed if any stage is missing and evaluates pairwise skew only
+inside a continuous jointly-ready interval.
+
+The focused regression has two falsifiable traces: a fair alternation followed by
+two peer-only items still passes at skew 1, while selecting the same session twice
+while its peer remains queued fails at skew 2. This changes no gate value, matrix
+row, duration, or model claim. It requires a fresh tunnel matrix; iteration 27
+remains useful latency/backpressure evidence, but its old fairness number cannot
+select a concurrency bound.
+
 ## Remote-vLLM tunnel matrix contract — 2026-08-18
 
 **VERDICT: FROZEN before measurement; no W2, G4, or G5 result yet.**
@@ -27,8 +52,18 @@ latency, GPU memory/utilisation/OOM, or vLLM active/queued counts. The 90-second
 `run_remote_vllm_tunnel_measurement.py` is a narrow W2 runner for the frozen contract. Its preflight
 rejects an unhealthy tunnel, a missing selected model, a malformed or credential-bearing endpoint URL, missing
 fixture/provisional inputs, and a malformed deployed descriptor before it starts any local route process. It
-captures `HEAD` once, finalizes only `OUTPUT/live-provider-manifest.json`, asks the production manifest reader
-to admit it, and refuses if the local descriptor does not carry that exact revision or deployed geometry.
+captures `HEAD` once, finalizes an ephemeral execution manifest outside the repository, materializes declared
+relative assets only beside that temporary manifest, and copies only the finalized manifest plus asset hashes
+to `OUTPUT`. It asks the production manifest reader to admit the execution bundle and refuses if the local
+descriptor does not carry that exact revision or deployed geometry. This avoids committing or retaining the
+79 MB ONNX asset in evidence while retaining the exact admitted manifest and hashes.
+
+Iteration 26 repaired the first live attempt's relative-asset locality failure. The focused command
+`.venv/bin/python -m pytest -q tests/test_remote_vllm_tunnel_measurement.py` passes **5/5**. Its new
+counterfactual calls the real `LiveProviderBundleConfig.preflight()` before materialization and observes both
+`identity-state` and `golden-input` absent; after materializing to a disposable execution directory it proves
+neither absence failure remains. The intentionally minimal test manifest remains otherwise inadmissible, so
+this is an asset-resolution proof only, not a replacement for the next real-bundle preflight or W2 matrix.
 
 The runner uses the existing production local-route/vLLM seam, but gives every session a background helper
 heartbeat at `lease / 4`, so a blocked remote transcription cannot make helper presence disappear. It records
@@ -247,3 +282,141 @@ resource-isolated local runtime.
 No dispatcher bound was guessed or implemented. The controlled results remain non-gating, and the
 real G4/G5 measurement remains a prerequisite. Raw result:
 `evidence/phase1/t3/iteration-8-stop-gate.txt`.
+
+## Remote-vLLM unique-marker inventory — 2026-08-18
+
+**VERDICT: PASS — the existing hash-pinned W2 source contains eight usable, distinct marker clips.**
+
+Question: can the read-only production vLLM endpoint recognize one distinct marker from each of eight
+bounded clips in the exact W2 fixture, without that marker occurring in any other candidate clip?
+
+`proto_unique_marker_inventory.py` queried `OpenMOSS-Team/MOSS-Transcribe-Diarize` through the local
+`/v1` tunnel. It used fixture manifest SHA-256
+`8e5eed2421482ab626e322a6242eb5ab57b43a091034bfc61bab7aef8d869155` and source WAV SHA-256
+`a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea`. All eight markers were present
+in their own direct transcription and absent from every other candidate: `New York`, `payments team`,
+`huge thanks`, `show notes`, `investment advice`, `entertainment purposes`, `feels appropriate`, and
+`dressed up`. Raw transcripts, clip bounds, timing, and both hashes are in
+`evidence/phase1/w2-local-concurrency/iteration-29-unique-marker-inventory.json`.
+
+The exclusivity condition is material: `cool technology` was rejected because the preceding bounded
+`payments` clip also transcribed it. This probe does not test cross-session isolation, reconnect,
+fairness, G4, or G5. Next, configure those eight audited clips in the W2 fixture, fail closed whenever
+a phase lacks one unique marker per session, and add the missing overload isolation/reconnect evaluation
+before the frozen matrix is replayed.
+
+## Remote-vLLM integrity-oracle absorption — 2026-08-18
+
+**VERDICT: PASS — fixture capacity and the fail-closed overload oracle are ready for one fresh frozen run.**
+
+Question: does the actual eight-marker fixture now support every W2 phase without repeated-marker false
+positives, and will the harness reject a missing unique clip, a foreign canonical transcript, or an
+unobserved reconnect instead of treating them as isolation evidence?
+
+The fixture now contains eight separately bounded clips, all read from configuration by
+`proto_unique_marker_inventory.py`. The real read-only endpoint re-inventoried that exact manifest
+(`d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee`): all eight expected markers
+were present in their own clip and absent from every other clip. Raw output:
+`evidence/phase1/w2-local-concurrency/iteration-31-unique-marker-fixture.json`.
+
+The measurement runner now assigns the first N distinct configured clips to an N-session phase and refuses
+any undersupplied or duplicate-marker phase before capture. Its instrumented canonical event log retains
+the rendered transcript for submitted spans, without retaining PCM. During overload it sends the peer's
+entire bounded clip, waits for both owned markers through reconnect polling, and requires the reconnect's
+snapshot plus replayed canonical events to resolve only to their session's text. Focused route/runner tests
+passed 10/10; their falsified cases cover an undersupplied phase, a duplicate marker, and a foreign marker
+in both canonical and reconnect-replayed evidence. Raw JUnit:
+`evidence/phase1/w2-local-concurrency/iteration-31-integrity-oracle.xml`.
+
+This is harness and fixture evidence only. It establishes neither G4 nor G5; rerun the unchanged
+preregistered remote-vLLM matrix in a fresh evidence directory.
+
+## Writer/evaluator drain boundary — 2026-08-18
+
+**VERDICT: PASS — a writer-owned drain barrier is required before evaluating lifecycle evidence.**
+
+Question: can the production asynchronous canonical-event writer make a complete, fair lifecycle evaluate as
+incomplete when the runner reads the event file before the writer drains?
+
+One command (prints full before-drain and after-drain state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_writer_evaluator_boundary.py \
+  --output evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json
+```
+
+The probe exercised the production `_CanonicalEventLogWriter` and the production
+`_canonical_lifecycle_fairness` evaluator, without a service or scheduler. In all three trials it enqueued a
+complete two-session, eight-item lifecycle (48 records). The writer had already recorded write activity, but
+the immediate file read saw 0 records and failed closed for absent queued/started/processed evidence. After
+the writer's non-closing `drain()` barrier, all 48 records were readable and the evaluator passed (8 contended
+dispatch observations, maximum skew 1). Artifact SHA-256:
+`31fe21ec4c1eeab9711ccfc8d9a83ee6e7794f021c46464fcade73fe6934e975`.
+
+Iteration 35 implemented that measured boundary: the runner asks its loopback route for a bounded writer-owned
+drain before every normal or overload lifecycle read, and it refuses to evaluate if the writer does not
+acknowledge inside the caller's existing stop deadline. The writer remains open for later phases. This changes
+no fairness, stop-drain, latency, or scheduler value. It establishes only the observation boundary; it does
+not establish scheduler fairness, stop-drain correctness, G4, or G5.
+
+## Saved lifecycle completeness audit — 2026-08-19
+
+**VERDICT: FAIL CLOSED — run 32 cannot be re-scored; rerun the unchanged frozen matrix.**
+
+Question: after adding the writer-owned boundary, does run 32's already-written lifecycle JSONL contain every
+event the writer reported, so the old fairness and queue-residue results can be safely re-evaluated without a
+new live run?
+
+One command (read-only over the saved evidence; prints full phase accounting):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_saved_lifecycle_completeness.py \
+  --run-directory evidence/phase1/w2-local-concurrency/run-20260819T011500-iteration32 \
+  --output evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json
+```
+
+The raw log has **4,240** records but its final writer counter is **4,245**. The first five phase boundaries
+match exactly (202, 548, 1,185, 2,259, and 4,194 cumulative records), while overload has 46 persisted records
+against its 51-record counter. Thus the terminal matrix lifecycle evidence is incomplete. The evidence audit
+does not reclassify any saved fairness or stop-drain result; it requires a new frozen matrix using the repaired
+writer boundary and separated predicates. Artifact SHA-256:
+`evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json` is recorded in the
+iteration evidence with SHA-256 `b0b4493c54218056d91c9925bdf6b5d577f3a3a073ce551c9d9eb31e5db04052`.
+
+This names the third degenerate oracle in this workstream: repeated markers, then the unscoped fairness counter,
+then the writer/evaluator race. A derived number is only usable when its source is complete and its predicate
+actually measures the behavior it names. This audit establishes no scheduler result, stop-drain result, G4,
+G5, live route, or inference result.
+
+## Rendered-ownership overload wait — 2026-08-19
+
+**VERDICT: FAIL CLOSED — a 120 s ordinary-poll wait did not make the peer's rendered own marker observable;
+do not move or lengthen the runner's reconnect.**
+
+Question: under the production remote-vLLM overload path, does ordinary snapshot/event polling observe each
+session's rendered own marker before a single reconnect per observer, within a bounded 120 s window?
+
+One command (prints full route/endpoint/overload state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_overload_rendered_ownership_wait.py \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 --port 18999 \
+  --rendered-ownership-timeout-seconds 120 \
+  --output evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait
+```
+
+Both endpoint probes returned HTTP 200. The real overload path reached a retryable session-local 429, accepted
+the peer, retried the refused frame successfully, completed peer replay without an unexpected frame result,
+and cleanly stopped both sessions. Both canonical own markers were present and foreign markers absent. But the
+peer's rendered own-marker predicate remained false before the bounded wait expired; no reconnect was triggered,
+so reconnect evidence correctly remained absent. This rejects the proposed poll-before-reconnect repair at 120 s
+rather than treating a longer wait as a gate improvement. Raw result SHA-256:
+`ae41e92afb7b3e292ec9521dd3e011d08e993e02a703dffe477ba164ea234a77`; canonical log SHA-256:
+`05c1b613c342ce0b7de882efb1e944d87b5a31cb0b5493b0a85500c2936aadec`.
+
+This is a live harness diagnosis only. It establishes neither G4 nor G5, a new duration bound, isolated-GPU
+latency, GPU telemetry, nor a rendered-publication product defect. Keep the frozen overload verdict false until
+a separately measured explanation distinguishes publication delay from an insufficient observation window.

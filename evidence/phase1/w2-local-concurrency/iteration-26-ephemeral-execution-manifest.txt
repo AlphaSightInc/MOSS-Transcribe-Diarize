@@ -1,0 +1,41 @@
+W2 iteration 26 — ephemeral execution-manifest asset locality repair
+
+Question
+========
+Can a freshly finalized, HEAD-bound W2 execution manifest preserve its relative
+identity and golden asset declarations without placing the 79,158,228-byte ONNX
+asset in the repository evidence directory?
+
+Implementation
+==============
+The runner finalizes into a newly created temporary directory outside the repo.
+It materializes each declared relative provider/golden asset beside that execution
+manifest by hard link, with a copy fallback; it records declaration paths, sizes,
+and SHA-256 values. Only the finalized manifest and small materialization/preflight
+records are written beneath --output. The temporary bundle is removed at cleanup.
+
+Falsifiable counterfactual and validation
+=========================================
+Command:
+  .venv/bin/python -m pytest -q tests/test_remote_vllm_tunnel_measurement.py
+
+Result: PASS — 5 passed in 2.33s.
+
+The new test calls the production LiveProviderBundleConfig.preflight() before any
+materialization and requires these two failures:
+  asset is not preinstalled: identity-state
+  asset is not preinstalled: golden-input
+
+It then materializes the same relative paths into a disposable execution directory
+and calls the same production preflight again; the test fails unless neither
+asset-absence failure remains. It also checks both copied/link-resolved byte
+sequences. A separate runner-finalization test fails if any `.onnx` or `.wav`
+appears under `--output`, and confirms the temporary execution directory is
+removed at cleanup. py_compile and git diff --check passed in the same validation
+command sequence.
+
+Scope limit
+===========
+The test manifest intentionally lacks the rest of a production bundle, so this
+only proves relative asset locality. It does not start a local service, call the
+vLLM tunnel, run any G4/G5 matrix phase, or establish model inference.

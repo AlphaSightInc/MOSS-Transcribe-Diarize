@@ -1,0 +1,6 @@
+Iteration 25 committed: `9945657`.
+
+W2 run failed closed before sessions/inference. Tunnel health/models were 200 before/after. Cause: run-owned manifest’s relative assets resolve in its evidence dir; both absent. Evidence: [run state](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/run-20260818T200016-iteration25/run-state.json), [preflight](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/run-20260818T200016-iteration25/bundle-preflight.json).
+
+Next: red/green locality repair, then fresh frozen matrix. Launcher telemetry remains uncommitted.
+

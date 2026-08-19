@@ -1,0 +1,7 @@
+Committed `cbf0610` — lifecycle fairness/stop-drain split.
+
+Run-32 re-score refused: 4,240 durable events vs 4,245 writer counter. Fresh frozen W2 matrix required. Evidence: [audit JSON](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json).
+
+Validation: focused 14 passed; writer-boundary probe 3/3.
+
+Launcher telemetry remains modified, untouched.

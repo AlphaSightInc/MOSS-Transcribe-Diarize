@@ -1,0 +1,6 @@
+Committed `fa510ca` — accepts valid empty canonical/provisional transcript text; null still rejected.
+
+Validated: poller 18/18, frontend 126/126, typecheck, build, preflight, HEAD-pinned bundle audit PASS.
+
+Next: W2 writer drain barrier and stop/fairness separation. External monitor/telemetry edits remain unstaged.
+

@@ -46,9 +46,24 @@ that contract. It may establish the local portions of G4 and G5, never deployed 
 utilisation.
 
 Its hash-pinned human-speech clip configuration is
-`cpu_hf_local_fixture.json`. The runner uses two different bounded segments from that real recording,
-then checks that each session renders only its own configured marker. The values belong in the fixture
-configuration, never in general runner logic.
+`cpu_hf_local_fixture.json`. The runner assigns one bounded real-speech clip and one distinct marker to
+each session, then fails closed before capture if any matrix or overload phase would reuse a clip or marker.
+The current fixture supplies all eight markers required by the 1/2/4/8 matrix; the values belong in the
+fixture configuration, never in general runner logic.
+
+Re-inventory the configured markers against the live read-only endpoint after changing any fixture bounds
+or marker (about five seconds):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_unique_marker_inventory.py \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --output evidence/phase1/w2-local-concurrency/unique-marker-inventory.json
+```
+
+The probe reads the fixture configuration rather than duplicating its clip values. It requires each marker
+to appear in its own bounded real-speech clip and in no other configured clip. It only establishes fixture
+capacity; it does not test cross-session isolation, fairness, G4, or G5.
 
 Full local CPU/HF measurement (about 19 minutes plus model warm-up):
 
@@ -62,7 +77,7 @@ Full local CPU/HF measurement (about 19 minutes plus model warm-up):
 
 The command first reads the deployed descriptor, re-finalizes only the local manifest for the current
 checkout, starts one loopback FastAPI process through the real `LiveServiceRuntime`, and records raw
-frame responses, observer cursors/events, canonical dispatch order, instrumentation overhead, decode real-time
+frame responses, observer cursors/events, canonical queue/start/publication lifecycle, instrumentation overhead, decode real-time
 factor, and service process-tree RSS incrementally. Canonical-event file I/O runs in a dedicated writer thread,
 with a five-second durability sync interval, so disk sync never holds the runtime publication lock. It records
 screening at 1/2/4/8 sessions, then soaks only the largest
@@ -84,11 +99,51 @@ and requires a `canonical_processed` event plus a clean stop. The heartbeat cade
 quarter of the explicitly supplied helper lease. It records whether the manifest revision matches `HEAD`;
 a mismatch, or this one-span probe itself, never qualifies W2.
 
-The subsequent tunnel matrix must hash the exact remote-vLLM preregistration and fixture bytes, record
-the selected model plus canonical `/models` identities before and after the run, and write a new finalized
-manifest into its own evidence directory. It must not overwrite the shared local manifest. Its p95 includes
-SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors, and vLLM active/queued counts remain outside
-the available read-only surface.
+The subsequent tunnel matrix must hash the exact remote-vLLM preregistration and fixture bytes and record
+the selected model plus canonical `/models` identities before and after the run. It finalizes an ephemeral
+execution bundle outside the repository, materializes its relative assets there, and copies only the finalized
+manifest plus asset hashes into the evidence directory. It must not overwrite the shared local manifest or add
+model bytes to evidence. Its p95 includes SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors,
+and vLLM active/queued counts remain outside the available read-only surface.
+
+Writer/evaluator boundary probe (no service or model; prints the full before-drain and after-drain state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_writer_evaluator_boundary.py \
+  --output evidence/phase1/w2-local-concurrency/writer-evaluator-boundary.json
+```
+
+It uses the production asynchronous canonical-event writer and lifecycle evaluator with a complete, fair
+synthetic lifecycle. It may only establish whether reading the log needs a writer-owned drain barrier; it
+cannot establish scheduler fairness, stop-drain semantics, G4, or G5.
+
+Saved lifecycle completeness audit (read-only; use before attempting any post-run re-score):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_saved_lifecycle_completeness.py \
+  --run-directory evidence/phase1/w2-local-concurrency/run-YYYYMMDDTHHMMSS \
+  --output evidence/phase1/w2-local-concurrency/saved-lifecycle-completeness.json
+```
+
+It compares the raw JSONL line count and every phase's attributed records to the cumulative writer counters
+in `run-state.json`. A short terminal count fails closed: it cannot reclassify scheduler fairness or
+stop-drain behavior and requires a fresh frozen matrix. It starts no service and sends no inference request.
+
+Rendered-ownership overload probe (one real remote-vLLM overload path; prints full state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_overload_rendered_ownership_wait.py \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 --port 18999 \
+  --rendered-ownership-timeout-seconds 120 \
+  --output evidence/phase1/w2-local-concurrency/overload-rendered-ownership-wait
+```
+
+It uses ordinary snapshot/event polling until both observers have their own rendered marker, then performs
+exactly one reconnect per observer. The exploratory timeout is fail-closed, never a G4/G5 threshold: a timeout
+must leave the frozen runner unchanged and report failure rather than reconnecting repeatedly.
 
 Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
 first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
@@ -105,7 +160,12 @@ process. Use a fresh output directory for the measurement after a successful pre
   --preflight
 ```
 
-Without `--preflight`, the runner writes a new final manifest under that output directory for its captured
-`HEAD`, starts one loopback production route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus
-the selected soak and overload/reconnect sequence, and probes `/health` and `/v1/models` again before issuing
-its verdict. Helper health posts run at one quarter of the explicit lease even while a remote request blocks.
+Without `--preflight`, the runner creates a new ephemeral finalized manifest for its captured `HEAD` outside
+the repository, materializes its declared relative assets only in that temporary execution directory, and
+copies the small manifest record into the requested output directory. It then starts one loopback production
+route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus the selected soak and overload/reconnect
+sequence, and probes `/health` and `/v1/models` again before issuing its verdict. The measurement event log
+adds the rendered transcript to each submitted canonical event so the harness can test isolation on both
+rendered snapshots and the canonical path. In overload it replays the peer's full bounded clip, then requires
+each observer reconnect to return isolated snapshot and canonical-event evidence. Helper health posts run at
+one quarter of the explicit lease even while a remote request blocks.

@@ -1,0 +1,6 @@
+Iteration 27 committed: `d6b1e53`.
+
+Live matrix completed; only 1-session + 600s soak passed. 2/4 fail fairness (skew 30/33); 8 also p95 46.62s. No G4/G5 claim: 4/8 marker oracle is degenerate; overload omits isolation/reconnect checks.
+
+Evidence: [verdict.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/verdict.json). Tests 5/5; contract validator PASS. Launcher telemetry remains unstaged.
+

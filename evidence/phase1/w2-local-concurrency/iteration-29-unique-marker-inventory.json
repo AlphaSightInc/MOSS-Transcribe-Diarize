@@ -1,0 +1,98 @@
+{
+  "all_markers_present_and_unique": true,
+  "candidates": [
+    {
+      "elapsed_seconds": 0.9735780000046361,
+      "end_seconds": 45.0,
+      "expected_marker": "New York",
+      "id": "new-york",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 39.0,
+      "transcript": "[0.00][S01] Have been to me that the very best person who acquired could interview in New York also happened to be their[5.96]"
+    },
+    {
+      "elapsed_seconds": 0.20973516700905748,
+      "end_seconds": 53.0,
+      "expected_marker": "payments team",
+      "id": "payments",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 48.0,
+      "transcript": "[0.00][S01] JP Morgan has been a fantastic partner of ours and their payments team demoed all kinds[4.13][4.13][S01] of cool technology.[4.95]"
+    },
+    {
+      "elapsed_seconds": 0.29722579100052826,
+      "end_seconds": 58.0,
+      "expected_marker": "huge thanks",
+      "id": "huge-thanks",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 52.0,
+      "transcript": "[0.08][S01] kinds of cool technology at the event.[1.76][1.81][S01]Our huge thanks to the JP Morgan team for putting on the show with us.[4.75][4.78][S01]And if you ever want to learn more.[5.99]"
+    },
+    {
+      "elapsed_seconds": 0.22701645799679682,
+      "end_seconds": 63.0,
+      "expected_marker": "show notes",
+      "id": "show-notes",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 58.0,
+      "transcript": "[0.08][S01] Just click the link in the show notes and tell them that Ben and David sent you.[3.26][3.82][S01] So with that, this show is not[4.96]"
+    },
+    {
+      "elapsed_seconds": 0.2068567500100471,
+      "end_seconds": 68.0,
+      "expected_marker": "investment advice",
+      "id": "investment-advice",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 63.0,
+      "transcript": "[0.00][S01] Investment advice. Dave and I may have investments in the companies we discuss,[2.88][3.12][S01] and this show is for informational.[4.92]"
+    },
+    {
+      "elapsed_seconds": 0.18010058300569654,
+      "end_seconds": 73.0,
+      "expected_marker": "entertainment purposes",
+      "id": "entertainment",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 68.0,
+      "transcript": "[0.08][S01] Entertainment purposes only.[1.62][2.04][S01] Onto our conversation with Jamie Dimon.[4.17]"
+    },
+    {
+      "elapsed_seconds": 0.09606070799054578,
+      "end_seconds": 75.0,
+      "expected_marker": "feels appropriate",
+      "id": "appropriate",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 73.0,
+      "transcript": "[0.51][S01] Well, this feels appropriate.[1.95]"
+    },
+    {
+      "elapsed_seconds": 0.10251712499302812,
+      "end_seconds": 78.0,
+      "expected_marker": "dressed up",
+      "id": "dressed-up",
+      "marker_absent_from_other_candidates": true,
+      "marker_present": true,
+      "start_seconds": 75.0,
+      "transcript": "[0.65][S01] You guys dressed up for me.[2.01]"
+    }
+  ],
+  "does_not_establish": [
+    "cross-session isolation",
+    "round-robin fairness",
+    "G4 or G5"
+  ],
+  "fixture": "prototypes/streaming-diarization/dl2-capture/evidence/d3-leading-silence/fixtures/leading-030s.wav",
+  "fixture_manifest": "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json",
+  "fixture_manifest_sha256": "8e5eed2421482ab626e322a6242eb5ab57b43a091034bfc61bab7aef8d869155",
+  "fixture_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+  "question": "Can the production vLLM endpoint recognize eight distinct real-speech markers?",
+  "schema": "moss-unique-marker-inventory.v1",
+  "vllm_base_url": "http://127.0.0.1:18000/v1",
+  "vllm_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+}

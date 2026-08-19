@@ -715,7 +715,7 @@ function parseCanonicalCommit(value: unknown): MossCanonicalCommit {
   return {
     spanId: requiredNonNegativeNumber(commit.span_id, "canonical commit span_id"),
     startSample: requiredNonNegativeNumber(commit.start_sample, "canonical commit start_sample"),
-    transcript: requiredString(commit.transcript, "canonical commit transcript"),
+    transcript: requiredTextField(commit.transcript, "canonical commit transcript"),
     revisedTranscript: optionalString(commit.revised_transcript)
   };
 }
@@ -725,7 +725,7 @@ function parseProvisionalSuffix(value: unknown): MossProvisionalSuffix {
   return {
     generation: requiredNonNegativeNumber(provisional.generation, "provisional generation"),
     startSample: requiredNonNegativeNumber(provisional.start_sample, "provisional start_sample"),
-    transcript: requiredString(provisional.transcript, "provisional transcript")
+    transcript: requiredTextField(provisional.transcript, "provisional transcript")
   };
 }
 
@@ -751,6 +751,13 @@ function record(value: unknown, label: string): JsonObject {
 
 function requiredString(value: unknown, label: string): string {
   if (typeof value !== "string" || value.length === 0) {
+    fail(label);
+  }
+  return value;
+}
+
+function requiredTextField(value: unknown, label: string): string {
+  if (typeof value !== "string") {
     fail(label);
   }
   return value;

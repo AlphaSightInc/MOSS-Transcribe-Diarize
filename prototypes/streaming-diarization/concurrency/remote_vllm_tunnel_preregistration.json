@@ -90,7 +90,7 @@
     },
     "fairness": {
       "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1,
-      "evidence": "full canonical_processed dispatch order and per-session counts"
+      "evidence": "full canonical_queued, canonical_started, and canonical_processed lifecycle order; the evaluator must reject incomplete lifecycle evidence and measure pairwise skew only inside each interval where the compared sessions remain continuously ready"
     },
     "backpressure": {
       "lane": "v2",
@@ -120,7 +120,7 @@
   "evidence_requirements": {
     "raw_arrays": [
       "per-session transcript-lag samples",
-      "canonical_processed dispatch order",
+      "full canonical_queued, canonical_started, and canonical_processed lifecycle order",
       "local process-tree RSS samples",
       "HTTP frame responses including session id and retry outcome",
       "observer reconnect cursors and returned events"
