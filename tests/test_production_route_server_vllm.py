@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -117,3 +118,37 @@ def test_route_probe_refuses_remote_vllm_without_a_manifest_or_model():
 
     with pytest.raises(ValueError, match="live-helper-lease-seconds must be positive"):
         server.build_app(live_helper_lease_seconds=0)
+
+
+def test_canonical_measurement_log_captures_queue_start_and_publication_lifecycle():
+    server = _load_server_module()
+    records: list[dict] = []
+
+    class EventLog:
+        def append(self, record):
+            records.append(record)
+
+    class Runtime:
+        def _record_event(self, *_args):
+            return None
+
+    runtime = Runtime()
+    state = SimpleNamespace(session_id="session-a")
+    server._instrument_commit_times(runtime, {}, threading.Lock(), event_log=EventLog())
+
+    runtime._record_event(state, "canonical_queued", {"item_id": 7})
+    runtime._record_event(state, "canonical_started", {"item_id": 7})
+    runtime._record_event(
+        state,
+        "canonical_processed",
+        {"item_id": 7, "span_id": 3, "submitted": True},
+    )
+
+    assert [record["kind"] for record in records] == [
+        "canonical_queued",
+        "canonical_started",
+        "canonical_processed",
+    ]
+    assert {record["schema"] for record in records} == {
+        "moss-live-canonical-dispatch-observation.v2"
+    }

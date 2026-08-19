@@ -197,7 +197,15 @@ def _instrument_commit_times(
     *,
     event_log: _CanonicalEventLogWriter | None = None,
 ):
-    """Timestamp canonical publication at the real runtime event seam."""
+    """Timestamp publication and retain the complete canonical scheduling lifecycle.
+
+    ``canonical_processed`` alone cannot establish the preregistered fairness
+    predicate: sessions may legitimately emit different numbers of spans as VAD
+    closes them. The measurement log therefore records queue, dispatch-start,
+    and publication events in runtime order. The writer remains off the
+    publication path; it receives one compact metadata record after the runtime
+    has recorded its own event.
+    """
     record_event = runtime._record_event
 
     def measured_record_event(state, kind, payload):
@@ -209,9 +217,13 @@ def _instrument_commit_times(
                     (state.session_id, int(payload["span_id"])),
                     time.time_ns(),
                 )
-            if event_log is not None and kind == "canonical_processed":
+            if event_log is not None and kind in {
+                "canonical_queued",
+                "canonical_started",
+                "canonical_processed",
+            }:
                 record = {
-                    "schema": "moss-live-canonical-dispatch-observation.v1",
+                    "schema": "moss-live-canonical-dispatch-observation.v2",
                     "observed_wall_ns": time.time_ns(),
                     "session_id": state.session_id,
                     "kind": kind,
@@ -729,7 +741,7 @@ def main() -> None:
     parser.add_argument(
         "--canonical-event-log",
         type=Path,
-        help="append raw canonical_processed observations for a local measurement harness",
+        help="append raw canonical queue/start/publication observations for a local measurement harness",
     )
     args = parser.parse_args()
     app = build_app(

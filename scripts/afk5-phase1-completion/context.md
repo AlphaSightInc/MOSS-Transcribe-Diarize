@@ -63,16 +63,18 @@ Living working memory. Update it every iteration so it matches reality. History 
   observe session-local retryable 429, peer acceptance, and eventual retry success, but both stops did
   not close. The endpoint/operator ruling arrived after this run: **do not use this CPU/HF result for
   any G4/G5 portion or inference claim**; retain it solely as raw harness/host diagnostic evidence.
-- **W2 remote-vLLM contract frozen (iteration 23):**
+- **W2 remote-vLLM contract revised (iteration 28):**
   `remote_vllm_tunnel_preregistration.json` SHA-256
-  `53de815d3a9b0e37b5f1c4845886977e61e3c9ca5bd1d7bd07a3b0ab7c857504` preserves the existing
-  1/2/4/8 + selected-600-second matrix and gate values before any tunnel matrix run. It requires a
-  run-owned manifest re-finalized to the exact captured `HEAD`, descriptor-derived geometry, and
-  endpoint `/health` plus selected-model `/models` probes before *and* after the run. It hashes the
-  contract, fixture, run-owned manifest, and endpoint model catalog identity. Tunnel-inclusive latency
-  may be measured, but isolated GPU latency, GPU memory/utilisation/OOM, and vLLM active/queued counts
-  remain unclaimed. The validator passed before implementation at
-  `prototypes/streaming-diarization/concurrency/validate_remote_vllm_tunnel_preregistration.py`.
+  `0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083` preserves the
+  1/2/4/8 + selected-600-second matrix and every gate value. It now requires ordered
+  `canonical_queued` -> `canonical_started` -> `canonical_processed` evidence and evaluates pairwise
+  skew only while both sessions remain queued; incomplete lifecycle evidence fails closed. It still requires
+  a run-owned manifest re-finalized to the exact captured `HEAD`, descriptor-derived geometry, and endpoint
+  `/health` plus selected-model `/models` probes before *and* after the run. Tunnel-inclusive latency may
+  be measured, but isolated GPU latency, GPU memory/utilisation/OOM, and vLLM active/queued counts remain
+  unclaimed. The focused lifecycle regression is at
+  `evidence/phase1/w2-local-concurrency/iteration-28-fairness-lifecycle.xml`; the contract validator also
+  passed with this SHA.
 - **W2 remote-vLLM runner first live attempt (iteration 25), fail-closed before capture:**
   `run_remote_vllm_tunnel_measurement.py` uses the production local-route/`VllmRunner` seam with one
   loopback process, a fresh evidence-owned finalized manifest bound to the captured HEAD, descriptor
@@ -101,20 +103,15 @@ Living working memory. Update it every iteration so it matches reality. History 
   locality evidence only: no route, remote inference, or G4/G5 phase ran.
 - **W2 first remote-vLLM matrix (iteration 27):** the real frozen 1/2/4/8 run completed at
   `evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/` against the read-only tunnel
-  (before/after health and selected-model probes 200; captured HEAD `037b633...`; contract
-  `53de815...`). Screen 1 passed, then its selected 600-second soak passed (p95 1.5023 s, local RSS growth
-  206,815,232 bytes, zero locally observable accelerator/OOM errors, closed stop); overload passed its
-  retryable session-local 429, peer-acceptance, retry, and stop checks. Screens 2/4/8 are recorded failures:
-  screen 2 fair-dispatch skew 30 > 1; screen 4 skew 33; screen 8 skew 13 and p95 46.6179 s > 10 s. Do not
-  certify G4 or G5 from this run: the normal-path marker oracle aliases the two fixture markers when it
-  reuses clips at 4/8 sessions, so it calls each duplicated session's own marker foreign; the overload
-  evaluator records 429/retry/stops but does not evaluate required text isolation or observer reconnect.
-  `qualifies_local_g4_g5_portions: true` is therefore a harness verdict, not gate certification. Latency is
-  SSH-tunnel/tailnet inclusive; GPU memory/utilisation/OOM and vLLM queue counts remain unmeasured. The
-  two-session markers are distinct, so its p95 2.0379 s, healthy local memory/errors/stops, and **skew 30**
-  identify real canonical-dispatch unfairness as the two-session blocker; screen 4 has the same fairness
-  failure independent of its degenerate marker result. This is not a model-throughput finding (RTF p50 is
-  below 0.15 in every screen).
+  (before/after health and selected-model probes 200; captured HEAD `037b633...`; prior contract
+  `53de815...`). Screen 1 and its 600-second soak passed (p95 1.5023 s, local RSS growth 206,815,232 bytes,
+  zero locally observable accelerator/OOM errors, closed stop); overload passed its retryable session-local
+  429, peer-acceptance, retry, and stop checks. Its reported screen-2/4/8 skew 30/33/13 is **unmeasurable**, not
+  scheduler evidence: the v1 log has only `canonical_processed` entries, so it cannot reconstruct which sessions
+  were continuously ready and must not select a bound. The normal marker oracle is also degenerate at 4/8 because
+  only two markers repeat, and overload does not evaluate required text isolation or observer reconnect. Latency is
+  SSH-tunnel/tailnet inclusive; GPU memory/utilisation/OOM and vLLM queue counts remain unmeasured. G4/G5 remain
+  uncertified; do not infer a scheduler defect or a bound from this run.
 
 ## Environment facts that cost previous cycles real time
 
@@ -138,12 +135,11 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 causal dispatch-fairness diagnosis + integrity-oracle repair (P1)**: iteration 27 has real tunnel
-   evidence but cannot certify G4/G5. First use the standing bench to reproduce and trace the two-session
-   skew 30 on the production route (distinct markers make that row valid), then make the evaluator reject
-   non-unique markers for per-session isolation claims and check text isolation plus reconnect during the
-   overload case. Keep all gate values and the 1/2/4/8 + selected-600s matrix unchanged; only rerun after
-   the revised contract/evidence checks are committed. The CPU/HF result remains diagnostic, not G4/G5 evidence.
+3. **W2 integrity-oracle repair (P1):** iteration 28 repaired the fairness evidence rule; do not touch the
+   scheduler unless a v2 lifecycle run measures a real violation. Before re-running, make every normal and
+   overload session marker unique, reject non-unique-marker isolation claims, and evaluate text isolation plus
+   observer reconnect in overload. Keep all gate values and the 1/2/4/8 + selected-600s matrix unchanged.
+   The CPU/HF result remains diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
 5. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
@@ -163,13 +159,11 @@ Living working memory. Update it every iteration so it matches reality. History 
 - The tunnel launcher is now present at `scripts/moss-vllm-tunnel.sh`, exact-content matched to reviewed
   `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
-  22; iteration 23 froze the hash-pinned matrix contract. Iteration 26 closed the relative-asset locality
-  blocker with an ephemeral execution bundle outside the repo. Iteration 27 proved tunnel reachability,
-  real decoder wiring, run-owned manifest admission, and the selected 600-second one-session bound, but
-  exposed two independent blockers: canonical dispatch fails the frozen fairness gate at the valid,
-  distinct-marker two-session screen (skew 30 > 1); and two expected markers cannot prove per-session
-  isolation when reused at four/eight sessions, while overload omits the preregistered
-  isolation/reconnect assertion.
+  22; iteration 26 closed the relative-asset locality blocker with an ephemeral execution bundle outside the
+  repo. Iteration 27 proved tunnel reachability, real decoder wiring, run-owned manifest admission, and the
+  selected 600-second one-session bound. Iteration 28 corrected the fairness observer: the old skew cannot
+  establish a scheduler failure, and the next run must use v2 lifecycle records plus unique markers and an
+  overload isolation/reconnect evaluator.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -549,37 +543,3 @@ path + asset sha256s — never into `evidence/`.
 
 Housekeeping: that durable dir has accumulated `live-provider-manifest.json.backup-*` files; prune or stop
 writing them if re-finalization adds one per run.
-
-## W2 tunnel run: DO NOT CLAIM G4/G5 (monitor, 2026-08-18 20:25)
-
-Run executed well; the raw data is good. The **verdict's conclusion** is wrong.
-
-**1. Bound measured at 1** — `chosen_normal_session_bound: 1`, `screening_passes: [1]`. That is the serialized
-status quo issue #3 exists to improve. A 600 s soak at concurrency 1 does not meet G4's 2–4 concurrent bar.
-
-**2. The foreign-marker "leak" is a HARNESS FALSE POSITIVE.** `run_cpu_hf_local_measurement.py:734-737`:
-```python
-foreign = [other.expected_marker for other in sessions if other.session_id != session.session_id]
-"foreign_markers_absent": all(marker not in text for marker in foreign)
-```
-The fixture has **two** markers ("New York", "payments"). At 4 and 8 sessions markers must repeat, so another
-session carries this session's own marker string → it is in this text → **False by construction**. Data matches
-exactly: 0/1, 0/2, then **4/4** and **8/8**. The check cannot distinguish leakage from clip reuse above 2
-sessions, so the run neither proves nor disproves isolation there. **Report no leak, and claim no isolation.**
-Fix: unique marker per session (N distinct referenced clips, or a per-session injected token), then re-run.
-
-**3. What the run DOES establish — the useful part:** the bound is limited by **dispatch fairness, not model
-throughput**.
-```
-fairness_gate = 1;  max_prefix_dispatch_skew: screen-2=30, screen-4=33, screen-8=13
-max_session_p95_s:  1.95 (1) · 2.04 (2) · 3.12 (4) · 46.62 (8)   [gate 10.0]
-decode RTF p50:     0.129 · 0.080 · 0.068 · 0.067    OOM=0    rss_growth 142–207 MB vs 4 GiB gate
-```
-Decode over the tunnel is fast and memory is healthy. 2 and 4 fail on **fairness alone**; 8 adds latency. That
-points at round-robin behaviour in the canonical pump scheduler — the exact mechanism issue #3 names.
-
-**4. Verdict should say:** `qualifies_local_g4_g5_portions: false`; bound 1; 2/4 fail fairness; 8 fails fairness
-+ latency; isolation **undetermined** above 2 sessions (degenerate marker check); no GPU memory/util/OOM or vLLM
-queue counts; latency includes SSH tunnel + tailnet and a GPU shared with mineru-api at 0.5 util; CPU control
-(`canonical_queue_full`) for contrast. Keep `closing_endpoint_probe_passes: true`, the fixture-repeat statement,
-and the `does_not_establish` list — those are right.

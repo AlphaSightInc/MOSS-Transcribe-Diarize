@@ -62,7 +62,7 @@ Full local CPU/HF measurement (about 19 minutes plus model warm-up):
 
 The command first reads the deployed descriptor, re-finalizes only the local manifest for the current
 checkout, starts one loopback FastAPI process through the real `LiveServiceRuntime`, and records raw
-frame responses, observer cursors/events, canonical dispatch order, instrumentation overhead, decode real-time
+frame responses, observer cursors/events, canonical queue/start/publication lifecycle, instrumentation overhead, decode real-time
 factor, and service process-tree RSS incrementally. Canonical-event file I/O runs in a dedicated writer thread,
 with a five-second durability sync interval, so disk sync never holds the runtime publication lock. It records
 screening at 1/2/4/8 sessions, then soaks only the largest

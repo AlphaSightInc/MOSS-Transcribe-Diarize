@@ -1033,3 +1033,49 @@ not host telemetry); latency includes SSH tunnel + tailnet transit and a GPU sha
 utilisation; and the CPU control (`canonical_queue_full` dominating every CPU row) for contrast.
 Good things you already did and should keep: `closing_endpoint_probe_passes: true`, the fixture-repeat
 limitation statement, and the accurate `does_not_establish` list.
+
+[monitor 2026-08-18 20:35] YOUR ITERATION-28 HYPOTHESIS IS CORRECT, AND IT IS SHARPER THAN YOU PUT IT. I
+checked the frozen contract against the evaluator and the recorded events. **CORRECTING MYSELF FROM 20:25:**
+I told you the run's valuable finding was "the dispatcher is unfair". That is NOT established. Withdraw it.
+
+THE FAIRNESS EVALUATOR DOES NOT IMPLEMENT THE GATE IT IS CHECKED AGAINST.
+  Frozen contract, `gates.fairness`:
+    "maximum_dispatch_count_skew_for_continuously_ready_sessions": 1
+    evidence: "full canonical_queued, canonical_started, and canonical_processed lifecycle order; the
+               evaluator must REJECT INCOMPLETE LIFECYCLE EVIDENCE and measure pairwise skew ONLY INSIDE
+               EACH INTERVAL WHERE THE COMPARED SESSIONS REMAIN CONTINUOUSLY READY"
+  Implementation, `run_cpu_hf_local_measurement.py:831-835`: counts EVERY `canonical_processed` completion
+  from t=0 and takes a running max prefix skew. No readiness intervals. No queued/started lifecycle. No
+  rejection of incomplete evidence.
+So skew 30 and 33 are an unscoped counter, not a fairness measurement. Exactly your hypothesis (1): unequal
+VAD output means a session can legitimately have nothing queued, and counting all completions inflates skew.
+This is the SAME class of defect as the marker oracle — two degenerate oracles in one run.
+
+AND THE RUN CANNOT BE RE-SCORED — THE LIFECYCLE EVENTS WERE NEVER CAPTURED. I counted the kinds in
+`canonical-processed.jsonl`: `{'canonical_processed': 1273}` and nothing else. No `canonical_queued`, no
+`canonical_started`. Readiness intervals are unreconstructable from it, so re-evaluating the existing data is
+impossible. By the contract's own words the evaluator should have REJECTED this evidence rather than
+computing a skew and reporting pass/fail from it. Make that rejection explicit in the evaluator — incomplete
+lifecycle evidence must produce "unmeasurable", never a number.
+
+WHAT THIS MEANS FOR THE RESULT — and it is more favourable than the current verdict, not less:
+  SOUND and established: latency (p95 1.95 / 2.04 / 3.12 / 46.62 s against a 10 s gate, so 1/2/4 pass and 8
+  genuinely fails), decode RTF p50 0.067-0.129, `oom_or_accelerator_error_count = 0`, RSS growth 142-207 MB
+  against a 4 GiB gate, `closing_endpoint_probe_passes: true`.
+  UNMEASURABLE from this run: fairness (incomplete lifecycle evidence) and cross-session isolation above 2
+  sessions (degenerate marker oracle).
+  THEREFORE THE BOUND IS NOT ESTABLISHED AS 1. Sessions 2 and 4 failed ONLY on the unsound fairness metric —
+  they passed latency, memory and OOM. Once fairness is measured as the contract defines it, **the bound may
+  well be 4**. Do not write "bound = 1" into the ledger as a measured property of the product; write that the
+  harness could not decide between 1 and 4.
+
+REQUIRED BEFORE ANY RE-RUN (all three, or the next run wastes another 19 minutes):
+  1. Emit `canonical_queued` and `canonical_started` into the event log alongside `canonical_processed`, with
+     session id and monotonic timestamps, so readiness intervals are reconstructable.
+  2. Implement the gate as written: pairwise skew only within intervals where both compared sessions are
+     continuously ready, and reject incomplete lifecycle evidence outright.
+  3. Give every session a UNIQUE marker so the isolation oracle stops being false-by-construction.
+Then re-run the frozen matrix unchanged. Do not touch the gate values, and do not "fix" the scheduler until a
+sound fairness measurement says it is broken — on this evidence, nobody knows that it is.
+
+[iteration 28] target=W2 continuously-ready fairness evidence repair; files=`prototypes/browser-capture-feasibility/production_route_server.py`, `prototypes/streaming-diarization/concurrency/{run_cpu_hf_local_measurement.py,run_remote_vllm_tunnel_measurement.py,remote_vllm_tunnel_preregistration.json,README.md,NOTES.md}`, `tests/{test_production_route_server_vllm.py,test_remote_vllm_tunnel_measurement.py}`, `evidence/phase1/w2-local-concurrency/iteration-28-fairness-lifecycle.xml`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_production_route_server_vllm.py tests/test_remote_vllm_tunnel_measurement.py --junitxml=evidence/phase1/w2-local-concurrency/iteration-28-fairness-lifecycle.xml` **9 passed**; `py_compile`, remote-contract validator (`sha256=0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083`), and `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/iteration-28-fairness-lifecycle.xml`; learned=iteration 27 has only `canonical_processed` records, so skew 30/33 cannot establish dispatch unfairness or select a bound; the production-route log now records v2 queue/start/publication lifecycle and the evaluator fails closed on incomplete evidence while a falsified trace proves it rejects two dispatches to a still-contended peer; next=make normal and overload markers unique and enforce overload text-isolation/reconnect before rerunning the unchanged tunnel matrix; do not change the scheduler unless a v2 lifecycle measurement finds a real violation.

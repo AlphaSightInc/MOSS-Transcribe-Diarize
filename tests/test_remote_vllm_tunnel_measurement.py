@@ -73,6 +73,62 @@ def test_endpoint_probe_refuses_embedded_credentials_and_missing_model(monkeypat
         )
 
 
+def test_lifecycle_fairness_excludes_an_idle_peer_but_rejects_ready_peer_starvation():
+    runner = _load_runner()
+
+    def event(session_id, kind, item_id):
+        return {"session_id": session_id, "kind": kind, "payload": {"item_id": item_id}}
+
+    fair_with_extra_peer_work = [
+        event("a", "canonical_queued", 0),
+        event("a", "canonical_queued", 1),
+        event("a", "canonical_queued", 2),
+        event("b", "canonical_queued", 0),
+        event("b", "canonical_queued", 1),
+        event("b", "canonical_queued", 2),
+        event("a", "canonical_started", 0),
+        event("a", "canonical_processed", 0),
+        event("b", "canonical_started", 0),
+        event("b", "canonical_processed", 0),
+        event("a", "canonical_started", 1),
+        event("a", "canonical_processed", 1),
+        event("b", "canonical_started", 1),
+        event("b", "canonical_processed", 1),
+        event("a", "canonical_started", 2),
+        event("a", "canonical_processed", 2),
+        event("b", "canonical_started", 2),
+        event("b", "canonical_processed", 2),
+        event("b", "canonical_queued", 3),
+        event("b", "canonical_started", 3),
+        event("b", "canonical_processed", 3),
+    ]
+    fair = runner._canonical_lifecycle_fairness(
+        fair_with_extra_peer_work, {"a", "b"}, maximum_skew=1
+    )
+
+    assert fair["passes"]
+    assert fair["maximum_contended_pair_dispatch_skew"] == 1
+    assert fair["contended_pair_dispatch_observations"] == 5
+
+    starving_ready_peer = [
+        event("a", "canonical_queued", 0),
+        event("a", "canonical_queued", 1),
+        event("b", "canonical_queued", 0),
+        event("a", "canonical_started", 0),
+        event("a", "canonical_processed", 0),
+        event("a", "canonical_started", 1),
+        event("a", "canonical_processed", 1),
+        event("b", "canonical_started", 0),
+        event("b", "canonical_processed", 0),
+    ]
+    unfair = runner._canonical_lifecycle_fairness(
+        starving_ready_peer, {"a", "b"}, maximum_skew=1
+    )
+
+    assert not unfair["passes"]
+    assert unfair["maximum_contended_pair_dispatch_skew"] == 2
+
+
 def test_preflight_accepts_a_relative_evidence_output_path(monkeypatch, tmp_path):
     runner = _load_runner()
     output = Path("evidence/phase1/w2-local-concurrency/relative-output-test")

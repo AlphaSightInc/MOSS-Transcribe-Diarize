@@ -1,5 +1,30 @@
 # Concurrency prototype notes
 
+## W2 lifecycle fairness repair — 2026-08-19
+
+**VERDICT: PASS for the measurement rule; the iteration-27 `skew=30` is not a
+scheduler finding.**
+
+Question: did the tunnel matrix establish unfair dispatch, or did its
+`canonical_processed`-only metric count VAD-dependent work after another session
+had stopped being ready?
+
+The prior log carried only publication events. Its two sessions completed 46 and
+76 items, so the all-completions prefix calculation reported 30 despite no record
+of which sessions were eligible when each item was selected. That cannot measure
+the preregistered condition, which is explicitly limited to *continuously ready*
+sessions. The production-route instrument now writes the compact, ordered
+`canonical_queued` -> `canonical_started` -> `canonical_processed` lifecycle.
+The evaluator fails closed if any stage is missing and evaluates pairwise skew only
+inside a continuous jointly-ready interval.
+
+The focused regression has two falsifiable traces: a fair alternation followed by
+two peer-only items still passes at skew 1, while selecting the same session twice
+while its peer remains queued fails at skew 2. This changes no gate value, matrix
+row, duration, or model claim. It requires a fresh tunnel matrix; iteration 27
+remains useful latency/backpressure evidence, but its old fairness number cannot
+select a concurrency bound.
+
 ## Remote-vLLM tunnel matrix contract — 2026-08-18
 
 **VERDICT: FROZEN before measurement; no W2, G4, or G5 result yet.**

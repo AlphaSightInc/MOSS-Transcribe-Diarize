@@ -80,6 +80,107 @@ def _type7(values: list[float], probability: float) -> float | None:
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (index - lower)
 
 
+def _canonical_lifecycle_fairness(
+    events: list[dict[str, Any]], session_ids: set[str], *, maximum_skew: int
+) -> dict[str, Any]:
+    """Evaluate dispatches only while the compared sessions are queued together.
+
+    A session with no queued work is not eligible for the next canonical dispatch.
+    Counting it against a peer that still has work mistakes unequal VAD/span output
+    for round-robin starvation. The v2 measurement log captures the runtime's
+    queued -> started -> processed lifecycle, allowing a pairwise counter to reset
+    whenever either member ceases to be ready.
+
+    This is deliberately a verifier, not scheduler policy: malformed or old
+    ``canonical_processed``-only evidence fails closed instead of yielding a
+    deceptively precise skew number.
+    """
+    queued_items = {session_id: set() for session_id in session_ids}
+    started_items = {session_id: set() for session_id in session_ids}
+    pair_counts: dict[tuple[str, str], dict[str, int]] = {}
+    maximum_observed_skew = 0
+    contended_pair_dispatch_observations = 0
+    lifecycle_counts = {
+        kind: 0
+        for kind in ("canonical_queued", "canonical_started", "canonical_processed")
+    }
+    errors: list[str] = []
+
+    def active_pairs() -> set[tuple[str, str]]:
+        ready = sorted(session_id for session_id, items in queued_items.items() if items)
+        return {
+            (left, right)
+            for index, left in enumerate(ready)
+            for right in ready[index + 1 :]
+        }
+
+    def reconcile_pairs() -> None:
+        active = active_pairs()
+        for pair in tuple(pair_counts):
+            if pair not in active:
+                del pair_counts[pair]
+        for pair in active:
+            pair_counts.setdefault(pair, {pair[0]: 0, pair[1]: 0})
+
+    for index, event in enumerate(events):
+        session_id = event.get("session_id")
+        kind = event.get("kind")
+        payload = event.get("payload")
+        if session_id not in session_ids:
+            continue
+        if kind not in lifecycle_counts:
+            errors.append(f"event {index} has unsupported canonical lifecycle kind {kind!r}")
+            continue
+        lifecycle_counts[kind] += 1
+        if not isinstance(payload, dict) or not isinstance(payload.get("item_id"), int):
+            errors.append(f"event {index} lacks an integer canonical item_id")
+            continue
+        item_id = payload["item_id"]
+        if kind == "canonical_queued":
+            if item_id in queued_items[session_id] or item_id in started_items[session_id]:
+                errors.append(f"event {index} queues duplicate item {session_id}/{item_id}")
+                continue
+            queued_items[session_id].add(item_id)
+            reconcile_pairs()
+            continue
+        if kind == "canonical_started":
+            reconcile_pairs()
+            if item_id not in queued_items[session_id]:
+                errors.append(f"event {index} starts unqueued item {session_id}/{item_id}")
+                continue
+            for pair, counts in pair_counts.items():
+                if session_id not in pair:
+                    continue
+                contended_pair_dispatch_observations += 1
+                counts[session_id] += 1
+                maximum_observed_skew = max(
+                    maximum_observed_skew,
+                    abs(counts[pair[0]] - counts[pair[1]]),
+                )
+            queued_items[session_id].remove(item_id)
+            started_items[session_id].add(item_id)
+            reconcile_pairs()
+            continue
+        if item_id not in started_items[session_id]:
+            errors.append(f"event {index} processes unstarted item {session_id}/{item_id}")
+
+    for session_id, items in queued_items.items():
+        if items:
+            errors.append(f"run ended with queued canonical items for {session_id}")
+    for kind, count in lifecycle_counts.items():
+        if count == 0:
+            errors.append(f"lifecycle evidence has no {kind} events")
+    return {
+        "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+        "lifecycle_event_counts": lifecycle_counts,
+        "contended_pair_dispatch_observations": contended_pair_dispatch_observations,
+        "maximum_contended_pair_dispatch_skew": maximum_observed_skew,
+        "fairness_gate": maximum_skew,
+        "errors": errors,
+        "passes": not errors and maximum_observed_skew <= maximum_skew,
+    }
+
+
 def _request_json(
     url: str,
     *,
@@ -662,13 +763,13 @@ class Measurement:
             return {"status": response["status"], "available": False}
         return {"status": response["status"], "available": True, **response["json"]}
 
-    def _dispatch_events(self, session_ids: set[str]) -> list[dict[str, Any]]:
+    def _canonical_lifecycle_events(self, session_ids: set[str]) -> list[dict[str, Any]]:
         events: list[dict[str, Any]] = []
         if not self.event_log.is_file():
             return events
         for line in self.event_log.read_text(encoding="utf-8").splitlines():
             event = json.loads(line)
-            if event.get("session_id") in session_ids and event.get("payload", {}).get("submitted"):
+            if event.get("session_id") in session_ids:
                 events.append(event)
         return events
 
@@ -719,12 +820,27 @@ class Measurement:
         latency_gate = self.contract["gates"]["latency"]["maximum_per_session_p95_transcript_lag_seconds"]
         memory_gate = self.contract["gates"]["memory"]["maximum_process_tree_rss_increase_bytes_over_warm_idle"]
         session_ids = {session.session_id for session in sessions}
-        dispatch = self._dispatch_events(session_ids)
+        lifecycle = self._canonical_lifecycle_events(session_ids)
+        dispatch = [
+            event
+            for event in lifecycle
+            if event.get("kind") == "canonical_processed"
+            and isinstance(event.get("payload"), dict)
+            and event["payload"].get("submitted")
+        ]
         counts = {session.session_id: 0 for session in sessions}
-        prefix_skew = 0
+        completed_prefix_skew = 0
         for event in dispatch:
             counts[event["session_id"]] += 1
-            prefix_skew = max(prefix_skew, max(counts.values()) - min(counts.values()))
+            completed_prefix_skew = max(completed_prefix_skew, max(counts.values()) - min(counts.values()))
+        fairness_gate = self.contract["gates"]["fairness"][
+            "maximum_dispatch_count_skew_for_continuously_ready_sessions"
+        ]
+        fairness = _canonical_lifecycle_fairness(
+            lifecycle,
+            session_ids,
+            maximum_skew=fairness_gate,
+        )
         marker_checks: dict[str, dict[str, bool]] = {}
         per_session_latency: dict[str, dict[str, float | int | None]] = {}
         rss: list[int] = []
@@ -774,8 +890,8 @@ class Measurement:
             "marker_checks": marker_checks,
             "dispatch_order": [event["session_id"] for event in dispatch],
             "dispatch_counts": counts,
-            "maximum_prefix_dispatch_skew": prefix_skew,
-            "fairness_gate": self.contract["gates"]["fairness"]["maximum_dispatch_count_skew_for_continuously_ready_sessions"],
+            "completed_dispatch_prefix_skew_diagnostic": completed_prefix_skew,
+            "canonical_lifecycle_fairness": fairness,
             "rss_warm_idle_bytes": self.rss_warm_idle,
             "maximum_process_tree_rss_bytes": max_rss,
             "rss_growth_bytes": rss_growth,
@@ -785,7 +901,7 @@ class Measurement:
             "passes": (
                 max_p95 is not None
                 and max_p95 <= latency_gate
-                and prefix_skew <= self.contract["gates"]["fairness"]["maximum_dispatch_count_skew_for_continuously_ready_sessions"]
+                and fairness["passes"]
                 and rss_growth is not None
                 and rss_growth <= memory_gate
                 and oom_count == 0
