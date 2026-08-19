@@ -514,9 +514,12 @@ export class CaptureClient {
    */
   async createSession(): Promise<CaptureSession> {
     if (this.session) return this.session;
-    if (this.lanes.get("microphone")?.degradedCode === "browser_microphone_silent") {
-      throw new Error((await this.requireDescriptor()).preflightStatusLines.microphoneSilent);
-    }
+    // A microphone that is silent RIGHT NOW is a health condition, not a precondition. The
+    // precondition charter section 4 states is that both lanes have SHOWN non-zero signal, which is
+    // the sticky `laneHasSignal` gate below. Blocking here refused healthy microphones: an operator
+    // picking a tab and ticking "share tab audio" is quiet for well over the ten-second window, and
+    // with echoCancellation on Chrome emits exact zeros in that gap. The remedy line still reaches
+    // them through `onPreflightStatus`; it just no longer prevents the meeting from starting.
     if (!this.laneHasSignal.has("microphone") || !this.laneHasSignal.has("system")) {
       throw new Error("both capture lanes must have non-zero signal before session creation");
     }

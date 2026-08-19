@@ -309,8 +309,23 @@ export function ControlPanel({ captureBearer, onCaptureBearerChange }: ControlPa
   );
 }
 
+/**
+ * Map lane RMS onto the bar as decibels, not amplitude.
+ *
+ * A linear bar (the previous `value * 500`) drew ordinary speech at ~7% beside tab audio pegged at
+ * 100%, so a perfectly healthy microphone was indistinguishable from a dead one. Measured on the
+ * operator's own hardware: speech rms 1.4e-2 = -37 dBFS, tab audio rms 2.9e-1 = -11 dBFS. Hearing is
+ * logarithmic, so the meter is too: -60 dBFS reads empty, 0 dBFS reads full, and those two real
+ * signals land at ~38% and ~82% -- clearly distinct, and neither one pegged.
+ */
+export function laneMeterPercent(value: number): number {
+  if (!(value > 0)) return 0;
+  const db = 20 * Math.log10(value);
+  return Math.min(100, Math.max(0, Math.round(((db + 60) / 60) * 100)));
+}
+
 function LaneMeter({ label, value }: { label: string; value: number }) {
-  const level = Math.min(100, Math.max(0, Math.round(value * 500)));
+  const level = laneMeterPercent(value);
   return (
     <div className="capture-meter">
       <span>{label}</span>

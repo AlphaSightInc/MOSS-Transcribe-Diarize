@@ -1,0 +1,137 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MOSS mic check</title>
+<style>
+  body { font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 24px; max-width: 760px; }
+  h1 { font-size: 19px; } h2 { font-size: 15px; margin: 22px 0 6px; }
+  button { font: inherit; padding: 8px 14px; margin: 4px 6px 4px 0; cursor: pointer; }
+  .bar { height: 22px; background: #eee; border-radius: 4px; overflow: hidden; margin: 6px 0; }
+  .fill { height: 100%; width: 0%; background: #2a7; transition: width 90ms linear; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  pre { background: #f6f6f6; padding: 10px; border-radius: 6px; white-space: pre-wrap; font-size: 13px; }
+  .hint { color: #666; font-size: 13px; }
+</style>
+<h1>MOSS microphone check</h1>
+<p class="hint">Isolates Chrome's raw audio from the MOSS capture pipeline. Same browser, same origin,
+same permissions &mdash; but none of the app's own processing. Speak normally while each test runs.</p>
+
+<h2>1. Microphone, exactly as MOSS requests it</h2>
+<p class="hint">echoCancellation as chosen, noiseSuppression off, autoGainControl off.</p>
+<button onclick="run('mic-ec', {echoCancellation:true,  noiseSuppression:false, autoGainControl:false})">Speakers mode (echo cancel ON)</button>
+<button onclick="run('mic-raw',{echoCancellation:false, noiseSuppression:false, autoGainControl:false})">Headphones mode (echo cancel OFF)</button>
+<button onclick="run('mic-def', true)">Chrome defaults (for comparison)</button>
+<div class="bar"><div class="fill" id="f-mic"></div></div>
+<div>level: <span class="num" id="v-mic">--</span></div>
+
+<h2>2. Shared audio (the display/tab lane)</h2>
+<p class="hint">Pick a tab and tick &ldquo;Share tab audio&rdquo;. Then <b>stay silent</b> and let the tab play.
+Then <b>speak without the tab playing</b>. If this bar moves when you speak, this lane is carrying your microphone.</p>
+<button onclick="runDisplay()">Test shared audio</button>
+<div class="bar"><div class="fill" id="f-sys"></div></div>
+<div>level: <span class="num" id="v-sys">--</span></div>
+
+<h2>3. BOTH lanes together, in the app's order &mdash; the decisive test</h2>
+<p class="hint">Microphone first, then display capture, exactly as MOSS does it. Both meters run at once
+for 25 seconds. <b>Keep speaking the whole time.</b> Watch whether the microphone bar collapses at the
+moment the share starts.</p>
+<button onclick="runBoth(true)">Speakers mode (echo cancel ON)</button>
+<button onclick="runBoth(false)">Headphones mode (echo cancel OFF)</button>
+<div>microphone</div><div class="bar"><div class="fill" id="f-b1"></div></div>
+<div>level: <span class="num" id="v-b1">--</span></div>
+<div style="margin-top:8px">shared</div><div class="bar"><div class="fill" id="f-b2"></div></div>
+<div>level: <span class="num" id="v-b2">--</span></div>
+
+<script>
+function live(stream, key, onPeak) {
+  const c = ctx || (ctx = new AudioContext({ sampleRate: 16000 })); c.resume();
+  const an = c.createAnalyser(); an.fftSize = 2048;
+  c.createMediaStreamSource(stream).connect(an);
+  const buf = new Float32Array(an.fftSize);
+  let peak = 0, before = 0, after = 0, t0 = performance.now();
+  const tick = () => {
+    an.getFloatTimeDomainData(buf);
+    let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+    const rms = Math.sqrt(s / buf.length);
+    const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+    peak = Math.max(peak, rms);
+    if (window.__shareStarted) after = Math.max(after, rms); else before = Math.max(before, rms);
+    document.getElementById('f-' + key).style.width = Math.min(100, Math.max(0,(db+90)/90*100)) + '%';
+    document.getElementById('v-' + key).textContent = (db === -Infinity ? '-inf' : db.toFixed(1)) + ' dBFS';
+    if (performance.now() - t0 < 25000) requestAnimationFrame(tick);
+    else { onPeak(peak, before, after); stream.getTracks().forEach(x => x.stop()); }
+  };
+  tick();
+}
+const dbs = (v) => v > 0 ? (20*Math.log10(v)).toFixed(1) + ' dBFS' : '-inf';
+async function runBoth(ec) {
+  window.__shareStarted = false;
+  try {
+    const mic = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: ec, noiseSuppression: false, autoGainControl: false } });
+    log('--- BOTH (' + (ec ? 'speakers' : 'headphones') + ') --- mic track "'
+        + mic.getAudioTracks()[0].label + '"');
+    live(mic, 'b1', (p, b, a) => {
+      log('  MIC  peak ' + dbs(p) + '   before share ' + dbs(b) + '   AFTER share ' + dbs(a)
+          + (a < 1e-4 ? '   <-- MIC DIED WHEN SHARING STARTED' : '   <-- mic survived sharing'));
+    });
+    log('  now pick a tab and tick "Share tab audio"...');
+    const sys = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    if (!sys.getAudioTracks().length) { log('  NO AUDIO TRACK - you did not tick share tab audio'); return; }
+    window.__shareStarted = true;
+    log('  shared track "' + sys.getAudioTracks()[0].label + '"');
+    live(sys, 'b2', (p) => log('  SHARED peak ' + dbs(p)));
+  } catch (e) { log('ERROR both: ' + e.name + ' ' + e.message); }
+}
+</script>
+
+<h2>Result</h2>
+<pre id="log">Nothing run yet.</pre>
+
+<script>
+const log = (m) => { document.getElementById('log').textContent = m + "\n" + document.getElementById('log').textContent; };
+let ctx;
+function meter(stream, key, label) {
+  ctx = ctx || new AudioContext({ sampleRate: 16000 });
+  ctx.resume();
+  const src = ctx.createMediaStreamSource(stream);
+  const an = ctx.createAnalyser(); an.fftSize = 2048;
+  src.connect(an);
+  const buf = new Float32Array(an.fftSize);
+  let peak = 0, frames = 0;
+  const tick = () => {
+    an.getFloatTimeDomainData(buf);
+    let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    const rms = Math.sqrt(sum / buf.length);
+    const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+    peak = Math.max(peak, rms); frames++;
+    document.getElementById('f-' + key).style.width = Math.min(100, Math.max(0, (db + 90) / 90 * 100) ) + '%';
+    document.getElementById('v-' + key).textContent =
+      (db === -Infinity ? '-inf' : db.toFixed(1)) + ' dBFS   (rms ' + rms.toExponential(2) + ')';
+    if (frames < 600) requestAnimationFrame(tick);
+    else {
+      const pdb = peak > 0 ? (20*Math.log10(peak)).toFixed(1) : '-inf';
+      log(label + ': PEAK ' + pdb + ' dBFS (rms ' + peak.toExponential(2) + ')  '
+          + (peak < 1e-4 ? '<-- BELOW the 1e-4 silence floor MOSS uses' : 'above the silence floor'));
+      stream.getTracks().forEach(t => t.stop());
+    }
+  };
+  tick();
+}
+async function run(key, audio) {
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio });
+    const t = s.getAudioTracks()[0];
+    log('--- ' + key + ' --- track "' + t.label + '"  settings ' + JSON.stringify(t.getSettings()));
+    meter(s, 'mic', key);
+  } catch (e) { log('ERROR ' + key + ': ' + e.name + ' ' + e.message); }
+}
+async function runDisplay() {
+  try {
+    const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const a = s.getAudioTracks();
+    if (!a.length) { log('shared audio: NO AUDIO TRACK - you did not tick "share tab audio"'); return; }
+    log('--- shared --- track "' + a[0].label + '"  settings ' + JSON.stringify(a[0].getSettings()));
+    meter(s, 'sys', 'shared');
+  } catch (e) { log('ERROR shared: ' + e.name + ' ' + e.message); }
+}
+</script>

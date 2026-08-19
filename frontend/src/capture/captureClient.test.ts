@@ -995,7 +995,7 @@ describe("browser capture frame contract", () => {
     });
   });
 
-  it("reports the server-authored silent-microphone remedy during preflight and refuses session creation", async () => {
+  it("reports the silent-microphone remedy and refuses a session for a lane that never produced any signal", async () => {
     const onPreflightStatus = vi.fn<(statusLine: string) => void>();
     const client = new CaptureClient({
       captureBearer: "capture-token",
@@ -1022,7 +1022,74 @@ describe("browser capture frame contract", () => {
       });
     }
     await vi.waitFor(() => expect(onPreflightStatus).toHaveBeenCalledWith(silentMicrophoneRemedy));
-    await expect(client.createSession()).rejects.toThrow(silentMicrophoneRemedy);
+    // This lane never produced a single non-silent frame, so the sticky signal gate refuses it --
+    // that is the precondition charter section 4 actually states, and it stays enforced.
+    await expect(client.createSession()).rejects.toThrow(
+      "both capture lanes must have non-zero signal before session creation",
+    );
+  });
+
+  it("starts a session for a lane that HAS proven signal and then went quiet, while still surfacing the remedy", async () => {
+    // Charter section 4's precondition is that both lanes have SHOWN non-zero signal, which is the
+    // sticky laneHasSignal gate. Live silence is a health condition, not a precondition: an operator
+    // choosing a tab and ticking "share tab audio" is naturally quiet for well over ten seconds, and
+    // with echoCancellation on Chrome emits exact zeros in that gap. Blocking there refuses a healthy
+    // microphone and nothing transcribes at all.
+    const onPreflightStatus = vi.fn<(statusLine: string) => void>();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: "session",
+        view_token: "view-only",
+        descriptor: { sample_rate: 4, frame_samples: 2 },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({
+      captureBearer: "capture-token",
+      helperVersion: "test",
+      onPreflightStatus,
+    });
+    const active = client as unknown as ActiveClient;
+    active.context = { sampleRate: 4 } as AudioContext;
+    active.descriptor = {
+      sampleRate: 4,
+      frameSamples: 2,
+      preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy },
+    };
+    active.session = null;
+    active.lanes.set("microphone", testLaneState());
+    active.lanes.set("system", testLaneState());
+
+    // both lanes prove signal once -- the operator spoke and the tab played
+    active.onWorkletFrame("microphone", {
+      type: "frame",
+      lane: "microphone",
+      samples: clean(),
+      startFrame: 0,
+    });
+    active.onWorkletFrame("system", {
+      type: "frame",
+      lane: "system",
+      samples: clean(),
+      startFrame: 0,
+    });
+
+    // then the operator stops talking while arranging the share
+    for (let index = 1; index <= 20; index += 1) {
+      active.onWorkletFrame("microphone", {
+        type: "frame",
+        lane: "microphone",
+        samples: silent(),
+        startFrame: index * 2,
+      });
+    }
+
+    // the remedy must still reach the operator ...
+    await vi.waitFor(() => expect(onPreflightStatus).toHaveBeenCalledWith(silentMicrophoneRemedy));
+    // ... but it must not prevent the meeting from starting
+    await expect(client.createSession()).resolves.toMatchObject({ id: "session" });
   });
 
   it("never reports a metered condition as `failed`, which would seal the lane server-side", async () => {
