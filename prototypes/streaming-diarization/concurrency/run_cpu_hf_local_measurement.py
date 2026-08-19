@@ -181,6 +181,21 @@ def _canonical_lifecycle_fairness(
     }
 
 
+def _marker_text_check(
+    texts: list[str], *, own_marker: str, foreign_markers: list[str]
+) -> dict[str, bool]:
+    """Evaluate an owned marker against text already rendered on its live path."""
+    normalized = [text.casefold() for text in texts]
+    own = own_marker.casefold()
+    foreign = [marker.casefold() for marker in foreign_markers]
+    return {
+        "own_marker_present": any(own in text for text in normalized),
+        "foreign_markers_absent": all(
+            marker not in text for marker in foreign for text in normalized
+        ),
+    }
+
+
 def _request_json(
     url: str,
     *,
@@ -453,6 +468,51 @@ class Measurement:
     def persist(self, *, terminal: str | None = None, error: str | None = None) -> None:
         _atomic_json(self.state_path, self.state(terminal=terminal, error=error))
 
+    def phase_clips(self, session_count: int) -> list[dict[str, Any]]:
+        """Select one auditable marker clip per session or fail before replay."""
+        if not isinstance(session_count, int) or session_count <= 0:
+            raise MeasurementError("measurement phase session count must be a positive integer")
+        raw_clips = self.fixture.get("clips")
+        if not isinstance(raw_clips, list) or len(raw_clips) < session_count:
+            raise MeasurementError(
+                f"fixture provides fewer clips than the {session_count}-session measurement phase"
+            )
+        clips = raw_clips[:session_count]
+        markers: set[str] = set()
+        identifiers: set[str] = set()
+        for clip in clips:
+            if not isinstance(clip, dict):
+                raise MeasurementError("fixture clip must be an object")
+            identifier = clip.get("id")
+            marker = clip.get("expected_marker")
+            if not isinstance(identifier, str) or not identifier:
+                raise MeasurementError("fixture clip lacks a non-empty id")
+            if not isinstance(marker, str) or not marker.strip():
+                raise MeasurementError("fixture clip lacks a non-empty expected marker")
+            normalized_marker = marker.casefold()
+            if identifier in identifiers or normalized_marker in markers:
+                raise MeasurementError(
+                    f"fixture lacks distinct clips and markers for the {session_count}-session measurement phase"
+                )
+            _wav_clip(self.fixture, clip)
+            identifiers.add(identifier)
+            markers.add(normalized_marker)
+        return clips
+
+    def validate_fixture_phase_capacities(self) -> None:
+        """Reject a frozen matrix that would repeat a marker in any of its phases."""
+        matrix = self.contract.get("matrix")
+        if matrix is None:
+            return
+        if not isinstance(matrix, dict):
+            raise MeasurementError("measurement contract matrix must be an object")
+        screening = matrix.get("screening_session_counts")
+        overload = matrix.get("overload_session_count")
+        if not isinstance(screening, list) or not screening:
+            raise MeasurementError("measurement contract lacks screening session counts")
+        for session_count in [*screening, overload]:
+            self.phase_clips(session_count)
+
     def preflight(self) -> dict[str, Any]:
         if self.contract["run_started"] is not False:
             raise MeasurementError("contract says a measurement already started; refuse to overwrite it")
@@ -464,8 +524,7 @@ class Measurement:
             if not required.is_file():
                 raise MeasurementError(f"required local input is absent: {required}")
         fixture_audio = ROOT / self.fixture["audio"]["path"]
-        _wav_clip(self.fixture, self.fixture["clips"][0])
-        _wav_clip(self.fixture, self.fixture["clips"][1])
+        self.validate_fixture_phase_capacities()
         response = _request_json(
             self.args.deployed_descriptor_url,
             insecure_tls=self.args.deployed_descriptor_url.startswith("https://"),
@@ -684,7 +743,7 @@ class Measurement:
         session.sequence += 1
         return True, None
 
-    def poll(self, session: SessionRun) -> None:
+    def poll(self, session: SessionRun, *, observation: str = "poll") -> None:
         quoted = urllib.parse.quote(session.session_id)
         snapshot = _request_json(
             f"{self.base_url}/api/live/sessions/{quoted}/snapshot?since_version={session.snapshot_version}",
@@ -695,7 +754,12 @@ class Measurement:
             bearer=session.view_bearer,
         )
         observed_ns = time.time_ns()
-        snapshot_record = {"status": snapshot["status"], "requested_since_version": session.snapshot_version, "wall_ns": observed_ns}
+        snapshot_record = {
+            "observation": observation,
+            "status": snapshot["status"],
+            "requested_since_version": session.snapshot_version,
+            "wall_ns": observed_ns,
+        }
         if snapshot["status"] == 200 and isinstance(snapshot["json"], dict):
             current = snapshot["json"].get("snapshot")
             if isinstance(current, dict):
@@ -708,6 +772,7 @@ class Measurement:
                     if isinstance(commits, list):
                         snapshot_record["committed_span_ids"] = []
                         snapshot_record["pending_work_items"] = current.get("pending_work_items")
+                        rendered_text: list[str] = []
                         for commit in commits:
                             if not isinstance(commit, dict) or not isinstance(commit.get("span_id"), int):
                                 continue
@@ -715,9 +780,16 @@ class Measurement:
                             text = commit.get("revised_transcript") or commit.get("transcript")
                             if isinstance(text, str):
                                 session.observer["text"][str(span_id)] = text
+                                rendered_text.append(text)
                             snapshot_record["committed_span_ids"].append(span_id)
+                        snapshot_record["rendered_transcript"] = "\n".join(rendered_text)
         session.observer["snapshots"].append(snapshot_record)
-        event_record = {"status": events["status"], "requested_since_seq": session.event_cursor, "wall_ns": observed_ns}
+        event_record = {
+            "observation": observation,
+            "status": events["status"],
+            "requested_since_seq": session.event_cursor,
+            "wall_ns": observed_ns,
+        }
         if events["status"] == 200 and isinstance(events["json"], dict):
             delivered = events["json"].get("events")
             if isinstance(delivered, list):
@@ -745,7 +817,7 @@ class Measurement:
                 "wall_ns": time.time_ns(),
             }
         )
-        self.poll(session)
+        self.poll(session, observation="reconnect")
 
     def stop(self, session: SessionRun) -> dict[str, Any]:
         response = _request_json(
@@ -773,10 +845,141 @@ class Measurement:
                 events.append(event)
         return events
 
+    def marker_checks(
+        self, sessions: list[SessionRun], lifecycle: list[dict[str, Any]]
+    ) -> dict[str, dict[str, bool]]:
+        """Check rendered and instrumented canonical text with one marker per session."""
+        canonical_texts: dict[str, list[str]] = {session.session_id: [] for session in sessions}
+        for event in lifecycle:
+            if event.get("kind") != "canonical_processed":
+                continue
+            payload = event.get("payload")
+            if not isinstance(payload, dict) or not payload.get("submitted"):
+                continue
+            transcript = payload.get("rendered_transcript")
+            if isinstance(transcript, str) and event.get("session_id") in canonical_texts:
+                canonical_texts[event["session_id"]].append(transcript)
+
+        checks: dict[str, dict[str, bool]] = {}
+        for session in sessions:
+            foreign = [
+                other.expected_marker
+                for other in sessions
+                if other.session_id != session.session_id
+            ]
+            rendered = _marker_text_check(
+                list(session.observer["text"].values()),
+                own_marker=session.expected_marker,
+                foreign_markers=foreign,
+            )
+            canonical = _marker_text_check(
+                canonical_texts[session.session_id],
+                own_marker=session.expected_marker,
+                foreign_markers=foreign,
+            )
+            checks[session.session_id] = {
+                "rendered_own_marker_present": rendered["own_marker_present"],
+                "rendered_foreign_markers_absent": rendered["foreign_markers_absent"],
+                "canonical_own_marker_present": canonical["own_marker_present"],
+                "canonical_foreign_markers_absent": canonical["foreign_markers_absent"],
+                "observer_reconnected": bool(session.reconnects),
+            }
+        return checks
+
+    def overload_integrity_checks(
+        self, sessions: list[SessionRun], lifecycle: list[dict[str, Any]]
+    ) -> dict[str, dict[str, bool]]:
+        """Require the overload reconnect to carry isolated snapshot and event evidence."""
+        checks = self.marker_checks(sessions, lifecycle)
+        canonical_by_span: dict[tuple[str, int], str] = {}
+        for event in lifecycle:
+            payload = event.get("payload")
+            if (
+                event.get("kind") == "canonical_processed"
+                and isinstance(payload, dict)
+                and payload.get("submitted")
+                and isinstance(payload.get("span_id"), int)
+                and isinstance(payload.get("rendered_transcript"), str)
+                and isinstance(event.get("session_id"), str)
+            ):
+                canonical_by_span[(event["session_id"], payload["span_id"])] = payload[
+                    "rendered_transcript"
+                ]
+        for session in sessions:
+            foreign = [
+                other.expected_marker
+                for other in sessions
+                if other.session_id != session.session_id
+            ]
+            reconnect_snapshots = [
+                record
+                for record in session.observer["snapshots"]
+                if record.get("observation") == "reconnect"
+            ]
+            snapshot_texts = [
+                record["rendered_transcript"]
+                for record in reconnect_snapshots
+                if isinstance(record.get("rendered_transcript"), str)
+            ]
+            reconnect_events = [
+                record
+                for record in session.observer["events"]
+                if record.get("observation") == "reconnect"
+            ]
+            replayed_canonical: list[dict[str, Any]] = []
+            for record in reconnect_events:
+                for event in record.get("events", []):
+                    if (
+                        isinstance(event, dict)
+                        and event.get("kind") == "canonical_processed"
+                        and isinstance(event.get("payload"), dict)
+                        and event["payload"].get("submitted")
+                    ):
+                        replayed_canonical.append(event)
+            replayed_texts: list[str] = []
+            replayed_transcripts_resolved = bool(replayed_canonical)
+            for event in replayed_canonical:
+                span_id = event["payload"].get("span_id")
+                if not isinstance(span_id, int):
+                    replayed_transcripts_resolved = False
+                    continue
+                transcript = canonical_by_span.get((session.session_id, span_id))
+                if transcript is None:
+                    replayed_transcripts_resolved = False
+                else:
+                    replayed_texts.append(transcript)
+            snapshot = _marker_text_check(
+                snapshot_texts,
+                own_marker=session.expected_marker,
+                foreign_markers=foreign,
+            )
+            replayed = _marker_text_check(
+                replayed_texts,
+                own_marker=session.expected_marker,
+                foreign_markers=foreign,
+            )
+            checks[session.session_id].update(
+                {
+                    "reconnect_snapshot_transcript_observed": bool(snapshot_texts),
+                    "reconnect_snapshot_foreign_markers_absent": snapshot[
+                        "foreign_markers_absent"
+                    ],
+                    "reconnect_event_response_observed": any(
+                        record.get("status") == 200 for record in reconnect_events
+                    ),
+                    "reconnect_replayed_canonical_event_observed": bool(replayed_canonical),
+                    "reconnect_replayed_canonical_transcripts_resolved": replayed_transcripts_resolved,
+                    "reconnect_replayed_canonical_foreign_markers_absent": replayed[
+                        "foreign_markers_absent"
+                    ],
+                }
+            )
+        return checks
+
     def run_normal_phase(self, *, name: str, session_count: int, duration_seconds: int) -> dict[str, Any]:
         bearer = self.capture_bearer
-        clips = self.fixture["clips"]
-        sessions = [self.create_session(bearer=bearer, clip=clips[index % len(clips)]) for index in range(session_count)]
+        clips = self.phase_clips(session_count)
+        sessions = [self.create_session(bearer=bearer, clip=clip) for clip in clips]
         self.active = {session.session_id: session for session in sessions}
         phase: dict[str, Any] = {
             "name": name,
@@ -796,12 +999,12 @@ class Measurement:
                 accepted, failure = self.send_pair(session)
                 if not accepted and failure is not None:
                     _record_unexpected_frame_result(phase["unexpected_frame_results"], failure)
-            for session in sessions:
-                self.poll(session)
             if not reconnect_done and time.monotonic() >= deadline - duration_seconds / 2:
                 for session in sessions:
                     self.reconnect_observer(session)
                 reconnect_done = True
+            for session in sessions:
+                self.poll(session)
             self.persist()
             tick += self.contract["production_path"]["ingress_cadence_seconds"]
             time.sleep(max(0.0, tick - time.monotonic()))
@@ -841,18 +1044,10 @@ class Measurement:
             session_ids,
             maximum_skew=fairness_gate,
         )
-        marker_checks: dict[str, dict[str, bool]] = {}
+        marker_checks = self.marker_checks(sessions, lifecycle)
         per_session_latency: dict[str, dict[str, float | int | None]] = {}
         rss: list[int] = []
         for session in sessions:
-            text = "\n".join(session.observer["text"].values()).casefold()
-            own = session.expected_marker.casefold()
-            foreign = [other.expected_marker.casefold() for other in sessions if other.session_id != session.session_id]
-            marker_checks[session.session_id] = {
-                "own_marker_present": own in text,
-                "foreign_markers_absent": all(marker not in text for marker in foreign),
-                "observer_reconnected": bool(session.reconnects),
-            }
             samples = session.observer["latency_seconds"]
             per_session_latency[session.session_id] = {
                 "count": len(samples),
@@ -913,8 +1108,9 @@ class Measurement:
 
     def run_overload_phase(self) -> dict[str, Any]:
         bearer = self.capture_bearer
-        saturated = self.create_session(bearer=bearer, clip=self.fixture["clips"][0])
-        peer = self.create_session(bearer=bearer, clip=self.fixture["clips"][1])
+        saturated_clip, peer_clip = self.phase_clips(2)
+        saturated = self.create_session(bearer=bearer, clip=saturated_clip)
+        peer = self.create_session(bearer=bearer, clip=peer_clip)
         self.active = {saturated.session_id: saturated, peer.session_id: peer}
         self.heartbeat(saturated)
         self.heartbeat(peer)
@@ -931,6 +1127,18 @@ class Measurement:
         if refusal is None:
             raise MeasurementError("overload did not reach a v2 refusal inside the descriptor-derived limit")
         peer_accepted, peer_failure = self.send_pair(peer)
+        peer_marker_replay_failures = _new_unexpected_frame_results()
+        peer_frames_for_full_fixture = math.ceil(
+            (len(peer.pcm) // 2) / int(self.local_descriptor["frame_samples"])
+        )
+        while peer.sequence < peer_frames_for_full_fixture:
+            accepted, failure = self.send_pair(peer)
+            if not accepted:
+                if failure is not None:
+                    _record_unexpected_frame_result(peer_marker_replay_failures, failure)
+                break
+            self.poll(saturated)
+            self.poll(peer)
         refused = refusal["attempted"][-1]
         retry_statuses: list[int] = []
         retry_payload = refused["payload"]
@@ -946,8 +1154,21 @@ class Measurement:
             if retry_response["status"] == 200:
                 break
             time.sleep(0.25)
-        for session in (saturated, peer):
-            self.poll(session)
+        marker_deadline = time.monotonic() + self.args.overload_retry_timeout_seconds
+        marker_observed_before_reconnect = False
+        while time.monotonic() < marker_deadline:
+            self.heartbeat(saturated)
+            self.heartbeat(peer)
+            for session in (saturated, peer):
+                self.reconnect_observer(session)
+            marker_observed_before_reconnect = all(
+                session.expected_marker.casefold()
+                in "\n".join(session.observer["text"].values()).casefold()
+                for session in (saturated, peer)
+            )
+            if marker_observed_before_reconnect:
+                break
+            time.sleep(0.25)
         phase = {
             "name": "overload",
             "kind": "overload",
@@ -955,19 +1176,34 @@ class Measurement:
             "refusal": {"lane": retry_payload["lane"], "sequence": retry_payload["sequence"], "status": refused["response"]["status"]},
             "peer_accepted": peer_accepted,
             "peer_failure": peer_failure,
+            "fixture_ids": [saturated.fixture_id, peer.fixture_id],
+            "peer_frames_for_full_fixture": peer_frames_for_full_fixture,
+            "peer_marker_replay_failures": peer_marker_replay_failures,
             "retry_statuses": retry_statuses,
             "stops": [self.stop(session) for session in (saturated, peer)],
             "canonical_event_log_instrumentation": self.instrumentation_overhead(),
         }
         saturated_frames = [record for record in saturated.frames if record["status"] == 429]
+        lifecycle = self._canonical_lifecycle_events({saturated.session_id, peer.session_id})
+        integrity_checks = self.overload_integrity_checks([saturated, peer], lifecycle)
         phase["evaluation"] = {
             "retryable_v2_429_observed": bool(saturated_frames),
             "peer_accepted_while_saturated": peer_accepted,
             "refused_frame_retried_successfully": retry_response is not None and retry_response["status"] == 200,
             "saturated_session_stop_closed": phase["stops"][0]["status"] == 200,
             "peer_session_stop_closed": phase["stops"][1]["status"] == 200,
+            "peer_marker_replay_completed_without_unexpected_frame_result": peer_marker_replay_failures[
+                "total_count"
+            ] == 0,
+            "rendered_markers_observed_before_reconnect": marker_observed_before_reconnect,
+            "integrity_marker_checks": integrity_checks,
+            "integrity_passes": all(
+                all(check.values()) for check in integrity_checks.values()
+            ),
         }
-        phase["evaluation"]["passes"] = all(phase["evaluation"].values())
+        phase["evaluation"]["passes"] = all(
+            value for key, value in phase["evaluation"].items() if key != "integrity_marker_checks"
+        )
         self.phases.append(phase)
         self.persist()
         self.active = {}

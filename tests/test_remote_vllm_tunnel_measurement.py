@@ -129,6 +129,68 @@ def test_lifecycle_fairness_excludes_an_idle_peer_but_rejects_ready_peer_starvat
     assert unfair["maximum_contended_pair_dispatch_skew"] == 2
 
 
+def test_unique_phase_clips_and_overload_integrity_oracle_fail_closed(tmp_path):
+    runner = _load_runner()
+    args = SimpleNamespace(output=tmp_path, port=18999)
+    fixture = runner._read_json(runner.FIXTURE_PATH)
+    measurement = runner.Measurement(args, {}, fixture)
+
+    clips = measurement.phase_clips(8)
+    assert len({clip["expected_marker"].casefold() for clip in clips}) == 8
+
+    too_short = {**fixture, "clips": fixture["clips"][:7]}
+    with pytest.raises(runner.MeasurementError, match="fewer clips"):
+        runner.Measurement(args, {}, too_short).phase_clips(8)
+
+    duplicate = {**fixture, "clips": [dict(clip) for clip in fixture["clips"]]}
+    duplicate["clips"][1]["expected_marker"] = duplicate["clips"][0]["expected_marker"]
+    with pytest.raises(runner.MeasurementError, match="lacks distinct clips and markers"):
+        runner.Measurement(args, {}, duplicate).phase_clips(2)
+
+    def session(session_id, marker):
+        value = runner.SessionRun(
+            session_id=session_id,
+            capture_bearer="capture",
+            view_bearer="view",
+            expected_marker=marker,
+        )
+        value.observer["text"] = {"0": marker}
+        value.reconnects = [{"prior_event_cursor": 1, "prior_snapshot_version": 1}]
+        value.observer["snapshots"] = [
+            {"observation": "reconnect", "status": 200, "rendered_transcript": marker}
+        ]
+        value.observer["events"] = [
+            {
+                "observation": "reconnect",
+                "status": 200,
+                "events": [
+                    {
+                        "kind": "canonical_processed",
+                        "payload": {"span_id": 0, "submitted": True},
+                    }
+                ],
+            }
+        ]
+        return value
+
+    sessions = [session("a", "alpha marker"), session("b", "beta marker")]
+    lifecycle = [
+        {
+            "session_id": item.session_id,
+            "kind": "canonical_processed",
+            "payload": {"span_id": 0, "submitted": True, "rendered_transcript": item.expected_marker},
+        }
+        for item in sessions
+    ]
+    checks = measurement.overload_integrity_checks(sessions, lifecycle)
+    assert all(all(check.values()) for check in checks.values())
+
+    lifecycle[0]["payload"]["rendered_transcript"] = "beta marker"
+    falsified = measurement.overload_integrity_checks(sessions, lifecycle)
+    assert not falsified["a"]["canonical_foreign_markers_absent"]
+    assert not falsified["a"]["reconnect_replayed_canonical_foreign_markers_absent"]
+
+
 def test_preflight_accepts_a_relative_evidence_output_path(monkeypatch, tmp_path):
     runner = _load_runner()
     output = Path("evidence/phase1/w2-local-concurrency/relative-output-test")

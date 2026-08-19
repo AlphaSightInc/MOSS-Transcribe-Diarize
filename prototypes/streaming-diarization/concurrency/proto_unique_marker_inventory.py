@@ -33,20 +33,6 @@ class Candidate:
     expected_marker: str
 
 
-# These bounds come from the already-recorded real-source transcript.  They
-# deliberately use multiword phrases unlikely to arise in a different clip.
-CANDIDATES = (
-    Candidate("new-york", 39.0, 45.0, "New York"),
-    Candidate("payments", 48.0, 53.0, "payments team"),
-    Candidate("huge-thanks", 52.0, 58.0, "huge thanks"),
-    Candidate("show-notes", 58.0, 63.0, "show notes"),
-    Candidate("investment-advice", 63.0, 68.0, "investment advice"),
-    Candidate("entertainment", 68.0, 73.0, "entertainment purposes"),
-    Candidate("appropriate", 73.0, 75.0, "feels appropriate"),
-    Candidate("dressed-up", 75.0, 78.0, "dressed up"),
-)
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vllm-base-url", required=True)
@@ -69,8 +55,10 @@ def _write_clip(*, source: wave.Wave_read, candidate: Candidate, path: Path) -> 
         destination.writeframes(frames)
 
 
-def _fixture_path() -> Path:
+def _fixture() -> tuple[dict[str, object], Path]:
     fixture = json.loads(FIXTURE_MANIFEST.read_text(encoding="utf-8"))
+    if not isinstance(fixture, dict):
+        raise RuntimeError("fixture manifest must be an object")
     audio = fixture.get("audio")
     if not isinstance(audio, dict) or not isinstance(audio.get("path"), str):
         raise RuntimeError("fixture manifest lacks an audio path")
@@ -82,7 +70,42 @@ def _fixture_path() -> Path:
         raise RuntimeError(f"fixture is absent: {path}")
     if _sha256(path) != expected_sha256:
         raise RuntimeError("fixture source SHA-256 drifted from its manifest")
-    return path
+    return fixture, path
+
+
+def _fixture_candidates(fixture: dict[str, object]) -> tuple[Candidate, ...]:
+    raw_clips = fixture.get("clips")
+    if not isinstance(raw_clips, list) or not raw_clips:
+        raise RuntimeError("fixture manifest lacks clips")
+    candidates: list[Candidate] = []
+    identifiers: set[str] = set()
+    markers: set[str] = set()
+    for raw_clip in raw_clips:
+        if not isinstance(raw_clip, dict):
+            raise RuntimeError("fixture clip must be an object")
+        identifier = raw_clip.get("id")
+        marker = raw_clip.get("expected_marker")
+        start_seconds = raw_clip.get("start_seconds")
+        end_seconds = raw_clip.get("end_seconds")
+        if not isinstance(identifier, str) or not identifier:
+            raise RuntimeError("fixture clip lacks an id")
+        if not isinstance(marker, str) or not marker.strip():
+            raise RuntimeError("fixture clip lacks an expected marker")
+        if (
+            isinstance(start_seconds, bool)
+            or not isinstance(start_seconds, (int, float))
+            or isinstance(end_seconds, bool)
+            or not isinstance(end_seconds, (int, float))
+            or end_seconds <= start_seconds
+        ):
+            raise RuntimeError(f"fixture clip has invalid bounds: {identifier}")
+        normalized_marker = marker.casefold()
+        if identifier in identifiers or normalized_marker in markers:
+            raise RuntimeError("fixture candidate markers and ids must be distinct")
+        identifiers.add(identifier)
+        markers.add(normalized_marker)
+        candidates.append(Candidate(identifier, float(start_seconds), float(end_seconds), marker))
+    return tuple(candidates)
 
 
 def _sha256(path: Path) -> str:
@@ -91,9 +114,8 @@ def _sha256(path: Path) -> str:
 
 def main() -> int:
     args = parse_args()
-    fixture_path = _fixture_path()
-    if len({candidate.expected_marker.casefold() for candidate in CANDIDATES}) != len(CANDIDATES):
-        raise RuntimeError("candidate marker inventory is not distinct")
+    fixture, fixture_path = _fixture()
+    candidates = _fixture_candidates(fixture)
 
     runner = VllmRunner(
         base_url=args.vllm_base_url,
@@ -106,7 +128,7 @@ def main() -> int:
         with wave.open(str(fixture_path), "rb") as source:
             if (source.getnchannels(), source.getsampwidth(), source.getframerate()) != (1, 2, 16000):
                 raise RuntimeError("fixture must be mono 16-bit 16 kHz PCM WAV")
-            for candidate in CANDIDATES:
+            for candidate in candidates:
                 clip = temp_dir / f"{candidate.identifier}.wav"
                 _write_clip(source=source, candidate=candidate, path=clip)
                 started = time.monotonic()
@@ -134,7 +156,7 @@ def main() -> int:
 
     result = {
         "schema": "moss-unique-marker-inventory.v1",
-        "question": "Can the production vLLM endpoint recognize eight distinct real-speech markers?",
+        "question": "Can the production vLLM endpoint recognize every distinct real-speech marker configured for the W2 fixture?",
         "fixture": str(fixture_path.relative_to(ROOT)),
         "fixture_sha256": _sha256(fixture_path),
         "fixture_manifest": str(FIXTURE_MANIFEST.relative_to(ROOT)),

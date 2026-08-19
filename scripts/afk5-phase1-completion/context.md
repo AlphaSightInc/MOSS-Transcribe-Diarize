@@ -78,9 +78,19 @@ Living working memory. Update it every iteration so it matches reality. History 
 - **W2 eight-marker source inventory (iteration 29):** the read-only endpoint recognized eight distinct
   markers from separately bounded clips of the exact hash-pinned W2 source, and every marker was absent
   from the other seven direct transcripts. The full clips, output, and fixture/manifest hashes are in
-  `evidence/phase1/w2-local-concurrency/iteration-29-unique-marker-inventory.json`. This establishes
-  fixture capacity only: the runner still has two configured clips, so normal/overload isolation and
-  reconnect remain unmeasured; G4/G5 remain uncertified.
+  `evidence/phase1/w2-local-concurrency/iteration-29-unique-marker-inventory.json`. At that time it
+  established fixture capacity only; iteration 31 absorbs it into the runner below. G4/G5 remain uncertified.
+- **W2 integrity oracle is ready (iteration 31):** the fixture now declares those eight audited clips, and
+  `proto_unique_marker_inventory.py` reads that shared configuration rather than duplicating its values.
+  The read-only endpoint re-proved the exact new fixture manifest (`d8932485...e8bb9aee`): 8/8 expected
+  markers appeared only in their own real-speech clip at
+  `evidence/phase1/w2-local-concurrency/iteration-31-unique-marker-fixture.json`. The runner assigns one
+  distinct clip per session and fails closed before capture if any normal or overload phase is undersupplied
+  or duplicated. Its v2 canonical log now associates submitted spans with their rendered transcript (never
+  PCM); overload replays the peer's whole clip and requires both rendered/canonical marker isolation plus
+  isolated reconnect snapshot and replayed-event evidence. Focused route/runner validation is 10/10 at
+  `evidence/phase1/w2-local-concurrency/iteration-31-integrity-oracle.xml`. This is harness/fixture
+  readiness, not a G4/G5 result; the unchanged fresh matrix is still required.
 - **W2 remote-vLLM runner first live attempt (iteration 25), fail-closed before capture:**
   `run_remote_vllm_tunnel_measurement.py` uses the production local-route/`VllmRunner` seam with one
   loopback process, a fresh evidence-owned finalized manifest bound to the captured HEAD, descriptor
@@ -134,11 +144,11 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 integrity-oracle implementation (P0):** iteration 29 proved eight unique real-speech markers
-   are available. Configure them in the fixture, fail closed if any phase has fewer distinct markers than
-   sessions, and evaluate text isolation plus observer reconnect in overload before replaying the unchanged
-   1/2/4/8 + selected-600s matrix. Do not touch the scheduler unless a v2 lifecycle run measures a real
-   violation; CPU/HF remains diagnostic, not G4/G5 evidence.
+1. **W2 frozen remote-vLLM replay (P0):** run the unchanged 1/2/4/8 + selected-600-second matrix from a
+   fresh evidence directory using the v2 lifecycle log and the new unique-marker/overload oracle. Preserve
+   every failing row; do not select a bound or claim G4/G5 unless every preregistered predicate is met.
+   Do not touch the scheduler unless the v2 lifecycle measurement finds a real violation; CPU/HF remains
+   diagnostic, not G4/G5 evidence.
 2. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
@@ -167,9 +177,10 @@ Living working memory. Update it every iteration so it matches reality. History 
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
   22; iteration 26 closed the relative-asset locality blocker with an ephemeral execution bundle outside the
   repo. Iteration 27 proved tunnel reachability, real decoder wiring, run-owned manifest admission, and the
-  selected 600-second one-session bound. Iteration 28 corrected the fairness observer and iteration 29
-  proved eight source markers. Iteration 30 superseded the old machine-readable G4/G5 claim; next make the
-  runner use v2 lifecycle records, unique markers, and an overload isolation/reconnect evaluator.
+  selected 600-second one-session bound. Iteration 28 corrected the fairness observer, iteration 29 proved
+  eight source markers, iteration 30 superseded the old machine-readable G4/G5 claim, and iteration 31
+  wired unique markers plus overload isolation/reconnect into the runner. Next is one unchanged fresh v2
+  lifecycle matrix; it alone can decide the W2 result.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -570,3 +581,21 @@ tightened continuously-ready evaluator and isolation is undetermined above two s
 
 **Remaining before the next matrix run:** unique per-session markers, and the overload phase actually executing
 its isolation + reconnect checks (your own flagged omission). Then re-run the frozen matrix unchanged.
+
+## Marker problem SOLVED without a new capture (monitor, 2026-08-18 20:55)
+
+`5dcf223` derives **eight** distinct markers from the existing hash-pinned fixture (`a42507d9…016b6eea`) —
+"New York", "payments team", "huge thanks", "show notes", "investment advice", "entertainment purposes",
+"feels appropriate", "dressed up" — each proved through the **live vLLM endpoint**, with
+`marker_absent_from_other_candidates` **computed** (`proto_unique_marker_inventory.py:127-129`), not asserted:
+8/8 exclusive, 8/8 present, probe committed. That covers the whole `[1,2,4,8]` matrix, so the isolation oracle
+is no longer false-by-construction. **The operator fixture request now stands only for Defect B** (two lanes,
+different speech).
+
+`bcab94d` corrected the verdict properly: `qualifies_local_g4_g5_portions: false`, `superseded_by: e5a59c4`,
+accurate `evaluator_defect` wording ("then-under-specified"), new commit, no history rewrite, all sound numbers
+retained.
+
+**Resolved in iteration 31:** the runner now assigns the eight markers one-per-session and executes overload
+isolation plus reconnect assertions. Re-run the frozen matrix unchanged next. Expect the bound may exceed 1:
+sessions 2 and 4 previously failed **only** on the unsound fairness metric.

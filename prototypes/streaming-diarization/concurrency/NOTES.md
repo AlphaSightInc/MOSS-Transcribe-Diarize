@@ -304,3 +304,29 @@ The exclusivity condition is material: `cool technology` was rejected because th
 fairness, G4, or G5. Next, configure those eight audited clips in the W2 fixture, fail closed whenever
 a phase lacks one unique marker per session, and add the missing overload isolation/reconnect evaluation
 before the frozen matrix is replayed.
+
+## Remote-vLLM integrity-oracle absorption — 2026-08-18
+
+**VERDICT: PASS — fixture capacity and the fail-closed overload oracle are ready for one fresh frozen run.**
+
+Question: does the actual eight-marker fixture now support every W2 phase without repeated-marker false
+positives, and will the harness reject a missing unique clip, a foreign canonical transcript, or an
+unobserved reconnect instead of treating them as isolation evidence?
+
+The fixture now contains eight separately bounded clips, all read from configuration by
+`proto_unique_marker_inventory.py`. The real read-only endpoint re-inventoried that exact manifest
+(`d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee`): all eight expected markers
+were present in their own clip and absent from every other clip. Raw output:
+`evidence/phase1/w2-local-concurrency/iteration-31-unique-marker-fixture.json`.
+
+The measurement runner now assigns the first N distinct configured clips to an N-session phase and refuses
+any undersupplied or duplicate-marker phase before capture. Its instrumented canonical event log retains
+the rendered transcript for submitted spans, without retaining PCM. During overload it sends the peer's
+entire bounded clip, waits for both owned markers through reconnect polling, and requires the reconnect's
+snapshot plus replayed canonical events to resolve only to their session's text. Focused route/runner tests
+passed 10/10; their falsified cases cover an undersupplied phase, a duplicate marker, and a foreign marker
+in both canonical and reconnect-replayed evidence. Raw JUnit:
+`evidence/phase1/w2-local-concurrency/iteration-31-integrity-oracle.xml`.
+
+This is harness and fixture evidence only. It establishes neither G4 nor G5; rerun the unchanged
+preregistered remote-vLLM matrix in a fresh evidence directory.

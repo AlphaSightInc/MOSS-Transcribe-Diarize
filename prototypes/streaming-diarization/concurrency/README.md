@@ -46,12 +46,13 @@ that contract. It may establish the local portions of G4 and G5, never deployed 
 utilisation.
 
 Its hash-pinned human-speech clip configuration is
-`cpu_hf_local_fixture.json`. The runner uses two different bounded segments from that real recording,
-then checks that each session renders only its own configured marker. The values belong in the fixture
-configuration, never in general runner logic.
+`cpu_hf_local_fixture.json`. The runner assigns one bounded real-speech clip and one distinct marker to
+each session, then fails closed before capture if any matrix or overload phase would reuse a clip or marker.
+The current fixture supplies all eight markers required by the 1/2/4/8 matrix; the values belong in the
+fixture configuration, never in general runner logic.
 
-Before extending that fixture to cover the eight-session row, inventory the candidate markers against
-the live read-only endpoint (about five seconds):
+Re-inventory the configured markers against the live read-only endpoint after changing any fixture bounds
+or marker (about five seconds):
 
 ```bash
 .venv/bin/python prototypes/streaming-diarization/concurrency/proto_unique_marker_inventory.py \
@@ -60,8 +61,9 @@ the live read-only endpoint (about five seconds):
   --output evidence/phase1/w2-local-concurrency/unique-marker-inventory.json
 ```
 
-The probe requires each marker to appear in its own bounded real-speech clip and in no other candidate
-clip. It only establishes fixture capacity; it does not test cross-session isolation, fairness, G4, or G5.
+The probe reads the fixture configuration rather than duplicating its clip values. It requires each marker
+to appear in its own bounded real-speech clip and in no other configured clip. It only establishes fixture
+capacity; it does not test cross-session isolation, fairness, G4, or G5.
 
 Full local CPU/HF measurement (about 19 minutes plus model warm-up):
 
@@ -123,5 +125,8 @@ Without `--preflight`, the runner creates a new ephemeral finalized manifest for
 the repository, materializes its declared relative assets only in that temporary execution directory, and
 copies the small manifest record into the requested output directory. It then starts one loopback production
 route process using `VllmRunner`, runs the frozen 1/2/4/8 matrix plus the selected soak and overload/reconnect
-sequence, and probes `/health` and `/v1/models` again before issuing its verdict. Helper health posts run at
+sequence, and probes `/health` and `/v1/models` again before issuing its verdict. The measurement event log
+adds the rendered transcript to each submitted canonical event so the harness can test isolation on both
+rendered snapshots and the canonical path. In overload it replays the peer's full bounded clip, then requires
+each observer reconnect to return isolated snapshot and canonical-event evidence. Helper health posts run at
 one quarter of the explicit lease even while a remote request blocks.

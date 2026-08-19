@@ -222,12 +222,26 @@ def _instrument_commit_times(
                 "canonical_started",
                 "canonical_processed",
             }:
+                measured_payload = dict(payload)
+                if kind == "canonical_processed" and payload.get("submitted"):
+                    session = getattr(state, "session", None)
+                    snapshot = session.snapshot() if session is not None else None
+                    span_id = payload.get("span_id")
+                    for commit in getattr(snapshot, "committed", ()):
+                        if getattr(commit, "span_id", None) != span_id:
+                            continue
+                        transcript = getattr(commit, "revised_transcript", None) or getattr(
+                            commit, "transcript", None
+                        )
+                        if isinstance(transcript, str):
+                            measured_payload["rendered_transcript"] = transcript
+                        break
                 record = {
                     "schema": "moss-live-canonical-dispatch-observation.v2",
                     "observed_wall_ns": time.time_ns(),
                     "session_id": state.session_id,
                     "kind": kind,
-                    "payload": payload,
+                    "payload": measured_payload,
                 }
         if record is not None:
             event_log.append(record)

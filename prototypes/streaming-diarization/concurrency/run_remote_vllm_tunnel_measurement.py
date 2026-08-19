@@ -309,8 +309,7 @@ class RemoteVllmMeasurement(Measurement):
         ):
             raise MeasurementError("provisional manifest lacks calibrated identity configuration")
         fixture_audio = ROOT / self.fixture["audio"]["path"]
-        _wav_clip(self.fixture, self.fixture["clips"][0])
-        _wav_clip(self.fixture, self.fixture["clips"][1])
+        self.validate_fixture_phase_capacities()
         self.head_revision = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip()

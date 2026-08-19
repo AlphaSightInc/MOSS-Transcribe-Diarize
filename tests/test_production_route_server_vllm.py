@@ -133,7 +133,15 @@ def test_canonical_measurement_log_captures_queue_start_and_publication_lifecycl
             return None
 
     runtime = Runtime()
-    state = SimpleNamespace(session_id="session-a")
+    committed = SimpleNamespace(
+        span_id=3,
+        transcript="[0][S01]marker text[0.5]",
+        revised_transcript=None,
+    )
+    state = SimpleNamespace(
+        session_id="session-a",
+        session=SimpleNamespace(snapshot=lambda: SimpleNamespace(committed=(committed,))),
+    )
     server._instrument_commit_times(runtime, {}, threading.Lock(), event_log=EventLog())
 
     runtime._record_event(state, "canonical_queued", {"item_id": 7})
@@ -152,3 +160,4 @@ def test_canonical_measurement_log_captures_queue_start_and_publication_lifecycl
     assert {record["schema"] for record in records} == {
         "moss-live-canonical-dispatch-observation.v2"
     }
+    assert records[-1]["payload"]["rendered_transcript"] == "[0][S01]marker text[0.5]"

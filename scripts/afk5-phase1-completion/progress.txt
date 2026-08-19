@@ -1121,3 +1121,40 @@ isolation and reconnect checks (you flagged that omission yourself). Those two p
 just landed are the full set; then re-run the frozen matrix unchanged.
 
 [iteration 30] target=W2 stale machine-readable verdict repair; files=`evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/verdict.json`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`python3` JSON-assertion + HEAD `run-state.json` SHA-256 comparison PASS (`842a9639...b3b067d`), `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/{verdict.json,run-state.json}`; learned=the run-27 raw state remains intact, but its processed-only fairness evidence and repeated markers cannot qualify G4/G5; next=configure the eight unique markers and make overload evaluate text isolation plus reconnect before rerunning the unchanged v2 lifecycle matrix.
+
+[iteration 31] target=W2 unique-marker fixture and overload integrity oracle; files=`prototypes/{streaming-diarization/concurrency/{cpu_hf_local_fixture.json,proto_unique_marker_inventory.py,run_cpu_hf_local_measurement.py,run_remote_vllm_tunnel_measurement.py,README.md,NOTES.md},browser-capture-feasibility/production_route_server.py}`, `tests/{test_production_route_server_vllm.py,test_remote_vllm_tunnel_measurement.py}`, `evidence/phase1/w2-local-concurrency/{iteration-31-unique-marker-fixture.json,iteration-31-integrity-oracle.xml}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=real read-only vLLM fixture inventory **PASS 8/8 unique markers**, focused route/runner suite **10 passed**, remote-contract validator PASS (`sha256=0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083`), `py_compile` and `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/{iteration-31-unique-marker-fixture.json,iteration-31-integrity-oracle.xml}`; learned=the W2 source supports a unique marker for every frozen matrix slot, while the runner now refuses repeated/undersupplied fixtures and only accepts overload when rendered/canonical text plus reconnect snapshot/event replay are isolated; next=run the unchanged remote-vLLM 1/2/4/8 + selected-600-second matrix from a fresh output directory, preserve failures, and make no G4/G5 claim without its full v2 evidence.
+
+[monitor 2026-08-18 20:55] BOTH OUTSTANDING ITEMS LANDED, AND YOU SOLVED THE MARKER PROBLEM BETTER THAN I
+PROPOSED. Verified all of it.
+
+1. VERDICT CORRECTED PROPERLY (`bcab94d`). `qualifies_local_g4_g5_portions: false`, `superseded_by: e5a59c4`,
+   and an `evaluator_defect` field that states the cause accurately — "Run 27 logged only canonical_processed
+   events under its then-under-specified fairness evidence rule; applying e5a59c4's continuously-ready
+   evaluator makes fairness unmeasurable, and repeated clips leave text isolation undetermined above two
+   sessions." Note it says **under-specified**, which is the correct characterisation and matches my 20:45
+   correction rather than my earlier misstatement. Done in a new commit, no history rewriting, and every sound
+   number survived — closing probe, soak, `does_not_establish`, fixture-limit statement all intact. Exactly
+   right.
+
+2. THE UNIQUE-MARKER INVENTORY (`5dcf223`) IS BETTER THAN THE FIX I ASKED FOR. I escalated to the operator for
+   a NEW attended capture with distinct per-session content. You instead derived EIGHT distinct markers from
+   the existing hash-pinned fixture — "New York", "payments team", "huge thanks", "show notes", "investment
+   advice", "entertainment purposes", "feels appropriate", "dressed up" — and proved each one live:
+     - fixture sha256 a42507d9…016b6eea, matching the pin I verified earlier; manifest sha recorded too
+     - every clip transcribed through the REAL vLLM endpoint, per-probe `elapsed_seconds` recorded
+     - `marker_absent_from_other_candidates` is COMPUTED (`proto_unique_marker_inventory.py:127-129`), not
+       asserted — 8/8 exclusive, 8/8 present
+     - `all_markers_present_and_unique: true`, and the probe is committed, not deleted after producing its
+       artifact (I checked)
+   Eight distinct markers covers the whole [1,2,4,8] matrix, so the isolation oracle stops being
+   false-by-construction at every concurrency you measure. **I am withdrawing the fixture request I made to
+   the operator for the G5 marker problem — you solved it without a new capture.** The operator fixture
+   request now stands ONLY for Defect B, which genuinely needs two lanes carrying different speech.
+
+REMAINING BEFORE THE NEXT MATRIX RUN — one item, and it is yours, not the operator's:
+  Wire the eight markers into the runner so each session gets its own, and make the OVERLOAD phase actually
+  execute its isolation and reconnect assertions. You flagged that omission yourself at iteration 27; it is
+  the last thing standing between this harness and a sound G5 answer. The lifecycle work is done, the markers
+  are proven, gate values are untouched and `run_started` is false. After that, re-run the frozen matrix
+  unchanged and let the numbers decide the bound — remember 2 and 4 previously failed ONLY on the unsound
+  fairness metric, so do not be surprised if the real bound is above 1.
