@@ -736,3 +736,30 @@ fixture with different speech per lane.
 
 Transient "capture … expired" on stop = capture request deadline path in `captureClient.ts`; appeared and
 resolved. Cosmetic ordering unless it recurs — do not spend an iteration on it.
+
+## Run 32 findings split by provenance (monitor, 2026-08-18 21:45)
+
+Iteration 33 proved a writer/evaluator race 3/3 (immediate read 0/48; flushed read 48/48, `passes: true`,
+skew 1, `errors: []`). **Partly my fault** — my 21:15 steer moved the fsync off the dispatch path into a
+background writer; correct for fidelity, but it needs a read barrier.
+
+**SURVIVES (not from the event log):**
+- `stops_closed = all(stop["status"] == 200 …)` (`run_cpu_hf_local_measurement.py:1071`) ⇒ soak
+  `stops_closed: False` is a **real defect**.
+- `maximum_session_p95_seconds` from latency samples ⇒ soak collapse **p95 2.60 s @120 s → 84.378 s @600 s**
+  (~32×) is **real**. Headline stands: concurrency 4 not sustainable, **G4 not met**. screen-8 47.66 s real.
+- `marker_checks` (text comparisons) clean everywhere.
+
+**SUSPECT (event-log derived, no barrier):** every `'run ended with queued canonical items …'` error — including
+the sole reason screen-1 failed — and all fairness verdicts / `contended_pair_dispatch_observations`.
+`_CanonicalEventLogWriter.close()` exists (`production_route_server.py:185-190`, sentinel + `join()`) but the
+runner never calls it before evaluating. **The fix is a barrier, not a redesign.**
+
+**Order:** (1) **Defect D first** — P0, blocks every clean G3 artifact, independent of this. (2) Add the barrier:
+close/join before reading, **fail closed** on barrier timeout, plus the regression test from your own probe.
+(3) Re-evaluate — if run 32's lifecycle events are complete on disk (check `line_count` vs expected), re-score
+fairness **without** re-running; if short, the data is gone. (4) Only then re-run the frozen matrix. No gate or
+contract edits.
+
+**Name the pattern in the write-up:** this is the **third** degenerate oracle here — repeated-marker oracle,
+unscoped fairness counter, writer/evaluator race. All three produced confident numbers that meant nothing.

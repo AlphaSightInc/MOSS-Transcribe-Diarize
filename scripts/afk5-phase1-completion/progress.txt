@@ -1332,3 +1332,49 @@ spend an iteration on it now.
 [iteration 33] target=W2 writer/evaluator observation-boundary prototype; files=`prototypes/streaming-diarization/concurrency/{proto_writer_evaluator_boundary.py,README.md,NOTES.md}`, `docs/design-streaming-diarization.md`, `evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`.venv/bin/python .../proto_writer_evaluator_boundary.py --output .../iteration-33-writer-evaluator-boundary.json` PASS (3/3: writer active + immediate 0/48 failed-closed lifecycle records; close barrier + 48/48 fair lifecycle, skew 1), SHA-256 `31fe21ec...6934e975`; learned=phase evaluation can race the buffered asynchronous writer even after it has written, so it needs a writer-owned drain barrier; this proves no scheduler, stop-drain, G4, or G5 claim; next=Defect D red tests and narrow empty-text poller parser repair, then the W2 drain/classification repair.
 
 [iteration 34] target=Defect D empty-text poller contract; files=`frontend/src/api/{mossPoller.ts,mossPoller.test.ts}`, `ProjectResources/Frontend/{app.js,app.js.map}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red `npm test -- --run src/api/mossPoller.test.ts` **2 failed** (empty canonical and provisional text each latched their field-specific malformed-transcript error), then focused **18/18**, full frontend **126/126**, typecheck, production build, and `git diff --check` PASS; evidence=`frontend/src/api/mossPoller.test.ts`, `ProjectResources/Frontend/{app.js,app.js.map}`; learned=empty strings are valid only for canonical/provisional text; null remains invalid, strict IDs/events/numbers are untouched, and server `LiveSession._revised_span` cannot emit a valid empty revision because it requires a nonempty segment track and renders at least one segment; next=W2 writer-owned drain barrier plus separate stop-drain/not-applicable-fairness classification, without changing frozen gates.
+
+[monitor 2026-08-18 21:45] ITERATION 33's RACE FINDING IS REAL AND IT IS PARTLY MY FAULT — record that. At
+cycle 21:15 on 2026-08-18 I told you to move the canonical event fsync OFF the dispatch path into a background
+writer, to stop the instrumentation perturbing fairness and queue depth. That was right for measurement
+fidelity and it introduced this hazard: an asynchronous writer with no read barrier lets the evaluator read a
+half-written log. You found it and PROVED it 3/3 rather than asserting it —
+`iteration-33-writer-evaluator-boundary.json`: immediate read 0/48 lines, flushed read 48/48 with
+`passes: true`, `maximum_contended_pair_dispatch_skew: 1`, `errors: []`. A complete, FAIR lifecycle evaluates
+as incomplete purely from reading too early. That is exactly the right way to find it.
+
+I HAVE NOW SPLIT RUN 32's FINDINGS BY PROVENANCE, BECAUSE SOME SURVIVE THIS AND SOME DO NOT. Do not discard
+the whole run, and do not keep all of it either:
+
+  SURVIVES — not derived from the event log, so the race cannot touch it:
+    * `stops_closed` is computed as `all(stop["status"] == 200 for stop in phase["stops"])`
+      (`run_cpu_hf_local_measurement.py:1071`) — HTTP stop responses, not the log. So the soak's
+      `stops_closed: False` is a REAL defect: sessions did not return 200 on stop after 600 s. Keep it.
+    * `maximum_session_p95_seconds` comes from latency samples, not the log. The soak collapse — p95 2.60 s at
+      120 s versus **84.378 s** at 600 s, ~32x — is REAL. Keep it. It remains the headline: concurrency 4 is
+      not sustainable, G4 not met.
+    * screen-8's p95 47.66 s: real.
+    * All `marker_checks` came back clean everywhere; those are rendered/canonical text comparisons, not
+      lifecycle counts.
+
+  SUSPECT — derived from the event-log read, and the runner never joins the writer first:
+    * every `'run ended with queued canonical items for <session>'` error, including the one that is the SOLE
+      reason screen-1 failed, and the ones in the soak.
+    * the fairness verdicts and `contended_pair_dispatch_observations` for every phase.
+  I checked: `_CanonicalEventLogWriter.close()` exists at `production_route_server.py:185-190` and does the
+  right thing — sentinel plus `join()` — but nothing in the runner path calls it before evaluation. So the fix
+  is a barrier, not a redesign.
+
+WHAT TO DO, IN THIS ORDER:
+  1. **Defect D first.** It is P0, it blocks every clean G3 artifact, and it is independent of all of this.
+  2. Then add the read barrier: the runner must close/join the writer (or wait on a durable
+     writer-quiescent signal) before it reads the log for evaluation, and must FAIL CLOSED if the barrier
+     times out rather than evaluating a partial file. Add the regression test from your own probe.
+  3. Then re-evaluate. If the lifecycle events from run 32 are still on disk and complete, you may be able to
+     re-score that run's fairness WITHOUT re-running the matrix — check `line_count` against the expected
+     event total first; if they are short, the data is gone and the matrix must be re-run.
+  4. Only then re-run the frozen matrix. Do NOT touch gate values or the contract.
+
+AND SAY THIS PLAINLY IN THE ARTIFACT: this is the THIRD degenerate-oracle defect in this workstream — the
+repeated-marker oracle, the unscoped fairness counter, and now the writer/evaluator race. All three produced
+confident numbers that meant nothing. That pattern is worth naming in the write-up so the next person building
+a harness here expects it and puts the barrier in from the start.
