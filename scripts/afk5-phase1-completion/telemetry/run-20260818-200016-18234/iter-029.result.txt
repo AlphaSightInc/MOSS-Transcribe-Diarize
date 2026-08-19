@@ -1,0 +1,7 @@
+Committed `5dcf223` — W2 unique-marker inventory.
+
+- Live vLLM probe: 8/8 real-speech markers present and mutually exclusive.
+- Validation: live probe, `py_compile`, JSON parse, diff check, AFK preflight passed.
+- G4/G5 remain uncertified. Next: correct iteration-27’s stale positive verdict, then implement eight-marker and overload isolation/reconnect checks.
+- Preserved concurrent dirty monitor/context/telemetry updates.
+

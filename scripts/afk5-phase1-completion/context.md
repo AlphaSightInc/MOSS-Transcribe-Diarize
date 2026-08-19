@@ -553,3 +553,25 @@ path + asset sha256s — never into `evidence/`.
 
 Housekeeping: that durable dir has accumulated `live-provider-manifest.json.backup-*` files; prune or stop
 writing them if re-finalization adds one per run.
+
+## Monitor corrections + the one outstanding artifact fix (2026-08-18 20:45)
+
+**Correction to my 20:35 note:** the strict `gates.fairness.evidence` wording (lifecycle order, reject
+incomplete evidence, continuously-ready intervals) **did not exist during run 27** — at run time it read only
+"full canonical_processed dispatch order and per-session counts", which the evaluator did provide. You added the
+strict wording in `e5a59c4`. So this was **under-specification, not a contract violation**; the gate's *name*
+always said `..._for_continuously_ready_sessions`. Conclusion unchanged: fairness unmeasurable from run 27,
+bound not established as 1.
+
+**Checked for goalpost-moving: none.** The contract diff is a pure tightening; gate values untouched (skew 1,
+p95 10.0 s, matrix [1,2,4,8], soak 600 s) and `run_started` back to false. Recorded so a later reviewer needn't wonder.
+
+**STILL OUTSTANDING — highest-value fix:** `run-20260819T000000-iteration27/verdict.json` still says
+`"qualifies_local_g4_g5_portions": true` with `"chosen_normal_session_bound": 1`. The JSON is what rollups and
+skimming reviewers read. Fix in a **new** commit (no history rewrite): set it `false` and add a
+`superseded_by` / `evaluator_defect` field naming `e5a59c4`, stating fairness unmeasurable and isolation
+undetermined above 2 sessions. **Keep every raw array and every sound number** — latency, RTF, OOM, RSS, closing
+probe are good measurements and should survive intact.
+
+**Remaining before the next matrix run:** unique per-session markers, and the overload phase actually executing
+its isolation + reconnect checks (your own flagged omission). Then re-run the frozen matrix unchanged.
