@@ -99,6 +99,22 @@ Living working memory. Update it every iteration so it matches reality. History 
   the repaired state requires neither. It passed **5/5** at
   `evidence/phase1/w2-local-concurrency/iteration-26-ephemeral-execution-manifest.txt`. This is harness
   locality evidence only: no route, remote inference, or G4/G5 phase ran.
+- **W2 first remote-vLLM matrix (iteration 27):** the real frozen 1/2/4/8 run completed at
+  `evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/` against the read-only tunnel
+  (before/after health and selected-model probes 200; captured HEAD `037b633...`; contract
+  `53de815...`). Screen 1 passed, then its selected 600-second soak passed (p95 1.5023 s, local RSS growth
+  206,815,232 bytes, zero locally observable accelerator/OOM errors, closed stop); overload passed its
+  retryable session-local 429, peer-acceptance, retry, and stop checks. Screens 2/4/8 are recorded failures:
+  screen 2 fair-dispatch skew 30 > 1; screen 4 skew 33; screen 8 skew 13 and p95 46.6179 s > 10 s. Do not
+  certify G4 or G5 from this run: the normal-path marker oracle aliases the two fixture markers when it
+  reuses clips at 4/8 sessions, so it calls each duplicated session's own marker foreign; the overload
+  evaluator records 429/retry/stops but does not evaluate required text isolation or observer reconnect.
+  `qualifies_local_g4_g5_portions: true` is therefore a harness verdict, not gate certification. Latency is
+  SSH-tunnel/tailnet inclusive; GPU memory/utilisation/OOM and vLLM queue counts remain unmeasured. The
+  two-session markers are distinct, so its p95 2.0379 s, healthy local memory/errors/stops, and **skew 30**
+  identify real canonical-dispatch unfairness as the two-session blocker; screen 4 has the same fairness
+  failure independent of its degenerate marker result. This is not a model-throughput finding (RTF p50 is
+  below 0.15 in every screen).
 
 ## Environment facts that cost previous cycles real time
 
@@ -122,14 +138,18 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 vLLM-only matrix measurement (P1)**: locality repair is complete. Run from a **fresh** output directory
-   with the unchanged frozen contract; record every 1/2/4/8 screen plus any selected 600-second soak and
-   overload/reconnect result, or preserve a fail-closed result. The runner must use its ephemeral execution
-   bundle outside the repo and leave only manifest/hash records in evidence; the CPU/HF result remains
-   diagnostic, not G4/G5 evidence.
+3. **W2 causal dispatch-fairness diagnosis + integrity-oracle repair (P1)**: iteration 27 has real tunnel
+   evidence but cannot certify G4/G5. First use the standing bench to reproduce and trace the two-session
+   skew 30 on the production route (distinct markers make that row valid), then make the evaluator reject
+   non-unique markers for per-session isolation claims and check text isolation plus reconnect during the
+   overload case. Keep all gate values and the 1/2/4/8 + selected-600s matrix unchanged; only rerun after
+   the revised contract/evidence checks are committed. The CPU/HF result remains diagnostic, not G4/G5 evidence.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-5. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+5. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
+   reachable vLLM endpoint; reconcile it only with a valid W2 replay and its explicit limits, never with the
+   current unsound G5 oracle.
+6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -144,8 +164,12 @@ Living working memory. Update it every iteration so it matches reality. History 
   `affeaea`; iteration 21 also observed its pre-existing local endpoint return `/v1/models` 200. The
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
   22; iteration 23 froze the hash-pinned matrix contract. Iteration 26 closed the relative-asset locality
-  blocker with an ephemeral execution bundle outside the repo. Tunnel reachability, basic decoder wiring,
-  preregistration, and manifest locality are not blockers.
+  blocker with an ephemeral execution bundle outside the repo. Iteration 27 proved tunnel reachability,
+  real decoder wiring, run-owned manifest admission, and the selected 600-second one-session bound, but
+  exposed two independent blockers: canonical dispatch fails the frozen fairness gate at the valid,
+  distinct-marker two-session screen (skew 30 > 1); and two expected markers cannot prove per-session
+  isolation when reused at four/eight sessions, while overload omits the preregistered
+  isolation/reconnect assertion.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -525,3 +549,37 @@ path + asset sha256s — never into `evidence/`.
 
 Housekeeping: that durable dir has accumulated `live-provider-manifest.json.backup-*` files; prune or stop
 writing them if re-finalization adds one per run.
+
+## W2 tunnel run: DO NOT CLAIM G4/G5 (monitor, 2026-08-18 20:25)
+
+Run executed well; the raw data is good. The **verdict's conclusion** is wrong.
+
+**1. Bound measured at 1** — `chosen_normal_session_bound: 1`, `screening_passes: [1]`. That is the serialized
+status quo issue #3 exists to improve. A 600 s soak at concurrency 1 does not meet G4's 2–4 concurrent bar.
+
+**2. The foreign-marker "leak" is a HARNESS FALSE POSITIVE.** `run_cpu_hf_local_measurement.py:734-737`:
+```python
+foreign = [other.expected_marker for other in sessions if other.session_id != session.session_id]
+"foreign_markers_absent": all(marker not in text for marker in foreign)
+```
+The fixture has **two** markers ("New York", "payments"). At 4 and 8 sessions markers must repeat, so another
+session carries this session's own marker string → it is in this text → **False by construction**. Data matches
+exactly: 0/1, 0/2, then **4/4** and **8/8**. The check cannot distinguish leakage from clip reuse above 2
+sessions, so the run neither proves nor disproves isolation there. **Report no leak, and claim no isolation.**
+Fix: unique marker per session (N distinct referenced clips, or a per-session injected token), then re-run.
+
+**3. What the run DOES establish — the useful part:** the bound is limited by **dispatch fairness, not model
+throughput**.
+```
+fairness_gate = 1;  max_prefix_dispatch_skew: screen-2=30, screen-4=33, screen-8=13
+max_session_p95_s:  1.95 (1) · 2.04 (2) · 3.12 (4) · 46.62 (8)   [gate 10.0]
+decode RTF p50:     0.129 · 0.080 · 0.068 · 0.067    OOM=0    rss_growth 142–207 MB vs 4 GiB gate
+```
+Decode over the tunnel is fast and memory is healthy. 2 and 4 fail on **fairness alone**; 8 adds latency. That
+points at round-robin behaviour in the canonical pump scheduler — the exact mechanism issue #3 names.
+
+**4. Verdict should say:** `qualifies_local_g4_g5_portions: false`; bound 1; 2/4 fail fairness; 8 fails fairness
++ latency; isolation **undetermined** above 2 sessions (degenerate marker check); no GPU memory/util/OOM or vLLM
+queue counts; latency includes SSH tunnel + tailnet and a GPU shared with mineru-api at 0.5 util; CPU control
+(`canonical_queue_full`) for contrast. Keep `closing_endpoint_probe_passes: true`, the fixture-repeat statement,
+and the `does_not_establish` list — those are right.

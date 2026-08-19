@@ -945,3 +945,91 @@ Housekeeping while you are in there: that durable directory has accumulated
 re-finalization writes a new backup every run they will pile up; prune or stop writing them.
 
 [iteration 26] target=W2 run-owned manifest relative-asset locality without evidence bloat; files=`prototypes/streaming-diarization/concurrency/{run_remote_vllm_tunnel_measurement.py,README.md,NOTES.md}`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/iteration-26-ephemeral-execution-manifest.txt`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=focused runner tests **5 passed**, `py_compile` PASS, `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/iteration-26-ephemeral-execution-manifest.txt`; learned=the production manifest reader correctly treats relative declarations as manifest-adjacent, so the runner now finalizes and materializes an ephemeral bundle outside the repo, copies only the manifest/hash records to evidence, and removes the temporary bundle; the test first observes both required absence failures and then proves neither remains, while a separate test rejects `.onnx`/`.wav` under `--output`; next=run the unchanged frozen vLLM-only matrix from a fresh output directory (or preserve a fail-closed result), never a CPU/HF substitute.
+
+[monitor 2026-08-18 20:05] THE ASSET-LOCALITY REPAIR IS EXACTLY RIGHT, AND THE TUNNEL RUN IS NOW LIVE.
+Verified `b7b6d82`: execution assets materialize into `tempfile.mkdtemp(prefix="moss-w2-remote-vllm-bundle-")`
+OUTSIDE the repo, evidence keeps only the 3,320-byte manifest plus the finalization record. Largest file in
+`evidence/` is still ~128 KB — no bloat reintroduced. The test pair is non-vacuous: it asserts the RED strings
+`asset is not preinstalled: identity-state` / `golden-input` and then asserts they are absent after
+materialization, and you added `test_finalize_keeps_execution_assets_out_of_evidence`, which turns my
+constraint into an enforced invariant rather than a one-off fix. That is better than what I asked for.
+5/5 tests pass. `test_endpoint_probe_refuses_embedded_credentials_and_missing_model` is a good addition too.
+
+RUN IN FLIGHT — I am deliberately NOT running the pytest or frontend suites this cycle, so I do not perturb
+your measurement with CPU contention. Confirmed live and correctly configured:
+  runner  --vllm-base-url http://127.0.0.1:18000/v1 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize
+  service --live-provider-manifest /var/folders/.../T/moss-w2-remote-vllm-bundle-65w6unwp/live-provider-manifest.json
+          --canonical-event-log .../run-20260819T000000-iteration27/canonical-processed.jsonl --port 18999
+No `--model` and no `MOSS_HF_MODEL` anywhere: inference goes to the tunnel, so the operator's "MacStudio must
+not load the model" constraint holds. `canonical-processed.jsonl` is already growing (29 events), which means
+real decode is happening, and it is being persisted incrementally as asked.
+
+SO YOU BUILD THE ARTIFACT RIGHT THE FIRST TIME, HERE IS EXACTLY WHAT I WILL CHECK WHEN IT LANDS:
+  1. Endpoint probes recorded BEFORE and AFTER the run. A run whose closing probe fails is not a passing run.
+  2. The five preregistered raw arrays retained: per-session transcript-lag samples, canonical_processed
+     dispatch order, process-tree RSS samples, HTTP frame responses with session id and retry outcome,
+     observer reconnect cursors and returned events.
+  3. Zero `pcm_base64` anywhere, and `unexpected_frame_results` aggregated by (status, error_code, lane) with
+     a few verbatim exemplars.
+  4. Latency labelled as including SSH tunnel + tailnet transit, AND the GPU stated as shared with mineru-api
+     at 0.5 utilisation / ~800 MiB free. Not an isolated-GPU bound.
+  5. The verdict must NOT claim GPU memory, GPU utilisation, GPU OOM/accelerator errors, or vLLM
+     active/queued counts. The tunnel carries inference, not host telemetry.
+  6. The CPU control stated explicitly: `canonical_queue_full` dominated every CPU row (33 at 2 sessions, 43
+     at 4, 44 at 8), which is why the local profile could not qualify. That turns the failed run into a
+     control rather than a discard.
+  7. If a soak runs, >=600 s and on the chosen bound only, per the frozen selection rule; gate values and the
+     `[1,2,4,8]` matrix unchanged from `sha256 53de815d...c857504`.
+  8. Any row that fails, reported as a failing row. A partial matrix with honest failures beats a trimmed
+     matrix that passes.
+
+[iteration 27] target=W2 frozen remote-vLLM 1/2/4/8 matrix; files=`evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/{preflight,live-provider-manifest,manifest-finalization,run-owned-asset-materialization,run-owned-manifest-preflight,canonical-processed,run-state,verdict}.json*`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=live production-route/vLLM-tunnel runner exited 0: selected 1-session screen and 600-second soak PASS, overload 429/peer/retry/stops PASS, closing endpoint probe PASS; focused runner tests 5/5 and frozen-contract validator PASS after the run; evidence=`.../run-20260819T000000-iteration27/`; learned=2 sessions fails fairness (skew 30), 4/8 have duplicate-fixture-marker oracle false failures (and skew 33/13), 8 also p95 46.6179 s; overload does not actually evaluate preregistered marker isolation/reconnect, so do not certify G4/G5 from `qualifies_local_g4_g5_portions`; next=prototype and fix the non-unique-marker/overload-isolation oracle without changing the frozen matrix or gate values, then rerun.
+
+[monitor 2026-08-18 20:25] ***DO NOT CLAIM G4/G5 FROM THIS RUN. `qualifies_local_g4_g5_portions: true` IS AN
+OVERCLAIM, AND THE ISOLATION CHECK THAT WOULD SUPPORT G5 IS BROKEN AT THE CONCURRENCIES THAT MATTER.*** The
+run itself executed well and the raw data is good — this is about what the verdict concludes from it.
+
+--- 1. THE CHOSEN BOUND IS 1. THAT IS THE SERIALIZED STATUS QUO, NOT A CONCURRENCY RESULT.
+`chosen_normal_session_bound: 1`, `screening_passes: [1]`. Issue #3 exists precisely because "Decode is
+serialized today"; its bar is 2-4 concurrent sessions, and G4's is "the ticket-3 bound sustained >=10 min".
+A 600 s soak at concurrency 1 does not establish that bar — it measures the thing the ticket set out to
+improve. Report it as: the tunnel-backed bound MEASURED AT 1, with 2/4/8 failing, and G4 NOT met.
+
+--- 2. THE FOREIGN-MARKER LEAK IS A HARNESS FALSE POSITIVE, NOT A PRODUCT DEFECT. I nearly escalated it as a
+P0 cross-session text leak, then read the check:
+    foreign = [other.expected_marker for other in sessions if other.session_id != session.session_id]
+    "foreign_markers_absent": all(marker not in text for marker in foreign)
+  (`run_cpu_hf_local_measurement.py:734-737`)
+The fixture has exactly TWO distinct markers ("New York", "payments"). At 4 and 8 sessions the markers must
+repeat, so another session carries the SAME marker string as this one. That string is in this session's own
+text — `own_marker_present: True` — therefore `foreign_markers_absent` is **False by construction**. The data
+confirms it exactly: leaking 0/1 at one session, 0/2 at two, then 4/4 and 8/8 the moment markers must repeat.
+**This check cannot detect real leakage above 2 sessions, and it cannot distinguish a leak from clip reuse.**
+So the run neither proves nor disproves G5 isolation at 4 or 8 — it says nothing. Do not report a leak, and
+do not report isolation as established.
+FIX: give every session a UNIQUE marker before re-running — either extend the fixture to N distinct
+separately-referenced clips, or inject a per-session unique token and assert on that. Then the check means
+something at every concurrency. Until then, no G5 isolation claim above concurrency 2.
+
+--- 3. WHAT THE RUN DOES ESTABLISH, AND IT IS GENUINELY USEFUL: THE DISPATCHER IS UNFAIR, AND THAT — NOT
+DECODE SPEED — IS WHAT BLOCKS THE BOUND.
+    fairness_gate = 1                          (frozen)
+    maximum_prefix_dispatch_skew: screen-2 = 30, screen-4 = 33, screen-8 = 13
+    maximum_session_p95_seconds: 1.95 (1), 2.04 (2), 3.12 (4), 46.62 (8)  [gate 10.0]
+    remote_vllm_tunnel_decode_real_time_factor p50: 0.129, 0.080, 0.068, 0.067
+    oom_or_accelerator_error_count = 0 everywhere; rss_growth ~142-207 MB vs a 4 GiB gate
+Decode over the tunnel is FAST — RTF p50 well under 0.15 at every concurrency — and memory is healthy. 2 and
+4 sessions fail on FAIRNESS ALONE (skew 30 and 33 against a gate of 1), and 8 fails on fairness plus a p95 of
+46.6 s. That points straight at round-robin behaviour in the canonical pump scheduler, which is exactly the
+mechanism issue #3 names. Write that up as the finding: **the concurrency bound is limited by dispatch
+fairness, not by model throughput.** That is a real, actionable result and it is the most valuable thing this
+run produced.
+
+--- 4. WHAT TO PUT IN THE VERDICT INSTEAD
+Set `qualifies_local_g4_g5_portions: false`. Keep every raw array. State: bound measured at 1; 2/4 fail
+fairness; 8 fails fairness and latency; isolation UNDETERMINED above 2 sessions because the marker check is
+degenerate under clip reuse; no GPU memory/utilisation/OOM or vLLM queue counts (tunnel carries inference,
+not host telemetry); latency includes SSH tunnel + tailnet transit and a GPU shared with mineru-api at 0.5
+utilisation; and the CPU control (`canonical_queue_full` dominating every CPU row) for contrast.
+Good things you already did and should keep: `closing_endpoint_probe_passes: true`, the fixture-repeat
+limitation statement, and the accurate `does_not_establish` list.
