@@ -1,0 +1,19 @@
+{
+  "chosen_normal_session_bound": 4,
+  "closing_endpoint_probe_passes": true,
+  "does_not_establish": [
+    "an isolated-GPU transcript-lag bound",
+    "GPU memory or utilisation",
+    "GPU OOM or accelerator errors",
+    "vLLM active or queued request counts",
+    "human-attended display capture"
+  ],
+  "fixture_limit_statement": "The 90-second real-speech source repeats during a selected 600-second soak and may make decode timing unrepresentative.",
+  "overload_passes": false,
+  "qualifies_local_g4_g5_portions": false,
+  "screening_passes": [
+    2,
+    4
+  ],
+  "soak_passes": false
+}

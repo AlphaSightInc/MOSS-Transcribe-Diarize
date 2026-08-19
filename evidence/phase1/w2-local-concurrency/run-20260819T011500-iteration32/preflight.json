@@ -1,0 +1,44 @@
+{
+  "captured_head_revision": "872d567fff14038a81f8ead6d2440a6af95d7007",
+  "contract_sha256": "0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083",
+  "deployed_bound_fields": {
+    "frame_samples": 8000,
+    "hard_cap_samples": 40000,
+    "max_events": 1000,
+    "max_frame_samples": 16000,
+    "max_identity_speakers": 16,
+    "max_queue_depth": 16,
+    "max_retained_samples": 960000,
+    "sample_rate": 16000,
+    "stop_drain_deadline_seconds": 5.0
+  },
+  "endpoint_before": {
+    "base_url": "http://127.0.0.1:18000/v1",
+    "health_status": 200,
+    "health_url": "http://127.0.0.1:18000/health",
+    "model_ids": [
+      "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    ],
+    "models_canonical_json_sha256": "5d6aad1adba90206c63f8728b43d891810f670349d929d96da7edc863764b950",
+    "models_status": 200,
+    "models_url": "http://127.0.0.1:18000/v1/models",
+    "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+  },
+  "evidence_manifest_path": "evidence/phase1/w2-local-concurrency/run-20260819T011500-iteration32/live-provider-manifest.json",
+  "fixture_clip_ids": [
+    "new-york",
+    "payments",
+    "huge-thanks",
+    "show-notes",
+    "investment-advice",
+    "entertainment",
+    "appropriate",
+    "dressed-up"
+  ],
+  "fixture_manifest_path": "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json",
+  "fixture_manifest_sha256": "d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee",
+  "fixture_path": "prototypes/streaming-diarization/dl2-capture/evidence/d3-leading-silence/fixtures/leading-030s.wav",
+  "fixture_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+  "gpu_claims_permitted": false,
+  "preflight": "PASS"
+}

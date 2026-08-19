@@ -144,11 +144,13 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 frozen remote-vLLM replay (P0):** run the unchanged 1/2/4/8 + selected-600-second matrix from a
-   fresh evidence directory using the v2 lifecycle log and the new unique-marker/overload oracle. Preserve
-   every failing row; do not select a bound or claim G4/G5 unless every preregistered predicate is met.
-   Do not touch the scheduler unless the v2 lifecycle measurement finds a real violation; CPU/HF remains
-   diagnostic, not G4/G5 evidence.
+1. **W2 evaluator and drain-boundary prototype/repair (P0):** before another matrix, extend the shared
+   streaming-diarization bench with a measured throwaway probe for the run-32 asynchronous event-writer
+   race and descriptor-declared stop drain. It must show a complete lifecycle log before evaluation and
+   distinguish no-contention fairness from stop-drain completeness. Then make the smallest test-backed
+   evaluator/writer-boundary repair without changing a gate value, re-run the frozen matrix from a fresh
+   directory, and preserve all failures. Do not touch the scheduler unless sound v2 evidence finds a real
+   violation; CPU/HF remains diagnostic, not G4/G5 evidence.
 2. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
@@ -599,3 +601,66 @@ retained.
 **Resolved in iteration 31:** the runner now assigns the eight markers one-per-session and executes overload
 isolation plus reconnect assertions. Re-run the frozen matrix unchanged next. Expect the bound may exceed 1:
 sessions 2 and 4 previously failed **only** on the unsound fairness metric.
+
+## Classify the "queued item remained at stop" finding correctly (monitor, 2026-08-18 21:15)
+
+Oracle hardening verified: `_select_marker_clips` fails closed on too-few clips, missing id/marker, or ANY
+repeated identifier/marker; `validate_fixture_phase_capacities()` rejects a matrix that would repeat a marker in
+any phase — upfront, not six phases deep. Tests 7/7, including
+`test_lifecycle_fairness_excludes_an_idle_peer_but_rejects_ready_peer_starvation` (both directions).
+
+**When the verdict lands, classify the stop finding before writing it up:**
+- Descriptor declares `stop_drain_deadline_seconds: 5.0`. Queued **inside** that window and drained before the
+  deadline ⇒ declared behaviour, not a defect. Say so plainly.
+- Survived the deadline, or a clean stop reported while work remained unprocessed ⇒ **stop-contract / G6**
+  finding about losing committed work at stop — **not** a G4 fairness/concurrency finding. Report it separately.
+- Either way record: the queued item's session id, its queued/started/processed timestamps, and the measured
+  stop→drain interval. Without those three the classification is not checkable by anyone who was not here.
+- Do not let it silently downgrade a row: if every gate otherwise passes at a concurrency, that row passes and
+  the stop finding stands as its own item.
+
+## Run 32: stop finding is on the WRONG GATE — fix before the verdict (monitor, 2026-08-18 21:25)
+
+**Good news first: screen-2 and screen-4 PASS** (p95 2.03 s, 2.60 s vs 10 s). Run 27's "bound = 1" was an
+artifact of the broken fairness metric. screen-8 fails on genuine latency (47.66 s). Honest bound looks like **4**.
+
+**Problem:** `screen-1` reports `passes: False` on one thing only —
+`canonical_lifecycle_fairness.errors: ['run ended with queued canonical items for 21b7ce43…']` — while
+`maximum_session_p95_passes: True` (3.39 s), OOM 0, `stops_closed: True`, `helper_presence_passes: True`, all
+marker checks good, RSS 242 MB vs 4 GiB. And that row records **`contended_pair_dispatch_observations: 0`** — at
+concurrency 1 fairness is not evaluable. A **stop-contract** condition was folded into the **fairness** predicate.
+
+**Fix before writing the verdict:**
+1. Give the drain condition its own predicate (`stop_drain_complete`), reported separately — G6/stop-contract,
+   not G4 concurrency.
+2. `contended_pair_dispatch_observations == 0` ⇒ fairness **not_applicable**, never failed. You already applied
+   that principle to run 27; apply it here.
+3. Classify against declared `stop_drain_deadline_seconds: 5.0`. Record session id `21b7ce43…`, queued/started/
+   processed timestamps, and the stop→drain interval. **`stops_closed: True` with queued items outstanding is
+   itself the finding** if it survives the deadline.
+4. Re-derive the verdict from corrected predicates. No gate-value edits, no contract changes, no retro-fitting
+   row outcomes — move the misfiled predicate and re-evaluate.
+
+If screen-1 still fails on a correctly-classified stop predicate, report it as a failing row **and** a separate
+G6 finding, stating plainly that latency, memory, isolation and fairness were satisfied or inapplicable there.
+
+## W2 remote-vLLM matrix result (iteration 32, not qualifying)
+
+- The fresh frozen v2 matrix completed against the read-only tunnel at
+  `evidence/phase1/w2-local-concurrency/run-20260819T011500-iteration32/`; its separate immutable-input
+  preflight is `iteration-32-remote-vllm-preflight/preflight.json`. The endpoint's health and selected-model
+  catalog probes were HTTP 200 both before and after. Contract SHA-256 remains
+  `0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083`; no gate value changed.
+- Screens 2 and 4 passed their recorded v2 predicates (p95 2.035 s and 2.602 s; fairness skew 0 and 1;
+  all unique-marker checks true; zero locally observable accelerator/OOM errors). Screen 8 failed genuine
+  latency (p95 47.664 s > 10 s). Screen 1's recorded fairness failure is an evidence-writer race, not a
+  product finding: it evaluated 59 queued / 58 started entries before the asynchronous writer flushed; the
+  completed log has 61/61 and a direct post-writer re-score passes with no errors and zero contention.
+- The selected four-session 600-second soak fails independently of that race: p95 84.378 s, three sessions
+  retain queued canonical work, lifecycle skew reaches 11, and three stop requests return 429. Its raw stop
+  outcome must be classified against the descriptor's 5-second drain contract; it is not evidence of a
+  scheduler change request. The matrix therefore does not establish a sustained G4 bound.
+- Overload observed retryable v2 429, peer acceptance, retry success, clean overload stops, and reconnect
+  isolation evidence, but it fails integrity: the `payments` peer never produced its own required marker
+  before reconnect or in rendered/canonical text. Thus it does not establish G5 across overload/reconnect.
+  `verdict.json` correctly remains `qualifies_local_g4_g5_portions: false`.

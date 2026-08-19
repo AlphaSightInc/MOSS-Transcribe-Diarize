@@ -1158,3 +1158,76 @@ REMAINING BEFORE THE NEXT MATRIX RUN — one item, and it is yours, not the oper
   are proven, gate values are untouched and `run_started` is false. After that, re-run the frozen matrix
   unchanged and let the numbers decide the bound — remember 2 and 4 previously failed ONLY on the unsound
   fairness metric, so do not be surprised if the real bound is above 1.
+
+[monitor 2026-08-18 21:15] INTEGRITY ORACLE HARDENING VERIFIED, AND IT IS STRONGER THAN I ASKED FOR.
+`_select_marker_clips` now raises `MeasurementError` when the fixture has fewer clips than sessions, when a
+clip lacks a non-empty id or marker, or when ANY identifier or marker repeats — so the degenerate oracle that
+invalidated run 27 is now impossible by construction; it refuses to start instead of producing a meaningless
+number. And `validate_fixture_phase_capacities()` — "Reject a frozen matrix that would repeat a marker in any
+of its phases" — checks the WHOLE matrix upfront, so a run cannot get six phases deep before discovering
+phase 8 has no distinct markers. I did not ask for that second one; it is the right call.
+Tests 7/7, and the one that matters most is
+`test_lifecycle_fairness_excludes_an_idle_peer_but_rejects_ready_peer_starvation`. That is exactly the
+distinction that made run 27's fairness number meaningless — exclude the idle peer, but still catch genuine
+starvation of a ready one — and you tested BOTH directions rather than just the exclusion.
+
+FRESH MATRIX RUN IS LIVE (8 minutes in as I write). I am staying off the CPU again: no pytest, no frontend
+suite this cycle, so the latency numbers are yours and not contaminated by my checks.
+
+ONE THING TO CLASSIFY CAREFULLY WHEN THE VERDICT LANDS. You reported "a fail-closed lifecycle finding (a
+queued item remained at stop)" in the first phase. Before you write that up, decide which contract it belongs
+to, because the answer changes what it means:
+  - The descriptor declares `stop_drain_deadline_seconds: 5.0`. If the item was still queued INSIDE that
+    window and drained before the deadline, that is declared behaviour, not a defect — say so plainly.
+  - If it survived the deadline, or the session reported a clean stop while work remained unprocessed, that
+    is a STOP-CONTRACT / G6 finding about losing committed work at stop — NOT a G4 fairness or concurrency
+    finding, and it should be reported separately so it does not get buried in a concurrency verdict.
+  - Either way, record the queued item's session id, its queued/started/processed timestamps, and the actual
+    interval between stop and drain. Those three make the classification checkable by someone who was not
+    here; "a queued item remained at stop" on its own does not.
+Do not let it silently downgrade the run's verdict either — if every gate otherwise passes at a given
+concurrency, that row passes, and the stop finding is reported alongside as its own item.
+
+[monitor 2026-08-18 21:25] ***READ BEFORE YOU WRITE RUN 32's VERDICT — THE STOP FINDING IS ATTACHED TO THE
+WRONG GATE, AND IT IS ABOUT TO PRODUCE AN INCOHERENT BOUND.***
+
+FIRST, THE GOOD NEWS, AND IT IS BIG: with the sound evaluator, **screen-2 and screen-4 both PASS**
+(p95 2.03 s and 2.60 s against the 10 s gate). Run 27's "bound = 1" really was an artifact of the broken
+fairness metric, exactly as suspected. screen-8 fails on genuine latency (p95 47.66 s), consistent with run 27.
+So the product does sustain concurrent sessions, and the honest bound is looking like 4, not 1.
+
+NOW THE PROBLEM. screen-1 reports `passes: False`, and it fails on ONE thing only:
+    canonical_lifecycle_fairness.errors:
+        ['run ended with queued canonical items for 21b7ce43bcd04c87bde2202d46fc0028']
+Everything else in that row passes: `maximum_session_p95_passes: True` (3.39 s), `oom_or_accelerator_error_count: 0`,
+`stops_closed: True`, `helper_presence_passes: True`, all four marker checks good, RSS 242 MB against a 4 GiB gate.
+And critically the same row records `contended_pair_dispatch_observations: 0` — **at concurrency 1 there are no
+contended pairs, so fairness is not evaluable at all.** You are failing a row on a fairness gate that cannot
+apply to it, because a STOP-CONTRACT condition was folded into the fairness predicate.
+
+Three consequences if this reaches the verdict unchanged:
+  1. The bound selection will reject 1 while accepting 2 and 4 — an incoherent result that will read as
+     nonsense to anyone reviewing it, and will discredit the rows that genuinely passed.
+  2. A real stop-contract finding gets buried inside a fairness field where nobody will look for it.
+  3. G4's fairness criterion ends up "failed" on evidence that says nothing about fairness.
+
+FIX BEFORE WRITING THE VERDICT:
+  1. Give the drain condition its OWN predicate — `stop_drain_complete` or similar — evaluated and reported
+     separately from `canonical_lifecycle_fairness`. It is a G6 / stop-contract matter, not a G4 concurrency
+     matter, exactly as I flagged at 21:15.
+  2. When `contended_pair_dispatch_observations == 0`, fairness must report **not_applicable**, never a
+     failure. A gate that cannot be measured is not a gate that was failed — you already applied that
+     principle correctly to run 27's fairness; apply it here too.
+  3. Then classify the drain finding against the declared `stop_drain_deadline_seconds: 5.0`: inside the
+     window and drained ⇒ declared behaviour; past the deadline, or `stops_closed: True` reported while work
+     remained unprocessed ⇒ a real defect worth its own write-up. Record the session id
+     (`21b7ce43bcd04c87bde2202d46fc0028`), the queued/started/processed timestamps, and the measured stop→drain
+     interval. Note `stops_closed: True` here alongside queued items outstanding — if both are true at once,
+     that pairing IS the finding and it is a genuine one.
+  4. Re-derive the verdict from the corrected predicates. Do not edit gate VALUES, do not touch the frozen
+     contract, and do not retro-fit the row outcomes — only move the misfiled predicate and re-evaluate.
+If after that screen-1 still fails on a correctly-classified stop-contract predicate, then report it as a
+failing row AND as a separate G6 finding — but say plainly that latency, memory, isolation and fairness were
+all satisfied or inapplicable there.
+
+[iteration 32] target=W2 frozen remote-vLLM v2 lifecycle matrix; files=`evidence/phase1/w2-local-concurrency/{iteration-32-remote-vllm-preflight,run-20260819T011500-iteration32}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=live preflight PASS (health/model HTTP 200, frozen-contract SHA `0961e7ad...ae5b1083`), full 1/2/4/8 + selected-600 s + overload/reconnect run completed with closing endpoint probe PASS, focused route/runner suite **10 passed**, `git diff --check` PASS; evidence=`run-20260819T011500-iteration32/{run-state.json,canonical-processed.jsonl,verdict.json}`; learned=screen 2/4 pass (p95 2.035/2.602 s) and screen 8 genuinely fails latency (47.664 s), but the selected 4-session soak fails p95 84.378 s plus drain/clean-stop requirements and overload lacks the `payments` session's own marker, so no G4/G5 claim; screen-1's queued-item fairness failure is an async event-writer read race (post-writer re-score passes), not scheduler evidence; next=prototype then repair the writer/evaluator stop boundary without changing thresholds, then re-run the unchanged matrix.
