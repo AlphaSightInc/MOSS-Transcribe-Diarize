@@ -307,6 +307,31 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`; preregistration:
   `prototypes/streaming-diarization/lane-level-preregistration-v2.json`.
 
+- **Mixer different-speech gain response — retain identity (2026-08-19).** The prior aligned
+  capture used the same playback in both lanes, so it could not attribute recovered words to either
+  speaker. A separate, preregistered two-speaker bed instead attenuated the microphone source by
+  15 dB and compared identity, +7.5 dB, exact +15 dB restoration, and peer-RMS (+25.742 dB) through
+  the same production-mixer transform and read-only vLLM endpoint. Exact restoration retained
+  12.70% microphone recall (unchanged) while shared recall fell only 2.27 pp; peer-RMS reached
+  65.08% microphone recall and removed 33 missing words, but lost 15.91 pp shared recall and made
+  no microphone-WER improvement. Every arm had zero limiter engagement. No gain-only candidate
+  meets all frozen guards, so the only authorized decision is **RETAIN_IDENTITY** — no
+  normalization, AGC, fixed offset, or Defect C threshold. This one synthetically attenuated corpus
+  with same-model references cannot select a production policy; any renewed work needs varied,
+  independently recorded lane-balance data and a fresh preregistration. Raw result:
+  `evidence/phase1/g3-attended/iteration-2-lane-balance-v2.json`; contract:
+  `prototypes/lane-balance/preregistration-v2.json`.
+
+- **Attended apparent over-split — not confirmed as a defect (2026-08-19).** The stopped
+  29-span session remained queryable and its private vector journal preserved all five final album
+  centroids. Production similarity was 0.000 for S01/S02 and 0.004914 for S04/S05, far below the
+  deployed 0.35 match floor and 0.70 sweep-merge threshold. More importantly, the source transcript
+  identifies S04 as Lex Fridman's question and S05 as James Holland's answer: those are correctly
+  separate people. The dynamic commercial behind S01/S02 was not retained, so that pair has strong
+  acoustic evidence but no human-auditable truth. Do not tune match, margin, admission, birth, or
+  merge policy from this observation. Reopen only if the ad audio/source proves one reader. Raw
+  diagnosis: `evidence/phase1/g3-attended/attended-session-8049-speaker-split-diagnosis.json`.
+
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
   lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48

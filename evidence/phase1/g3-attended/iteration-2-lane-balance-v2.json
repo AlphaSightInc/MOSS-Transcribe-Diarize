@@ -1,0 +1,216 @@
+{
+  "schema": "moss-lane-balance-result.v2",
+  "preregistration": {
+    "path": "prototypes/lane-balance/preregistration-v2.json",
+    "sha256": "e58a8bbf6a77bc40750fe89e3daeff1c227edc9eaa9c2cce04086c54e0635fec"
+  },
+  "scope": "Diagnostic prototype only. It does not certify G3, select a production mixer policy, or set a Defect C warning threshold.",
+  "does_not_establish": "A result removes or confirms the prior same-playback rejection only. One corpus, synthetic attenuation, and same-model references cannot authorize a production change or a Defect C threshold.",
+  "input": {
+    "fixture_root": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize",
+    "shared_lane": {
+      "path": "prototypes/streaming-diarization/data/meet_k2_s0.wav",
+      "sha256": "167cb9c04d3f6e7b04982314fc3fbb680e74bed39230c5a8063f5973f2ba15b8",
+      "rms": 0.053372031224796876
+    },
+    "microphone_lane": {
+      "path": "prototypes/streaming-diarization/data/meet_k2_s1.wav",
+      "sha256": "bc0ec14d438b3bfd9e0ab96952f3facfd7ea74216728a2a39433fcf83c47854f",
+      "rms_before_attenuation": 0.015496012725304526,
+      "rms_after_attenuation": 0.002755624036711018
+    },
+    "microphone_attenuation_db": -15.0,
+    "clip_seconds": 12,
+    "sample_rate": 16000
+  },
+  "vllm": {
+    "base_url": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+  },
+  "clean_references": {
+    "shared": {
+      "text": "[0.00][S01]And silent were busy carrying away the vessels of hospitality and restoring order as if already they prepared for another company on the morrow, just as usual.[8.84][9.96][S02]And in nothing suspicious noticed.[11.78]",
+      "normalized_tokens": 44,
+      "runtime": {
+        "elapsed_seconds": 1.1726883340161294,
+        "generated_tokens": 67,
+        "prompt_tokens": 389
+      }
+    },
+    "microphone": {
+      "text": "[0.00][S01]from the corridor behind.[1.32][1.34][S02]looking at him now.[2.24][2.38][S01]upped with her hand on the latch of the Wilson ' s door to still her beating heart and listened to the hushed quill like fever.[9.00][10.08][S02]whether he got anything else, it[11.96]",
+      "normalized_tokens": 63,
+      "runtime": {
+        "elapsed_seconds": 0.43185704201459885,
+        "generated_tokens": 108,
+        "prompt_tokens": 389
+      }
+    }
+  },
+  "recall_definition": "LCS matches divided by clean-reference token count, normalized by speaker_reference.normalize_reference_text.",
+  "results": {
+    "identity": {
+      "label": "current (equal gain, mic left 15 dB down)",
+      "microphone_gain": 1.0,
+      "microphone_gain_db_from_quiet": 0.0,
+      "mixed_audio_sha256": "1a601c5a4403d20b252765874f770cbfd869faa78816f3e13fd9893005bb3200",
+      "transcript": "[0.07][S01] And silent were busy carrying away the vessels of hospitality and restoring order,[5.16][5.21][S01] as if already they prepared for another company on the morrow, just as usual.[8.85][9.98][S02] And nothing suspicious noticed.[11.81]",
+      "transcription_runtime": {
+        "elapsed_seconds": 0.3256402090191841,
+        "generated_tokens": 81,
+        "prompt_tokens": 389
+      },
+      "shared": {
+        "reference_tokens": 44,
+        "mixed_tokens": 49,
+        "lcs_matches": 39,
+        "word_recall": 0.8863636363636364,
+        "word_error_rate": 0.25,
+        "missing_reference_words": 5
+      },
+      "microphone": {
+        "reference_tokens": 63,
+        "mixed_tokens": 49,
+        "lcs_matches": 8,
+        "word_recall": 0.12698412698412698,
+        "word_error_rate": 0.8571428571428571,
+        "missing_reference_words": 55
+      },
+      "limited_samples": 0,
+      "limited_output_fraction": 0.0
+    },
+    "peer_rms_matched_microphone": {
+      "label": "matched (mic scaled to the shared lane's rms)",
+      "microphone_gain": 19.368400955196776,
+      "microphone_gain_db_from_quiet": 25.74187534158868,
+      "mixed_audio_sha256": "eaccb85b6837f8e8e72083de97858a8728035bfcd4d1dc341fd1550e5c0fd9be",
+      "transcript": "[0.00][S01]from the corridor behind, looking at him, up with her hand on the latch at Wilson ' s door, to still her beating heart. Now listen to the hushed, quarrellike fever[8.92][0.00][S02]and silent were busy carrying away the vessels of hospitality and restoring order, as if already they prepared for another company on the morrow, as usual.[8.81][10.08][S01]Whether he got anything else, it[11.96]",
+      "transcription_runtime": {
+        "elapsed_seconds": 0.4802210839698091,
+        "generated_tokens": 124,
+        "prompt_tokens": 389
+      },
+      "shared": {
+        "reference_tokens": 44,
+        "mixed_tokens": 80,
+        "lcs_matches": 32,
+        "word_recall": 0.7272727272727273,
+        "word_error_rate": 1.0909090909090908,
+        "missing_reference_words": 12
+      },
+      "microphone": {
+        "reference_tokens": 63,
+        "mixed_tokens": 80,
+        "lcs_matches": 41,
+        "word_recall": 0.6507936507936508,
+        "word_error_rate": 0.8571428571428571,
+        "missing_reference_words": 22
+      },
+      "limited_samples": 0,
+      "limited_output_fraction": 0.0,
+      "decision_metrics": {
+        "microphone_recall_improvement": 0.5238095238095238,
+        "shared_recall_change": -0.15909090909090906,
+        "microphone_wer_reduction": 0.0,
+        "microphone_missing_word_reduction": 33,
+        "limited_sample_fraction_change": 0.0
+      },
+      "rejection_reasons": [
+        "shared_recall_decrease_exceeds_0.05",
+        "microphone_wer_reduction_below_0.05"
+      ],
+      "eligible": false
+    },
+    "half_matched_microphone": {
+      "label": "half-matched (mic brought up 7.5 dB)",
+      "microphone_gain": 2.371373705661655,
+      "microphone_gain_db_from_quiet": 7.499999999999999,
+      "mixed_audio_sha256": "a8c9a095c669e941f7f3f859efcc453417a6c14bc2daeba2e91bfc3c805c0a6e",
+      "transcript": "[0.07][S01] And silent were busy carrying away the vessels of hospitality and restoring order[5.16][5.19][S01] as if already they prepared for another company on the morrow, just as usual.[8.85][9.98][S02] And nothing suspicious noticed.[11.81]",
+      "transcription_runtime": {
+        "elapsed_seconds": 0.3318176250322722,
+        "generated_tokens": 81,
+        "prompt_tokens": 389
+      },
+      "shared": {
+        "reference_tokens": 44,
+        "mixed_tokens": 49,
+        "lcs_matches": 39,
+        "word_recall": 0.8863636363636364,
+        "word_error_rate": 0.25,
+        "missing_reference_words": 5
+      },
+      "microphone": {
+        "reference_tokens": 63,
+        "mixed_tokens": 49,
+        "lcs_matches": 8,
+        "word_recall": 0.12698412698412698,
+        "word_error_rate": 0.8571428571428571,
+        "missing_reference_words": 55
+      },
+      "limited_samples": 0,
+      "limited_output_fraction": 0.0,
+      "decision_metrics": {
+        "microphone_recall_improvement": 0.0,
+        "shared_recall_change": 0.0,
+        "microphone_wer_reduction": 0.0,
+        "microphone_missing_word_reduction": 0,
+        "limited_sample_fraction_change": 0.0
+      },
+      "rejection_reasons": [
+        "microphone_recall_improvement_below_0.05",
+        "microphone_wer_reduction_below_0.05",
+        "microphone_missing_word_count_not_strictly_reduced"
+      ],
+      "eligible": false
+    },
+    "restore_microphone_to_clean_level": {
+      "label": "restored (mic attenuation exactly undone)",
+      "microphone_gain": 5.623413251903491,
+      "microphone_gain_db_from_quiet": 15.0,
+      "mixed_audio_sha256": "9c0892a7a464e5166321dec4a5e8aee668579c39675e0bea64f0bba8db930b70",
+      "transcript": "[0.07][S01] And silent were busy carrying away the vessels of hospitality and restoring order[5.15][5.15][S01] as if already they prepared for another company on the morrow, as usual.[8.83][9.94][S02] And nothing suspicious noticed.[11.88]",
+      "transcription_runtime": {
+        "elapsed_seconds": 0.34466062497813255,
+        "generated_tokens": 80,
+        "prompt_tokens": 389
+      },
+      "shared": {
+        "reference_tokens": 44,
+        "mixed_tokens": 48,
+        "lcs_matches": 38,
+        "word_recall": 0.8636363636363636,
+        "word_error_rate": 0.2727272727272727,
+        "missing_reference_words": 6
+      },
+      "microphone": {
+        "reference_tokens": 63,
+        "mixed_tokens": 48,
+        "lcs_matches": 8,
+        "word_recall": 0.12698412698412698,
+        "word_error_rate": 0.8571428571428571,
+        "missing_reference_words": 55
+      },
+      "limited_samples": 0,
+      "limited_output_fraction": 0.0,
+      "decision_metrics": {
+        "microphone_recall_improvement": 0.0,
+        "shared_recall_change": -0.022727272727272707,
+        "microphone_wer_reduction": 0.0,
+        "microphone_missing_word_reduction": 0,
+        "limited_sample_fraction_change": 0.0
+      },
+      "rejection_reasons": [
+        "microphone_recall_improvement_below_0.05",
+        "microphone_wer_reduction_below_0.05",
+        "microphone_missing_word_count_not_strictly_reduced"
+      ],
+      "eligible": false
+    }
+  },
+  "selection": {
+    "verdict": "RETAIN_IDENTITY",
+    "selected_candidate": "identity",
+    "selection_reason": "Retain identity; do not propose normalization, AGC, or a fixed offset."
+  }
+}

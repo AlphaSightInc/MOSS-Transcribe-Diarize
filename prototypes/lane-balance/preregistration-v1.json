@@ -1,0 +1,56 @@
+{
+  "schema": "moss-lane-balance-preregistration.v1",
+  "question": "With different speakers in the shared and microphone lanes, does raising the synthetically quiet microphone lane recover its own clean-reference words without materially degrading the shared lane?",
+  "scope": "Diagnostic prototype only. It does not certify G3, select a production mixer policy, or set a Defect C warning threshold.",
+  "production_path": {
+    "mixer": "moss_transcribe_diarize.app.live_mixer.LiveCompatibilityMixer",
+    "rule": "both lanes receive -6 dB headroom then the production soft limiter",
+    "model_endpoint": "MOSS_VLLM_BASE_URL /v1/audio/transcriptions"
+  },
+  "fixture": {
+    "shared_lane": "prototypes/streaming-diarization/data/meet_k2_s0.wav",
+    "microphone_lane": "prototypes/streaming-diarization/data/meet_k2_s1.wav",
+    "microphone_attenuation_db": -15.0,
+    "clip_seconds": 12,
+    "references": "transcribe each unattenuated lane cleanly with the same model before scoring its mixed result"
+  },
+  "candidates": [
+    {
+      "id": "identity",
+      "runner_policy_label": "current (equal gain, mic left 15 dB down)",
+      "description": "Current equal-gain mixer; microphone remains 15 dB below its clean source."
+    },
+    {
+      "id": "peer_rms_matched_microphone",
+      "runner_policy_label": "matched (mic scaled to the shared lane's rms)",
+      "description": "Scale the attenuated microphone by shared RMS divided by attenuated microphone RMS."
+    },
+    {
+      "id": "half_matched_microphone",
+      "runner_policy_label": "half-matched (mic brought up 7.5 dB)",
+      "description": "Raise the attenuated microphone by 7.5 dB, half of the declared disparity."
+    }
+  ],
+  "metrics": {
+    "primary": "Per-lane recall: fraction of normalized tokens in one lane's clean transcript that occur in the mixed transcript; report microphone and shared values separately.",
+    "secondary": [
+      "Quiet-microphone word error rate against its own clean reference, using token Levenshtein distance divided by reference-token count.",
+      "Quiet-microphone missing-word count: reference-token count minus LCS length against the mixed transcript.",
+      "Output limited-sample fraction from the faithful production-mixer copy."
+    ],
+    "normalizer": "moss_transcribe_diarize.speaker_reference.normalize_reference_text"
+  },
+  "decision_rule": {
+    "baseline": "identity",
+    "candidate_is_rejected_if": [
+      "microphone recall improves by less than 0.05 absolute",
+      "shared-lane recall decreases by more than 0.05 absolute",
+      "quiet-microphone word error rate improves by less than 0.05 absolute",
+      "quiet-microphone missing-word count does not strictly decrease",
+      "its limited-sample fraction exceeds identity"
+    ],
+    "selection_among_eligible_candidates": "Choose the largest microphone-recall improvement. If results are within 0.005 absolute, choose the lower microphone gain.",
+    "if_no_candidate_is_eligible": "Retain identity; do not propose normalization, AGC, or a fixed offset.",
+    "interpretation_limit": "A result removes or confirms the prior same-playback rejection only. One corpus, synthetic attenuation, and same-model references cannot authorize a production change or a Defect C threshold."
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema": "moss-attended-speaker-split-diagnosis.v1",
+  "recorded_at": "2026-08-19T20:47:40Z",
+  "question": "Did attended session 8049b5aef8e34b1da61e258a71907680 split one real voice into S01/S02 or S04/S05?",
+  "feedback_loop": {
+    "session_id": "8049b5aef8e34b1da61e258a71907680",
+    "terminal_snapshot_status": "closed",
+    "terminal_snapshot_canonical_json_sha256": "7a8bdee96513471d0b962700f2297db3ebd3e5a46e02833ba01d390382813d71",
+    "vector_journal_path": "/Users/gao/.local/share/moss-transcribe-diarize/g3/vector-journal.jsonl",
+    "vector_journal_sha256": "dd06903538d82a15b97e9e3a5f083d1467df382cb65af10ecf9a3a74db3ea0ab",
+    "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+    "committed_spans": 29,
+    "canonical_speakers": [
+      "speaker-0001",
+      "speaker-0002",
+      "speaker-0003",
+      "speaker-0004",
+      "speaker-0005"
+    ]
+  },
+  "deployed_identity_policy": {
+    "min_match_score": 0.35,
+    "min_match_margin": 0.1,
+    "sweep_merge_threshold": 0.7,
+    "album_admission_seconds": 2.0,
+    "birth_min_seconds": 1.0,
+    "min_segment_samples": 8000
+  },
+  "pair_measurements": {
+    "S01_S02": {
+      "production_cosine_similarity": 0.0,
+      "sample_seconds": [4.67, 2.05],
+      "exemplar_count": [2, 1],
+      "provisional": [false, false],
+      "source_truth": "The dynamic commercial audio was not retained, so human identity truth is unavailable."
+    },
+    "S04_S05": {
+      "production_cosine_similarity": 0.004914265820736384,
+      "sample_seconds": [6.36, 23.16],
+      "exemplar_count": [3, 10],
+      "provisional": [false, false],
+      "source_truth": {
+        "url": "https://lexfridman.com/james-holland-transcript/",
+        "S04": "Lex Fridman asks the World War II question at 00:02:11.",
+        "S05": "James Holland begins the answer at 00:02:22."
+      }
+    }
+  },
+  "ranked_hypotheses": [
+    "The content transitions contain genuinely different speakers.",
+    "Short or contaminated evidence fragmented one real speaker.",
+    "Mixer imbalance corrupted the shared-lane embeddings.",
+    "The deployed match or merge threshold is too strict."
+  ],
+  "verdict": {
+    "status": "NOT_CONFIRMED_AS_DEFECT",
+    "reason": "S04/S05 are source-confirmed different people. S01/S02 are strongly incompatible under the production embedder but lack retained human-auditable audio.",
+    "production_change": "NONE",
+    "threshold_change": "NONE",
+    "required_follow_up": "Only reopen S01/S02 if the commercial audio or exact ad source is supplied and a human confirms one reader."
+  },
+  "does_not_establish": "Embedding dissimilarity alone cannot prove the human identity of S01/S02 without the source audio."
+}
