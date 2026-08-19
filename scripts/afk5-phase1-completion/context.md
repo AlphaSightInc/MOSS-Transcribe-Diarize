@@ -144,11 +144,12 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 overload rendered-marker timing probe/repair (P1):** the sound iteration-37 matrix passes normal
-   1/2/4 screens and the selected four-session soak, but overload fails only because one peer's rendered own
-   marker is absent before reconnect. Canonical isolation, reconnect snapshot/replay isolation, session-local
-   retryable 429, peer acceptance, retry, and both stops pass. Prototype a bounded wait for rendered ownership
-   before reconnect; preserve a real timeout as a failure and do not move a gate.
+1. **W2 rendered-publication diagnosis (P1):** iteration 38 rejected the proposed 120 s poll-before-reconnect
+   repair on the real remote-vLLM overload path. Canonical isolation, session-local retryable 429, peer
+   acceptance, retry, full peer replay, and stops pass, but one peer's rendered own marker remains absent before
+   the bounded window. Because no reconnect follows that failure, reconnect evidence is intentionally absent.
+   Do not lengthen a timeout or alter the frozen runner without a separate measured diagnosis that distinguishes
+   rendered publication delay from an insufficient observation window.
 2. **Defect B replication (operator input, P2)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
@@ -158,8 +159,8 @@ Living working memory. Update it every iteration so it matches reality. History 
    one same-playback fixture.
 4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-5. **W4 ledger reconciliation (after W2 repair):** reconcile the reachable vLLM endpoint and iteration-37's
-   sound normal/soak evidence with the remaining overload-rendered-text failure and unavailable GPU/vLLM
+5. **W4 ledger reconciliation (after W2 diagnosis):** reconcile the reachable vLLM endpoint and iteration-37's
+   sound normal/soak evidence with iteration 38's fail-closed rendered-text result and unavailable GPU/vLLM
    telemetry. Do not certify G4/G5 while the frozen verdict remains false.
 6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
@@ -181,7 +182,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   eight source markers, iteration 30 superseded the old machine-readable G4/G5 claim, and iteration 31
   wired unique markers plus overload isolation/reconnect into the runner. Iteration 37 completed the fresh v2
   lifecycle matrix with a complete writer log: normal/soak evidence is sound, but its overload rendered-text
-  predicate fails before reconnect, so W2 remains open for that bounded timing probe.
+  predicate fails before reconnect. Iteration 38's real 120-second ordinary-poll probe also timed out with one
+  rendered own marker absent, so W2 remains open for rendered-publication diagnosis rather than a reconnect
+  timing repair.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -892,3 +895,17 @@ tunnel still cannot supply GPU memory/utilisation, GPU OOM, or vLLM active/queue
   combined frozen verdict false. Next: prototype the bounded rendered-ownership wait before reconnect; a timeout
   must remain a failure. This run also does not establish isolated-GPU latency, GPU memory/utilisation or OOM,
   vLLM active/queued counts, or attended display capture.
+
+## W2 rendered-ownership wait (iteration 38)
+
+- The live single-overload probe at
+  `evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait/` used production
+  loopback routes and the read-only vLLM endpoint, with a 120-second exploratory ordinary-poll window before
+  exactly one reconnect per observer. Before and after endpoint probes were HTTP 200; the output JSON SHA-256 is
+  `ae41e92afb7b3e292ec9521dd3e011d08e993e02a703dffe477ba164ea234a77`.
+- **FAIL CLOSED:** one peer's rendered own marker remained absent by the bound, although both canonical own
+  markers were present and foreign markers absent. The probe deliberately triggered no reconnect, leaving its
+  reconnect snapshot/replay evidence absent rather than manufactured. Session-local 429, peer acceptance,
+  refusal retry, peer fixture replay, and both stops passed. This rejects the proposed ordering repair at 120 s;
+  it neither authorizes a longer timeout nor proves a rendered-publication product defect. G4/G5 remain
+  uncertified.

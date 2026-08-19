@@ -1,0 +1,771 @@
+{
+  "active_sessions": {},
+  "captured_head_revision": "7c328fbba4a900965a7e66b0c4b96f081b1516dc",
+  "contract_sha256": "0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083",
+  "deployed_descriptor": {
+    "bounds": {
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "stop_drain_deadline_seconds": 5.0
+    },
+    "config_hashes": {
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+    },
+    "feature_enabled": true,
+    "frame_samples": 8000,
+    "live_protocol": {
+      "capabilities": {
+        "binary": false,
+        "idempotent_frames": true,
+        "lanes": true,
+        "resumable": true
+      },
+      "max_protocol_version": 2,
+      "min_protocol_version": 2,
+      "protocol": "moss-live-service.v2"
+    },
+    "live_protocol_version": "moss-live-service.v1",
+    "provider_manifest_hash": "92986060f632bc671024ca6a909b5be08f5b1475493ce08fc9dd027499d2bfc3",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000,
+    "schema_version": 1,
+    "source_revision": "fb83ba5ee60c44688e2580a398bfa388dcf5e67a"
+  },
+  "endpoint_probe_errors": {},
+  "endpoint_probes": {
+    "after": {
+      "base_url": "http://127.0.0.1:18000/v1",
+      "health_status": 200,
+      "health_url": "http://127.0.0.1:18000/health",
+      "model_ids": [
+        "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+      ],
+      "models_canonical_json_sha256": "2b4f71e3a4a5e97334a56eb7adabd379a75293e99358732d325846636a9113be",
+      "models_status": 200,
+      "models_url": "http://127.0.0.1:18000/v1/models",
+      "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    },
+    "before": {
+      "base_url": "http://127.0.0.1:18000/v1",
+      "health_status": 200,
+      "health_url": "http://127.0.0.1:18000/health",
+      "model_ids": [
+        "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+      ],
+      "models_canonical_json_sha256": "3897802ff0304329a276c65ff7e250d92a329d033d1639ee103dfdbc5292c9a0",
+      "models_status": 200,
+      "models_url": "http://127.0.0.1:18000/v1/models",
+      "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    }
+  },
+  "error": null,
+  "evidence_manifest": "evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait/live-provider-manifest.json",
+  "evidence_manifest_sha256": "1e8e6a97ac873e58b905f897dadb45485bdd99c30841fef414e9b86abe9ecaca",
+  "execution_manifest": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-w2-remote-vllm-bundle-4secrdna/live-provider-manifest.json",
+  "execution_manifest_sha256": "1e8e6a97ac873e58b905f897dadb45485bdd99c30841fef414e9b86abe9ecaca",
+  "fixture_manifest_sha256": "d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee",
+  "fixture_sha256": "a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea",
+  "head_revision": "7c328fbba4a900965a7e66b0c4b96f081b1516dc",
+  "heartbeat_outcomes": {
+    "b4c0cb212b454e35a7a7895ba8364c0c": {
+      "error": null,
+      "interval_seconds": 7.5,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "d8fc93a6b14d4938ad1dc3d9362c1eef": {
+      "error": null,
+      "interval_seconds": 7.5,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    }
+  },
+  "latency_label": "loopback production routes with remote vLLM over the SSH tunnel and tailnet; transcript lag includes network transit",
+  "local_descriptor": {
+    "bounds": {
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "stop_drain_deadline_seconds": 5.0
+    },
+    "config_hashes": {
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+    },
+    "feature_enabled": true,
+    "frame_samples": 8000,
+    "live_protocol": {
+      "capabilities": {
+        "binary": false,
+        "idempotent_frames": true,
+        "lanes": true,
+        "resumable": true
+      },
+      "max_protocol_version": 2,
+      "min_protocol_version": 2,
+      "protocol": "moss-live-service.v2"
+    },
+    "live_protocol_version": "moss-live-service.v1",
+    "provider_manifest_hash": "34e9d3ef3c52abecbacdc82e57cd970f2ad3bb2865a992d5d3ed83e5056cde35",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000,
+    "schema_version": 1,
+    "source_revision": "7c328fbba4a900965a7e66b0c4b96f081b1516dc"
+  },
+  "phases": [
+    {
+      "canonical_event_log_drain": {
+        "event_log": {
+          "enqueue_elapsed_ns": 715624,
+          "event_count": 51,
+          "fsync_count": 3,
+          "fsync_elapsed_ns": 1512792,
+          "fsync_interval_seconds": 5.0,
+          "max_pending_writer_records": 2,
+          "schema": "moss-canonical-event-log-overhead.v1",
+          "write_elapsed_ns": 247710
+        },
+        "status": 200,
+        "timeout_seconds": 90.0
+      },
+      "canonical_event_log_instrumentation": {
+        "available": true,
+        "event_log": {
+          "enqueue_elapsed_ns": 715624,
+          "event_count": 51,
+          "fsync_count": 3,
+          "fsync_elapsed_ns": 1512792,
+          "fsync_interval_seconds": 5.0,
+          "max_pending_writer_records": 2,
+          "schema": "moss-canonical-event-log-overhead.v1",
+          "write_elapsed_ns": 247710
+        },
+        "status": 200
+      },
+      "evaluation": {
+        "helper_presence": {
+          "b4c0cb212b454e35a7a7895ba8364c0c": {
+            "error": null,
+            "interval_seconds": 7.5,
+            "statuses": [
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          "d8fc93a6b14d4938ad1dc3d9362c1eef": {
+            "error": null,
+            "interval_seconds": 7.5,
+            "statuses": [
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          }
+        },
+        "helper_presence_passes": true,
+        "integrity_marker_checks": {
+          "b4c0cb212b454e35a7a7895ba8364c0c": {
+            "canonical_foreign_markers_absent": true,
+            "canonical_own_marker_present": true,
+            "observer_reconnected": false,
+            "reconnect_event_response_observed": false,
+            "reconnect_replayed_canonical_event_observed": false,
+            "reconnect_replayed_canonical_foreign_markers_absent": true,
+            "reconnect_replayed_canonical_transcripts_resolved": false,
+            "reconnect_snapshot_foreign_markers_absent": true,
+            "reconnect_snapshot_transcript_observed": false,
+            "rendered_foreign_markers_absent": true,
+            "rendered_own_marker_present": false
+          },
+          "d8fc93a6b14d4938ad1dc3d9362c1eef": {
+            "canonical_foreign_markers_absent": true,
+            "canonical_own_marker_present": true,
+            "observer_reconnected": false,
+            "reconnect_event_response_observed": false,
+            "reconnect_replayed_canonical_event_observed": false,
+            "reconnect_replayed_canonical_foreign_markers_absent": true,
+            "reconnect_replayed_canonical_transcripts_resolved": false,
+            "reconnect_snapshot_foreign_markers_absent": true,
+            "reconnect_snapshot_transcript_observed": false,
+            "rendered_foreign_markers_absent": true,
+            "rendered_own_marker_present": true
+          }
+        },
+        "integrity_passes": false,
+        "passes": false,
+        "peer_accepted_while_saturated": true,
+        "peer_marker_replay_completed_without_unexpected_frame_result": true,
+        "peer_session_stop_closed": true,
+        "refused_frame_retried_successfully": true,
+        "rendered_markers_observed_before_reconnect": false,
+        "retryable_v2_429_observed": true,
+        "saturated_session_stop_closed": true
+      },
+      "fixture_ids": [
+        "new-york",
+        "payments"
+      ],
+      "kind": "overload",
+      "name": "overload",
+      "peer_accepted": true,
+      "peer_failure": null,
+      "peer_frames_for_full_fixture": 10,
+      "peer_marker_replay_failures": {
+        "buckets": [],
+        "total_count": 0
+      },
+      "refusal": {
+        "lane": "system",
+        "sequence": 53,
+        "status": 429
+      },
+      "retry_statuses": [
+        429,
+        429,
+        200
+      ],
+      "sessions": [
+        "d8fc93a6b14d4938ad1dc3d9362c1eef",
+        "b4c0cb212b454e35a7a7895ba8364c0c"
+      ],
+      "stops": [
+        {
+          "body": {
+            "snapshot": {
+              "descriptor": {
+                "bounds": {
+                  "hard_cap_samples": 40000,
+                  "max_events": 1000,
+                  "max_frame_samples": 16000,
+                  "max_identity_speakers": 16,
+                  "max_queue_depth": 16,
+                  "max_retained_samples": 960000,
+                  "stop_drain_deadline_seconds": 5.0
+                },
+                "config_hashes": {
+                  "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+                  "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+                  "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+                  "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+                },
+                "feature_enabled": true,
+                "frame_samples": 8000,
+                "live_protocol": {
+                  "capabilities": {
+                    "binary": false,
+                    "idempotent_frames": true,
+                    "lanes": true,
+                    "resumable": true
+                  },
+                  "max_protocol_version": 2,
+                  "min_protocol_version": 2,
+                  "protocol": "moss-live-service.v2"
+                },
+                "live_protocol_version": "moss-live-service.v1",
+                "provider_manifest_hash": "34e9d3ef3c52abecbacdc82e57cd970f2ad3bb2865a992d5d3ed83e5056cde35",
+                "provider_name": "moss-rtx-webrtc-wespeaker",
+                "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+                "sample_rate": 16000,
+                "schema_version": 1,
+                "source_revision": "7c328fbba4a900965a7e66b0c4b96f081b1516dc"
+              },
+              "pending_work_items": 0,
+              "schema_version": 1,
+              "session": {
+                "accepted_samples": 432000,
+                "accounted_samples": 432000,
+                "committed": [
+                  {
+                    "end_sample": 40000,
+                    "identity_snapshot_version": 1,
+                    "prefix_hash": "b4d4d01d439874eb115bb4d0a212f72f4ccc919407ed63fdcd3a125f212e92c2",
+                    "revised_transcript": null,
+                    "span_id": 0,
+                    "start_sample": 0,
+                    "transcript": "[0][S01]have been to me that the very best person[2.46]"
+                  },
+                  {
+                    "end_sample": 80000,
+                    "identity_snapshot_version": 2,
+                    "prefix_hash": "918a82c449610e4df6ff9f6ed821d835b1cb5781a7e9126644a3514f2df052af",
+                    "revised_transcript": null,
+                    "span_id": 1,
+                    "start_sample": 40000,
+                    "transcript": "[0.12][S01]who acquired could interview in New York.[1.92]"
+                  },
+                  {
+                    "end_sample": 80160,
+                    "identity_snapshot_version": 2,
+                    "prefix_hash": "c8381f0bafcafea97709b4d8a3f8be4046816230efbeadc0a52fd7f1fc9495b7",
+                    "revised_transcript": null,
+                    "span_id": 2,
+                    "start_sample": 80000,
+                    "transcript": ""
+                  },
+                  {
+                    "end_sample": 120160,
+                    "identity_snapshot_version": 3,
+                    "prefix_hash": "e5001ab761448c206665c36829056f4b9c394d4ddd226873117b604e06590c00",
+                    "revised_transcript": null,
+                    "span_id": 3,
+                    "start_sample": 80160,
+                    "transcript": "[0.11][S01]Also happened to be there to bed in me that the very[2.45]"
+                  },
+                  {
+                    "end_sample": 160160,
+                    "identity_snapshot_version": 4,
+                    "prefix_hash": "7c4f39e46150acf2e0d32d803911d839e70cb60ed9e2808a7e45528708bc6a9c",
+                    "revised_transcript": null,
+                    "span_id": 4,
+                    "start_sample": 120160,
+                    "transcript": "[0.25][S01]Best person who acquired could interview.[2.43]"
+                  },
+                  {
+                    "end_sample": 171200,
+                    "identity_snapshot_version": 5,
+                    "prefix_hash": "9d7c0b0088694c6eb7810e3d06d6ac4e7ec5db94433880cfb514429e3f2a36ef",
+                    "revised_transcript": null,
+                    "span_id": 5,
+                    "start_sample": 160160,
+                    "transcript": "[0][S01]New York.[0.54]"
+                  },
+                  {
+                    "end_sample": 176160,
+                    "identity_snapshot_version": 5,
+                    "prefix_hash": "f747b37d3bed8f0aa34a8d585c16c79584e18b196a98fbe5dee818828de98a16",
+                    "revised_transcript": null,
+                    "span_id": 6,
+                    "start_sample": 171200,
+                    "transcript": ""
+                  },
+                  {
+                    "end_sample": 216160,
+                    "identity_snapshot_version": 6,
+                    "prefix_hash": "23e3f9a38e4309eb432fea00b92865c1ed7b66678c130fd4c48a978ce17afeea",
+                    "revised_transcript": null,
+                    "span_id": 7,
+                    "start_sample": 176160,
+                    "transcript": "[0.11][S01]Also happened to be there to bed in me that the very[2.45]"
+                  },
+                  {
+                    "end_sample": 256160,
+                    "identity_snapshot_version": 7,
+                    "prefix_hash": "de19f487ca3ee12e477dbc03d97b43abf0fc8647745afd564f182b1ca47d5b5d",
+                    "revised_transcript": null,
+                    "span_id": 8,
+                    "start_sample": 216160,
+                    "transcript": "[0.25][S01]Best person who acquired could interview.[2.43]"
+                  },
+                  {
+                    "end_sample": 267200,
+                    "identity_snapshot_version": 8,
+                    "prefix_hash": "b8893ae8567acf8751f0c9d3cca0163b3033924f04fbe7cb131c58cf415c2665",
+                    "revised_transcript": null,
+                    "span_id": 9,
+                    "start_sample": 256160,
+                    "transcript": "[0][S01]New York.[0.54]"
+                  },
+                  {
+                    "end_sample": 272160,
+                    "identity_snapshot_version": 8,
+                    "prefix_hash": "914cd6852d7aa9bc5c0baf3cb63ea2d73f78a0a94da09e1c13c3190a3281607f",
+                    "revised_transcript": null,
+                    "span_id": 10,
+                    "start_sample": 267200,
+                    "transcript": ""
+                  },
+                  {
+                    "end_sample": 312160,
+                    "identity_snapshot_version": 9,
+                    "prefix_hash": "09ccbb06b312804b487fb98c6bbf558bb6e7f5b38c40217734525b21f1862bb7",
+                    "revised_transcript": null,
+                    "span_id": 11,
+                    "start_sample": 272160,
+                    "transcript": "[0.11][S01]Also happened to be there to bed in me that the very[2.45]"
+                  },
+                  {
+                    "end_sample": 352160,
+                    "identity_snapshot_version": 10,
+                    "prefix_hash": "06d6564069a2eff8929643e67d58d17b440ad8fcf6e753f62bd3fd1a9d284eec",
+                    "revised_transcript": null,
+                    "span_id": 12,
+                    "start_sample": 312160,
+                    "transcript": "[0.25][S01]Best person who acquired could interview.[2.43]"
+                  },
+                  {
+                    "end_sample": 363200,
+                    "identity_snapshot_version": 11,
+                    "prefix_hash": "2273167b5b95d7f40585601faefb676b09b6a4b6548d4be87514cf9f59594b52",
+                    "revised_transcript": null,
+                    "span_id": 13,
+                    "start_sample": 352160,
+                    "transcript": "[0][S01]New York.[0.54]"
+                  },
+                  {
+                    "end_sample": 368160,
+                    "identity_snapshot_version": 11,
+                    "prefix_hash": "5300a57da52c1b86e3794e8a2a5cb3ba49c82ad8a88534de3fb0d643348dc0af",
+                    "revised_transcript": null,
+                    "span_id": 14,
+                    "start_sample": 363200,
+                    "transcript": ""
+                  },
+                  {
+                    "end_sample": 408160,
+                    "identity_snapshot_version": 12,
+                    "prefix_hash": "1d6ed2d0ee681f39a2ce87452c1321ba97779257c15eebedd0bc37aa75c82387",
+                    "revised_transcript": null,
+                    "span_id": 15,
+                    "start_sample": 368160,
+                    "transcript": "[0.11][S01]Also happened to be there to bed in me that the very[2.45]"
+                  },
+                  {
+                    "end_sample": 432000,
+                    "identity_snapshot_version": 13,
+                    "prefix_hash": "a2ccd2b51f10576ea00e699ee39fb675d99ac4d04256197e4f26e25bf65f388a",
+                    "revised_transcript": null,
+                    "span_id": 16,
+                    "start_sample": 408160,
+                    "transcript": "[0.24][S01]Best person who acquired.[1.44]"
+                  }
+                ],
+                "committed_prefix_hash": "a2ccd2b51f10576ea00e699ee39fb675d99ac4d04256197e4f26e25bf65f388a",
+                "committed_samples": 432000,
+                "epoch": 0,
+                "failure_reason": null,
+                "frozen_until_sample": 432000,
+                "identity_snapshot": {
+                  "canonical_speakers": [
+                    "speaker-0001"
+                  ],
+                  "diagnostics": [
+                    [
+                      "schema_version",
+                      "1"
+                    ],
+                    [
+                      "status",
+                      "prepared"
+                    ],
+                    [
+                      "reason",
+                      "ok"
+                    ],
+                    [
+                      "span_id",
+                      "16"
+                    ],
+                    [
+                      "span_samples",
+                      "408160:432000"
+                    ],
+                    [
+                      "local_speakers",
+                      "S01"
+                    ],
+                    [
+                      "assignments",
+                      "S01->speaker-0001"
+                    ],
+                    [
+                      "deferred_births",
+                      ""
+                    ],
+                    [
+                      "canonical_speakers",
+                      "speaker-0001"
+                    ]
+                  ],
+                  "version": 13
+                },
+                "label_revision_version": 0,
+                "next_frame_sequence": 54,
+                "pending_span_ids": [],
+                "provisional": null,
+                "retained_samples": 0,
+                "status": "closed",
+                "version": 73
+              },
+              "session_id": "d8fc93a6b14d4938ad1dc3d9362c1eef",
+              "terminal_failure": null
+            },
+            "v2_session": {
+              "lanes": {
+                "microphone": {
+                  "accepted_samples": 432000,
+                  "accounted_samples": 432000,
+                  "current_device_epoch": 1,
+                  "failed_samples": 0,
+                  "failure_code": null,
+                  "health": "active",
+                  "lane": "microphone",
+                  "next_sequence": 54,
+                  "pruned_through_sequence": -1,
+                  "retained_samples": 0
+                },
+                "system": {
+                  "accepted_samples": 432000,
+                  "accounted_samples": 432000,
+                  "current_device_epoch": 1,
+                  "failed_samples": 0,
+                  "failure_code": null,
+                  "health": "active",
+                  "lane": "system",
+                  "next_sequence": 54,
+                  "pruned_through_sequence": -1,
+                  "retained_samples": 0
+                }
+              },
+              "status": "closed",
+              "terminal_reason": null
+            }
+          },
+          "session_id": "d8fc93a6b14d4938ad1dc3d9362c1eef",
+          "status": 200
+        },
+        {
+          "body": {
+            "snapshot": {
+              "descriptor": {
+                "bounds": {
+                  "hard_cap_samples": 40000,
+                  "max_events": 1000,
+                  "max_frame_samples": 16000,
+                  "max_identity_speakers": 16,
+                  "max_queue_depth": 16,
+                  "max_retained_samples": 960000,
+                  "stop_drain_deadline_seconds": 5.0
+                },
+                "config_hashes": {
+                  "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+                  "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+                  "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+                  "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+                },
+                "feature_enabled": true,
+                "frame_samples": 8000,
+                "live_protocol": {
+                  "capabilities": {
+                    "binary": false,
+                    "idempotent_frames": true,
+                    "lanes": true,
+                    "resumable": true
+                  },
+                  "max_protocol_version": 2,
+                  "min_protocol_version": 2,
+                  "protocol": "moss-live-service.v2"
+                },
+                "live_protocol_version": "moss-live-service.v1",
+                "provider_manifest_hash": "34e9d3ef3c52abecbacdc82e57cd970f2ad3bb2865a992d5d3ed83e5056cde35",
+                "provider_name": "moss-rtx-webrtc-wespeaker",
+                "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+                "sample_rate": 16000,
+                "schema_version": 1,
+                "source_revision": "7c328fbba4a900965a7e66b0c4b96f081b1516dc"
+              },
+              "pending_work_items": 0,
+              "schema_version": 1,
+              "session": {
+                "accepted_samples": 80000,
+                "accounted_samples": 80000,
+                "committed": [
+                  {
+                    "end_sample": 40000,
+                    "identity_snapshot_version": 1,
+                    "prefix_hash": "17c1a737ad8b8ccae610eb53c6e61a0e44e5c1a36133e2b05b49e158fd8b052e",
+                    "revised_transcript": null,
+                    "span_id": 0,
+                    "start_sample": 0,
+                    "transcript": "[0.08][S01]JP Morgan has been a fantastic partner of ours.[2.46]"
+                  },
+                  {
+                    "end_sample": 80000,
+                    "identity_snapshot_version": 2,
+                    "prefix_hash": "d5974c9e813b174e6b9e84287e14c38848df02fc93c37bb6f342988ad8d461c7",
+                    "revised_transcript": null,
+                    "span_id": 1,
+                    "start_sample": 40000,
+                    "transcript": "[0][S01]And their payments team demoed all kinds of cool technology.[2.44]"
+                  }
+                ],
+                "committed_prefix_hash": "d5974c9e813b174e6b9e84287e14c38848df02fc93c37bb6f342988ad8d461c7",
+                "committed_samples": 80000,
+                "epoch": 0,
+                "failure_reason": null,
+                "frozen_until_sample": 80000,
+                "identity_snapshot": {
+                  "canonical_speakers": [
+                    "speaker-0001"
+                  ],
+                  "diagnostics": [
+                    [
+                      "schema_version",
+                      "1"
+                    ],
+                    [
+                      "status",
+                      "prepared"
+                    ],
+                    [
+                      "reason",
+                      "ok"
+                    ],
+                    [
+                      "span_id",
+                      "1"
+                    ],
+                    [
+                      "span_samples",
+                      "40000:80000"
+                    ],
+                    [
+                      "local_speakers",
+                      "S01"
+                    ],
+                    [
+                      "assignments",
+                      "S01->speaker-0001"
+                    ],
+                    [
+                      "deferred_births",
+                      ""
+                    ],
+                    [
+                      "canonical_speakers",
+                      "speaker-0001"
+                    ]
+                  ],
+                  "version": 2
+                },
+                "label_revision_version": 0,
+                "next_frame_sequence": 10,
+                "pending_span_ids": [],
+                "provisional": null,
+                "retained_samples": 0,
+                "status": "closed",
+                "version": 14
+              },
+              "session_id": "b4c0cb212b454e35a7a7895ba8364c0c",
+              "terminal_failure": null
+            },
+            "v2_session": {
+              "lanes": {
+                "microphone": {
+                  "accepted_samples": 80000,
+                  "accounted_samples": 80000,
+                  "current_device_epoch": 1,
+                  "failed_samples": 0,
+                  "failure_code": null,
+                  "health": "active",
+                  "lane": "microphone",
+                  "next_sequence": 10,
+                  "pruned_through_sequence": -1,
+                  "retained_samples": 0
+                },
+                "system": {
+                  "accepted_samples": 80000,
+                  "accounted_samples": 80000,
+                  "current_device_epoch": 1,
+                  "failed_samples": 0,
+                  "failure_code": null,
+                  "health": "active",
+                  "lane": "system",
+                  "next_sequence": 10,
+                  "pruned_through_sequence": -1,
+                  "retained_samples": 0
+                }
+              },
+              "status": "closed",
+              "terminal_reason": null
+            }
+          },
+          "session_id": "b4c0cb212b454e35a7a7895ba8364c0c",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "required_negative_statement": "This remote-vLLM tunnel result does not measure isolated-GPU latency, GPU memory or utilisation, GPU OOM/errors, or vLLM active/queued request counts.",
+  "schema": "moss-remote-vllm-tunnel-concurrency-measurement.v1",
+  "started_wall_ns": 1787106562214450000,
+  "terminal": "completed",
+  "updated_wall_ns": 1787106698417637000,
+  "warm_idle_process_tree_rss_bytes": 648003584
+}

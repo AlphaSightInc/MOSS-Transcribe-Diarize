@@ -129,6 +129,22 @@ It compares the raw JSONL line count and every phase's attributed records to the
 in `run-state.json`. A short terminal count fails closed: it cannot reclassify scheduler fairness or
 stop-drain behavior and requires a fresh frozen matrix. It starts no service and sends no inference request.
 
+Rendered-ownership overload probe (one real remote-vLLM overload path; prints full state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_overload_rendered_ownership_wait.py \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 --port 18999 \
+  --rendered-ownership-timeout-seconds 120 \
+  --output evidence/phase1/w2-local-concurrency/overload-rendered-ownership-wait
+```
+
+It uses ordinary snapshot/event polling until both observers have their own rendered marker, then performs
+exactly one reconnect per observer. The exploratory timeout is fail-closed, never a G4/G5 threshold: a timeout
+must leave the frozen runner unchanged and report failure rather than reconnecting repeatedly.
+
 Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
 first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
 process. Use a fresh output directory for the measurement after a successful preflight:

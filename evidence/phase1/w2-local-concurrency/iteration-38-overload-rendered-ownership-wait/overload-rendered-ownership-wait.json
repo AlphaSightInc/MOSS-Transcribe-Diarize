@@ -1,0 +1,149 @@
+{
+  "inputs": {
+    "contract_sha256": "0961e7ad863db419c3f2e4ee4e35da6e3a0065418ec9f8c049dc32beae5b1083",
+    "endpoint_after": {
+      "base_url": "http://127.0.0.1:18000/v1",
+      "health_status": 200,
+      "health_url": "http://127.0.0.1:18000/health",
+      "model_ids": [
+        "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+      ],
+      "models_canonical_json_sha256": "2b4f71e3a4a5e97334a56eb7adabd379a75293e99358732d325846636a9113be",
+      "models_status": 200,
+      "models_url": "http://127.0.0.1:18000/v1/models",
+      "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    },
+    "endpoint_before": {
+      "base_url": "http://127.0.0.1:18000/v1",
+      "health_status": 200,
+      "health_url": "http://127.0.0.1:18000/health",
+      "model_ids": [
+        "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+      ],
+      "models_canonical_json_sha256": "3897802ff0304329a276c65ff7e250d92a329d033d1639ee103dfdbc5292c9a0",
+      "models_status": 200,
+      "models_url": "http://127.0.0.1:18000/v1/models",
+      "selected_model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+    },
+    "fixture_manifest_sha256": "d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee",
+    "rendered_ownership_timeout_seconds": 120.0
+  },
+  "overload_evaluation": {
+    "helper_presence": {
+      "b4c0cb212b454e35a7a7895ba8364c0c": {
+        "error": null,
+        "interval_seconds": 7.5,
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      },
+      "d8fc93a6b14d4938ad1dc3d9362c1eef": {
+        "error": null,
+        "interval_seconds": 7.5,
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    "helper_presence_passes": true,
+    "integrity_marker_checks": {
+      "b4c0cb212b454e35a7a7895ba8364c0c": {
+        "canonical_foreign_markers_absent": true,
+        "canonical_own_marker_present": true,
+        "observer_reconnected": false,
+        "reconnect_event_response_observed": false,
+        "reconnect_replayed_canonical_event_observed": false,
+        "reconnect_replayed_canonical_foreign_markers_absent": true,
+        "reconnect_replayed_canonical_transcripts_resolved": false,
+        "reconnect_snapshot_foreign_markers_absent": true,
+        "reconnect_snapshot_transcript_observed": false,
+        "rendered_foreign_markers_absent": true,
+        "rendered_own_marker_present": false
+      },
+      "d8fc93a6b14d4938ad1dc3d9362c1eef": {
+        "canonical_foreign_markers_absent": true,
+        "canonical_own_marker_present": true,
+        "observer_reconnected": false,
+        "reconnect_event_response_observed": false,
+        "reconnect_replayed_canonical_event_observed": false,
+        "reconnect_replayed_canonical_foreign_markers_absent": true,
+        "reconnect_replayed_canonical_transcripts_resolved": false,
+        "reconnect_snapshot_foreign_markers_absent": true,
+        "reconnect_snapshot_transcript_observed": false,
+        "rendered_foreign_markers_absent": true,
+        "rendered_own_marker_present": true
+      }
+    },
+    "integrity_passes": false,
+    "passes": false,
+    "peer_accepted_while_saturated": true,
+    "peer_marker_replay_completed_without_unexpected_frame_result": true,
+    "peer_session_stop_closed": true,
+    "refused_frame_retried_successfully": true,
+    "rendered_markers_observed_before_reconnect": false,
+    "retryable_v2_429_observed": true,
+    "saturated_session_stop_closed": true
+  },
+  "production_code_path": {
+    "decoder": "production VllmRunner through the supplied read-only tunnel",
+    "observation_change": "ordinary poll until all rendered own markers are visible, then one reconnect per observer; timeout remains fail-closed",
+    "overload": "Measurement.run_overload_phase",
+    "route": "production_route_server.py via RemoteVllmMeasurement.start_service"
+  },
+  "question": "Under the production remote-vLLM overload path, does a bounded ordinary-poll wait observe each session's rendered own marker before exactly one reconnect per observer?",
+  "rendered_ownership": {
+    "exactly_one_reconnect_per_session": false,
+    "marker_first_seen_after_wait_seconds": {},
+    "ownership_observed_monotonic_ns": null,
+    "ownership_wait_seconds": null,
+    "parent_overload_integrity_passes": false,
+    "parent_overload_rendered_marker_predicate": false,
+    "reconnect_counts": {},
+    "rendered_ownership_observed_before_reconnect": false,
+    "timeout_seconds": 120.0,
+    "wait_started_monotonic_ns": 207217128555333
+  },
+  "schema": "moss-overload-rendered-ownership-wait-prototype.v1",
+  "verdict": {
+    "does_not_establish": [
+      "G4",
+      "G5",
+      "a new concurrency bound",
+      "GPU memory, utilisation, OOM, or vLLM queue telemetry"
+    ],
+    "passes": false,
+    "required_next_step": "Retain the current fail-closed overload result; investigate rendered publication before changing the runner."
+  }
+}

@@ -17,11 +17,22 @@ from moss_transcribe_diarize.app.live_provider_bundle import LiveProviderBundleC
 ROOT = Path(__file__).resolve().parents[1]
 CONCURRENCY = ROOT / "prototypes/streaming-diarization/concurrency"
 RUNNER_PATH = CONCURRENCY / "run_remote_vllm_tunnel_measurement.py"
+OWNERSHIP_WAIT_PROBE_PATH = CONCURRENCY / "proto_overload_rendered_ownership_wait.py"
 
 
 def _load_runner():
     sys.path.insert(0, str(CONCURRENCY))
     spec = importlib.util.spec_from_file_location("remote_vllm_tunnel_runner_test", RUNNER_PATH)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_ownership_wait_probe():
+    sys.path.insert(0, str(CONCURRENCY))
+    spec = importlib.util.spec_from_file_location("ownership_wait_probe_test", OWNERSHIP_WAIT_PROBE_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -156,6 +167,59 @@ def test_lifecycle_fairness_does_not_conflate_stop_residue_with_scheduler_fairne
     assert fairness["passes"] is True
     assert stop_drain["passes"] is False
     assert stop_drain["queued_item_count"] == 1
+
+
+def test_rendered_ownership_probe_polls_before_one_reconnect_per_observer(tmp_path):
+    probe = _load_ownership_wait_probe()
+    runner = _load_runner()
+    args = SimpleNamespace(output=tmp_path, port=18999, overload_retry_timeout_seconds=120.0)
+    measurement = probe.RenderedOwnershipWaitProbe(args, {}, {})
+    first = runner.SessionRun(
+        session_id="first",
+        capture_bearer="capture",
+        view_bearer="view",
+        expected_marker="alpha marker",
+    )
+    second = runner.SessionRun(
+        session_id="second",
+        capture_bearer="capture",
+        view_bearer="view",
+        expected_marker="beta marker",
+    )
+    measurement.active = {first.session_id: first, second.session_id: second}
+    observations: list[tuple[str, str]] = []
+
+    def fake_poll(session, *, observation="poll"):
+        observations.append((session.session_id, observation))
+        if session.session_id == second.session_id and observation == "pre-reconnect-rendered-ownership":
+            first.observer["text"]["0"] = first.expected_marker
+            second.observer["text"]["0"] = second.expected_marker
+
+    measurement.poll = fake_poll
+
+    measurement.reconnect_observer(first)
+    assert first.reconnects == []
+    assert second.reconnects == []
+
+    measurement.reconnect_observer(second)
+
+    assert observations == [
+        ("first", "pre-reconnect-rendered-ownership"),
+        ("second", "pre-reconnect-rendered-ownership"),
+        ("first", "reconnect"),
+        ("second", "reconnect"),
+    ]
+    assert len(first.reconnects) == len(second.reconnects) == 1
+    result = measurement.rendered_ownership_result(
+        {
+            "evaluation": {
+                "rendered_markers_observed_before_reconnect": True,
+                "integrity_passes": True,
+            }
+        }
+    )
+    assert result["rendered_ownership_observed_before_reconnect"] is True
+    assert result["exactly_one_reconnect_per_session"] is True
 
 
 def test_single_session_normal_phase_accepts_not_applicable_fairness(tmp_path):

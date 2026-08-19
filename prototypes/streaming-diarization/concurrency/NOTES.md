@@ -387,3 +387,36 @@ This names the third degenerate oracle in this workstream: repeated markers, the
 then the writer/evaluator race. A derived number is only usable when its source is complete and its predicate
 actually measures the behavior it names. This audit establishes no scheduler result, stop-drain result, G4,
 G5, live route, or inference result.
+
+## Rendered-ownership overload wait — 2026-08-19
+
+**VERDICT: FAIL CLOSED — a 120 s ordinary-poll wait did not make the peer's rendered own marker observable;
+do not move or lengthen the runner's reconnect.**
+
+Question: under the production remote-vLLM overload path, does ordinary snapshot/event polling observe each
+session's rendered own marker before a single reconnect per observer, within a bounded 120 s window?
+
+One command (prints full route/endpoint/overload state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_overload_rendered_ownership_wait.py \
+  --provisional-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --live-helper-lease-seconds 30 --port 18999 \
+  --rendered-ownership-timeout-seconds 120 \
+  --output evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait
+```
+
+Both endpoint probes returned HTTP 200. The real overload path reached a retryable session-local 429, accepted
+the peer, retried the refused frame successfully, completed peer replay without an unexpected frame result,
+and cleanly stopped both sessions. Both canonical own markers were present and foreign markers absent. But the
+peer's rendered own-marker predicate remained false before the bounded wait expired; no reconnect was triggered,
+so reconnect evidence correctly remained absent. This rejects the proposed poll-before-reconnect repair at 120 s
+rather than treating a longer wait as a gate improvement. Raw result SHA-256:
+`ae41e92afb7b3e292ec9521dd3e011d08e993e02a703dffe477ba164ea234a77`; canonical log SHA-256:
+`05c1b613c342ce0b7de882efb1e944d87b5a31cb0b5493b0a85500c2936aadec`.
+
+This is a live harness diagnosis only. It establishes neither G4 nor G5, a new duration bound, isolated-GPU
+latency, GPU telemetry, nor a rendered-publication product defect. Keep the frozen overload verdict false until
+a separately measured explanation distinguishes publication delay from an insufficient observation window.
