@@ -351,6 +351,22 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/phase1/g3-attended/live-latency-baseline-20260819.json` and
   `evidence/phase1/g3-attended/live-cap-silence-sweep-20260819.json`.
 
+- **Deployed server-stage timing — exact release-compatible instrumentation (2026-08-19).**
+  Production now runs server-only diagnostics commit `89fc48376ec2f855d4cac504cef4a2dc18ab2704`
+  directly atop release `fb83ba5ee60c44688e2580a398bfa388dcf5e67a`. Deployment changed only
+  manifest `source_revision`; every config hash and the sealed portal bytes remained unchanged.
+  A 52 s real-vLLM probe accepted 208/208 lane frames, produced 21 committed advances, and kept
+  two concurrent readers green. One-clock p50/p95 values were: queue 0.5/0.7 ms, canonical
+  processing 587.0/766.2 ms, queued-to-processed 587.6/766.5 ms, and commit-to-server-events-read
+  411.5/589.6 ms. Decode p50/p95 was 299/413 ms; no request hit the token cap. Queueing was
+  negligible. Post-freeze work is about 1.36 s at p95; adding the 2.5 s hard-cap accumulation
+  explains an approximate 3.86 s first-word path before browser DOM work. This strengthens the
+  attribution but does not supersede the quality-gated `NO_POLICY_CHANGE` cap-sweep verdict.
+  Actual DOM timing remains implemented/tested on `dev` only because the current production
+  release byte-seals `live_capture_portal.py`; do not claim deployed browser-DOM evidence from
+  this server probe. Raw artifact:
+  `evidence/phase1/g3-attended/server-stage-timing-deployed-20advance-20260819.json`.
+
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
   lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48

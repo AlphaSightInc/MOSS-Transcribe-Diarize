@@ -1,0 +1,1003 @@
+{
+  "schema": "ralph-live-pipeline-probe.v1",
+  "host": "ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
+  "pin_prefix": "a35ca9fc",
+  "requested_seconds": 52.0,
+  "audio": {
+    "voices": {
+      "microphone": "Samantha",
+      "system": "Fred"
+    },
+    "lane_audio": "continuous",
+    "lead_seconds": 0.5,
+    "lane_offset_ms": {
+      "system": 0.0,
+      "microphone": 0.0
+    },
+    "turns": {
+      "microphone": 6,
+      "system": 6
+    },
+    "frames_per_lane": {
+      "microphone": 104,
+      "system": 104
+    },
+    "voiced_frames": {
+      "microphone": 103,
+      "system": 103
+    }
+  },
+  "pairing": {
+    "status": 200,
+    "device_id": "codex-server-latency-20advance-20260819",
+    "scope": "capture",
+    "device_token_len": 43
+  },
+  "session": {
+    "status": 200,
+    "session_id_len": 32,
+    "view_token_len": 43,
+    "view_expires_at": 1787225552.3562567,
+    "descriptor": {
+      "sample_rate": 16000,
+      "frame_samples": 8000,
+      "source_revision": "89fc48376ec2f855d4cac504cef4a2dc18ab2704",
+      "provider_manifest_hash": "ba0a0a0fce473d6531e7a40497518aafb8970267e43c84af870d174f112050a5"
+    }
+  },
+  "last_live_snapshot": {
+    "status": "active",
+    "version": 124,
+    "accepted_samples": 824000,
+    "accounted_samples": 806400,
+    "committed_samples": 806400,
+    "retained_samples": 24000,
+    "pending_span_ids": 0,
+    "committed_items": 21,
+    "identity_snapshot_version": 18,
+    "identity_canonical_speakers": [
+      "speaker-0001"
+    ],
+    "failure_reason": null,
+    "terminal_failure": null,
+    "pending_work_items": 0
+  },
+  "publish": {
+    "ticks_planned": 104,
+    "ticks_run": 104,
+    "accepted_frames": {
+      "system": 104,
+      "microphone": 104
+    },
+    "non_200_count": 0,
+    "aborted_at": null,
+    "wall_seconds": 52.0,
+    "tls_handshakes": 1
+  },
+  "concurrent_readers": {
+    "count": 2,
+    "interval_seconds": 0.22,
+    "readers": [
+      {
+        "name": "view-reader-1",
+        "polls": 193,
+        "status_counts": {
+          "events:200": 193,
+          "snapshot:200": 193
+        },
+        "first_non_200": null,
+        "last_non_200": null,
+        "snapshot_p95_ms": 108.3,
+        "events_p95_ms": 89.3,
+        "handshakes": 1,
+        "error": null
+      },
+      {
+        "name": "view-reader-2",
+        "polls": 192,
+        "status_counts": {
+          "events:200": 192,
+          "snapshot:200": 192
+        },
+        "first_non_200": null,
+        "last_non_200": null,
+        "snapshot_p95_ms": 101.6,
+        "events_p95_ms": 112.5,
+        "handshakes": 1,
+        "error": null
+      }
+    ]
+  },
+  "stop": {
+    "status": 200,
+    "snapshot": {
+      "status": "closed",
+      "version": 128,
+      "accepted_samples": 832000,
+      "accounted_samples": 832000,
+      "committed_samples": 832000,
+      "retained_samples": 0,
+      "pending_span_ids": 0,
+      "committed_items": 22,
+      "identity_snapshot_version": 19,
+      "identity_canonical_speakers": [
+        "speaker-0001"
+      ],
+      "failure_reason": null,
+      "terminal_failure": null,
+      "pending_work_items": 0
+    }
+  },
+  "transcript": {
+    "item_count": 22,
+    "speakers": [
+      "S00",
+      "S01"
+    ],
+    "attributed_speakers": [
+      "S01"
+    ],
+    "unattributed_spans": 5,
+    "empty_spans": 0,
+    "items": [
+      {
+        "span_id": 0,
+        "start_sample": 0,
+        "end_sample": 6400,
+        "identity_snapshot_version": 1,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0][S00]\u55ef\u3002[0.22]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 1,
+        "start_sample": 6400,
+        "end_sample": 46400,
+        "identity_snapshot_version": 2,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.11][S01]Good morning everyone.[1.35][1.44][S01]This is the microphone.[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 2,
+        "start_sample": 46400,
+        "end_sample": 86400,
+        "identity_snapshot_version": 3,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.08][S01]I am the second speaker in this meeting.[2.44]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 3,
+        "start_sample": 86400,
+        "end_sample": 126400,
+        "identity_snapshot_version": 4,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.06][S01]...service should be receiving two separate audio.[2.44]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 4,
+        "start_sample": 126400,
+        "end_sample": 166400,
+        "identity_snapshot_version": 5,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0][S01]right now. Let us check whether the speaker[2.34]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 5,
+        "start_sample": 166400,
+        "end_sample": 206400,
+        "identity_snapshot_version": 6,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]labels come through on the live page.[1.81][1.83][S01]I will hand over.[2.5]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 6,
+        "start_sample": 206400,
+        "end_sample": 246400,
+        "identity_snapshot_version": 7,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.08][S01]Over to the second speaker for a moment.[1.99][1.99][S01]Thank you.[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 7,
+        "start_sample": 246400,
+        "end_sample": 286400,
+        "identity_snapshot_version": 8,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.25][S01]That confirms the microphone lane is being.[2.43]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 8,
+        "start_sample": 286400,
+        "end_sample": 326400,
+        "identity_snapshot_version": 9,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]Transcribed. This is the last thing the first speaker.[2.47]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 9,
+        "start_sample": 326400,
+        "end_sample": 366400,
+        "identity_snapshot_version": 9,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0.07][S00]before the session stops.[1.95][1.99][S00]Good morning.[2.49]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 10,
+        "start_sample": 366400,
+        "end_sample": 406400,
+        "identity_snapshot_version": 10,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]Everyone, this is the microphone lane and[2.43]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 11,
+        "start_sample": 406400,
+        "end_sample": 446400,
+        "identity_snapshot_version": 10,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0.07][S00]I am the first speaker.[1.15][1.17][S00]The transcription service.[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 12,
+        "start_sample": 446400,
+        "end_sample": 486400,
+        "identity_snapshot_version": 11,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]should be receiving two separate audio lanes right[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 13,
+        "start_sample": 486400,
+        "end_sample": 526400,
+        "identity_snapshot_version": 12,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]Now, let us check whether the speaker labels come[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 14,
+        "start_sample": 526400,
+        "end_sample": 566400,
+        "identity_snapshot_version": 13,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]through on the live page, I will hand over to the[2.41]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 15,
+        "start_sample": 566400,
+        "end_sample": 606400,
+        "identity_snapshot_version": 14,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.08][S01]Second speaker for a moment.[1.41][1.42][S01]Thank you.[2.11][2.12][S01]That[2.43]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 16,
+        "start_sample": 606400,
+        "end_sample": 646400,
+        "identity_snapshot_version": 15,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.08][S01]Confirms the microphone lane is being transcribed.[2.5]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 17,
+        "start_sample": 646400,
+        "end_sample": 686400,
+        "identity_snapshot_version": 16,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.28][S01]This is the last thing the first speaker says.[2.42]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 18,
+        "start_sample": 686400,
+        "end_sample": 726400,
+        "identity_snapshot_version": 16,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0.06][S00]Before the session stops.[1.48][1.52][S00]Good morning, everyone.[2.5]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 19,
+        "start_sample": 726400,
+        "end_sample": 766400,
+        "identity_snapshot_version": 17,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.07][S01]This is the microphone lane and I am the first.[2.49]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 20,
+        "start_sample": 766400,
+        "end_sample": 806400,
+        "identity_snapshot_version": 18,
+        "speakers": [
+          "S01",
+          "S00"
+        ],
+        "transcript": "[0.08][S01]The transcription service should be[2.32][1.92][S00]in a more[2.42]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 21,
+        "start_sample": 806400,
+        "end_sample": 832000,
+        "identity_snapshot_version": 19,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.08][S01]...seating two separate audio lane.[1.56]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      }
+    ]
+  },
+  "sweep": {
+    "committed_items": 22,
+    "revised_items": 0,
+    "label_changing": 0,
+    "byte_identical_rewrites": 0,
+    "words_moved": 0,
+    "cadence": {
+      "version_surface": "canonical_processed.identity_revision_version",
+      "spans_reporting": 21,
+      "spans_without_version": 0,
+      "versions": [
+        0
+      ],
+      "version_histogram": {
+        "0": 21
+      },
+      "max_version": 0,
+      "first_nonzero": null,
+      "spans_revised": 0,
+      "merges": 0
+    },
+    "cadence_refusals": {},
+    "session_end": {
+      "version": null,
+      "spans_revised": null,
+      "units_revised": null,
+      "merges": null,
+      "refusals": null,
+      "unreadable": "identity_finalized not read: post-stop events drain returned 403"
+    }
+  },
+  "fragmentation": {
+    "canonical_speakers": 1,
+    "real_voices": 2,
+    "references_per_real_voice": 0.5,
+    "labels_seen_in_transcript": [
+      "S00",
+      "S01"
+    ],
+    "capacity_abstains": 0
+  },
+  "latency": {
+    "committed_advances": 21,
+    "rejected_negative": 0,
+    "committed_p50_ms": 1662.681,
+    "committed_p95_ms": 1767.189,
+    "snapshot_p95_ms": 92.4,
+    "events_p95_ms": 66.4,
+    "publish_p95_ms": 101.2,
+    "route_sampling": "serial diagnostic only; not the portal user-visible latency contract"
+  },
+  "post_stop_events": {
+    "status": 403,
+    "since_seq": 187,
+    "authority": "capture",
+    "body": {
+      "detail": "session is not owned by this device."
+    }
+  },
+  "events_seen": 188,
+  "duplicate_event_reads": 103,
+  "event_kinds": {
+    "canonical_processed": 21,
+    "canonical_queued": 21,
+    "canonical_started": 21,
+    "frame_accepted": 103,
+    "session_created": 1,
+    "span_frozen": 21
+  },
+  "canonical_events": [
+    {
+      "span_id": 0,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.9125093824695796,
+      "canonical_decode_elapsed_sec": 0.36500375298783183,
+      "canonical_decode_token_cap": 103,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 0.4,
+      "runtime_monotonic_ns": 801494228055366,
+      "queue_wait_ms": 0.504323,
+      "canonical_processing_elapsed_ms": 366.614564,
+      "queued_to_processed_ms": 367.118887,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 174.151902
+    },
+    {
+      "span_id": 1,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11916264202445745,
+      "canonical_decode_elapsed_sec": 0.29790660506114364,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801496538115918,
+      "queue_wait_ms": 0.457583,
+      "canonical_processing_elapsed_ms": 602.401584,
+      "queued_to_processed_ms": 602.859167,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 411.532071
+    },
+    {
+      "span_id": 2,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.10623969119042158,
+      "canonical_decode_elapsed_sec": 0.26559922797605395,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801499070139900,
+      "queue_wait_ms": 0.696307,
+      "canonical_processing_elapsed_ms": 548.07112,
+      "queued_to_processed_ms": 548.767427,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 406.984801
+    },
+    {
+      "span_id": 3,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11794869280420243,
+      "canonical_decode_elapsed_sec": 0.2948717320105061,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801501441831691,
+      "queue_wait_ms": 0.494208,
+      "canonical_processing_elapsed_ms": 582.473057,
+      "queued_to_processed_ms": 582.967265,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 465.862424
+    },
+    {
+      "span_id": 4,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.10636467961594462,
+      "canonical_decode_elapsed_sec": 0.26591169903986156,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801503899801672,
+      "queue_wait_ms": 0.353235,
+      "canonical_processing_elapsed_ms": 550.352154,
+      "queued_to_processed_ms": 550.705389,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 9.149918
+    },
+    {
+      "span_id": 5,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.14514425923116506,
+      "canonical_decode_elapsed_sec": 0.36286064807791263,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801506549047485,
+      "queue_wait_ms": 0.563846,
+      "canonical_processing_elapsed_ms": 674.768536,
+      "queued_to_processed_ms": 675.332382,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 410.342211
+    },
+    {
+      "span_id": 6,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.15471029761247337,
+      "canonical_decode_elapsed_sec": 0.3867757440311834,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801509029699991,
+      "queue_wait_ms": 0.587128,
+      "canonical_processing_elapsed_ms": 640.759298,
+      "queued_to_processed_ms": 641.346426,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 420.780187
+    },
+    {
+      "span_id": 7,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11097210440784692,
+      "canonical_decode_elapsed_sec": 0.2774302610196173,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801511435139449,
+      "queue_wait_ms": 0.724645,
+      "canonical_processing_elapsed_ms": 541.819391,
+      "queued_to_processed_ms": 542.544036,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 498.50162
+    },
+    {
+      "span_id": 8,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.10551805160939694,
+      "canonical_decode_elapsed_sec": 0.26379512902349234,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801513905702447,
+      "queue_wait_ms": 0.415758,
+      "canonical_processing_elapsed_ms": 555.426164,
+      "queued_to_processed_ms": 555.841922,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 459.268168
+    },
+    {
+      "span_id": 9,
+      "submitted": true,
+      "identity_status": "abstain",
+      "identity_reason": "same_span_cannot_link_conflict",
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.14304058556444943,
+      "canonical_decode_elapsed_sec": 0.3576014639111236,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801516757091398,
+      "queue_wait_ms": 0.61318,
+      "canonical_processing_elapsed_ms": 707.017789,
+      "queued_to_processed_ms": 707.630969,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 137.846908
+    },
+    {
+      "span_id": 10,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.10882711037993431,
+      "canonical_decode_elapsed_sec": 0.2720677759498358,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801518907869768,
+      "queue_wait_ms": 0.32712,
+      "canonical_processing_elapsed_ms": 558.529389,
+      "queued_to_processed_ms": 558.856509,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 439.465408
+    },
+    {
+      "span_id": 11,
+      "submitted": true,
+      "identity_status": "abstain",
+      "identity_reason": "same_span_cannot_link_conflict",
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.16518248119391502,
+      "canonical_decode_elapsed_sec": 0.4129562029847875,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801521614423758,
+      "queue_wait_ms": 0.366498,
+      "canonical_processing_elapsed_ms": 766.155113,
+      "queued_to_processed_ms": 766.521611,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 241.052509
+    },
+    {
+      "span_id": 12,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11495375921949744,
+      "canonical_decode_elapsed_sec": 0.2873843980487436,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801523966500919,
+      "queue_wait_ms": 0.472295,
+      "canonical_processing_elapsed_ms": 587.004672,
+      "queued_to_processed_ms": 587.476967,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 651.785691
+    },
+    {
+      "span_id": 13,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.12083000517450274,
+      "canonical_decode_elapsed_sec": 0.3020750129362568,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801526536704510,
+      "queue_wait_ms": 0.604427,
+      "canonical_processing_elapsed_ms": 586.961894,
+      "queued_to_processed_ms": 587.566321,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 468.997572
+    },
+    {
+      "span_id": 14,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.12929612440057098,
+      "canonical_decode_elapsed_sec": 0.32324031100142747,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801528967983852,
+      "queue_wait_ms": 0.297045,
+      "canonical_processing_elapsed_ms": 618.508461,
+      "queued_to_processed_ms": 618.805506,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 589.617016
+    },
+    {
+      "span_id": 15,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.18358557601459324,
+      "canonical_decode_elapsed_sec": 0.4589639400364831,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801531598966951,
+      "queue_wait_ms": 0.460018,
+      "canonical_processing_elapsed_ms": 746.360808,
+      "queued_to_processed_ms": 746.820826,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 266.760477
+    },
+    {
+      "span_id": 16,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.09854397042654454,
+      "canonical_decode_elapsed_sec": 0.24635992606636137,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801533900866267,
+      "queue_wait_ms": 0.394105,
+      "canonical_processing_elapsed_ms": 552.134152,
+      "queued_to_processed_ms": 552.528257,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 472.042422
+    },
+    {
+      "span_id": 17,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11759725161828101,
+      "canonical_decode_elapsed_sec": 0.2939931290457025,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801536413868082,
+      "queue_wait_ms": 0.347158,
+      "canonical_processing_elapsed_ms": 559.447838,
+      "queued_to_processed_ms": 559.794996,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 435.423808
+    },
+    {
+      "span_id": 18,
+      "submitted": true,
+      "identity_status": "abstain",
+      "identity_reason": "same_span_cannot_link_conflict",
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.1315963659901172,
+      "canonical_decode_elapsed_sec": 0.328990914975293,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801539190236218,
+      "queue_wait_ms": 0.544535,
+      "canonical_processing_elapsed_ms": 678.831003,
+      "queued_to_processed_ms": 679.375538,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 172.08664
+    },
+    {
+      "span_id": 19,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.11973312920890748,
+      "canonical_decode_elapsed_sec": 0.2993328230222687,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801541454027694,
+      "queue_wait_ms": 0.363928,
+      "canonical_processing_elapsed_ms": 602.818712,
+      "queued_to_processed_ms": 603.18264,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 402.433975
+    },
+    {
+      "span_id": 20,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.15567457517609,
+      "canonical_decode_elapsed_sec": 0.389186437940225,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801544138496016,
+      "queue_wait_ms": 0.419266,
+      "canonical_processing_elapsed_ms": 788.001695,
+      "queued_to_processed_ms": 788.420961,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 210.646758
+    }
+  ],
+  "server_stage_timing": {
+    "clock": "server_monotonic",
+    "cross_host_subtraction": false,
+    "queue_wait_ms": {
+      "count": 21,
+      "p50": 0.5,
+      "p95": 0.7,
+      "max": 0.7
+    },
+    "canonical_processing_elapsed_ms": {
+      "count": 21,
+      "p50": 587.0,
+      "p95": 766.2,
+      "max": 788.0
+    },
+    "queued_to_processed_ms": {
+      "count": 21,
+      "p50": 587.6,
+      "p95": 766.5,
+      "max": 788.4
+    },
+    "commit_to_events_fetch_ms": {
+      "count": 21,
+      "p50": 411.5,
+      "p95": 589.6,
+      "max": 651.8
+    }
+  },
+  "decode": {
+    "spans_total": 21,
+    "spans_measured": 21,
+    "cap_present_count": 21,
+    "capped_count": 0,
+    "capped_span_ids": [],
+    "elapsed_sec": {
+      "min": 0.246,
+      "p50": 0.299,
+      "p95": 0.413,
+      "max": 0.459
+    },
+    "rtf": {
+      "min": 0.099,
+      "p50": 0.12,
+      "p95": 0.184,
+      "max": 0.913,
+      "bound": 1.0,
+      "p95_under_bound": true
+    },
+    "cap_expectation_source": "product-function",
+    "caps_observed": [
+      103,
+      286
+    ],
+    "cap_derivation_mismatches": [],
+    "cap_derivation_holds": true
+  },
+  "view_authority_after_stop": {
+    "snapshot_status": 401,
+    "revoked": true
+  }
+}

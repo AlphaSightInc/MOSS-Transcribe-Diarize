@@ -1100,6 +1100,7 @@ def main() -> int:
             )
             events_ms.append(elapsed * 1000.0)
             if status == 200 and isinstance(body, dict):
+                observed_monotonic_ns = body.get("runtime_observed_monotonic_ns")
                 fresh, repeats = _unseen_events(body.get("events") or (), seen_event_seqs)
                 duplicate_event_reads += repeats
                 for event in fresh:
@@ -1109,47 +1110,60 @@ def main() -> int:
                     last_seq = max(last_seq, int(event.get("seq", last_seq)))
                     if event.get("kind") == "canonical_processed":
                         payload = event.get("payload") or {}
-                        canonical_events.append(
-                            {
-                                key: payload.get(key)
-                                for key in (
-                                    "span_id",
-                                    "submitted",
-                                    "identity_status",
-                                    "identity_reason",
-                                    "submission_refusal",
-                                    "empty_reason",
-                                    "canonical_decode_rtf",
-                                    # D-c (candidate 50, iteration 16) put the decode bound and
-                                    # its verdict on this event. Collecting the RTF alone made the
-                                    # probe unable to say whether a span was CAPPED or merely
-                                    # fast, which is the whole question the cap was added to answer.
-                                    "canonical_decode_elapsed_sec",
-                                    "canonical_decode_token_cap",
-                                    "canonical_decode_capped",
-                                    "frozen_span_duration_sec",
-                                    # The ONE sweep-refusal surface a client can read
-                                    # (`live_service_runtime.py:804`). A session-end sweep's
-                                    # refusals ride `identity_finalized`, which no client can
-                                    # reach, so this covers the CADENCE half only -- and an
-                                    # empty map here with a revision published is the
-                                    # difference between "the sweep proposed nothing" and
-                                    # "it proposed something the session would not apply".
-                                    "identity_revision_refusals",
-                                    # The cadence sweep's own product, on the only surface that
-                                    # carries it (`live_service_runtime.py:615,800`). `version`
-                                    # is the session's CURRENT label revision, written on every
-                                    # span, so its histogram over a meeting is the record of
-                                    # when each correction became visible; `spans`/`merges` are
-                                    # what that one revision changed. A committed item does not
-                                    # carry any of this -- it carries `identity_snapshot_
-                                    # version`, a different quantity (candidate 67).
-                                    "identity_revision_version",
-                                    "identity_revision_spans",
-                                    "identity_revision_merges",
-                                )
-                            }
-                        )
+                        measurement = {
+                            key: payload.get(key)
+                            for key in (
+                                "span_id",
+                                "submitted",
+                                "identity_status",
+                                "identity_reason",
+                                "submission_refusal",
+                                "empty_reason",
+                                "canonical_decode_rtf",
+                                # D-c (candidate 50, iteration 16) put the decode bound and
+                                # its verdict on this event. Collecting the RTF alone made the
+                                # probe unable to say whether a span was CAPPED or merely
+                                # fast, which is the whole question the cap was added to answer.
+                                "canonical_decode_elapsed_sec",
+                                "canonical_decode_token_cap",
+                                "canonical_decode_capped",
+                                "frozen_span_duration_sec",
+                                "runtime_monotonic_ns",
+                                "queue_wait_ms",
+                                "canonical_processing_elapsed_ms",
+                                "queued_to_processed_ms",
+                                # The ONE sweep-refusal surface a client can read
+                                # (`live_service_runtime.py:804`). A session-end sweep's
+                                # refusals ride `identity_finalized`, which no client can
+                                # reach, so this covers the CADENCE half only -- and an
+                                # empty map here with a revision published is the
+                                # difference between "the sweep proposed nothing" and
+                                # "it proposed something the session would not apply".
+                                "identity_revision_refusals",
+                                # The cadence sweep's own product, on the only surface that
+                                # carries it (`live_service_runtime.py:615,800`). `version`
+                                # is the session's CURRENT label revision, written on every
+                                # span, so its histogram over a meeting is the record of
+                                # when each correction became visible; `spans`/`merges` are
+                                # what that one revision changed. A committed item does not
+                                # carry any of this -- it carries `identity_snapshot_
+                                # version`, a different quantity (candidate 67).
+                                "identity_revision_version",
+                                "identity_revision_spans",
+                                "identity_revision_merges",
+                            )
+                        }
+                        processed_monotonic_ns = measurement.get("runtime_monotonic_ns")
+                        if (
+                            isinstance(observed_monotonic_ns, int)
+                            and not isinstance(observed_monotonic_ns, bool)
+                            and isinstance(processed_monotonic_ns, int)
+                            and not isinstance(processed_monotonic_ns, bool)
+                        ):
+                            measurement["commit_to_events_fetch_ms"] = max(
+                                0, observed_monotonic_ns - processed_monotonic_ns
+                            ) / 1_000_000
+                        canonical_events.append(measurement)
 
         target = started_wall + (tick + 1) * TICK_SECONDS
         remaining = target - time.monotonic()
@@ -1285,6 +1299,7 @@ def main() -> int:
     report["duplicate_event_reads"] = duplicate_event_reads
     report["event_kinds"] = dict(sorted(event_kinds.items()))
     report["canonical_events"] = canonical_events
+    report["server_stage_timing"] = _server_stage_timing_summary(canonical_events)
     report["decode"] = _decode_summary(canonical_events)
     report["view_authority_after_stop"] = _probe_view_after_stop(client, session_id, view_token)
 
@@ -1410,6 +1425,40 @@ def _p95(values: list[float]) -> float | None:
     ordered = sorted(values)
     rank = max(1, math.ceil(0.95 * len(ordered)))
     return round(ordered[rank - 1], 1)
+
+
+def _server_stage_timing_summary(canonical_events: list[dict]) -> dict:
+    """Reduce only server-local monotonic durations; never compare host clocks."""
+
+    result: dict = {
+        "clock": "server_monotonic",
+        "cross_host_subtraction": False,
+    }
+    for key in (
+        "queue_wait_ms",
+        "canonical_processing_elapsed_ms",
+        "queued_to_processed_ms",
+        "commit_to_events_fetch_ms",
+    ):
+        values = sorted(
+            float(event[key])
+            for event in canonical_events
+            if isinstance(event.get(key), (int, float))
+            and not isinstance(event.get(key), bool)
+            and float(event[key]) >= 0
+        )
+        if not values:
+            result[key] = {"count": 0, "p50": None, "p95": None, "max": None}
+            continue
+        p50_rank = max(1, math.ceil(0.50 * len(values)))
+        p95_rank = max(1, math.ceil(0.95 * len(values)))
+        result[key] = {
+            "count": len(values),
+            "p50": round(values[p50_rank - 1], 1),
+            "p95": round(values[p95_rank - 1], 1),
+            "max": round(values[-1], 1),
+        }
+    return result
 
 
 def _drain_events_after_stop(
@@ -1564,6 +1613,39 @@ def _self_test() -> int:
     check("session_end read version", read["version"], 4)
     check("session_end read spans", read["spans_revised"], 19)
     check("session_end read unreadable", read["unreadable"], None)
+
+    # 7. Server-stage durations share one monotonic clock. Missing fields stay missing;
+    #    they never become zero-duration evidence.
+    timing = _server_stage_timing_summary(
+        [
+            {
+                "queue_wait_ms": 100.0,
+                "canonical_processing_elapsed_ms": 200.0,
+                "queued_to_processed_ms": 300.0,
+                "commit_to_events_fetch_ms": 400.0,
+            },
+            {
+                "queue_wait_ms": 300.0,
+                "canonical_processing_elapsed_ms": 400.0,
+                "queued_to_processed_ms": 700.0,
+            },
+        ]
+    )
+    check(
+        "queue timing",
+        timing["queue_wait_ms"],
+        {"count": 2, "p50": 100.0, "p95": 300.0, "max": 300.0},
+    )
+    check(
+        "processing timing",
+        timing["canonical_processing_elapsed_ms"],
+        {"count": 2, "p50": 200.0, "p95": 400.0, "max": 400.0},
+    )
+    check(
+        "fetch timing missing",
+        timing["commit_to_events_fetch_ms"],
+        {"count": 1, "p50": 400.0, "p95": 400.0, "max": 400.0},
+    )
 
     for failure in failures:
         print(f"FAIL {failure}")

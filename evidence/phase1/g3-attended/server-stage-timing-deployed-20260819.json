@@ -1,0 +1,458 @@
+{
+  "schema": "ralph-live-pipeline-probe.v1",
+  "host": "ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
+  "pin_prefix": "a35ca9fc",
+  "requested_seconds": 12.0,
+  "audio": {
+    "voices": {
+      "microphone": "Samantha",
+      "system": "Fred"
+    },
+    "lane_audio": "continuous",
+    "lead_seconds": 0.5,
+    "lane_offset_ms": {
+      "system": 0.0,
+      "microphone": 0.0
+    },
+    "turns": {
+      "microphone": 6,
+      "system": 6
+    },
+    "frames_per_lane": {
+      "microphone": 24,
+      "system": 24
+    },
+    "voiced_frames": {
+      "microphone": 23,
+      "system": 23
+    }
+  },
+  "pairing": {
+    "status": 200,
+    "device_id": "codex-server-latency-20260819",
+    "scope": "capture",
+    "device_token_len": 43
+  },
+  "session": {
+    "status": 200,
+    "session_id_len": 32,
+    "view_token_len": 43,
+    "view_expires_at": 1787225500.3195171,
+    "descriptor": {
+      "sample_rate": 16000,
+      "frame_samples": 8000,
+      "source_revision": "89fc48376ec2f855d4cac504cef4a2dc18ab2704",
+      "provider_manifest_hash": "ba0a0a0fce473d6531e7a40497518aafb8970267e43c84af870d174f112050a5"
+    }
+  },
+  "last_live_snapshot": {
+    "status": "active",
+    "version": 28,
+    "accepted_samples": 184000,
+    "accounted_samples": 166400,
+    "committed_samples": 166400,
+    "retained_samples": 24000,
+    "pending_span_ids": 0,
+    "committed_items": 5,
+    "identity_snapshot_version": 4,
+    "identity_canonical_speakers": [
+      "speaker-0001"
+    ],
+    "failure_reason": null,
+    "terminal_failure": null,
+    "pending_work_items": 0
+  },
+  "publish": {
+    "ticks_planned": 24,
+    "ticks_run": 24,
+    "accepted_frames": {
+      "system": 24,
+      "microphone": 24
+    },
+    "non_200_count": 0,
+    "aborted_at": null,
+    "wall_seconds": 12.0,
+    "tls_handshakes": 1
+  },
+  "concurrent_readers": {
+    "count": 2,
+    "interval_seconds": 0.22,
+    "readers": [
+      {
+        "name": "view-reader-1",
+        "polls": 42,
+        "status_counts": {
+          "events:200": 42,
+          "snapshot:200": 42
+        },
+        "first_non_200": null,
+        "last_non_200": null,
+        "snapshot_p95_ms": 122.8,
+        "events_p95_ms": 87.1,
+        "handshakes": 1,
+        "error": null
+      },
+      {
+        "name": "view-reader-2",
+        "polls": 42,
+        "status_counts": {
+          "events:200": 42,
+          "snapshot:200": 42
+        },
+        "first_non_200": null,
+        "last_non_200": null,
+        "snapshot_p95_ms": 103.2,
+        "events_p95_ms": 86.7,
+        "handshakes": 1,
+        "error": null
+      }
+    ]
+  },
+  "stop": {
+    "status": 200,
+    "snapshot": {
+      "status": "closed",
+      "version": 32,
+      "accepted_samples": 192000,
+      "accounted_samples": 192000,
+      "committed_samples": 192000,
+      "retained_samples": 0,
+      "pending_span_ids": 0,
+      "committed_items": 6,
+      "identity_snapshot_version": 5,
+      "identity_canonical_speakers": [
+        "speaker-0001"
+      ],
+      "failure_reason": null,
+      "terminal_failure": null,
+      "pending_work_items": 0
+    }
+  },
+  "transcript": {
+    "item_count": 6,
+    "speakers": [
+      "S00",
+      "S01"
+    ],
+    "attributed_speakers": [
+      "S01"
+    ],
+    "unattributed_spans": 2,
+    "empty_spans": 0,
+    "items": [
+      {
+        "span_id": 0,
+        "start_sample": 0,
+        "end_sample": 6400,
+        "identity_snapshot_version": 1,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0][S00]\u55ef\u3002[0.22]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 1,
+        "start_sample": 6400,
+        "end_sample": 46400,
+        "identity_snapshot_version": 2,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.11][S01]Good morning everyone.[1.31][1.44][S01]This is the microphone.[2.45]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 2,
+        "start_sample": 46400,
+        "end_sample": 86400,
+        "identity_snapshot_version": 2,
+        "speakers": [
+          "S00"
+        ],
+        "transcript": "[0.08][S00]I am the second speaker.[1.62][1.68][S00]The transcription.[2.46]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 3,
+        "start_sample": 86400,
+        "end_sample": 126400,
+        "identity_snapshot_version": 3,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.06][S01]...service should be receiving two separate audio.[2.44]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 4,
+        "start_sample": 126400,
+        "end_sample": 166400,
+        "identity_snapshot_version": 4,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0][S01]right now. Let us check whether the speaker[2.34]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      },
+      {
+        "span_id": 5,
+        "start_sample": 166400,
+        "end_sample": 192000,
+        "identity_snapshot_version": 5,
+        "speakers": [
+          "S01"
+        ],
+        "transcript": "[0.06][S01]labels come through on the live paint.[1.56]",
+        "revised_transcript": null,
+        "revised_speakers": []
+      }
+    ]
+  },
+  "sweep": {
+    "committed_items": 6,
+    "revised_items": 0,
+    "label_changing": 0,
+    "byte_identical_rewrites": 0,
+    "words_moved": 0,
+    "cadence": {
+      "version_surface": "canonical_processed.identity_revision_version",
+      "spans_reporting": 5,
+      "spans_without_version": 0,
+      "versions": [
+        0
+      ],
+      "version_histogram": {
+        "0": 5
+      },
+      "max_version": 0,
+      "first_nonzero": null,
+      "spans_revised": 0,
+      "merges": 0
+    },
+    "cadence_refusals": {},
+    "session_end": {
+      "version": null,
+      "spans_revised": null,
+      "units_revised": null,
+      "merges": null,
+      "refusals": null,
+      "unreadable": "identity_finalized not read: post-stop events drain returned 403"
+    }
+  },
+  "fragmentation": {
+    "canonical_speakers": 1,
+    "real_voices": 2,
+    "references_per_real_voice": 0.5,
+    "labels_seen_in_transcript": [
+      "S00",
+      "S01"
+    ],
+    "capacity_abstains": 0
+  },
+  "latency": {
+    "committed_advances": 5,
+    "rejected_negative": 0,
+    "committed_p50_ms": 1718.643,
+    "committed_p95_ms": 3759.048,
+    "snapshot_p95_ms": 95.5,
+    "events_p95_ms": 80.8,
+    "publish_p95_ms": 130.7,
+    "route_sampling": "serial diagnostic only; not the portal user-visible latency contract"
+  },
+  "post_stop_events": {
+    "status": 403,
+    "since_seq": 43,
+    "authority": "capture",
+    "body": {
+      "detail": "session is not owned by this device."
+    }
+  },
+  "events_seen": 44,
+  "duplicate_event_reads": 23,
+  "event_kinds": {
+    "canonical_processed": 5,
+    "canonical_queued": 5,
+    "canonical_started": 5,
+    "frame_accepted": 23,
+    "session_created": 1,
+    "span_frozen": 5
+  },
+  "canonical_events": [
+    {
+      "span_id": 0,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 5.247910325124394,
+      "canonical_decode_elapsed_sec": 2.0991641300497577,
+      "canonical_decode_token_cap": 103,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 0.4,
+      "runtime_monotonic_ns": 801444048341337,
+      "queue_wait_ms": 0.603546,
+      "canonical_processing_elapsed_ms": 2101.649059,
+      "queued_to_processed_ms": 2102.252605,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 429.603933
+    },
+    {
+      "span_id": 1,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.07620310080237687,
+      "canonical_decode_elapsed_sec": 0.19050775200594217,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801444704581269,
+      "queue_wait_ms": 182.575204,
+      "canonical_processing_elapsed_ms": 656.202854,
+      "queued_to_processed_ms": 838.778058,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 184.696374
+    },
+    {
+      "span_id": 2,
+      "submitted": true,
+      "identity_status": "abstain",
+      "identity_reason": "same_span_cannot_link_conflict",
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.14757998720742763,
+      "canonical_decode_elapsed_sec": 0.36894996801856905,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801447095481794,
+      "queue_wait_ms": 0.566014,
+      "canonical_processing_elapsed_ms": 708.357133,
+      "queued_to_processed_ms": 708.923147,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 469.503401
+    },
+    {
+      "span_id": 3,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.12212749482132494,
+      "canonical_decode_elapsed_sec": 0.30531873705331236,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801449479345191,
+      "queue_wait_ms": 0.523956,
+      "canonical_processing_elapsed_ms": 599.774993,
+      "queued_to_processed_ms": 600.298949,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 459.136102
+    },
+    {
+      "span_id": 4,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "submission_refusal": null,
+      "empty_reason": null,
+      "canonical_decode_rtf": 0.12196329198777675,
+      "canonical_decode_elapsed_sec": 0.3049082299694419,
+      "canonical_decode_token_cap": 286,
+      "canonical_decode_capped": false,
+      "frozen_span_duration_sec": 2.5,
+      "runtime_monotonic_ns": 801451977096837,
+      "queue_wait_ms": 0.473426,
+      "canonical_processing_elapsed_ms": 582.886103,
+      "queued_to_processed_ms": 583.359529,
+      "identity_revision_refusals": {},
+      "identity_revision_version": 0,
+      "identity_revision_spans": 0,
+      "identity_revision_merges": 0,
+      "commit_to_events_fetch_ms": 401.279628
+    }
+  ],
+  "server_stage_timing": {
+    "clock": "server_monotonic",
+    "cross_host_subtraction": false,
+    "queue_wait_ms": {
+      "count": 5,
+      "p50": 0.6,
+      "p95": 182.6,
+      "max": 182.6
+    },
+    "canonical_processing_elapsed_ms": {
+      "count": 5,
+      "p50": 656.2,
+      "p95": 2101.6,
+      "max": 2101.6
+    },
+    "queued_to_processed_ms": {
+      "count": 5,
+      "p50": 708.9,
+      "p95": 2102.3,
+      "max": 2102.3
+    },
+    "commit_to_events_fetch_ms": {
+      "count": 5,
+      "p50": 429.6,
+      "p95": 469.5,
+      "max": 469.5
+    }
+  },
+  "decode": {
+    "spans_total": 5,
+    "spans_measured": 5,
+    "cap_present_count": 5,
+    "capped_count": 0,
+    "capped_span_ids": [],
+    "elapsed_sec": {
+      "min": 0.191,
+      "p50": 0.305,
+      "p95": 2.099,
+      "max": 2.099
+    },
+    "rtf": {
+      "min": 0.076,
+      "p50": 0.122,
+      "p95": 5.248,
+      "max": 5.248,
+      "bound": 1.0,
+      "p95_under_bound": false
+    },
+    "cap_expectation_source": "product-function",
+    "caps_observed": [
+      103,
+      286
+    ],
+    "cap_derivation_mismatches": [],
+    "cap_derivation_holds": true
+  },
+  "view_authority_after_stop": {
+    "snapshot_status": 401,
+    "revoked": true
+  }
+}

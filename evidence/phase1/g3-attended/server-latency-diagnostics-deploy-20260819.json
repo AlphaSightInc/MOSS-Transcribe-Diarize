@@ -1,0 +1,81 @@
+{
+  "schema": "moss.server-latency-diagnostics-deploy.v1",
+  "date": "2026-08-19",
+  "target": "ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
+  "release_parent": "fb83ba5ee60c44688e2580a398bfa388dcf5e67a",
+  "deployed_revision": "89fc48376ec2f855d4cac504cef4a2dc18ab2704",
+  "deployment": {
+    "checkout_clean": true,
+    "service": "moss-live-web.service",
+    "service_active": true,
+    "service_pid": 115221,
+    "live_http": 200,
+    "capture_http": 404,
+    "production_postdeploy_verify": "PASS",
+    "rollback_snapshot": "/home/devcontainers/.local/share/moss-transcribe-diarize/production-backups/20260819T232654Z-pre-server-latency-89fc483"
+  },
+  "manifest": {
+    "field_diff_count": 1,
+    "changed_fields": [
+      "source_revision"
+    ],
+    "config_hashes_identical": true,
+    "provider_admission_available": true,
+    "provider_admission_failures": [],
+    "provider_manifest_hash": "ba0a0a0fce473d6531e7a40497518aafb8970267e43c84af870d174f112050a5",
+    "manifest_sha256": "c9b14c6da7fef7a3791b0cc3ae08f219ac05aaeed2ece1a4a7a37a4d6af42ddb",
+    "config_hashes": {
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+    }
+  },
+  "portal": {
+    "production_sha256": "6aa6c4a6de63cdec87cd6e7c9e9933fa9509518539d7c83b0b2051de2c854aff",
+    "byte_identical_to_release_parent": true,
+    "dom_timing_deployed": false,
+    "reason": "The production release contract byte-seals live_capture_portal.py; DOM timing remains tested on dev pending release reconciliation."
+  },
+  "validation": {
+    "focused_python": {
+      "passed": 137,
+      "subtests_passed": 393,
+      "failed": 0
+    },
+    "swift": {
+      "passed": 200,
+      "failed": 0
+    },
+    "full_python": {
+      "passed": 1074,
+      "skipped": 3,
+      "subtests_passed": 451,
+      "failed": 2,
+      "declared_failures": [
+        "l15_product_tree_drift",
+        "legacy_all92_expected_92_observed_55"
+      ]
+    }
+  },
+  "deployed_probe": {
+    "artifact": "server-stage-timing-deployed-20advance-20260819.json",
+    "sha256": "97c9e3ad30dd997e80fdcc8260d14c4e3cb4b1ef87082018e4e2096f04498210",
+    "committed_advances": 21,
+    "accepted_frames": 208,
+    "non_200_count": 0,
+    "two_concurrent_readers_green": true,
+    "queue_wait_p95_ms": 0.7,
+    "canonical_processing_p95_ms": 766.2,
+    "queued_to_processed_p95_ms": 766.5,
+    "commit_to_server_events_read_p95_ms": 589.6,
+    "decode_p95_ms": 413.0,
+    "committed_p95_ms": 1767.189,
+    "verdict": "NO_POLICY_CHANGE"
+  },
+  "remaining_external_gate": {
+    "m4mbp_online": false,
+    "fresh_installed_app_acceptance": false,
+    "attended_microphone_system_overlap_acceptance": false
+  }
+}

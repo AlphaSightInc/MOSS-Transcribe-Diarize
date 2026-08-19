@@ -2588,3 +2588,33 @@ warning threshold or authorize normalisation, AGC, or a fixed offset. Next evide
 multiple synchronized recordings with distinct, audited lexical references in each lane.
 Command and raw result:
 `.venv/bin/python prototypes/streaming-diarization/proto_lane_level_effect.py --preregistration prototypes/streaming-diarization/lane-level-preregistration-v2.json --base-url http://127.0.0.1:18000/v1 --output evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`.
+
+### Deployed server-stage latency attribution (`live-pipeline-probe.py`, 2026-08-19)
+
+**Question:** on the exact production service, how much post-freeze latency is queue wait,
+canonical processing, and waiting for the next events read when all durations use one server
+monotonic clock?
+
+**VERDICT: HARD-CAP ACCUMULATION REMAINS THE FIRST-WORD DOMINANT TERM; NO POLICY CHANGE.** A
+server-only diagnostics commit `89fc48376ec2f855d4cac504cef4a2dc18ab2704`, based directly on
+the production release `fb83ba5ee60c44688e2580a398bfa388dcf5e67a`, was deployed after a
+one-field manifest diff (`source_revision` only), unchanged config hashes, real-provider
+admission, and the production postdeploy contract. The sealed production portal remained
+byte-identical (`6aa6c4a6...aff`); browser-DOM instrumentation remains on `dev`, not production.
+
+The 52 s real-vLLM run accepted 104/104 frames on each lane, had zero non-200 responses, clean
+stop/view revocation, 21 committed advances, and two concurrent readers with no failures. Queue
+wait was 0.5/0.7 ms p50/p95; canonical processing 587.0/766.2 ms; queued-to-processed
+587.6/766.5 ms; commit-to-server-events-read 411.5/589.6 ms. Decode itself was 299/413 ms
+p50/p95 with no capped decode. The independent capture-side committed p95 was 1,767.189 ms.
+Thus normal post-freeze work is roughly 1.36 s at p95 before browser DOM work; adding the 2.5 s
+hard-cap accumulation gives an approximate 3.86 s first-word path, consistent with the reported
+3–5 s. Queueing was not the cause in this run. The five-span smoke run's 2.099 s decode tail is
+preserved but is not used to select policy; it did not reproduce in the 21-span run.
+
+No endpoint/manifest threshold changes follow: the sealed cap sweep already rejected shorter
+arms, and this instrumentation does not override its quality gates. Raw evidence:
+`evidence/phase1/g3-attended/server-stage-timing-deployed-20260819.json` (SHA-256
+`faf22dcc...65e`) and
+`evidence/phase1/g3-attended/server-stage-timing-deployed-20advance-20260819.json` (SHA-256
+`97c9e3ad...210`).
