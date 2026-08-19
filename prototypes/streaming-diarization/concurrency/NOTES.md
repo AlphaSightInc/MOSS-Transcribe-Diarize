@@ -358,3 +358,32 @@ drain before every normal or overload lifecycle read, and it refuses to evaluate
 acknowledge inside the caller's existing stop deadline. The writer remains open for later phases. This changes
 no fairness, stop-drain, latency, or scheduler value. It establishes only the observation boundary; it does
 not establish scheduler fairness, stop-drain correctness, G4, or G5.
+
+## Saved lifecycle completeness audit — 2026-08-19
+
+**VERDICT: FAIL CLOSED — run 32 cannot be re-scored; rerun the unchanged frozen matrix.**
+
+Question: after adding the writer-owned boundary, does run 32's already-written lifecycle JSONL contain every
+event the writer reported, so the old fairness and queue-residue results can be safely re-evaluated without a
+new live run?
+
+One command (read-only over the saved evidence; prints full phase accounting):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_saved_lifecycle_completeness.py \
+  --run-directory evidence/phase1/w2-local-concurrency/run-20260819T011500-iteration32 \
+  --output evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json
+```
+
+The raw log has **4,240** records but its final writer counter is **4,245**. The first five phase boundaries
+match exactly (202, 548, 1,185, 2,259, and 4,194 cumulative records), while overload has 46 persisted records
+against its 51-record counter. Thus the terminal matrix lifecycle evidence is incomplete. The evidence audit
+does not reclassify any saved fairness or stop-drain result; it requires a new frozen matrix using the repaired
+writer boundary and separated predicates. Artifact SHA-256:
+`evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json` is recorded in the
+iteration evidence with SHA-256 `b0b4493c54218056d91c9925bdf6b5d577f3a3a073ce551c9d9eb31e5db04052`.
+
+This names the third degenerate oracle in this workstream: repeated markers, then the unscoped fairness counter,
+then the writer/evaluator race. A derived number is only usable when its source is complete and its predicate
+actually measures the behavior it names. This audit establishes no scheduler result, stop-drain result, G4,
+G5, live route, or inference result.

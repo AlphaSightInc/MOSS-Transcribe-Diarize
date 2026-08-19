@@ -35,6 +35,7 @@ from run_cpu_hf_local_measurement import (  # Reuse the established live-route b
     SessionRun,
     _atomic_json,
     _canonical_lifecycle_fairness,
+    _canonical_lifecycle_stop_drain,
     _descriptor_fields,
     _process_tree_rss_bytes,
     _read_json,

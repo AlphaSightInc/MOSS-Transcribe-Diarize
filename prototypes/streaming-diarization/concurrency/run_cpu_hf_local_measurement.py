@@ -164,20 +164,87 @@ def _canonical_lifecycle_fairness(
         if item_id not in started_items[session_id]:
             errors.append(f"event {index} processes unstarted item {session_id}/{item_id}")
 
-    for session_id, items in queued_items.items():
-        if items:
-            errors.append(f"run ended with queued canonical items for {session_id}")
     for kind, count in lifecycle_counts.items():
         if count == 0:
             errors.append(f"lifecycle evidence has no {kind} events")
+    if errors:
+        applicability = "invalid"
+        passes: bool | None = False
+    elif contended_pair_dispatch_observations == 0:
+        applicability = "not_applicable"
+        passes = None
+    else:
+        applicability = "measured"
+        passes = maximum_observed_skew <= maximum_skew
     return {
         "method": "pairwise dispatch skew over each continuous jointly-ready interval",
         "lifecycle_event_counts": lifecycle_counts,
         "contended_pair_dispatch_observations": contended_pair_dispatch_observations,
         "maximum_contended_pair_dispatch_skew": maximum_observed_skew,
         "fairness_gate": maximum_skew,
+        "applicability": applicability,
         "errors": errors,
-        "passes": not errors and maximum_observed_skew <= maximum_skew,
+        "passes": passes,
+    }
+
+
+def _canonical_lifecycle_stop_drain(
+    events: list[dict[str, Any]], session_ids: set[str]
+) -> dict[str, Any]:
+    """Report queued canonical residue separately from scheduler fairness.
+
+    The runner calls this only after a writer-owned drain boundary.  A queued item
+    at that boundary is a stop-drain observation, not evidence that the scheduler
+    favored a peer while both were ready.  The lifecycle records retain enough
+    information to make the two predicates independently falsifiable.
+    """
+    queued_items = {session_id: set() for session_id in session_ids}
+    started_items = {session_id: set() for session_id in session_ids}
+    errors: list[str] = []
+
+    for index, event in enumerate(events):
+        session_id = event.get("session_id")
+        kind = event.get("kind")
+        payload = event.get("payload")
+        if session_id not in session_ids:
+            continue
+        if kind not in {"canonical_queued", "canonical_started", "canonical_processed"}:
+            errors.append(f"event {index} has unsupported canonical lifecycle kind {kind!r}")
+            continue
+        if not isinstance(payload, dict) or not isinstance(payload.get("item_id"), int):
+            errors.append(f"event {index} lacks an integer canonical item_id")
+            continue
+        item_id = payload["item_id"]
+        if kind == "canonical_queued":
+            if item_id in queued_items[session_id] or item_id in started_items[session_id]:
+                errors.append(f"event {index} queues duplicate item {session_id}/{item_id}")
+                continue
+            queued_items[session_id].add(item_id)
+            continue
+        if kind == "canonical_started":
+            if item_id not in queued_items[session_id]:
+                errors.append(f"event {index} starts unqueued item {session_id}/{item_id}")
+                continue
+            queued_items[session_id].remove(item_id)
+            started_items[session_id].add(item_id)
+            continue
+        if item_id not in started_items[session_id]:
+            errors.append(f"event {index} processes unstarted item {session_id}/{item_id}")
+
+    queued_by_session = {
+        session_id: sorted(items) for session_id, items in queued_items.items() if items
+    }
+    if queued_by_session:
+        errors.extend(
+            f"run ended with queued canonical items for {session_id}"
+            for session_id in sorted(queued_by_session)
+        )
+    return {
+        "method": "queued canonical work after the writer-owned post-stop drain boundary",
+        "queued_item_count": sum(len(items) for items in queued_items.values()),
+        "queued_item_ids_by_session": queued_by_session,
+        "errors": errors,
+        "passes": not errors,
     }
 
 
@@ -1065,6 +1132,7 @@ class Measurement:
             session_ids,
             maximum_skew=fairness_gate,
         )
+        canonical_stop_drain = _canonical_lifecycle_stop_drain(lifecycle, session_ids)
         marker_checks = self.marker_checks(sessions, lifecycle)
         per_session_latency: dict[str, dict[str, float | int | None]] = {}
         rss: list[int] = []
@@ -1090,6 +1158,15 @@ class Measurement:
         log_text = self.service_log.read_text(encoding="utf-8", errors="replace").casefold() if self.service_log.exists() else ""
         oom_count = sum(log_text.count(token) for token in ("out of memory", "oom", "accelerator error"))
         stops_closed = all(stop["status"] == 200 for stop in phase["stops"])
+        stop_drain_complete = {
+            "method": (
+                "all HTTP stop responses close and no queued canonical work remains after "
+                "the writer-owned post-stop drain boundary"
+            ),
+            "http_stops_closed": stops_closed,
+            "canonical_queue": canonical_stop_drain,
+            "passes": stops_closed and canonical_stop_drain["passes"],
+        }
         return {
             "latency_label": self.contract["scope"]["latency_label"],
             "per_session_latency_seconds": per_session_latency,
@@ -1108,6 +1185,7 @@ class Measurement:
             "dispatch_counts": counts,
             "completed_dispatch_prefix_skew_diagnostic": completed_prefix_skew,
             "canonical_lifecycle_fairness": fairness,
+            "stop_drain_complete": stop_drain_complete,
             "rss_warm_idle_bytes": self.rss_warm_idle,
             "maximum_process_tree_rss_bytes": max_rss,
             "rss_growth_bytes": rss_growth,
@@ -1117,11 +1195,11 @@ class Measurement:
             "passes": (
                 max_p95 is not None
                 and max_p95 <= latency_gate
-                and fairness["passes"]
+                and fairness["passes"] is not False
                 and rss_growth is not None
                 and rss_growth <= memory_gate
                 and oom_count == 0
-                and stops_closed
+                and stop_drain_complete["passes"]
                 and phase["unexpected_frame_results"]["total_count"] == 0
                 and all(all(check.values()) for check in marker_checks.values())
             ),

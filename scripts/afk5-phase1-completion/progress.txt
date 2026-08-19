@@ -1380,3 +1380,46 @@ AND SAY THIS PLAINLY IN THE ARTIFACT: this is the THIRD degenerate-oracle defect
 repeated-marker oracle, the unscoped fairness counter, and now the writer/evaluator race. All three produced
 confident numbers that meant nothing. That pattern is worth naming in the write-up so the next person building
 a harness here expects it and puts the barrier in from the start.
+
+[monitor 2026-08-18 21:55] BOTH P0s LANDED AND BOTH ARE CORRECT. Verified rather than taken on trust.
+
+DEFECT D (`fa510ca`) — done exactly as specified, including the part you had to find rather than be told.
+  `requiredTextField` accepts "" and still rejects non-strings, so `null` fails — applied at BOTH
+  `mossPoller.ts:718` (canonical) and `:728` (provisional). The provisional site was the second instance I
+  flagged; fixing only the first would have re-latched the banner from the other parser.
+  You did NOT blanket-swap: `requiredString` survives at `:630` snapshot session_id, `:690` event session_id,
+  `:691` event kind — all correctly strict, since empty really is malformed there.
+  Tests +96 lines including a parameterised "still rejects a non-string %s transcript", so both directions are
+  covered, and the positive case asserts `onError` not called plus cursor advance. Frontend 126/126.
+  AND IT SHIPS: `git log -1 -- ProjectResources/Frontend/app.js` is `fa510ca`, so the bundle was rebuilt in the
+  same commit and the HEAD-pinned gate passes. A poller fix that stayed in source would not have helped the
+  operator's next attended run; this one is in the artifact the service serves.
+
+DRAIN BARRIER (`103b72a`) — a real solution to a cross-process problem, not a sleep.
+  `_CanonicalEventLogDrain` is pushed through the SAME queue as the writes, so FIFO ordering guarantees
+  everything queued before it is on disk when it completes. `drain(timeout_seconds)` rejects a non-positive
+  timeout and handles a closed or dead writer. It is exposed at `POST /prototype/measurement-event-log/drain`
+  because the writer lives in the service process and the runner is a different process — that indirection is
+  necessary and you got it right.
+  AND IT FAILS CLOSED, which was the part that mattered: `run_cpu_hf_local_measurement.py:848-850` raises
+  `MeasurementError("canonical event-log drain barrier did not acknowledge; refusing partial lifecycle
+  evaluation")` unless the response is 200 with `drained: true`. That is exactly the behaviour I asked for —
+  a partial file must never be evaluated.
+
+ONE ITEM FROM THE DEFECT-D CLUSTER IS STILL OPEN, AND IT IS THE ONE I SAID NEEDS A DECISION, NOT A REFLEX:
+  `optionalString` (`mossPoller.ts:759-761`) still maps `""` to `null`, and `:415` renders
+  `commit.revisedTranscript ?? commit.transcript` while `:453` treats `revisedTranscript !== null` as "was
+  revised". So if the retrospective sweep ever revises a span TO empty — removing a misrecognition — the
+  client silently falls back to the STALE original text and does not even count it as a revision.
+  Decide it explicitly, do not just widen the helper:
+    (a) If the server can emit an empty revision, distinguish absent (`undefined`/`null`) from revised-to-empty
+        (`""`) and render the empty revision, with a test.
+    (b) If it cannot, prove that from the server code — find where `revised_transcript` is produced and show
+        the empty case is unreachable — and record that proof next to the parser so the conflation is a
+        documented invariant rather than an accident.
+  Either answer is fine. An undocumented coincidence is not.
+
+NEXT, unchanged: stop/fairness predicate separation (screen-1 must report fairness `not_applicable` at
+`contended_pair_dispatch_observations: 0`), then re-score or re-run per provenance.
+
+[iteration 36] target=W2 lifecycle predicate separation and saved run-32 completeness audit; files=`prototypes/streaming-diarization/concurrency/{run_cpu_hf_local_measurement.py,run_remote_vllm_tunnel_measurement.py,proto_saved_lifecycle_completeness.py,README.md,NOTES.md}`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/{iteration-36-run32-lifecycle-completeness.json,iteration-36-writer-evaluator-boundary-regression.json}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red focused test **1 failed** before the separate drain evaluator existed, then focused route/runner **14 passed**, writer/evaluator boundary **3/3**, `py_compile`, and `git diff --check` PASS; evidence=`iteration-36-run32-lifecycle-completeness.json` SHA-256 `b0b4493c...e5db04052`; learned=run-32 JSONL is terminally short (**4,240** records vs writer counter **4,245**; overload 46/51), so no lifecycle/fairness/stop re-score is permitted; residue is now a separate `stop_drain_complete` predicate and zero jointly-ready fairness is `not_applicable`; next=run the unchanged fresh remote-vLLM 1/2/4/8 + selected-soak + overload/reconnect matrix and preserve any failure.

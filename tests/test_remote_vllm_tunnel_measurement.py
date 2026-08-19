@@ -129,6 +129,91 @@ def test_lifecycle_fairness_excludes_an_idle_peer_but_rejects_ready_peer_starvat
     assert unfair["maximum_contended_pair_dispatch_skew"] == 2
 
 
+def test_lifecycle_fairness_does_not_conflate_stop_residue_with_scheduler_fairness():
+    runner = _load_runner()
+
+    def event(session_id, kind, item_id):
+        return {"session_id": session_id, "kind": kind, "payload": {"item_id": item_id}}
+
+    lifecycle_with_post_stop_residue = [
+        event("a", "canonical_queued", 0),
+        event("b", "canonical_queued", 0),
+        event("a", "canonical_started", 0),
+        event("a", "canonical_processed", 0),
+        event("b", "canonical_started", 0),
+        event("b", "canonical_processed", 0),
+        event("a", "canonical_queued", 1),
+    ]
+
+    fairness = runner._canonical_lifecycle_fairness(
+        lifecycle_with_post_stop_residue, {"a", "b"}, maximum_skew=1
+    )
+    stop_drain = runner._canonical_lifecycle_stop_drain(
+        lifecycle_with_post_stop_residue, {"a", "b"}
+    )
+
+    assert fairness["applicability"] == "measured"
+    assert fairness["passes"] is True
+    assert stop_drain["passes"] is False
+    assert stop_drain["queued_item_count"] == 1
+
+
+def test_single_session_normal_phase_accepts_not_applicable_fairness(tmp_path):
+    runner = _load_runner()
+    args = SimpleNamespace(output=tmp_path, port=18999)
+    contract = {
+        "scope": {"latency_label": "test latency"},
+        "gates": {
+            "latency": {"maximum_per_session_p95_transcript_lag_seconds": 10.0},
+            "memory": {"maximum_process_tree_rss_increase_bytes_over_warm_idle": 1024},
+            "fairness": {"maximum_dispatch_count_skew_for_continuously_ready_sessions": 1},
+        },
+    }
+    measurement = runner.Measurement(args, contract, {})
+    measurement.rss_warm_idle = 100
+    session = runner.SessionRun(
+        session_id="only-session",
+        capture_bearer="capture",
+        view_bearer="view",
+        expected_marker="owned marker",
+    )
+    session.observer["latency_seconds"] = [0.5]
+    session.observer["text"] = {"0": "owned marker"}
+    session.rss_samples = [{"bytes": 100}]
+    session.reconnects = [{"prior_event_cursor": 0, "prior_snapshot_version": 0}]
+    measurement.event_log.write_text(
+        "\n".join(
+            json.dumps(
+                {"session_id": "only-session", "kind": kind, "payload": payload}
+            )
+            for kind, payload in (
+                ("canonical_queued", {"item_id": 0}),
+                ("canonical_started", {"item_id": 0}),
+                (
+                    "canonical_processed",
+                    {
+                        "item_id": 0,
+                        "submitted": True,
+                        "rendered_transcript": "owned marker",
+                    },
+                ),
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    phase = {
+        "stops": [{"status": 200}],
+        "unexpected_frame_results": {"total_count": 0},
+    }
+
+    evaluation = measurement.evaluate_normal_phase(phase, [session])
+
+    assert evaluation["canonical_lifecycle_fairness"]["applicability"] == "not_applicable"
+    assert evaluation["stop_drain_complete"]["passes"] is True
+    assert evaluation["passes"] is True
+
+
 def test_unique_phase_clips_and_overload_integrity_oracle_fail_closed(tmp_path):
     runner = _load_runner()
     args = SimpleNamespace(output=tmp_path, port=18999)

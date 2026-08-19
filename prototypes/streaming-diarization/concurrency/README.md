@@ -117,6 +117,18 @@ It uses the production asynchronous canonical-event writer and lifecycle evaluat
 synthetic lifecycle. It may only establish whether reading the log needs a writer-owned drain barrier; it
 cannot establish scheduler fairness, stop-drain semantics, G4, or G5.
 
+Saved lifecycle completeness audit (read-only; use before attempting any post-run re-score):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_saved_lifecycle_completeness.py \
+  --run-directory evidence/phase1/w2-local-concurrency/run-YYYYMMDDTHHMMSS \
+  --output evidence/phase1/w2-local-concurrency/saved-lifecycle-completeness.json
+```
+
+It compares the raw JSONL line count and every phase's attributed records to the cumulative writer counters
+in `run-state.json`. A short terminal count fails closed: it cannot reclassify scheduler fairness or
+stop-drain behavior and requires a fresh frozen matrix. It starts no service and sends no inference request.
+
 Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
 first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
 process. Use a fresh output directory for the measurement after a successful preflight:

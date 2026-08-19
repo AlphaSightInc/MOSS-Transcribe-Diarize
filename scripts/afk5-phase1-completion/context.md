@@ -144,12 +144,11 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 run-32 lifecycle re-score and stop-classification repair (P1):** iteration 35 added a bounded,
-   writer-owned drain barrier before every normal/overload lifecycle read, so first inspect the already-durable
-   run-32 log's counts and re-score it without another matrix if complete. Then separate drain completeness
-   from fairness and report no-contention fairness as `not_applicable`. Do not change frozen gate values or
-   scheduler behavior. The run-32 four-session soak is already a true G4 failure (p95 84.378 s); do not rerun
-   a matrix merely to seek a higher bound.
+1. **W2 fresh remote-vLLM lifecycle matrix (P1):** iteration 36 separated stop-drain from fairness and marks
+   zero jointly-ready observations `not_applicable`; it did not change a frozen gate or scheduler behavior.
+   The saved run-32 log is five terminal writer records short (4,240 vs 4,245), so its lifecycle findings cannot
+   be re-scored and a fresh 1/2/4/8 + selected-soak + overload/reconnect matrix is mandatory. Preserve its
+   independent failures: 4-session soak p95 84.378 s, non-200 stop responses, and 8-session p95 47.664 s.
 2. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
    rendered marker was checked before reconnect. Test a bounded wait for rendered ownership before reconnect;
    keep a real timeout as a failure, not a pass. This can clarify G5 integrity evidence but cannot make the
@@ -780,3 +779,42 @@ unscoped fairness counter, writer/evaluator race. All three produced confident n
   `c1fa5697a7f5d36eece0fb568e7a6eae5bf75dfa830f1c206c1ad50209429bba`.
 - This repairs only the observation boundary. Run-32's p95 and HTTP stop outcomes remain independently valid;
   lifecycle/fairness and queued-item results require the next evidence-only re-score before any classification.
+
+## Defect D + drain barrier verified; one cluster item still open (monitor, 2026-08-18 21:55)
+
+**Defect D (`fa510ca`) correct and SHIPPING.** `requiredTextField` accepts `""`, rejects non-strings (`null`
+still fails), applied at **both** `:718` canonical and `:728` provisional. No blanket swap — `requiredString`
+still guards `:630`/`:690`/`:691`. Tests +96 lines incl. parameterised "still rejects a non-string %s
+transcript"; frontend 126/126. Bundle rebuilt in the same commit (`git log -1 -- …app.js` = `fa510ca`),
+HEAD-pinned gate PASS — so it reaches the browser, not just source.
+
+**Drain barrier (`103b72a`) correct.** `_CanonicalEventLogDrain` rides the same queue (FIFO ⇒ everything before
+it is on disk), rejects non-positive timeouts, handles closed/dead writer, exposed at
+`POST /prototype/measurement-event-log/drain` because writer and runner are separate processes. **Fails closed:**
+`run_cpu_hf_local_measurement.py:848-850` raises `MeasurementError("… refusing partial lifecycle evaluation")`
+unless 200 + `drained: true`.
+
+**STILL OPEN — decide, don't reflex:** `optionalString` (`:759-761`) maps `""`→`null`; `:415` renders
+`revisedTranscript ?? transcript` and `:453` counts `!== null` as revised. So a span revised **to empty**
+silently keeps the stale original and isn't counted as a revision. Either (a) distinguish absent from
+revised-to-empty and render it, with a test; or (b) prove from the server that an empty revision is unreachable
+and record that proof beside the parser. An undocumented coincidence is not acceptable.
+
+**Next, unchanged:** stop/fairness predicate separation (fairness must be `not_applicable` when
+`contended_pair_dispatch_observations: 0`), then re-score or re-run per the provenance split.
+
+## W2 lifecycle predicate split and saved-log audit (iteration 36)
+
+- `canonical_lifecycle_fairness` now evaluates only pairwise scheduling: residue is excluded, no jointly-ready
+  observation is `not_applicable` (not a failure), and malformed lifecycle evidence remains invalid/fails closed.
+  `stop_drain_complete` separately requires both 200 HTTP stops and an empty queued-work set after the
+  writer-owned boundary. This changes no frozen value or runtime scheduling.
+- The generic saved-log completeness prototype read run 32's raw JSONL and its phase counters. Screens and soak
+  account exactly through cumulative 4,194, but overload has 46 durable records versus writer counter 51; the
+  full log is 4,240 vs 4,245. Therefore `rescore_permitted: false`: no old lifecycle/fairness/stop result was
+  reclassified; rerun the frozen matrix. Artifact
+  `evidence/phase1/w2-local-concurrency/iteration-36-run32-lifecycle-completeness.json`, SHA-256
+  `b0b4493c54218056d91c9925bdf6b5d577f3a3a073ce551c9d9eb31e5db04052`.
+- Validation: red regression first (missing separated drain evaluator), then 14 focused route/runner tests pass;
+  writer/evaluator boundary prototype remains 3/3; `py_compile` and `git diff --check` pass. This establishes
+  no scheduler, G4, G5, or new live inference result.
