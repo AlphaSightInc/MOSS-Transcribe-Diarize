@@ -1,0 +1,218 @@
+{
+  "inputs": {
+    "attempts": 3,
+    "items_per_session": 8,
+    "sessions": 2,
+    "writer_activity_timeout_seconds": 2.0
+  },
+  "production_code_path": {
+    "evaluator": "prototypes/streaming-diarization/concurrency/run_cpu_hf_local_measurement.py:_canonical_lifecycle_fairness",
+    "writer": "prototypes/browser-capture-feasibility/production_route_server.py:_CanonicalEventLogWriter"
+  },
+  "question": "Can the production asynchronous canonical-event writer make a complete lifecycle evaluate as incomplete when the runner reads its file before the writer drains?",
+  "schema": "moss-writer-evaluator-boundary-prototype.v1",
+  "trials": [
+    {
+      "drain_completed": true,
+      "drained_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 8,
+          "errors": [],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 16,
+            "canonical_queued": 16,
+            "canonical_started": 16
+          },
+          "maximum_contended_pair_dispatch_skew": 1,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": true
+        },
+        "line_count": 48,
+        "readable": true
+      },
+      "expected_event_count": 48,
+      "immediate_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 0,
+          "errors": [
+            "lifecycle evidence has no canonical_queued events",
+            "lifecycle evidence has no canonical_started events",
+            "lifecycle evidence has no canonical_processed events"
+          ],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 0,
+            "canonical_queued": 0,
+            "canonical_started": 0
+          },
+          "maximum_contended_pair_dispatch_skew": 0,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": false
+        },
+        "line_count": 0,
+        "readable": true
+      },
+      "race_observed": true,
+      "writer_activity_before_read": {
+        "stats": {
+          "enqueue_elapsed_ns": 120337,
+          "event_count": 48,
+          "fsync_count": 0,
+          "fsync_elapsed_ns": 0,
+          "fsync_interval_seconds": 5.0,
+          "max_pending_writer_records": 48,
+          "schema": "moss-canonical-event-log-overhead.v1",
+          "write_elapsed_ns": 7167
+        },
+        "writer_activity_observed": true
+      },
+      "writer_stats_after_close": {
+        "enqueue_elapsed_ns": 120337,
+        "event_count": 48,
+        "fsync_count": 2,
+        "fsync_elapsed_ns": 433250,
+        "fsync_interval_seconds": 5.0,
+        "max_pending_writer_records": 48,
+        "schema": "moss-canonical-event-log-overhead.v1",
+        "write_elapsed_ns": 7167
+      }
+    },
+    {
+      "drain_completed": true,
+      "drained_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 8,
+          "errors": [],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 16,
+            "canonical_queued": 16,
+            "canonical_started": 16
+          },
+          "maximum_contended_pair_dispatch_skew": 1,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": true
+        },
+        "line_count": 48,
+        "readable": true
+      },
+      "expected_event_count": 48,
+      "immediate_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 0,
+          "errors": [
+            "lifecycle evidence has no canonical_queued events",
+            "lifecycle evidence has no canonical_started events",
+            "lifecycle evidence has no canonical_processed events"
+          ],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 0,
+            "canonical_queued": 0,
+            "canonical_started": 0
+          },
+          "maximum_contended_pair_dispatch_skew": 0,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": false
+        },
+        "line_count": 0,
+        "readable": true
+      },
+      "race_observed": true,
+      "writer_activity_before_read": {
+        "stats": {
+          "enqueue_elapsed_ns": 93498,
+          "event_count": 48,
+          "fsync_count": 0,
+          "fsync_elapsed_ns": 0,
+          "fsync_interval_seconds": 5.0,
+          "max_pending_writer_records": 48,
+          "schema": "moss-canonical-event-log-overhead.v1",
+          "write_elapsed_ns": 5006
+        },
+        "writer_activity_observed": true
+      },
+      "writer_stats_after_close": {
+        "enqueue_elapsed_ns": 93498,
+        "event_count": 48,
+        "fsync_count": 2,
+        "fsync_elapsed_ns": 114708,
+        "fsync_interval_seconds": 5.0,
+        "max_pending_writer_records": 48,
+        "schema": "moss-canonical-event-log-overhead.v1",
+        "write_elapsed_ns": 5006
+      }
+    },
+    {
+      "drain_completed": true,
+      "drained_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 8,
+          "errors": [],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 16,
+            "canonical_queued": 16,
+            "canonical_started": 16
+          },
+          "maximum_contended_pair_dispatch_skew": 1,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": true
+        },
+        "line_count": 48,
+        "readable": true
+      },
+      "expected_event_count": 48,
+      "immediate_read": {
+        "fairness": {
+          "contended_pair_dispatch_observations": 0,
+          "errors": [
+            "lifecycle evidence has no canonical_queued events",
+            "lifecycle evidence has no canonical_started events",
+            "lifecycle evidence has no canonical_processed events"
+          ],
+          "fairness_gate": 1,
+          "lifecycle_event_counts": {
+            "canonical_processed": 0,
+            "canonical_queued": 0,
+            "canonical_started": 0
+          },
+          "maximum_contended_pair_dispatch_skew": 0,
+          "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+          "passes": false
+        },
+        "line_count": 0,
+        "readable": true
+      },
+      "race_observed": true,
+      "writer_activity_before_read": {
+        "stats": {
+          "enqueue_elapsed_ns": 96291,
+          "event_count": 48,
+          "fsync_count": 0,
+          "fsync_elapsed_ns": 0,
+          "fsync_interval_seconds": 5.0,
+          "max_pending_writer_records": 48,
+          "schema": "moss-canonical-event-log-overhead.v1",
+          "write_elapsed_ns": 4875
+        },
+        "writer_activity_observed": true
+      },
+      "writer_stats_after_close": {
+        "enqueue_elapsed_ns": 96291,
+        "event_count": 48,
+        "fsync_count": 2,
+        "fsync_elapsed_ns": 58083,
+        "fsync_interval_seconds": 5.0,
+        "max_pending_writer_records": 48,
+        "schema": "moss-canonical-event-log-overhead.v1",
+        "write_elapsed_ns": 4875
+      }
+    }
+  ],
+  "verdict": {
+    "race_observed_in_all_trials": true,
+    "required_repair_boundary": "The measurement runner must wait for a writer-owned drain barrier before it reads canonical lifecycle evidence; do not alter fairness or drain gate values."
+  }
+}

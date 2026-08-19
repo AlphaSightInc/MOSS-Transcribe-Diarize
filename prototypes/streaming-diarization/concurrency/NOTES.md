@@ -349,10 +349,12 @@ The probe exercised the production `_CanonicalEventLogWriter` and the production
 `_canonical_lifecycle_fairness` evaluator, without a service or scheduler. In all three trials it enqueued a
 complete two-session, eight-item lifecycle (48 records). The writer had already recorded write activity, but
 the immediate file read saw 0 records and failed closed for absent queued/started/processed evidence. After
-the writer's existing `close()` barrier, all 48 records were readable and the evaluator passed (8 contended
+the writer's non-closing `drain()` barrier, all 48 records were readable and the evaluator passed (8 contended
 dispatch observations, maximum skew 1). Artifact SHA-256:
 `31fe21ec4c1eeab9711ccfc8d9a83ee6e7794f021c46464fcade73fe6934e975`.
 
-The next implementation must add a writer-owned drain barrier before phase evaluation without changing a
-fairness, stop-drain, latency, or scheduler value. This bench result establishes only the observation race; it
-does not establish scheduler fairness, stop-drain correctness, G4, or G5.
+Iteration 35 implemented that measured boundary: the runner asks its loopback route for a bounded writer-owned
+drain before every normal or overload lifecycle read, and it refuses to evaluate if the writer does not
+acknowledge inside the caller's existing stop deadline. The writer remains open for later phases. This changes
+no fairness, stop-drain, latency, or scheduler value. It establishes only the observation boundary; it does
+not establish scheduler fairness, stop-drain correctness, G4, or G5.

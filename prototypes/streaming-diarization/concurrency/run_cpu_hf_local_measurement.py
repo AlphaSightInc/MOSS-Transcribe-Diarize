@@ -835,6 +835,26 @@ class Measurement:
             return {"status": response["status"], "available": False}
         return {"status": response["status"], "available": True, **response["json"]}
 
+    def drain_canonical_event_log(self) -> dict[str, Any]:
+        """Refuse lifecycle evaluation until the route writer acknowledges its boundary."""
+        timeout_seconds = self.args.stop_deadline_seconds
+        response = _request_json(
+            f"{self.base_url}/prototype/measurement-event-log/drain",
+            method="POST",
+            payload={"timeout_seconds": timeout_seconds},
+            timeout_seconds=timeout_seconds,
+        )
+        body = response["json"]
+        if response["status"] != 200 or not isinstance(body, dict) or body.get("drained") is not True:
+            raise MeasurementError(
+                "canonical event-log drain barrier did not acknowledge; refusing partial lifecycle evaluation"
+            )
+        return {
+            "status": response["status"],
+            "timeout_seconds": timeout_seconds,
+            "event_log": body.get("event_log"),
+        }
+
     def _canonical_lifecycle_events(self, session_ids: set[str]) -> list[dict[str, Any]]:
         events: list[dict[str, Any]] = []
         if not self.event_log.is_file():
@@ -1011,6 +1031,7 @@ class Measurement:
         for session in sessions:
             self.poll(session)
         phase["stops"] = [self.stop(session) for session in sessions]
+        phase["canonical_event_log_drain"] = self.drain_canonical_event_log()
         phase["canonical_event_log_instrumentation"] = self.instrumentation_overhead()
         phase["ended_wall_ns"] = time.time_ns()
         phase["evaluation"] = self.evaluate_normal_phase(phase, sessions)
@@ -1181,8 +1202,9 @@ class Measurement:
             "peer_marker_replay_failures": peer_marker_replay_failures,
             "retry_statuses": retry_statuses,
             "stops": [self.stop(session) for session in (saturated, peer)],
-            "canonical_event_log_instrumentation": self.instrumentation_overhead(),
         }
+        phase["canonical_event_log_drain"] = self.drain_canonical_event_log()
+        phase["canonical_event_log_instrumentation"] = self.instrumentation_overhead()
         saturated_frames = [record for record in saturated.frames if record["status"] == 429]
         lifecycle = self._canonical_lifecycle_events({saturated.session_id, peer.session_id})
         integrity_checks = self.overload_integrity_checks([saturated, peer], lifecycle)

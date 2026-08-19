@@ -144,11 +144,12 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 writer/evaluator drain and stop-classification repair (P1):** iteration 33 proved the async event
-   writer can leave a complete lifecycle unreadable at evaluation. Add a writer-owned drain barrier before
-   lifecycle reads, then separate drain completeness from fairness and report no-contention fairness as
-   `not_applicable`. Do not change frozen gate values or scheduler behavior. The run-32 four-session soak is
-   already a true G4 failure (p95 84.378 s); do not rerun a matrix merely to seek a higher bound.
+1. **W2 run-32 lifecycle re-score and stop-classification repair (P1):** iteration 35 added a bounded,
+   writer-owned drain barrier before every normal/overload lifecycle read, so first inspect the already-durable
+   run-32 log's counts and re-score it without another matrix if complete. Then separate drain completeness
+   from fairness and report no-contention fairness as `not_applicable`. Do not change frozen gate values or
+   scheduler behavior. The run-32 four-session soak is already a true G4 failure (p95 84.378 s); do not rerun
+   a matrix merely to seek a higher bound.
 2. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
    rendered marker was checked before reconnect. Test a bounded wait for rendered ownership before reconnect;
    keep a real timeout as a failure, not a pass. This can clarify G5 integrity evidence but cannot make the
@@ -763,3 +764,19 @@ contract edits.
 
 **Name the pattern in the write-up:** this is the **third** degenerate oracle here — repeated-marker oracle,
 unscoped fairness counter, writer/evaluator race. All three produced confident numbers that meant nothing.
+
+## W2 writer-owned lifecycle drain barrier (iteration 35)
+
+- The local route's `_CanonicalEventLogWriter` now accepts an ordered, non-closing drain marker. It flushes and
+  fsyncs all records preceding that marker, then acknowledges it; later phases continue using the same writer.
+  The measurement runner requests that bounded boundary before every normal or overload lifecycle read and
+  refuses partial evaluation when it does not receive a `200`/`drained: true` acknowledgement inside its existing
+  stop deadline. No scheduler behavior, frozen gate value, or contract changed.
+- Focused coverage is **5 passed**: it exercises the loopback drain route and proves the runner fails closed on
+  a rejected barrier. The production writer/evaluator prototype ran **3/3**: each immediate read saw **0/48**
+  records and failed closed, while each acknowledged drain exposed **48/48** complete records and passed the
+  fairness evaluator (maximum skew 1). Raw artifact:
+  `evidence/phase1/w2-local-concurrency/iteration-35-writer-evaluator-drain.json`, SHA-256
+  `c1fa5697a7f5d36eece0fb568e7a6eae5bf75dfa830f1c206c1ad50209429bba`.
+- This repairs only the observation boundary. Run-32's p95 and HTTP stop outcomes remain independently valid;
+  lifecycle/fairness and queued-item results require the next evidence-only re-score before any classification.

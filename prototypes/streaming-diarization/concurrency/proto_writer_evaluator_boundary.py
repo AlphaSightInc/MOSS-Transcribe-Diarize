@@ -3,7 +3,7 @@
 
 This is bench-only code. It exercises the production ``_CanonicalEventLogWriter``
 and the runner's lifecycle evaluator with a complete fair lifecycle, then compares
-the evaluator's result before and after the writer's existing ``close()`` barrier.
+the evaluator's result before and after the writer's non-closing ``drain()`` barrier.
 It changes neither runtime scheduling nor any preregistered gate value.
 """
 
@@ -98,26 +98,29 @@ def _trial(*, sessions: int, items_per_session: int, writer_activity_timeout_sec
             immediate["fairness"] = _canonical_lifecycle_fairness(
                 immediate["events"], session_ids, maximum_skew=1
             )
+            drain_completed = writer.drain(timeout_seconds=writer_activity_timeout_seconds)
+            drained = _read_lifecycle(path)
+            drained["fairness"] = _canonical_lifecycle_fairness(
+                drained["events"], session_ids, maximum_skew=1
+            )
         finally:
             writer.close()
-        flushed = _read_lifecycle(path)
-        flushed["fairness"] = _canonical_lifecycle_fairness(
-            flushed["events"], session_ids, maximum_skew=1
-        )
         after = writer.stats()
     return {
         "expected_event_count": len(expected),
         "writer_activity_before_read": before,
         "immediate_read": {key: value for key, value in immediate.items() if key != "events"},
-        "flushed_read": {key: value for key, value in flushed.items() if key != "events"},
+        "drain_completed": drain_completed,
+        "drained_read": {key: value for key, value in drained.items() if key != "events"},
         "writer_stats_after_close": after,
         "race_observed": (
             before["writer_activity_observed"]
             and immediate["line_count"] < len(expected)
-            and flushed["readable"]
-            and flushed["line_count"] == len(expected)
+            and drain_completed
+            and drained["readable"]
+            and drained["line_count"] == len(expected)
             and not immediate["fairness"]["passes"]
-            and flushed["fairness"]["passes"]
+            and drained["fairness"]["passes"]
         ),
     }
 
