@@ -909,3 +909,32 @@ tunnel still cannot supply GPU memory/utilisation, GPU OOM, or vLLM active/queue
   refusal retry, peer fixture replay, and both stops passed. This rejects the proposed ordering repair at 120 s;
   it neither authorizes a longer timeout nor proves a rendered-publication product defect. G4/G5 remain
   uncertified.
+
+## One predicate blocks the G4 claim — resolve it as a question, not a gate edit (monitor, 2026-08-18 22:35)
+
+Verdict: `bound 4`, `screening_passes [1,2,4]`, **`soak_passes: true`**, `overload_passes: false`,
+`qualifies_local_g4_g5_portions: false`. Refusing the claim is correct — but the *only* overload failure is
+**`rendered_markers_observed_before_reconnect: False`**. Everything else passes: 429 retryable, peer accepted
+while saturated, refused frame retried, canonical own marker present, foreign markers absent (including
+reconnect replay), both stops closed.
+
+**The predicate is stricter than the bar it enforces.** prd.md G5: *"no session ever receives another session's
+text"*. Contract `gates.integrity`: rendered/canonical *"retain only their own session's distinct speech
+marker"*; reconnect replay contains *"no other session's marker"*. Both are **absence-of-foreign** conditions,
+and both pass. Neither requires the own marker to render **before the reconnect**.
+
+**Discriminating test** (reproduced identically in runs 32 and 37 ⇒ deterministic, so "race" is weak): wait,
+bounded with timeout, for the own marker in the **rendered** view before triggering reconnect.
+- Always succeeds ⇒ the harness reconnected before the render round-trip; fix the **ordering**, record that the
+  contract never required before-reconnect, re-evaluate.
+- Times out while `canonical_own_marker_present: True` ⇒ the user sees nothing during backpressure while the
+  server holds the text — a **real G6/UX defect**, own write-up and issue; G5 stays unclaimed.
+
+**Do not delete or loosen the predicate to make the run pass.** Correcting *when* the harness looks ≠ changing
+*whether* the property must hold — state that distinction in the artifact; this repo has shipped a weakened
+check before.
+
+**Soundly established already:** bound 4, 600 s sustain at p95 2.617 s (gate 10 s); fairness measured, skew 1
+across 127 contended pairs @4 and 2371 @8; stop-drain passing everywhere; no OOM; per-session retryable 429 with
+peer accepted while saturated and the refused frame later succeeding — **issue #3's per-client backpressure
+criterion, met**.

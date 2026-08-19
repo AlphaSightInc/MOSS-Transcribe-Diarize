@@ -1530,4 +1530,59 @@ this run is.
 
 [iteration 37] target=W2 fresh frozen remote-vLLM 1/2/4/8 + selected-soak + overload/reconnect matrix; files=`evidence/phase1/w2-local-concurrency/{iteration-37-remote-vllm-preflight,run-20260819T020000-iteration37,iteration-37-lifecycle-completeness.json}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=preflight PASS (selected model and deployed bounds, endpoint HTTP 200), live runner exit **0** with closing endpoint probes HTTP 200, contract revalidation PASS, and saved-log audit PASS (**5,338/5,338** raw/attributed/terminal writer records); evidence=run verdict SHA-256 `054301ac...0a39a545`, event-log SHA-256 `c29278a0...30823883`; learned=normal screens 1/2/4 and four-session 600 s soak pass (bound 4; soak p95 2.61740295 s; fairness skew 1 where applicable), screen 8 is throughput-limited (p95 47.16 s), but overload fails only one peer's pre-reconnect rendered-own-marker assertion while 429/peer/retry/stop/canonical/reconnect isolation pass; frozen verdict stays non-qualifying for G4/G5; next=prototype a bounded rendered-ownership wait before overload reconnect, preserving timeout failure.
 
+[monitor 2026-08-18 22:35] VERDICT AUDITED. THIS IS THE BEST W2 RESULT THE PROJECT HAS HAD, AND ONE PREDICATE
+IS ALL THAT STANDS BETWEEN IT AND A G4 CLAIM. Do NOT resolve that by deleting the predicate — read on.
+
+  chosen_normal_session_bound: 4 · screening_passes: [1,2,4] · soak_passes: TRUE
+  overload_passes: false · qualifies_local_g4_g5_portions: false
+Refusing the claim while overload fails is correct. But look at WHAT fails.
+
+EVERYTHING SUBSTANTIVE IN THE OVERLOAD PHASE PASSES, for the second run running:
+  retryable_v2_429_observed                              True
+  peer_accepted_while_saturated                          True
+  refused_frame_retried_successfully                     True
+  canonical_own_marker_present                           True
+  canonical_foreign_markers_absent                       True
+  reconnect_event_response_observed                      True
+  reconnect_replayed_canonical_event_observed            True
+  reconnect_replayed_canonical_foreign_markers_absent    True
+  saturated_session_stop_closed / peer_session_stop_closed  True
+  peer_marker_replay_completed_without_unexpected_frame_result  True
+The ONLY failure is `rendered_markers_observed_before_reconnect: False`.
+
+NOW COMPARE THAT PREDICATE TO THE BAR IT IS SUPPOSED TO ENFORCE:
+  prd.md G5: "under overload and across reconnect, **no session ever receives another session's text**."
+  frozen contract `gates.integrity`:
+    overload:  "all rendered text and canonical_processed events retain only their own session's distinct
+                speech marker while the backpressure case runs"
+    reconnect: "replayed events and snapshot contain no other session's marker"
+Both are about the ABSENCE OF FOREIGN TEXT, and both pass. Neither says anything about the own marker having
+to be rendered **before the reconnect**. Your harness has added a timing constraint that neither the PRD bar
+nor its own frozen contract wording states.
+
+SO RESOLVE IT AS A QUESTION, NOT A GATE EDIT. It reproduced identically across run 32 and run 37 on two
+different harness versions, which makes my earlier "probably a race" hypothesis weaker — a race would be
+intermittent. Deterministic reproduction points at either a fixed ordering bug in the harness or a real
+product behaviour. Run the discriminating test I asked for at 21:35:
+  Wait, BOUNDED and with a timeout, for the own marker to appear in the RENDERED view before triggering the
+  reconnect.
+    * If the bounded wait always succeeds -> the harness was reconnecting before the render round-trip could
+      complete. Fix the ORDERING, record that the contract never required before-reconnect, and re-evaluate.
+      That is a harness correction with a written justification, not a weakened gate.
+    * If it times out while `canonical_own_marker_present` stays True -> the user sees NOTHING in the rendered
+      view during backpressure while the server has the text. That is a real G6/UX defect, worth its own
+      write-up and its own issue, and G5 stays unclaimed until it is fixed.
+  Either answer is publishable. Guessing is not.
+
+DO NOT DELETE OR LOOSEN `rendered_markers_observed_before_reconnect` TO MAKE THE RUN PASS. If the bounded-wait
+test shows the ordering was wrong, you are correcting WHEN the harness looks, not WHETHER the property must
+hold. State that distinction explicitly in the artifact, because from the outside those two look identical and
+this repo has shipped a weakened check before.
+
+FOR THE RECORD, WHAT THIS RUN ALREADY ESTABLISHES SOUNDLY: bound 4 with a 600-second sustain at p95 2.617 s
+against a 10 s gate; fairness MEASURED and passing at skew 1 across 127 contended pairs at four sessions and
+2371 at eight; stop-drain passing in every phase; no OOM; per-session retryable 429 with a peer accepted while
+one session was saturated and the refused frame later succeeding. That last trio is issue #3's per-client
+backpressure criterion, met on a harness whose oracles have all been repaired.
+
 [iteration 38] target=W2 bounded rendered-ownership wait before reconnect; files=`prototypes/streaming-diarization/concurrency/{proto_overload_rendered_ownership_wait.py,README.md,NOTES.md}`, `docs/design-streaming-diarization.md`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait/`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=focused runner/probe tests **10 passed**, `py_compile`, evidence JSON assertion, guardrail preflight, and `git diff --check` PASS; live probe used production loopback routes and read-only vLLM with endpoint probes HTTP 200 before/after; evidence=result SHA-256 `ae41e92afb7b3e292ec9521dd3e011d08e993e02a703dffe477ba164ea234a77`, canonical log SHA-256 `05c1b613c342ce0b7de882efb1e944d87b5a31cb0b5493b0a85500c2936aadec`; learned=the exploratory 120 s ordinary-poll window timed out with one rendered own marker absent despite canonical own markers/foreign-marker isolation, retryable session-local 429, peer acceptance, retry, replay, and clean stops; it correctly did not reconnect, so no timing repair or longer timeout is authorized and G4/G5 remain non-qualifying; next=separately diagnose rendered publication versus observation-window insufficiency, preserving the frozen false overload verdict.
