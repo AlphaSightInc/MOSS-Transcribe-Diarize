@@ -1119,3 +1119,5 @@ RSS and the closing probe are good measurements and should survive the correctio
 REMAINING BEFORE THE NEXT MATRIX RUN: unique per-session markers, and the overload phase actually running its
 isolation and reconnect checks (you flagged that omission yourself). Those two plus the lifecycle work you
 just landed are the full set; then re-run the frozen matrix unchanged.
+
+[iteration 30] target=W2 stale machine-readable verdict repair; files=`evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/verdict.json`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`python3` JSON-assertion + HEAD `run-state.json` SHA-256 comparison PASS (`842a9639...b3b067d`), `git diff --check` PASS; evidence=`evidence/phase1/w2-local-concurrency/run-20260819T000000-iteration27/{verdict.json,run-state.json}`; learned=the run-27 raw state remains intact, but its processed-only fairness evidence and repeated markers cannot qualify G4/G5; next=configure the eight unique markers and make overload evaluate text isolation plus reconnect before rerunning the unchanged v2 lifecycle matrix.

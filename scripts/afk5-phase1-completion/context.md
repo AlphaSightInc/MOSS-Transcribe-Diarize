@@ -134,28 +134,24 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
-   rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
-   same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
-   Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
-   normalisation/AGC/offset proposal.
-2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
-   one same-playback fixture.
-3. **W2 stale-verdict repair (P0):** the iteration-27 `verdict.json` still falsely says
-   `qualifies_local_g4_g5_portions: true`. In one evidence-correction commit, set it false and add a
-   machine-readable supersession naming `e5a59c4`, with fairness unmeasurable and isolation undetermined
-   above two sessions. Preserve every raw array and sound latency/RTF/RSS/OOM/closing-probe result.
-4. **W2 integrity-oracle implementation (P1):** iteration 29 proved eight unique real-speech markers
+1. **W2 integrity-oracle implementation (P0):** iteration 29 proved eight unique real-speech markers
    are available. Configure them in the fixture, fail closed if any phase has fewer distinct markers than
    sessions, and evaluate text isolation plus observer reconnect in overload before replaying the unchanged
    1/2/4/8 + selected-600s matrix. Do not touch the scheduler unless a v2 lifecycle run measures a real
    violation; CPU/HF remains diagnostic, not G4/G5 evidence.
-5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+2. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
+   rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
+   same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
+   Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
+   normalisation/AGC/offset proposal.
+3. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
+   one same-playback fixture.
+4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-6. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
+5. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
    reachable vLLM endpoint; reconcile it only with a valid W2 replay and its explicit limits, never with the
    current unsound G5 oracle.
-7. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -172,8 +168,8 @@ Living working memory. Update it every iteration so it matches reality. History 
   22; iteration 26 closed the relative-asset locality blocker with an ephemeral execution bundle outside the
   repo. Iteration 27 proved tunnel reachability, real decoder wiring, run-owned manifest admission, and the
   selected 600-second one-session bound. Iteration 28 corrected the fairness observer and iteration 29
-  proved eight source markers; first correct the old machine-readable G4/G5 overclaim, then make the runner
-  use v2 lifecycle records, unique markers, and an overload isolation/reconnect evaluator.
+  proved eight source markers. Iteration 30 superseded the old machine-readable G4/G5 claim; next make the
+  runner use v2 lifecycle records, unique markers, and an overload isolation/reconnect evaluator.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -554,7 +550,7 @@ path + asset sha256s — never into `evidence/`.
 Housekeeping: that durable dir has accumulated `live-provider-manifest.json.backup-*` files; prune or stop
 writing them if re-finalization adds one per run.
 
-## Monitor corrections + the one outstanding artifact fix (2026-08-18 20:45)
+## Monitor corrections + resolved artifact fix (2026-08-18 20:45; updated iteration 30)
 
 **Correction to my 20:35 note:** the strict `gates.fairness.evidence` wording (lifecycle order, reject
 incomplete evidence, continuously-ready intervals) **did not exist during run 27** — at run time it read only
@@ -566,12 +562,11 @@ bound not established as 1.
 **Checked for goalpost-moving: none.** The contract diff is a pure tightening; gate values untouched (skew 1,
 p95 10.0 s, matrix [1,2,4,8], soak 600 s) and `run_started` back to false. Recorded so a later reviewer needn't wonder.
 
-**STILL OUTSTANDING — highest-value fix:** `run-20260819T000000-iteration27/verdict.json` still says
-`"qualifies_local_g4_g5_portions": true` with `"chosen_normal_session_bound": 1`. The JSON is what rollups and
-skimming reviewers read. Fix in a **new** commit (no history rewrite): set it `false` and add a
-`superseded_by` / `evaluator_defect` field naming `e5a59c4`, stating fairness unmeasurable and isolation
-undetermined above 2 sessions. **Keep every raw array and every sound number** — latency, RTF, OOM, RSS, closing
-probe are good measurements and should survive intact.
+**Resolved iteration 30:** `run-20260819T000000-iteration27/verdict.json` now sets
+`"qualifies_local_g4_g5_portions": false` and has `superseded_by: "e5a59c4"` plus an `evaluator_defect`.
+The correction keeps `chosen_normal_session_bound: 1` as the measured serialized result and leaves raw state,
+latency, RTF, OOM, RSS, and the closing probe untouched. It explicitly says fairness is unmeasurable under the
+tightened continuously-ready evaluator and isolation is undetermined above two sessions; G4/G5 remain uncertified.
 
 **Remaining before the next matrix run:** unique per-session markers, and the overload phase actually executing
 its isolation + reconnect checks (your own flagged omission). Then re-run the frozen matrix unchanged.

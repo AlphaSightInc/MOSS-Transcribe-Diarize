@@ -8,11 +8,13 @@
     "vLLM active or queued request counts",
     "human-attended display capture"
   ],
+  "evaluator_defect": "Run 27 logged only canonical_processed events under its then-under-specified fairness evidence rule; applying e5a59c4's continuously-ready evaluator makes fairness unmeasurable, and repeated clips leave text isolation undetermined above two sessions.",
   "fixture_limit_statement": "The 90-second real-speech source repeats during a selected 600-second soak and may make decode timing unrepresentative.",
   "overload_passes": true,
-  "qualifies_local_g4_g5_portions": true,
+  "qualifies_local_g4_g5_portions": false,
   "screening_passes": [
     1
   ],
-  "soak_passes": true
+  "soak_passes": true,
+  "superseded_by": "e5a59c4"
 }
