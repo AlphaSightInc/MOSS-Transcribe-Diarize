@@ -282,3 +282,25 @@ resource-isolated local runtime.
 No dispatcher bound was guessed or implemented. The controlled results remain non-gating, and the
 real G4/G5 measurement remains a prerequisite. Raw result:
 `evidence/phase1/t3/iteration-8-stop-gate.txt`.
+
+## Remote-vLLM unique-marker inventory — 2026-08-18
+
+**VERDICT: PASS — the existing hash-pinned W2 source contains eight usable, distinct marker clips.**
+
+Question: can the read-only production vLLM endpoint recognize one distinct marker from each of eight
+bounded clips in the exact W2 fixture, without that marker occurring in any other candidate clip?
+
+`proto_unique_marker_inventory.py` queried `OpenMOSS-Team/MOSS-Transcribe-Diarize` through the local
+`/v1` tunnel. It used fixture manifest SHA-256
+`8e5eed2421482ab626e322a6242eb5ab57b43a091034bfc61bab7aef8d869155` and source WAV SHA-256
+`a42507d9f5cbaf62407751793735a4a1edf6fefe6c2625d7c02863f5016b6eea`. All eight markers were present
+in their own direct transcription and absent from every other candidate: `New York`, `payments team`,
+`huge thanks`, `show notes`, `investment advice`, `entertainment purposes`, `feels appropriate`, and
+`dressed up`. Raw transcripts, clip bounds, timing, and both hashes are in
+`evidence/phase1/w2-local-concurrency/iteration-29-unique-marker-inventory.json`.
+
+The exclusivity condition is material: `cool technology` was rejected because the preceding bounded
+`payments` clip also transcribed it. This probe does not test cross-session isolation, reconnect,
+fairness, G4, or G5. Next, configure those eight audited clips in the W2 fixture, fail closed whenever
+a phase lacks one unique marker per session, and add the missing overload isolation/reconnect evaluation
+before the frozen matrix is replayed.

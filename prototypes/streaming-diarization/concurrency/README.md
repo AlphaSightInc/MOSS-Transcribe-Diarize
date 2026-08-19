@@ -50,6 +50,19 @@ Its hash-pinned human-speech clip configuration is
 then checks that each session renders only its own configured marker. The values belong in the fixture
 configuration, never in general runner logic.
 
+Before extending that fixture to cover the eight-session row, inventory the candidate markers against
+the live read-only endpoint (about five seconds):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_unique_marker_inventory.py \
+  --vllm-base-url http://127.0.0.1:18000/v1 \
+  --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
+  --output evidence/phase1/w2-local-concurrency/unique-marker-inventory.json
+```
+
+The probe requires each marker to appear in its own bounded real-speech clip and in no other candidate
+clip. It only establishes fixture capacity; it does not test cross-session isolation, fairness, G4, or G5.
+
 Full local CPU/HF measurement (about 19 minutes plus model warm-up):
 
 ```bash

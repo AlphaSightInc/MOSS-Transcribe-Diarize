@@ -75,6 +75,12 @@ Living working memory. Update it every iteration so it matches reality. History 
   unclaimed. The focused lifecycle regression is at
   `evidence/phase1/w2-local-concurrency/iteration-28-fairness-lifecycle.xml`; the contract validator also
   passed with this SHA.
+- **W2 eight-marker source inventory (iteration 29):** the read-only endpoint recognized eight distinct
+  markers from separately bounded clips of the exact hash-pinned W2 source, and every marker was absent
+  from the other seven direct transcripts. The full clips, output, and fixture/manifest hashes are in
+  `evidence/phase1/w2-local-concurrency/iteration-29-unique-marker-inventory.json`. This establishes
+  fixture capacity only: the runner still has two configured clips, so normal/overload isolation and
+  reconnect remain unmeasured; G4/G5 remain uncertified.
 - **W2 remote-vLLM runner first live attempt (iteration 25), fail-closed before capture:**
   `run_remote_vllm_tunnel_measurement.py` uses the production local-route/`VllmRunner` seam with one
   loopback process, a fresh evidence-owned finalized manifest bound to the captured HEAD, descriptor
@@ -135,17 +141,21 @@ Living working memory. Update it every iteration so it matches reality. History 
    normalisation/AGC/offset proposal.
 2. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-3. **W2 integrity-oracle repair (P1):** iteration 28 repaired the fairness evidence rule; do not touch the
-   scheduler unless a v2 lifecycle run measures a real violation. Before re-running, make every normal and
-   overload session marker unique, reject non-unique-marker isolation claims, and evaluate text isolation plus
-   observer reconnect in overload. Keep all gate values and the 1/2/4/8 + selected-600s matrix unchanged.
-   The CPU/HF result remains diagnostic, not G4/G5 evidence.
-4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+3. **W2 stale-verdict repair (P0):** the iteration-27 `verdict.json` still falsely says
+   `qualifies_local_g4_g5_portions: true`. In one evidence-correction commit, set it false and add a
+   machine-readable supersession naming `e5a59c4`, with fairness unmeasurable and isolation undetermined
+   above two sessions. Preserve every raw array and sound latency/RTF/RSS/OOM/closing-probe result.
+4. **W2 integrity-oracle implementation (P1):** iteration 29 proved eight unique real-speech markers
+   are available. Configure them in the fixture, fail closed if any phase has fewer distinct markers than
+   sessions, and evaluate text isolation plus observer reconnect in overload before replaying the unchanged
+   1/2/4/8 + selected-600s matrix. Do not touch the scheduler unless a v2 lifecycle run measures a real
+   violation; CPU/HF remains diagnostic, not G4/G5 evidence.
+5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-5. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
+6. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
    reachable vLLM endpoint; reconcile it only with a valid W2 replay and its explicit limits, never with the
    current unsound G5 oracle.
-6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+7. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -161,9 +171,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   route-probe support now exists at `production_route_server.py` and its real seam artifact is iteration
   22; iteration 26 closed the relative-asset locality blocker with an ephemeral execution bundle outside the
   repo. Iteration 27 proved tunnel reachability, real decoder wiring, run-owned manifest admission, and the
-  selected 600-second one-session bound. Iteration 28 corrected the fairness observer: the old skew cannot
-  establish a scheduler failure, and the next run must use v2 lifecycle records plus unique markers and an
-  overload isolation/reconnect evaluator.
+  selected 600-second one-session bound. Iteration 28 corrected the fairness observer and iteration 29
+  proved eight source markers; first correct the old machine-readable G4/G5 overclaim, then make the runner
+  use v2 lifecycle records, unique markers, and an overload isolation/reconnect evaluator.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
