@@ -1,0 +1,7 @@
+Iteration 33 committed: `7c71e7e`.
+
+- Probe proved writer/evaluator race 3/3: immediate read 0/48; close barrier 48/48, fair.
+- Updated bench, evidence, docs, context, progress.
+- Next P0: Defect D poller empty-text fix.
+- Preserved launcher telemetry unstaged.
+
