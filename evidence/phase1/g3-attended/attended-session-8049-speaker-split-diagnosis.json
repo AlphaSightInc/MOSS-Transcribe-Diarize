@@ -1,6 +1,7 @@
 {
   "schema": "moss-attended-speaker-split-diagnosis.v1",
   "recorded_at": "2026-08-19T20:47:40Z",
+  "amended_at": "2026-08-19T23:09:00Z",
   "question": "Did attended session 8049b5aef8e34b1da61e258a71907680 split one real voice into S01/S02 or S04/S05?",
   "feedback_loop": {
     "session_id": "8049b5aef8e34b1da61e258a71907680",
@@ -29,6 +30,9 @@
   "pair_measurements": {
     "S01_S02": {
       "production_cosine_similarity": 0.0,
+      "raw_centroid_cosine_similarity": -0.074201670028,
+      "production_similarity_floor": 0.0,
+      "production_similarity_floor_saturated": true,
       "sample_seconds": [4.67, 2.05],
       "exemplar_count": [2, 1],
       "provisional": [false, false],
@@ -36,6 +40,9 @@
     },
     "S04_S05": {
       "production_cosine_similarity": 0.004914265820736384,
+      "raw_centroid_cosine_similarity": 0.004914265820736384,
+      "production_similarity_floor": 0.0,
+      "production_similarity_floor_saturated": false,
       "sample_seconds": [6.36, 23.16],
       "exemplar_count": [3, 10],
       "provisional": [false, false],

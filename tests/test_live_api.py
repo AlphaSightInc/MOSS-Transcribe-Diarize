@@ -694,6 +694,10 @@ class LiveApiTest(unittest.TestCase):
             self.assertIn(session_id, app.state.live_v2_sessions)
             initial_events = client.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
             self.assertEqual(initial_events.status_code, 200)
+            self.assertIsInstance(
+                initial_events.json()["runtime_observed_monotonic_ns"],
+                int,
+            )
             self.assertEqual(
                 [(event["seq"], event["kind"]) for event in initial_events.json()["events"]],
                 [(0, "session_created")],

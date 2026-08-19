@@ -413,6 +413,13 @@ class _RuntimeSession:
     terminal_failure: LiveServiceFailureRecord | None = None
     work_changed: threading.Event = field(default_factory=threading.Event)
     drain_waiters: set[_DrainWaiter] = field(default_factory=set)
+    canonical_timing: dict[int, "_CanonicalTiming"] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class _CanonicalTiming:
+    queued_ns: int
+    started_ns: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,6 +443,7 @@ class LiveServiceRuntime:
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
         vector_journal: LiveVectorJournal | None = None,
         wall_time: Callable[[], float] | None = None,
+        monotonic_ns: Callable[[], int] | None = None,
     ):
         self.descriptor = descriptor
         self._endpoint_policy_factory = endpoint_policy_factory
@@ -446,6 +454,7 @@ class LiveServiceRuntime:
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._vector_journal = vector_journal
         self._wall_time = wall_time or time.time
+        self._monotonic_ns = monotonic_ns or time.monotonic_ns
         self._sessions: dict[str, _RuntimeSession] = {}
         self._lock = threading.RLock()
         self._ready_session_ids: deque[str] = deque()
@@ -600,7 +609,7 @@ class LiveServiceRuntime:
                     },
                 )
             for item_id in result.queued_item_ids:
-                self._record_event(state, "canonical_queued", {"item_id": item_id})
+                self._record_canonical_queued(state, item_id)
             if result.queued_item_ids:
                 self._mark_ready_locked(state)
             return LiveServiceFrameResult(
@@ -617,6 +626,20 @@ class LiveServiceRuntime:
             if int(since_seq) < -1:
                 raise ValueError("since_seq must be at least -1.")
             return tuple(event for event in state.events if event.seq >= since_seq)
+
+    def _events_with_observation(
+        self,
+        session_id: str,
+        since_seq: int = 0,
+    ) -> tuple[tuple[LiveServiceEvent, ...], int]:
+        """Return events and their read instant from the runtime's monotonic clock."""
+
+        with self._lock:
+            state = self._get(session_id)
+            if int(since_seq) < -1:
+                raise ValueError("since_seq must be at least -1.")
+            events = tuple(event for event in state.events if event.seq >= since_seq)
+            return events, self._monotonic_ns()
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
         with self._lock:
@@ -668,9 +691,7 @@ class LiveServiceRuntime:
                         queued = state.coordinator.stop_endpoint()
                     if queued is not None:
                         for item_id in queued:
-                            self._record_event(
-                                state, "canonical_queued", {"item_id": item_id, "reason": "stop"}
-                            )
+                            self._record_canonical_queued(state, item_id, reason="stop")
                         if self._has_unresolved_work_locked(state) and loop.time() >= end_time:
                             raise TimeoutError("live service stop deadline expired with unresolved work.")
                         if queued:
@@ -955,7 +976,21 @@ class LiveServiceRuntime:
                     continue
                 self._in_flight_session_ids.add(state.session_id)
                 self._in_flight_canonical_counts[state.session_id] = span_count
-                self._record_event(state, "canonical_started", {"item_id": item.id})
+                started_ns = self._monotonic_ns()
+                timing = state.canonical_timing.get(item.id)
+                if timing is None:
+                    timing = _CanonicalTiming(queued_ns=started_ns)
+                    state.canonical_timing[item.id] = timing
+                timing.started_ns = started_ns
+                self._record_event(
+                    state,
+                    "canonical_started",
+                    {
+                        "item_id": item.id,
+                        "runtime_monotonic_ns": started_ns,
+                        "queue_wait_ms": _elapsed_ms(timing.queued_ns, started_ns),
+                    },
+                )
                 break
             else:
                 return False
@@ -982,11 +1017,25 @@ class LiveServiceRuntime:
                         return
                     result = state.coordinator.submit_prepared_work(prepared)
                     self._in_flight_canonical_counts[state.session_id] = span_count - span_index - 1
+                    processed_ns = self._monotonic_ns()
+                    timing = state.canonical_timing.get(item.id)
+                    queued_ns = timing.queued_ns if timing is not None else processed_ns
+                    started_ns = (
+                        timing.started_ns
+                        if timing is not None and timing.started_ns is not None
+                        else processed_ns
+                    )
                     self._record_event(
                         state,
                         "canonical_processed",
                         {
                             "item_id": item.id,
+                            "runtime_monotonic_ns": processed_ns,
+                            "queue_wait_ms": _elapsed_ms(queued_ns, started_ns),
+                            "canonical_processing_elapsed_ms": _elapsed_ms(
+                                started_ns, processed_ns
+                            ),
+                            "queued_to_processed_ms": _elapsed_ms(queued_ns, processed_ns),
                             "batch_index": span_index,
                             "batch_size": span_count,
                             "span_id": result.span_id,
@@ -1037,6 +1086,7 @@ class LiveServiceRuntime:
             with self._lock:
                 self._in_flight_session_ids.discard(state.session_id)
                 self._in_flight_canonical_counts.pop(state.session_id, None)
+                state.canonical_timing.pop(item.id, None)
                 state.work_changed.set()
                 self._notify_drain_waiters_locked(state)
                 if state.terminal_failure is None and state.arbiter.snapshot().live_canonical > 0:
@@ -1054,6 +1104,23 @@ class LiveServiceRuntime:
         state.next_event_seq += 1
         state.work_changed.set()
         self._notify_drain_waiters_locked(state)
+
+    def _record_canonical_queued(
+        self,
+        state: _RuntimeSession,
+        item_id: int,
+        *,
+        reason: str | None = None,
+    ) -> None:
+        queued_ns = self._monotonic_ns()
+        state.canonical_timing[item_id] = _CanonicalTiming(queued_ns=queued_ns)
+        payload: dict[str, Any] = {
+            "item_id": item_id,
+            "runtime_monotonic_ns": queued_ns,
+        }
+        if reason is not None:
+            payload["reason"] = reason
+        self._record_event(state, "canonical_queued", payload)
 
     def _notify_drain_waiters_locked(self, state: _RuntimeSession) -> None:
         for waiter in tuple(state.drain_waiters):
@@ -1131,6 +1198,12 @@ def _failure_message(exc: Exception) -> str:
     """
 
     return str(exc).strip() or exc.__class__.__name__
+
+
+def _elapsed_ms(start_ns: int, end_ns: int) -> float:
+    """A server-local monotonic duration; never a cross-host timestamp subtraction."""
+
+    return max(0, end_ns - start_ns) / 1_000_000
 
 
 def _error_from_failure(failure: LiveServiceFailureRecord) -> LiveServiceError:

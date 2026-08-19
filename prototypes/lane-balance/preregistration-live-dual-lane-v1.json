@@ -1,0 +1,72 @@
+{
+  "schema": "moss-live-dual-lane-preregistration.v1",
+  "question": "Does a minimal span-wise dual-lane decoder module recover buried microphone content through the deployed endpoint, serial-worker, merge, and identity semantics without worsening the measured live latency or bounded lifecycle?",
+  "scope": "Prototype only. The inputs are synthetic 15.377 dB lane disparities. Even a passing result requires fresh real attended evidence before production use.",
+  "bound_evidence": {
+    "lane_balance_v3": {
+      "path": "evidence/phase1/g3-attended/lane-balance-v3-20260819.json",
+      "sha256": "7ea0b6d756072284269bf2585175201736817d48d792210537f253ab0eb59ed8",
+      "verdict": "GAIN_ONLY_FAILED_REPLICATION"
+    },
+    "whole_clip_separate_lane": {
+      "path": "evidence/phase1/g3-attended/separate-lane-decode-20260819.json",
+      "sha256": "80c2b7617fe28d63fa65dea2f0e1ef137b8d9e9dbcac4527a2e5c86655eae259",
+      "verdict": "LIVE_DUAL_LANE_SEAM_PROTOTYPE_REQUIRED"
+    },
+    "attended_latency_baseline": {
+      "path": "evidence/phase1/g3-attended/live-latency-baseline-20260819.json",
+      "sha256": "a76ed8cce25fd6d627e682058e1df9ffa729de6dad1f553978da10e686d6e149",
+      "active_reader_render_bound_ms": 642.1315
+    },
+    "endpoint_sweep": {
+      "path": "evidence/phase1/g3-attended/live-cap-silence-sweep-20260819.json",
+      "sha256": "04cc77e4cfa0eece72f7208304b4cb0d89c73c6a75452303d9f6b87f939183fb",
+      "verdict": "NO_POLICY_CHANGE"
+    }
+  },
+  "production_contract": {
+    "manifest_path": "evidence/phase1/w2-local-concurrency/run-20260819T020000-iteration37/live-provider-manifest.json",
+    "manifest_sha256": "a2adb4fec76ee0292c8c00517e98e6cba9ea6b15e77f4c0d9402c878ebd1973c",
+    "frame_samples": 8000,
+    "hard_cap_samples": 40000,
+    "min_silence_samples": 8000,
+    "max_queue_depth": 16,
+    "stop_drain_deadline_seconds": 5.0,
+    "max_identity_speakers": 16,
+    "single_worker": true
+  },
+  "module_interface": {
+    "input": "One frozen span plus aligned system and microphone PCM for exactly that span.",
+    "output": "One merged timed transcript, per-lane source trace, aggregate decode diagnostics, and lane-specific PCM ownership for every local speaker.",
+    "invariants": [
+      "At most one bounded arbiter item per frozen span.",
+      "Within that item, active lanes decode serially; no second worker or fairness bypass.",
+      "Local speaker labels are namespaced by lane before stable time ordering.",
+      "Overlaps are preserved; no clipping, deduplication, or forced turn order.",
+      "Identity embeds each local speaker only from the PCM lane that produced it."
+    ]
+  },
+  "arms": [
+    "production_mono_mix",
+    "dual_lane_serial"
+  ],
+  "measurements": {
+    "endpoint": "Production WebRTC provider and EndpointPolicy over production mono-mix frames.",
+    "decode": "Production VllmRunner and canonical token cap; retain raw transcript, parsed segments, elapsed time, tokens, capped and parse classification.",
+    "content": "Sealed v3 shuffle-edit score against both clean lane references.",
+    "identity": "Production WeSpeaker embeddings from the owning lane, replayed through accepted album plus terminal sweep with lane identity as truth.",
+    "latency": "Single-worker queue from actual span freeze times and decode durations, plus the bound active-reader render time.",
+    "lifecycle": "Queue depth, final stop-drain tail, two-session round-robin item fairness, request multiplier, and speaker capacity.",
+    "structure": "Parse roundtrip, segment preservation, collision-free lane namespace, overlap preservation, and source trace."
+  },
+  "decision_rule": {
+    "content": "Dual-lane WER improves by at least 0.05 absolute on all four corpora.",
+    "structure": "Every corpus preserves all parsed source segments, roundtrips, preserves overlaps, and stays within 16 speakers.",
+    "identity": "At least 0.80 duration-weighted accuracy, at most 4 canonical speakers, and no embedding failures on every corpus.",
+    "decode_integrity": "No capped, empty, or unparseable lane decode on any corpus.",
+    "bounded_lifecycle": "Max queue depth at most 16, stop drain at most 5 s, exactly 2x requests, and two-session maximum service skew at most one completed span while both sessions have work.",
+    "latency": "Dual-lane first-word and last-word p95 must not exceed same-span mono baseline on any corpus. Attribution already proved span accumulation dominates; a microphone remedy cannot consume the latency improvement the active goal requires.",
+    "passing_verdict": "LIVE_DUAL_LANE_CANDIDATE_NEEDS_REAL_ATTENDED_REPLICATION",
+    "failing_verdict": "NO_PRODUCTION_LANE_REMEDY_SELECTED"
+  }
+}

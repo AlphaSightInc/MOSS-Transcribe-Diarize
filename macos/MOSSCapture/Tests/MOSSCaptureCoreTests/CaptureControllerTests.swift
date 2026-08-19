@@ -6264,6 +6264,40 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(report.rejectedClockRegression, 0)
     }
 
+    func testLatencySamplerReportsSpanStartAndEndAgesOnTheCaptureClock() throws {
+        let sampler = CaptureLatencySampler()
+        sampler.noteLaneStates([laneStatus(.microphone, state: "capturing")])
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        let origin: UInt64 = 1_000_000_000
+        sampler.observe(
+            committedStartSample: 0,
+            committedEndSample: 40_000,
+            atHostNanoseconds: origin + 40_000 * 62_500 + 200_000_000
+        )
+        sampler.observe(
+            committedStartSample: 40_000,
+            committedEndSample: 80_000,
+            atHostNanoseconds: origin + 80_000 * 62_500 + 300_000_000
+        )
+
+        let report = sampler.report(polling: false)
+        XCTAssertEqual(report.spanStartFetchAge.count, 1)
+        XCTAssertEqual(report.spanStartFetchAge.p95MS, 2_800)
+        XCTAssertEqual(report.spanEndFetchAge.count, 1)
+        XCTAssertEqual(report.spanEndFetchAge.p95MS, 300)
+        XCTAssertEqual(
+            report.committedLatency,
+            report.spanEndFetchAge,
+            "the v2 field remains a compatibility alias for end-of-span age"
+        )
+    }
+
     func testLatencySamplerRejectsNegativeRegressedAndPostBreakReadingsInsteadOfAveragingThem() throws {
         let sampler = CaptureLatencySampler()
         // A denied lane is excluded exactly as the server excludes a failed lane, so the origin is
@@ -6446,6 +6480,8 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(report.renderBoundMS, 590)
         XCTAssertEqual(report.committedLatency.p95MS, 1_500)
         XCTAssertEqual(report.userVisibleMS, 2_090)
+        XCTAssertEqual(report.spanStartAnalyticVisibleBoundMS, 2_590)
+        XCTAssertEqual(report.spanEndAnalyticVisibleBoundMS, 2_090)
         XCTAssertEqual(
             report.userVisibleMS,
             try XCTUnwrap(report.committedLatency.p95MS) + (try XCTUnwrap(report.renderBoundMS)),
@@ -6587,12 +6623,68 @@ final class CaptureControllerTests: XCTestCase {
         let response = try dispatcher.dispatch(ControlChannelRequest(command: "latency"))
         let encoded = String(decoding: try JSONEncoder().encode(response), as: UTF8.self)
         XCTAssertTrue(response.ok)
-        XCTAssertEqual(response.latency?.schema, "moss-capture-latency.v2")
+        XCTAssertEqual(response.latency?.schema, "moss-capture-latency.v3")
         XCTAssertEqual(response.latency?.snapshotFetch.count, 2)
         XCTAssertEqual(response.latency?.eventsFetch.count, 2)
         XCTAssertFalse(encoded.contains("view-token-secret"))
         XCTAssertFalse(encoded.contains("moss.example"))
         XCTAssertFalse(encoded.contains("session-latency"))
+    }
+
+    func testLatencyProbeMeasuresTheNewestCommittedSpanWhenOnePollSeesMultipleCommits() throws {
+        let sessionStore = InMemoryCaptureSessionStore()
+        try sessionStore.saveCaptureServerURL(URL(string: "https://moss.example")!)
+        try sessionStore.saveCaptureSessionID("session-latency")
+        try sessionStore.saveCaptureViewToken("view-token-secret")
+        let client = RecordingLatencyHTTPClient()
+        client.snapshotBody = try latencySnapshotBody(
+            version: 1,
+            committedSamples: 40_000,
+            committedSpans: [(0, 40_000)]
+        )
+        client.eventsBody = try latencyEventsBody(sequences: [])
+        let scheduler = FakeCaptureSchedulerAdapter()
+        let sampler = CaptureLatencySampler()
+        sampler.observeAcknowledgedFrame(
+            lane: .microphone,
+            captureTimestampNS: 1_000_000_000,
+            sampleRate: 16_000,
+            sampleCount: 8_000,
+            discontinuity: false
+        )
+        let probe = CaptureLatencyProbe(
+            sampler: sampler,
+            status: {
+                CaptureStatus(
+                    running: true,
+                    sessionID: "session-latency",
+                    lanes: [self.laneStatus(.microphone, state: "capturing")],
+                    publishedFrameCount: 0,
+                    lastHealthSequence: nil
+                )
+            },
+            sessionStore: sessionStore,
+            clientProvider: RecordingCaptureHTTPClientProvider(client: client),
+            certificatePin: StaticCaptureCertificatePinAdapter(pin: String(repeating: "a", count: 64)),
+            clock: FakeCaptureClockAdapter(ticks: [0, 1, 0, 1, 0, 1, 0, 1]),
+            hostTime: StaticCaptureHostTimeReader(
+                nanoseconds: [3_700_000_000, 8_800_000_000]
+            ),
+            scheduler: scheduler
+        )
+
+        _ = try probe.measure()
+        scheduler.runScheduledOperation()
+        client.snapshotBody = try latencySnapshotBody(
+            version: 3,
+            committedSamples: 120_000,
+            committedSpans: [(0, 40_000), (40_000, 80_000), (80_000, 120_000)]
+        )
+        scheduler.runScheduledOperation()
+
+        let report = sampler.report(polling: true)
+        XCTAssertEqual(report.spanStartFetchAge.p95MS, 2_800)
+        XCTAssertEqual(report.spanEndFetchAge.p95MS, 300)
     }
 
     func testLatencyProbeStartsBothRoutesTogetherAndRecordsOneOwnedPair() throws {
@@ -6891,7 +6983,11 @@ final class CaptureControllerTests: XCTestCase {
         )
     }
 
-    private func latencySnapshotBody(version: Int, committedSamples: Int) throws -> Data {
+    private func latencySnapshotBody(
+        version: Int,
+        committedSamples: Int,
+        committedSpans: [(start: Int, end: Int)] = []
+    ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: [
                 "snapshot": [
@@ -6899,7 +6995,17 @@ final class CaptureControllerTests: XCTestCase {
                     "session": [
                         "version": version,
                         "status": "active",
-                        "committed_samples": committedSamples
+                        "committed_samples": committedSamples,
+                        "committed": committedSpans.enumerated().map { index, span in
+                            [
+                                "span_id": index,
+                                "start_sample": span.start,
+                                "end_sample": span.end,
+                                "transcript": "[0.00][S01]diagnostic[0.10]",
+                                "prefix_hash": String(repeating: "a", count: 64),
+                                "identity_snapshot_version": 0
+                            ] as [String: Any]
+                        }
                     ]
                 ],
                 "unchanged": false

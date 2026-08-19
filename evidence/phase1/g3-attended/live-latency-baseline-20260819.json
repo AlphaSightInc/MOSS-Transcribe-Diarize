@@ -1,0 +1,3374 @@
+{
+  "attended_path": {
+    "basis": "MOSSCapture's portal handoff appends /live to the paired server URL.",
+    "capture_app": "/Applications/MOSSCapture.app",
+    "capture_host": "M4 MacBook Pro",
+    "poll_cadence_ms": 500,
+    "react_poller_cadence_ms": 250,
+    "react_reader_active_for_this_path": false,
+    "reader_implementation": "moss_transcribe_diarize/app/live_portal.py",
+    "reader_route": "/live"
+  },
+  "attribution": {
+    "evidence": [
+      "27/30 canonical spans ran to the 2.5 s hard cap.",
+      "Canonical decode p95 was 0.427 s and max was 0.617 s.",
+      "Paired fetch p95 was 142.131 ms and max was 223.034 ms.",
+      "Last-sample-to-visible analytic p95 bound was 3041.396 ms.",
+      "First-sample-to-visible additive p95 bound was 5541.396 ms."
+    ],
+    "next_measurement": "Add queue, commit-to-fetch, actual DOM-render, and start/end span ages before selecting a cap or silence policy.",
+    "verdict": "SPAN_ACCUMULATION_PLUS_POST_SPAN_VISIBILITY_DOMINATE"
+  },
+  "canonical_events": {
+    "decode_capped_count": 0,
+    "decode_rtf": {
+      "count": 30,
+      "max": 2.8427326500805705,
+      "p50": 0.14855458319652826,
+      "p95": 1.122796630641506
+    },
+    "decode_seconds": {
+      "count": 30,
+      "max": 0.616665874957107,
+      "p50": 0.34417137497803196,
+      "p95": 0.4273460829863325
+    },
+    "full_2_5_second_span_count": 27,
+    "full_2_5_second_span_fraction": 0.9,
+    "path": "/tmp/moss-latency-canonical-events-20260819.json",
+    "processed_span_count": 30,
+    "sanitized_payload": {
+      "events": [
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 0
+          },
+          "seq": 11,
+          "snapshot_version": 9
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 0
+          },
+          "seq": 12,
+          "snapshot_version": 9
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.4227541250293143,
+            "canonical_decode_rtf": 0.16910165001172572,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 40000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 0,
+            "span_id": 0,
+            "submitted": true
+          },
+          "seq": 15,
+          "snapshot_version": 12
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 1
+          },
+          "seq": 22,
+          "snapshot_version": 17
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 1
+          },
+          "seq": 23,
+          "snapshot_version": 17
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3995968750095926,
+            "canonical_decode_rtf": 0.15983875000383704,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 80000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 1,
+            "span_id": 1,
+            "submitted": true
+          },
+          "seq": 26,
+          "snapshot_version": 20
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 2
+          },
+          "seq": 34,
+          "snapshot_version": 26
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 2
+          },
+          "seq": 35,
+          "snapshot_version": 26
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.4273460829863325,
+            "canonical_decode_rtf": 0.170938433194533,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 120000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 2,
+            "span_id": 2,
+            "submitted": true
+          },
+          "seq": 40,
+          "snapshot_version": 31
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 3
+          },
+          "seq": 46,
+          "snapshot_version": 35
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 3
+          },
+          "seq": 47,
+          "snapshot_version": 35
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3775603750254959,
+            "canonical_decode_rtf": 0.15102415001019837,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 160000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 3,
+            "span_id": 3,
+            "submitted": true
+          },
+          "seq": 50,
+          "snapshot_version": 38
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 4
+          },
+          "seq": 58,
+          "snapshot_version": 44
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 4
+          },
+          "seq": 59,
+          "snapshot_version": 44
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.37138645799132064,
+            "canonical_decode_rtf": 0.14855458319652826,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 200000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 4,
+            "span_id": 4,
+            "submitted": true
+          },
+          "seq": 61,
+          "snapshot_version": 46
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 5
+          },
+          "seq": 70,
+          "snapshot_version": 53
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 5
+          },
+          "seq": 71,
+          "snapshot_version": 53
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.31137483404017985,
+            "canonical_decode_rtf": 0.12454993361607195,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 240000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 5,
+            "span_id": 5,
+            "submitted": true
+          },
+          "seq": 73,
+          "snapshot_version": 55
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 6
+          },
+          "seq": 79,
+          "snapshot_version": 59
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 6
+          },
+          "seq": 80,
+          "snapshot_version": 59
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.35901766701135784,
+            "canonical_decode_rtf": 0.14360706680454313,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 280000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 6,
+            "span_id": 6,
+            "submitted": true
+          },
+          "seq": 82,
+          "snapshot_version": 61
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 7
+          },
+          "seq": 91,
+          "snapshot_version": 68
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 7
+          },
+          "seq": 92,
+          "snapshot_version": 68
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3356284169713035,
+            "canonical_decode_rtf": 0.1342513667885214,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 320000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 7,
+            "span_id": 7,
+            "submitted": true
+          },
+          "seq": 94,
+          "snapshot_version": 70
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 8
+          },
+          "seq": 103,
+          "snapshot_version": 77
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 8
+          },
+          "seq": 104,
+          "snapshot_version": 77
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3037674159859307,
+            "canonical_decode_rtf": 0.12150696639437228,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 360000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 8,
+            "span_id": 8,
+            "submitted": true
+          },
+          "seq": 107,
+          "snapshot_version": 80
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 9
+          },
+          "seq": 115,
+          "snapshot_version": 86
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 9
+          },
+          "seq": 116,
+          "snapshot_version": 86
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.37694141699466854,
+            "canonical_decode_rtf": 0.1507765667978674,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 400000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 9,
+            "span_id": 9,
+            "submitted": true
+          },
+          "seq": 119,
+          "snapshot_version": 89
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 10
+          },
+          "seq": 127,
+          "snapshot_version": 95
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 10
+          },
+          "seq": 128,
+          "snapshot_version": 95
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.34417137497803196,
+            "canonical_decode_rtf": 0.13766854999121278,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 440000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 10,
+            "span_id": 10,
+            "submitted": true
+          },
+          "seq": 131,
+          "snapshot_version": 98
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 11
+          },
+          "seq": 139,
+          "snapshot_version": 104
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 11
+          },
+          "seq": 140,
+          "snapshot_version": 104
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3065798750030808,
+            "canonical_decode_rtf": 0.12263195000123232,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 480000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 11,
+            "span_id": 11,
+            "submitted": true
+          },
+          "seq": 142,
+          "snapshot_version": 106
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 12
+          },
+          "seq": 148,
+          "snapshot_version": 110
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 12
+          },
+          "seq": 149,
+          "snapshot_version": 110
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 13
+          },
+          "seq": 152,
+          "snapshot_version": 111
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3994546670001,
+            "canonical_decode_rtf": 0.15978186680004,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 520000,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 12,
+            "span_id": 12,
+            "submitted": true
+          },
+          "seq": 153,
+          "snapshot_version": 112
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 13
+          },
+          "seq": 154,
+          "snapshot_version": 112
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.11663050000788644,
+            "canonical_decode_rtf": 1.122796630641506,
+            "canonical_decode_token_cap": 78,
+            "committed_samples": 521662,
+            "frozen_span_duration_sec": 0.103875,
+            "frozen_span_sample_count": 1662,
+            "item_id": 13,
+            "span_id": 13,
+            "submitted": true
+          },
+          "seq": 155,
+          "snapshot_version": 113
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 14
+          },
+          "seq": 164,
+          "snapshot_version": 120
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 14
+          },
+          "seq": 165,
+          "snapshot_version": 120
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.34778770903358236,
+            "canonical_decode_rtf": 0.13911508361343294,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 561662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 14,
+            "span_id": 14,
+            "submitted": true
+          },
+          "seq": 167,
+          "snapshot_version": 122
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 15
+          },
+          "seq": 173,
+          "snapshot_version": 126
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 15
+          },
+          "seq": 174,
+          "snapshot_version": 126
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3982856249785982,
+            "canonical_decode_rtf": 0.15931424999143928,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 601662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 15,
+            "span_id": 15,
+            "submitted": true
+          },
+          "seq": 176,
+          "snapshot_version": 128
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 16
+          },
+          "seq": 184,
+          "snapshot_version": 134
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 16
+          },
+          "seq": 185,
+          "snapshot_version": 134
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3308133750106208,
+            "canonical_decode_rtf": 0.13232535000424833,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 641662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 16,
+            "span_id": 16,
+            "submitted": true
+          },
+          "seq": 188,
+          "snapshot_version": 137
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 17
+          },
+          "seq": 195,
+          "snapshot_version": 142
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 17
+          },
+          "seq": 196,
+          "snapshot_version": 142
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.4094342080061324,
+            "canonical_decode_rtf": 0.16377368320245295,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 681662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 17,
+            "span_id": 17,
+            "submitted": true
+          },
+          "seq": 198,
+          "snapshot_version": 144
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 18
+          },
+          "seq": 205,
+          "snapshot_version": 149
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 18
+          },
+          "seq": 206,
+          "snapshot_version": 149
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3168904579943046,
+            "canonical_decode_rtf": 0.12675618319772183,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 721662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 18,
+            "span_id": 18,
+            "submitted": true
+          },
+          "seq": 209,
+          "snapshot_version": 152
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 19
+          },
+          "seq": 216,
+          "snapshot_version": 157
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 19
+          },
+          "seq": 217,
+          "snapshot_version": 157
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.28845212497981265,
+            "canonical_decode_rtf": 0.11538084999192506,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 761662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 19,
+            "span_id": 19,
+            "submitted": true
+          },
+          "seq": 219,
+          "snapshot_version": 159
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 20
+          },
+          "seq": 226,
+          "snapshot_version": 164
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 20
+          },
+          "seq": 227,
+          "snapshot_version": 164
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3962664999999106,
+            "canonical_decode_rtf": 0.15850659999996425,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 801662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 20,
+            "span_id": 20,
+            "submitted": true
+          },
+          "seq": 230,
+          "snapshot_version": 167
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 21
+          },
+          "seq": 238,
+          "snapshot_version": 173
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 21
+          },
+          "seq": 239,
+          "snapshot_version": 173
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.40235479100374505,
+            "canonical_decode_rtf": 0.16094191640149802,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 841662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 21,
+            "span_id": 21,
+            "submitted": true
+          },
+          "seq": 241,
+          "snapshot_version": 175
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 22
+          },
+          "seq": 250,
+          "snapshot_version": 182
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 22
+          },
+          "seq": 251,
+          "snapshot_version": 182
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3792249580146745,
+            "canonical_decode_rtf": 0.1516899832058698,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 881662,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 22,
+            "span_id": 22,
+            "submitted": true
+          },
+          "seq": 253,
+          "snapshot_version": 184
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 23
+          },
+          "seq": 256,
+          "snapshot_version": 185
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 23
+          },
+          "seq": 257,
+          "snapshot_version": 185
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.16314995795255527,
+            "canonical_decode_rtf": 0.20493007750360218,
+            "canonical_decode_token_cap": 138,
+            "committed_samples": 894400,
+            "frozen_span_duration_sec": 0.796125,
+            "frozen_span_sample_count": 12738,
+            "item_id": 23,
+            "span_id": 23,
+            "submitted": true
+          },
+          "seq": 258,
+          "snapshot_version": 186
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 24
+          },
+          "seq": 267,
+          "snapshot_version": 193
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 24
+          },
+          "seq": 268,
+          "snapshot_version": 193
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.616665874957107,
+            "canonical_decode_rtf": 0.24666634998284281,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 934400,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 24,
+            "span_id": 24,
+            "submitted": true
+          },
+          "seq": 275,
+          "snapshot_version": 200
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 25
+          },
+          "seq": 278,
+          "snapshot_version": 201
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 25
+          },
+          "seq": 279,
+          "snapshot_version": 201
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.28137279202928767,
+            "canonical_decode_rtf": 0.11254911681171506,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 974400,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 25,
+            "span_id": 25,
+            "submitted": true
+          },
+          "seq": 282,
+          "snapshot_version": 204
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 26
+          },
+          "seq": 291,
+          "snapshot_version": 211
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 26
+          },
+          "seq": 292,
+          "snapshot_version": 211
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.2427732499781996,
+            "canonical_decode_rtf": 0.09710929999127985,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 1014400,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 26,
+            "span_id": 26,
+            "submitted": true
+          },
+          "seq": 293,
+          "snapshot_version": 213
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 27
+          },
+          "seq": 301,
+          "snapshot_version": 219
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 27
+          },
+          "seq": 302,
+          "snapshot_version": 219
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.3283913749619387,
+            "canonical_decode_rtf": 0.13135654998477547,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 1054400,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 27,
+            "span_id": 27,
+            "submitted": true
+          },
+          "seq": 306,
+          "snapshot_version": 223
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 28
+          },
+          "seq": 312,
+          "snapshot_version": 227
+        },
+        {
+          "kind": "canonical_queued",
+          "payload": {
+            "item_id": 29,
+            "reason": "stop"
+          },
+          "seq": 313,
+          "snapshot_version": 227
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 28
+          },
+          "seq": 314,
+          "snapshot_version": 227
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.14753641601419076,
+            "canonical_decode_rtf": 0.0590145664056763,
+            "canonical_decode_token_cap": 286,
+            "committed_samples": 1094400,
+            "frozen_span_duration_sec": 2.5,
+            "frozen_span_sample_count": 40000,
+            "item_id": 28,
+            "span_id": 28,
+            "submitted": true
+          },
+          "seq": 315,
+          "snapshot_version": 228
+        },
+        {
+          "kind": "canonical_started",
+          "payload": {
+            "item_id": 29
+          },
+          "seq": 316,
+          "snapshot_version": 228
+        },
+        {
+          "kind": "canonical_processed",
+          "payload": {
+            "batch_index": 0,
+            "batch_size": 1,
+            "canonical_decode_capped": false,
+            "canonical_decode_elapsed_sec": 0.15617262496380135,
+            "canonical_decode_rtf": 2.8427326500805705,
+            "canonical_decode_token_cap": 73,
+            "committed_samples": 1095279,
+            "frozen_span_duration_sec": 0.0549375,
+            "frozen_span_sample_count": 879,
+            "item_id": 29,
+            "span_id": 29,
+            "submitted": true
+          },
+          "seq": 317,
+          "snapshot_version": 229
+        },
+        {
+          "kind": "session_closed",
+          "payload": {
+            "accepted_samples": 1095279
+          },
+          "seq": 320,
+          "snapshot_version": 232
+        }
+      ],
+      "schema": "moss-latency-canonical-events.v1"
+    },
+    "sha256": "acb7b1f0b86a20598b50563598e178baf8a5751048950fb6c350950add9afe3b",
+    "span_duration_seconds": {
+      "count": 30,
+      "max": 2.5,
+      "p50": 2.5,
+      "p95": 2.5
+    }
+  },
+  "capture_runs": {
+    "fresh_app_relaunch": {
+      "classification": "VALID_BASELINE",
+      "final_latency_report": {
+        "committedLatency": {
+          "count": 23,
+          "maxMS": 2551.14925,
+          "p50MS": 2127.634208,
+          "p95MS": 2399.264791
+        },
+        "eventsFetch": {
+          "count": 240,
+          "maxMS": 223.033916,
+          "p50MS": 50.232792,
+          "p95MS": 142.1315
+        },
+        "fetchFailures": 0,
+        "frameQuantisationMS": 500,
+        "mixerOriginResolved": true,
+        "polling": true,
+        "portalCycleMS": 500,
+        "portalFetchCycle": {
+          "count": 240,
+          "maxMS": 223.033916,
+          "p50MS": 50.232792,
+          "p95MS": 142.1315
+        },
+        "rejectedAfterTimelineBreak": 0,
+        "rejectedClockRegression": 0,
+        "rejectedNegative": 0,
+        "renderBoundMS": 642.1315,
+        "schema": "moss-capture-latency.v2",
+        "snapshotFetch": {
+          "count": 240,
+          "maxMS": 177.11875,
+          "p50MS": 40.044,
+          "p95MS": 127.44125
+        },
+        "sufficientSamples": true,
+        "timelineIntact": true,
+        "userVisibleMS": 3041.396291
+      },
+      "latency_report_count": 7,
+      "path": "/tmp/moss-latency-baseline-relaunch-raw.txt",
+      "raw_records": [
+        {
+          "line": 1,
+          "timestamp": "2026-08-19T22:23:43Z"
+        },
+        {
+          "line": 2,
+          "payload": {
+            "lanes": [
+              {
+                "lane": "system",
+                "state": "pending"
+              },
+              {
+                "lane": "microphone",
+                "state": "capturing"
+              }
+            ],
+            "ok": true,
+            "outboxRetainedFrames": 0,
+            "publishedFrameCount": 0,
+            "running": true,
+            "sessionID": "1ff5e8f0e8f54f1590af272ef5a3f607"
+          },
+          "timestamp": "2026-08-19T22:23:43Z"
+        },
+        {
+          "line": 3,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 0
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 0
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 0
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:23:43Z"
+        },
+        {
+          "fixture_pass": 1,
+          "line": 4,
+          "timestamp": "2026-08-19T22:23:43Z"
+        },
+        {
+          "line": 5,
+          "timestamp": "2026-08-19T22:23:54Z"
+        },
+        {
+          "line": 6,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 2,
+                "maxMS": 2315.940333,
+                "p50MS": 2306.750875,
+                "p95MS": 2315.940333
+              },
+              "eventsFetch": {
+                "count": 39,
+                "maxMS": 164.902458,
+                "p50MS": 43.594625,
+                "p95MS": 143.412125
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 39,
+                "maxMS": 164.902458,
+                "p50MS": 43.594625,
+                "p95MS": 143.412125
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 643.4121250000001,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 39,
+                "maxMS": 130.810167,
+                "p50MS": 38.565,
+                "p95MS": 112.986083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 2959.3524580000003
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:23:54Z"
+        },
+        {
+          "line": 7,
+          "timestamp": "2026-08-19T22:24:04Z"
+        },
+        {
+          "line": 8,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 6,
+                "maxMS": 2551.14925,
+                "p50MS": 2306.660916,
+                "p95MS": 2551.14925
+              },
+              "eventsFetch": {
+                "count": 79,
+                "maxMS": 197.84325,
+                "p50MS": 45.637334,
+                "p95MS": 142.1315
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 79,
+                "maxMS": 197.84325,
+                "p50MS": 45.637334,
+                "p95MS": 142.1315
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 642.1315,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 79,
+                "maxMS": 141.7285,
+                "p50MS": 38.75675,
+                "p95MS": 120.786042
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 3193.28075
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:24:04Z"
+        },
+        {
+          "line": 9,
+          "timestamp": "2026-08-19T22:24:14Z"
+        },
+        {
+          "line": 10,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 10,
+                "maxMS": 2551.14925,
+                "p50MS": 2290.635041,
+                "p95MS": 2551.14925
+              },
+              "eventsFetch": {
+                "count": 120,
+                "maxMS": 197.84325,
+                "p50MS": 45.499375,
+                "p95MS": 127.623041
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 120,
+                "maxMS": 197.84325,
+                "p50MS": 45.538542,
+                "p95MS": 127.623041
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 627.6230410000001,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 120,
+                "maxMS": 141.7285,
+                "p50MS": 38.570166,
+                "p95MS": 120.786042
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 3178.772291
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:24:14Z"
+        },
+        {
+          "line": 11,
+          "timestamp": "2026-08-19T22:24:24Z"
+        },
+        {
+          "line": 12,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 14,
+                "maxMS": 2551.14925,
+                "p50MS": 2234.037041,
+                "p95MS": 2551.14925
+              },
+              "eventsFetch": {
+                "count": 160,
+                "maxMS": 223.033916,
+                "p50MS": 49.14525,
+                "p95MS": 142.1315
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 160,
+                "maxMS": 223.033916,
+                "p50MS": 49.14525,
+                "p95MS": 142.1315
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 642.1315,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 160,
+                "maxMS": 177.11875,
+                "p50MS": 40.863334,
+                "p95MS": 127.44125
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 3193.28075
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:24:24Z"
+        },
+        {
+          "line": 13,
+          "timestamp": "2026-08-19T22:24:34Z"
+        },
+        {
+          "line": 14,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 18,
+                "maxMS": 2551.14925,
+                "p50MS": 2127.634208,
+                "p95MS": 2551.14925
+              },
+              "eventsFetch": {
+                "count": 200,
+                "maxMS": 223.033916,
+                "p50MS": 52.330167,
+                "p95MS": 144.244167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 200,
+                "maxMS": 223.033916,
+                "p50MS": 52.330167,
+                "p95MS": 144.244167
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 644.2441670000001,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 200,
+                "maxMS": 177.11875,
+                "p50MS": 41.459375,
+                "p95MS": 127.93
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 3195.393417
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:24:34Z"
+        },
+        {
+          "line": 15,
+          "timestamp": "2026-08-19T22:24:44Z"
+        },
+        {
+          "line": 16,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 23,
+                "maxMS": 2551.14925,
+                "p50MS": 2127.634208,
+                "p95MS": 2399.264791
+              },
+              "eventsFetch": {
+                "count": 240,
+                "maxMS": 223.033916,
+                "p50MS": 50.232792,
+                "p95MS": 142.1315
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 240,
+                "maxMS": 223.033916,
+                "p50MS": 50.232792,
+                "p95MS": 142.1315
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 642.1315,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 240,
+                "maxMS": 177.11875,
+                "p50MS": 40.044,
+                "p95MS": 127.44125
+              },
+              "sufficientSamples": true,
+              "timelineIntact": true,
+              "userVisibleMS": 3041.396291
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:24:44Z"
+        }
+      ],
+      "sha256": "25be909c655ab7c3413efeb6e95092be9582dfd1a41347a46e9574c1684bbda2"
+    },
+    "initial_short": {
+      "classification": "INSUFFICIENT_SAMPLE",
+      "final_latency_report": {
+        "committedLatency": {
+          "count": 10,
+          "maxMS": 189.029916,
+          "p50MS": 20.703458,
+          "p95MS": 189.029916
+        },
+        "eventsFetch": {
+          "count": 382,
+          "maxMS": 202.569583,
+          "p50MS": 40.73425,
+          "p95MS": 125.207667
+        },
+        "fetchFailures": 0,
+        "frameQuantisationMS": 500,
+        "mixerOriginResolved": true,
+        "polling": true,
+        "portalCycleMS": 500,
+        "portalFetchCycle": {
+          "count": 382,
+          "maxMS": 202.569583,
+          "p50MS": 41.003834,
+          "p95MS": 127.5405
+        },
+        "rejectedAfterTimelineBreak": 0,
+        "rejectedClockRegression": 0,
+        "rejectedNegative": 31,
+        "renderBoundMS": 627.5405,
+        "schema": "moss-capture-latency.v2",
+        "snapshotFetch": {
+          "count": 382,
+          "maxMS": 184.293416,
+          "p50MS": 33.600709,
+          "p95MS": 117.895791
+        },
+        "sufficientSamples": false,
+        "timelineIntact": true,
+        "userVisibleMS": 816.5704159999999
+      },
+      "latency_report_count": 21,
+      "path": "/tmp/moss-latency-baseline-raw.txt",
+      "raw_records": [
+        {
+          "line": 1,
+          "timestamp": "2026-08-19T22:18:48Z"
+        },
+        {
+          "line": 2,
+          "payload": {
+            "lanes": [
+              {
+                "lane": "system",
+                "state": "pending"
+              },
+              {
+                "lane": "microphone",
+                "state": "capturing"
+              }
+            ],
+            "ok": true,
+            "outboxRetainedFrames": 0,
+            "publishedFrameCount": 0,
+            "running": true,
+            "sessionID": "22edc1f1651e405c906865662bf6f53e"
+          },
+          "timestamp": "2026-08-19T22:18:48Z"
+        },
+        {
+          "line": 3,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 0
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 0
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 0
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:18:48Z"
+        },
+        {
+          "line": 4,
+          "timestamp": "2026-08-19T22:18:53Z"
+        },
+        {
+          "line": 5,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 19,
+                "maxMS": 133.20925,
+                "p50MS": 38.449292,
+                "p95MS": 133.20925
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 19,
+                "maxMS": 141.518792,
+                "p50MS": 38.479625,
+                "p95MS": 141.518792
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 1,
+              "renderBoundMS": 641.518792,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 19,
+                "maxMS": 141.518792,
+                "p50MS": 34.285709,
+                "p95MS": 141.518792
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:18:53Z"
+        },
+        {
+          "line": 6,
+          "timestamp": "2026-08-19T22:18:58Z"
+        },
+        {
+          "line": 7,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 40,
+                "maxMS": 150.58375,
+                "p50MS": 38.4865,
+                "p95MS": 130.815166
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 40,
+                "maxMS": 150.624209,
+                "p50MS": 39.647042,
+                "p95MS": 133.20925
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 3,
+              "renderBoundMS": 633.20925,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 40,
+                "maxMS": 150.624209,
+                "p50MS": 33.949208,
+                "p95MS": 133.200709
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:18:58Z"
+        },
+        {
+          "line": 8,
+          "timestamp": "2026-08-19T22:19:03Z"
+        },
+        {
+          "line": 9,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 60,
+                "maxMS": 150.58375,
+                "p50MS": 38.4865,
+                "p95MS": 129.61925
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 60,
+                "maxMS": 150.624209,
+                "p50MS": 38.721916,
+                "p95MS": 130.815166
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 6,
+              "renderBoundMS": 630.815166,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 60,
+                "maxMS": 150.624209,
+                "p50MS": 33.0135,
+                "p95MS": 130.811625
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:03Z"
+        },
+        {
+          "line": 10,
+          "timestamp": "2026-08-19T22:19:09Z"
+        },
+        {
+          "line": 11,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 80,
+                "maxMS": 150.58375,
+                "p50MS": 39.647042,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 80,
+                "maxMS": 150.624209,
+                "p50MS": 40.548958,
+                "p95MS": 129.61925
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 8,
+              "renderBoundMS": 629.61925,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 80,
+                "maxMS": 150.624209,
+                "p50MS": 32.340917,
+                "p95MS": 129.616625
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:09Z"
+        },
+        {
+          "line": 12,
+          "timestamp": "2026-08-19T22:19:14Z"
+        },
+        {
+          "line": 13,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 1,
+                "maxMS": 16.694875,
+                "p50MS": 16.694875,
+                "p95MS": 16.694875
+              },
+              "eventsFetch": {
+                "count": 100,
+                "maxMS": 150.58375,
+                "p50MS": 39.647042,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 100,
+                "maxMS": 150.624209,
+                "p50MS": 39.671709,
+                "p95MS": 125.207667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 9,
+              "renderBoundMS": 625.207667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 100,
+                "maxMS": 150.624209,
+                "p50MS": 33.690291,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 641.902542
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:14Z"
+        },
+        {
+          "line": 14,
+          "timestamp": "2026-08-19T22:19:19Z"
+        },
+        {
+          "line": 15,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 2,
+                "maxMS": 16.694875,
+                "p50MS": 5.7045,
+                "p95MS": 16.694875
+              },
+              "eventsFetch": {
+                "count": 120,
+                "maxMS": 202.569583,
+                "p50MS": 39.511833,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 120,
+                "maxMS": 202.569583,
+                "p50MS": 39.647042,
+                "p95MS": 125.207667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 10,
+              "renderBoundMS": 625.207667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 120,
+                "maxMS": 184.293416,
+                "p50MS": 33.0135,
+                "p95MS": 124.292625
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 641.902542
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:19Z"
+        },
+        {
+          "line": 16,
+          "timestamp": "2026-08-19T22:19:24Z"
+        },
+        {
+          "line": 17,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 4,
+                "maxMS": 76.136166,
+                "p50MS": 8.536708,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 140,
+                "maxMS": 202.569583,
+                "p50MS": 39.195834,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 140,
+                "maxMS": 202.569583,
+                "p50MS": 39.530833,
+                "p95MS": 125.207667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 10,
+              "renderBoundMS": 625.207667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 140,
+                "maxMS": 184.293416,
+                "p50MS": 32.340917,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 701.343833
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:24Z"
+        },
+        {
+          "line": 18,
+          "timestamp": "2026-08-19T22:19:29Z"
+        },
+        {
+          "line": 19,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 6,
+                "maxMS": 76.136166,
+                "p50MS": 8.536708,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 160,
+                "maxMS": 202.569583,
+                "p50MS": 39.647042,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 160,
+                "maxMS": 202.569583,
+                "p50MS": 39.671709,
+                "p95MS": 125.207667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 10,
+              "renderBoundMS": 625.207667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 160,
+                "maxMS": 184.293416,
+                "p50MS": 32.340917,
+                "p95MS": 114.38775
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 701.343833
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:29Z"
+        },
+        {
+          "line": 20,
+          "timestamp": "2026-08-19T22:19:34Z"
+        },
+        {
+          "line": 21,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 7,
+                "maxMS": 76.136166,
+                "p50MS": 16.694875,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 181,
+                "maxMS": 202.569583,
+                "p50MS": 39.675584,
+                "p95MS": 124.607125
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 181,
+                "maxMS": 202.569583,
+                "p50MS": 39.961042,
+                "p95MS": 125.207667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 11,
+              "renderBoundMS": 625.207667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 181,
+                "maxMS": 184.293416,
+                "p50MS": 32.540042,
+                "p95MS": 115.57425
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 701.343833
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:34Z"
+        },
+        {
+          "line": 22,
+          "timestamp": "2026-08-19T22:19:39Z"
+        },
+        {
+          "line": 23,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 7,
+                "maxMS": 76.136166,
+                "p50MS": 16.694875,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 200,
+                "maxMS": 202.569583,
+                "p50MS": 39.675584,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 200,
+                "maxMS": 202.569583,
+                "p50MS": 39.888083,
+                "p95MS": 127.526667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 13,
+              "renderBoundMS": 627.526667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 200,
+                "maxMS": 184.293416,
+                "p50MS": 32.340917,
+                "p95MS": 114.38775
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 703.662833
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:39Z"
+        },
+        {
+          "line": 24,
+          "timestamp": "2026-08-19T22:19:44Z"
+        },
+        {
+          "line": 25,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 8,
+                "maxMS": 76.136166,
+                "p50MS": 16.694875,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 221,
+                "maxMS": 202.569583,
+                "p50MS": 39.860292,
+                "p95MS": 124.777167
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 221,
+                "maxMS": 202.569583,
+                "p50MS": 39.99575,
+                "p95MS": 127.526667
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 14,
+              "renderBoundMS": 627.526667,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 221,
+                "maxMS": 184.293416,
+                "p50MS": 32.624875,
+                "p95MS": 115.57425
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 703.662833
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:44Z"
+        },
+        {
+          "line": 26,
+          "timestamp": "2026-08-19T22:19:49Z"
+        },
+        {
+          "line": 27,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 8,
+                "maxMS": 76.136166,
+                "p50MS": 16.694875,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 241,
+                "maxMS": 202.569583,
+                "p50MS": 39.860292,
+                "p95MS": 127.526667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 241,
+                "maxMS": 202.569583,
+                "p50MS": 39.99575,
+                "p95MS": 128.3475
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 17,
+              "renderBoundMS": 628.3475,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 241,
+                "maxMS": 184.293416,
+                "p50MS": 32.591125,
+                "p95MS": 116.769459
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 704.483666
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:49Z"
+        },
+        {
+          "line": 28,
+          "timestamp": "2026-08-19T22:19:54Z"
+        },
+        {
+          "line": 29,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 8,
+                "maxMS": 76.136166,
+                "p50MS": 16.694875,
+                "p95MS": 76.136166
+              },
+              "eventsFetch": {
+                "count": 261,
+                "maxMS": 202.569583,
+                "p50MS": 39.961042,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 261,
+                "maxMS": 202.569583,
+                "p50MS": 40.164125,
+                "p95MS": 127.5405
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 19,
+              "renderBoundMS": 627.5405,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 261,
+                "maxMS": 184.293416,
+                "p50MS": 32.505875,
+                "p95MS": 116.769459
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 703.676666
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:54Z"
+        },
+        {
+          "line": 30,
+          "timestamp": "2026-08-19T22:19:59Z"
+        },
+        {
+          "line": 31,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 9,
+                "maxMS": 136.440166,
+                "p50MS": 20.703458,
+                "p95MS": 136.440166
+              },
+              "eventsFetch": {
+                "count": 281,
+                "maxMS": 202.569583,
+                "p50MS": 39.961042,
+                "p95MS": 127.5405
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 281,
+                "maxMS": 202.569583,
+                "p50MS": 40.164125,
+                "p95MS": 129.330167
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 20,
+              "renderBoundMS": 629.330167,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 281,
+                "maxMS": 184.293416,
+                "p50MS": 33.172583,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 765.7703329999999
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:19:59Z"
+        },
+        {
+          "line": 32,
+          "timestamp": "2026-08-19T22:20:04Z"
+        },
+        {
+          "line": 33,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 9,
+                "maxMS": 136.440166,
+                "p50MS": 20.703458,
+                "p95MS": 136.440166
+              },
+              "eventsFetch": {
+                "count": 301,
+                "maxMS": 202.569583,
+                "p50MS": 40.369708,
+                "p95MS": 127.526667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 301,
+                "maxMS": 202.569583,
+                "p50MS": 40.548958,
+                "p95MS": 128.3475
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 22,
+              "renderBoundMS": 628.3475,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 301,
+                "maxMS": 184.293416,
+                "p50MS": 33.458375,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 764.787666
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:04Z"
+        },
+        {
+          "line": 34,
+          "timestamp": "2026-08-19T22:20:09Z"
+        },
+        {
+          "line": 35,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 9,
+                "maxMS": 136.440166,
+                "p50MS": 20.703458,
+                "p95MS": 136.440166
+              },
+              "eventsFetch": {
+                "count": 321,
+                "maxMS": 202.569583,
+                "p50MS": 40.153791,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 321,
+                "maxMS": 202.569583,
+                "p50MS": 40.52975,
+                "p95MS": 127.5405
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 24,
+              "renderBoundMS": 627.5405,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 321,
+                "maxMS": 184.293416,
+                "p50MS": 33.600709,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 763.9806659999999
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:09Z"
+        },
+        {
+          "line": 36,
+          "timestamp": "2026-08-19T22:20:14Z"
+        },
+        {
+          "line": 37,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 9,
+                "maxMS": 136.440166,
+                "p50MS": 20.703458,
+                "p95MS": 136.440166
+              },
+              "eventsFetch": {
+                "count": 342,
+                "maxMS": 202.569583,
+                "p50MS": 41.156083,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 342,
+                "maxMS": 202.569583,
+                "p50MS": 41.247708,
+                "p95MS": 127.5405
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 26,
+              "renderBoundMS": 627.5405,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 342,
+                "maxMS": 184.293416,
+                "p50MS": 33.690291,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 763.9806659999999
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:14Z"
+        },
+        {
+          "line": 38,
+          "timestamp": "2026-08-19T22:20:19Z"
+        },
+        {
+          "line": 39,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 9,
+                "maxMS": 136.440166,
+                "p50MS": 20.703458,
+                "p95MS": 136.440166
+              },
+              "eventsFetch": {
+                "count": 362,
+                "maxMS": 202.569583,
+                "p50MS": 40.548958,
+                "p95MS": 127.526667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 362,
+                "maxMS": 202.569583,
+                "p50MS": 41.156083,
+                "p95MS": 127.746875
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 28,
+              "renderBoundMS": 627.746875,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 362,
+                "maxMS": 184.293416,
+                "p50MS": 33.766833,
+                "p95MS": 118.501083
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 764.187041
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:19Z"
+        },
+        {
+          "line": 40,
+          "timestamp": "2026-08-19T22:20:24Z"
+        },
+        {
+          "line": 41,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 10,
+                "maxMS": 189.029916,
+                "p50MS": 20.703458,
+                "p95MS": 189.029916
+              },
+              "eventsFetch": {
+                "count": 382,
+                "maxMS": 202.569583,
+                "p50MS": 40.73425,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 382,
+                "maxMS": 202.569583,
+                "p50MS": 41.003834,
+                "p95MS": 127.5405
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 31,
+              "renderBoundMS": 627.5405,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 382,
+                "maxMS": 184.293416,
+                "p50MS": 33.600709,
+                "p95MS": 117.895791
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 816.5704159999999
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:24Z"
+        },
+        {
+          "line": 42,
+          "timestamp": "2026-08-19T22:20:24Z"
+        },
+        {
+          "line": 43,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 10,
+                "maxMS": 189.029916,
+                "p50MS": 20.703458,
+                "p95MS": 189.029916
+              },
+              "eventsFetch": {
+                "count": 382,
+                "maxMS": 202.569583,
+                "p50MS": 40.73425,
+                "p95MS": 125.207667
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": true,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 382,
+                "maxMS": 202.569583,
+                "p50MS": 41.003834,
+                "p95MS": 127.5405
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 31,
+              "renderBoundMS": 627.5405,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 382,
+                "maxMS": 184.293416,
+                "p50MS": 33.600709,
+                "p95MS": 117.895791
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true,
+              "userVisibleMS": 816.5704159999999
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:24Z"
+        }
+      ],
+      "sha256": "1f6e7122c8e11c377c25e146d86abad9010efce59d8f04d773fdffc661a568ab"
+    },
+    "restart_lifecycle_fault": {
+      "classification": "LIFECYCLE_FAULT_NO_MIXER_ORIGIN",
+      "final_latency_report": {
+        "committedLatency": {
+          "count": 0
+        },
+        "eventsFetch": {
+          "count": 521,
+          "maxMS": 225.308583,
+          "p50MS": 40.501541,
+          "p95MS": 126.110583
+        },
+        "fetchFailures": 0,
+        "frameQuantisationMS": 500,
+        "mixerOriginResolved": false,
+        "polling": true,
+        "portalCycleMS": 500,
+        "portalFetchCycle": {
+          "count": 521,
+          "maxMS": 225.308583,
+          "p50MS": 40.740166,
+          "p95MS": 126.74825
+        },
+        "rejectedAfterTimelineBreak": 0,
+        "rejectedClockRegression": 0,
+        "rejectedNegative": 0,
+        "renderBoundMS": 626.74825,
+        "schema": "moss-capture-latency.v2",
+        "snapshotFetch": {
+          "count": 521,
+          "maxMS": 190.665709,
+          "p50MS": 35.545375,
+          "p95MS": 115.037625
+        },
+        "sufficientSamples": false,
+        "timelineIntact": true
+      },
+      "latency_report_count": 14,
+      "path": "/tmp/moss-latency-baseline-long-raw.txt",
+      "raw_records": [
+        {
+          "line": 1,
+          "timestamp": "2026-08-19T22:20:50Z"
+        },
+        {
+          "line": 2,
+          "payload": {
+            "lanes": [
+              {
+                "lane": "system",
+                "state": "pending"
+              },
+              {
+                "lane": "microphone",
+                "state": "capturing"
+              }
+            ],
+            "ok": true,
+            "outboxRetainedFrames": 0,
+            "publishedFrameCount": 0,
+            "running": true,
+            "sessionID": "712f02a6e3f04242aa19368ebe1c1e5a"
+          },
+          "timestamp": "2026-08-19T22:20:50Z"
+        },
+        {
+          "line": 3,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 0
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 0
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 0
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:20:50Z"
+        },
+        {
+          "fixture_pass": 1,
+          "line": 4,
+          "timestamp": "2026-08-19T22:20:50Z"
+        },
+        {
+          "line": 5,
+          "timestamp": "2026-08-19T22:21:01Z"
+        },
+        {
+          "line": 6,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 39,
+                "maxMS": 193.093042,
+                "p50MS": 37.69125,
+                "p95MS": 128.936083
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 39,
+                "maxMS": 193.093042,
+                "p50MS": 37.69125,
+                "p95MS": 128.936083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.936083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 39,
+                "maxMS": 127.380916,
+                "p50MS": 34.831583,
+                "p95MS": 124.195167
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:01Z"
+        },
+        {
+          "line": 7,
+          "timestamp": "2026-08-19T22:21:11Z"
+        },
+        {
+          "line": 8,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 79,
+                "maxMS": 193.093042,
+                "p50MS": 37.0265,
+                "p95MS": 132.097833
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 79,
+                "maxMS": 193.093042,
+                "p50MS": 37.0265,
+                "p95MS": 132.097833
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 632.097833,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 79,
+                "maxMS": 139.854958,
+                "p50MS": 33.511875,
+                "p95MS": 113.598375
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:11Z"
+        },
+        {
+          "line": 9,
+          "timestamp": "2026-08-19T22:21:21Z"
+        },
+        {
+          "line": 10,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 120,
+                "maxMS": 193.093042,
+                "p50MS": 39.94025,
+                "p95MS": 128.936083
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 120,
+                "maxMS": 193.093042,
+                "p50MS": 39.94025,
+                "p95MS": 128.936083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.936083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 120,
+                "maxMS": 139.854958,
+                "p50MS": 33.92075,
+                "p95MS": 113.598375
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:21Z"
+        },
+        {
+          "line": 11,
+          "timestamp": "2026-08-19T22:21:31Z"
+        },
+        {
+          "line": 12,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 160,
+                "maxMS": 225.308583,
+                "p50MS": 40.6345,
+                "p95MS": 128.316834
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 160,
+                "maxMS": 225.308583,
+                "p50MS": 40.6345,
+                "p95MS": 128.936083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.936083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 160,
+                "maxMS": 139.854958,
+                "p50MS": 35.933208,
+                "p95MS": 115.1545
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:31Z"
+        },
+        {
+          "line": 13,
+          "timestamp": "2026-08-19T22:21:41Z"
+        },
+        {
+          "line": 14,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 200,
+                "maxMS": 225.308583,
+                "p50MS": 40.930667,
+                "p95MS": 128.316834
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 200,
+                "maxMS": 225.308583,
+                "p50MS": 41.125625,
+                "p95MS": 128.936083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.936083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 200,
+                "maxMS": 139.854958,
+                "p50MS": 36.10375,
+                "p95MS": 114.404708
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:41Z"
+        },
+        {
+          "line": 15,
+          "timestamp": "2026-08-19T22:21:51Z"
+        },
+        {
+          "line": 16,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 240,
+                "maxMS": 225.308583,
+                "p50MS": 40.930667,
+                "p95MS": 127.576625
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 240,
+                "maxMS": 225.308583,
+                "p50MS": 41.222625,
+                "p95MS": 128.316834
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.316834,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 240,
+                "maxMS": 139.854958,
+                "p50MS": 36.10375,
+                "p95MS": 114.404708
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:21:51Z"
+        },
+        {
+          "line": 17,
+          "timestamp": "2026-08-19T22:22:01Z"
+        },
+        {
+          "line": 18,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 280,
+                "maxMS": 225.308583,
+                "p50MS": 41.697625,
+                "p95MS": 127.344917
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 280,
+                "maxMS": 225.308583,
+                "p50MS": 41.846458,
+                "p95MS": 127.576625
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 627.576625,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 280,
+                "maxMS": 139.854958,
+                "p50MS": 36.393375,
+                "p95MS": 113.598375
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:01Z"
+        },
+        {
+          "line": 19,
+          "timestamp": "2026-08-19T22:22:11Z"
+        },
+        {
+          "line": 20,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 320,
+                "maxMS": 225.308583,
+                "p50MS": 41.805833,
+                "p95MS": 128.316834
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 320,
+                "maxMS": 225.308583,
+                "p50MS": 42.006583,
+                "p95MS": 128.936083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.936083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 320,
+                "maxMS": 175.8545,
+                "p50MS": 36.593542,
+                "p95MS": 115.1545
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:11Z"
+        },
+        {
+          "line": 21,
+          "timestamp": "2026-08-19T22:22:21Z"
+        },
+        {
+          "line": 22,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 360,
+                "maxMS": 225.308583,
+                "p50MS": 41.803916,
+                "p95MS": 127.576625
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 360,
+                "maxMS": 225.308583,
+                "p50MS": 41.950333,
+                "p95MS": 128.316834
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 628.316834,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 360,
+                "maxMS": 175.8545,
+                "p50MS": 36.455625,
+                "p95MS": 115.043375
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:21Z"
+        },
+        {
+          "line": 23,
+          "timestamp": "2026-08-19T22:22:31Z"
+        },
+        {
+          "line": 24,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 400,
+                "maxMS": 225.308583,
+                "p50MS": 40.930667,
+                "p95MS": 127.221083
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 400,
+                "maxMS": 225.308583,
+                "p50MS": 41.681541,
+                "p95MS": 127.380916
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 627.380916,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 400,
+                "maxMS": 175.8545,
+                "p50MS": 36.085792,
+                "p95MS": 114.983
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:31Z"
+        },
+        {
+          "fixture_pass": 2,
+          "line": 25,
+          "timestamp": "2026-08-19T22:22:31Z"
+        },
+        {
+          "line": 26,
+          "timestamp": "2026-08-19T22:22:41Z"
+        },
+        {
+          "line": 27,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 441,
+                "maxMS": 225.308583,
+                "p50MS": 40.368292,
+                "p95MS": 126.74825
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 441,
+                "maxMS": 225.308583,
+                "p50MS": 40.6345,
+                "p95MS": 127.221083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 627.221083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 441,
+                "maxMS": 175.8545,
+                "p50MS": 35.96475,
+                "p95MS": 114.404708
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:41Z"
+        },
+        {
+          "line": 28,
+          "timestamp": "2026-08-19T22:22:51Z"
+        },
+        {
+          "line": 29,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 481,
+                "maxMS": 225.308583,
+                "p50MS": 40.437833,
+                "p95MS": 126.349709
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 481,
+                "maxMS": 225.308583,
+                "p50MS": 40.740166,
+                "p95MS": 127.221083
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 627.221083,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 481,
+                "maxMS": 190.665709,
+                "p50MS": 35.968166,
+                "p95MS": 115.037625
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:22:51Z"
+        },
+        {
+          "line": 30,
+          "timestamp": "2026-08-19T22:23:01Z"
+        },
+        {
+          "line": 31,
+          "payload": {
+            "latency": {
+              "committedLatency": {
+                "count": 0
+              },
+              "eventsFetch": {
+                "count": 521,
+                "maxMS": 225.308583,
+                "p50MS": 40.501541,
+                "p95MS": 126.110583
+              },
+              "fetchFailures": 0,
+              "frameQuantisationMS": 500,
+              "mixerOriginResolved": false,
+              "polling": true,
+              "portalCycleMS": 500,
+              "portalFetchCycle": {
+                "count": 521,
+                "maxMS": 225.308583,
+                "p50MS": 40.740166,
+                "p95MS": 126.74825
+              },
+              "rejectedAfterTimelineBreak": 0,
+              "rejectedClockRegression": 0,
+              "rejectedNegative": 0,
+              "renderBoundMS": 626.74825,
+              "schema": "moss-capture-latency.v2",
+              "snapshotFetch": {
+                "count": 521,
+                "maxMS": 190.665709,
+                "p50MS": 35.545375,
+                "p95MS": 115.037625
+              },
+              "sufficientSamples": false,
+              "timelineIntact": true
+            },
+            "ok": true
+          },
+          "timestamp": "2026-08-19T22:23:01Z"
+        }
+      ],
+      "sha256": "9c06e75c4b27e771729ecce2e5e077362fca9e77a7b8f1a737c974782ce684a5"
+    }
+  },
+  "question": "Where does the attended 3-5 second word-to-screen delay accrue before policy changes?",
+  "recorded_date": "2026-08-19",
+  "schema": "moss-live-latency-baseline.v1",
+  "scope": "Diagnostic baseline only. No server/browser clock subtraction is made. The capture-to-fetch figures use the M4 capture clock; decode durations use the server clock; the served-reader term is an analytic bound, not an observed render.",
+  "stage_budget": {
+    "commit_to_fetch": {
+      "status": "NOT_YET_SEPARATED_FROM_POST_SPAN_AGE"
+    },
+    "decode": {
+      "clock": "server monotonic duration",
+      "distribution_seconds": {
+        "count": 30,
+        "max": 0.616665874957107,
+        "p50": 0.34417137497803196,
+        "p95": 0.4273460829863325
+      },
+      "status": "MEASURED"
+    },
+    "fetch_to_dom_render": {
+      "components": {
+        "paired_fetch_p95_ms": 142.1315,
+        "reader_poll_cadence_ms": 500
+      },
+      "p95_bound_ms": 642.1315,
+      "status": "ANALYTIC_BOUND_ONLY"
+    },
+    "first_sample_to_span_end": {
+      "clock": "sample timeline",
+      "p95_ms": 2500.0,
+      "status": "MEASURED_FROM_SPAN_BOUNDARIES"
+    },
+    "first_sample_to_visible": {
+      "p95_bound_ms": 5541.396290999999,
+      "status": "ADDITIVE_P95_BOUND_ONLY",
+      "warning": "Sum of component p95 values, not an observed end-to-end percentile."
+    },
+    "last_sample_to_visible": {
+      "p95_bound_ms": 3041.396291,
+      "status": "ANALYTIC_BOUND_ONLY"
+    },
+    "queue_wait": {
+      "status": "NOT_YET_INSTRUMENTED"
+    },
+    "span_end_to_probe_fetch_observation": {
+      "clock": "M4 capture host clock",
+      "distribution_ms": {
+        "count": 23,
+        "maxMS": 2551.14925,
+        "p50MS": 2127.634208,
+        "p95MS": 2399.264791
+      },
+      "status": "MEASURED"
+    }
+  }
+}

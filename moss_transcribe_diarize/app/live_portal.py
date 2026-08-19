@@ -195,6 +195,17 @@ LIVE_PORTAL_HTML = """<!doctype html>
         controlController: null,
         renderedEvents: new Set(),
         renderedEventOrder: [],
+        pendingLatencyEvents: new Map(),
+      };
+      const latencySamples = {
+        queueWaitMS: [],
+        processingMS: [],
+        decodeMS: [],
+        commitToFetchMS: [],
+        eventsFetchMS: [],
+        fetchToDOMRenderMS: [],
+        spanStartToDOMRenderUpperBoundMS: [],
+        spanEndToDOMRenderUpperBoundMS: [],
       };
 
       function setText(node, value) {
@@ -214,6 +225,48 @@ LIVE_PORTAL_HTML = """<!doctype html>
           return;
         }
         setText(nodes.serverState, value);
+      }
+
+      function resetLatency() {
+        state.pendingLatencyEvents.clear();
+        for (const values of Object.values(latencySamples)) {
+          values.length = 0;
+        }
+      }
+
+      function latencyDistribution(values) {
+        const sorted = [...values].sort((left, right) => left - right);
+        const percentile = (fraction) => {
+          if (!sorted.length) return null;
+          const rank = Math.ceil(fraction * sorted.length);
+          return sorted[Math.max(1, rank) - 1];
+        };
+        return {
+          count: sorted.length,
+          p50MS: percentile(0.50),
+          p95MS: percentile(0.95),
+          maxMS: sorted.length ? sorted[sorted.length - 1] : null,
+        };
+      }
+
+      function latencyReport() {
+        return {
+          schema: "moss-live-portal-latency.v1",
+          sampleCount: latencySamples.spanEndToDOMRenderUpperBoundMS.length,
+          clockContract: "durations are measured within one clock domain, then added; absolute clocks are never subtracted",
+          queueWaitMS: latencyDistribution(latencySamples.queueWaitMS),
+          processingMS: latencyDistribution(latencySamples.processingMS),
+          decodeMS: latencyDistribution(latencySamples.decodeMS),
+          commitToFetchMS: latencyDistribution(latencySamples.commitToFetchMS),
+          eventsFetchMS: latencyDistribution(latencySamples.eventsFetchMS),
+          fetchToDOMRenderMS: latencyDistribution(latencySamples.fetchToDOMRenderMS),
+          spanStartToDOMRenderUpperBoundMS: latencyDistribution(
+            latencySamples.spanStartToDOMRenderUpperBoundMS
+          ),
+          spanEndToDOMRenderUpperBoundMS: latencyDistribution(
+            latencySamples.spanEndToDOMRenderUpperBoundMS
+          ),
+        };
       }
 
       function authHeaders(token = state.viewToken) {
@@ -257,6 +310,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
+        resetLatency();
         nodes.sharedToken.value = "";
         nodes.sessionId.value = "";
         nodes.viewToken.value = "";
@@ -373,6 +427,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         state.eventSequence = -1;
         state.renderedEvents.clear();
         state.renderedEventOrder = [];
+        resetLatency();
         setText(nodes.events, "");
         setText(nodes.transcript, "");
         setControls(state.connected);
@@ -593,6 +648,107 @@ LIVE_PORTAL_HTML = """<!doctype html>
         return highest;
       }
 
+      function retainLatencyEvents(payload) {
+        if (
+          !payload
+          || !Array.isArray(payload.events)
+          || !Number.isFinite(payload.runtime_observed_monotonic_ns)
+        ) {
+          return;
+        }
+        for (const event of payload.events) {
+          const detail = event && event.payload;
+          if (
+            !event
+            || !Number.isInteger(event.seq)
+            || event.seq <= state.eventSequence
+            || event.kind !== "canonical_processed"
+            || !detail
+            || !Number.isInteger(detail.span_id)
+            || !Number.isFinite(detail.runtime_monotonic_ns)
+          ) {
+            continue;
+          }
+          state.pendingLatencyEvents.set(event.seq, {
+            event,
+            observedMonotonicNS: payload.runtime_observed_monotonic_ns,
+          });
+          while (state.pendingLatencyEvents.size > maxRenderedEvents) {
+            state.pendingLatencyEvents.delete(state.pendingLatencyEvents.keys().next().value);
+          }
+        }
+      }
+
+      function measureRenderedLatency(
+        session,
+        eventsFetchMS,
+        eventsFetchedAtMS,
+        generation,
+      ) {
+        if (!session || !Array.isArray(session.committed)) {
+          return;
+        }
+        const committedSpanIds = new Set(
+          session.committed
+            .map((item) => item && item.span_id)
+            .filter((spanId) => Number.isInteger(spanId))
+        );
+        const ready = [];
+        for (const [sequence, retained] of state.pendingLatencyEvents) {
+          if (committedSpanIds.has(retained.event.payload.span_id)) {
+            ready.push(retained);
+            state.pendingLatencyEvents.delete(sequence);
+          }
+        }
+        if (!ready.length) {
+          return;
+        }
+        window.requestAnimationFrame((renderedAtMS) => {
+          if (!state.connected || generation !== state.generation) {
+            return;
+          }
+          const fetchToDOMRenderMS = Math.max(0, renderedAtMS - eventsFetchedAtMS);
+          for (const retained of ready) {
+            const detail = retained.event.payload;
+            const commitToFetchMS = Math.max(
+              0,
+              (retained.observedMonotonicNS - detail.runtime_monotonic_ns) / 1_000_000,
+            );
+            const queueWaitMS = Number(detail.queue_wait_ms);
+            const processingMS = Number(detail.canonical_processing_elapsed_ms);
+            const queuedToProcessedMS = Number(detail.queued_to_processed_ms);
+            const decodeMS = Number(detail.canonical_decode_elapsed_sec) * 1_000;
+            const spanDurationMS = Number(detail.frozen_span_duration_sec) * 1_000;
+            if (
+              ![queueWaitMS, processingMS, queuedToProcessedMS, decodeMS, spanDurationMS]
+                .every(Number.isFinite)
+            ) {
+              continue;
+            }
+            // `commitToFetchMS` ends at the server's read of the events response. Adding the
+            // complete browser fetch duration double-counts at most the request prefix, so the
+            // result is an explicit upper bound ending at an actual post-DOM animation frame.
+            const spanEndUpperMS = queuedToProcessedMS
+              + commitToFetchMS
+              + eventsFetchMS
+              + fetchToDOMRenderMS;
+            latencySamples.queueWaitMS.push(queueWaitMS);
+            latencySamples.processingMS.push(processingMS);
+            latencySamples.decodeMS.push(decodeMS);
+            latencySamples.commitToFetchMS.push(commitToFetchMS);
+            latencySamples.eventsFetchMS.push(eventsFetchMS);
+            latencySamples.fetchToDOMRenderMS.push(fetchToDOMRenderMS);
+            latencySamples.spanEndToDOMRenderUpperBoundMS.push(spanEndUpperMS);
+            latencySamples.spanStartToDOMRenderUpperBoundMS.push(
+              spanDurationMS + spanEndUpperMS
+            );
+            for (const values of Object.values(latencySamples)) {
+              if (values.length > maxRenderedEvents) values.shift();
+            }
+          }
+        });
+      }
+
       function schedulePoll(delayMs) {
         if (!state.connected || state.retryTimer) {
           return;
@@ -622,6 +778,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
         try {
           // Both responses describe the same cursor generation and neither depends on the
           // other's body. Starting them together makes the viewer pay the slower fetch once.
+          const eventsFetchStartedAtMS = performance.now();
           const [snapshotPayload, eventsPayload] = await Promise.all([
             fetchPollJson(
               endpoints.snapshot(state.sessionId, state.snapshotVersion),
@@ -636,16 +793,24 @@ LIVE_PORTAL_HTML = """<!doctype html>
               controller,
             ),
           ]);
+          const eventsFetchedAtMS = performance.now();
           const session = renderSnapshot(snapshotPayload);
           assertCurrent(generation);
           if (session) {
             state.snapshotVersion = session.version;
           }
+          retainLatencyEvents(eventsPayload);
           const highestEvent = renderEvents(eventsPayload);
           assertCurrent(generation);
           if (highestEvent !== null) {
             state.eventSequence = highestEvent;
           }
+          measureRenderedLatency(
+            session,
+            Math.max(0, eventsFetchedAtMS - eventsFetchStartedAtMS),
+            eventsFetchedAtMS,
+            generation,
+          );
           state.retryIndex = 0;
           if (session && terminalStates.has(session.status)) {
             terminalDisconnect();
@@ -734,7 +899,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
       nodes.abort.addEventListener("click", () => void control("abort"));
       window.addEventListener("pagehide", disconnect);
 
-      window.mossLivePortal = { endpoints, renderedEventBounds };
+      window.mossLivePortal = { endpoints, renderedEventBounds, latencyReport };
     })();
   </script>
 </body>

@@ -789,6 +789,28 @@ class LivePortalRouteTest(unittest.TestCase):
             "the render bound must take p95 after pairing each cycle's slower fetch",
         )
 
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_measures_commit_to_actual_dom_render_without_cross_clock_subtraction(self):
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        report = _run_latency_contract_probe(html)
+
+        self.assertEqual(report["schema"], "moss-live-portal-latency.v1")
+        self.assertEqual(report["sampleCount"], 1)
+        self.assertEqual(report["queueWaitMS"]["p95MS"], 250)
+        self.assertEqual(report["decodeMS"]["p95MS"], 300)
+        self.assertEqual(report["commitToFetchMS"]["p95MS"], 250)
+        self.assertEqual(report["fetchToDOMRenderMS"]["p95MS"], 16)
+        self.assertEqual(report["spanEndToDOMRenderUpperBoundMS"]["p95MS"], 926)
+        self.assertEqual(report["spanStartToDOMRenderUpperBoundMS"]["p95MS"], 3_426)
+        self.assertEqual(
+            report["clockContract"],
+            "durations are measured within one clock domain, then added; absolute clocks are never subtracted",
+        )
+
     def test_idea_038_context_and_adr_keep_portal_constants_and_evidence_tier_missing(self):
         from fastapi.testclient import TestClient
 
@@ -956,6 +978,13 @@ function installPortal(responses) {{
   let maxPendingTimers = 0;
   const storageWrites = [];
   const windowListeners = {{}};
+  let performanceNowMS = 0;
+  const performance = {{
+    now() {{
+      performanceNowMS += 10;
+      return performanceNowMS;
+    }},
+  }};
   const document = {{
     getElementById(id) {{
       if (!nodes[id]) {{
@@ -998,6 +1027,11 @@ function installPortal(responses) {{
     clearTimeout(id) {{
       clearedTimers.add(id);
     }},
+    requestAnimationFrame(handler) {{
+      performanceNowMS += 16;
+      handler(performanceNowMS);
+      return 1;
+    }},
   }};
   const storage = new Proxy({{}}, {{
     set(target, key, value) {{
@@ -1009,6 +1043,7 @@ function installPortal(responses) {{
   global.document = document;
   global.window = window;
   global.clearTimeout = window.clearTimeout;
+  global.performance = performance;
   global.localStorage = storage;
   global.sessionStorage = storage;
   global.fetch = async (url, options) => {{
@@ -1394,6 +1429,82 @@ async function runEventRetention() {{
   }}));
 }}
 
+async function runLatency() {{
+  const processed = {{
+    seq: 7,
+    kind: "canonical_processed",
+    snapshot_version: 4,
+    payload: {{
+      item_id: 2,
+      batch_index: 0,
+      span_id: 3,
+      runtime_monotonic_ns: 1000000000,
+      queue_wait_ms: 250,
+      canonical_processing_elapsed_ms: 400,
+      queued_to_processed_ms: 650,
+      canonical_decode_elapsed_sec: 0.3,
+      frozen_span_duration_sec: 2.5,
+    }},
+  }};
+  const env = installPortal([
+    {{ payload: {{
+      snapshot: {{
+        session: {{
+          status: "active",
+          version: 4,
+          accepted_samples: 40000,
+          accounted_samples: 40000,
+          retained_samples: 0,
+          committed: [{{ span_id: 3, transcript: "[0][S01]measured[2.5]" }}],
+          provisional: null,
+        }},
+        pending_work_items: 0,
+      }},
+      helper_presence: null,
+      v2_session: v2Session("active"),
+    }} }},
+    {{ payload: {{
+      events: [processed],
+      runtime_observed_monotonic_ns: 1250000000,
+    }} }},
+    {{ payload: {{ snapshot: null, unchanged: true }} }},
+    {{ payload: {{
+      events: [processed],
+      runtime_observed_monotonic_ns: 1300000000,
+    }} }},
+    {{ payload: {{
+      snapshot: {{
+        session: {{
+          status: "active",
+          version: 5,
+          accepted_samples: 40000,
+          accounted_samples: 40000,
+          retained_samples: 0,
+          committed: [{{ span_id: 3, transcript: "[0][S01]measured[2.5]" }}],
+          provisional: null,
+        }},
+        pending_work_items: 0,
+      }},
+      helper_presence: null,
+      v2_session: v2Session("active"),
+    }} }},
+    {{ payload: {{
+      events: [processed],
+      runtime_observed_monotonic_ns: 1350000000,
+    }} }},
+  ]);
+  env.nodes.sessionId.value = "latency-session";
+  env.nodes.viewToken.value = "latency-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  await env.flush();
+  await env.runNextTimer();
+  await env.flush();
+  await env.runNextTimer();
+  await env.flush();
+  console.log(JSON.stringify(window.mossLivePortal.latencyReport()));
+}}
+
 async function runServedPolls() {{
   // No hand-written payloads: every body and status code here came off a live route.
   const env = installPortal(servedResponses.map((served) => ({{
@@ -1437,6 +1548,7 @@ const scenarios = {{
   concurrentFailure: runConcurrentFailure,
   controlTimeout: runControlTimeout,
   eventRetention: runEventRetention,
+  latency: runLatency,
 }};
 scenarios[scenario]().catch((error) => {{
   console.error(error && error.stack ? error.stack : String(error));
@@ -1498,6 +1610,10 @@ def _run_control_timeout_contract_probe(html: str) -> dict:
 
 def _run_event_retention_contract_probe(html: str) -> dict:
     return _run_node_probe(html, "eventRetention")
+
+
+def _run_latency_contract_probe(html: str) -> dict:
+    return _run_node_probe(html, "latency")
 
 
 def _run_served_polls_probe(html: str, responses: list) -> dict:

@@ -1,0 +1,95 @@
+{
+  "schema": "moss-lane-balance-preregistration.v3",
+  "amends": {
+    "path": "prototypes/lane-balance/preregistration-v2.json",
+    "sha256": "e58a8bbf6a77bc40750fe89e3daeff1c227edc9eaa9c2cce04086c54e0635fec",
+    "result_path": "evidence/phase1/g3-attended/iteration-2-lane-balance-v2.json",
+    "result_sha256": "3721c46d671df10533d74f2308114d0d856182f87437a916d3f9c4e9d2cb7db2",
+    "reason": "v1/v2 calibrated the k2 fixture to 25.741875 dB rather than the attended 15.377 dB, called SequenceMatcher matching blocks LCS, and used per-lane edit distances whose insertions include the other lane. Those sealed artifacts remain historical evidence but are invalid for policy selection."
+  },
+  "question": "At the attended 15.377 dB disparity, does any microphone gain from identity through RMS parity plus 6 dB reduce non-double-counting total-content error on different-speech mixtures, and does the apparent optimum replicate on three held-out different-speech pairs?",
+  "scope": "Diagnostic prototype only. It can identify a gain region for a later causal-policy prototype. It cannot authorize a production mixer policy, a fixed gain, AGC, a warning threshold, or G3 acceptance.",
+  "production_path": {
+    "mixer": "moss_transcribe_diarize.app.live_mixer.LiveCompatibilityMixer",
+    "rule": "both lanes receive -6 dB headroom then the production soft limiter",
+    "model_endpoint": "MOSS_VLLM_BASE_URL /v1/audio/transcriptions"
+  },
+  "calibration": {
+    "target_total_disparity_db": 15.377,
+    "definition": "shared 12-second RMS dBFS minus attenuated microphone 12-second RMS dBFS",
+    "attended_basis": "evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json",
+    "k2_required_synthetic_attenuation_db": -4.635124658411,
+    "tolerance_db": 0.000001
+  },
+  "corpora": [
+    {
+      "id": "k2-discovery",
+      "role": "discovery",
+      "shared_lane": "prototypes/streaming-diarization/data/meet_k2_s0.wav",
+      "shared_sha256": "167cb9c04d3f6e7b04982314fc3fbb680e74bed39230c5a8063f5973f2ba15b8",
+      "microphone_lane": "prototypes/streaming-diarization/data/meet_k2_s1.wav",
+      "microphone_sha256": "bc0ec14d438b3bfd9e0ab96952f3facfd7ea74216728a2a39433fcf83c47854f",
+      "microphone_attenuation_db": -4.635124658411,
+      "clip_seconds": 12
+    },
+    {
+      "id": "k3-validation",
+      "role": "validation",
+      "shared_lane": "prototypes/streaming-diarization/data/meet_k3_s0.wav",
+      "shared_sha256": "32a9ab579cb53af3f124b8eb1d4135314df4d82c5f7b5630002a6a52ae352518",
+      "microphone_lane": "prototypes/streaming-diarization/data/meet_k3_s1.wav",
+      "microphone_sha256": "515af087d62f3f6c7561b9206e22bd1b1144cd3a0cf5020cc84688ae4f2329d0",
+      "microphone_attenuation_db": -21.294578898277,
+      "clip_seconds": 12
+    },
+    {
+      "id": "k4-validation",
+      "role": "validation",
+      "shared_lane": "prototypes/streaming-diarization/data/meet_k4_s0.wav",
+      "shared_sha256": "df99cf0d7751a71bac1cc28d36022648ac97562362f3c66949b53e347139106f",
+      "microphone_lane": "prototypes/streaming-diarization/data/meet_k4_s1.wav",
+      "microphone_sha256": "beca9b43663250b24bb92c606e4225ac963a88ee0e4a16c3a9e518049bac6567",
+      "microphone_attenuation_db": -21.902461233623,
+      "clip_seconds": 12
+    },
+    {
+      "id": "k6-validation",
+      "role": "validation",
+      "shared_lane": "prototypes/streaming-diarization/data/meet_k6_s0.wav",
+      "shared_sha256": "ae7e03afa4aab74fb29a654d188c0512e253e5e9cb15ea2dd1c6f03876e0f41b",
+      "microphone_lane": "prototypes/streaming-diarization/data/meet_k6_s1.wav",
+      "microphone_sha256": "4c7a8a60f544c7f9f352a22671285451bbc28b6e5c6293b869c734685b67edf7",
+      "microphone_attenuation_db": -19.180062793947,
+      "clip_seconds": 12
+    }
+  ],
+  "candidates": [
+    {"id": "gain_0db", "microphone_gain_db_from_quiet": 0.0},
+    {"id": "gain_3db", "microphone_gain_db_from_quiet": 3.0},
+    {"id": "gain_6db", "microphone_gain_db_from_quiet": 6.0},
+    {"id": "gain_9db", "microphone_gain_db_from_quiet": 9.0},
+    {"id": "gain_12db", "microphone_gain_db_from_quiet": 12.0},
+    {"id": "gain_parity", "microphone_gain_db_from_quiet": 15.377},
+    {"id": "gain_parity_plus_3db", "microphone_gain_db_from_quiet": 18.377},
+    {"id": "gain_parity_plus_6db", "microphone_gain_db_from_quiet": 21.377}
+  ],
+  "metrics": {
+    "primary": "Minimum token edit distance between the hypothesis and any order-preserving interleaving of the shared and microphone clean-reference tokens, divided by the sum of reference-token counts.",
+    "primary_recurrence": "D[i,j,k] = min(D[i-1,j,k]+1, D[i,j-1,k]+1, D[i,j,k-1]+1, D[i-1,j,k-1]+[A_i!=H_k], D[i,j-1,k-1]+[B_j!=H_k]); D[0,0,0]=0. Terms with negative indices are omitted.",
+    "single_credit_invariant": "Every hypothesis token advances k at most once, so one token cannot be credited to both lanes.",
+    "diagnostics": [
+      "True dynamic-programming LCS against each lane separately; diagnostic only and never summed.",
+      "Optimal-interleaving matches, substitutions, reference deletions, and hypothesis insertions.",
+      "Hypothesis length and insertion count as hallucination/output-length cost.",
+      "Scaled-microphone over-range samples, production output-limiter samples, output peak, decode time, token counts, and audio hashes."
+    ]
+  },
+  "decision_rule": {
+    "discovery_selection": "On k2-discovery, choose the lowest gain within 0.01 absolute total-content WER of the best candidate, but only if it improves identity by at least 0.05 absolute. Otherwise gain-only fails.",
+    "validation_candidates": "Evaluate every arm on held-out corpora so the full gain response remains visible; apply the replication gate only to the discovery-selected gain.",
+    "replication_gate": "The discovery-selected gain must beat identity on at least two of three validation corpora, have median validation WER improvement at least 0.05 absolute, and worsen no validation corpus by more than 0.05 absolute.",
+    "if_replication_passes": "Prototype a causal live gain rule; do not change production yet.",
+    "if_replication_fails": "Gain-only fails this bed; prototype separate-lane decode/merge next.",
+    "interpretation_limit": "The clean references are same-model transcripts over synthetic 12-second mixtures. Even a replicated result selects only the next prototype, not production policy."
+  }
+}

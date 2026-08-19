@@ -116,14 +116,17 @@ public struct CaptureLatencyDistribution: Codable, Equatable, Sendable {
 /// identifier and above all no token, so the report cannot leak view authority by construction
 /// rather than by review.
 public struct CaptureLatencyReport: Codable, Equatable, Sendable {
-    public static let schemaName = "moss-capture-latency.v2"
+    public static let schemaName = "moss-capture-latency.v3"
 
     public var schema: String
     public var polling: Bool
     public var mixerOriginResolved: Bool
     public var timelineIntact: Bool
     public var sufficientSamples: Bool
+    /// Compatibility alias retained for v2 consumers. This is end-of-span age, not first-word age.
     public var committedLatency: CaptureLatencyDistribution
+    public var spanStartFetchAge: CaptureLatencyDistribution
+    public var spanEndFetchAge: CaptureLatencyDistribution
     public var snapshotFetch: CaptureLatencyDistribution
     public var eventsFetch: CaptureLatencyDistribution
     public var portalFetchCycle: CaptureLatencyDistribution
@@ -133,6 +136,8 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
     public var renderBoundMS: Double?
     /// The gated number: committed p95 plus the render bound. Both components stay in the report.
     public var userVisibleMS: Double?
+    public var spanStartAnalyticVisibleBoundMS: Double?
+    public var spanEndAnalyticVisibleBoundMS: Double?
     public var rejectedNegative: Int
     public var rejectedClockRegression: Int
     public var rejectedAfterTimelineBreak: Int
@@ -145,6 +150,8 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         timelineIntact: Bool = true,
         sufficientSamples: Bool = false,
         committedLatency: CaptureLatencyDistribution = CaptureLatencyDistribution(),
+        spanStartFetchAge: CaptureLatencyDistribution = CaptureLatencyDistribution(),
+        spanEndFetchAge: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         snapshotFetch: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         eventsFetch: CaptureLatencyDistribution = CaptureLatencyDistribution(),
         portalFetchCycle: CaptureLatencyDistribution = CaptureLatencyDistribution(),
@@ -152,6 +159,8 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         portalCycleMS: Double = CaptureLatencyContract.portalCycleSeconds * 1_000,
         renderBoundMS: Double? = nil,
         userVisibleMS: Double? = nil,
+        spanStartAnalyticVisibleBoundMS: Double? = nil,
+        spanEndAnalyticVisibleBoundMS: Double? = nil,
         rejectedNegative: Int = 0,
         rejectedClockRegression: Int = 0,
         rejectedAfterTimelineBreak: Int = 0,
@@ -163,6 +172,8 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         self.timelineIntact = timelineIntact
         self.sufficientSamples = sufficientSamples
         self.committedLatency = committedLatency
+        self.spanStartFetchAge = spanStartFetchAge
+        self.spanEndFetchAge = spanEndFetchAge
         self.snapshotFetch = snapshotFetch
         self.eventsFetch = eventsFetch
         self.portalFetchCycle = portalFetchCycle
@@ -170,6 +181,8 @@ public struct CaptureLatencyReport: Codable, Equatable, Sendable {
         self.portalCycleMS = portalCycleMS
         self.renderBoundMS = renderBoundMS
         self.userVisibleMS = userVisibleMS
+        self.spanStartAnalyticVisibleBoundMS = spanStartAnalyticVisibleBoundMS
+        self.spanEndAnalyticVisibleBoundMS = spanEndAnalyticVisibleBoundMS
         self.rejectedNegative = rejectedNegative
         self.rejectedClockRegression = rejectedClockRegression
         self.rejectedAfterTimelineBreak = rejectedAfterTimelineBreak
@@ -190,7 +203,8 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
     private var timelineIntact = true
     private var lastCommittedSamples: Int?
     private var lastObservedNS: UInt64?
-    private var committedLatencyNS: [UInt64] = []
+    private var spanStartFetchAgeNS: [UInt64] = []
+    private var spanEndFetchAgeNS: [UInt64] = []
     private var snapshotFetchNS: [UInt64] = []
     private var eventsFetchNS: [UInt64] = []
     private var portalFetchCycleNS: [UInt64] = []
@@ -212,7 +226,8 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         timelineIntact = true
         lastCommittedSamples = nil
         lastObservedNS = nil
-        committedLatencyNS = []
+        spanStartFetchAgeNS = []
+        spanEndFetchAgeNS = []
         snapshotFetchNS = []
         eventsFetchNS = []
         portalFetchCycleNS = []
@@ -270,6 +285,32 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
     /// Records one observation of the server's committed sample count, taken at `now` on the
     /// capture clock.
     public func observe(committedSamples: Int, atHostNanoseconds now: UInt64) {
+        observe(
+            committedStartSample: nil,
+            committedEndSample: committedSamples,
+            atHostNanoseconds: now
+        )
+    }
+
+    /// Records the newest committed span's exact boundaries. The explicit start is what turns the
+    /// old last-word measurement into a first/last-word pair without comparing clocks across hosts.
+    public func observe(
+        committedStartSample: Int,
+        committedEndSample: Int,
+        atHostNanoseconds now: UInt64
+    ) {
+        observe(
+            committedStartSample: Optional(committedStartSample),
+            committedEndSample: committedEndSample,
+            atHostNanoseconds: now
+        )
+    }
+
+    private func observe(
+        committedStartSample explicitStartSample: Int?,
+        committedEndSample committedSamples: Int,
+        atHostNanoseconds now: UInt64
+    ) {
         lock.lock()
         defer { lock.unlock() }
 
@@ -299,13 +340,21 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
             rejectedClockRegression += 1
             return
         }
+        let committedStartSample = explicitStartSample ?? previous
+        guard committedStartSample >= 0, committedStartSample <= committedSamples else {
+            rejectedNegative += 1
+            return
+        }
+        let committedStartCaptureNS =
+            origin + UInt64(committedStartSample) * CaptureLatencyContract.nanosecondsPerCommittedSample
         let committedEndCaptureNS =
             origin + UInt64(committedSamples) * CaptureLatencyContract.nanosecondsPerCommittedSample
         guard now >= committedEndCaptureNS else {
             rejectedNegative += 1
             return
         }
-        committedLatencyNS.append(now - committedEndCaptureNS)
+        spanStartFetchAgeNS.append(now - committedStartCaptureNS)
+        spanEndFetchAgeNS.append(now - committedEndCaptureNS)
     }
 
     /// Records one production-shaped portal cycle atomically. Completion order cannot cross-pair
@@ -332,7 +381,8 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
         defer { lock.unlock() }
         resolveOriginLocked()
 
-        let committed = CaptureLatencyDistribution.over(committedLatencyNS)
+        let spanStart = CaptureLatencyDistribution.over(spanStartFetchAgeNS)
+        let spanEnd = CaptureLatencyDistribution.over(spanEndFetchAgeNS)
         let snapshot = CaptureLatencyDistribution.over(snapshotFetchNS)
         let events = CaptureLatencyDistribution.over(eventsFetchNS)
         let portalFetchCycle = CaptureLatencyDistribution.over(portalFetchCycleNS)
@@ -342,20 +392,27 @@ public final class CaptureLatencySampler: CaptureAcknowledgedFrameObserving, @un
                 + portalFetchP95
         }
         var userVisibleMS: Double?
-        if let renderBoundMS, let committedP95 = committed.p95MS {
+        if let renderBoundMS, let committedP95 = spanEnd.p95MS {
             userVisibleMS = committedP95 + renderBoundMS
+        }
+        let spanStartVisibleMS = renderBoundMS.flatMap { bound in
+            spanStart.p95MS.map { $0 + bound }
         }
         return CaptureLatencyReport(
             polling: polling,
             mixerOriginResolved: mixerOriginNS != nil,
             timelineIntact: timelineIntact,
-            sufficientSamples: committed.count >= CaptureLatencyContract.minimumCommittedAdvances,
-            committedLatency: committed,
+            sufficientSamples: spanEnd.count >= CaptureLatencyContract.minimumCommittedAdvances,
+            committedLatency: spanEnd,
+            spanStartFetchAge: spanStart,
+            spanEndFetchAge: spanEnd,
             snapshotFetch: snapshot,
             eventsFetch: events,
             portalFetchCycle: portalFetchCycle,
             renderBoundMS: renderBoundMS,
             userVisibleMS: userVisibleMS,
+            spanStartAnalyticVisibleBoundMS: spanStartVisibleMS,
+            spanEndAnalyticVisibleBoundMS: userVisibleMS,
             rejectedNegative: rejectedNegative,
             rejectedClockRegression: rejectedClockRegression,
             rejectedAfterTimelineBreak: rejectedAfterTimelineBreak,
@@ -500,7 +557,18 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
             sinceVersion = observed.version
             lock.unlock()
             if let now = hostTime.hostNanoseconds() {
-                sampler.observe(committedSamples: observed.committedSamples, atHostNanoseconds: now)
+                if let committedStartSample = observed.newestCommittedStartSample {
+                    sampler.observe(
+                        committedStartSample: committedStartSample,
+                        committedEndSample: observed.committedSamples,
+                        atHostNanoseconds: now
+                    )
+                } else {
+                    sampler.observe(
+                        committedSamples: observed.committedSamples,
+                        atHostNanoseconds: now
+                    )
+                }
             }
         }
         if let highestSeq = decodeHighestEventSequence(cycle.events.response) {
@@ -528,6 +596,7 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
     private struct ObservedSession {
         var version: Int
         var committedSamples: Int
+        var newestCommittedStartSample: Int?
     }
 
     private struct SnapshotObservation {
@@ -641,7 +710,11 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
             return SnapshotObservation(session: nil)
         }
         return SnapshotObservation(
-            session: ObservedSession(version: session.version, committedSamples: session.committedSamples)
+            session: ObservedSession(
+                version: session.version,
+                committedSamples: session.committedSamples,
+                newestCommittedStartSample: session.committed?.last?.startSample
+            )
         )
     }
 
@@ -701,12 +774,22 @@ public final class CaptureLatencyProbe: CaptureLatencyProbing, @unchecked Sendab
 private struct SnapshotEnvelope: Decodable {
     struct Snapshot: Decodable {
         struct Session: Decodable {
+            struct Commit: Decodable {
+                var startSample: Int
+
+                enum CodingKeys: String, CodingKey {
+                    case startSample = "start_sample"
+                }
+            }
+
             var version: Int
             var committedSamples: Int
+            var committed: [Commit]?
 
             enum CodingKeys: String, CodingKey {
                 case version
                 case committedSamples = "committed_samples"
+                case committed
             }
         }
 

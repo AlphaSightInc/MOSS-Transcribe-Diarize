@@ -1,0 +1,44 @@
+{
+  "schema": "moss-separate-lane-decode-preregistration.v1",
+  "trigger": {
+    "lane_balance_v3_result": "evidence/phase1/g3-attended/lane-balance-v3-20260819.json",
+    "sha256": "7ea0b6d756072284269bf2585175201736817d48d792210537f253ab0eb59ed8",
+    "verdict": "GAIN_ONLY_FAILED_REPLICATION"
+  },
+  "question": "When gain-only fails replication, does sequentially decoding the shared and attended-level microphone lanes and merging their timed segments recover total content without breaking attribution, overlap, speaker capacity, or bounded-load accounting?",
+  "scope": "Diagnostic prototype only. It measures the content/latency/load/identity tradeoff of separate-lane decode and a deterministic merge. It does not authorize a production path or queue-policy change.",
+  "inputs": {
+    "corpora": "Exactly the four hash-pinned, 15.377 dB-calibrated corpora in the bound lane-balance v3 result.",
+    "shared_lane": "Decode the original shared lane.",
+    "microphone_lane": "Decode the synthetically attenuated microphone lane, not its clean source.",
+    "reference": "The same unattenuated clean-lane transcripts recorded in lane-balance v3.",
+    "baseline": "The gain_0db mono-mix result recorded in lane-balance v3."
+  },
+  "decode_policy": {
+    "request_order": ["shared", "microphone"],
+    "concurrency": "serial",
+    "reason": "Measure the two-request cost without bypassing the production single-worker fairness/backpressure contract.",
+    "model_endpoint": "MOSS_VLLM_BASE_URL /v1/audio/transcriptions"
+  },
+  "merge_policy": {
+    "parse": "Use moss_transcribe_diarize.transcript_parser.parse_transcript.",
+    "namespace": "Map sorted shared local labels first to S01.., then sorted microphone local labels to the next unused labels. Never reuse a label across lanes.",
+    "ordering": "Stable sort by start time, lane order shared-before-microphone, end time, then source label.",
+    "overlap": "Preserve overlapping segments with their original times; do not clip, deduplicate, or force turns to be disjoint.",
+    "render": "Use live_span_bounds.render_segments and require parse-roundtrip equality."
+  },
+  "metrics": {
+    "content": "The sealed v3 shuffle-edit total-content WER and operation counts against both clean references.",
+    "attribution": "Every rendered segment maps to exactly one source lane; source labels from different lanes never collide.",
+    "merge_coherence": "Parsed input/output segment counts, parse-roundtrip equality, label maps, and cross-lane overlap pair count/duration.",
+    "latency_and_load": "Actual sequential wall time, per-request decoder elapsed/tokens, versus recorded mono baseline; request multiplier and token multiplier.",
+    "identity": "Speaker-group count/capacity plus production ONNX WeSpeaker pairwise cosine geometry for mono-mix groups versus lane-isolated groups. Geometry is diagnostic, not an identity-accuracy score."
+  },
+  "decision_rule": {
+    "content_gate": "Separate-lane merge improves total-content WER by at least 0.05 absolute on at least three of four corpora and worsens no corpus by more than 0.05 absolute.",
+    "structure_gate": "All four outputs parse, preserve every parsed source segment, preserve every measured cross-lane overlap, use collision-free lane namespaces, and remain at or below 16 local labels.",
+    "latency_load_rule": "Report the measured cost; do not invent an acceptance threshold before the end-to-end attended latency budget is attributed.",
+    "if_content_and_structure_pass": "Prototype the minimal live dual-lane scheduling/identity seam and evaluate it together with the latency-cap sweep; do not ship yet.",
+    "otherwise": "No mixer remedy is selected from this synthetic bed; obtain new real attended evidence before another production-policy attempt."
+  }
+}

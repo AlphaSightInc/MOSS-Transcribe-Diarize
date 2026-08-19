@@ -307,30 +307,49 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/phase1/g3-attended/iteration-20-lane-level-aligned-prototype.json`; preregistration:
   `prototypes/streaming-diarization/lane-level-preregistration-v2.json`.
 
-- **Mixer different-speech gain response — retain identity (2026-08-19).** The prior aligned
-  capture used the same playback in both lanes, so it could not attribute recovered words to either
-  speaker. A separate, preregistered two-speaker bed instead attenuated the microphone source by
-  15 dB and compared identity, +7.5 dB, exact +15 dB restoration, and peer-RMS (+25.742 dB) through
-  the same production-mixer transform and read-only vLLM endpoint. Exact restoration retained
-  12.70% microphone recall (unchanged) while shared recall fell only 2.27 pp; peer-RMS reached
-  65.08% microphone recall and removed 33 missing words, but lost 15.91 pp shared recall and made
-  no microphone-WER improvement. Every arm had zero limiter engagement. No gain-only candidate
-  meets all frozen guards, so the only authorized decision is **RETAIN_IDENTITY** — no
-  normalization, AGC, fixed offset, or Defect C threshold. This one synthetically attenuated corpus
-  with same-model references cannot select a production policy; any renewed work needs varied,
-  independently recorded lane-balance data and a fresh preregistration. Raw result:
-  `evidence/phase1/g3-attended/iteration-2-lane-balance-v2.json`; contract:
-  `prototypes/lane-balance/preregistration-v2.json`.
+- **Mixer different-speech gain response — no production remedy selected (2026-08-19).** The v1/v2
+  `RETAIN_IDENTITY` selection is historical and invalid: its total disparity was 25.741875 dB rather
+  than the attended 15.377 dB; `SequenceMatcher` was not true LCS; per-lane WER charged other-lane
+  words as insertions; and summed lane matches double-counted hypothesis tokens. The sealed v3
+  experiment recalibrated synthetic attenuation to -4.635124658 dB, used a deletion-capable
+  shuffle-edit recurrence that credits each hypothesis token once, and replicated the discovery
+  gain on three distinct-speech validation corpora. Parity +3 dB improved discovery WER by 34.58 pp
+  but validation gains were +19.51, +4.35, and -14.77 pp: **GAIN_ONLY_FAILED_REPLICATION**. A
+  whole-clip separate-lane merge then improved all four corpora, but its live-path follow-up exposed
+  the actual endpoint cost: k3 WER worsened 23.17 pp; 3/4 missed 0.80 identity accuracy; 3/4 had an
+  unparseable lane span; and first/last-word p95 worsened on 3/4. Bounded queue, stop drain,
+  two-session fairness, overlap, attribution, namespace, and capacity passed. Therefore no gain,
+  normalization, AGC, limiter, warning threshold, or dual-lane production path is selected. Obtain
+  fresh real attended lane evidence before another remedy. Raw results:
+  `evidence/phase1/g3-attended/lane-balance-v3-20260819.json`,
+  `evidence/phase1/g3-attended/separate-lane-decode-20260819.json`, and
+  `evidence/phase1/g3-attended/live-dual-lane-20260819.json`.
 
 - **Attended apparent over-split — not confirmed as a defect (2026-08-19).** The stopped
   29-span session remained queryable and its private vector journal preserved all five final album
-  centroids. Production similarity was 0.000 for S01/S02 and 0.004914 for S04/S05, far below the
+  centroids. Raw cosine was -0.074202 for S01/S02; production correctly floor-clamped it to 0.000.
+  Raw and production cosine were both 0.004914 for S04/S05. Both are far below the
   deployed 0.35 match floor and 0.70 sweep-merge threshold. More importantly, the source transcript
   identifies S04 as Lex Fridman's question and S05 as James Holland's answer: those are correctly
   separate people. The dynamic commercial behind S01/S02 was not retained, so that pair has strong
   acoustic evidence but no human-auditable truth. Do not tune match, margin, admission, birth, or
   merge policy from this observation. Reopen only if the ad audio/source proves one reader. Raw
   diagnosis: `evidence/phase1/g3-attended/attended-session-8049-speaker-split-diagnosis.json`.
+
+- **Attended word-to-screen latency — attributed; no endpoint policy selected (2026-08-19).** The
+  active attended path is the legacy `/live` portal at 500 ms cadence, not the React poller. A fresh
+  23-advance M4 capture measured 2.399 s p95 last-sample age, 142 ms p95 paired fetch, and a 3.041 s
+  last-sample analytic visible bound. Since 27/30 canonical spans ran to the 2.5 s cap, the additive
+  first-sample bound is 5.541 s, matching the reported 3–5 s delay. Server events now measure queue,
+  canonical processing, and commit-to-fetch on one monotonic clock; `/live` measures fetch through
+  the actual post-DOM animation frame; `mtd-capture latency` v3 reports exact newest-span start/end
+  ages on the capture clock. No absolute cross-host clocks are subtracted. A sealed real-speech
+  cap/silence sweep selected no change: the quality-safe 2.0 s arm improved median first-word p95
+  by 487.675 ms, 12.325 ms short of the frozen discovery gate, and increased unparseable output;
+  shorter arms failed identity, WER, load, or parse guards. Keep 2.5 s cap / 0.5 s silence and the
+  generated manifest hashes. Raw evidence:
+  `evidence/phase1/g3-attended/live-latency-baseline-20260819.json` and
+  `evidence/phase1/g3-attended/live-cap-silence-sweep-20260819.json`.
 
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and

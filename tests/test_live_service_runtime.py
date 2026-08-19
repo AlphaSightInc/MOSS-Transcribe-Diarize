@@ -337,6 +337,7 @@ def _runtime(
     scheduler: _ManualCanonicalPumpScheduler | None = None,
     vector_journal=None,
     wall_time=None,
+    monotonic_ns=None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
     return LiveServiceRuntime(
@@ -351,6 +352,7 @@ def _runtime(
         _canonical_scheduler=scheduler,
         vector_journal=vector_journal,
         wall_time=wall_time,
+        monotonic_ns=monotonic_ns,
     )
 
 
@@ -421,6 +423,38 @@ def test_runtime_canonical_processed_event_reports_measured_decode_rtf():
     assert processed.payload["frozen_span_duration_sec"] == 1000 / LIVE_SAMPLE_RATE
     assert processed.payload["canonical_decode_rtf"] == 0.5
     assert processed.to_dict()["payload"]["canonical_decode_rtf"] == 0.5
+
+
+def test_runtime_events_measure_queue_and_processing_on_one_server_clock():
+    ticks = iter((10_000_000_000, 10_250_000_000, 10_650_000_000, 10_900_000_000))
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(
+        speech=(True, False),
+        scheduler=scheduler,
+        monotonic_ns=lambda: next(ticks),
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+
+    queued = [event for event in runtime.events(created.session_id) if event.kind == "canonical_queued"][0]
+    assert queued.payload["runtime_monotonic_ns"] == 10_000_000_000
+    assert scheduler.run_one()
+
+    events = runtime.events(created.session_id)
+    started = [event for event in events if event.kind == "canonical_started"][0]
+    processed = [event for event in events if event.kind == "canonical_processed"][0]
+    assert started.payload["runtime_monotonic_ns"] == 10_250_000_000
+    assert started.payload["queue_wait_ms"] == 250.0
+    assert processed.payload["runtime_monotonic_ns"] == 10_650_000_000
+    assert processed.payload["queue_wait_ms"] == 250.0
+    assert processed.payload["canonical_processing_elapsed_ms"] == 400.0
+    assert processed.payload["queued_to_processed_ms"] == 650.0
+
+    observed_events, observed_ns = runtime._events_with_observation(created.session_id)
+    assert observed_events == events
+    assert observed_ns == 10_900_000_000
+    assert (observed_ns - processed.payload["runtime_monotonic_ns"]) / 1_000_000 == 250.0
 
 
 def test_blocked_decode_does_not_block_frame_admission_or_snapshot_reads():

@@ -394,14 +394,20 @@ def attach_live_routes(
                 session_id,
                 now=_request_now(),
             )
-            events = runtime.events(session_id, since_seq=since_seq)
+            events, observed_monotonic_ns = runtime._events_with_observation(
+                session_id,
+                since_seq=since_seq,
+            )
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return {"events": [event.to_dict() for event in events]}
+        return {
+            "events": [event.to_dict() for event in events],
+            "runtime_observed_monotonic_ns": observed_monotonic_ns,
+        }
 
     @app.post("/api/live/sessions/{session_id}/stop")
     async def stop_live_session(session_id: str, request: Request):

@@ -8,7 +8,7 @@ survived — exactly the short loud interjections — while the shared lane prod
 That is the signature of a lane buried in the mono mix, not a broken microphone. The microphone was
 independently proven healthy at about -21 dBFS while both lanes ran together.
 
-## The measurement that is still missing
+## Historical v1/v2 measurements — superseded for policy selection
 
 Iteration 20 measured a 15.377 dB disparity, tried peer-RMS matching, measured WER +3.468 pp and
 rejected it. **That rejection is not safe to rely on**: its fixture played the SAME audio in both
@@ -38,7 +38,7 @@ change or a Defect C warning threshold.
 - Read and write PCM with `array`, never `struct.pack("<" + "h" * n, ...)`. Building a
   192,000-character format string stalls for minutes and looks exactly like a hung model call.
 
-## First scored run — 2026-08-19
+## First scored run — 2026-08-19 (historical; invalid for selection)
 
 `evidence/phase1/g3-attended/iteration-2-lane-balance.json` is the one preregistered 12-second
 run. It used the read-only local tunnel, whose sole advertised model was
@@ -66,7 +66,7 @@ This re-tests the old same-playback rejection on a valid different-speech bed. I
 one-corpus, synthetic-attenuation, same-model-reference result; it cannot authorize a production
 mixer policy or a Defect C threshold.
 
-## v2 amendment — before the second score
+## v2 amendment — before the second score (historical; invalid for selection)
 
 `preregistration-v1.json` is immutable: the first result hash-pins it. Its +0, +7.5 dB, and
 peer-RMS (+25.742 dB) arms left a meaningful gap: peer-RMS matches a naturally louder shared speaker,
@@ -86,7 +86,7 @@ gain-response curve, including that limiter engagement was zero in v1 and theref
 was untested rather than passed. A v2 result still cannot authorize a production mixer policy or a
 Defect C threshold without independently recorded varied lane-balance examples.
 
-## v2 scored run — 2026-08-19
+## v2 scored run — 2026-08-19 (historical; invalid for selection)
 
 `evidence/phase1/g3-attended/iteration-2-lane-balance-v2.json` is the one real-vLLM score of the
 sealed four-arm v2 contract (result SHA-256 `3721c46d...d2cb7db2`; contract SHA-256
@@ -108,5 +108,56 @@ verdict remains **RETAIN_IDENTITY**. The limiter was zero for every arm, so its 
 not a reason to accept a candidate.
 
 This is a gain-response result for one synthetically attenuated, two-speaker corpus using same-model
-references. It neither selects a production policy nor supplies a Defect C threshold. Any further
-policy work requires varied, independently recorded lane-balance evidence and a fresh preregistration.
+references. It neither selects a production policy nor supplies a Defect C threshold. Its
+`RETAIN_IDENTITY` wording is superseded: the fixture disparity was 25.741875 dB rather than the
+attended 15.377 dB, `SequenceMatcher` was not true LCS, per-lane WER charged other-lane words as
+insertions, and summed lane matches double-counted hypothesis tokens. Preserve v1/v2 for audit only.
+
+## v3 calibrated gain sweep — 2026-08-19
+
+One command:
+
+```sh
+.venv/bin/python prototypes/lane-balance/proto_lane_balance_v3.py \
+  --output evidence/phase1/g3-attended/lane-balance-v3-20260819.json
+```
+
+The sealed v3 contract uses the exact shuffle-edit recurrence printed in the result, true LCS only
+as a diagnostic, and a `-4.635124658 dB` synthetic microphone attenuation so every corpus reaches
+the attended `15.377 dB` total disparity. It scores four distinct-speech corpora and credits each
+hypothesis token at most once. The discovery optimum was parity +3 dB (`+18.377 dB` from the quiet
+lane), improving total-content WER by 34.58 points. It did not replicate: validation improvements
+were +19.51, +4.35, and -14.77 points. Verdict: **GAIN_ONLY_FAILED_REPLICATION**. No gain,
+normalization, AGC, limiter, or warning threshold is selected. Historical v1/v2 remain invalid for
+policy selection. Raw result: `evidence/phase1/g3-attended/lane-balance-v3-20260819.json`.
+
+## Separate-lane whole-clip prototype — 2026-08-19
+
+Serial lane decode plus deterministic timed merge improved total-content WER on all four corpora
+by 28.05–50.43 points. It preserved every parsed segment, source attribution, overlap, namespace,
+and the 16-speaker bound. It also doubled request count and cost 2.5909× the mono decoder elapsed
+at the median. That passed only the preregistered trigger for a live-path seam prototype; it did
+not authorize production. Raw result:
+`evidence/phase1/g3-attended/separate-lane-decode-20260819.json`.
+
+## Live-path dual-lane seam — 2026-08-19
+
+One command:
+
+```sh
+.venv/bin/python prototypes/lane-balance/proto_live_dual_lane.py \
+  --output evidence/phase1/g3-attended/live-dual-lane-20260819.json
+```
+
+The module interface is one frozen span plus both aligned lane PCM inputs, returning one merged
+transcript, source trace, aggregate decode diagnostics, and lane-specific identity PCM. One arbiter
+item owns the span; its two requests remain serial. This is the narrow seam a future implementation
+would need, not production code.
+
+The real endpoint fragmented each 12 s bed into 5–7 spans. Structure, queue depth, two-session
+round-robin skew, 2× request accounting, stop drain, and capped-decode gates passed. The candidate
+still failed decisively: k3 WER worsened 23.17 points; 3/4 corpora missed 0.80 identity accuracy;
+3/4 produced at least one unparseable lane span; and first/last-word p95 worsened on 3/4. Verdict:
+**NO_PRODUCTION_LANE_REMEDY_SELECTED**. Keep the production mono mix. Obtain fresh real attended
+lane evidence before another remedy. Raw result:
+`evidence/phase1/g3-attended/live-dual-lane-20260819.json`.
