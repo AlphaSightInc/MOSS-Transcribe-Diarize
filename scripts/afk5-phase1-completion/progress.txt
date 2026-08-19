@@ -1423,3 +1423,109 @@ NEXT, unchanged: stop/fairness predicate separation (screen-1 must report fairne
 `contended_pair_dispatch_observations: 0`), then re-score or re-run per provenance.
 
 [iteration 36] target=W2 lifecycle predicate separation and saved run-32 completeness audit; files=`prototypes/streaming-diarization/concurrency/{run_cpu_hf_local_measurement.py,run_remote_vllm_tunnel_measurement.py,proto_saved_lifecycle_completeness.py,README.md,NOTES.md}`, `tests/test_remote_vllm_tunnel_measurement.py`, `evidence/phase1/w2-local-concurrency/{iteration-36-run32-lifecycle-completeness.json,iteration-36-writer-evaluator-boundary-regression.json}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=red focused test **1 failed** before the separate drain evaluator existed, then focused route/runner **14 passed**, writer/evaluator boundary **3/3**, `py_compile`, and `git diff --check` PASS; evidence=`iteration-36-run32-lifecycle-completeness.json` SHA-256 `b0b4493c...e5db04052`; learned=run-32 JSONL is terminally short (**4,240** records vs writer counter **4,245**; overload 46/51), so no lifecycle/fairness/stop re-score is permitted; residue is now a separate `stop_drain_complete` predicate and zero jointly-ready fairness is `not_applicable`; next=run the unchanged fresh remote-vLLM 1/2/4/8 + selected-soak + overload/reconnect matrix and preserve any failure.
+
+[monitor 2026-08-18 22:05] EVERY W2 STEER IS NOW IMPLEMENTED, AND THE RE-SCORE REFUSAL WAS THE RIGHT CALL.
+
+RUN-32 COMPLETENESS AUDIT — I verified your numbers independently. `wc -l` on
+`run-20260819T011500-iteration32/canonical-processed.jsonl` gives exactly **4240**, matching your
+`raw_line_count: 4240`, against `terminal_writer_counter: 4245` and
+`terminal_counter_matches_raw_log: false`. That is a **5-event shortfall proven by the writer's own counter**,
+not an inference — direct evidence the race dropped data. Refusing to re-score on it and requiring a fresh
+matrix is correct, and the artifact says so in its own verdict: `does_not_establish` lists scheduler fairness,
+stop-drain correctness, G4, G5.
+The `oracle_history` block naming the three degenerate oracles and the lesson — "A confident derived number is
+unusable unless its source evidence is complete and its predicate measures only the behavior it names" — is
+exactly what I asked for at 21:45. Keep that block; it is the most portable thing this workstream produced.
+
+PREDICATE SPLIT (`cbf0610`) — correct and complete:
+  `contended_pair_dispatch_observations == 0` -> `applicability: "not_applicable"`, `passes: None`. Fairness is
+  no longer FAILED at concurrency 1, which was the incoherence I flagged at 21:25.
+  New `_canonical_lifecycle_stop_drain()`, and `stop_drain_complete` composes
+  `stops_closed and canonical_stop_drain["passes"]` — so the HTTP-derived `stops_closed` I established survives
+  the race is now combined with the queue-drain check in its OWN predicate, separate from fairness.
+  The old conflated `"passes": not errors and maximum_observed_skew <= maximum_skew` is gone.
+
+THIS IS THE FIRST RUN WHERE THE HARNESS ITSELF IS TRUSTWORTHY. Before it you had: a marker oracle that was
+false by construction above two sessions, a fairness counter that measured unscoped completions, and an
+evaluator that read a partially-written log. All three are now fixed, with a fail-closed barrier and a
+completeness check in front of them. Whatever this matrix reports, the number will mean what it says — which
+has not been true of any previous W2 result.
+
+Baseline while the run is in flight: frontend 16 files / 126 tests pass, bundle gate OVERALL=PASS. I ran that
+vitest pass before noticing your run had started; it is a ~1 s node process against 120 s phases so the
+perturbation is negligible, but I am recording it rather than leaving it unsaid, and I am staying off the CPU
+for the remainder of the run.
+
+WHEN IT LANDS, the bar is unchanged from 20:05 — probes before and after, the five raw arrays, no pcm, latency
+labelled with tunnel + tailnet transit and the shared GPU, no GPU/vLLM-queue claims, failing rows reported as
+failing. Plus the two new ones: `stop_drain_complete` reported separately from fairness, and fairness reported
+`not_applicable` wherever there are no contended pairs.
+
+[monitor 2026-08-18 22:12] THE FAIRNESS QUESTION IS NOW SETTLED, AND THE ANSWER IS THE OPPOSITE OF WHAT RUN 27
+SUGGESTED. First sound measurement in this whole workstream:
+
+  phase      contended_pairs   skew   gate   verdict
+  screen-1             0         0      1    not_applicable
+  screen-2             0         0      1    not_applicable
+  screen-4           127         1      1    MEASURED, PASSES
+  screen-8          2371         1      1    MEASURED, PASSES
+
+**The dispatcher is fair.** Skew 1 against a gate of 1 across 127 contended-pair observations at four
+sessions and 2371 at eight. I said at 20:25 that "the dispatcher is unfair" on the strength of skew 30/33;
+I withdrew it at 20:35 as unmeasurable, and it is now positively DISPROVEN rather than merely unproven. The
+round-robin scheduler distributes work correctly even at eight concurrent sessions. Record that as a
+finding in its own right — issue #3 was written on the premise that decode is serialized and unfair, and the
+fairness half of that premise does not survive measurement.
+
+And screen-8 now fails on ONE thing only: p95 47.16 s against the 10 s gate. Fairness passes, `stop_drain`
+passes, drain barrier acknowledged. So the eight-session failure is purely throughput, cleanly attributable,
+with no oracle ambiguity left in it. That is a far more useful statement than run 27's or run 32's.
+
+ONE HONESTY POINT FOR THE WRITE-UP: fairness is `not_applicable` at 1 AND at 2, because neither produced a
+single contended pair — the two sessions never had simultaneously-ready work. So the round-robin criterion is
+genuinely exercised only at 4 and 8. Say that explicitly rather than letting four green rows imply fairness
+was tested at every concurrency. It is not a defect; it is a coverage fact.
+
+The lifecycle instrumentation is visibly working now — `canonical_queued` and `canonical_started` are present
+and equal in every phase (61/61, 109/109, 206/206, 354/354), which is what the barrier and the queued/started
+emission were for.
+
+Soak is still running as I write. It is the decisive one: run 32's four-session soak collapsed from p95 2.60 s
+at 120 s to 84.378 s at 600 s. If that reproduces on a sound harness, the finding is real and G4 is not met at
+4; if it does not, run 32's soak collapse was itself contaminated and you should say so plainly. Either way,
+report the 120 s versus 600 s pair side by side — the gap between them is the whole point of the >=10-minute bar.
+
+[monitor 2026-08-18 22:22] ***THE FOUR-SESSION SOAK PASSES. RUN 32's COLLAPSE WAS CONTAMINATED, AND I NEED TO
+CORRECT MYSELF AGAIN — IN YOUR FAVOUR THIS TIME.***
+
+  run 37  chosen-bound-soak  n=4  dur=600  passes=True   p95=2.617 s   drain=True
+  run 32  chosen-bound-soak  n=4  dur=600  passes=False  p95=84.378 s  stops_closed=False
+
+Same bound, same duration, same frozen gates, same tunnel. The difference is the harness: run 32 had no drain
+barrier and a writer that provably lost events (4240 on disk against a 4245 writer counter). At 21:35 I told
+the operator "concurrency 4 is not sustainable, G4 not met" and called it the headline finding. **That was
+wrong, and it was wrong because I trusted a number produced by a broken harness — the exact error I have been
+holding you to all evening.** On a sound harness, four sessions sustain ten minutes at p95 2.617 s against a
+10 s gate.
+
+WHAT THIS MEANS, STATED CAREFULLY BECAUSE IT IS THE BIGGEST RESULT OF THE CYCLE:
+  Pending the overload phase and your verdict, the G4 concurrency bar looks MET at four sessions —
+  >=10 minutes sustained, p95 well inside the gate, fairness MEASURED and passing at 127 contended-pair
+  observations with skew 1, stop-drain passing, no OOM. screen-8 fails on throughput alone, so the bound sits
+  at 4 and the product is comfortably inside it. That is the first time this project has had that.
+  Do NOT claim it until the overload phase lands and the verdict is computed by the frozen evaluator. If
+  overload passes, say plainly which of issue #3's criteria are now met and which still are not.
+
+REPORT BOTH RUNS SIDE BY SIDE — do not silently replace 84.378 with 2.617. Anyone reading the ledger later
+will find run 32's artifact in the repo and must be able to see why it is superseded. Cite the completeness
+audit (`iteration-36-run32-lifecycle-completeness.json`, 4240 vs 4245, `terminal_counter_matches_raw_log:
+false`) as the reason, and state that run 32's soak p95 and `stops_closed: False` are withdrawn as
+harness-contaminated rather than merely superseded by a newer number. Note that I asked for exactly this
+comparison at 22:12, before either result was known, so it is not a post-hoc rationalisation.
+
+STILL TRUE AND UNCHANGED: fairness `not_applicable` at 1 and 2 (zero contended pairs), so round-robin is
+exercised only at 4 and 8 — say it. And the tunnel still cannot supply GPU memory/utilisation, GPU OOM or vLLM
+active/queued counts, so issue #3's criterion 3 and issue #1's criterion 9 remain unmet regardless of how good
+this run is.
+
+[iteration 37] target=W2 fresh frozen remote-vLLM 1/2/4/8 + selected-soak + overload/reconnect matrix; files=`evidence/phase1/w2-local-concurrency/{iteration-37-remote-vllm-preflight,run-20260819T020000-iteration37,iteration-37-lifecycle-completeness.json}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=preflight PASS (selected model and deployed bounds, endpoint HTTP 200), live runner exit **0** with closing endpoint probes HTTP 200, contract revalidation PASS, and saved-log audit PASS (**5,338/5,338** raw/attributed/terminal writer records); evidence=run verdict SHA-256 `054301ac...0a39a545`, event-log SHA-256 `c29278a0...30823883`; learned=normal screens 1/2/4 and four-session 600 s soak pass (bound 4; soak p95 2.61740295 s; fairness skew 1 where applicable), screen 8 is throughput-limited (p95 47.16 s), but overload fails only one peer's pre-reconnect rendered-own-marker assertion while 429/peer/retry/stop/canonical/reconnect isolation pass; frozen verdict stays non-qualifying for G4/G5; next=prototype a bounded rendered-ownership wait before overload reconnect, preserving timeout failure.

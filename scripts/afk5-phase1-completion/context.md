@@ -144,28 +144,24 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 fresh remote-vLLM lifecycle matrix (P1):** iteration 36 separated stop-drain from fairness and marks
-   zero jointly-ready observations `not_applicable`; it did not change a frozen gate or scheduler behavior.
-   The saved run-32 log is five terminal writer records short (4,240 vs 4,245), so its lifecycle findings cannot
-   be re-scored and a fresh 1/2/4/8 + selected-soak + overload/reconnect matrix is mandatory. Preserve its
-   independent failures: 4-session soak p95 84.378 s, non-200 stop responses, and 8-session p95 47.664 s.
-2. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
-   rendered marker was checked before reconnect. Test a bounded wait for rendered ownership before reconnect;
-   keep a real timeout as a failure, not a pass. This can clarify G5 integrity evidence but cannot make the
-   failed G4 soak pass.
-3. **Defect B replication (operator input, P3)**: iteration 20 measured a 15.377 dB RMS disparity but
+1. **W2 overload rendered-marker timing probe/repair (P1):** the sound iteration-37 matrix passes normal
+   1/2/4 screens and the selected four-session soak, but overload fails only because one peer's rendered own
+   marker is absent before reconnect. Canonical isolation, reconnect snapshot/replay isolation, session-local
+   retryable 429, peer acceptance, retry, and both stops pass. Prototype a bounded wait for rendered ownership
+   before reconnect; preserve a real timeout as a failure and do not move a gate.
+2. **Defect B replication (operator input, P2)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
    Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
    normalisation/AGC/offset proposal.
-4. **Defect C (P4, blocked on B replication)**: do not source warning copy or choose a threshold from the
+3. **Defect C (P3, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-6. **W4 ledger reconciliation (after W2 repair):** `docs/phase1-gate-status.md` is stale about
-   the reachable vLLM endpoint. Reconcile it only with the run-32 result and explicit limits: G4 is not met,
-   while G5 has no cross-session leakage observed but remains not certified.
-7. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+5. **W4 ledger reconciliation (after W2 repair):** reconcile the reachable vLLM endpoint and iteration-37's
+   sound normal/soak evidence with the remaining overload-rendered-text failure and unavailable GPU/vLLM
+   telemetry. Do not certify G4/G5 while the frozen verdict remains false.
+6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -183,8 +179,9 @@ Living working memory. Update it every iteration so it matches reality. History 
   repo. Iteration 27 proved tunnel reachability, real decoder wiring, run-owned manifest admission, and the
   selected 600-second one-session bound. Iteration 28 corrected the fairness observer, iteration 29 proved
   eight source markers, iteration 30 superseded the old machine-readable G4/G5 claim, and iteration 31
-  wired unique markers plus overload isolation/reconnect into the runner. Next is one unchanged fresh v2
-  lifecycle matrix; it alone can decide the W2 result.
+  wired unique markers plus overload isolation/reconnect into the runner. Iteration 37 completed the fresh v2
+  lifecycle matrix with a complete writer log: normal/soak evidence is sound, but its overload rendered-text
+  predicate fails before reconnect, so W2 remains open for that bounded timing probe.
 - Issue #8 criterion 2 needs an operator ruling: the demanded `starting`/`recording`/`completed` values do
   not exist in the product's `SessionLifecycle`, and queued/running both presently map to `active`.
 
@@ -818,3 +815,80 @@ and record that proof beside the parser. An undocumented coincidence is not acce
 - Validation: red regression first (missing separated drain evaluator), then 14 focused route/runner tests pass;
   writer/evaluator boundary prototype remains 3/3; `py_compile` and `git diff --check` pass. This establishes
   no scheduler, G4, G5, or new live inference result.
+
+## Fairness settled: the dispatcher IS fair (monitor, 2026-08-18 22:12)
+
+First sound measurement in the workstream:
+
+| phase | contended pairs | skew | gate | verdict |
+|---|---:|---:|---:|---|
+| screen-1 | 0 | 0 | 1 | not_applicable |
+| screen-2 | 0 | 0 | 1 | not_applicable |
+| screen-4 | **127** | **1** | 1 | measured, **passes** |
+| screen-8 | **2371** | **1** | 1 | measured, **passes** |
+
+I claimed at 20:25 the dispatcher was unfair (skew 30/33), withdrew it at 20:35 as unmeasurable; it is now
+**positively disproven**. Issue #3 was written on the premise that decode is serialized *and unfair* — the
+fairness half does not survive measurement. Record it as a finding.
+
+screen-8 now fails on **one** thing: p95 47.16 s vs the 10 s gate. Fairness passes, `stop_drain` passes, barrier
+acknowledged ⇒ the eight-session failure is **purely throughput**, cleanly attributable.
+
+**Honesty point for the write-up:** fairness is `not_applicable` at 1 *and* 2 (zero contended pairs — never
+simultaneously ready), so round-robin is genuinely exercised only at 4 and 8. State that; four green rows must
+not imply fairness was tested everywhere. Coverage fact, not a defect.
+
+Lifecycle instrumentation confirmed working: `canonical_queued`/`canonical_started` present and equal in every
+phase (61/61, 109/109, 206/206, 354/354).
+
+**Soak is decisive:** run 32 collapsed 2.60 s @120 s → 84.378 s @600 s. If that reproduces on the sound harness,
+G4 is not met at 4 and the finding is real; if it does not, run 32's soak was itself contaminated — say so
+plainly. Either way report the 120 s vs 600 s pair side by side.
+
+## The 4-session soak PASSES — run 32's collapse was contaminated (monitor, 2026-08-18 22:22)
+
+```
+run 37  chosen-bound-soak  n=4  600s  passes=True   p95=2.617 s   drain=True
+run 32  chosen-bound-soak  n=4  600s  passes=False  p95=84.378 s  stops_closed=False
+```
+Same bound, duration, gates, tunnel. The difference is the harness — run 32 had no drain barrier and provably
+lost events (4240 on disk vs 4245 writer counter). **My 21:35 "concurrency 4 is not sustainable, G4 not met"
+was wrong**, and wrong because I trusted a number from a broken harness.
+
+**Pending overload + the frozen verdict, G4's concurrency bar looks MET at 4:** ≥10 min sustained, p95 2.617 s
+vs a 10 s gate, fairness measured and passing (127 contended pairs, skew 1), stop-drain passing, no OOM.
+screen-8 fails on throughput alone ⇒ bound is 4. **Do not claim it until overload lands and the evaluator
+computes the verdict.**
+
+**Report both runs side by side** — do not silently replace 84.378 with 2.617. Cite
+`iteration-36-run32-lifecycle-completeness.json` (4240 vs 4245, `terminal_counter_matches_raw_log: false`) and
+state run 32's soak p95 and `stops_closed: False` are **withdrawn as harness-contaminated**, not merely
+superseded. I asked for this comparison at 22:12, before either result was known.
+
+Unchanged: fairness `not_applicable` at 1 and 2 ⇒ round-robin exercised only at 4 and 8 — say so. And the
+tunnel still cannot supply GPU memory/utilisation, GPU OOM, or vLLM active/queued counts ⇒ #3 criterion 3 and
+#1 criterion 9 remain unmet regardless.
+
+## W2 fresh remote-vLLM matrix (iteration 37)
+
+- The unchanged frozen contract (`0961e7ad...ae5b1083`) completed at
+  `evidence/phase1/w2-local-concurrency/run-20260819T020000-iteration37/`, bound to captured HEAD
+  `91a4d6f179182037fc124bdc3acac060def15df8`. Before and after `/health` and selected-model `/v1/models`
+  probes were HTTP 200. The runner verdict is intentionally non-qualifying: `screening_passes=[1,2,4]`,
+  `chosen_normal_session_bound=4`, `soak_passes=true`, `overload_passes=false`, and
+  `qualifies_local_g4_g5_portions=false`.
+- This is the first lifecycle-complete v2 matrix: the post-run saved-log audit records **5,338/5,338** raw,
+  attributed, and terminal-writer records across all six phases, so its separated fairness and stop-drain
+  predicates are eligible to be read. Artifact:
+  `evidence/phase1/w2-local-concurrency/iteration-37-lifecycle-completeness.json`, event-log SHA-256
+  `c29278a0...30823883`. Fairness is measured/pass at four and eight sessions (skew 1); it is
+  `not_applicable` at one/two because neither supplied jointly-ready pairs. Screen 8 fails throughput only
+  (p95 47.16 s vs 10 s); the selected four-session 600 s soak passes at p95 2.61740295 s with stop-drain
+  complete. Run 32's 84.378 s soak and non-200 stops remain withdrawn as writer-race-contaminated, not a
+  competing result.
+- Overload preserves retryable v2 429, peer acceptance, retry success, clean stops, canonical own/foreign
+  marker isolation, and reconnect snapshot/replay isolation. It fails only the pre-reconnect rendered-own-marker
+  assertion for one peer (`rendered_own_marker_present=false`), so it does **not** establish G5 and keeps the
+  combined frozen verdict false. Next: prototype the bounded rendered-ownership wait before reconnect; a timeout
+  must remain a failure. This run also does not establish isolated-GPU latency, GPU memory/utilisation or OOM,
+  vLLM active/queued counts, or attended display capture.
