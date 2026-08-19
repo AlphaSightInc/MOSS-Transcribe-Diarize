@@ -1,0 +1,6 @@
+Committed `103b72a` — writer-owned lifecycle-log drain barrier.
+
+- Focused tests: 5 passed.
+- Prototype: 3/3, pre-drain 0/48 vs drained 48/48.
+- G4/G5 unchanged; next re-score run-32 lifecycle evidence.
+
