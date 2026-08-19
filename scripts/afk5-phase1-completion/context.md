@@ -9,8 +9,8 @@ Living working memory. Update it every iteration so it matches reality. History 
   `evidence/phase1/g10-ledger-reconciliation/iteration-3-root-pytest.txt`: **1 failed / 1065 passed /
   4 skipped / 488 subtests**. The valid local l2 corpus accounts for +92 subtests; two
   operator-owned real-corpus tests skip here. **Never "fix" either baseline guard or replace the
-  certified bar with this worktree's denominator.** The current source frontend suite is **122/122** across
-  16 files at `evidence/phase1/g3-attended/iteration-19-poller-flat-cursor-watchdog.txt`.
+  certified bar with this worktree's denominator.** The current source frontend suite is **126/126** across
+  16 files (iteration 34); the earlier 122/122 artifact remains historical evidence.
 - Gates certified: G1, G2, G7, G8, G10. G6 has its local real-browser bar met (y6: 19/19 assertions,
   all 19 falsified against corrupted observations).
 - W1/W5 are now released in `ProjectResources/Frontend/{app.js,app.js.map}`. The app keeps the
@@ -144,33 +144,28 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **Defect D empty-text poller contract repair (P0):** the server deliberately commits empty canonical and
-   provisional transcripts for silence, while the client rejects them. Start with red tests for both fields,
-   then make the narrow parser repair that accepts `""` but still rejects non-strings. Treat empty
-   `revised_transcript` separately: distinguish absent from revised-to-empty, or first prove that the server
-   never emits an empty revision. Do not weaken strict IDs, event kinds, or numeric fields.
-2. **W2 writer/evaluator drain and stop-classification repair (P1):** iteration 33 proved the async event
+1. **W2 writer/evaluator drain and stop-classification repair (P1):** iteration 33 proved the async event
    writer can leave a complete lifecycle unreadable at evaluation. Add a writer-owned drain barrier before
    lifecycle reads, then separate drain completeness from fairness and report no-contention fairness as
    `not_applicable`. Do not change frozen gate values or scheduler behavior. The run-32 four-session soak is
    already a true G4 failure (p95 84.378 s); do not rerun a matrix merely to seek a higher bound.
-3. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
+2. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
    rendered marker was checked before reconnect. Test a bounded wait for rendered ownership before reconnect;
    keep a real timeout as a failure, not a pass. This can clarify G5 integrity evidence but cannot make the
    failed G4 soak pass.
-4. **Defect B replication (operator input, P3)**: iteration 20 measured a 15.377 dB RMS disparity but
+3. **Defect B replication (operator input, P3)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
    Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
    normalisation/AGC/offset proposal.
-5. **Defect C (P4, blocked on B replication)**: do not source warning copy or choose a threshold from the
+4. **Defect C (P4, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-6. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+5. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-7. **W4 ledger reconciliation (after Defect D and W2 repair):** `docs/phase1-gate-status.md` is stale about
+6. **W4 ledger reconciliation (after W2 repair):** `docs/phase1-gate-status.md` is stale about
    the reachable vLLM endpoint. Reconcile it only with the run-32 result and explicit limits: G4 is not met,
    while G5 has no cross-session leakage observed but remains not certified.
-8. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+7. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -353,11 +348,12 @@ ruling, since local CPU could not sustain two sessions. Cleanup confirmed: nothi
 process alive.
 
 ## Next feasible sequence
-1. Run the preregistered W2 matrix using the live-preflighted remote-vLLM runner from a fresh output directory;
-   do not alter frozen gates or use the CPU/HF runner as G4/G5 evidence.
-2. Preserve its after-run endpoint probe and all non-GPU limits when evaluating the raw matrix.
-3. W3 stays blocked until an operator adds a raw attended-session log; Issue #8 remains blocked on the
-   criterion-2 lifecycle ruling; Defect B needs new audited recordings before Defect C.
+1. Repair the W2 writer/evaluator drain boundary and classify stop drain separately from fairness; do not
+   alter the frozen gates or reinterpret the failed four-session soak.
+2. Probe the bounded rendered-marker wait before overload reconnect; preserve a timeout as a failure.
+3. Reconcile the ledger after those W2 repairs. W3 stays blocked until an operator adds a raw attended-session
+   log; Issue #8 remains blocked on the criterion-2 lifecycle ruling; Defect B needs new audited recordings
+   before Defect C.
 
 ## Resolved iteration 12 — Issue #8 `/studio` continuation documented
 
@@ -716,30 +712,21 @@ move the drain condition to its own `stop_drain_complete` predicate.
 overload reports `canonical_foreign_markers_absent: True` **and** `rendered_foreign_markers_absent: True`,
 including on reconnect replay. No cross-session leakage anywhere — meaningful only because the oracle was fixed first.
 
-## DEFECT D (P0) — do this before any more W2 (monitor, 2026-08-18 21:40)
+## Resolved iteration 34 — Defect D empty-text poller contract
 
-Third attended run: **Defect A confirmed fixed** (transcript updates, Stop no longer freezes). New P0:
+The server deliberately emits `transcript=""` for silence spans; the client now accepts empty **string** text
+only for canonical commits and provisional tails. The two red public-poller cases initially failed with
+`Malformed MOSS canonical commit transcript.` and `Malformed MOSS provisional transcript.`; they now dispatch
+their snapshot rounds without `onError`. Matching `null` cases still fail with the same field-specific errors.
+`snapshot.session_id`, runtime-event `session_id`/`kind`, and numeric fields still use their original strict
+validators. Frontend validation: focused poller **18/18**, full suite **126/126**, typecheck, and production
+bundle rebuild passed.
 
-**Contract mismatch, verified both ends.** Server `live_session.py:495-501` commits `transcript=""` for a
-silence span — deliberate, pinned by `tests/test_live_pipeline_seams.py:521`
-(`test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting`, docstring: *"Every meeting opens
-with silence"*). Client `mossPoller.ts:718` uses `requiredString`, and `:752-756` rejects `value.length === 0`
-⇒ throws **"Malformed MOSS canonical commit transcript."** The first closing silence span kills the poll round,
-rendering stops, banner latches. Server is right; the client parser is wrong. G6 no-crash + C3 poll contract.
-
-**Second instance (confirmed):** `mossPoller.ts:728` `requiredString(provisional.transcript, …)` — the
-provisional tail has the identical assumption. Fix both or the banner returns from the other parser.
-
-**Third, needs a decision:** `optionalString` (`:759-761`) maps `""` → `null`, so a `revised_transcript` revised
-**to empty** reads as *no revision* and stale text survives. Distinguish absent from revised-to-empty, or prove
-from the server that an empty revision is never emitted and record that.
-
-**Audit each field — do not blanket-swap.** Keep strict: `:630` `snapshot.session_id`, `:690` event
-`session_id`, `:691` event `kind`. `span_id`/`start_sample` already use `requiredNonNegativeNumber`. Add a
-distinct helper (e.g. `requiredTextField`) accepting `""` but rejecting non-strings; use it only at `:718`/`:728`.
-
-**Red test first** (as with Defect A): canonical commit with `transcript: ""` renders without throwing; same for
-an empty provisional transcript. Both must fail before the fix.
+`revised_transcript` remains intentionally optional. Server audit proves it cannot validly be `""`:
+`LiveSession._revised_span` requires a nonempty label track and equal parsed-segment count, then returns
+`render_segments(...)` only after at least one applied label change; that renderer emits one nonempty grammar
+record per segment. Empty text has no segment/track and is refused, so there is no server path that publishes
+an empty revision. No blanket parser relaxation was made.
 
 ## Defect B: echo cancellation EXCLUDED (monitor, 2026-08-18 21:40)
 Operator ran Speakers and Headphones with identical poor mic transcription in the same sequence ⇒ echo
