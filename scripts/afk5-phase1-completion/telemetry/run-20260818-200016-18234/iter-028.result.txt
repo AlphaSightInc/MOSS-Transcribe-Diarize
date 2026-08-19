@@ -1,0 +1,8 @@
+Committed `e5a59c4` — W2 fairness evidence repaired.
+
+- New lifecycle log + fail-closed continuously-ready evaluator.
+- Iteration-27 skew 30/33 now correctly treated as unmeasurable, not scheduler failure.
+- Validation: 9 focused tests passed; compile, contract validator, gate/matrix check, diff check passed.
+- Remaining: unique markers and overload isolation/reconnect checks, then fresh tunnel matrix. G4/G5 not complete.
+- Only launcher telemetry remains uncommitted.
+
