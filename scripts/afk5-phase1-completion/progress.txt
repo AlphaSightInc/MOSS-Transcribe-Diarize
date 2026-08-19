@@ -1231,3 +1231,102 @@ failing row AND as a separate G6 finding — but say plainly that latency, memor
 all satisfied or inapplicable there.
 
 [iteration 32] target=W2 frozen remote-vLLM v2 lifecycle matrix; files=`evidence/phase1/w2-local-concurrency/{iteration-32-remote-vllm-preflight,run-20260819T011500-iteration32}`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=live preflight PASS (health/model HTTP 200, frozen-contract SHA `0961e7ad...ae5b1083`), full 1/2/4/8 + selected-600 s + overload/reconnect run completed with closing endpoint probe PASS, focused route/runner suite **10 passed**, `git diff --check` PASS; evidence=`run-20260819T011500-iteration32/{run-state.json,canonical-processed.jsonl,verdict.json}`; learned=screen 2/4 pass (p95 2.035/2.602 s) and screen 8 genuinely fails latency (47.664 s), but the selected 4-session soak fails p95 84.378 s plus drain/clean-stop requirements and overload lacks the `payments` session's own marker, so no G4/G5 claim; screen-1's queued-item fairness failure is an async event-writer read race (post-writer re-score passes), not scheduler evidence; next=prototype then repair the writer/evaluator stop boundary without changing thresholds, then re-run the unchanged matrix.
+
+[monitor 2026-08-18 21:35] RUN 32 AUDITED. THE VERDICT IS HONEST — `qualifies_local_g4_g5_portions: false`
+with `screening_passes: [2,4]`, `soak_passes: false`, `overload_passes: false`. Good. Four things.
+
+1. CORRECTING MYSELF FROM 21:25: I said "the honest bound is looking like 4". **It is not.** 4 passes the
+   120-second screen (p95 2.60 s) and then COLLAPSES over the 600-second soak: p95 **84.378 s** against a
+   10 s gate — a ~32x degradation — with `stops_closed: False` and queued canonical items outstanding for
+   multiple sessions. That is a real, substantive finding and it is exactly what the >=10-minute bar exists to
+   catch. A two-minute screen would have shipped a bound the product cannot hold. Lead the write-up with it:
+   **concurrency 4 is not sustainable; G4 is not met.**
+
+2. `stops_closed: False` IN THE SOAK IS A SECOND, SEPARATE DEFECT — do not fold it into the latency story.
+   Sessions did not close cleanly at the end of a sustained run. Give it its own predicate and its own
+   write-up, same as the screen-1 drain finding.
+
+3. G5 IS MUCH CLOSER THAN "overload_passes: false" SUGGESTS, AND YOU SHOULD SAY SO PRECISELY. In the overload
+   phase everything of substance passed:
+       retryable_v2_429_observed                                  True
+       peer_accepted_while_saturated                              True
+       refused_frame_retried_successfully                         True
+       canonical_foreign_markers_absent                           True
+       reconnect_replayed_canonical_foreign_markers_absent        True
+       observer_reconnected / reconnect_event_response_observed   True
+       saturated_session_stop_closed / peer_session_stop_closed   True
+   The ONLY failing predicate is `rendered_markers_observed_before_reconnect: False`, while
+   `canonical_own_marker_present: True`. So the text reached the canonical layer and simply had not appeared
+   in the RENDERED view before the harness reconnected. **That smells like a race in the harness, not a
+   product defect** — the same class as the last two oracle problems. Test it before reporting it as a G5
+   failure: wait for the rendered marker (bounded, with a timeout) before triggering reconnect, and if the
+   wait always succeeds, the predicate was racy. If it times out with canonical present and rendered absent,
+   THEN it is a real render-path defect and worth its own finding.
+   Also note for the board: `retryable_v2_429_observed` + `peer_accepted_while_saturated` +
+   `refused_frame_retried_successfully` together are the first genuine evidence for issue #3's per-client 429
+   criterion. That is new and it is worth recording explicitly.
+
+4. STILL NOT APPLIED, from 21:25: screen-1 fails ONLY on
+   `canonical_lifecycle_fairness.errors: ['run ended with queued canonical items for 21b7ce43...']` while that
+   same row reports `contended_pair_dispatch_observations: 0` — fairness is not evaluable at concurrency 1, so
+   it must report **not_applicable**, never failed. Move the drain condition to its own `stop_drain_complete`
+   predicate. Right now `screening_passes: [2,4]` excludes 1 for a reason that has nothing to do with
+   concurrency, which will confuse any reviewer.
+
+ISOLATION IS HOLDING EVERYWHERE, AND THAT IS WORTH STATING: with the eight unique markers, every session in
+screen-1, the 4-session soak and the overload phase reports `canonical_foreign_markers_absent: True` AND
+`rendered_foreign_markers_absent: True`, including on reconnect replay. No cross-session text leakage was
+observed anywhere in this run, including during a soak that was failing on latency. That is a real result and
+it is only meaningful because you fixed the oracle first.
+
+[monitor 2026-08-18 21:40] ***THIRD ATTENDED RUN. DEFECT A IS CONFIRMED FIXED BY THE OPERATOR — transcript
+kept updating and Stop no longer freezes. NEW P0: DEFECT D. DROP W2 AND DO D FIRST — it blocks every clean
+G3 artifact.***
+
+DEFECT D — CONFIRMED AT BOTH ENDS. I verified the whole contract myself, and it is worse than one line.
+  SERVER, deliberate and test-pinned:
+    `live_session.py:495-501` commits `CanonicalResult(..., transcript="")` for a silence span.
+    Pinned by `tests/test_live_pipeline_seams.py:521`
+    `test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting`, whose own docstring says
+    "The F0 blocker... Every meeting opens with silence".
+  CLIENT, contradicts it:
+    `mossPoller.ts:718` `transcript: requiredString(commit.transcript, "canonical commit transcript")`
+    `mossPoller.ts:752-756` `requiredString` -> `if (typeof value !== "string" || value.length === 0) fail(label)`
+  So the first silence span that CLOSES throws, the poll round dies, rendering stops and the
+  "Malformed MOSS canonical commit transcript." banner latches. The server is behaving exactly as specified;
+  the client parser is wrong. Same family as Defect A: G6 no-crash and the C3 poll contract.
+
+***AND THERE IS A SECOND INSTANCE THE OPERATOR ASKED ME TO LOOK FOR — IT IS THERE.***
+    `mossPoller.ts:728` `transcript: requiredString(provisional.transcript, "provisional transcript")`
+  The PROVISIONAL TAIL has the identical assumption. An empty provisional transcript — entirely plausible
+  during silence before any word is decoded — throws the same way. Fix both, or you will ship the fix and hit
+  the banner again from the other parser.
+
+THIRD, QUIETER, AND IT NEEDS A DECISION RATHER THAN A REFLEX:
+    `mossPoller.ts:759-761` `optionalString` returns `value.length > 0 ? value : null`
+  So for `revised_transcript`, an empty revision silently becomes `null` = "no revision". If the retrospective
+  sweep ever revises a span TO empty (removing a misrecognition), the client keeps the stale text instead of
+  clearing it. Distinguish absent (`undefined`/`null`) from revised-to-empty (`""`). If you believe the server
+  never emits an empty revision, prove it from the server code and record that, rather than leaving the
+  conflation implicit.
+
+AUDIT EACH FIELD — DO NOT BLANKET-SWAP `requiredString`. These must stay strict, because empty really is
+malformed for them: `:630` `snapshot.session_id`, `:690` `runtime event session_id`, `:691` `runtime event
+kind`. `span_id`/`start_sample` already use `requiredNonNegativeNumber` and are fine. Add a distinct helper
+(e.g. `requiredTextField`) that accepts "" but still rejects non-strings, and use it only at `:718` and `:728`.
+
+RED TEST FIRST, as with Defect A: feed a canonical commit with `transcript: ""` and assert the poller renders
+the round and does NOT throw; add the same for an empty provisional transcript. Both must fail before the fix.
+
+DEFECT B UPDATE — A CONFOUND IS NOW ELIMINATED, RECORD IT. The operator ran the session twice, once on
+Speakers and once on Headphones, with identical poor microphone transcription in the same sequence. **Echo
+cancellation is excluded as a hypothesis.** That strengthens the level/mixing diagnosis at `live_mixer.py:256`
+and is consistent with your measured 15.377 dB disparity. Your rejection of peer-RMS matching on measured WER
+still stands — do not ship a hand-tuned constant — but the search space is narrower now. B remains blocked on
+a fixture whose two lanes carry DIFFERENT speech.
+
+The transient "capture ... expired" the operator saw on stop is the capture request deadline path in
+`captureClient.ts`; it appeared briefly and resolved. Treat as cosmetic ordering unless it recurs — do not
+spend an iteration on it now.
+
+[iteration 33] target=W2 writer/evaluator observation-boundary prototype; files=`prototypes/streaming-diarization/concurrency/{proto_writer_evaluator_boundary.py,README.md,NOTES.md}`, `docs/design-streaming-diarization.md`, `evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json`, `scripts/afk5-phase1-completion/{context.md,progress.txt}`; validation=`.venv/bin/python .../proto_writer_evaluator_boundary.py --output .../iteration-33-writer-evaluator-boundary.json` PASS (3/3: writer active + immediate 0/48 failed-closed lifecycle records; close barrier + 48/48 fair lifecycle, skew 1), SHA-256 `31fe21ec...6934e975`; learned=phase evaluation can race the buffered asynchronous writer even after it has written, so it needs a writer-owned drain barrier; this proves no scheduler, stop-drain, G4, or G5 claim; next=Defect D red tests and narrow empty-text poller parser repair, then the W2 drain/classification repair.

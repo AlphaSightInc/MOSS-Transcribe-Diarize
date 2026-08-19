@@ -330,3 +330,29 @@ in both canonical and reconnect-replayed evidence. Raw JUnit:
 
 This is harness and fixture evidence only. It establishes neither G4 nor G5; rerun the unchanged
 preregistered remote-vLLM matrix in a fresh evidence directory.
+
+## Writer/evaluator drain boundary — 2026-08-18
+
+**VERDICT: PASS — a writer-owned drain barrier is required before evaluating lifecycle evidence.**
+
+Question: can the production asynchronous canonical-event writer make a complete, fair lifecycle evaluate as
+incomplete when the runner reads the event file before the writer drains?
+
+One command (prints full before-drain and after-drain state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_writer_evaluator_boundary.py \
+  --output evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json
+```
+
+The probe exercised the production `_CanonicalEventLogWriter` and the production
+`_canonical_lifecycle_fairness` evaluator, without a service or scheduler. In all three trials it enqueued a
+complete two-session, eight-item lifecycle (48 records). The writer had already recorded write activity, but
+the immediate file read saw 0 records and failed closed for absent queued/started/processed evidence. After
+the writer's existing `close()` barrier, all 48 records were readable and the evaluator passed (8 contended
+dispatch observations, maximum skew 1). Artifact SHA-256:
+`31fe21ec4c1eeab9711ccfc8d9a83ee6e7794f021c46464fcade73fe6934e975`.
+
+The next implementation must add a writer-owned drain barrier before phase evaluation without changing a
+fairness, stop-drain, latency, or scheduler value. This bench result establishes only the observation race; it
+does not establish scheduler fairness, stop-drain correctness, G4, or G5.

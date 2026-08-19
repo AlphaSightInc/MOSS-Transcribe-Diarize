@@ -144,26 +144,33 @@ Living working memory. Update it every iteration so it matches reality. History 
 
 ## Candidates (ranked — re-rank as you learn)
 
-1. **W2 evaluator and drain-boundary prototype/repair (P0):** before another matrix, extend the shared
-   streaming-diarization bench with a measured throwaway probe for the run-32 asynchronous event-writer
-   race and descriptor-declared stop drain. It must show a complete lifecycle log before evaluation and
-   distinguish no-contention fairness from stop-drain completeness. Then make the smallest test-backed
-   evaluator/writer-boundary repair without changing a gate value, re-run the frozen matrix from a fresh
-   directory, and preserve all failures. Do not touch the scheduler unless sound v2 evidence finds a real
-   violation; CPU/HF remains diagnostic, not G4/G5 evidence.
-2. **Defect B replication (operator input, P1)**: iteration 20 measured a 15.377 dB RMS disparity but
+1. **Defect D empty-text poller contract repair (P0):** the server deliberately commits empty canonical and
+   provisional transcripts for silence, while the client rejects them. Start with red tests for both fields,
+   then make the narrow parser repair that accepts `""` but still rejects non-strings. Treat empty
+   `revised_transcript` separately: distinguish absent from revised-to-empty, or first prove that the server
+   never emits an empty revision. Do not weaken strict IDs, event kinds, or numeric fields.
+2. **W2 writer/evaluator drain and stop-classification repair (P1):** iteration 33 proved the async event
+   writer can leave a complete lifecycle unreadable at evaluation. Add a writer-owned drain barrier before
+   lifecycle reads, then separate drain completeness from fairness and report no-contention fairness as
+   `not_applicable`. Do not change frozen gate values or scheduler behavior. The run-32 four-session soak is
+   already a true G4 failure (p95 84.378 s); do not rerun a matrix merely to seek a higher bound.
+3. **W2 overload rendered-marker timing probe/repair (P2):** canonical marker evidence is present but the
+   rendered marker was checked before reconnect. Test a bounded wait for rendered ownership before reconnect;
+   keep a real timeout as a failure, not a pass. This can clarify G5 integrity evidence but cannot make the
+   failed G4 soak pass.
+4. **Defect B replication (operator input, P3)**: iteration 20 measured a 15.377 dB RMS disparity but
    rejected peer-RMS matching (WER +3.468 pp, six more missing words). The sole aligned capture has the
    same lexical playback in both lanes, so it cannot set a general mixer policy or a warning threshold.
    Need multiple synchronized recordings with distinct audited per-lane references before re-testing any
    normalisation/AGC/offset proposal.
-3. **Defect C (P2, blocked on B replication)**: do not source warning copy or choose a threshold from the
+5. **Defect C (P4, blocked on B replication)**: do not source warning copy or choose a threshold from the
    one same-playback fixture.
-4. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
+6. **W3 (blocked externally)**: an operator must add the raw attended-session log before the charter
    frame/cadence/fetch/RMS validation can run.
-5. **W4 ledger reconciliation (after W2 repair/replay)**: `docs/phase1-gate-status.md` still says no
-   reachable vLLM endpoint; reconcile it only with a valid W2 replay and its explicit limits, never with the
-   current unsound G5 oracle.
-6. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
+7. **W4 ledger reconciliation (after Defect D and W2 repair):** `docs/phase1-gate-status.md` is stale about
+   the reachable vLLM endpoint. Reconcile it only with the run-32 result and explicit limits: G4 is not met,
+   while G5 has no cross-session leakage observed but remains not certified.
+8. **Issue #8 criterion 2 (blocked externally)**: needs the lifecycle vocabulary ruling; do not invent
    nonexistent `starting`/`recording`/`completed` values.
 
 ## Blockers
@@ -664,3 +671,81 @@ G6 finding, stating plainly that latency, memory, isolation and fairness were sa
   isolation evidence, but it fails integrity: the `payments` peer never produced its own required marker
   before reconnect or in rendered/canonical text. Thus it does not establish G5 across overload/reconnect.
   `verdict.json` correctly remains `qualifies_local_g4_g5_portions: false`.
+
+## W2 writer/evaluator boundary prototype (iteration 33)
+
+- `proto_writer_evaluator_boundary.py` exercised the production `_CanonicalEventLogWriter` and
+  `_canonical_lifecycle_fairness` evaluator without a service or scheduler. In **3/3** trials, after writer
+  activity had begun, an immediate read saw **0/48** complete fair-lifecycle records and failed closed; after
+  the writer's existing `close()` barrier it saw **48/48** and passed at maximum skew **1**. Raw artifact:
+  `evidence/phase1/w2-local-concurrency/iteration-33-writer-evaluator-boundary.json` (SHA-256
+  `31fe21ec4c1eeab9711ccfc8d9a83ee6e7794f021c46464fcade73fe6934e975`).
+- Verdict: a writer-owned drain barrier is required before evaluating lifecycle evidence. This is an
+  observation-boundary finding only: it does not establish a scheduler defect, stop-drain result, G4, or G5;
+  no gate value changed. Next W2 change, after Defect D, is the narrow barrier plus separate
+  `not_applicable` fairness and stop-drain predicates.
+
+## Run 32 audited — G4 not met, G5 close, two real defects (monitor, 2026-08-18 21:35)
+
+Verdict is honest: `qualifies_local_g4_g5_portions: false`, `screening_passes: [2,4]`, `soak_passes: false`,
+`overload_passes: false`.
+
+**Correcting my 21:25 note:** the bound is **not** 4. Concurrency 4 passes the 120 s screen (p95 2.60 s) then
+collapses over the 600 s soak — **p95 84.378 s** vs a 10 s gate (~32×), `stops_closed: False`, queued canonical
+items outstanding for multiple sessions. **Lead with this: concurrency 4 is not sustainable; G4 not met.** A
+two-minute screen alone would have shipped a bound the product cannot hold.
+
+**Defect (separate):** `stops_closed: False` in the soak — sessions did not close cleanly after a sustained run.
+Own predicate, own write-up; do not fold it into the latency story.
+
+**G5 is closer than `overload_passes: false` implies.** Passing in overload: `retryable_v2_429_observed`,
+`peer_accepted_while_saturated`, `refused_frame_retried_successfully`, `canonical_foreign_markers_absent`,
+`reconnect_replayed_canonical_foreign_markers_absent`, `observer_reconnected`, both stops closed. **Only**
+`rendered_markers_observed_before_reconnect: False` fails — while `canonical_own_marker_present: True`. Text
+reached canonical and hadn't rendered before the harness reconnected: **likely a harness race**. Test it — wait
+(bounded, with timeout) for the rendered marker before reconnecting. If it always succeeds, the predicate was
+racy; if it times out with canonical present and rendered absent, that is a real render-path defect.
+For the board: `retryable_v2_429_observed` + `peer_accepted_while_saturated` + `refused_frame_retried_successfully`
+is the **first genuine evidence for issue #3's per-client 429 criterion**.
+
+**Still not applied (from 21:25):** screen-1 fails only on the drain error inside `canonical_lifecycle_fairness`
+while reporting `contended_pair_dispatch_observations: 0`. Fairness must be **not_applicable** at concurrency 1;
+move the drain condition to its own `stop_drain_complete` predicate.
+
+**Isolation held everywhere:** with the eight unique markers, every session in screen-1, the 4-session soak and
+overload reports `canonical_foreign_markers_absent: True` **and** `rendered_foreign_markers_absent: True`,
+including on reconnect replay. No cross-session leakage anywhere — meaningful only because the oracle was fixed first.
+
+## DEFECT D (P0) — do this before any more W2 (monitor, 2026-08-18 21:40)
+
+Third attended run: **Defect A confirmed fixed** (transcript updates, Stop no longer freezes). New P0:
+
+**Contract mismatch, verified both ends.** Server `live_session.py:495-501` commits `transcript=""` for a
+silence span — deliberate, pinned by `tests/test_live_pipeline_seams.py:521`
+(`test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting`, docstring: *"Every meeting opens
+with silence"*). Client `mossPoller.ts:718` uses `requiredString`, and `:752-756` rejects `value.length === 0`
+⇒ throws **"Malformed MOSS canonical commit transcript."** The first closing silence span kills the poll round,
+rendering stops, banner latches. Server is right; the client parser is wrong. G6 no-crash + C3 poll contract.
+
+**Second instance (confirmed):** `mossPoller.ts:728` `requiredString(provisional.transcript, …)` — the
+provisional tail has the identical assumption. Fix both or the banner returns from the other parser.
+
+**Third, needs a decision:** `optionalString` (`:759-761`) maps `""` → `null`, so a `revised_transcript` revised
+**to empty** reads as *no revision* and stale text survives. Distinguish absent from revised-to-empty, or prove
+from the server that an empty revision is never emitted and record that.
+
+**Audit each field — do not blanket-swap.** Keep strict: `:630` `snapshot.session_id`, `:690` event
+`session_id`, `:691` event `kind`. `span_id`/`start_sample` already use `requiredNonNegativeNumber`. Add a
+distinct helper (e.g. `requiredTextField`) accepting `""` but rejecting non-strings; use it only at `:718`/`:728`.
+
+**Red test first** (as with Defect A): canonical commit with `transcript: ""` renders without throwing; same for
+an empty provisional transcript. Both must fail before the fix.
+
+## Defect B: echo cancellation EXCLUDED (monitor, 2026-08-18 21:40)
+Operator ran Speakers and Headphones with identical poor mic transcription in the same sequence ⇒ echo
+cancellation is not the cause. Strengthens the level/mixing diagnosis at `live_mixer.py:256` and the measured
+15.377 dB disparity. Rejection of peer-RMS matching still stands; no hand-tuned constant. B still blocked on a
+fixture with different speech per lane.
+
+Transient "capture … expired" on stop = capture request deadline path in `captureClient.ts`; appeared and
+resolved. Cosmetic ordering unless it recurs — do not spend an iteration on it.

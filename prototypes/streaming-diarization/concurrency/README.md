@@ -106,6 +106,17 @@ manifest plus asset hashes into the evidence directory. It must not overwrite th
 model bytes to evidence. Its p95 includes SSH-tunnel/tailnet transit; GPU memory, utilisation, OOM/errors,
 and vLLM active/queued counts remain outside the available read-only surface.
 
+Writer/evaluator boundary probe (no service or model; prints the full before-drain and after-drain state):
+
+```bash
+.venv/bin/python prototypes/streaming-diarization/concurrency/proto_writer_evaluator_boundary.py \
+  --output evidence/phase1/w2-local-concurrency/writer-evaluator-boundary.json
+```
+
+It uses the production asynchronous canonical-event writer and lifecycle evaluator with a complete, fair
+synthetic lifecycle. It may only establish whether reading the log needs a writer-owned drain barrier; it
+cannot establish scheduler fairness, stop-drain semantics, G4, or G5.
+
 Remote-vLLM tunnel matrix (about 19 minutes if a 600-second soak is selected; start the read-only tunnel
 first). The preflight command checks endpoint identity and deployed bounds but does not start a local route
 process. Use a fresh output directory for the measurement after a successful preflight:
