@@ -367,6 +367,20 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   this server probe. Raw artifact:
   `evidence/phase1/g3-attended/server-stage-timing-deployed-20advance-20260819.json`.
 
+- **Fresh M4 exact-build rerun — system/latency pass; microphone remains an operator gate
+  (2026-08-19).** M4MBP was restored online, checked out detached exact `aca1600`, rebuilt,
+  reinstalled with its signing requirement unchanged, and retained both TCC grants. Its old
+  MacStudio pairing failed transport and was rejected; fresh direct production pairing then
+  drained cleanly. A 24-advance system-lane run measured a 0.904 s p95 last-word analytic visible
+  bound and 3.376 s first-word bound, with 268 frames, zero retained frames, intact timeline, and
+  no pump failure or session refusal. Four muted lane-separation canaries all proved that system
+  capture survives output mute, but an external MacStudio room source did not produce its known
+  microphone marker—even at maximum external output, with an ASR-stable marker, and with temporary
+  M4 input gain 71→100%. Transport/lifecycle and system-lane latency pass; microphone, overlap, and
+  perceived-delay acceptance remain fail-closed until a person near M4 speaks into its microphone.
+  No gain, input-volume, mixer, span, or identity policy is selected. Raw redacted record:
+  `evidence/phase1/g3-attended/m4-exact-build-rerun-20260819.json`.
+
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
   lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48

@@ -1,0 +1,134 @@
+{
+  "schema": "moss-g3-m4-exact-build-rerun.v1",
+  "recorded_at": "2026-08-19T20:13:00-04:00",
+  "source_revision": "aca160046f938f78df80dc07fd017282299b3c71",
+  "capture_host": {
+    "hostname": "M4MBP.local",
+    "os": "macOS 26.5.2 (25F84)",
+    "checkout_state": "detached exact source revision",
+    "default_input": "MacBook Pro Microphone",
+    "default_output": "MacBook Pro Speakers"
+  },
+  "transfer_and_install": {
+    "thin_bundle_sha256": "0529147d835b6f824423257fe2210cfa3d9cafc13fb7af53dd6b867ecbbbba6b",
+    "built_bundle_digest": "13d73124eeb27369e5b636818d5890284c9c1ac47ea85432d06d087ff08ac2df",
+    "installed_app_executable_sha256": "31785b636461cecf7de0047509b7c8a50d7e7794010c482c018fd4418f1c2929",
+    "installed_cli_sha256": "01f88dceb9f5391bac054c3b012456c7f108c2ae9fab02fc513dd992bb586f50",
+    "designated_requirement": "identifier com.alphasight.moss.capture and certificate leaf e118d874377746c4bd25beb8252bb84302b73e72",
+    "tcc": {
+      "kTCCServiceAudioCapture": 2,
+      "kTCCServiceMicrophone": 2
+    },
+    "recoverable_backups": [
+      "/Applications/MOSSCapture.app.backup-20260819T234146Z",
+      "/Users/ga0/.local/bin/mtd-capture.backup-20260819T234146Z"
+    ]
+  },
+  "pairing_correction": {
+    "rejected_attempt": {
+      "configured_server": "https://macstudio.tailnet.aisight.us:7861",
+      "result": "transportUnavailable",
+      "published_frames": 0,
+      "retained_frames": 60,
+      "accepted_as_evidence": false
+    },
+    "corrected_server": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
+    "corrected_smoke": {
+      "published_frames_before_stop": 21,
+      "published_frames_after_stop": 24,
+      "retained_frames_after_stop": 0
+    }
+  },
+  "system_lane_latency": {
+    "program": "seven continuous macOS say phrases with muted local output",
+    "accepted_frames_before_stop": 264,
+    "accepted_frames_after_stop": 268,
+    "retained_frames_after_stop": 0,
+    "lanes_after_stop": {
+      "system": "stopped",
+      "microphone": "stopped"
+    },
+    "pump_failure": null,
+    "session_refusal": null,
+    "latency_v3": {
+      "committed_advances": 24,
+      "timeline_intact": true,
+      "fetch_failures": 0,
+      "span_end_fetch_age_p95_ms": 255.797834,
+      "span_start_fetch_age_p95_ms": 2727.51375,
+      "portal_fetch_cycle_p95_ms": 148.3765,
+      "last_word_analytic_visible_bound_ms": 904.174334,
+      "first_word_analytic_visible_bound_ms": 3375.89025
+    },
+    "verdict": "PASS_EXACT_BUILD_MACHINE_PATH"
+  },
+  "isolated_lane_canaries": [
+    {
+      "label": "aca1600-lane-canary",
+      "room_source": "Mac Studio built-in speakers at 55 percent",
+      "room_marker": "obsidian",
+      "m4_input_volume_percent": 71,
+      "published_frames_after_stop": 366,
+      "retained_frames_after_stop": 0,
+      "committed_advances": 56,
+      "system_marker": "VERBATIM",
+      "room_marker": "NOT_TRANSCRIBED",
+      "reducer_rc": 4
+    },
+    {
+      "label": "aca1600-room-rerun-20260819",
+      "room_source": "Mac Studio built-in speakers at 100 percent",
+      "room_marker": "obsidian",
+      "m4_input_volume_percent": 71,
+      "published_frames_after_stop": 397,
+      "retained_frames_after_stop": 0,
+      "committed_advances": 48,
+      "system_marker": "VERBATIM",
+      "room_marker": "NOT_TRANSCRIBED",
+      "room_window_distinct_speaker_label": "S03",
+      "reducer_rc": 4
+    },
+    {
+      "label": "aca1600-room-banana-20260819",
+      "room_source": "Mac Studio built-in speakers at 100 percent",
+      "room_marker": "banana",
+      "m4_input_volume_percent": 71,
+      "published_frames_after_stop": 397,
+      "retained_frames_after_stop": 0,
+      "committed_advances": 54,
+      "system_marker": "VERBATIM",
+      "room_marker": "NOT_TRANSCRIBED",
+      "reducer_rc": 4
+    },
+    {
+      "label": "aca1600-room-input100-20260819",
+      "room_source": "Mac Studio built-in speakers at 100 percent",
+      "room_marker": "banana",
+      "m4_input_volume_percent": 100,
+      "published_frames_after_stop": 397,
+      "retained_frames_after_stop": 0,
+      "committed_advances": 60,
+      "system_marker": "VERBATIM",
+      "room_marker": "NOT_TRANSCRIBED",
+      "room_window_distinct_speaker_label": "S03",
+      "reducer_rc": 4
+    }
+  ],
+  "environment_restoration": {
+    "m4_output_volume_percent": 44,
+    "m4_output_muted": false,
+    "m4_input_volume_percent": 71,
+    "mac_studio_output_volume_percent": 0,
+    "mac_studio_output_muted": true,
+    "capture_running": false,
+    "capture_outbox_retained_frames": 0
+  },
+  "verdict": {
+    "transport_and_lifecycle": "PASS",
+    "system_lane_and_latency": "PASS",
+    "isolated_microphone_marker": "FAIL_CLOSED",
+    "overlap": "NOT_RUN",
+    "human_perceived_delay": "NOT_OBSERVED",
+    "next_gate": "A person near M4MBP must speak a known marker into its microphone, then perform an overlap/perceived-delay check."
+  }
+}
