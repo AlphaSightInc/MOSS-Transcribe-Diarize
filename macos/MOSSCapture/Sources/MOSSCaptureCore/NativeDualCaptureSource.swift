@@ -169,6 +169,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
     private let microphone: NativeAudioCaptureComponent
     private let queue: RealTimeNativeAudioBufferQueue
     private let emitter: NativeLaneFrameEmitter
+    private let signalLevels: CaptureSignalLevelTracker
     private let health = NativeLaneHealth()
     private let permissions = NativeLanePermissionCoordinator()
     private var started = false
@@ -185,7 +186,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
             system: SystemAudioTap(),
             microphone: MicrophoneCapture(),
             queue: RealTimeNativeAudioBufferQueue(capacity: queueCapacity),
-            emitter: NativeLaneFrameEmitter()
+            emitter: NativeLaneFrameEmitter(),
+            signalLevels: CaptureSignalLevelTracker()
         )
     }
 
@@ -193,12 +195,14 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         system: NativeAudioCaptureComponent,
         microphone: NativeAudioCaptureComponent,
         queue: RealTimeNativeAudioBufferQueue,
-        emitter: NativeLaneFrameEmitter = NativeLaneFrameEmitter()
+        emitter: NativeLaneFrameEmitter = NativeLaneFrameEmitter(),
+        signalLevels: CaptureSignalLevelTracker = CaptureSignalLevelTracker()
     ) {
         self.system = system
         self.microphone = microphone
         self.queue = queue
         self.emitter = emitter
+        self.signalLevels = signalLevels
     }
 
     public func start(configuration: CaptureConfiguration) throws {
@@ -213,6 +217,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
             // for a lane a second time or restart a lane that is already capturing.
             return
         }
+
+        signalLevels.reset()
 
         let generation = health.beginGeneration()
         permissions.beginGeneration(generation)
@@ -282,6 +288,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
             return tail
         }
         let frames = emitter.frames(from: queue.drain())
+        signalLevels.observe(frames)
         lock.lock()
         let generation = activeGeneration
         for frame in frames {
@@ -299,6 +306,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         let isStarted = started
         let framesByLane = latestFrames
         lock.unlock()
+        let levelsByLane = signalLevels.snapshot()
         return health.statuses(running: isStarted).map { status in
             let latest = framesByLane[status.lane]
             var state = isStarted && status.state == "stopped" ? "recovering" : status.state
@@ -314,7 +322,8 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
                 state: state,
                 droppedFrames: status.droppedFrames,
                 discontinuities: status.discontinuities,
-                failureCode: status.failureCode
+                failureCode: status.failureCode,
+                signalLevel: levelsByLane[status.lane]
             )
         }
     }
@@ -330,6 +339,7 @@ public final class NativeDualCaptureSource: CaptureSourceAdapter, @unchecked Sen
         // Drain what the stopped lanes left behind, then end each converter's stream so the last
         // partial frame of the meeting is published instead of being dropped on the floor.
         let tail = emitter.frames(from: queue.drain()) + emitter.flush()
+        signalLevels.observe(tail)
         lock.lock()
         started = false
         activeGeneration = nil

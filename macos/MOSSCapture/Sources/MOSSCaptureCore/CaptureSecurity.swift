@@ -584,24 +584,32 @@ public final class OSLogControlChannelFailureLog: ControlChannelFailureLogging, 
 }
 
 /// One capture lane as the control channel reports it: which lane, what it is doing, and — when it
-/// failed — the typed code that names the failure. States and codes only; never audio, never a
-/// secret, and never the free-form cause string, which is not a typed value.
+/// failed — the typed code that names the failure — plus aggregate signal facts measured from the
+/// wire PCM. Never audio, never a secret, and never the free-form cause string.
 public struct ControlChannelLaneStatus: Codable, Equatable {
     public var lane: String
     public var state: String
     public var failureCode: String?
+    public var signalLevel: CaptureLaneSignalLevel?
 
-    public init(lane: String, state: String, failureCode: String? = nil) {
+    public init(
+        lane: String,
+        state: String,
+        failureCode: String? = nil,
+        signalLevel: CaptureLaneSignalLevel? = nil
+    ) {
         self.lane = lane
         self.state = state
         self.failureCode = failureCode
+        self.signalLevel = signalLevel
     }
 
     public init(status: CaptureLaneStatus) {
         self.init(
             lane: status.lane.rawValue,
             state: status.state,
-            failureCode: status.failureCode
+            failureCode: status.failureCode,
+            signalLevel: status.signalLevel
         )
     }
 }

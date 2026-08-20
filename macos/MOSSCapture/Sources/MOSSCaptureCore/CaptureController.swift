@@ -76,6 +76,7 @@ public struct CaptureLaneStatus: Equatable {
     public var droppedFrames: UInt64
     public var discontinuities: UInt64
     public var failureCode: String?
+    public var signalLevel: CaptureLaneSignalLevel?
 
     public init(
         lane: CaptureLane,
@@ -84,7 +85,8 @@ public struct CaptureLaneStatus: Equatable {
         state: String,
         droppedFrames: UInt64 = 0,
         discontinuities: UInt64 = 0,
-        failureCode: String? = nil
+        failureCode: String? = nil,
+        signalLevel: CaptureLaneSignalLevel? = nil
     ) {
         self.lane = lane
         self.sequence = sequence
@@ -93,6 +95,7 @@ public struct CaptureLaneStatus: Equatable {
         self.droppedFrames = droppedFrames
         self.discontinuities = discontinuities
         self.failureCode = failureCode
+        self.signalLevel = signalLevel
     }
 }
 

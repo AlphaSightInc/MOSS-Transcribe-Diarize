@@ -1905,9 +1905,22 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertTrue(secondDrain.isEmpty)
         XCTAssertEqual(runningStatus.map(\.state), ["capturing", "capturing"])
         XCTAssertEqual(runningStatus.map(\.deviceEpoch), [1, 7])
+        XCTAssertEqual(
+            try XCTUnwrap(runningStatus.first { $0.lane == .system }?.signalLevel?.lastFrameRMSDBFS),
+            -6.0206,
+            accuracy: 0.001
+        )
+        XCTAssertNil(
+            runningStatus.first { $0.lane == .microphone }?.signalLevel?.lastFrameRMSDBFS
+        )
+        XCTAssertEqual(
+            runningStatus.first { $0.lane == .microphone }?.signalLevel?.silentFrames,
+            1
+        )
         XCTAssertEqual(system.stopCount, 1)
         XCTAssertEqual(microphone.stopCount, 1)
         XCTAssertEqual(stoppedStatus.map(\.state), ["stopped", "stopped"])
+        XCTAssertEqual(stoppedStatus.map(\.signalLevel), runningStatus.map(\.signalLevel))
     }
 
     func testNativeDualCaptureSourceSystemSurvivesMicrophoneStartFail() throws {
@@ -3939,7 +3952,17 @@ final class CaptureControllerTests: XCTestCase {
             running: true,
             sessionID: "session-a",
             lanes: [
-                CaptureLaneStatus(lane: .system, sequence: 4, deviceEpoch: 2, state: "capturing"),
+                CaptureLaneStatus(
+                    lane: .system,
+                    sequence: 4,
+                    deviceEpoch: 2,
+                    state: "capturing",
+                    signalLevel: CaptureLaneSignalLevel(
+                        analyzedFrames: 4,
+                        analyzedSamples: 32_000,
+                        maxFrameRMSDBFS: -12
+                    )
+                ),
                 CaptureLaneStatus(lane: .microphone, sequence: 6, deviceEpoch: 8, state: "pending"),
             ],
             publishedFrameCount: 10,
@@ -3983,6 +4006,7 @@ final class CaptureControllerTests: XCTestCase {
         XCTAssertEqual(microphone["device_epoch"] as? Int, 8)
         XCTAssertTrue(system["failure_code"] is NSNull)
         XCTAssertTrue(microphone["failure_code"] is NSNull)
+        XCTAssertNil(system["signalLevel"], "local signal diagnostics do not widen heartbeat v1")
         XCTAssertFalse(String(data: request.httpBody ?? Data(), encoding: .utf8)?.contains("capture-token") ?? true)
     }
 
