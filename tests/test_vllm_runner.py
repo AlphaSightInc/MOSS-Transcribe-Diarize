@@ -91,6 +91,35 @@ class VllmRunnerTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "encoder cache overflow"):
             _consume_sse_transcription(response, status_callback=None, max_new_tokens=128)
 
+    def test_sse_done_returns_without_waiting_for_connection_eof(self):
+        class FailIfReadAfterDone:
+            def __init__(self):
+                self.lines = iter(
+                    [
+                        b'data: {"choices":[{"delta":{"content":"[0][S01]hello[1]"}}]}\n\n',
+                        b'data: {"usage":{"prompt_tokens":11,"completion_tokens":7},"choices":[]}\n\n',
+                        b"data: [DONE]\n\n",
+                    ]
+                )
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                try:
+                    return next(self.lines)
+                except StopIteration as exc:
+                    raise AssertionError("SSE parser read past the terminal marker") from exc
+
+        result = _consume_sse_transcription(
+            FailIfReadAfterDone(),
+            status_callback=None,
+            max_new_tokens=128,
+        )
+
+        self.assertEqual(result["text"], "[0][S01]hello[1]")
+        self.assertEqual(result["usage"], {"prompt_tokens": 11, "completion_tokens": 7})
+
 
 if __name__ == "__main__":
     unittest.main()

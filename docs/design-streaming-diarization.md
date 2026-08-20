@@ -397,6 +397,23 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   the irreducible microphone/overlap/perceived-delay gate. Raw redacted record:
   `evidence/phase1/g3-attended/m4-native-signal-diagnosis-20260819.json`.
 
+- **Correct attended browser path — transcript recovery accepted (2026-08-19).** The operator's
+  actual path is M4 Chrome → `https://macstudio.tailnet.aisight.us:7861/` → MacStudio's local SSH
+  tunnel → Alienware vLLM; the native app and Alienware `/live` page are not this acceptance path.
+  Chrome accepted 85 frames and froze nine spans during a failed run, but processed none. Direct
+  streamed and non-streamed requests inside Alienware reproduced zero audio-response bytes while
+  `moss-vllm.service` reported no running/waiting requests and the GPU stayed at 100% SM with only
+  88 MiB free. The operator authorized restarting that dedicated service only. Its new process
+  then transcribed a real 2.5 s clip through production `VllmRunner` in 0.849 s. The fresh attended
+  Chrome session closed with 729,792/729,792 samples accounted, zero retained/pending work, and
+  exactly 21 queued/started/processed spans. Queue wait was 0.766/122.350 ms p50/p95; decode was
+  346.129/469.071 ms; queued-to-processed was 672.167/953.703 ms; no decode capped. The operator
+  confirmed that transcript text appeared correctly while counting over the noisy background WAV,
+  with both foreground counts and background speech visible. This closes the person-near-M4
+  microphone/transcript gate without selecting any gain, mixer, span, identity, or threshold
+  change. A separate perceived-delay grade was not stated. Raw record:
+  `evidence/phase1/g3-attended/macstudio-m4-browser-recovery-20260819.json`.
+
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
   lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48

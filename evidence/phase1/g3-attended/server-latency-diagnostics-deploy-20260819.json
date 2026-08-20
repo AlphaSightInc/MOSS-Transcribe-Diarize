@@ -35,7 +35,7 @@
     "production_sha256": "6aa6c4a6de63cdec87cd6e7c9e9933fa9509518539d7c83b0b2051de2c854aff",
     "byte_identical_to_release_parent": true,
     "dom_timing_deployed": false,
-    "reason": "The production release contract byte-seals live_capture_portal.py; DOM timing remains tested on dev pending release reconciliation."
+    "reason": "The production release contract byte-seals its deployed capture portal module; DOM timing remains tested on dev pending release reconciliation."
   },
   "validation": {
     "focused_python": {

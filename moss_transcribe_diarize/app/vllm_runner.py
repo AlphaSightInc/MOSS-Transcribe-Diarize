@@ -300,8 +300,10 @@ def _consume_sse_transcription(
         if not line.startswith("data:"):
             continue
         data = line.removeprefix("data:").strip()
-        if not data or data == "[DONE]":
+        if not data:
             continue
+        if data == "[DONE]":
+            break
         chunk = json.loads(data)
         if "error" in chunk:
             _raise_vllm_error(chunk["error"])

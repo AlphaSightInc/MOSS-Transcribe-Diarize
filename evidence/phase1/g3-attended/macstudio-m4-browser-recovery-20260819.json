@@ -1,0 +1,70 @@
+{
+  "schema": "moss-g3-macstudio-browser-recovery.v1",
+  "recorded_at": "2026-08-19",
+  "attended_path": {
+    "capture_host": "ga0@m4mbp",
+    "browser": "Chrome",
+    "frontend_and_live_service": "https://macstudio.tailnet.aisight.us:7861/",
+    "inference_route": "MacStudio 127.0.0.1:18000 SSH tunnel to Alienware 127.0.0.1:8000",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize"
+  },
+  "incident": {
+    "browser_frames_accepted_before_recovery": 85,
+    "browser_spans_frozen_before_recovery": 9,
+    "browser_spans_processed_before_recovery": 0,
+    "direct_alienware_stream_result": "HTTP 200 headers, zero body bytes for 15 seconds",
+    "direct_alienware_nonstream_result": "zero body bytes for 15 seconds",
+    "vllm_running_requests": 0,
+    "vllm_waiting_requests": 0,
+    "gpu_sm_utilization_percent": 100,
+    "gpu_free_memory_mib": 88,
+    "root_cause": "dedicated Alienware moss-vllm.service wedged outside browser and MacStudio"
+  },
+  "recovery": {
+    "operator_authorized_service_restart": true,
+    "service": "moss-vllm.service",
+    "old_main_pid": 99874,
+    "new_main_pid": 120298,
+    "active_enter_timestamp": "2026-08-19 23:09:39 EDT",
+    "post_restart_real_audio_seconds": 2.5,
+    "post_restart_transcription_elapsed_seconds": 0.849,
+    "post_restart_generated_tokens": 26
+  },
+  "attended_session": {
+    "session_id": "357da780fbda41e8bd7b9288f9b32574",
+    "status": "closed",
+    "capture_phase": "stopped",
+    "accepted_samples": 729792,
+    "accounted_samples": 729792,
+    "retained_samples": 0,
+    "duration_seconds": 45.612,
+    "frame_accepted_events": 181,
+    "canonical_queued_events": 21,
+    "canonical_started_events": 21,
+    "canonical_processed_events": 21,
+    "committed_spans": 21,
+    "pending_work_items": 0,
+    "pending_span_ids": [],
+    "terminal_failure": null,
+    "decode_capped_count": 0,
+    "empty_span_count": 2
+  },
+  "server_stage_latency_ms": {
+    "queue_wait": {"count": 21, "p50": 0.766, "p95": 122.35, "max": 344.229},
+    "decode": {"count": 21, "p50": 346.129, "p95": 469.071, "max": 958.025},
+    "canonical_processing": {"count": 21, "p50": 671.589, "p95": 953.307, "max": 1176.489},
+    "queued_to_processed": {"count": 21, "p50": 672.167, "p95": 953.703, "max": 1177.286}
+  },
+  "operator_attended_result": {
+    "transcript_text": "PASS",
+    "observation": "Transcript text showed correctly while the operator counted one through ten over a messy background WAV.",
+    "foreground_examples": ["One, two, three", "Three, four", "Six", "Seven", "Eight"],
+    "background_content_present": true,
+    "perceived_delay_grade": "not separately stated"
+  },
+  "scope": {
+    "threshold_or_identity_policy_changed": false,
+    "gpu_service_restarted": "moss-vllm.service only",
+    "other_alienware_workloads_changed": false
+  }
+}
