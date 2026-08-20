@@ -381,6 +381,22 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   No gain, input-volume, mixer, span, or identity policy is selected. Raw redacted record:
   `evidence/phase1/g3-attended/m4-exact-build-rerun-20260819.json`.
 
+- **Native microphone signal diagnosis — path healthy; external canary source was inaudible
+  (2026-08-19).** A throwaway exact-PCM prototype validated JSON-safe per-lane RMS/peak aggregates
+  at 0.332 ms per 8,000-sample wire frame; the production implementation exposes those aggregates
+  only through same-user local status, never the heartbeat, and passed 205 Swift tests. Exact
+  `08475d3` was rebuilt/reinstalled on M4 without changing its signing requirement or TCC grants.
+  During a valid muted lane-separation run, the MacStudio external source reached M4's microphone
+  at only -48.10 dBFS median / -45.40 dBFS maximum in the room window and did not raise the
+  session maximum; the marker was not transcribed. In a deliberately confounded near-field control,
+  M4's own speakers raised the same microphone path to -9.13 dBFS and `banana` committed in five
+  spans. This proves microphone hardware → AVAudioEngine → downmix/resample → strict-v2 wire → ASR
+  response, while refuting the external speaker geometry as attended microphone evidence. It does
+  not prove lane separation or overlap because local speaker audio reached both lanes. No signal
+  threshold, gain, input-volume, mixer, or identity policy is selected. A person beside M4 remains
+  the irreducible microphone/overlap/perceived-delay gate. Raw redacted record:
+  `evidence/phase1/g3-attended/m4-native-signal-diagnosis-20260819.json`.
+
 - **W2 event-evidence boundary — harness repair required, no scheduler policy (2026-08-18).** The shared
   bench drove a complete, fair two-session lifecycle through the production asynchronous event writer and
   lifecycle evaluator. In all three trials, the writer had begun writing but the immediate read returned 0/48

@@ -1,0 +1,130 @@
+{
+  "schema": "moss-g3-m4-native-signal-diagnosis.v1",
+  "recorded_at": "2026-08-19T20:27:00-04:00",
+  "source_revision": "08475d3f7fd7f91b342a3205232702352efd704f",
+  "question": "Did the failed external-room canaries reflect a broken native microphone path or an unusably quiet acoustic source at M4MBP?",
+  "instrument": {
+    "measurement_point": "canonical mono PCM16 after native downmix and resampling, before transport",
+    "fields": [
+      "analyzedFrames",
+      "analyzedSamples",
+      "silentFrames",
+      "malformedFrames",
+      "lastFrameRMSDBFS",
+      "maxFrameRMSDBFS",
+      "sessionPeakDBFS"
+    ],
+    "privacy": "aggregate levels only; no audio retained or returned",
+    "surface": "same-user local control status only; helper heartbeat v1 unchanged",
+    "prototype": {
+      "checks_passed": 6,
+      "checks_total": 6,
+      "production_size_frames": 2000,
+      "samples_per_frame": 8000,
+      "elapsed_ms": 664.521,
+      "ms_per_frame": 0.332260,
+      "threshold_or_policy_selected": false
+    },
+    "validation": {
+      "swift_tests_passed": 205,
+      "swift_tests_failed": 0
+    }
+  },
+  "m4_install": {
+    "hostname": "M4MBP.local",
+    "installed_source_revision": "08475d3f7fd7f91b342a3205232702352efd704f",
+    "thin_bundle_sha256": "c43cfa9dd9ed7fd72a49b89486bf66e620027e42966f652909b10789bf762f19",
+    "built_bundle_digest": "5e03ae762e880bd2cbf4d031259e58dbb0b3b4ba643c00160b1e6e84924b289c",
+    "installed_app_executable_sha256": "252864c814fe3bc16a3940a7c20cc92c476f7c94d6b6e71545b85d09eba3c329",
+    "installed_cli_sha256": "800c642db80ccfa7b90b2be70b7abe700086b4b4bc8ca253c551394fe10c37d8",
+    "designated_requirement": "identifier com.alphasight.moss.capture and certificate leaf e118d874377746c4bd25beb8252bb84302b73e72",
+    "tcc": {
+      "kTCCServiceAudioCapture": 2,
+      "kTCCServiceMicrophone": 2
+    },
+    "recoverable_backups": [
+      "/Applications/MOSSCapture.app.backup-20260820T001605Z",
+      "/Users/ga0/.local/bin/mtd-capture.backup-20260820T001605Z"
+    ]
+  },
+  "external_source_canary": {
+    "label": "08475d3-signal-room-20260819",
+    "layout": "M4 system output muted; Mac Studio built-in speakers at 100 percent supplied banana during the isolated room window",
+    "system_marker": "cardamom",
+    "room_marker": "banana",
+    "room_marker_transcribed": false,
+    "strict_reducer_rc": 4,
+    "signal_by_phase": {
+      "program_a": {
+        "microphone_last_frame_rms_dbfs_median": -41.42981249733826,
+        "microphone_last_frame_rms_dbfs_max": -29.413504300346567,
+        "microphone_cumulative_max_frame_rms_dbfs": -22.76689570513613
+      },
+      "room_window": {
+        "system_last_frame_rms_sample_count": 0,
+        "system_silent_frames_first": 4,
+        "system_silent_frames_last": 77,
+        "microphone_last_frame_rms_dbfs_min": -50.828233987216116,
+        "microphone_last_frame_rms_dbfs_median": -48.101918889157076,
+        "microphone_last_frame_rms_dbfs_max": -45.398619792457126,
+        "microphone_cumulative_max_frame_rms_dbfs": -22.76689570513613,
+        "microphone_cumulative_max_increased": false
+      }
+    },
+    "lifecycle": {
+      "published_frames_after_stop": 397,
+      "retained_frames_after_stop": 0,
+      "pump_failure": null,
+      "session_refusal": null,
+      "malformed_signal_frames": 0
+    },
+    "verdict": "EXTERNAL_SOURCE_DID_NOT_REACH_M4_MIC_AT_USABLE_LEVEL"
+  },
+  "near_field_acoustic_control": {
+    "label": "08475d3-m4-loopback-20260819",
+    "scope_limit": "M4 local speaker audio reached both system and microphone lanes; this is a microphone-path control, not lane-separation or overlap acceptance evidence.",
+    "layout": "M4 built-in speakers temporarily unmuted at 100 percent during the room window and restored immediately",
+    "marker": "banana",
+    "committed_marker_spans": 5,
+    "signal_by_phase": {
+      "program_a": {
+        "microphone_last_frame_rms_dbfs_median": -47.471367257395684,
+        "microphone_last_frame_rms_dbfs_max": -29.201043047302797,
+        "microphone_cumulative_max_frame_rms_dbfs": -26.969087325189832
+      },
+      "audible_room_window": {
+        "microphone_last_frame_rms_dbfs_min": -48.503365250666526,
+        "microphone_last_frame_rms_dbfs_median": -38.74105778124586,
+        "microphone_last_frame_rms_dbfs_max": -9.130573686238936,
+        "microphone_cumulative_max_frame_rms_dbfs": -9.130573686238936,
+        "microphone_cumulative_max_increased": true,
+        "system_last_frame_rms_dbfs_median": -15.904326873703692
+      }
+    },
+    "lifecycle": {
+      "published_frames_after_stop": 399,
+      "retained_frames_after_stop": 0,
+      "pump_failure": null,
+      "session_refusal": null,
+      "malformed_signal_frames": 0
+    },
+    "verdict": "MICROPHONE_HARDWARE_NATIVE_CAPTURE_WIRE_AND_ASR_PATH_RESPOND"
+  },
+  "diagnosis": {
+    "native_microphone_path_broken": false,
+    "external_mac_studio_source_usable_at_m4": false,
+    "input_volume_71_to_100_selected": false,
+    "mixer_gain_change_selected": false,
+    "reason": "The same exact native path moved from a room-window maximum below -45 dBFS with the external source to -9.13 dBFS with a near-field source, and the near-field marker committed in five spans.",
+    "remaining_gate": "A person physically near M4MBP must speak a known marker, then perform real different-source overlap and report perceived first-word delay."
+  },
+  "environment_restoration": {
+    "m4_output_volume_percent": 44,
+    "m4_output_muted": false,
+    "m4_input_volume_percent": 71,
+    "mac_studio_output_volume_percent": 0,
+    "mac_studio_output_muted": true,
+    "capture_running": false,
+    "capture_outbox_retained_frames": 0
+  }
+}
