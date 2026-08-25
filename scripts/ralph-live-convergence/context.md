@@ -26,15 +26,24 @@
 
 ## Current state
 
-(2026-08-25, after iteration 3)
+(2026-08-25, after iteration 4)
 
-- Deployed dev stack up: `web_cli` (pid ~32906) at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 82706, restarted 2026-08-25 00:43:48 onto campaign
+  code** (repo working tree @ `e291624`) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
-  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Service currently runs pre-campaign
-  code; restart with campaign code is required before end-to-end paired reruns (record it).
+  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after
+  the restart (`evidence/.../M0d-paired-reacquisition/restart-{pre,post}.txt`) — the build
+  changed and nothing else. Restart again after any production change, and record it.
 - Paired baseline (deployed stack, 2026-08-24): trio FILE WER .1039 / TBSA .9106 / DER .1021 /
   spk_acc .8979 vs LIVE .1999 / .8384 / .1764 / .8236; 5-min keyu FILE .0506/.0579(DER) vs
   LIVE .1464/.1315. Artifacts + drivers: `prototypes/live-file-gap-baseline-20260824/`.
+  Re-acquired on campaign code 2026-08-25 (M0d): file arms byte-identical; live per case
+  bill WER .2727 / DER .2237, milei .1440 / .1945, keyu .1942 / .1122; 5-min live
+  .1464-.1477 / DER .1130-.1100. Two named deltas: bill live WER .2614 → .2727 is one decode
+  flip (one extra published segment), and 5-min live DER .1315 → .1130 is real — the M0a fix
+  restored `revised_transcript`, so the scored hypothesis finally carries the label revisions
+  the session applied. **The PRD's preregistered comparators (.2614 / .1440 / .1942) stand
+  unchanged**; the re-acquisition explains their noise, it does not move them.
 - Root causes (measured, `prototypes/live-file-gap-{context,emptyspan,identity,timing}/NOTES.md`):
   seam severance dominates (boundary WER .483 vs interior .082≈file); 5/80 spans are parser
   discards of correct words (missing closing timestamp; salvage ceiling = 1/3 of coverage gap
@@ -100,7 +109,45 @@
   report both (plan §1.3 G4).
 - Evaluator v2 is a **prototype**: no production module reads it, and M1-M4 gates still name the
   deployed metrics. Promotion is a later, separately reviewed change.
-- Rest of the ladder (M0d, M1-M5) unimplemented; working tree carries the plan, evidence
+- **M0d MEASURED (iteration 4), 4 of 5 gates pass; M0 does NOT close.** Four sequential passes
+  (trio ×2, 5-minute ×2) on the restarted service, then
+  `verify_paired_reacquisition.py`. G1 file-byte-identical PASS (5/5 cases × 2 runs);
+  G3 5-minute terminal snapshot shows the revisions `identity_finalized` reports PASS
+  (A 2==2, B 1==1; baseline 0 vs 2 — the M0a defect retired); G4 service-runs-campaign-code
+  PASS (240/240 `canonical_processed` carry `canonical_decode_generated_tokens`, baseline
+  control 0/115); G5 single provenance PASS. **G2 fresh-vs-fresh live hash-identical FAILS on
+  the 5-minute case** (all four 60 s cases pass). Evidence:
+  `evidence/live-convergence-0824/M0d-paired-reacquisition/`.
+- **G2's cause is measured, external, and has no in-repo lever: the deployed decoder is not a
+  function.** `probe_decode_determinism.py` sends the identical multipart greedy request 12×
+  through the same `VllmRunner` the service uses: after a ~3-minute idle gap, 12 requests gave
+  2 distinct outputs (request 0: 20 tokens; 1-11: 37); repeated immediately while warm, 12/12
+  identical. Live issues ~24 small requests per minute of audio where file issues one large
+  one, which is exactly why file arms reproduce byte-for-byte and live arms do not. The 4070 Ti
+  host is read-only by PRD constraint; greedy, model and prompt are frozen. G2 as worded is not
+  achievable. Its M0(d) row stays **unsigned pending an owner ruling** (PRD: "a hard gate
+  failure leaves its row unsigned") — the campaign is not stopped, because nothing in the
+  convergence approach is refuted by a 1-in-115 decode flip.
+- Endpointing is deterministic and that is now proven, not assumed: `diff_live_runs.py` finds
+  **zero differing spans** across all three trio pairs, and on the 5-minute pair 114/114 span
+  bounds identical with the earliest divergence at exactly one span (55: 24 vs 26 generated
+  tokens). The other 51 differing spans are pure identity cascade (49× `identity_revision_version`,
+  2× `identity_status` abstain→prepared) — one decode flip changed the parsed speaker turns,
+  hence the embedding evidence, hence the album, producing 3 speakers/2 revisions vs 4/1.
+- **F3 (new defect, top candidate): every 5-minute replay trace is truncated, the checked-in
+  baseline included.** `bounds.max_events = 1000` is a `deque(maxlen=…)` at
+  `app/live_service_runtime.py:499`, and `live_service_replay.py:446` drains once with
+  `since_seq=0` *after* the session ends. A 5-minute session emits ~1600 events, so the first
+  ~30 s is evicted before anyone reads it: traces start at frame 60 / span 13 and hold 114 of
+  127 spans. Metrics are unaffected (the hypothesis comes from the terminal snapshot), but every
+  span-level analysis of the 5-minute case reads a truncated window — M1's salvage corpus, M4's
+  sample accounting (G10), and `_canonical_decode_rtf_evaluation`.
+- **F4: extent jitter is provider-side and survives identical decodes.** On the trio, where every
+  span and every decode matched, published boundaries still moved ±10-20 ms (one webrtcvad
+  frame) on 3/26 keyu and 6/32 jamie segments, and one jamie segment changed speaker label. WER
+  is blind to it; DER/TSA/coverage are not. A ±.002 per-case DER difference is inside this noise
+  until the floor is quantified.
+- Rest of the ladder (M1-M5) unimplemented; working tree carries the plan, evidence
   prototypes, and this scaffold.
 
 ## Validation
@@ -125,6 +172,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # M0c evaluator v2 gates (exit 0 = all four A0.3 gates pass)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/compare_evaluators.py --output /tmp/v2.json
+# M0d four paired passes (detached; ~19 min) then the gates
+prototypes/streaming-diarization/live-convergence/run_paired_reacquisition.sh /tmp/m0d-<stamp>
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_paired_reacquisition.py --fresh-root /tmp/m0d-<stamp>
+# where do two live runs of the same audio first disagree? (also flags a truncated trace)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/diff_live_runs.py <trace-A> <trace-B>
+# is the deployed decoder bit-reproducible for an identical greedy request?
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/probe_decode_determinism.py --repeats 12
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -139,9 +196,22 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    by design.
 3. ~~**M0c evaluator v2 prototype**~~ — DONE iteration 3 (see Current state). Promotion into
    `moss_transcribe_diarize/` is deliberately NOT done and is not an M0 item.
-4. **M0d paired re-acquisition** (needs service restart onto campaign branch first — record it).
-   Validate: byte-identical file arms; hash-identical fresh live pairs; 5-min revisions visible.
-   This is the last open M0 item; M0 closes with it.
+4. ~~**M0d paired re-acquisition**~~ — MEASURED iteration 4, 4 of 5 gates pass. G2 is the one
+   open item and it needs an owner ruling, not more code (see Current state). Do NOT re-run the
+   four passes to try for a green G2; the cause is an external decoder and re-rolling until it
+   passes would be tuning the instrument to the answer.
+4b. **F3 trace truncation** (NEW, highest-leverage open item). `bounds.max_events = 1000`
+   (`app/live_service_runtime.py:499`) silently drops the first ~30 s of every 5-minute session's
+   event stream because `live_service_replay.py:446` drains once with `since_seq=0` after the
+   session ends. Fix belongs on the replay client — drain incrementally during the session using
+   the `since_seq` it already has — not by raising the bound, which only moves the cliff. Gate:
+   a fresh 5-minute trace starts at frame 0 / span 0 and holds all 127 spans; 60-second traces
+   byte-unchanged; file mode untouched (no production module changes). M1's salvage corpus and
+   M4's G10 accounting both read this stream, so it comes first.
+4c. **Noise floor for per-case gates** (do before M2/M3 gate readings, not before M1). N>=4
+   repeats of the 5-minute pair to turn "the 5-minute case can flip" into a spread. Needed
+   because M1 gates "no per-case WER regression" and M3 gates per-case DER, and F4 shows
+   extents move +-10-20 ms even when every span and decode match.
 5. **M1 salvage**: port `prototypes/live-file-gap-emptyspan/` P1v policy into
    `classify_live_transcript` per plan M1 seams; table-driven tests from `out/d3.json`.
    Amended PRD adds: run the §9.1 O1-vs-O2 comparison first (prefer O1 on a full-corpus

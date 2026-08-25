@@ -1,0 +1,30 @@
+{
+  "span_bounds_identical": true,
+  "span_count": [
+    24,
+    24
+  ],
+  "canonical_spans_compared": 24,
+  "canonical_spans_differing": 0,
+  "earliest_differing_span": null,
+  "differing_field_tally": [],
+  "terminal_label_revision_version": [
+    0,
+    0
+  ],
+  "trace_truncation": {
+    "/tmp/m0d-iter4-20260825-005440/trio-A/lex_bill_ackman/live/run-001/trace.jsonl": {
+      "event_count": 220,
+      "first_frame_sequence": 0,
+      "first_span_id": 0,
+      "prefix_evicted": false
+    },
+    "/tmp/m0d-iter4-20260825-005440/trio-B/lex_bill_ackman/live/run-001/trace.jsonl": {
+      "event_count": 220,
+      "first_frame_sequence": 0,
+      "first_span_id": 0,
+      "prefix_evicted": false
+    }
+  },
+  "differing_spans": []
+}

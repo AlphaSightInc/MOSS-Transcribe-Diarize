@@ -1,0 +1,31 @@
+[00:55:25] provenance: {"base_url": "https://127.0.0.1:7861", "vllm_base_url": "http://127.0.0.1:18000/v1", "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize", "windowing": {"window_seconds": 150, "stride_seconds": 120}, "live_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b", "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265", "decoding": "greedy", "max_new_tokens": 12000, "timestamp": "2026-08-25T00:55:25-0400"}
+[00:55:25] case lex_bill_ackman (primary) refs=5 ref_speech_s=60.0 order=('file', 'live')
+[00:55:28]   file tbsa=0.9188 wer=0.1591 cov=0.9522 tsa=0.9381 der=0.0755 spk_acc=0.9245
+[00:56:29]   live tbsa=0.7983 wer=0.2727 cov=0.8457 tsa=0.8012 der=0.2237 spk_acc=0.7763
+[00:56:29] case lex_javier_milei (primary) refs=2 ref_speech_s=60.0 order=('live', 'file')
+[00:57:29]   live tbsa=0.8415 wer=0.1440 cov=0.8460 tsa=0.8284 der=0.1945 spk_acc=0.8055
+[00:57:32]   file tbsa=0.8812 wer=0.0880 cov=0.8710 tsa=0.8710 der=0.1518 spk_acc=0.8482
+[00:57:32] case lex_keyu_jin (primary) refs=4 ref_speech_s=60.0 order=('file', 'live')
+[00:57:34]   file tbsa=0.9317 wer=0.0647 cov=0.9364 tsa=0.9254 der=0.0790 spk_acc=0.9210
+[00:58:34]   live tbsa=0.8725 wer=0.1942 cov=0.9018 tsa=0.8886 der=0.1122 spk_acc=0.8878
+[00:58:34] case acquired_jamie_dimon (secondary) refs=9 ref_speech_s=12.3 order=('live', 'file')
+[00:59:35]   live tbsa=0.6580 wer=0.9661 cov=0.8772 tsa=0.8564 der=3.4045 spk_acc=0.7447
+[00:59:38]   file tbsa=0.7165 wer=0.8475 cov=0.9098 tsa=0.8997 der=3.8447 spk_acc=0.7111
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/remeasure_live_vs_file.py", line 309, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/remeasure_live_vs_file.py", line 221, in main
+    ref_transcript = lsa.load_reference_jsonl(reference)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/live_speaker_accuracy.py", line 64, in load_reference_jsonl
+    return tuple(
+           ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/live_speaker_accuracy.py", line 65, in <genexpr>
+    _reference_segment(record, line_number)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/live_speaker_accuracy.py", line 357, in _reference_segment
+    text = _required_text(record, "text", line_number)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/live_speaker_accuracy.py", line 606, in _required_text
+    raise ValueError(f"reference record {line_number} field {key} must be non-empty")
+ValueError: reference record 6 field text must be non-empty

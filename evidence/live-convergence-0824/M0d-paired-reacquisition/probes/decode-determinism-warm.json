@@ -1,0 +1,109 @@
+{
+  "audio": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
+  "span": {
+    "start_sample": 760000,
+    "end_sample": 800000
+  },
+  "request_wav_sha256": "5c8b4af46610888de3f78e6243d7fb0ca8cc00758ee3d6f6f13d261cb4d8d338",
+  "repeats": 12,
+  "distinct_outputs": 1,
+  "output_histogram": [
+    [
+      "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      12
+    ]
+  ],
+  "token_counts": [
+    [
+      37,
+      12
+    ]
+  ],
+  "deterministic": true,
+  "attempts": [
+    {
+      "index": 0,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 1,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 2,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 3,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 4,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 5,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 6,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 7,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 8,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 9,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 10,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    },
+    {
+      "index": 11,
+      "generated_tokens": 37,
+      "prompt_len": 150,
+      "text_sha256": "137ee60f40e5baff7abf56d73dc8a1ac85c14b0986a3bc66b2d30c299ba832e4",
+      "text_length": 53
+    }
+  ]
+}

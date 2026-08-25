@@ -1,0 +1,553 @@
+{
+  "fresh_root": "/private/tmp/m0d-iter4-20260825-005440",
+  "baseline": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824",
+  "gates": {
+    "G1_file_byte_identical_to_baseline": {
+      "pass": true,
+      "per_case": {
+        "lex_bill_ackman": {
+          "baseline_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "A": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "B": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "A_matches_baseline": true,
+          "B_matches_baseline": true,
+          "A_matches_B": true
+        },
+        "lex_javier_milei": {
+          "baseline_sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "A": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "B": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "A_matches_baseline": true,
+          "B_matches_baseline": true,
+          "A_matches_B": true
+        },
+        "lex_keyu_jin": {
+          "baseline_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "A": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "B": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "A_matches_baseline": true,
+          "B_matches_baseline": true,
+          "A_matches_B": true
+        },
+        "acquired_jamie_dimon": {
+          "baseline_sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "A": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "B": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "A_matches_baseline": true,
+          "B_matches_baseline": true,
+          "A_matches_B": true
+        },
+        "keyu-5m": {
+          "baseline_sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "A": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "B": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "A_matches_baseline": true,
+          "B_matches_baseline": true,
+          "A_matches_B": true
+        }
+      }
+    },
+    "G2_live_transcript_reproducible": {
+      "pass": false,
+      "per_case": {
+        "lex_bill_ackman": {
+          "A_transcript_sha256": "ddd1000becbd64c40771736e1fbc508342b04ee3388212fb68894d3cad4f7356",
+          "B_transcript_sha256": "ddd1000becbd64c40771736e1fbc508342b04ee3388212fb68894d3cad4f7356",
+          "transcript_identical": true,
+          "full_hypothesis_identical": true,
+          "A_rows": 31,
+          "B_rows": 31
+        },
+        "lex_javier_milei": {
+          "A_transcript_sha256": "cfc844159a4233bf4b0b760619f24d24b8ec70abbffce1fdae081700df05cc8d",
+          "B_transcript_sha256": "cfc844159a4233bf4b0b760619f24d24b8ec70abbffce1fdae081700df05cc8d",
+          "transcript_identical": true,
+          "full_hypothesis_identical": true,
+          "A_rows": 28,
+          "B_rows": 28
+        },
+        "lex_keyu_jin": {
+          "A_transcript_sha256": "2d2e137399f9ee86b4af8a4260afdb42c69d97639ce641d57865678367151bf4",
+          "B_transcript_sha256": "2d2e137399f9ee86b4af8a4260afdb42c69d97639ce641d57865678367151bf4",
+          "transcript_identical": true,
+          "full_hypothesis_identical": false,
+          "A_rows": 26,
+          "B_rows": 26
+        },
+        "acquired_jamie_dimon": {
+          "A_transcript_sha256": "0a071a54f69392bc9258fea477689102f35887a521f303f302e0bb24106071db",
+          "B_transcript_sha256": "0a071a54f69392bc9258fea477689102f35887a521f303f302e0bb24106071db",
+          "transcript_identical": true,
+          "full_hypothesis_identical": false,
+          "A_rows": 32,
+          "B_rows": 32
+        },
+        "keyu-5m": {
+          "A_transcript_sha256": "06f9e635c8c24ab748558b670c549f644e82451311806563d163279b6d881259",
+          "B_transcript_sha256": "3644cd18b9d8ca25f46007c8301db5afdc70e40021f2b5a3742464c919a53bae",
+          "transcript_identical": false,
+          "full_hypothesis_identical": false,
+          "A_rows": 127,
+          "B_rows": 127
+        }
+      }
+    },
+    "G3_terminal_snapshot_shows_revisions": {
+      "pass": true,
+      "vacuous_runs": [],
+      "note": "baseline is expected to DISAGREE (that is the M0a defect this re-acquisition retires)",
+      "per_run": {
+        "A": {
+          "identity_finalized_revision_version": 2,
+          "terminal_label_revision_version": 2,
+          "agrees": true,
+          "nonzero_revisions": true
+        },
+        "B": {
+          "identity_finalized_revision_version": 1,
+          "terminal_label_revision_version": 1,
+          "agrees": true,
+          "nonzero_revisions": true
+        },
+        "baseline": {
+          "identity_finalized_revision_version": 2,
+          "terminal_label_revision_version": 0,
+          "agrees": false,
+          "nonzero_revisions": true
+        }
+      }
+    },
+    "G4_service_runs_campaign_code": {
+      "pass": true,
+      "baseline_control": {
+        "canonical_processed": 115,
+        "with_token_field": 0,
+        "expected": "0 -- the pre-campaign build cannot emit this field"
+      },
+      "per_run": {
+        "lex_bill_ackman/A": {
+          "canonical_processed": 24,
+          "with_token_field": 24,
+          "complete": true
+        },
+        "lex_bill_ackman/B": {
+          "canonical_processed": 24,
+          "with_token_field": 24,
+          "complete": true
+        },
+        "lex_javier_milei/A": {
+          "canonical_processed": 32,
+          "with_token_field": 32,
+          "complete": true
+        },
+        "lex_javier_milei/B": {
+          "canonical_processed": 32,
+          "with_token_field": 32,
+          "complete": true
+        },
+        "lex_keyu_jin/A": {
+          "canonical_processed": 24,
+          "with_token_field": 24,
+          "complete": true
+        },
+        "lex_keyu_jin/B": {
+          "canonical_processed": 24,
+          "with_token_field": 24,
+          "complete": true
+        },
+        "acquired_jamie_dimon/A": {
+          "canonical_processed": 27,
+          "with_token_field": 27,
+          "complete": true
+        },
+        "acquired_jamie_dimon/B": {
+          "canonical_processed": 27,
+          "with_token_field": 27,
+          "complete": true
+        },
+        "keyu-5m/A": {
+          "canonical_processed": 115,
+          "with_token_field": 115,
+          "complete": true
+        },
+        "keyu-5m/B": {
+          "canonical_processed": 115,
+          "with_token_field": 115,
+          "complete": true
+        }
+      }
+    },
+    "G5_single_provenance": {
+      "pass": true,
+      "runs": [
+        "trio-A",
+        "trio-B"
+      ],
+      "matches_baseline_provenance": true,
+      "provenance": [
+        "{\"combined_config_hash\": \"431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265\", \"decoding\": \"greedy\", \"live_source_revision\": \"cc8f778a89326ee18a3c362d886bb9abdd63646b\", \"max_new_tokens\": 12000, \"model\": \"OpenMOSS-Team/MOSS-Transcribe-Diarize\", \"windowing\": {\"stride_seconds\": 120, \"window_seconds\": 150}}"
+      ]
+    }
+  },
+  "detail": {
+    "trio_cases": [
+      "lex_bill_ackman",
+      "lex_javier_milei",
+      "lex_keyu_jin",
+      "acquired_jamie_dimon"
+    ],
+    "arms": {
+      "lex_bill_ackman": {
+        "file": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_bill_ackman/file-hypothesis.jsonl",
+            "sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "transcript_sha256": "427c28260b98d1401b9abf91171511a622cd7db6939c3c038cc7c6fcf1f29208",
+            "rows": 18
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_bill_ackman/file-hypothesis.jsonl",
+            "sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "transcript_sha256": "427c28260b98d1401b9abf91171511a622cd7db6939c3c038cc7c6fcf1f29208",
+            "rows": 18
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_bill_ackman/file-hypothesis.jsonl",
+            "sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "transcript_sha256": "427c28260b98d1401b9abf91171511a622cd7db6939c3c038cc7c6fcf1f29208",
+            "rows": 18
+          }
+        },
+        "live": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_bill_ackman/live-hypothesis.jsonl",
+            "sha256": "c59ae6be44e58546ca3b334f55a99d576467bba9804be8193fcd1a01af9bf5c3",
+            "transcript_sha256": "ddd1000becbd64c40771736e1fbc508342b04ee3388212fb68894d3cad4f7356",
+            "rows": 31
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_bill_ackman/live-hypothesis.jsonl",
+            "sha256": "c59ae6be44e58546ca3b334f55a99d576467bba9804be8193fcd1a01af9bf5c3",
+            "transcript_sha256": "ddd1000becbd64c40771736e1fbc508342b04ee3388212fb68894d3cad4f7356",
+            "rows": 31
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_bill_ackman/live-hypothesis.jsonl",
+            "sha256": "2cecfa178626d38d198bb5458f0dc14b16d1f1faffee7f2154dbd0791d0c2c2b",
+            "transcript_sha256": "818e0e01cd1f195118e56540772b9a3fb01ba2b992373172d2d5adcd067c7ea2",
+            "rows": 30
+          }
+        }
+      },
+      "lex_javier_milei": {
+        "file": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_javier_milei/file-hypothesis.jsonl",
+            "sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+            "transcript_sha256": "bccbb2046109af83823df6bdbcd774553f6d9bcb18f634ad1d651f9f597fa0bc",
+            "rows": 20
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_javier_milei/file-hypothesis.jsonl",
+            "sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+            "transcript_sha256": "bccbb2046109af83823df6bdbcd774553f6d9bcb18f634ad1d651f9f597fa0bc",
+            "rows": 20
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_javier_milei/file-hypothesis.jsonl",
+            "sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+            "transcript_sha256": "bccbb2046109af83823df6bdbcd774553f6d9bcb18f634ad1d651f9f597fa0bc",
+            "rows": 20
+          }
+        },
+        "live": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_javier_milei/live-hypothesis.jsonl",
+            "sha256": "b6855cf95a71b2bf5dc65956f4c8386fb5f53cd81bf80aa1f11daf266be65325",
+            "transcript_sha256": "cfc844159a4233bf4b0b760619f24d24b8ec70abbffce1fdae081700df05cc8d",
+            "rows": 28
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_javier_milei/live-hypothesis.jsonl",
+            "sha256": "b6855cf95a71b2bf5dc65956f4c8386fb5f53cd81bf80aa1f11daf266be65325",
+            "transcript_sha256": "cfc844159a4233bf4b0b760619f24d24b8ec70abbffce1fdae081700df05cc8d",
+            "rows": 28
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_javier_milei/live-hypothesis.jsonl",
+            "sha256": "9cf79b7e27a9034559bbaf8f890cba677d5fe84becd9bc02d90f6d8e5b88e0a8",
+            "transcript_sha256": "cfc844159a4233bf4b0b760619f24d24b8ec70abbffce1fdae081700df05cc8d",
+            "rows": 28
+          }
+        }
+      },
+      "lex_keyu_jin": {
+        "file": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_keyu_jin/file-hypothesis.jsonl",
+            "sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "transcript_sha256": "6d1e4221878e0351040c71e7cb8a50e3f4f5ba157c504ae38a1fde07ff1ac7d6",
+            "rows": 10
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_keyu_jin/file-hypothesis.jsonl",
+            "sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "transcript_sha256": "6d1e4221878e0351040c71e7cb8a50e3f4f5ba157c504ae38a1fde07ff1ac7d6",
+            "rows": 10
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_keyu_jin/file-hypothesis.jsonl",
+            "sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "transcript_sha256": "6d1e4221878e0351040c71e7cb8a50e3f4f5ba157c504ae38a1fde07ff1ac7d6",
+            "rows": 10
+          }
+        },
+        "live": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/lex_keyu_jin/live-hypothesis.jsonl",
+            "sha256": "5bfec81d52d0e379a24cf9b62e4acf21a5f8b1c702b75f82f47ae1a3f92978ac",
+            "transcript_sha256": "2d2e137399f9ee86b4af8a4260afdb42c69d97639ce641d57865678367151bf4",
+            "rows": 26
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/lex_keyu_jin/live-hypothesis.jsonl",
+            "sha256": "fec31e5d3423689626bb91a618eb1fefaaff21ce2887a90f04ce7400b7e324a1",
+            "transcript_sha256": "2d2e137399f9ee86b4af8a4260afdb42c69d97639ce641d57865678367151bf4",
+            "rows": 26
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/lex_keyu_jin/live-hypothesis.jsonl",
+            "sha256": "4be39c09c63d3b66779cb39008f9e2da6bde988c482ee94d016e125e67995709",
+            "transcript_sha256": "2d2e137399f9ee86b4af8a4260afdb42c69d97639ce641d57865678367151bf4",
+            "rows": 26
+          }
+        }
+      },
+      "acquired_jamie_dimon": {
+        "file": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/acquired_jamie_dimon/file-hypothesis.jsonl",
+            "sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+            "transcript_sha256": "f612d28b3fd473035d50b3e7b3e61153558771f5a12cb43055980f938c4f0757",
+            "rows": 17
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/acquired_jamie_dimon/file-hypothesis.jsonl",
+            "sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+            "transcript_sha256": "f612d28b3fd473035d50b3e7b3e61153558771f5a12cb43055980f938c4f0757",
+            "rows": 17
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/acquired_jamie_dimon/file-hypothesis.jsonl",
+            "sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+            "transcript_sha256": "f612d28b3fd473035d50b3e7b3e61153558771f5a12cb43055980f938c4f0757",
+            "rows": 17
+          }
+        },
+        "live": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-A/acquired_jamie_dimon/live-hypothesis.jsonl",
+            "sha256": "049cc7e51ab9bf602ce4c6c158c1d0b5c8dd1ec0b57f6a6ade408fe65e2d8445",
+            "transcript_sha256": "0a071a54f69392bc9258fea477689102f35887a521f303f302e0bb24106071db",
+            "rows": 32
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/trio-B/acquired_jamie_dimon/live-hypothesis.jsonl",
+            "sha256": "50e05819929377e0f47fc726fd56dd389a89dfa4fc2caa52f6e606f9b66da28b",
+            "transcript_sha256": "0a071a54f69392bc9258fea477689102f35887a521f303f302e0bb24106071db",
+            "rows": 32
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/trio-60s/acquired_jamie_dimon/live-hypothesis.jsonl",
+            "sha256": "1ee0e269c89d487ff18a994828be0bcc9841116d9937c74affa5d94b857f4b89",
+            "transcript_sha256": "0a071a54f69392bc9258fea477689102f35887a521f303f302e0bb24106071db",
+            "rows": 32
+          }
+        }
+      },
+      "keyu-5m": {
+        "file": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/keyu5m-A/file-hypothesis.jsonl",
+            "sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+            "transcript_sha256": "f9ee3c9f162cd233799f0c67b7e1d8f21dae40d58c50534f1bb79187364b45c1",
+            "rows": 67
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/keyu5m-B/file-hypothesis.jsonl",
+            "sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+            "transcript_sha256": "f9ee3c9f162cd233799f0c67b7e1d8f21dae40d58c50534f1bb79187364b45c1",
+            "rows": 67
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/keyu-5m/file-hypothesis.jsonl",
+            "sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+            "transcript_sha256": "f9ee3c9f162cd233799f0c67b7e1d8f21dae40d58c50534f1bb79187364b45c1",
+            "rows": 67
+          }
+        },
+        "live": {
+          "A": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/keyu5m-A/live-hypothesis.jsonl",
+            "sha256": "10c098e6a0cd83d164ae5227d1f50d3e3a38dd8bdae610c668cf23ab021796ae",
+            "transcript_sha256": "06f9e635c8c24ab748558b670c549f644e82451311806563d163279b6d881259",
+            "rows": 127
+          },
+          "B": {
+            "path": "/private/tmp/m0d-iter4-20260825-005440/keyu5m-B/live-hypothesis.jsonl",
+            "sha256": "fed66487bcb48462b8edfb98306156f2735d1a8674d2e5535bf61930c43e6235",
+            "transcript_sha256": "3644cd18b9d8ca25f46007c8301db5afdc70e40021f2b5a3742464c919a53bae",
+            "rows": 127
+          },
+          "baseline": {
+            "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-baseline-20260824/keyu-5m/live-hypothesis.jsonl",
+            "sha256": "3c0c6115663c4d07b2e3ebc738a13b87d2e494bbec8ca4a01f39c1eb823a0a43",
+            "transcript_sha256": "06f9e635c8c24ab748558b670c549f644e82451311806563d163279b6d881259",
+            "rows": 127
+          }
+        }
+      }
+    },
+    "provenance": {
+      "trio-A": {
+        "base_url": "https://127.0.0.1:7861",
+        "vllm_base_url": "http://127.0.0.1:18000/v1",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "windowing": {
+          "window_seconds": 150,
+          "stride_seconds": 120
+        },
+        "live_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+        "decoding": "greedy",
+        "max_new_tokens": 12000,
+        "timestamp": "2026-08-25T00:55:25-0400"
+      },
+      "trio-B": {
+        "base_url": "https://127.0.0.1:7861",
+        "vllm_base_url": "http://127.0.0.1:18000/v1",
+        "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "windowing": {
+          "window_seconds": 150,
+          "stride_seconds": 120
+        },
+        "live_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+        "decoding": "greedy",
+        "max_new_tokens": 12000,
+        "timestamp": "2026-08-25T00:59:41-0400"
+      }
+    },
+    "traces": {
+      "lex_bill_ackman": {
+        "A": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 24,
+          "canonical_processed_with_token_field": 24,
+          "canonical_decode_generated_tokens_total": 753
+        },
+        "B": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 24,
+          "canonical_processed_with_token_field": 24,
+          "canonical_decode_generated_tokens_total": 753
+        }
+      },
+      "lex_javier_milei": {
+        "A": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 32,
+          "canonical_processed_with_token_field": 32,
+          "canonical_decode_generated_tokens_total": 706
+        },
+        "B": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 32,
+          "canonical_processed_with_token_field": 32,
+          "canonical_decode_generated_tokens_total": 706
+        }
+      },
+      "lex_keyu_jin": {
+        "A": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 24,
+          "canonical_processed_with_token_field": 24,
+          "canonical_decode_generated_tokens_total": 621
+        },
+        "B": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 0,
+          "identity_finalized_count": 1,
+          "canonical_processed": 24,
+          "canonical_processed_with_token_field": 24,
+          "canonical_decode_generated_tokens_total": 621
+        }
+      },
+      "acquired_jamie_dimon": {
+        "A": {
+          "exists": true,
+          "terminal_label_revision_version": 1,
+          "identity_finalized_revision_version": 1,
+          "identity_finalized_count": 1,
+          "canonical_processed": 27,
+          "canonical_processed_with_token_field": 27,
+          "canonical_decode_generated_tokens_total": 803
+        },
+        "B": {
+          "exists": true,
+          "terminal_label_revision_version": 1,
+          "identity_finalized_revision_version": 1,
+          "identity_finalized_count": 1,
+          "canonical_processed": 27,
+          "canonical_processed_with_token_field": 27,
+          "canonical_decode_generated_tokens_total": 803
+        }
+      },
+      "keyu-5m": {
+        "A": {
+          "exists": true,
+          "terminal_label_revision_version": 2,
+          "identity_finalized_revision_version": 2,
+          "identity_finalized_count": 1,
+          "canonical_processed": 115,
+          "canonical_processed_with_token_field": 115,
+          "canonical_decode_generated_tokens_total": 2890
+        },
+        "B": {
+          "exists": true,
+          "terminal_label_revision_version": 1,
+          "identity_finalized_revision_version": 1,
+          "identity_finalized_count": 1,
+          "canonical_processed": 115,
+          "canonical_processed_with_token_field": 115,
+          "canonical_decode_generated_tokens_total": 2892
+        },
+        "baseline": {
+          "exists": true,
+          "terminal_label_revision_version": 0,
+          "identity_finalized_revision_version": 2,
+          "identity_finalized_count": 1,
+          "canonical_processed": 115,
+          "canonical_processed_with_token_field": 0,
+          "canonical_decode_generated_tokens_total": 0
+        }
+      }
+    }
+  }
+}

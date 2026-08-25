@@ -1,0 +1,5 @@
+[01:03:56] refs=10 speech_s=300.0
+[01:04:08] file tbsa=0.9470 wer=0.0506 cov=0.9521 der=0.0579 spk=0.9421
+[01:09:09] live tbsa=0.8863 wer=0.1464 cov=0.9084 der=0.1130 spk=0.8870
+[01:09:09] live meta: {"failure": null, "wall_s": 300.0, "span_reasons": {"hard_cap": 105, "end_silence": 3, "leading_silence": 6}, "spans_empty": 6, "segments": 127, "speakers": ["S00", "S01", "S02"], "label_revision_version": 2}
+[01:09:09] RESULTS /private/tmp/m0d-iter4-20260825-005440/keyu5m-A/results.json

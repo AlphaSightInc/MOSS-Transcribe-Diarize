@@ -1,0 +1,140 @@
+{
+  "case": "5m-lex-keyu-jin",
+  "results": {
+    "file": {
+      "meta": {
+        "job_id": "bcf47d64bbe4",
+        "status": "waiting_review",
+        "wall_s": 12.2,
+        "segments": 67,
+        "speakers": [
+          "S01",
+          "S02"
+        ]
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.947018,
+          "text_speaker_accuracy": 0.941083,
+          "text_coverage": 0.952109,
+          "wer": 0.050616,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          }
+        },
+        "diarization": {
+          "der": 0.057933,
+          "miss": 0.0478,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.010133,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.942067,
+          "reference_coverage": 0.9522,
+          "matched_speaker_seconds": 282.62,
+          "covered_reference_seconds": 285.66,
+          "reference_seconds": 300.0,
+          "hypothesis_seconds": 285.66,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 2,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Keyu Jin": 0.940094,
+            "Lex Fridman": 0.946818
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.9522,
+          "reference_activity_seconds": 300.0,
+          "hypothesis_activity_seconds": 285.66,
+          "true_positive_activity_seconds": 285.66,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 14.34,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 14.34,
+          "confused_speaker_seconds": 3.04,
+          "diarization_error_rate": 0.057933
+        }
+      }
+    },
+    "live": {
+      "meta": {
+        "failure": null,
+        "wall_s": 300.0,
+        "span_reasons": {
+          "hard_cap": 105,
+          "end_silence": 3,
+          "leading_silence": 6
+        },
+        "spans_empty": 6,
+        "segments": 127,
+        "speakers": [
+          "S00",
+          "S01",
+          "S02"
+        ],
+        "label_revision_version": 2
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.886347,
+          "text_speaker_accuracy": 0.887461,
+          "text_coverage": 0.908445,
+          "wer": 0.146375,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          }
+        },
+        "diarization": {
+          "der": 0.113033,
+          "miss": 0.0922,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.020833,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.886967,
+          "reference_coverage": 0.9078,
+          "matched_speaker_seconds": 266.09,
+          "covered_reference_seconds": 272.34,
+          "reference_seconds": 300.0,
+          "hypothesis_seconds": 272.34,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 3,
+          "speaker_mapping": {
+            "Keyu Jin": "S02",
+            "Lex Fridman": "S01"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Keyu Jin": 0.901557,
+            "Lex Fridman": 0.851818
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.9078,
+          "reference_activity_seconds": 300.0,
+          "hypothesis_activity_seconds": 272.34,
+          "true_positive_activity_seconds": 272.34,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 27.66,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 27.66,
+          "confused_speaker_seconds": 6.25,
+          "diarization_error_rate": 0.113033
+        }
+      }
+    }
+  }
+}

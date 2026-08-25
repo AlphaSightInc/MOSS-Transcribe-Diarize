@@ -199,3 +199,86 @@ before relaunch.
   provenance; gates are byte-identical file arms vs the checked-in baseline, hash-identical
   fresh-vs-fresh live transcripts, and the 5-minute terminal snapshot showing the 2 revisions its
   identity_finalized event reports.
+
+2026-08-25 iteration 4 (run 20260825-042645-70858) - M0d: paired re-acquisition on campaign code.
+- Target: context.md candidate 4 / PRD M0(d), the last open M0 item. Telemetry iteration 3 had
+  restarted the service onto campaign code and written the verifier, then died mid-measurement
+  twice (background jobs do not survive agent exit). This iteration ran the measurement to
+  completion and evaluated the gates.
+- Files added:
+  prototypes/streaming-diarization/live-convergence/run_paired_reacquisition.sh   (detached 4-pass driver)
+  prototypes/streaming-diarization/live-convergence/probe_decode_determinism.py   (decoder repeatability)
+  prototypes/streaming-diarization/live-convergence/diff_live_runs.py             (where two runs first disagree)
+  evidence/live-convergence-0824/M0d-paired-reacquisition/{NOTES.md,gates.json,runs/**,probes/**}
+  (edited: live-convergence/NOTES.md verdict table, scripts/ralph-live-convergence/context.md)
+- Service restart RECORDED: web_cli pid 82706, started 2026-08-25 00:43:48 local, repo working
+  tree @ e291624, same argv as the pre-campaign pid 32906. Descriptors identical before/after
+  (restart-pre.txt / restart-post.txt) -- the build changed and nothing else. Not restarted again
+  this iteration; no production module was touched.
+- Validation: 4 sequential passes 04:55:23-05:14:25Z (trio x2, 5-minute x2), one in-flight vLLM
+  request throughout, then verify_paired_reacquisition.py --fresh-root /tmp/m0d-iter4-20260825-005440
+  -> G1 PASS, G2 FAIL, G3 PASS, G4 PASS, G5 PASS ("GATE FAILURE" overall).
+  - G1 file arms byte-identical to prototypes/live-file-gap-baseline-20260824/: 5/5 cases x 2 runs
+  - G3 5-minute terminal snapshot shows the revisions identity_finalized reports: A 2==2, B 1==1
+    (baseline 0 vs 2 -- exactly the M0a defect this re-acquisition retires)
+  - G4 service runs campaign code: 240/240 canonical_processed carry canonical_decode_generated_tokens;
+    baseline control 0/115, which the pre-campaign build cannot emit
+  - G5 one provenance across runs, matching the baseline (combined_config_hash 431efb3f..., greedy, 150/120)
+  - G2 fresh-vs-fresh live transcripts hash-identical: all four 60-second cases PASS; keyu-5m FAILS
+- Numbers (fresh, campaign code): trio file WER bill .1591 / milei .0880 / keyu .0647 (byte-identical
+  to baseline); trio live A/B bill .2727/.2727 DER .2237, milei .1440/.1440 DER .1945, keyu
+  .1942/.1942 DER .1122/.1120. 5-minute file .0506 / DER .0579 (byte-identical); 5-minute live A
+  WER .1464 DER .1130 3 speakers 2 revisions, B WER .1477 DER .1100 4 speakers 1 revision.
+  Two deltas vs the checked-in baseline, both explained: bill live WER .2614 -> .2727 is one decode
+  flip (one extra published segment "You know."), and 5-minute live DER .1315 -> .1130 is real --
+  the M0a fix restored revised_transcript, so the scored hypothesis now carries the label revisions
+  the session actually applied. The PRD's preregistered comparators (.2614/.1440/.1942) are NOT
+  moved by this; they stand as written.
+- Learned:
+  - G2's cause is measured and external. probe_decode_determinism.py sends the identical multipart
+    greedy request 12x through the same VllmRunner the service uses, on the exact 2.5 s span that
+    flipped (lex_bill_ackman samples 760000-800000): after a ~3-minute idle gap, 12 requests gave
+    2 distinct outputs (request 0: 20 tokens; requests 1-11: 37 tokens); repeated immediately while
+    warm, 12/12 identical. The deployed decoder is bit-reproducible when warm and can answer
+    differently on the first request after an idle gap. Live issues ~24 small requests per minute
+    of audio where file issues one large one -- that ratio is why file arms reproduce byte-for-byte
+    and live arms do not. There is no in-repo lever: the 4070 Ti host is read-only by PRD
+    constraint, greedy/model/prompt are frozen. G2 as literally worded is not achievable.
+  - Endpointing is deterministic, now proven rather than assumed. diff_live_runs.py finds ZERO
+    differing spans across all three trio pairs, and on the 5-minute pair 114/114 span bounds
+    identical with the earliest divergence at exactly one span (55: 24 vs 26 generated tokens).
+    The other 51 differing spans are pure identity cascade (49x identity_revision_version, 2x
+    identity_status abstain->prepared): one decode flip changed the parsed speaker turns, hence
+    the embedding evidence, hence the album, producing 3 speakers/2 revisions vs 4/1. A single
+    external coin-flip is the whole root of the 5-minute irreproducibility.
+  - F3 NEW DEFECT: every 5-minute replay trace is truncated, the checked-in baseline included.
+    bounds.max_events = 1000 is a deque(maxlen=...) at app/live_service_runtime.py:499, and
+    live_service_replay.py:446 drains the stream once with since_seq=0 AFTER the session ends.
+    A 5-minute session emits ~1600 events, so the first ~30 s is evicted before anyone reads it:
+    traces start at frame 60 / span 13 and hold 114 of 127 spans. Metrics are unaffected (the
+    hypothesis is built from the terminal snapshot), but M1's salvage corpus, M4's G10 sample
+    accounting and _canonical_decode_rtf_evaluation all read a truncated window.
+  - F4: extent jitter is provider-side and survives identical decodes. On the trio, where every
+    span and every decode matched, published boundaries still moved +-10-20 ms (one webrtcvad
+    frame) on 3/26 keyu and 6/32 jamie segments, and one jamie segment changed speaker label.
+    WER is blind to this; DER/TSA/coverage are not.
+  - Operational: three earlier attempts at these passes died mid-run because their caller exited.
+    run_paired_reacquisition.sh now detaches (macOS has no setsid; nohup in a subshell) and drops
+    a DONE marker. The trio driver exits 1 on its fifth case (acquired_nfl has an empty reference
+    text field) -- pre-existing, after every promotion-denominator case is measured and written,
+    and the 2026-08-24 baseline run stopped at the same wall.
+- BLOCKED (not a campaign stop): G2 needs an OWNER RULING and its M0(d) row stays UNSIGNED per the
+  PRD's own mechanism ("a hard gate failure leaves its row unsigned"). No .stop file was created,
+  deliberately: the gate protects measurement integrity, and that integrity is intact -- file mode
+  is byte-exact, endpointing is deterministic, live text reproduces on every 60-second case, and
+  what fails is bit-equality of an external decoder that no in-repo change can make into a
+  function. Nothing in the convergence approach is refuted by a 1-in-115 decode flip. The owner's
+  options are (O1) accept G2 as satisfied by reproducible-modulo-decoder-flip with the measured
+  flip rate recorded, (O2) re-word it as a noise-floor bound instead of a hash equality, or
+  (O3) treat it as a hard stop. Do NOT re-roll the four passes hoping for a green G2; that is
+  tuning the instrument to the answer.
+- Next: F3 trace truncation (context.md candidate 4b) -- fix the replay client to drain events
+  incrementally during the session with the since_seq it already has, rather than raising the
+  bound, which only moves the cliff. Gate: a fresh 5-minute trace starts at frame 0 / span 0 and
+  holds all 127 spans, 60-second traces unchanged, no production module touched. Then M1 salvage
+  (candidate 5), whose span corpus depends on complete 5-minute event streams.
