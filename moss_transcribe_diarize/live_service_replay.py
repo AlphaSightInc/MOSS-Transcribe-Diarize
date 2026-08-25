@@ -29,6 +29,7 @@ from .app.live_service_runtime import (
     LiveServiceRuntime,
     LiveServiceSnapshot,
 )
+from .app.live_lane_contract import LiveV2Descriptor
 from .app.live_session import (
     AudioFrame,
     CanonicalCommit,
@@ -850,10 +851,19 @@ def _descriptor_from_dict(payload: dict[str, Any]) -> LiveServiceDescriptor:
         bounds=LiveServiceBounds(**payload["bounds"]),
         schema_version=int(payload.get("schema_version", 1)),
         live_protocol_version=str(payload.get("live_protocol_version", "moss-live-service.v1")),
+        live_protocol=_live_protocol_from_dict(payload.get("live_protocol")),
         sample_rate=int(payload.get("sample_rate", LIVE_SAMPLE_RATE)),
         frame_samples=int(payload.get("frame_samples", LIVE_SAMPLE_RATE)),
         feature_enabled=bool(payload.get("feature_enabled", True)),
     )
+
+
+def _live_protocol_from_dict(payload: Any) -> LiveV2Descriptor:
+    return LiveV2Descriptor() if payload is None else LiveV2Descriptor.from_dict(payload)
+
+
+def _optional_str(value: Any) -> str | None:
+    return None if value is None else str(value)
 
 
 def _failure_from_dict(payload: dict[str, Any]) -> LiveServiceFailureRecord:
@@ -906,6 +916,7 @@ def _live_snapshot_from_dict(payload: dict[str, Any]) -> LiveSnapshot:
         frozen_until_sample=int(payload["frozen_until_sample"]),
         pending_span_ids=tuple(int(item) for item in payload.get("pending_span_ids", ())),
         failure_reason=payload.get("failure_reason"),
+        label_revision_version=int(payload.get("label_revision_version", 0)),
     )
 
 
@@ -925,6 +936,7 @@ def _commit_from_dict(payload: dict[str, Any]) -> CanonicalCommit:
         transcript=str(payload["transcript"]),
         prefix_hash=str(payload["prefix_hash"]),
         identity_snapshot_version=int(payload["identity_snapshot_version"]),
+        revised_transcript=_optional_str(payload.get("revised_transcript")),
     )
 
 

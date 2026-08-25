@@ -1,0 +1,13 @@
+{
+  "decoded": {
+    "label_revision_version": 7,
+    "revised_transcript": "[0][S01]hello[2.5]"
+  },
+  "input": {
+    "label_revision_version": 7,
+    "revised_transcript": "[0][S01]hello[2.5]"
+  },
+  "question": "Does the shipped HTTP replay adapter preserve retrospective identity revisions?",
+  "revision_preserved": true
+}
+exit=0

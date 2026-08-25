@@ -8,30 +8,37 @@ import threading
 import time
 import unittest
 import wave
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass, fields, is_dataclass, replace
 from pathlib import Path
 
 from moss_transcribe_diarize import live_service_replay
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
+from moss_transcribe_diarize.app.live_lane_contract import LiveV2Capabilities, LiveV2Descriptor
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceEvent,
     LiveServiceFailureKind,
+    LiveServiceFailureRecord,
     LiveServiceIdentityCommitFailure,
     LiveServiceProviderConfigFailure,
     LiveServiceRtfFailure,
     LiveServiceRuntime,
+    LiveServiceSnapshot,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
+    CanonicalCommit,
+    FrameAck,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
+    LiveSnapshot,
+    ProvisionalSuffix,
 )
 
 
@@ -754,6 +761,166 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         finally:
             server.should_exit = True
             thread.join(timeout=5)
+
+
+class ReplayReconstructorRoundTripTest(unittest.TestCase):
+    """The replay client's reconstructors must be exact inverses of the service's `asdict`.
+
+    Every measurement this campaign makes reads a replay artifact, so a field the client
+    silently drops is a metric quietly computed on the wrong transcript -- `revised_transcript`
+    and `label_revision_version` were dropped that way, and every replayed snapshot read as
+    "never corrected". Equality alone is not enough of a guard: it only bites when the fixture
+    varies the field, so `_assert_varies_from_defaults` fails the moment a new defaulted field
+    arrives unset, which then forces the equality check to cover it too.
+    """
+
+    def test_service_snapshot_survives_json_round_trip_field_for_field(self):
+        snapshot = _rich_service_snapshot()
+        _assert_varies_from_defaults(self, snapshot)
+
+        restored = live_service_replay._snapshot_from_dict(json.loads(json.dumps(snapshot.to_dict())))
+
+        self.assertEqual(restored, snapshot)
+
+    def test_event_and_frame_ack_survive_json_round_trip_field_for_field(self):
+        event = _canonical_processed_event(seq=3, span_id=1, rtf=0.4)
+        ack = FrameAck(
+            sequence=2,
+            start_sample=400,
+            end_sample=800,
+            accepted_samples=800,
+            retained_samples=120,
+            frozen_span_ids=(0, 1),
+        )
+        _assert_varies_from_defaults(self, event)
+        _assert_varies_from_defaults(self, ack)
+
+        restored_event = live_service_replay._event_from_dict(json.loads(json.dumps(event.to_dict())))
+        restored_ack = live_service_replay._frame_ack_from_dict(json.loads(json.dumps(live_service_replay._jsonable(ack))))
+
+        self.assertEqual(restored_event, event)
+        self.assertEqual(restored_ack, ack)
+
+
+def _rich_service_snapshot() -> LiveServiceSnapshot:
+    """A snapshot whose every free field is off its default, so a dropped field cannot pass."""
+
+    descriptor = replace(
+        _descriptor(),
+        bounds=LiveServiceBounds(
+            max_frame_samples=LIVE_SAMPLE_RATE,
+            max_queue_depth=8,
+            max_retained_samples=4000,
+            max_identity_speakers=2,
+            max_events=128,
+            hard_cap_samples=40000,
+            stop_drain_deadline_seconds=2.5,
+        ),
+        live_protocol=LiveV2Descriptor(
+            capabilities=LiveV2Capabilities(
+                lanes=False,
+                binary=True,
+                idempotent_frames=False,
+                resumable=False,
+            )
+        ),
+    )
+    session = LiveSnapshot(
+        status="closed",
+        epoch=1,
+        version=9,
+        accepted_samples=40000,
+        accounted_samples=40000,
+        retained_samples=160,
+        committed_samples=39840,
+        committed_prefix_hash=_digest("prefix"),
+        identity_snapshot=LiveIdentitySnapshot(
+            version=2,
+            canonical_speakers=("speaker-0001", "speaker-0002"),
+            diagnostics=(("adopted", "speaker-0002"),),
+        ),
+        committed=(
+            CanonicalCommit(
+                span_id=0,
+                start_sample=0,
+                end_sample=39840,
+                transcript="[0][S00]hello[2.49]",
+                prefix_hash=_digest("commit"),
+                identity_snapshot_version=2,
+                revised_transcript="[0][S01]hello[2.49]",
+            ),
+        ),
+        provisional=ProvisionalSuffix(
+            generation=4,
+            start_sample=39840,
+            end_sample=40000,
+            transcript="[0][S01]there[0.01]",
+        ),
+        next_frame_sequence=3,
+        frozen_until_sample=39840,
+        pending_span_ids=(1,),
+        failure_reason="stop_drain_deadline",
+        label_revision_version=7,
+    )
+    return LiveServiceSnapshot(
+        session_id="session-round-trip",
+        descriptor=descriptor,
+        session=session,
+        pending_work_items=2,
+        terminal_failure=LiveServiceFailureRecord(
+            kind=LiveServiceFailureKind.RTF,
+            code="rtf_bound_exceeded",
+            message="canonical decode exceeded the real-time bound.",
+            retryable=True,
+            detail={"rtf": 1.4},
+        ),
+    )
+
+
+# Fields the runtime pins to one legal value in `__post_init__`: a fixture cannot vary them,
+# and a reconstructor that read the wrong one would raise rather than mis-measure.
+_PINNED_FIELDS = frozenset(
+    {
+        ("LiveServiceSnapshot", "schema_version"),
+        ("LiveServiceDescriptor", "schema_version"),
+        ("LiveServiceDescriptor", "live_protocol_version"),
+        ("LiveServiceDescriptor", "sample_rate"),
+        ("LiveServiceDescriptor", "feature_enabled"),
+        ("LiveV2Descriptor", "protocol"),
+        ("LiveV2Descriptor", "min_protocol_version"),
+        ("LiveV2Descriptor", "max_protocol_version"),
+        ("LiveServiceEvent", "schema_version"),
+    }
+)
+
+
+def _assert_varies_from_defaults(case: unittest.TestCase, instance: object, path: str = "") -> None:
+    """Fail if any defaulted field of `instance` (or a nested dataclass) still holds its default."""
+
+    label = type(instance).__name__
+    for field_info in fields(instance):
+        value = getattr(instance, field_info.name)
+        where = f"{path}{label}.{field_info.name}"
+        if (label, field_info.name) not in _PINNED_FIELDS:
+            default = field_info.default
+            if default is MISSING and field_info.default_factory is not MISSING:
+                default = field_info.default_factory()
+            if default is not MISSING:
+                case.assertNotEqual(
+                    value,
+                    default,
+                    f"{where} still holds its default; vary it so the round-trip check can see it.",
+                )
+        for nested in _nested_dataclasses(value):
+            _assert_varies_from_defaults(case, nested, path=f"{where}.")
+
+
+def _nested_dataclasses(value: object) -> list[object]:
+    if is_dataclass(value) and not isinstance(value, type):
+        return [value]
+    if isinstance(value, (tuple, list)):
+        return [item for item in value if is_dataclass(item) and not isinstance(item, type)]
+    return []
 
 
 def _canonical_processed_event(*, seq: int, span_id: int, rtf: float) -> LiveServiceEvent:

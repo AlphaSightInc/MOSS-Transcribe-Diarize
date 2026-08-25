@@ -7,8 +7,8 @@
   (the spec; **Appendix B overrides the body; Appendix A is the runbook + code map**),
   `AGENTS.md`, `docs/design-streaming-diarization.md` §2/§7.
 - Key code paths and why they matter:
-  - `moss_transcribe_diarize/live_service_replay.py:891-928` — the two reconstructors that
-    drop revision fields (M0 target); terminal-trace write at `:488`.
+  - `moss_transcribe_diarize/live_service_replay.py:~842-935` — the payload reconstructors
+    (field-complete since iteration 1; keep them so); terminal-trace write at `:488`.
   - `moss_transcribe_diarize/app/vllm_runner.py:274-278` + `app/live_adapters.py:307-311` —
     the unparseable→`""` collapse (M0 disposition, M1 salvage seam).
   - `app/live_span_bounds.py` — clamp-never-refuse precedent; M1 `classify_live_transcript` home.
@@ -24,7 +24,7 @@
 
 ## Current state
 
-(2026-08-24 night, campaign start)
+(2026-08-25, after iteration 1)
 
 - Deployed dev stack up: `web_cli` (pid ~32906) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
@@ -44,12 +44,22 @@
   stitcher → .146 (`prototypes/streaming-diarization/live-multiview-prototype/`); seam5
   refuted (worse than nothing); terminal = file exactly. Grid (§10.2) decides the production
   policy; decode volume target ≤ ~2× audio.
-- Replay-adapter defect LIVE: `verify_replay_roundtrip.py` exits 1 (M0a is unstarted).
-  All existing replay-trace snapshot revision fields are untrustworthy; `identity_finalized`
-  events are trustworthy. The 5-minute run's cadence sweep applied 2 label revisions —
-  re-acquisition after the fix must show them (M0d check).
-- Nothing of the campaign ladder is implemented yet; working tree carries the plan,
-  evidence prototypes, and this scaffold as the setup commit.
+- **M0a CLOSED (iteration 1).** `verify_replay_roundtrip.py` now exits 0. The replay client
+  dropped three fields, not two: `CanonicalCommit.revised_transcript`,
+  `LiveSnapshot.label_revision_version`, and `LiveServiceDescriptor.live_protocol` (v2
+  capabilities silently reverted to defaults). All three restored in
+  `live_service_replay.py:_commit_from_dict/_live_snapshot_from_dict/_descriptor_from_dict`;
+  `ReplayReconstructorRoundTripTest` in `tests/test_live_service_replay.py` is the tripwire
+  (JSON round-trip equality + `_assert_varies_from_defaults`, which fails on any *new*
+  defaulted field left unset, so this defect class cannot recur silently). Mutation-checked:
+  deleting any one restored line fails the test. Evidence:
+  `evidence/live-convergence-0824/M0a-replay-roundtrip/`.
+- Replay traces written **before** this fix still read as "zero revisions / never corrected";
+  `identity_finalized` events never went through these reconstructors and stay trustworthy.
+  The 5-minute run's cadence sweep applied 2 label revisions — M0d re-acquisition must show
+  them in the terminal snapshot now.
+- Rest of the ladder (M0b-M5) unimplemented; working tree carries the plan, evidence
+  prototypes, and this scaffold.
 
 ## Validation
 
@@ -72,9 +82,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/live-file-roadmap-verifica
 
 ## Candidates
 
-1. **M0a replay-adapter fix**: add the two missing fields in `_live_snapshot_from_dict` /
-   `_commit_from_dict` + field-complete asdict round-trip regression test. Evidence: reproducer
-   exits 1 today. Validate: reproducer exits 0 + `tests/test_live_service_replay.py` green.
+1. ~~**M0a replay-adapter fix**~~ — DONE iteration 1 (see Current state). Remaining M0
+   work is 0b/0c/0d below.
 2. **M0b typed disposition**: thread `EmptyTranscriptionError` variants through
    `live_adapters`/`live_coordinator` so traces distinguish empty/unparseable/refusal.
    Validate: unit test drives an unparseable payload and asserts the trace reason.

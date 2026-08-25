@@ -1,0 +1,6 @@
+# Mutation check: delete one restored line, run ReplayReconstructorRoundTripTest
+
+drop label_revision_version: rc=1 -> CAUGHT | 1 failed, 1 passed, 19 deselected in 2.19s
+drop revised_transcript: rc=1 -> CAUGHT | 1 failed, 1 passed, 19 deselected in 2.28s
+drop live_protocol: rc=1 -> CAUGHT | 1 failed, 1 passed, 19 deselected in 2.29s
+unmutated control: rc=0 | 2 passed, 19 deselected in 2.28s

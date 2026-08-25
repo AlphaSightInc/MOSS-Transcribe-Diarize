@@ -20,3 +20,35 @@ under prototypes/live-file-gap-*; replay-adapter defect reproducer exits 1; noth
 the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).
 
 [loop 20260825-030106-23237] start budget=40 agent=claude branch=ralph/live-convergence-0824
+
+## Iteration 1 - M0a replay reconstructors made field-complete
+- Target: context.md candidate 1 (M0a). PRD acceptance M0(a).
+- Files: moss_transcribe_diarize/live_service_replay.py (+12),
+  tests/test_live_service_replay.py (+169), evidence/live-convergence-0824/M0a-replay-roundtrip/,
+  scripts/ralph-live-convergence/context.md
+- Validation:
+  - prototypes/live-file-roadmap-verification/verify_replay_roundtrip.py -> exit 1 BEFORE, exit 0 AFTER
+  - pytest tests/test_live_service_replay.py -q -> 21 passed, 9 subtests
+  - pytest tests/ -q -> 978 passed, 2 skipped, 386 subtests (92 s), no regressions
+  - mutation check: deleting any one of the three restored lines fails
+    ReplayReconstructorRoundTripTest (CAUGHT x3); unmutated control passes
+- Evidence: evidence/live-convergence-0824/M0a-replay-roundtrip/{NOTES.md,
+  reproducer-before.json,reproducer-after.json,mutation-check.txt,pytest-replay.txt}
+- Learned: the replay client dropped THREE fields, not the two the PRD named --
+  CanonicalCommit.revised_transcript, LiveSnapshot.label_revision_version, and
+  LiveServiceDescriptor.live_protocol (v2 capabilities silently reverted to defaults on
+  every replayed descriptor). Same defect class, same three-function seam; found only
+  because the round-trip test was made field-complete rather than field-specific.
+  Service->client serialization is asdict (complete by construction); every loss was on the
+  hand-written way back in. The regression test therefore guards the SHAPE, not the three
+  fields: _assert_varies_from_defaults walks the dataclass tree and fails on any defaulted
+  field left at its default, so a future field added to LiveSnapshot/CanonicalCommit/
+  descriptor cannot be silently dropped. Nine fields the runtime pins to one legal value
+  in __post_init__ are listed as _PINNED_FIELDS (a fixture cannot vary them and a wrong
+  read would raise, not mis-measure).
+- No production behavior change outside the replay measurement client; file-mode pipeline
+  untouched (diff is 2 files), so no byte-identity re-check was owed this iteration.
+- Next: M0b typed decode disposition (context.md candidate 2) -- thread the
+  EmptyTranscriptionError variants through app/vllm_runner.py:274-278 +
+  app/live_adapters.py:307-311 so an unparseable payload stops reporting as
+  decoder_returned_no_transcript. That also opens the M1 salvage seam.
