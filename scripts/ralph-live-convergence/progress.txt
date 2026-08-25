@@ -18,3 +18,5 @@ Started: 2026-08-24 night - Campaign setup complete. Plan (with Appendix B owner
 overrides) cross-reviewed and final; paired baseline + root-cause prototypes checked in
 under prototypes/live-file-gap-*; replay-adapter defect reproducer exits 1; nothing on
 the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).
+
+[loop 20260825-030106-23237] start budget=40 agent=claude branch=ralph/live-convergence-0824
