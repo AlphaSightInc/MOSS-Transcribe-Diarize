@@ -1103,6 +1103,25 @@
   arm to 6 dp, trio DER `.176389 -> .102111`, trio speaker accuracy `.823611 -> .897889`,
   five-minute live WER `.146375 -> .050616`. Ladder: salvage `-.0076`, rolling `-.0609`, terminal
   `-.0274` and distance to zero.
+- **M5 step 9b DONE (iteration 34): the plan's §18 acceptance record is annotated, and it is a
+  COMMAND too.** `docs/plans/live-mode-convergence-implementation-20260824.md` §18 now carries a
+  dated campaign annotation, five generated phase rows (E0-E4, each citing its milestone-exit
+  bundle, its tally, its unsigned gate names and a UTC clock), the four rulings that close the five
+  unsigned gates, and the two findings that outlive the campaign (candidate 7d's 63 %/27 % speaker
+  decomposition and the deployed-DER double count). `verify_plan_record.py`: seven gates PASS,
+  eight record mutations each CAUGHT. `--emit` generates the rows, so the table is not typed.
+  - **The clock is the evidence's commit date** (`git log -1` on the cited `gates.json`, in UTC:
+    E0 `2026-08-25T05:21:46Z`, E1 `06:40:03Z`, E2 `10:24:53Z`, E3 `11:24:13Z`, E4 `16:08:09Z`).
+    The bundles have no uniform stamp of their own - `M3-disposition/` writes none at all - and a
+    re-score moves the commit date with it.
+  - **G-P5 and G-P6 fail on a signature, not on its absence.** Every other gate in this campaign
+    fails when something is missing; these two fail when something is ADDED, because the one thing
+    an unattended loop must not write here is a sign-off. G-P6 checks each sign-off FIELD, not each
+    line: the first version passed a mutant that typed a decision beside one label, because the
+    `date: ____` blank later on the same line was still there.
+  - Nothing in `moss_transcribe_diarize/` or `tests/` changed, so the suite was not re-run;
+    `verify_adr_text_finalization.py` (the other instrument that reads this plan) still PASSes and
+    `verify_campaign_report.py` still PASSes after the report gained the new command.
 
 ## Validation
 
@@ -1347,6 +1366,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --selftest
 ```
 
+# M5 step 9b: does the plan's §18 record say what the bundles say, and is it still unsigned?
+# (no GPU, no service; the clock is `git log -1` on each cited gates.json)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py
+# the five phase rows, generated so the §18 table is not typed
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py --emit
+# eight mutations of the record (including two that SIGN it), each caught by its own gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py --selftest
+
 ## Candidates
 
 1. ~~**M0a replay-adapter fix**~~ — DONE iteration 1 (see Current state). Remaining M0
@@ -1589,13 +1619,17 @@ NEW EVIDENCE, from iteration 30, that outlives this candidate:
    of two of them. Do NOT rewrite the three bundles that say `D-M4-3` for the seam trade - their
    `sha256.txt` manifests are checked in and six instruments compare against them; the collision is
    recorded in the report and here instead.
-9b. **The plan §18 row annotations** - NEXT. Annotate `docs/plans/live-mode-convergence-
-   implementation-20260824.md` §18's rows "gates passed <UTC timestamp>, awaiting morning
-   sign-off", with the per-row tally from candidate 9 and the unsigned gate named on the rows that
-   have one. Candidate 7d's speaker decomposition (63 % straddled turns / 27 % microfragments) and
-   the deployed-DER double count belong in that record too - both are already in the report.
-9c. **The dated verdict entry in `docs/design-streaming-diarization.md` §7** - after 9b. One dated
-   campaign entry; the report is the long form, §7 is the index.
+9b. ~~**The plan §18 row annotations**~~ - DONE iteration 34 (see Current state).
+   `verify_plan_record.py`, seven gates PASS, eight mutations caught. Do NOT hand-edit a row: the
+   rows come from `--emit` and G-P2/G-P3/G-P4 recompute the tally, the failing gate names and the
+   clock from the `gates.json` the row cites. Do NOT sign anything in §18 - not a row, not a field
+   of the sign-off block; G-P5 and G-P6 exist to fail on exactly that, and Appendix B §18 reserves
+   the signatures for morning review. Do NOT give the clock a hand-written timestamp: three of the
+   five bundles write no UTC stamp of their own, which is why it is the evidence's commit date.
+9c. **The dated verdict entry in `docs/design-streaming-diarization.md` §7** - NEXT, and the LAST
+   item on the ladder. One dated campaign entry; the report is the long form, §7 is the index.
+   Read §7's existing verdict entries first and match their shape; the numbers belong to
+   `CAMPAIGN_REPORT.md` and should be cited from it, not re-derived by hand.
 
 ## Non-candidates
 

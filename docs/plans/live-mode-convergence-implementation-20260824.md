@@ -1257,14 +1257,51 @@ Until the final line is signed, this document authorizes review and throwaway pr
 That initial authorization permits only its named first phase. Every later phase requires a
 completed row below after its predecessor and prototype gate pass.
 
+### Campaign annotation — 2026-08-25 (unattended run, branch `ralph/live-convergence-0824`)
+
+Appendix B §18 pre-authorized every phase below **conditionally**: a phase is authorized
+provided its rescoped gates pass mechanically with evidence written, and morning review signs
+the rows retroactively before any merge off the campaign branch. The campaign ran E0–E4 under
+that authorization. **Every row below is therefore UNSIGNED, and so is the block above it** —
+the gates are scored and the evidence is written; the signatures are morning review's to give.
+
+Each row's clock is the commit date, in UTC, of the `gates.json` it cites; each tally and each
+unsigned gate name is recomputed from that same file. Both are checked by
+`prototypes/streaming-diarization/live-convergence/verify_plan_record.py`, which also fails if
+any row acquires a signature. The reader's long form is
+`evidence/live-convergence-0824/CAMPAIGN_REPORT.md`.
+
 | Phase | Prototype/evidence bundle reviewed | Reviewer / date | Owner authorization | Status |
 |---|---|---|---|---|
-| E0 | ______________________________ | __________________ | __________________ | Blocked |
-| E1 | ______________________________ | __________________ | __________________ | Blocked |
-| E2 | ______________________________ | __________________ | __________________ | Blocked |
-| E3 | ______________________________ | __________________ | __________________ | Blocked |
-| E4 | ______________________________ | __________________ | __________________ | Blocked |
-| Optional multi-view | ______________________________ | __________________ | __________________ | Blocked |
+| E0 | `evidence/live-convergence-0824/M0d-paired-reacquisition/` | unsigned — morning review | Appendix B §18 (conditional) | gates passed 2026-08-25T05:21:46Z (4 of 5; `G2_live_transcript_reproducible` unsigned), awaiting morning sign-off |
+| E1 | `evidence/live-convergence-0824/M1-e1-exit/` | unsigned — morning review | Appendix B §18 (conditional) | gates passed 2026-08-25T06:40:03Z (5 of 6; `G_M1_1_trio_live_wer_bound` unsigned), awaiting morning sign-off |
+| E2 | `evidence/live-convergence-0824/M2-e2-exit/` | unsigned — morning review | Appendix B §18 (conditional) | gates passed 2026-08-25T10:24:53Z (7 of 8; `G_M2_4_correction_p95` unsigned), awaiting morning sign-off |
+| E3 | `evidence/live-convergence-0824/M3-disposition/` | unsigned — morning review | Appendix B §18 (conditional) | gates passed 2026-08-25T11:24:13Z (14 of 14; none unsigned), awaiting morning sign-off |
+| E4 | `evidence/live-convergence-0824/M4-e4-exit-2/` | unsigned — morning review | Appendix B §18 (conditional) | gates passed 2026-08-25T16:08:09Z (12 of 14; `G-M4-3` unsigned; `G-M4-4` unsigned), awaiting morning sign-off |
+| Optional multi-view | — (not run) | — | not authorized — Appendix B §B.3 puts §13 out of campaign scope | Blocked |
+
+Four rulings close the five unsigned gates; none is a code change, and each has its disposition
+written in its own bundle. E0's `G2` asked two fresh live runs of the same audio to be
+hash-identical and the five-minute case is not, because the deployed decoder is not
+bit-reproducible at that length. E1's `G_M1_1` missed `.190` by `.0023`, attributable to one
+decode flip that entered the instrument before E1 was written. E2's `G_M2_4` wanted a `6.0` s
+correction p95 and no geometry in the preregistered grid can reach it — the bound needs
+`L + S <= 12` and the grid's floors are `6.46` / `8.51` / `11.64` / `12.81` s. E4's `G-M4-3` and
+`G-M4-4` are gates the campaign added to itself (terminal no worse than the rolling surface it
+replaces); on `lex_adam_frank` alone, converging to the paired file arm costs `.003766` of word
+error against rolling, which is the trade the owner ruled before the numbers existed.
+
+**Two findings outlive these rows and belong to whatever campaign follows.** First, the
+remaining speaker error decomposes as **63 % segments that straddle a reference turn** — an
+extent question owned by the text geometry, not by identity — and **27 % sub-0.5-second
+microfragments** below the evidence floor; a successor should start from that split rather than
+from the confusion total. Second, **the deployed diarization metric pays a bonus for publishing
+the same audio twice**: `evaluation.calculate_diarization` sums the overlap of every
+(reference, hypothesis) pair, so reference seconds two hypothesis segments both claim are
+credited twice and that much real `miss` disappears (`lex_adam_frank` file arm: `.053222`
+becomes `.066222` once the duplication is resolved, all of it `miss`). That is §3.4's extent
+artifact in a new shape — duplication rather than padding — and evaluator v2, which unions
+hypothesis intervals first, does not move.
 
 ---
 

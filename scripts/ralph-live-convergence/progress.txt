@@ -3224,3 +3224,62 @@ appended at the iteration 4->5 boundary]
   sign-off" with the per-row tally from candidate 9 and the unsigned gate named on the rows that
   have one; then 9c, the dated verdict entry in docs/design-streaming-diarization.md §7. After 9c
   the PRD's acceptance bar is met, with every milestone row unsigned by design.
+
+## iteration 34 - the plan's own ledger, annotated and unforgeable
+- Focus: candidate 9b, the lowest open item and M5's second sub-step. Annotate the plan's §18
+  acceptance record with what the campaign actually scored, and make the annotation a command
+  rather than a transcription - including the two claims a row makes that are forgeable by
+  typing: "these gates passed, at this time" and "nobody has signed this yet".
+  No production code changed; no test changed; no service touched; no MOSS request issued.
+- Target: PRD M5 (the §18 annotation row), context.md candidate 9b.
+- Files touched:
+  docs/plans/live-mode-convergence-implementation-20260824.md   (§18: campaign annotation,
+      five generated phase rows, the four rulings, the two outliving findings)
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py  (new, 7 gates)
+  prototypes/streaming-diarization/live-convergence/NOTES.md    (index row + section)
+  evidence/live-convergence-0824/CAMPAIGN_REPORT.md             (Reproduction: the new command)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - verify_plan_record.py -> **PASS on all seven gates**. Every phase row is recomputed at
+    scoring time from the bundle it cites: the tally and the failing gate names from that
+    gates.json (via verify_campaign_report.tally, one implementation for both records), the UTC
+    clock from `git log -1` on that same file. Nothing about the campaign is restated in the
+    verifier.
+  - verify_plan_record.py --selftest -> control PASS, **8 of 8 mutations CAUGHT**: removed bundle
+    path (G-P1), inflated tally (G-P2), deleted failing-gate name (G-P3), moved clock (G-P4), a
+    row signed by a reviewer (G-P5), a sign-off choice decided (G-P6), a reviewer name typed into
+    a sign-off blank (G-P6), the out-of-scope multi-view row claiming a result (G-P7).
+  - verify_adr_text_finalization.py -> PASS (the other instrument that reads this plan; §18 is
+    not its section, and the edit did not disturb D1-D7).
+  - verify_campaign_report.py -> PASS on all seven gates after the report gained the new command.
+  - pytest NOT re-run: `git status` shows no file under moss_transcribe_diarize/ or tests/
+    changed, so the suite could not react to this change. Last full run: iteration 33,
+    1157 passed / 2 skipped / 411 subtests.
+- WHAT §18 NOW SAYS, in one line: E0 4 of 5 @ 2026-08-25T05:21:46Z, E1 5 of 6 @ 06:40:03Z,
+  E2 7 of 8 @ 10:24:53Z, E3 14 of 14 @ 11:24:13Z, E4 12 of 14 @ 16:08:09Z - every row citing its
+  bundle, naming its unsigned gate, and awaiting morning sign-off; the optional multi-view row
+  stays Blocked with Appendix B §B.3 named as the reason.
+- TWO DESIGN CHOICES WORTH THE RECORD:
+  D1 **The clock is the evidence's commit date, not a stamp in the bundle.** Three of the five
+     milestone-exit bundles write no UTC stamp of their own and M3-disposition/ writes none at
+     all (it is a no-GPU scoring run), so "when did these gates pass" had no uniform answer in
+     the evidence. `git log -1` on the cited gates.json does, for all five, and it moves if the
+     evidence is ever re-scored - which is the property a record wants.
+  D2 **G-P5 and G-P6 fail on a signature, not on its absence.** Every other gate in this campaign
+     fails when something is missing. These two fail when something is ADDED, because the one
+     thing an unattended loop must never write into this section is a sign-off that no human
+     gave, and Appendix B §18 reserves those signatures for morning review.
+- Learned:
+  - **A line-level blank check is not a blank check.** G-P6's first version accepted any sign-off
+    line that still contained an underscore run, so the mutation that typed a decision beside one
+    label passed - the `date: ____` blank later on the same line kept the line "blank". The gate
+    had to be per FIELD (split each line on runs of 2+ spaces, then require a blank run or an
+    undecided choice list in every cell that carries a label). The selftest caught this before
+    the gate was ever green, which is the whole point of writing the mutations first.
+  - The record's tally logic is IMPORTED from verify_campaign_report rather than re-implemented,
+    so the report and the plan cannot drift into two different tallies of the same gates.json.
+- BLOCKER: none.
+- Next: candidate 9c, the last item on the ladder - one dated campaign verdict entry in
+  docs/design-streaming-diarization.md §7, matching the shape of the existing §7 verdict entries
+  and citing CAMPAIGN_REPORT.md for the numbers rather than re-deriving them. After 9c the PRD's
+  acceptance bar is met, with every milestone row unsigned by design.

@@ -31,6 +31,7 @@ imported by `moss_transcribe_diarize/`.
 | `measure_seam_overlap.py` + `PREREGISTRATION-M4-seam.md` | when a terminal proposal reproduces the paired file arm and that arm overlaps at a window seam, what should the finalizer send instead? | **`merge_overlapping`** — of five arms it is the only one that drops no word and displaces no second of extent; the whole `.053222 → .066222` DER cost is the deployed scorer's **double count** disappearing (evaluator v2, which unions, does not move: `.054079` either way); 6 of 6 gates, 4 isolated reactions; `evidence/live-convergence-0824/M4-seam-overlap/` |
 | `mutate_terminal_seam.sh` + `measure_seam_overlap.py --verify-production` | does the SHIPPED seam rule do what the selected arm was measured doing, and do its tests bite? | **yes and yes** — production `resolve_terminal_overlaps` is IDENTICAL to the measured arm on all 24 inputs (12 file arms + 12 shapes), the trio terminal surface is still the paired file arm at `0.000000`, and five mutants are each caught by the test that names the defect; `evidence/live-convergence-0824/M4-seam-ship/` |
 | `verify_campaign_report.py` | does the M5 campaign report say what the thirty-two checked-in bundles say? | **yes, seven gates** — every ledger tally, every failing gate name, every per-case before/after number and the `[C]`-vs-`[PRD]` split are re-derived from the evidence and compared against the report text; six mutations of the report are each caught; `evidence/live-convergence-0824/CAMPAIGN_REPORT.md` |
+| `verify_plan_record.py` | does the plan's §18 acceptance record say what the evidence says — and is it still unsigned? | **yes, seven gates** — each phase row's tally, failing gate names and UTC clock are recomputed from the `gates.json` it cites (the clock is that file's commit date, the one clock all five bundles have), and the record fails if any row or sign-off field acquires a signature; eight mutations caught; `docs/plans/live-mode-convergence-implementation-20260824.md` §18 |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -952,4 +953,41 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # six mutations of the report, each caught by the gate that names its defect
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --selftest
+```
+
+## `verify_plan_record.py` — iteration 34, candidate 9b: the plan's §18 record
+
+§18 is the plan's own ledger, and the document morning review signs before any merge off the
+campaign branch. Each row makes two claims at once — *these gates passed, at this time* and
+*nobody has signed this yet* — and both are forgeable by typing. So the row is generated from
+the evidence (`--emit`) and then checked against it, exactly like the M5 report's tables.
+
+Two choices worth keeping:
+
+- **The clock is the evidence's commit date.** Three of the five milestone-exit bundles write
+  no UTC stamp of their own (`M3-disposition/` writes none at all — it is a no-GPU scoring run),
+  so "when did these gates pass" had no uniform answer in the bundles. `git log -1` on the cited
+  `gates.json` does, in UTC, for all five, and it moves if the evidence is ever re-scored.
+- **G-P5 and G-P6 fail on a signature, not on its absence.** Every other gate in this campaign
+  fails when something is missing; these two fail when something is *added*, because the one
+  thing an unattended loop must not write into this section is a sign-off. G-P6 checks each
+  sign-off FIELD rather than each line — a name typed beside one label leaves the rest of that
+  line blank, which is how the first version of the gate missed it.
+
+`--selftest` mutates a copy eight ways (removed bundle path, inflated tally, deleted failing
+gate name, moved clock, a row signed, a sign-off choice decided, a reviewer name typed into a
+blank, and the out-of-scope multi-view row claiming a result) and requires each to be caught.
+
+```bash
+# does §18 match the evidence, and is it still unsigned? (no GPU, no service, < 1 s)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py
+
+# the rows, generated for the plan body
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py --emit
+
+# eight mutations of the record, each caught by the gate that names its defect
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_plan_record.py --selftest
 ```
