@@ -1,0 +1,58 @@
+...F.....................                                            [100%]
+=================================== FAILURES ===================================
+_ LivePortalRouteTest.test_live_portal_browser_contract_polls_renders_controls_and_stops _
+
+self = <test_live_portal.LivePortalRouteTest testMethod=test_live_portal_browser_contract_polls_renders_controls_and_stops>
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_browser_contract_polls_renders_controls_and_stops(self):
+        from fastapi.testclient import TestClient
+    
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+    
+        probe = _run_browser_contract_probe(html)
+    
+        first_snapshot, first_events, second_snapshot, second_events = probe["pollRequests"]
+        self.assertEqual(first_snapshot["method"], "GET")
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/snapshot?since_version=0", first_snapshot["url"])
+        self.assertEqual(first_snapshot["headers"]["Authorization"], "Bearer portal-view-secret")
+        self.assertEqual(first_snapshot["cache"], "no-store")
+        self.assertEqual(first_snapshot["credentials"], "same-origin")
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=-1", first_events["url"])
+        self.assertEqual(first_events["headers"]["Authorization"], "Bearer portal-view-secret")
+        self.assertIn("since_version=2", second_snapshot["url"])
+        self.assertIn("since_seq=3", second_events["url"])
+        for request in probe["pollRequests"] + probe["controlRequests"]:
+            self.assertNotIn("portal-view-secret", request["url"])
+        self.assertEqual(
+            probe["eventRows"],
+            [
+                "seq: 0 | kind: session_created | snapshot: 1",
+                "seq: 1 | kind: opened | snapshot: 2",
+                "seq: 3 | kind: partial | snapshot: 2",
+                "seq: 4 | kind: commit | snapshot: 4",
+            ],
+        )
+        # The surface, rendered: session-absolute seconds, the `Sxx` token the canonical
+        # identity is published as, and the words -- then the span still being spoken, shown
+        # after it, exactly as the base path published it because no authority owns it yet.
+>       self.assertEqual(
+            probe["transcriptAfterFirstPoll"],
+            "[0][S01]hello <script>[1]\n\ndraft & safe",
+        )
+E       AssertionError: '[0][S01]hello <script>[1]' != '[0][S01]hello <script>[1]\n\ndraft & safe'
+E         [0][S01]hello <script>[1]
+E       + 
+E       + draft & safe
+
+tests/test_live_portal.py:362: AssertionError
+=============================== warnings summary ===============================
+tests/test_live_portal.py::LivePortalRouteTest::test_a_terminal_viewer_reads_the_reason_and_stops_without_reconnecting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops
+1 failed, 24 passed, 1 warning, 4 subtests passed in 3.42s

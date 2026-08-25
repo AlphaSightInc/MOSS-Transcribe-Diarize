@@ -1,0 +1,205 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "base": {
+        "content_recall": 0.8636363636363636,
+        "dom_characters": 1587,
+        "dom_segments": 30,
+        "effective_segments": 30,
+        "first_mismatch": {
+          "dom": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]\n\n[2.5][S02]to kind of weigh it. He talked about[4.92]\n\n[7.5][S03]It in the short term is a voting machine. It represents[9.98]\n\n[10][S04]Sense speculative interests.[12.42]\n\n[12.5][S05]Supply and demand of people in the short term.[14.98]\n\n[15.31][S06]But in the long term, it's the stock market's a weighing machin",
+          "expected": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]\n\n[2.5][S02]to kind of weigh it. He talked about[4.92]\n\n[7.5][S03]It in the short term is a voting machine. It represents[9.98]\n\n[10][S04]Sense speculative interests.[12.42]\n\n[12.5][S05]Supply and demand of people in the short term.[14.98]\n\n[15.31][S06]But in the long term, it's the stock market's a weighing machin",
+          "poll": 86
+        },
+        "polls": 121,
+        "render_mismatches": 35,
+        "snapshot_wer": 0.261364,
+        "speaker_tokens": [
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.261364
+      },
+      "rolling": {
+        "content_recall": 0.9261363636363636,
+        "dom_characters": 1474,
+        "dom_segments": 21,
+        "effective_segments": 21,
+        "first_mismatch": {
+          "dom": "[0.51][S01]To figure out what something's worth and you have to kind of weigh it.[3.27]\n\n[4.05][S03]He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88]\n\n[8.88][S03]machine.\"[9.48]\n\n[9.51][S03]It represents-[9.99]\n\n[10][S05]Sense speculative interests, you know, supply and demand of people in the short term.[15.26]\n\n[15.31][S06]But in the long term",
+          "expected": "[0.51][S01]To figure out what something's worth and you have to kind of weigh it.[3.27]\n\n[4.05][S03]He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88]\n\n[8.88][S03]machine.\"[9.48]\n\n[9.51][S03]It represents-[9.99]\n\n[10][S05]Sense speculative interests, you know, supply and demand of people in the short term.[15.26]\n\n[15.31][S06]But in the long term",
+          "poll": 81
+        },
+        "polls": 121,
+        "render_mismatches": 40,
+        "snapshot_wer": 0.198864,
+        "speaker_tokens": [
+          "S01",
+          "S03",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.198864
+      }
+    },
+    "lex_javier_milei": {
+      "base": {
+        "content_recall": 0.92,
+        "dom_characters": 1333,
+        "dom_segments": 28,
+        "effective_segments": 28,
+        "first_mismatch": {
+          "dom": "[0.11][S01]So, what is the difference?[2.41]\n\n[2.75][S02]Between a madman and a genius.[4.99]\n\n[5][S03]S[5.06]\n\n[6.88][S04]Success.[7.69]\n\n[10.81][S05]The following is a conversation.[12]\n\n[12.1][S06]...with Javier Malley, the president.[14.46]\n\n[14.76][S07]of Argentina.[15.64]\n\n[15.93][S08]Yeah.[16.17]\n\n[16.35][S09]He is a libertarian, a narco-[18.65]\n\n[18.73][S10]Capitalist and economist.[20.85]",
+          "expected": "[0.11][S01]So, what is the difference?[2.41]\n\n[2.75][S02]Between a madman and a genius.[4.99]\n\n[5][S03]S[5.06]\n\n[6.88][S04]Success.[7.69]\n\n[10.81][S05]The following is a conversation.[12]\n\n[12.1][S06]...with Javier Malley, the president.[14.46]\n\n[14.76][S07]of Argentina.[15.64]\n\n[15.93][S08]Yeah.[16.17]\n\n[16.35][S09]He is a libertarian, a narco-[18.65]\n\n[18.73][S10]Capitalist and economist.[20.85]",
+          "poll": 79
+        },
+        "polls": 121,
+        "render_mismatches": 42,
+        "snapshot_wer": 0.144,
+        "speaker_tokens": [
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.144
+      },
+      "rolling": {
+        "content_recall": 0.92,
+        "dom_characters": 1017,
+        "dom_segments": 14,
+        "effective_segments": 14,
+        "first_mismatch": {
+          "dom": "[0.11][S01]So, what is the difference between a madman and a genius?[5.12]\n\n[6.88][S04]Success.[7.82]\n\n[10.87][S06]The following is a conversation with Javier Mal\u00e9,[13.87]\n\n[13.9][S07]the president of Argentina.[16.27]\n\n[16.3][S09]He is a libertarian, a narco-capitalist, and[19.99]\n\n[20.11][S12]economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[27",
+          "expected": "[0.11][S01]So, what is the difference between a madman and a genius?[5.12]\n\n[6.88][S04]Success.[7.82]\n\n[10.87][S06]The following is a conversation with Javier Mal\u00e9,[13.87]\n\n[13.9][S07]the president of Argentina.[16.27]\n\n[16.3][S09]He is a libertarian, a narco-capitalist, and[19.99]\n\n[20.11][S12]economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[27",
+          "poll": 74
+        },
+        "polls": 121,
+        "render_mismatches": 47,
+        "snapshot_wer": 0.096,
+        "speaker_tokens": [
+          "S01",
+          "S04",
+          "S06",
+          "S07",
+          "S09",
+          "S12",
+          "S13",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.096
+      }
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 124
+  },
+  "failures": [
+    "G3 lex_bill_ackman/base 35 of 121 polls did not render the surface",
+    "G3 lex_bill_ackman/rolling 40 of 121 polls did not render the surface",
+    "G3 lex_javier_milei/base 42 of 121 polls did not render the surface",
+    "G3 lex_javier_milei/rolling 47 of 121 polls did not render the surface",
+    "G4 no rendered segment exercised S00"
+  ],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_portal.py"
+  ],
+  "passed": false,
+  "recorded_at": "2026-08-25T09:19:32.499769+00:00",
+  "schema": "moss-live-convergence-portal-surface.v1",
+  "speaker_tokens": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "trio": {
+    "base": {
+      "content_recall_mean": 0.8918181818181818,
+      "wer_mean": 0.20268199999999997
+    },
+    "rolling": {
+      "content_recall_mean": 0.9230681818181818,
+      "wer_mean": 0.147432
+    }
+  }
+}

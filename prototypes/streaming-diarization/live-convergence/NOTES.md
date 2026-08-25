@@ -206,3 +206,32 @@ mutations are caught by the T2 tests alone: a window nobody was waiting for, a r
 refused revision and a salvaged span are all branches sixty seconds of unhurried trio speech never
 takes, so the corpus reading of the stream is necessary and not sufficient. Verdict:
 `evidence/live-convergence-0824/M2-event-serialization/`.
+
+```bash
+# E2 step 6: does the READER see the selected arm, and is it one replacement surface? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_portal_surface.py
+# six mutations, in `live_portal.py` itself, restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh /tmp/portal-mutations
+```
+
+`verify_portal_surface.py` reads the **DOM**. Every gate above this one could stay green while a
+page that appended instead of replacing showed a corrected meeting as the meeting said twice, so
+this verifier renders each session's whole sequence of snapshots through the portal script the
+service actually serves, parses the transcript node back with the production parser, and scores it
+with the grid's own scorer. It reuses step 4's driver (`run_case(..., collect_surfaces=True)`) and
+the T2 tier's own headless browser (`tests/test_live_portal._run_node_probe`, `servedPolls`), so
+there is one browser emulation in this repo and one runtime driver, not two of either.
+
+The arm is on the screen: base `.199870` / `.913490`, rolling `.131861` / `.943916`, per case to
+6 dp, screen equal to snapshot on every case. The replacement property is stated as a purity
+claim — at **every one of 726 polls** the transcript node equalled an independent render of *that
+poll's snapshot alone* — which a page carrying state across polls cannot satisfy.
+
+Two findings beyond its gates. The live album establishes **one canonical speaker per span** on
+this instrument (16 on a one-minute two-speaker interview), which is E3's problem and not the
+render's, but it is why the screen shows `S01`..`S16`. And the rolling arm prints materially
+**fewer, longer rows** than the base arm for the same audio (bill 30 → 21, milei 28 → 14, keyu
+26 → 16): a ten-second witness publishes sentences where twenty-four 2.5-second spans publish
+fragments, and that is visible before any metric is computed. Verdict:
+`evidence/live-convergence-0824/M2-portal-surface/`.

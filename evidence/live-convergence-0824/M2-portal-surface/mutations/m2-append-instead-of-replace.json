@@ -1,0 +1,227 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "base": {
+        "content_recall": 0.8636363636363636,
+        "dom_characters": 85941,
+        "dom_segments": 1576,
+        "effective_segments": 30,
+        "first_mismatch": {
+          "dom": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]\n\n[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]",
+          "expected": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]",
+          "poll": 12
+        },
+        "polls": 121,
+        "render_mismatches": 109,
+        "snapshot_wer": 0.261364,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.261364
+      },
+      "rolling": {
+        "content_recall": 0.9261363636363636,
+        "dom_characters": 85879,
+        "dom_segments": 1340,
+        "effective_segments": 21,
+        "first_mismatch": {
+          "dom": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]\n\n[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]",
+          "expected": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]",
+          "poll": 12
+        },
+        "polls": 121,
+        "render_mismatches": 109,
+        "snapshot_wer": 0.198864,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.693182
+      }
+    },
+    "lex_javier_milei": {
+      "base": {
+        "content_recall": 0.92,
+        "dom_characters": 69269,
+        "dom_segments": 1553,
+        "effective_segments": 28,
+        "first_mismatch": {
+          "dom": "[0.11][S01]So, what is the difference?[2.41]\n\n[0.11][S01]So, what is the difference?[2.41]",
+          "expected": "[0.11][S01]So, what is the difference?[2.41]",
+          "poll": 12
+        },
+        "polls": 121,
+        "render_mismatches": 109,
+        "snapshot_wer": 0.144,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.144
+      },
+      "rolling": {
+        "content_recall": 0.928,
+        "dom_characters": 54348,
+        "dom_segments": 958,
+        "effective_segments": 14,
+        "first_mismatch": {
+          "dom": "[0.11][S01]So, what is the difference?[2.41]\n\n[0.11][S01]So, what is the difference?[2.41]",
+          "expected": "[0.11][S01]So, what is the difference?[2.41]",
+          "poll": 12
+        },
+        "polls": 121,
+        "render_mismatches": 109,
+        "snapshot_wer": 0.096,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6
+        ],
+        "wer": 0.552
+      }
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 124
+  },
+  "failures": [
+    "G3 lex_bill_ackman/base 109 of 121 polls did not render the surface",
+    "G6 lex_bill_ackman/base rendered segment starts are not non-decreasing",
+    "G3 lex_bill_ackman/rolling 109 of 121 polls did not render the surface",
+    "G6 lex_bill_ackman/rolling rendered segment starts are not non-decreasing",
+    "G2 lex_bill_ackman/rolling screen wer 0.693182 != grid 0.198864",
+    "G2 lex_bill_ackman/rolling screen wer 0.693182 != snapshot wer 0.198864",
+    "G3 lex_javier_milei/base 109 of 121 polls did not render the surface",
+    "G6 lex_javier_milei/base rendered segment starts are not non-decreasing",
+    "G3 lex_javier_milei/rolling 109 of 121 polls did not render the surface",
+    "G6 lex_javier_milei/rolling rendered segment starts are not non-decreasing",
+    "G2 lex_javier_milei/rolling screen wer 0.552000 != grid 0.096000",
+    "G2 lex_javier_milei/rolling screen wer 0.552000 != snapshot wer 0.096000"
+  ],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_portal.py"
+  ],
+  "passed": false,
+  "recorded_at": "2026-08-25T09:19:18.310745+00:00",
+  "schema": "moss-live-convergence-portal-surface.v1",
+  "speaker_tokens": [
+    "S00",
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "trio": {
+    "base": {
+      "content_recall_mean": 0.8918181818181818,
+      "wer_mean": 0.20268199999999997
+    },
+    "rolling": {
+      "content_recall_mean": 0.9270681818181818,
+      "wer_mean": 0.622591
+    }
+  }
+}

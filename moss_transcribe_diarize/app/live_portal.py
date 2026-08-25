@@ -146,6 +146,10 @@ LIVE_PORTAL_HTML = """<!doctype html>
       const localStates = new Set(["disconnected", "reconnecting"]);
       const terminalStates = new Set(["closed", "failed", "aborted"]);
       const retryDelaysMs = [500, 1000, 2000, 5000];
+      // The token the server publishes for speech nobody has been attributed. Declared here
+      // because the surface a reader is shown carries canonical identities, not tokens, and
+      // this page has to write one; a test binds it to the server's own constant.
+      const unattributedSpeaker = "S00";
       // The reader's own cadence, and the only thing that decides how long committed
       // text waits before a browser asks for it. The app's latency gate reports an
       // analytic render bound built from the SAME cadence
@@ -533,21 +537,61 @@ LIVE_PORTAL_HTML = """<!doctype html>
         return lines;
       }
 
-      function renderTranscript(snapshot) {
-        const session = snapshot.session;
-        const rows = [];
-        for (const item of session.committed || []) {
-          // A span whose speaker was corrected after it was published carries the
-          // corrected labelling beside the words it was committed with; the words are
-          // identical either way, and the reader is shown who is believed to have said
-          // them now rather than who was believed at the time.
-          const text = item.revised_transcript || item.transcript;
-          // A span with no speech commits an empty transcript so its audio stays
-          // accounted for; it must not open a blank gap in the meeting.
-          if (text) {
-            rows.push(text);
-          }
+      // The `Sxx` token a canonical speaker is published as. Positional, and the canonical
+      // list only ever grows by appending, which is what makes a label written in minute one
+      // still name the same speaker in minute seventeen. This is the server's own
+      // `display_speaker_label` rule, applied on the one surface that carries canonical
+      // identities instead of tokens: `effective_transcript` reports who is believed to have
+      // spoken, and the reader is shown the token the rest of the meeting is written in.
+      // Nobody-attributed, and an identity this snapshot has not established, both read as the
+      // honest unattributed token rather than as a guess.
+      function speakerLabel(canonicalSpeaker, canonicalSpeakers) {
+        if (canonicalSpeaker === undefined || canonicalSpeaker === null) {
+          return unattributedSpeaker;
         }
+        const index = (canonicalSpeakers || []).indexOf(canonicalSpeaker);
+        if (index < 0) {
+          return unattributedSpeaker;
+        }
+        return `S${String(index + 1).padStart(2, "0")}`;
+      }
+
+      // Sample integers are what the wire carries and what the server treats as
+      // authoritative; seconds are a presentation value, computed here from the rate the
+      // descriptor declares rather than from a number this page happens to believe. Six
+      // significant digits is what the server's own span renderer prints, so a surface
+      // rendered here reads in the same grammar as the spans the short base path publishes.
+      function displaySeconds(sampleIndex, sampleRate) {
+        return String(Number((Number(sampleIndex) / sampleRate).toPrecision(6)));
+      }
+
+      function renderTranscript(snapshot, sampleRate) {
+        const session = snapshot.session;
+        const speakers = (session.identity_snapshot || {}).canonical_speakers || [];
+        const rows = [];
+        // ONE replacement surface. The server publishes the whole of what a reader should be
+        // shown on every snapshot -- the rolling authority's words over the interval it owns,
+        // then the short base path's words after that frontier -- so this render REPLACES the
+        // transcript instead of appending to it. That is what makes a correction that arrives
+        // ten seconds late read as a corrected meeting rather than as the meeting said twice,
+        // and it is why the reader never sees the same words under two authorities: the server
+        // resolved that before it serialized, and this page does not re-decide it.
+        for (const segment of session.effective_transcript || []) {
+          // A span with no speech contributes no segment so its audio stays accounted for
+          // without opening a blank gap in the meeting.
+          if (!segment || !segment.text) {
+            continue;
+          }
+          rows.push(
+            `[${displaySeconds(segment.start_sample, sampleRate)}]`
+            + `[${speakerLabel(segment.canonical_speaker, speakers)}]`
+            + `${segment.text}`
+            + `[${displaySeconds(segment.end_sample, sampleRate)}]`,
+          );
+        }
+        // The span still being spoken is not part of the surface: nothing has committed it, so
+        // no authority owns it yet. It is shown after the surface, exactly as the base path
+        // published it, so the reader sees the live tail without it reading as settled text.
         if (session.provisional && session.provisional.transcript) {
           rows.push(session.provisional.transcript);
         }
@@ -566,6 +610,14 @@ LIVE_PORTAL_HTML = """<!doctype html>
         if (!session || !allowedServerStates.has(session.status)) {
           throw new Error("malformed snapshot session");
         }
+        // The surface carries sample indices; turning them into a time a reader can use needs
+        // the rate the service declares. Refusing a snapshot that does not declare one is the
+        // point: a page that silently assumed a rate would print a plausible wrong time, and a
+        // page that skipped the timestamps would drop information the reader has today.
+        const sampleRate = (snapshot.descriptor || {}).sample_rate;
+        if (!Number.isInteger(sampleRate) || sampleRate <= 0) {
+          throw new Error("malformed snapshot descriptor");
+        }
         setServerState(session.status);
         const failure = snapshot.terminal_failure || {};
         const details = [
@@ -579,6 +631,15 @@ LIVE_PORTAL_HTML = """<!doctype html>
           // labels stood is not a meeting with "0 revisions", it is one with nothing to
           // say about revisions at all.
           session.label_revision_version ? line("label revisions", session.label_revision_version) : "",
+          // The other dimension of the same living document, and shown on the same terms: a
+          // meeting whose words were never revised has nothing to say about word revisions,
+          // and a meeting no terminal pass has touched is not a meeting that "failed" to
+          // finalize. Say each only once there is something to say.
+          session.text_revision_version ? line("text revisions", session.text_revision_version) : "",
+          session.text_revision_version ? line("converged through sample", session.canonical_through_sample) : "",
+          session.finalization_status && session.finalization_status !== "not_started"
+            ? line("finalization", session.finalization_status)
+            : "",
           line("failure", session.failure_reason),
           line("failure kind", failure.kind),
           line("failure code", failure.code),
@@ -587,7 +648,7 @@ LIVE_PORTAL_HTML = """<!doctype html>
           ...v2Lines(payload.v2_session),
         ].filter(Boolean);
         setText(nodes.statusDetail, details.join("\\n"));
-        renderTranscript(snapshot);
+        renderTranscript(snapshot, sampleRate);
         return session;
       }
 

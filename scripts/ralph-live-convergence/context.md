@@ -49,6 +49,12 @@
     `_record_rolling_completed`, the `rolling_timing` table, and `decode_salvaged`. Events are
     recorded HERE and nowhere else (plan §6 M7: adapters serialize, they do not decide), from data
     the coordinator hands back on its result objects.
+  - `app/live_portal.py` — the one page a reader ever sees. **Since iteration 16 it renders
+    `effective_transcript`, not `committed`**: `renderTranscript` replaces the transcript node from
+    the snapshot alone (no state across polls), `speakerLabel` re-applies the server's
+    `display_speaker_label` rule to the canonical identity the surface carries, and
+    `displaySeconds` reads the rate off `snapshot.descriptor.sample_rate` (a snapshot without one
+    is refused). The `S00` literal is bound to `UNATTRIBUTED_SPEAKER` by a test.
   - `app/live_endpoint.py` — 2.5 s hard cap (`hard_cap_samples=40000` via bounds config; stays 2.5 s).
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
     witness-owned evidence through the existing album, never context audio.
@@ -57,7 +63,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 15)
+(2026-08-25, after iteration 16)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -513,11 +519,49 @@
   `pcm_evicted` and stops planning. The verifier's first draft hit exactly this (0 windows, all
   three cases) because its driver handed over the whole meeting before the pump thread ran once.
   It now paces the base within two spans, which is what real-time pacing produces.
+- **M2 STEP 6 SHIPPED (iteration 16): the arm is on the screen, and the screen is one replacement
+  surface.** `live_portal.py` renders `session.effective_transcript` instead of stitching
+  `session.committed`: one row per surface segment, session-absolute seconds from the descriptor's
+  declared rate, the `Sxx` token re-derived from the canonical identity with the server's own rule,
+  and the provisional tail (which no authority owns yet) still shown after it. The status panel
+  gained `text revisions` / `converged through sample` / `finalization`, each said only once there
+  is something to say. `verify_portal_surface.py` exit 0 on seven gates: base trio WER **.199870** /
+  recall **.913490** and rolling **.131861** / **.943916** read off the DOM, per case to 6 dp,
+  screen equal to snapshot on every case; 0 fresh MOSS requests. Full suite 1082 passed / 2 skipped
+  / 386 subtests (1079 before). File mode byte-identical (`sha ad381d8b...`, unmoved across seven
+  production changes). Six mutations, all caught. Evidence:
+  `evidence/live-convergence-0824/M2-portal-surface/`.
+- **The replacement property is stated as PURITY, and that is what makes it checkable.** At every
+  one of 726 polls the transcript node equalled an independent render of *that poll's snapshot
+  alone*. A page that carried state across polls cannot satisfy that, which is why mutation M2
+  (append instead of replace) is caught at the first poll after the first revision rather than at
+  the end. Do not add render state (a diff, an animation buffer, a de-duplicator) without replacing
+  that gate with something at least as strong.
+- **The page needs the sample rate and must not assume it.** The surface carries sample integers;
+  seconds are presentation. `renderSnapshot` refuses a snapshot whose descriptor declares no
+  positive integer rate rather than printing a plausible wrong second (mutation M6 shows an assumed
+  8000 puts segments outside the meeting). Every server-produced snapshot payload is
+  `LiveServiceSnapshot.to_dict()`, so the field is always there.
+- **Before this step the reader could not have seen a correction at all.** The old render printed
+  one row per committed span on its own *span-relative* clock, so every row started near `[0]`.
+  Session-absolute rows are what make a revision land in place.
+- **F1 (identity, not render): the live album establishes one canonical speaker per span on the
+  offline instrument** — 16 on a one-minute two-speaker interview, `S01`..`S16` on the screen. That
+  is the deployed identity behaviour and exactly what E3/M3 exists to fix; recorded here because it
+  is what makes the render's speaker-token gate look like a richer corpus than it is.
+- **F2: the rolling arm prints materially fewer, longer rows than the base arm for the same audio**
+  (bill 30 → 21, milei 28 → 14, keyu 26 → 16). A ten-second witness publishes sentences where
+  twenty-four 2.5 s spans publish fragments. It is the first convergence result visible without a
+  metric.
+- **The provisional-tail mutation is caught by T2 alone.** This instrument's base path commits every
+  span it freezes and never publishes a provisional suffix, so sixty seconds of real audio cannot
+  see the live tail disappear; the `happy` scenario reads the transcript after a poll that has one.
+  Fifth iteration of the same lesson (11-16): the corpus reading is necessary and not sufficient.
 - **The deployed `web_cli` was NOT restarted onto this build** (still pid 22561 on the M1 build).
-  Rolling would turn on in the live service before its events and portal exist, and nothing this
-  iteration measured needs the running service. The restart belongs with the paired rerun after
+  Rolling would turn on in the live service before its export is settled, and nothing iterations
+  14-16 measured needs the running service. The restart belongs with the paired rerun after
   §10.5 step 7, and must be recorded then.
-- Rest of the ladder (M2 step 3 items 6-7, M3-M5) unimplemented; working tree carries the plan,
+- Rest of the ladder (M2 step 3 item 7, M3-M5) unimplemented; working tree carries the plan,
   evidence prototypes, and this scaffold.
 
 ## Validation
@@ -617,6 +661,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_rolling_events.py
 # its six mutations, in live_coordinator.py / live_service_runtime.py, restored on exit
 prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh /tmp/event-mutations
+# E2 step 6: does the READER see the arm, and is the screen one replacement surface? (exit 0, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_portal_surface.py
+# its six mutations, in live_portal.py itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh /tmp/portal-mutations
+# portal render tests (the surface, the replacement, S00, the missing rate, the headless browser)
+.venv/bin/python -m pytest tests/test_live_portal.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -672,18 +723,21 @@ prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh /tmp/
    state). Do NOT add the three `terminal_finalization_*` events here: they are E4's and have no
    producer, and an event kind with no producer is a contract rather than a serialization. Do NOT
    replace G4's read-from-production vocabulary with a literal list.
-6h. **M2 step 3 items 6-7 - NEXT**, in this fixed order: portal renders `effective_transcript` as
-   ONE replacement surface (§10.5 step 6; the four §7.3 fields and the five §7.1 segment fields are
-   now proven to reach a client, so this is a render question, not a transport one) -> export switch
-   **last**, only after terminal/effective export tests pass, in the same reviewed change (step 7).
-   Then the headless portal render/serialization test and the 5-minute soak (§10.6). The soak now
-   has a stream to read: `rolling_decode_queued`/`completed` carry queue delay and the decode
-   record, so per-kind queue delay, stale/coalesced counts and rolling correction latency come off
-   the events rather than out of the process. F2 says the duplicate-phrase-at-a-join behaviour ships
-   with this geometry; do not add a de-duplicator without measuring one (the corpus for it is in
-   `M2-rolling-grid/grid.json`). F3 says G6 will be missed; measure it honestly in the soak, and
-   measure D2's serial witness cost there too. Restart `web_cli` onto the build and record it before
-   any paired rerun; file mode must stay byte-identical.
+6h. ~~**M2 step 3 item 6: the portal renders the surface**~~ - SHIPPED iteration 16 (see Current
+   state). The PRD's "headless portal render/serialization test" landed with it: three new T2 tests
+   in `tests/test_live_portal.py`, one of them driven entirely by real server payloads. Do NOT add
+   render state across polls (a diff, an animation buffer, a join de-duplicator) without replacing
+   the purity gate with something at least as strong, and do NOT let the page assume a sample rate.
+6i. **M2 step 3 item 7 - NEXT**: the export switch, and it goes **last** (§10.5 step 7). Exports
+   still read current commits; switch them to the effective/terminal surface only once
+   terminal/effective export tests pass, in one reviewed change. Then the 5-minute soak (§10.6),
+   which now has a stream to read: `rolling_decode_queued`/`completed` carry queue delay and the
+   decode record, so per-kind queue delay, stale/coalesced counts and rolling correction latency
+   come off the events rather than out of the process. F2 (step 2) says the duplicate-phrase-at-a-
+   join behaviour ships with this geometry; do not add a de-duplicator without measuring one (the
+   corpus for it is in `M2-rolling-grid/grid.json`). F3 (step 2) says G6 will be missed; measure it
+   honestly in the soak, and measure D2's serial witness cost there too. Restart `web_cli` onto the
+   build and record it before any paired rerun; file mode must stay byte-identical.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

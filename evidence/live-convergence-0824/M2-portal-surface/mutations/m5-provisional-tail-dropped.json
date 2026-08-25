@@ -1,0 +1,187 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "base": {
+        "content_recall": 0.8636363636363636,
+        "dom_characters": 1587,
+        "dom_segments": 30,
+        "effective_segments": 30,
+        "first_mismatch": null,
+        "polls": 121,
+        "render_mismatches": 0,
+        "snapshot_wer": 0.261364,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.261364
+      },
+      "rolling": {
+        "content_recall": 0.9261363636363636,
+        "dom_characters": 1474,
+        "dom_segments": 21,
+        "effective_segments": 21,
+        "first_mismatch": null,
+        "polls": 121,
+        "render_mismatches": 0,
+        "snapshot_wer": 0.198864,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S03",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.198864
+      }
+    },
+    "lex_javier_milei": {
+      "base": {
+        "content_recall": 0.92,
+        "dom_characters": 1333,
+        "dom_segments": 28,
+        "effective_segments": 28,
+        "first_mismatch": null,
+        "polls": 121,
+        "render_mismatches": 0,
+        "snapshot_wer": 0.144,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.144
+      },
+      "rolling": {
+        "content_recall": 0.92,
+        "dom_characters": 1017,
+        "dom_segments": 14,
+        "effective_segments": 14,
+        "first_mismatch": null,
+        "polls": 121,
+        "render_mismatches": 0,
+        "snapshot_wer": 0.096,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S04",
+          "S06",
+          "S07",
+          "S09",
+          "S12",
+          "S13",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6
+        ],
+        "wer": 0.096
+      }
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 124
+  },
+  "failures": [],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_portal.py"
+  ],
+  "passed": true,
+  "recorded_at": "2026-08-25T09:19:39.593696+00:00",
+  "schema": "moss-live-convergence-portal-surface.v1",
+  "speaker_tokens": [
+    "S00",
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "trio": {
+    "base": {
+      "content_recall_mean": 0.8918181818181818,
+      "wer_mean": 0.20268199999999997
+    },
+    "rolling": {
+      "content_recall_mean": 0.9230681818181818,
+      "wer_mean": 0.147432
+    }
+  }
+}

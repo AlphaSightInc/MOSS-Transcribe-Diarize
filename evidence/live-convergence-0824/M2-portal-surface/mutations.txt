@@ -1,0 +1,39 @@
+== control: unmutated portal ==
+control: verify exit=0  pytest exit=0  25 passed, 1 warning, 4 subtests passed in 3.52s
+    PASS
+== M1: render the committed spans instead of the surface ==
+m1-render-committed-spans: verify exit=1  pytest exit=1  3 failed, 22 passed, 1 warning, 4 subtests passed in 3.63s
+    FAIL G3 lex_bill_ackman/base 110 of 121 polls did not render the surface
+    FAIL G6 lex_bill_ackman/base rendered segment starts are not non-decreasing
+    FAIL G1 lex_bill_ackman/base screen wer 0.795455 != grid 0.261364
+    FAIL G1 lex_bill_ackman/base screen wer 0.795455 != snapshot wer 0.261364
+== M2: append the surface instead of replacing it ==
+m2-append-instead-of-replace: verify exit=1  pytest exit=1  3 failed, 22 passed, 1 warning, 4 subtests passed in 3.53s
+    FAIL G3 lex_bill_ackman/base 109 of 121 polls did not render the surface
+    FAIL G6 lex_bill_ackman/base rendered segment starts are not non-decreasing
+    FAIL G3 lex_bill_ackman/rolling 109 of 121 polls did not render the surface
+    FAIL G6 lex_bill_ackman/rolling rendered segment starts are not non-decreasing
+== M3: print the canonical identity, not the Sxx token ==
+m3-print-canonical-identity: verify exit=1  pytest exit=1  4 failed, 21 passed, 1 warning, 4 subtests passed in 3.50s
+    FAIL G3 lex_bill_ackman/base 110 of 121 polls did not render the surface
+    FAIL G5 lex_bill_ackman/base a canonical identity reached the transcript node
+    FAIL G1 lex_bill_ackman/base screen wer 0.812500 != grid 0.261364
+    FAIL G1 lex_bill_ackman/base screen wer 0.812500 != snapshot wer 0.261364
+== M4: unattributed speech is rendered as a speaker ==
+m4-unattributed-rendered-as-speaker: verify exit=1  pytest exit=1  1 failed, 24 passed, 1 warning, 4 subtests passed in 3.46s
+    FAIL G3 lex_bill_ackman/base 35 of 121 polls did not render the surface
+    FAIL G3 lex_bill_ackman/rolling 40 of 121 polls did not render the surface
+    FAIL G3 lex_javier_milei/base 42 of 121 polls did not render the surface
+    FAIL G3 lex_javier_milei/rolling 47 of 121 polls did not render the surface
+== M5: the provisional tail is dropped ==
+m5-provisional-tail-dropped: verify exit=0  pytest exit=1  1 failed, 24 passed, 1 warning, 4 subtests passed in 3.42s
+    PASS
+== M6: assume a sample rate instead of reading it ==
+m6-assume-a-sample-rate: verify exit=1  pytest exit=1  4 failed, 21 passed, 1 warning, 4 subtests passed in 3.48s
+    FAIL G3 lex_bill_ackman/base 110 of 121 polls did not render the surface
+    FAIL G6 lex_bill_ackman/base segment [60,64.96] is outside [0,60]
+    FAIL G1 lex_bill_ackman/base screen wer 0.511364 != grid 0.261364
+    FAIL G1 lex_bill_ackman/base screen wer 0.511364 != snapshot wer 0.261364
+== restored; control run ==
+control-restored: verify exit=0  pytest exit=0  25 passed, 1 warning, 4 subtests passed in 3.50s
+    PASS

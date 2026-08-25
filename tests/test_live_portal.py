@@ -17,6 +17,8 @@ from test_live_api import (
     make_live_runtime,
 )
 
+from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE, UNATTRIBUTED_SPEAKER
+
 
 BASE_INDEX_SHA256 = "aaa308fa135e8e29ed1d96e9b9417952959c9c0218f783ddd4b62ff249a6e43d"
 EXPECTED_LIVE_API = {
@@ -241,6 +243,10 @@ class LivePortalRouteTest(unittest.TestCase):
             self.assertIn('aria-live="polite"', html)
             self.assertIn("controlRequestTimeoutMs = 10000", html)
             self.assertIn("maxRenderedEvents = 200", html)
+            # The surface carries canonical identities, so this page writes the token for
+            # "nobody attributed" itself. Bind it to the server's own constant: two spellings
+            # of S00 would make a reader's transcript disagree with every export of it.
+            self.assertIn(f'const unattributedSpeaker = "{UNATTRIBUTED_SPEAKER}";', html)
             self.assertNotIn("localhost", lower)
             self.assertNotIn("127.0.0.1", lower)
             self.assertNotIn("websocket", lower)
@@ -350,7 +356,16 @@ class LivePortalRouteTest(unittest.TestCase):
                 "seq: 4 | kind: commit | snapshot: 4",
             ],
         )
-        self.assertIn("hello <script>", probe["transcriptBeforeControls"])
+        # The surface, rendered: session-absolute seconds, the `Sxx` token the canonical
+        # identity is published as, and the words -- then the span still being spoken, shown
+        # after it, exactly as the base path published it because no authority owns it yet.
+        self.assertEqual(
+            probe["transcriptAfterFirstPoll"],
+            "[0][S01]hello <script>[1]\n\ndraft & safe",
+        )
+        # The next snapshot has no span in flight, so the tail is gone and the surface stands
+        # alone: the reader is shown what the server says now, not what it said and then some.
+        self.assertEqual(probe["transcriptBeforeControls"], "[0][S01]hello <script>[1]")
         self.assertEqual(
             probe["statusDetailAfterSecondPoll"],
             "\n".join(
@@ -640,6 +655,183 @@ class LivePortalRouteTest(unittest.TestCase):
         self.assertIn("label revisions: 1", probe["statusAfter"].splitlines())
 
     @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_the_portal_replaces_the_surface_when_a_rolling_revision_lands(self):
+        """Plan §10.5 step 6: the reader is shown ONE surface, and a correction replaces it.
+
+        Nothing here is hand-written. A real session commits real spans through the real
+        canonical pump, a rolling producer offers the real `apply_text_revision` seam a real
+        proposal over the interval it owns, and the two snapshots a viewer actually receives
+        on `/snapshot` are replayed into the portal script the service serves. What the test
+        reads is the DOM.
+
+        The claim is the one the whole of E2 rests on: when a witness that heard ten seconds
+        at once corrects words a reader was already shown, the reader sees a *corrected
+        meeting*, not the meeting said twice. So the revised words must stand where the base
+        words stood, the base words must be GONE, and the audio the revision does not own
+        must be untouched.
+        """
+
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+        from moss_transcribe_diarize.app.live_service_runtime import _ManualCanonicalPumpScheduler
+        from moss_transcribe_diarize.app.live_session import (
+            EffectiveTranscriptSegment,
+            TextRevisionProposal,
+        )
+
+        scheduler = _ManualCanonicalPumpScheduler()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=10_000,
+                    max_frame_samples=1_000,
+                    frame_samples=1_000,
+                    max_queue_depth=8,
+                    speech=(True,) * 16,
+                    canonical_scheduler=scheduler,
+                ),
+                live_auth_state_path=Path(tmpdir) / "live-auth.json",
+                live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
+            )
+            html = TestClient(app).get("/live").text
+            capture = _paired_live_client(app)
+            created = capture.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+
+            # Eight 1000-sample frames at a 4000-sample hard cap: two spans, decoded and
+            # committed by the real canonical pump.
+            for sequence in range(8):
+                accepted = capture.post(
+                    f"/api/live/sessions/{session_id}/frames",
+                    json=frame_payload(sequence, 1_000),
+                )
+                self.assertEqual(accepted.status_code, 200)
+                scheduler.drain()
+
+            base_snapshot = viewer.get(f"/api/live/sessions/{session_id}/snapshot?since_version=0")
+            base_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(base_snapshot.status_code, 200)
+            base_session = base_snapshot.json()["snapshot"]["session"]
+            self.assertEqual(base_session["committed_samples"], 8_000)
+            cursor = base_session["version"]
+
+            session = app.state.live_runtime._sessions[session_id].session
+            live = session.snapshot()
+            outcome = session.apply_text_revision(
+                TextRevisionProposal(
+                    epoch=live.epoch,
+                    base_text_revision_version=live.text_revision_version,
+                    source="rolling",
+                    start_sample=0,
+                    end_sample=4_000,
+                    # No speaker of its own: the surface projects one from the base timeline,
+                    # which is what a text-only witness leaves for E3 to improve on.
+                    segments=(
+                        EffectiveTranscriptSegment(
+                            start_sample=0,
+                            end_sample=4_000,
+                            text="the witness heard the whole of it",
+                            canonical_speaker=None,
+                            authority="rolling",
+                        ),
+                    ),
+                )
+            )
+            self.assertTrue(outcome.applied, outcome.refusal)
+
+            revised_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={cursor}"
+            )
+            revised_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=0")
+            self.assertEqual(revised_snapshot.status_code, 200)
+
+            served = [
+                _served(base_snapshot),
+                _served(base_events),
+                _served(revised_snapshot),
+                _served(revised_events),
+            ]
+
+        probe = _run_served_polls_probe(html, served)
+
+        before, after = probe["transcriptAfterEachPoll"]
+        self.assertEqual(before, "[0][S01]stable[0.25]\n\n[0.25][S01]stable[0.5]")
+        self.assertEqual(
+            after,
+            "[0][S01]the witness heard the whole of it[0.25]\n\n[0.25][S01]stable[0.5]",
+        )
+        # Replacement, not accumulation: the words the base path published over the revised
+        # interval are gone from the reader's screen, and the span the revision never claimed
+        # still reads exactly as it was published.
+        self.assertEqual(after.count("stable"), 1)
+        self.assertEqual(before.count("stable"), 2)
+        self.assertNotIn("the witness heard the whole of it", before)
+        # The speaker was projected from the base timeline the revision replaced, not invented
+        # and not dropped: same words, same interval, the identity the base had established.
+        self.assertNotIn(UNATTRIBUTED_SPEAKER, after)
+
+        status_before, status_after = probe["statusAfterEachPoll"]
+        self.assertNotIn("text revisions", status_before)
+        self.assertIn("text revisions: 1", status_after.splitlines())
+        self.assertIn("converged through sample: 4000", status_after.splitlines())
+        # Terminal finalization is E4's to publish; a meeting no terminal pass has touched
+        # must not read as one that failed to finalize.
+        self.assertNotIn("finalization", status_after)
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_the_portal_never_attributes_speech_the_server_left_unattributed(self):
+        """`S00` is a fact, not a gap to fill in.
+
+        The surface names canonical identities; this page turns them back into the tokens the
+        rest of the meeting is written in. Two of those identities are not names at all -- the
+        server attributed nobody, or it named a speaker this snapshot has never established --
+        and both must read as the honest unattributed token. A page that guessed the first
+        speaker instead would put a real person's name on words nobody claimed.
+        """
+
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_node_probe(html, "unattributed")
+
+        self.assertEqual(
+            probe["transcript"],
+            "\n\n".join(
+                (
+                    "[0][S01]attributed[1]",
+                    f"[1][{UNATTRIBUTED_SPEAKER}]nobody attributed[2]",
+                    f"[2][{UNATTRIBUTED_SPEAKER}]never established[3]",
+                )
+            ),
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_the_portal_refuses_a_snapshot_that_declares_no_sample_rate(self):
+        """A surface of sample indices with no declared rate has no readable time at all.
+
+        The alternative to refusing is a page that prints a plausible wrong second from a
+        rate it assumed, and a reader has no way to tell that apart from the truth.
+        """
+
+        from fastapi.testclient import TestClient
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+
+        probe = _run_node_probe(html, "missingRate")
+
+        self.assertEqual(probe["transcript"], "")
+        self.assertIn("Reconnecting", probe["statusDetail"])
+        self.assertIn("malformed snapshot descriptor", probe["statusDetail"])
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
     def test_live_portal_connect_and_control_failure_banners_do_not_echo_authority(self):
         from fastapi.testclient import TestClient
 
@@ -893,6 +1085,10 @@ def _run_node_probe(html: str, scenario: str, responses: list | None = None) -> 
     node_program = f"""
 const portalScript = {json.dumps(script)};
 const scenario = {json.dumps(scenario)};
+// The service's own audio rate, not a number this probe chose. A hand-built snapshot that
+// declared a different one would let the page's seconds agree with the test and with nothing
+// else.
+const sampleRate = {LIVE_SAMPLE_RATE};
 // Bodies captured from a real server on a real route, replayed into the real portal
 // script. Empty for the hand-built scenarios below.
 const servedResponses = {json.dumps(responses or [])};
@@ -1146,12 +1342,25 @@ function v2Session(status) {{
   }};
 }}
 
+// Every snapshot the service serializes carries the descriptor it was produced under, and
+// the render needs the rate off it to turn sample indices into a time a reader can use. The
+// hand-built scenarios declare the real rate, injected from the server's own constant, so
+// none of them can drift into a convenient number this page would then agree with.
+const descriptor = {{ sample_rate: sampleRate }};
+// One published span, as the session surfaces it: the words, where they sit on the session
+// clock, and which established identity is believed to have said them. `identity_snapshot`
+// is what turns that identity back into the `Sxx` token the rest of the meeting reads in.
+const helloSurface = [
+  {{ start_sample: 0, end_sample: sampleRate, text: "hello <script>", canonical_speaker: "spk-a", authority: "provisional" }},
+];
+const helloIdentity = {{ canonical_speakers: ["spk-a"] }};
+
 const snapshots = {{
-  active2: {{ snapshot: {{ session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 8, retained_samples: 4, committed: [{{ transcript: "hello <script>" }}], provisional: {{ transcript: "draft & safe" }} }}, pending_work_items: 1 }}, helper_presence: helperPresence("capturing", 1), v2_session: v2Session("active") }},
-  active4: {{ snapshot: {{ session: {{ status: "active", version: 4, accepted_samples: 12, accounted_samples: 12, retained_samples: 2, committed: [{{ transcript: "hello <script>" }}], provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 2), v2_session: v2Session("active") }},
-  closing5: {{ snapshot: {{ session: {{ status: "closing", version: 5, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 3), v2_session: v2Session("closing") }},
-  aborted6: {{ snapshot: {{ session: {{ status: "aborted", version: 6, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null, failure_reason: "operator abort" }}, terminal_failure: {{ kind: "operator", code: "abort", detail: "typed failure" }}, pending_work_items: 0 }}, helper_presence: null, v2_session: v2Session("aborted") }},
-  closed7: {{ snapshot: {{ session: {{ status: "closed", version: 7, accepted_samples: 0, accounted_samples: 0, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: null, v2_session: null }},
+  active2: {{ snapshot: {{ descriptor, session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 8, retained_samples: 4, committed: [{{ transcript: "hello <script>" }}], identity_snapshot: helloIdentity, effective_transcript: helloSurface, provisional: {{ transcript: "draft & safe" }} }}, pending_work_items: 1 }}, helper_presence: helperPresence("capturing", 1), v2_session: v2Session("active") }},
+  active4: {{ snapshot: {{ descriptor, session: {{ status: "active", version: 4, accepted_samples: 12, accounted_samples: 12, retained_samples: 2, committed: [{{ transcript: "hello <script>" }}], identity_snapshot: helloIdentity, effective_transcript: helloSurface, provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 2), v2_session: v2Session("active") }},
+  closing5: {{ snapshot: {{ descriptor, session: {{ status: "closing", version: 5, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: helperPresence("capturing", 3), v2_session: v2Session("closing") }},
+  aborted6: {{ snapshot: {{ descriptor, session: {{ status: "aborted", version: 6, accepted_samples: 12, accounted_samples: 12, retained_samples: 0, committed: [], provisional: null, failure_reason: "operator abort" }}, terminal_failure: {{ kind: "operator", code: "abort", detail: "typed failure" }}, pending_work_items: 0 }}, helper_presence: null, v2_session: v2Session("aborted") }},
+  closed7: {{ snapshot: {{ descriptor, session: {{ status: "closed", version: 7, accepted_samples: 0, accounted_samples: 0, retained_samples: 0, committed: [], provisional: null }}, pending_work_items: 0 }}, helper_presence: null, v2_session: null }},
 }};
 
 async function runHappy() {{
@@ -1168,6 +1377,10 @@ async function runHappy() {{
   env.nodes.connectButton.listeners.click();
   const inputsAfterConnect = {{ session: env.nodes.sessionId.value, token: env.nodes.viewToken.value }};
   await env.runNextTimer();
+  // The first served snapshot still has a span in flight; the second does not. Read the
+  // transcript after each, because the surface and the provisional tail are two different
+  // things and only a poll that has one can prove the page still shows it.
+  const transcriptAfterFirstPoll = env.nodes.transcript.textContent;
   await env.runNextTimer();
   const pollRequests = env.requests.slice();
   const transcriptBeforeControls = env.nodes.transcript.textContent;
@@ -1183,6 +1396,7 @@ async function runHappy() {{
     pollRequests,
     controlRequests,
     eventRows,
+    transcriptAfterFirstPoll,
     transcriptBeforeControls,
     statusDetailAfterSecondPoll,
     domText,
@@ -1246,7 +1460,10 @@ async function runRetry() {{
 async function runLabelRevision() {{
   // One span, published under S01 and later corrected to S03 by a retrospective sweep. The
   // words are byte-identical in both fields; only the label differs, which is the whole
-  // claim a living document makes.
+  // claim a living document makes. The surface carries the correction the way the session
+  // publishes it -- same words, same interval, a different established identity -- and the
+  // span it was committed as travels beside it unchanged.
+  const identity = {{ canonical_speakers: ["spk-a", "spk-b", "spk-c"] }};
   const committedFirst = [
     {{ transcript: "[0][S01]who said this[1]", revised_transcript: null }},
     {{ transcript: "", revised_transcript: null }},
@@ -1255,10 +1472,16 @@ async function runLabelRevision() {{
     {{ transcript: "[0][S01]who said this[1]", revised_transcript: "[0][S03]who said this[1]" }},
     {{ transcript: "", revised_transcript: null }},
   ];
+  const surfaceFirst = [
+    {{ start_sample: 0, end_sample: sampleRate, text: "who said this", canonical_speaker: "spk-a", authority: "provisional" }},
+  ];
+  const surfaceRevised = [
+    {{ start_sample: 0, end_sample: sampleRate, text: "who said this", canonical_speaker: "spk-c", authority: "provisional" }},
+  ];
   const env = installPortal([
-    {{ payload: {{ snapshot: {{ session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedFirst, provisional: null, label_revision_version: 0 }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ snapshot: {{ descriptor, session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedFirst, identity_snapshot: identity, effective_transcript: surfaceFirst, provisional: null, label_revision_version: 0 }}, pending_work_items: 0 }} }} }},
     {{ payload: {{ events: [] }} }},
-    {{ payload: {{ snapshot: {{ session: {{ status: "active", version: 3, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedRevised, provisional: null, label_revision_version: 1 }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ snapshot: {{ descriptor, session: {{ status: "active", version: 3, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: committedRevised, identity_snapshot: identity, effective_transcript: surfaceRevised, provisional: null, label_revision_version: 1 }}, pending_work_items: 0 }} }} }},
     {{ payload: {{ events: [] }} }},
   ]);
   env.nodes.sessionId.value = "revision-session";
@@ -1273,6 +1496,44 @@ async function runLabelRevision() {{
     statusBefore,
     transcriptAfter: env.nodes.transcript.textContent,
     statusAfter: env.nodes.statusDetail.textContent,
+  }}));
+}}
+
+async function runUnattributed() {{
+  // Three segments the server does not attribute the same way: one with an established
+  // identity, one it declined to attribute at all, and one naming an identity this snapshot
+  // has never established -- an older surface's speaker, or a producer's defect. The last two
+  // are the same fact about the meeting and must read the same way.
+  const env = installPortal([
+    {{ payload: {{ snapshot: {{ descriptor, session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: [], identity_snapshot: {{ canonical_speakers: ["spk-a"] }}, effective_transcript: [
+      {{ start_sample: 0, end_sample: sampleRate, text: "attributed", canonical_speaker: "spk-a", authority: "provisional" }},
+      {{ start_sample: sampleRate, end_sample: 2 * sampleRate, text: "nobody attributed", canonical_speaker: null, authority: "rolling" }},
+      {{ start_sample: 2 * sampleRate, end_sample: 3 * sampleRate, text: "never established", canonical_speaker: "spk-z", authority: "rolling" }},
+    ], provisional: null }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ events: [] }} }},
+  ]);
+  env.nodes.sessionId.value = "unattributed-session";
+  env.nodes.viewToken.value = "unattributed-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  console.log(JSON.stringify({{ transcript: env.nodes.transcript.textContent }}));
+}}
+
+async function runMissingRate() {{
+  // Everything a reader needs except the one presentation input the surface cannot be read
+  // without. The snapshot is otherwise well formed, which is the point: the render must fail
+  // on the missing rate rather than on anything else.
+  const env = installPortal([
+    {{ payload: {{ snapshot: {{ descriptor: {{}}, session: {{ status: "active", version: 2, accepted_samples: 10, accounted_samples: 10, retained_samples: 0, committed: [], identity_snapshot: helloIdentity, effective_transcript: helloSurface, provisional: null }}, pending_work_items: 0 }} }} }},
+    {{ payload: {{ events: [] }} }},
+  ]);
+  env.nodes.sessionId.value = "rate-session";
+  env.nodes.viewToken.value = "rate-token";
+  env.nodes.connectButton.listeners.click();
+  await env.runNextTimer();
+  console.log(JSON.stringify({{
+    transcript: env.nodes.transcript.textContent,
+    statusDetail: env.nodes.statusDetail.textContent,
   }}));
 }}
 
@@ -1449,6 +1710,7 @@ async function runLatency() {{
   const env = installPortal([
     {{ payload: {{
       snapshot: {{
+        descriptor,
         session: {{
           status: "active",
           version: 4,
@@ -1474,6 +1736,7 @@ async function runLatency() {{
     }} }},
     {{ payload: {{
       snapshot: {{
+        descriptor,
         session: {{
           status: "active",
           version: 5,
@@ -1516,6 +1779,8 @@ async function runServedPolls() {{
   env.nodes.viewToken.value = "served-view-secret";
   env.nodes.connectButton.listeners.click();
   const rowsAfterEachPoll = [];
+  const transcriptAfterEachPoll = [];
+  const statusAfterEachPoll = [];
   const pollCount = servedResponses.length / 2;
   for (let poll = 0; poll < pollCount; poll += 1) {{
     if (poll > 0 && env.activeTimerCount() === 0) {{
@@ -1523,10 +1788,17 @@ async function runServedPolls() {{
     }}
     await env.runNextTimer();
     rowsAfterEachPoll.push(env.nodes.events.children.map((node) => node.textContent));
+    // What the reader is actually looking at after each served poll. A surface that is
+    // REPLACED and a surface that is appended to are indistinguishable from the last frame
+    // alone; only the sequence tells them apart.
+    transcriptAfterEachPoll.push(env.nodes.transcript.textContent);
+    statusAfterEachPoll.push(env.nodes.statusDetail.textContent);
   }}
   console.log(JSON.stringify({{
     requests: env.requests,
     rowsAfterEachPoll,
+    transcriptAfterEachPoll,
+    statusAfterEachPoll,
     eventRows: env.nodes.events.children.map((node) => node.textContent),
     serverState: env.nodes.serverState.textContent,
     connectionState: env.nodes.connectionState.textContent,
@@ -1541,6 +1813,8 @@ const scenarios = {{
   sharedStart: runSharedStart,
   retry: runRetry,
   labelRevision: runLabelRevision,
+  unattributed: runUnattributed,
+  missingRate: runMissingRate,
   controlFailure: runControlFailure,
   overlap: runOverlap,
   disconnectOverlap: runDisconnectOverlap,

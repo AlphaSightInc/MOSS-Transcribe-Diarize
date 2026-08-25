@@ -1,0 +1,9 @@
+lex_bill_ackman    base     polls=121  mismatches=0   dom_segments=30  revisions=0  wer=0.261364 recall=0.863636
+lex_bill_ackman    rolling  polls=121  mismatches=0   dom_segments=21  revisions=6  wer=0.198864 recall=0.926136
+lex_javier_milei   base     polls=121  mismatches=0   dom_segments=28  revisions=0  wer=0.144000 recall=0.920000
+lex_javier_milei   rolling  polls=121  mismatches=0   dom_segments=14  revisions=6  wer=0.096000 recall=0.920000
+TRIO               base     wer=0.202682 (grid 0.199870) recall=0.891818 (grid 0.913490)
+TRIO               rolling  wer=0.147432 (grid 0.131861) recall=0.923068 (grid 0.943916)
+speaker tokens on the screen: ['S00', 'S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16']
+decode cost: {'requests': 124, 'fresh_requests': 0}
+PASS

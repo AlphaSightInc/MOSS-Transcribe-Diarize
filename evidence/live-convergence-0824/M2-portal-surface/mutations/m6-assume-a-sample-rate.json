@@ -1,0 +1,221 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "base": {
+        "content_recall": 0.5284090909090909,
+        "dom_characters": 1576,
+        "dom_segments": 30,
+        "effective_segments": 30,
+        "first_mismatch": {
+          "dom": "[1.02][S01]To figure out what something's worth.[3.54]\n\n[4.44][S01]And you have[5]",
+          "expected": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]",
+          "poll": 11
+        },
+        "polls": 121,
+        "render_mismatches": 110,
+        "snapshot_wer": 0.261364,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.511364
+      },
+      "rolling": {
+        "content_recall": 0.5795454545454546,
+        "dom_characters": 1484,
+        "dom_segments": 21,
+        "effective_segments": 21,
+        "first_mismatch": {
+          "dom": "[1.02][S01]To figure out what something's worth.[3.54]\n\n[4.44][S01]And you have[5]\n\n[5][S02]to kind of weigh it. He talked about[9.84]",
+          "expected": "[0.51][S01]To figure out what something's worth.[1.77]\n\n[2.22][S01]And you have[2.5]\n\n[2.5][S02]to kind of weigh it. He talked about[4.92]",
+          "poll": 11
+        },
+        "polls": 121,
+        "render_mismatches": 110,
+        "snapshot_wer": 0.198864,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S03",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.460227
+      }
+    },
+    "lex_javier_milei": {
+      "base": {
+        "content_recall": 0.432,
+        "dom_characters": 1337,
+        "dom_segments": 28,
+        "effective_segments": 28,
+        "first_mismatch": {
+          "dom": "[0.22][S01]So, what is the difference?[4.82]",
+          "expected": "[0.11][S01]So, what is the difference?[2.41]",
+          "poll": 11
+        },
+        "polls": 121,
+        "render_mismatches": 110,
+        "snapshot_wer": 0.144,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0
+        ],
+        "wer": 0.6
+      },
+      "rolling": {
+        "content_recall": 0.392,
+        "dom_characters": 1022,
+        "dom_segments": 14,
+        "effective_segments": 14,
+        "first_mismatch": {
+          "dom": "[0.22][S01]So, what is the difference?[4.82]\n\n[5.5][S02]Between a madman and a genius.[9.98]",
+          "expected": "[0.11][S01]So, what is the difference?[2.41]\n\n[2.75][S02]Between a madman and a genius.[4.99]",
+          "poll": 11
+        },
+        "polls": 121,
+        "render_mismatches": 110,
+        "snapshot_wer": 0.096,
+        "speaker_tokens": [
+          "S00",
+          "S01",
+          "S04",
+          "S06",
+          "S07",
+          "S09",
+          "S12",
+          "S13",
+          "S15",
+          "S16"
+        ],
+        "surfaces": 121,
+        "text_revision_versions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "wer": 0.616
+      }
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 124
+  },
+  "failures": [
+    "G3 lex_bill_ackman/base 110 of 121 polls did not render the surface",
+    "G6 lex_bill_ackman/base segment [60,64.96] is outside [0,60]",
+    "G1 lex_bill_ackman/base screen wer 0.511364 != grid 0.261364",
+    "G1 lex_bill_ackman/base screen wer 0.511364 != snapshot wer 0.261364",
+    "G3 lex_bill_ackman/rolling 110 of 121 polls did not render the surface",
+    "G6 lex_bill_ackman/rolling segment [60,67.56] is outside [0,60]",
+    "G2 lex_bill_ackman/rolling screen wer 0.460227 != grid 0.198864",
+    "G2 lex_bill_ackman/rolling screen wer 0.460227 != snapshot wer 0.198864",
+    "G3 lex_javier_milei/base 110 of 121 polls did not render the surface",
+    "G6 lex_javier_milei/base segment [58.54,63.22] is outside [0,60]",
+    "G1 lex_javier_milei/base screen wer 0.600000 != grid 0.144000",
+    "G1 lex_javier_milei/base screen wer 0.600000 != snapshot wer 0.144000",
+    "G3 lex_javier_milei/rolling 110 of 121 polls did not render the surface",
+    "G6 lex_javier_milei/rolling segment [60.22,69.82] is outside [0,60]",
+    "G2 lex_javier_milei/rolling screen wer 0.616000 != grid 0.096000",
+    "G2 lex_javier_milei/rolling screen wer 0.616000 != snapshot wer 0.096000"
+  ],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_portal.py"
+  ],
+  "passed": false,
+  "recorded_at": "2026-08-25T09:19:46.572407+00:00",
+  "schema": "moss-live-convergence-portal-surface.v1",
+  "speaker_tokens": [
+    "S00",
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "trio": {
+    "base": {
+      "content_recall_mean": 0.4802045454545455,
+      "wer_mean": 0.555682
+    },
+    "rolling": {
+      "content_recall_mean": 0.4857727272727273,
+      "wer_mean": 0.5381135
+    }
+  }
+}

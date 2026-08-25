@@ -1408,3 +1408,123 @@ appended at the iteration 4->5 boundary]
   question. Then the export switch LAST (step 7), the headless portal render/serialization test,
   and the §10.6 soak, which now has a stream to read its queue delay and stale/coalesced counts off.
   Plan §10.5's order is not negotiable.
+
+2026-08-25 iteration 16 (run 20260825-042645-70858) - M2 step 3, item 6 of plan §10.5: the portal
+  renders `effective_transcript` as ONE replacement surface, and the selected arm is measured off
+  the DOM.
+- Target: context.md candidate 6h, the lowest open item. M0's G2, M1's G-M1-1 and M2's
+  D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code. §10.5's order is
+  fixed: this is its SIXTH item. The export switch (step 7) is LAST and is its own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_portal.py                                    (+~60/-14, the render)
+  tests/test_live_portal.py                                                     (+~200, 3 T2 tests + scenarios)
+  prototypes/streaming-diarization/live-convergence/verify_portal_surface.py    (new, seven gates)
+  prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh    (new, 6 mutations)
+  prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py   (+collect_surfaces, additive)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                    (index + commands)
+  evidence/live-convergence-0824/M2-portal-surface/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                               (new, 204K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart, same decision as iterations 14 and 15: rolling would turn on in the live
+  service before its export is settled, and nothing measured here needs the running service.
+  web_cli stays pid 22561 on the M1 build. The restart belongs with the paired rerun after
+  §10.5 step 7 and must be recorded there.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_portal_surface.py
+    exit 0. It reads the DOM, not the snapshot: step 4's driver
+    (`verify_runtime_rolling.run_case(..., collect_surfaces=True)`) supplies every distinct
+    snapshot the meeting passed through, `LIVE_PORTAL_HTML` supplies the page, and the headless
+    browser is the T2 tier's own (`tests/test_live_portal._run_node_probe`, `servedPolls`) -- one
+    browser emulation in this repo, not two.
+      lex_bill_ackman    base    polls=121 mismatches=0 dom_segments=30 wer=0.261364 recall=0.863636
+      lex_bill_ackman    rolling polls=121 mismatches=0 dom_segments=21 wer=0.198864 recall=0.926136
+      lex_javier_milei   base    polls=121 mismatches=0 dom_segments=28 wer=0.144000 recall=0.920000
+      lex_javier_milei   rolling polls=121 mismatches=0 dom_segments=14 wer=0.096000 recall=0.920000
+      lex_keyu_jin       base    polls=121 mismatches=0 dom_segments=26 wer=0.194245 recall=0.956835
+      lex_keyu_jin       rolling polls=121 mismatches=0 dom_segments=16 wer=0.100719 recall=0.985612
+      TRIO base    wer=0.199870 (grid 0.199870) recall=0.913490 (grid 0.913490)
+      TRIO rolling wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      178 replayed decodes, 0 fresh (no GPU)
+    Seven gates: G1 the base arm is on the screen; G2 the rolling arm is on the screen (per case
+    to 6 dp, and the screen equals the snapshot on every case, so the render neither lost nor
+    invented a word); G3 the render is a PURE FUNCTION of the snapshot it was given -- at every
+    one of 726 polls the transcript node equalled an independent render of that poll's snapshot
+    alone, built with the server's own `display_speaker_label` rule; G4 G3 is not vacuous (S00
+    plus sixteen established speakers reached the screen; every rolling sequence shows six
+    distinct `text_revision_version` values); G5 no canonical identity and no authority name
+    reaches the screen; G6 rendered starts non-decreasing and inside `[0, duration]`; G7 zero
+    fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1082 passed, 2 skipped, 386 subtests (1079 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the same digest since
+    iteration 7, unmoved across seven production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh <out>
+    six mutations in live_portal.py; all six caught; control clean before and after.
+- WHAT SHIPPED. One render function and two helpers in the page the service serves:
+  `renderTranscript` reads `session.effective_transcript` instead of stitching
+  `session.committed`; `speakerLabel` turns the canonical identity the surface carries back into
+  the `Sxx` token the rest of the meeting is written in (the server's own rule, with nobody-
+  attributed AND an identity this snapshot never established both reading as `S00`);
+  `displaySeconds` turns sample indices into session-absolute seconds using the rate the
+  descriptor declares. The status panel gained the other three §7.3 fields on the same terms
+  `label_revision_version` already had -- said only once there is something to say. The
+  provisional tail is still shown after the surface, unchanged: nothing has committed it, so no
+  authority owns it yet.
+- THREE DESIGN DECISIONS, each with what it cost:
+  D1 The replacement property is stated as PURITY. "One replacement surface" is easy to assert
+     and hard to check; "the transcript node equals a render of this snapshot alone" is neither.
+     The verifier renders the whole sequence into one portal and compares each poll against an
+     independent per-snapshot render, so a page that accumulated diverges at the first poll after
+     the first revision rather than at the end. Cost: the verifier carries a second, independent
+     implementation of the render -- deliberate, and the same instrument shape the evaluator-v2
+     and grid controls used.
+  D2 The page REFUSES a snapshot that declares no sample rate. The surface carries sample
+     integers and seconds are presentation, so the rate has to come from somewhere; the two
+     alternatives were assuming 16000 (a plausible wrong timestamp, which a reader cannot tell
+     from the truth -- mutation M6 puts segments outside the meeting) and dropping timestamps
+     (losing information the reader has today). Cost: `renderSnapshot` has a third throw, and
+     every hand-built probe scenario now carries a descriptor, which makes them more faithful to
+     the real payload rather than less.
+  D3 The `Sxx` rule is re-implemented in JS and BOUND rather than shared. The surface carries
+     canonical identities; the page must write tokens; there is no way to share a Python function
+     with a browser. So the binding is measured instead of asserted: G3 compares the DOM against a
+     render built with the production `display_speaker_label` on real audio, on every poll, and
+     the `S00` literal is pinned to `UNATTRIBUTED_SPEAKER` by a test that reads the served HTML.
+     Cost: two spellings of one rule exist, and both are checked every run.
+- MUTATIONS, six, in live_portal.py (backed up, restored by a trap on exit):
+    M1 render the committed spans again (the pre-step-6 page)  -> verifier G1/G2/G3/G6 + T2
+    M2 append the surface instead of replacing it              -> verifier G3/G6 + T2
+    M3 print the canonical identity, not the Sxx token         -> verifier G3/G5 + T2
+    M4 unattributed speech rendered as the first speaker       -> verifier G3 + T2
+    M5 the provisional tail is dropped                         -> T2 ONLY
+    M6 assume a sample rate instead of reading it              -> verifier G3/G6 + T2
+- Learned:
+  - The arm was never on the screen before this change, and could not have been. The old render
+    printed one row per committed span on its own SPAN-RELATIVE clock, so every row started near
+    `[0]` and a ten-second correction had nowhere to land. Session-absolute rows are what make a
+    revision replace words in place; the format change is load-bearing, not cosmetic.
+  - The rolling arm prints materially FEWER, LONGER rows for the same audio -- bill 30 -> 21,
+    milei 28 -> 14, keyu 26 -> 16. A ten-second witness publishes sentences where twenty-four
+    2.5-second spans publish fragments. That is the first convergence result a reader can see
+    without computing a metric, and it is worth carrying into the morning review.
+  - The live album establishes ONE CANONICAL SPEAKER PER SPAN on this instrument: 16 canonical
+    speakers on a one-minute two-speaker interview, rendering as `S01`..`S16`. That is deployed
+    identity behaviour, not the render's, and it is exactly what E3/M3 exists to fix -- but it is
+    recorded now because it is what makes the render's speaker-token diversity gate look like a
+    richer corpus than it is, and because M3's gates will be read against it.
+  - Reusing the T2 tier's headless browser from a prototype worked and is worth repeating: the
+    verifier imports `tests/test_live_portal._run_node_probe`, so the page under test, the DOM
+    emulation and the fetch stub are the ones the test tier already maintains. The only additions
+    were three output keys on an existing scenario, all additive.
+  - Fifth iteration of the same lesson (11-16): the corpus reading is necessary and not
+    sufficient. Here it is the provisional tail -- this instrument's base path commits every span
+    it freezes and never publishes a provisional suffix, so sixty seconds of real audio cannot see
+    the live tail disappear. The `happy` scenario now reads the transcript after a poll that has
+    one.
+- Next: M2 step 3 item 7 = the export switch (context.md candidate 6i), and §10.5 says it goes
+  LAST -- exports stay on current commits until terminal/effective export tests pass, then switch
+  once in the same reviewed change. Then the §10.6 5-minute soak, which now has both a stream to
+  read (queue delay, stale/coalesced counts) and a screen to time (portal render). Plan §10.5's
+  order is not negotiable.

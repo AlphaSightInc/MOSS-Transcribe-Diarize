@@ -1,0 +1,221 @@
+...F............F.....F..                                            [100%]
+=================================== FAILURES ===================================
+_ LivePortalRouteTest.test_live_portal_browser_contract_polls_renders_controls_and_stops _
+
+self = <test_live_portal.LivePortalRouteTest testMethod=test_live_portal_browser_contract_polls_renders_controls_and_stops>
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_browser_contract_polls_renders_controls_and_stops(self):
+        from fastapi.testclient import TestClient
+    
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+    
+        probe = _run_browser_contract_probe(html)
+    
+        first_snapshot, first_events, second_snapshot, second_events = probe["pollRequests"]
+        self.assertEqual(first_snapshot["method"], "GET")
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/snapshot?since_version=0", first_snapshot["url"])
+        self.assertEqual(first_snapshot["headers"]["Authorization"], "Bearer portal-view-secret")
+        self.assertEqual(first_snapshot["cache"], "no-store")
+        self.assertEqual(first_snapshot["credentials"], "same-origin")
+        self.assertIn("/api/live/sessions/portal-session%2Falpha/events?since_seq=-1", first_events["url"])
+        self.assertEqual(first_events["headers"]["Authorization"], "Bearer portal-view-secret")
+        self.assertIn("since_version=2", second_snapshot["url"])
+        self.assertIn("since_seq=3", second_events["url"])
+        for request in probe["pollRequests"] + probe["controlRequests"]:
+            self.assertNotIn("portal-view-secret", request["url"])
+        self.assertEqual(
+            probe["eventRows"],
+            [
+                "seq: 0 | kind: session_created | snapshot: 1",
+                "seq: 1 | kind: opened | snapshot: 2",
+                "seq: 3 | kind: partial | snapshot: 2",
+                "seq: 4 | kind: commit | snapshot: 4",
+            ],
+        )
+        # The surface, rendered: session-absolute seconds, the `Sxx` token the canonical
+        # identity is published as, and the words -- then the span still being spoken, shown
+        # after it, exactly as the base path published it because no authority owns it yet.
+        self.assertEqual(
+            probe["transcriptAfterFirstPoll"],
+            "[0][S01]hello <script>[1]\n\ndraft & safe",
+        )
+        # The next snapshot has no span in flight, so the tail is gone and the surface stands
+        # alone: the reader is shown what the server says now, not what it said and then some.
+>       self.assertEqual(probe["transcriptBeforeControls"], "[0][S01]hello <script>[1]")
+E       AssertionError: '[0][S01]hello <script>[1]\n\ndraft & safe\n\n[0][S01]hello <script>[1]' != '[0][S01]hello <script>[1]'
+E         [0][S01]hello <script>[1]
+E       - 
+E       - draft & safe
+E       - 
+E       - [0][S01]hello <script>[1]
+
+tests/test_live_portal.py:368: AssertionError
+_ LivePortalRouteTest.test_live_portal_shows_a_corrected_speaker_without_changing_the_words _
+
+self = <test_live_portal.LivePortalRouteTest testMethod=test_live_portal_shows_a_corrected_speaker_without_changing_the_words>
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_live_portal_shows_a_corrected_speaker_without_changing_the_words(self):
+        """ADR-0002's living document, at the only place a reader ever sees one.
+    
+        A span published under one speaker and corrected by a retrospective sweep must read
+        as the corrected speaker -- and must read as *the same words*, because a rewriter
+        that could alter speech would be a worse defect than the mislabelling it fixes. The
+        revision count appears only once something has actually been corrected: a meeting
+        whose live labels stood has nothing to say about revisions, and saying "0" invites a
+        reader to wonder what went wrong.
+        """
+    
+        from fastapi.testclient import TestClient
+    
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = TestClient(_make_live_app(tmpdir)).get("/live").text
+    
+        probe = _run_label_revision_contract_probe(html)
+    
+        self.assertEqual(probe["transcriptBefore"], "[0][S01]who said this[1]")
+>       self.assertEqual(probe["transcriptAfter"], "[0][S03]who said this[1]")
+E       AssertionError: '[0][S01]who said this[1]\n\n[0][S03]who said this[1]' != '[0][S03]who said this[1]'
+E       - [0][S01]who said this[1]
+E       - 
+E         [0][S03]who said this[1]
+
+tests/test_live_portal.py:653: AssertionError
+_ LivePortalRouteTest.test_the_portal_replaces_the_surface_when_a_rolling_revision_lands _
+
+self = <test_live_portal.LivePortalRouteTest testMethod=test_the_portal_replaces_the_surface_when_a_rolling_revision_lands>
+
+    @unittest.skipUnless(shutil.which("node"), "node is required for browser-contract probe")
+    def test_the_portal_replaces_the_surface_when_a_rolling_revision_lands(self):
+        """Plan §10.5 step 6: the reader is shown ONE surface, and a correction replaces it.
+    
+        Nothing here is hand-written. A real session commits real spans through the real
+        canonical pump, a rolling producer offers the real `apply_text_revision` seam a real
+        proposal over the interval it owns, and the two snapshots a viewer actually receives
+        on `/snapshot` are replayed into the portal script the service serves. What the test
+        reads is the DOM.
+    
+        The claim is the one the whole of E2 rests on: when a witness that heard ten seconds
+        at once corrects words a reader was already shown, the reader sees a *corrected
+        meeting*, not the meeting said twice. So the revised words must stand where the base
+        words stood, the base words must be GONE, and the audio the revision does not own
+        must be untouched.
+        """
+    
+        from fastapi.testclient import TestClient
+        from moss_transcribe_diarize.app.server import create_app
+        from moss_transcribe_diarize.app.live_service_runtime import _ManualCanonicalPumpScheduler
+        from moss_transcribe_diarize.app.live_session import (
+            EffectiveTranscriptSegment,
+            TextRevisionProposal,
+        )
+    
+        scheduler = _ManualCanonicalPumpScheduler()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = create_app(
+                model_path="fake-model",
+                runs_dir=tmpdir,
+                live_enabled=True,
+                live_runtime_factory=lambda: make_live_runtime(
+                    max_retained_samples=10_000,
+                    max_frame_samples=1_000,
+                    frame_samples=1_000,
+                    max_queue_depth=8,
+                    speech=(True,) * 16,
+                    canonical_scheduler=scheduler,
+                ),
+                live_auth_state_path=Path(tmpdir) / "live-auth.json",
+                live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+                live_helper_lease_seconds=30.0,
+            )
+            html = TestClient(app).get("/live").text
+            capture = _paired_live_client(app)
+            created = capture.post("/api/live/sessions").json()
+            session_id = created["id"]
+            viewer = AuthorizedLiveClient(app, created["view_token"])
+    
+            # Eight 1000-sample frames at a 4000-sample hard cap: two spans, decoded and
+            # committed by the real canonical pump.
+            for sequence in range(8):
+                accepted = capture.post(
+                    f"/api/live/sessions/{session_id}/frames",
+                    json=frame_payload(sequence, 1_000),
+                )
+                self.assertEqual(accepted.status_code, 200)
+                scheduler.drain()
+    
+            base_snapshot = viewer.get(f"/api/live/sessions/{session_id}/snapshot?since_version=0")
+            base_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=-1")
+            self.assertEqual(base_snapshot.status_code, 200)
+            base_session = base_snapshot.json()["snapshot"]["session"]
+            self.assertEqual(base_session["committed_samples"], 8_000)
+            cursor = base_session["version"]
+    
+            session = app.state.live_runtime._sessions[session_id].session
+            live = session.snapshot()
+            outcome = session.apply_text_revision(
+                TextRevisionProposal(
+                    epoch=live.epoch,
+                    base_text_revision_version=live.text_revision_version,
+                    source="rolling",
+                    start_sample=0,
+                    end_sample=4_000,
+                    # No speaker of its own: the surface projects one from the base timeline,
+                    # which is what a text-only witness leaves for E3 to improve on.
+                    segments=(
+                        EffectiveTranscriptSegment(
+                            start_sample=0,
+                            end_sample=4_000,
+                            text="the witness heard the whole of it",
+                            canonical_speaker=None,
+                            authority="rolling",
+                        ),
+                    ),
+                )
+            )
+            self.assertTrue(outcome.applied, outcome.refusal)
+    
+            revised_snapshot = viewer.get(
+                f"/api/live/sessions/{session_id}/snapshot?since_version={cursor}"
+            )
+            revised_events = viewer.get(f"/api/live/sessions/{session_id}/events?since_seq=0")
+            self.assertEqual(revised_snapshot.status_code, 200)
+    
+            served = [
+                _served(base_snapshot),
+                _served(base_events),
+                _served(revised_snapshot),
+                _served(revised_events),
+            ]
+    
+        probe = _run_served_polls_probe(html, served)
+    
+        before, after = probe["transcriptAfterEachPoll"]
+        self.assertEqual(before, "[0][S01]stable[0.25]\n\n[0.25][S01]stable[0.5]")
+>       self.assertEqual(
+            after,
+            "[0][S01]the witness heard the whole of it[0.25]\n\n[0.25][S01]stable[0.5]",
+        )
+E       AssertionError: '[0][S01]stable[0.25]\n\n[0.25][S01]stable[0.5]\n\[70 chars]0.5]' != '[0][S01]the witness heard the whole of it[0.25]\n[20 chars]0.5]'
+E       - [0][S01]stable[0.25]
+E       - 
+E       - [0.25][S01]stable[0.5]
+E       - 
+E         [0][S01]the witness heard the whole of it[0.25]
+E         
+E         [0.25][S01]stable[0.5]
+
+tests/test_live_portal.py:764: AssertionError
+=============================== warnings summary ===============================
+tests/test_live_portal.py::LivePortalRouteTest::test_a_terminal_viewer_reads_the_reason_and_stops_without_reconnecting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_browser_contract_polls_renders_controls_and_stops
+FAILED tests/test_live_portal.py::LivePortalRouteTest::test_live_portal_shows_a_corrected_speaker_without_changing_the_words
+FAILED tests/test_live_portal.py::LivePortalRouteTest::test_the_portal_replaces_the_surface_when_a_rolling_revision_lands
+3 failed, 22 passed, 1 warning, 4 subtests passed in 3.53s

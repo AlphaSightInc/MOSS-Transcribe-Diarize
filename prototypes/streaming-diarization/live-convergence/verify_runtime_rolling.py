@@ -274,12 +274,21 @@ def run_case(
     *,
     rolling: bool,
     collect_events: bool = False,
+    collect_surfaces: bool = False,
 ) -> dict[str, Any]:
     """One meeting, frame by frame, through the real runtime; then stop it and read the surface.
 
     `collect_events` adds the serialized event stream and the serialized service snapshot to
     the answer. Off by default so this verifier's own artifact keeps its shape; step 5's
     event verifier turns it on rather than rebuilding this driver.
+
+    `collect_surfaces` adds every DISTINCT serialized service snapshot the meeting passed
+    through, in order -- what a viewer polling this session would have been served. Off by
+    default for the same reason, and used by step 6's portal verifier, which has to read a
+    sequence rather than an ending: a surface that is replaced and a surface that is appended
+    to are indistinguishable from the last frame alone. Which versions a run happens to
+    observe depends on when the canonical pump thread lands, so the sequence is evidence
+    rather than a fixed expectation; the final snapshot is the deterministic one.
     """
 
     pcm = bench.read_pcm(bench.CORPUS / case / "audio.wav")
@@ -296,6 +305,18 @@ def run_case(
     # and it is deliberately far tighter than the converger's own `2 x window` retention
     # bound, so the pacing never decides what the retention bound reports.
     max_base_lag_samples = 2 * config["bounds_config"]["hard_cap_samples"]
+
+    surfaces: list[dict[str, Any]] = []
+    seen_version = -1
+
+    def capture_surface() -> None:
+        nonlocal seen_version
+        if not collect_surfaces:
+            return
+        served = runtime.snapshot(session_id)
+        if served.session.version != seen_version:
+            seen_version = served.session.version
+            surfaces.append(served.to_dict())
 
     cursor = 0
     sequence = 0
@@ -318,7 +339,9 @@ def run_case(
         )
         cursor += count
         sequence += 1
+        capture_surface()
     asyncio.run(runtime.stop(session_id, config["bounds_config"]["stop_drain_deadline_seconds"]))
+    capture_surface()
 
     service = runtime.snapshot(session_id)
     session = service.session
@@ -346,6 +369,8 @@ def run_case(
     if collect_events:
         collected["events"] = [event.to_dict() for event in runtime.events(session_id)]
         collected["service_snapshot"] = service.to_dict()
+    if collect_surfaces:
+        collected["surfaces"] = surfaces
     return {
         **collected,
         "scores": bench.score(bench.load_reference(case), hypothesis),

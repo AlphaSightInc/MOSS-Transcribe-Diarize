@@ -1,0 +1,26 @@
+lex_bill_ackman    base     polls=121  mismatches=110 dom_segments=12  revisions=0  wer=0.812500 recall=0.255682
+lex_bill_ackman    rolling  polls=121  mismatches=110 dom_segments=8   revisions=6  wer=0.823864 recall=0.244318
+lex_javier_milei   base     polls=121  mismatches=110 dom_segments=12  revisions=0  wer=0.608000 recall=0.416000
+lex_javier_milei   rolling  polls=121  mismatches=110 dom_segments=5   revisions=6  wer=0.576000 recall=0.424000
+TRIO               base     wer=0.710250 (grid 0.199870) recall=0.335841 (grid 0.913490)
+TRIO               rolling  wer=0.699932 (grid 0.131861) recall=0.334159 (grid 0.943916)
+speaker tokens on the screen: ['S00']
+decode cost: {'requests': 124, 'fresh_requests': 0}
+FAIL G3 lex_bill_ackman/base 110 of 121 polls did not render the surface
+FAIL G5 lex_bill_ackman/base a canonical identity reached the transcript node
+FAIL G1 lex_bill_ackman/base screen wer 0.812500 != grid 0.261364
+FAIL G1 lex_bill_ackman/base screen wer 0.812500 != snapshot wer 0.261364
+FAIL G3 lex_bill_ackman/rolling 110 of 121 polls did not render the surface
+FAIL G5 lex_bill_ackman/rolling a canonical identity reached the transcript node
+FAIL G2 lex_bill_ackman/rolling screen wer 0.823864 != grid 0.198864
+FAIL G2 lex_bill_ackman/rolling screen wer 0.823864 != snapshot wer 0.198864
+FAIL G3 lex_javier_milei/base 110 of 121 polls did not render the surface
+FAIL G5 lex_javier_milei/base a canonical identity reached the transcript node
+FAIL G1 lex_javier_milei/base screen wer 0.608000 != grid 0.144000
+FAIL G1 lex_javier_milei/base screen wer 0.608000 != snapshot wer 0.144000
+FAIL G3 lex_javier_milei/rolling 110 of 121 polls did not render the surface
+FAIL G5 lex_javier_milei/rolling a canonical identity reached the transcript node
+FAIL G2 lex_javier_milei/rolling screen wer 0.576000 != grid 0.096000
+FAIL G2 lex_javier_milei/rolling screen wer 0.576000 != snapshot wer 0.096000
+FAIL G4 fewer than two established speakers reached the screen
+FAILED 17 gate(s)

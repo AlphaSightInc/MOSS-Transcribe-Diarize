@@ -1,0 +1,25 @@
+lex_bill_ackman    base     polls=121  mismatches=110 dom_segments=30  revisions=0  wer=0.511364 recall=0.528409
+lex_bill_ackman    rolling  polls=121  mismatches=110 dom_segments=21  revisions=6  wer=0.460227 recall=0.579545
+lex_javier_milei   base     polls=121  mismatches=110 dom_segments=28  revisions=0  wer=0.600000 recall=0.432000
+lex_javier_milei   rolling  polls=121  mismatches=110 dom_segments=14  revisions=6  wer=0.616000 recall=0.392000
+TRIO               base     wer=0.555682 (grid 0.199870) recall=0.480205 (grid 0.913490)
+TRIO               rolling  wer=0.538114 (grid 0.131861) recall=0.485773 (grid 0.943916)
+speaker tokens on the screen: ['S00', 'S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16']
+decode cost: {'requests': 124, 'fresh_requests': 0}
+FAIL G3 lex_bill_ackman/base 110 of 121 polls did not render the surface
+FAIL G6 lex_bill_ackman/base segment [60,64.96] is outside [0,60]
+FAIL G1 lex_bill_ackman/base screen wer 0.511364 != grid 0.261364
+FAIL G1 lex_bill_ackman/base screen wer 0.511364 != snapshot wer 0.261364
+FAIL G3 lex_bill_ackman/rolling 110 of 121 polls did not render the surface
+FAIL G6 lex_bill_ackman/rolling segment [60,67.56] is outside [0,60]
+FAIL G2 lex_bill_ackman/rolling screen wer 0.460227 != grid 0.198864
+FAIL G2 lex_bill_ackman/rolling screen wer 0.460227 != snapshot wer 0.198864
+FAIL G3 lex_javier_milei/base 110 of 121 polls did not render the surface
+FAIL G6 lex_javier_milei/base segment [58.54,63.22] is outside [0,60]
+FAIL G1 lex_javier_milei/base screen wer 0.600000 != grid 0.144000
+FAIL G1 lex_javier_milei/base screen wer 0.600000 != snapshot wer 0.144000
+FAIL G3 lex_javier_milei/rolling 110 of 121 polls did not render the surface
+FAIL G6 lex_javier_milei/rolling segment [60.22,69.82] is outside [0,60]
+FAIL G2 lex_javier_milei/rolling screen wer 0.616000 != grid 0.096000
+FAIL G2 lex_javier_milei/rolling screen wer 0.616000 != snapshot wer 0.096000
+FAILED 16 gate(s)
