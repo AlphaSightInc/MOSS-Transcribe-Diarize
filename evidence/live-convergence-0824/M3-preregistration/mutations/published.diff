@@ -1,0 +1,11 @@
+--- /tmp/m3mut/a/b/c/control.py	2026-08-25 06:33:40
++++ /tmp/m3mut/a/b/c/mut_published.py	2026-08-25 06:33:52
+@@ -171,7 +171,7 @@
+                 if overlap(seg, start, end) > 0 and seg.speaker != UNATTRIBUTED_SPEAKER
+             }
+             published = any(overlap(seg, start, end) > 0 for seg in hypothesis)
+-            if published and len(names) < len(voices):
++            if len(names) < len(voices):
+                 collapsed.append(
+                     {
+                         "window": [round(start, 3), round(end, 3)],

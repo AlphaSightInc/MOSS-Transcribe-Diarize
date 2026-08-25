@@ -1,0 +1,11 @@
+--- /tmp/m3mut/a/b/c/control.py	2026-08-25 06:33:40
++++ /tmp/m3mut/a/b/c/mut_floor.py	2026-08-25 06:33:51
+@@ -162,7 +162,7 @@
+             got = overlap(seg, start, end)
+             if got > 0:
+                 ref_seconds[seg.speaker] = ref_seconds.get(seg.speaker, 0.0) + got
+-        voices = sorted(name for name, secs in ref_seconds.items() if secs >= floor_sec)
++        voices = sorted(ref_seconds)
+         if len(voices) >= 2:
+             mixed += 1
+             names = {

@@ -1,0 +1,11 @@
+--- /tmp/m3mut/a/b/c/control.py	2026-08-25 06:33:40
++++ /tmp/m3mut/a/b/c/mut.py	2026-08-25 06:33:40
+@@ -168,7 +168,7 @@
+             names = {
+                 seg.speaker
+                 for seg in hypothesis
+-                if overlap(seg, start, end) > 0 and seg.speaker != UNATTRIBUTED_SPEAKER
++                if overlap(seg, start, end) > 0
+             }
+             published = any(overlap(seg, start, end) > 0 for seg in hypothesis)
+             if published and len(names) < len(voices):

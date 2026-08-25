@@ -1738,3 +1738,84 @@ appended at the iteration 4->5 boundary]
   restates the comparators against the M2 exit measurement (see above), then the §11.1 S1 arm
   over the standing bench, 2.5 s base only, embeddings strictly from witness-owned intervals
   (plan D5). Do not re-open the geometry or the salvage gate on the way.
+
+2026-08-25 iteration 19 (run 20260825-042645-70858) - M3 (plan E3) step 1: the comparators are
+  restated from measurement, and E3's ceiling is now a number.
+- Target: context.md candidate 7's FIRST step, named by iteration 18 as the thing that must
+  happen before any S1 arm runs. A MEASUREMENT plus a contract: no production file was touched.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M3.md   (new; arms, 14 gates
+      with bounds and clocks, 7 predictions, selection + disposition rules)
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py  (new; the comparator
+      instrument, with --selftest)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                (index row + commands)
+  evidence/live-convergence-0824/M3-preregistration/{NOTES.md,baseline.json,baseline-console.txt,
+      selftest.txt,mutations.txt,mutations/*.diff,pytest-identity-floor.txt,sha256.txt}  (new)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart, no GPU, zero MOSS requests: the table is re-derived from the checked-in
+  M2 exit passes.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --output <json>
+    Four cases x two passes x two arms. runs_agree: true on all four cases (DER, miss, confusion,
+    speaker_accuracy, matched-word accuracy and S00 seconds identical to 6 dp across passes).
+  - --selftest: PASS (0 failures), and four mutations of the instrument each caught by its own
+    check (S00 counted as a name; the second voice needs no floor; the confusion-free floor
+    forgets false alarm; an unpublished window counts as collapsed). Control clean before/after.
+  - .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q -> 3 passed (G-M3-6's
+    baseline, green before any E3 work).
+  - .venv/bin/python -m pytest tests/ -q -> 1091 passed, 2 skipped, 392 subtests (unchanged; no
+    production code was touched).
+- WHY THIS WAS THE STEP. M3's PRD gates name the PRE-CAMPAIGN live arm (trio DER .2235/.1945/.1112
+  mean bound .1393, speaker_accuracy >= .8437, five-minute DER <= .0947). The M2 exit measured the
+  surface actually served, WITH NO E3 CODE AT ALL, at trio DER mean .111278, speaker accuracy
+  .888722, five-minute .0886 -- every PRD absolute bound already met. Gating M3 against the stale
+  comparator would let the milestone pass by doing nothing. Every gate is now stated against BOTH
+  the PRD bound and the M2 exit, binding on whichever is stricter: a strengthening in every row,
+  with no PRD bound relaxed anywhere.
+- E3'S CEILING, MEASURED BEFORE E3 EXISTS. DER decomposed on the deployed live arm (false alarm is
+  .000000 on all four cases):
+      case              DER      miss    confusion  confusion-free floor  confusion share
+      lex_bill_ackman   .127333  .090167  .037167   .090167               29.2 %
+      lex_javier_milei  .117333  .117333  .000000   .117333                0.0 %
+      lex_keyu_jin      .089167  .077000  .012167   .077000               13.6 %
+      keyu-5m           .088600  .082700  .005900   .082700                6.7 %
+  Only confusion is a label the album could have got right; miss is speech nobody published, which
+  no embedding recovers. A PERFECT speaker authority that changed nothing else moves trio mean DER
+  .111278 -> .094833: a ceiling of .016445, three quarters of it (.037167 of .049334) inside
+  lex_bill_ackman. The five-minute ceiling is .005900. lex_javier_milei's confusion is exactly
+  zero, so any DER movement there is a regression by construction -- P3 in the preregistration.
+- S00 AND COLLAPSE HAVE BASELINES. S00 seconds .73 on bill (3 fragments: 29.63-29.96, 39.84-40.00,
+  49.75-49.99), .56 on the five-minute case (150.08-150.64), .00 on milei and keyu. Every fragment
+  is 0.16-0.56 s, below the 0.5 s matching floor -- plan §11.4 microfragments, a separate
+  candidate, not M3's. Exactly ONE collapsed two-speaker window in the whole bench: bill
+  [20.0, 30.0), where the reference carries Bill 20-29 and Lex 29-30 (exactly the 1.0 s birth
+  floor) and the surface names only S01 -- the second voice IS detected but published as S00.
+- TWO COLLAPSE SCREENS, and the bug that produced them. The deployed 10 s grid is
+  alignment-dependent: lex_javier_milei's ONLY reference turn falls exactly on a window boundary,
+  so the aligned grid reports zero mixed windows on that case -- a fact about alignment, not about
+  speaker health. The sliding screen keeps the 10 s window and hops by the deployed base-span
+  cadence (2.5 s, read from each pass's own replay-manifest.json), giving 9/3/9/27 mixed windows
+  against 3/0/3/5. The first version of the driver silently fell back to the stride when it could
+  not find the manifest (wrong path), which made the sliding screen a copy of the deployed one and
+  reported the same numbers twice. The fallback is now a refusal: a missing hard cap raises.
+  Gates use the sliding screen.
+- Learned:
+  - A gate needs a decomposition, not a total. "Trio DER .111278 against a bound of .1393" says
+    E3 has .0279 of room; the decomposition says it has .016445, and that three quarters of it is
+    in one of three cases. Both statements are true and only one of them can tell an S1 arm that
+    "improved" by .04 that it moved something other than speaker identity.
+  - The instrument must read every rule from production or it will quietly disagree with it.
+    UNATTRIBUTED_SPEAKER, DEFAULT_ROLLING_GEOMETRY, ALBUM_BIRTH_MIN_SECONDS and the hard cap all
+    come from the deployment; the prototype spells none of them. That is also what made the
+    sliding-screen bug visible -- the hop had a source to be wrong about.
+  - A silent fallback in a measurement is worse than a crash: it produced a plausible table with
+    two identical columns, which reads as agreement rather than as a missing file.
+  - Same lesson as iterations 11-18, seventh time: probes must be shown to react. Four mutations
+    of this instrument, four catches, each by the check written for it.
+- Next: candidate 7b, the S1 arm itself. plan §11.1 S1 on the standing bench, 2.5 s base only,
+  embeddings strictly from witness-owned local speaker intervals (plan D5), the §6 M4 resolver
+  internal to live_transcript_convergence.py; prototype prints every embedded interval, cache
+  hit/miss, mapping, abstention and per-resource RTF, decodes each witness once. Score it with
+  measure_m3_baseline.py --passes-root against the 14 preregistered gates. Do not re-open the
+  bounds, the arms or the geometry on the way.

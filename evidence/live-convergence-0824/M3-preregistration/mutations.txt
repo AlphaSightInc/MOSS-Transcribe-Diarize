@@ -1,0 +1,26 @@
+Instrument mutations for measure_m3_baseline.py -- each flips exactly one rule of the
+comparator instrument and must be caught by --selftest. Run 2026-08-25, iteration 19.
+Each mutant is the checked-in driver with one line changed (see mutations/<name>.diff);
+the only other edit is the REPO/sys.path prelude, so the mutant can run from /tmp.
+
+control (unmutated): selftest: PASS (0 failures)  exit=0
+
+mutation unattributed: S00 counts as a published speaker name
+    FAIL unattributed is not a name: got (1, 0), want (1, 1)
+    selftest: FAIL (1 failures)
+    exit=1
+
+mutation floor: the second voice needs no evidence floor
+    FAIL a voice below the birth floor is not a second voice: got 1, want 0
+    selftest: FAIL (1 failures)
+    exit=1
+
+mutation share: the confusion-free floor forgets false alarm
+    FAIL confusion-free floor: got 0.06, want 0.07
+    selftest: FAIL (1 failures)
+    exit=1
+
+mutation published: a window nobody published counts as collapsed
+    FAIL nothing published -> mixed but not collapsed: got (1, 1), want (1, 0)
+    selftest: FAIL (1 failures)
+    exit=1

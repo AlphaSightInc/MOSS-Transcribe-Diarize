@@ -17,6 +17,7 @@ imported by `moss_transcribe_diarize/`.
 | `run_paired_passes.sh` + `verify_m1_exit.py` | does the M1 build clear the plan E1 exit gates on the deployed service? | 5 of 6 — G-M1-1 misses by .0023 on a pre-M1 decode flip; `evidence/live-convergence-0824/M1-e1-exit/` |
 | `attribute_wer_delta.py` | which published segment is a WER delta actually made of? | measures each segment's cost by re-scoring without it — bill's salvage is worth −.034091, the S00 flip +.011363 |
 | `verify_adr_text_finalization.py` | does the text-finalization ADR still quote the plan's decisions *verbatim*, as Appendix B Q8 required? | **yes** — D1–D7 byte-identical, one contiguous block, D8–D10 absent; `evidence/live-convergence-0824/M2-text-finalization-adr/` |
+| `measure_m3_baseline.py` + `PREREGISTRATION-M3.md` | how much of the deployed DER can a speaker authority even reach, and what must M3 not regress? | at most `.016445` trio DER (`.005900` on the five-minute case); comparators restated against the M2 exit — `evidence/live-convergence-0824/M3-preregistration/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -295,3 +296,32 @@ quality moved without any E3 work: trio live DER `.111278` mean (baseline live `
 five-minute case `.0886` — already inside M3's `<= .0947`, because longer surface segments shrink
 the extent artifact. M3 must restate its comparators against this measurement. Verdict:
 `evidence/live-convergence-0824/M2-e2-exit/`.
+
+```bash
+# M3 (plan E3) preregistration: the comparator table E3 is gated against (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py \
+  --output /tmp/m3-baseline.json
+# prove the derived quantities react before trusting them
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --selftest
+# the same instrument, pointed at an S1 arm's fresh passes
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py \
+  --passes-root /tmp/m3-s1-<stamp> --output /tmp/m3-s1.json
+```
+
+`measure_m3_baseline.py` answers the question M3 cannot be gated without: **how much of the
+deployed DER is even reachable by a speaker authority?** It decomposes the deployed scorer's DER
+into miss / false alarm / confusion, and only confusion is a label the album could have got
+right. Trio: `.111278` DER over a confusion-free floor of `.094833`, so a *perfect* speaker
+authority wins at most `.016445`, three quarters of it in `lex_bill_ackman`; the five-minute case
+can win at most `.005900`; `lex_javier_milei`'s confusion is exactly `.000000`, so any DER
+movement there is a regression by construction. It also reports S00 seconds and intervals, and
+counts two-speaker collapse on two screens — the deployed 10 s grid, and a screen that keeps the
+window but hops by the deployed base-span cadence, because `lex_javier_milei`'s only reference
+turn lands exactly on a window boundary and hides from the aligned grid entirely (0 mixed windows
+aligned, 3 sliding). Gates use the sliding screen. Instance values come from production
+(`UNATTRIBUTED_SPEAKER`, `DEFAULT_ROLLING_GEOMETRY`, `ALBUM_BIRTH_MIN_SECONDS`, and the hard cap
+read from each pass's own manifest), never from this file. Contract: `PREREGISTRATION-M3.md`;
+verdict and mutation sweep: `evidence/live-convergence-0824/M3-preregistration/`.

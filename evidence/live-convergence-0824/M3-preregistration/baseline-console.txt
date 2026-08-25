@@ -1,0 +1,24 @@
+passes root : /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M2-e2-exit/passes
+collapse    : 10.0 s windows (hop 10.0 s deployed / base-span sliding), 1.0 s voice floor, unattributed label S00
+
+case              arm         DER     miss     conf    floor  spk_acc   v2_spk   S00_s  clps/dep  clps/slide
+------------------------------------------------------------------------------------------------------------
+lex_bill_ackman   file   0.075500 0.051000 0.024500 0.051000 0.924500        -       -                      
+lex_bill_ackman   live   0.127333 0.090167 0.037167 0.090167 0.872667 0.920455    0.73       1/3         1/9
+                        runs agree: True
+lex_javier_milei  file   0.151833 0.151833 0.000000 0.151833 0.848167        -       -                      
+lex_javier_milei  live   0.117333 0.117333 0.000000 0.117333 0.882667 0.920000    0.00       0/0         0/3
+                        runs agree: True
+lex_keyu_jin      file   0.079000 0.067667 0.011333 0.067667 0.921000        -       -                      
+lex_keyu_jin      live   0.089167 0.077000 0.012167 0.077000 0.910833 0.985612    0.00       0/3         0/9
+                        runs agree: True
+keyu-5m           file   0.057933 0.047800 0.010133 0.047800 0.942067        -       -                      
+keyu-5m           live   0.088600 0.082700 0.005900 0.082700 0.911400 0.954856    0.56       0/5        0/27
+                        runs agree: True
+
+TRIO live   DER 0.111278  confusion-free floor 0.094833  -> most any speaker-authority arm can win: 0.016445
+TRIO live   speaker_accuracy 0.888722  matched-word 0.942022
+5-MIN live  DER 0.088600  floor 0.082700  -> reachable 0.005900
+collapsed two-speaker windows across all four cases: 1 at the deployed hop, 1 on the sliding screen
+
+wrote evidence/live-convergence-0824/M3-preregistration/baseline.json

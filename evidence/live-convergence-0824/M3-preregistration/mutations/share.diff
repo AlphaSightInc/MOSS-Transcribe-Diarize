@@ -1,0 +1,11 @@
+--- /tmp/m3mut/a/b/c/control.py	2026-08-25 06:33:40
++++ /tmp/m3mut/a/b/c/mut_share.py	2026-08-25 06:33:52
+@@ -106,7 +106,7 @@
+         # What a speaker-authority change can and cannot reach. Confusion is a label the
+         # album could have got right; miss is speech nobody published, which no embedding
+         # recovers.
+-        node["der_confusion_free_floor"] = round(miss + false_alarm, 6)
++        node["der_confusion_free_floor"] = round(miss, 6)
+         node["confusion_share_of_der"] = round(confusion / der, 6) if der else 0.0
+     return node
+ 

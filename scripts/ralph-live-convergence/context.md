@@ -644,8 +644,28 @@
   span cadence. Rolling's own queue wait is the mirror: p50 .016 ms, max 133 ms (a window waiting
   for canonical work). §10.6's other quantities are in `gates.json` under `_soak_10_6`: snapshot
   bytes 12.8K (1 min) / 51.7K (5 min), trace 752 KB, base RTF .09-.12, witness RTF .030-.048.
-- Rest of the ladder (M3-M5) unimplemented; working tree carries the plan, evidence prototypes,
-  and this scaffold.
+- **M3's gates are now written and measured against (iteration 19).**
+  `PREREGISTRATION-M3.md` states 14 gates, each against BOTH the PRD bound and the M2 exit
+  measurement, binding on whichever is stricter - a strengthening in every row, no PRD bound
+  relaxed. It fixes the arms (S1; S2 only if S1 fails), the clocks, 7 predictions, and the
+  disposition rule (an unsigned row unless a plan §15 global condition fires).
+- **E3's ceiling is a measured number, not a hope.** `measure_m3_baseline.py` decomposes the
+  deployed DER: false alarm is .000000 everywhere, and only CONFUSION is a label a speaker
+  authority could have got right - miss is speech nobody published, which no embedding recovers.
+  Trio DER .111278 over a confusion-free floor of **.094833**, so a perfect speaker authority
+  wins at most **.016445**; the five-minute case at most **.005900**. `lex_bill_ackman` holds
+  .037167 of the trio's .049334 confusion (75.3 %); `lex_javier_milei`'s confusion is exactly
+  .000000, so ANY DER movement on that case is a regression by construction.
+- **S00 and collapse have baselines now**: S00 seconds .73 (3 fragments, 0.16-0.33 s, at the 29 /
+  40 / 50 s turn boundaries) on bill, .56 (1 fragment) on the five-minute case, .00 elsewhere -
+  all below the 0.5 s matching floor, i.e. plan §11.4 microfragments, not M3's. Exactly ONE
+  collapsed two-speaker window in the whole bench: bill [20.0, 30.0), where the second voice is
+  detected but published as S00. Two collapse screens are reported because the deployed 10 s grid
+  is alignment-dependent - `lex_javier_milei`'s only reference turn falls exactly on a window
+  boundary and produces 0 mixed windows aligned vs 3 sliding. **Gates use the sliding screen**
+  (window 10 s, hop = the deployed hard cap read from each pass's manifest).
+- Rest of the ladder (M3 arms, M4-M5) unimplemented; working tree carries the plan, evidence
+  prototypes, and this scaffold.
 
 ## Validation
 
@@ -776,6 +796,14 @@ prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh \
 .venv/bin/python -m pytest tests/ -q
 ```
 
+```bash
+# M3 comparator table + instrument self-test (no GPU, no service; the bounds M3 is gated against)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --output /tmp/m3.json
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --selftest
+```
+
 ## Candidates
 
 1. ~~**M0a replay-adapter fix**~~ — DONE iteration 1 (see Current state). Remaining M0
@@ -842,15 +870,24 @@ prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh \
    soak quantities were read off the same five-minute passes (Appendix B's rescope) and are in
    `M2-e2-exit/gates.json` under `_soak_10_6`; only portal render time is still outstanding and
    it is the attended browser item.
-7. **M3 S1 speaker authority - NEXT**: prototype (`compare_speaker_authority.py` per plan §11.1,
-   2.5 s base only) → production wiring. **Restate the comparators first**: M3's PRD gates name
-   the baseline live DER (.2235 / .1945 / .1112, mean bound .1393) and speaker accuracy (.8437),
-   but the M2 exit already measures DER mean .111278 / spk_acc .888722 on the trio and .0886 on
-   the five-minute case with no E3 code at all. Gating M3 against a surface nobody serves would
-   let it pass by doing nothing; the honest bar is "no per-case regression vs the M2 exit
-   measurement AND the PRD's absolute bounds", and that restatement belongs in the M3
-   preregistration, written before any S1 arm runs. The evaluator-v2 matched-word speaker axis
-   (.9549 on the five-minute case) is the non-gameable half and must be reported beside DER.
+7. ~~**M3 step 1: restate the comparators**~~ - DONE iteration 19.
+   `PREREGISTRATION-M3.md` + `measure_m3_baseline.py`, verdict in
+   `evidence/live-convergence-0824/M3-preregistration/`. Do NOT re-derive the bounds when an S1
+   number arrives: every gate is fixed against both the PRD bound and the M2 exit, binding on
+   whichever is stricter, and the PRD forbids moving one after a number is seen. Do NOT gate on
+   the deployed collapse screen; it reports 0 mixed windows on `lex_javier_milei` for alignment
+   reasons alone.
+7b. **M3 step 2: the S1 arm - NEXT**: plan §11.1 S1 (2.5 s base only), embeddings strictly from
+   witness-owned local speaker intervals (plan D5), reconciled against the existing album; the
+   §6 M4 resolver is internal to `live_transcript_convergence.py` "until a second caller exists".
+   The prototype (`compare_speaker_authority.py`) must print every embedded interval, cache
+   hit/miss, mapping, abstention and per-resource RTF, and must decode each witness ONCE and
+   reuse it - only changed segmentation earns new WeSpeaker work. Score it with
+   `measure_m3_baseline.py --passes-root` against the 14 preregistered gates. Read the ceiling
+   first: at most .016445 trio DER is available and three quarters of it is in one case, so an
+   arm that "improves" by more than that is measuring something else. S2 only if S1 fails, and
+   record that S2's premise (overlapping witnesses) does not exist at the selected 10/10
+   geometry.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed
    prerelease amendment also gates terminal DER within .020 of the paired file arm per case and
    requires §12.2 cold/warm model-readiness reporting).
