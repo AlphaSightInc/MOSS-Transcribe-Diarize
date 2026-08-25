@@ -155,3 +155,28 @@ One finding worth carrying: the converger's coalesce key is `rolling:<epoch>` an
 starts at epoch 0, so the key identifies a session only because the runtime builds one arbiter per
 session — the driver namespaces it and says so. Verdict:
 `evidence/live-convergence-0824/M2-refinement-scheduling/`.
+
+```bash
+# E2 step 4: does the real RUNTIME run the witness, and land on the selected arm? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py
+# five mutations, in `live_coordinator.py` / `live_service_runtime.py`, restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_runtime_rolling.sh /tmp/rolling-mutations
+```
+
+`verify_runtime_rolling.py` removes the driver. Every earlier E2 verifier replayed baseline spans
+into the objects under test; this one puts audio frames into `LiveServiceRuntime.accept_frame` and
+reads the arm out of the session snapshot, with the deployed endpoint configuration, real
+`webrtcvad`, the real arbiter, the production canonical pump and the production decode seam
+(a runner that replays the grid's recorded answers through `_validate_transcription_response`, so
+M1 salvage sees exactly what it sees on the 4070 Ti). Each case runs **twice** — no window decoder,
+then one — so both arms come off one instrument: base `.199870` / `.913490`, rolling `.131861` /
+`.943916`, every case exact to 6 dp, zero fresh MOSS requests.
+
+Two things it established beyond its own gates. The offline runtime reproduces the **deployed span
+grid exactly** (24 / 32 / 24 frozen spans, identical to the checked-in baseline traces), which is
+what makes a GPU-free end-to-end verifier possible. And its first draft measured what happens when
+the base runs far ahead of the witness: the converger's `2 x window` ring evicts, names
+`pcm_evicted`, and rolling stops — degrading to the base path statedly rather than silently. The
+driver now paces the base within two spans, which is what real-time pacing produces. Verdict:
+`evidence/live-convergence-0824/M2-runtime-wiring/`.

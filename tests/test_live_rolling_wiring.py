@@ -1,0 +1,496 @@
+"""Plan §10.5 step 4 -- the rolling witness inside the live runtime (test tier T2).
+
+The three pieces E2 shipped before this were each provably correct on their own: the
+converger reproduces the selected arm, the session validates every revision, and the arbiter
+schedules a witness below the base path. What none of them could show is that the *runtime*
+puts them together -- that a base commit reaches the converger, that the window it plans is
+dispatched and released, that what comes back publishes, and that none of it can take down
+the meeting the base path is already publishing.
+
+These are the seams that only exist once the wiring does. The arm itself is measured
+elsewhere, on real audio, against the grid: `verify_runtime_rolling.py`.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import unittest
+from dataclasses import dataclass
+from typing import Any
+
+from moss_transcribe_diarize.app.live_adapters import (
+    InferenceTranscript,
+    LiveProviderError,
+    LiveProviderTransientError,
+    RunnerBoundedWavInference,
+)
+from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter
+from moss_transcribe_diarize.app.live_coordinator import (
+    LiveCoordinator,
+    ROLLING_DECODE_DID_NOT_ANSWER,
+    ROLLING_DECODE_FAILED,
+    ROLLING_WINDOW_REASON,
+    RefinementWork,
+)
+from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig
+from moss_transcribe_diarize.app.live_service_runtime import (
+    LiveServiceBounds,
+    LiveServiceConfigHashes,
+    LiveServiceDescriptor,
+    LiveServiceRuntime,
+)
+from moss_transcribe_diarize.app.live_session import (
+    AudioFrame,
+    FrozenSpan,
+    LIVE_SAMPLE_RATE,
+    LiveIdentityPreparation,
+    LiveIdentitySnapshot,
+    LiveSession,
+)
+from moss_transcribe_diarize.app.live_span_bounds import HARD_CAP_REASON
+from moss_transcribe_diarize.app.live_transcript_convergence import (
+    DEFAULT_ROLLING_GEOMETRY,
+    RollingStatus,
+    RollingTranscriptConverger,
+)
+from moss_transcribe_diarize.app.transcription_outcome import (
+    EmptyTranscriptCause,
+    EmptyTranscriptionError,
+)
+
+FRAME_SAMPLES = 8000
+HARD_CAP_SAMPLES = 40000
+WINDOW_SAMPLES = DEFAULT_ROLLING_GEOMETRY.window_samples
+DECODER_MAX_SAMPLES = 120000
+
+
+class ScriptedSpeech:
+    """Every accepted range is speech, so the endpoint freezes on the hard cap alone."""
+
+    def observe(self, *, frame: AudioFrame, start_sample: int, end_sample: int):
+        from moss_transcribe_diarize.app.live_endpoint import SpeechObservation
+
+        del frame
+        return (
+            SpeechObservation(start_sample=start_sample, end_sample=end_sample, speech_present=True),
+        )
+
+
+class ScriptedIdentity:
+    def prepare(self, *, span, pcm, transcript, base_snapshot):
+        del pcm
+        return LiveIdentityPreparation(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            base_snapshot_version=base_snapshot.version,
+            proposed_snapshot=LiveIdentitySnapshot(
+                version=base_snapshot.version + 1,
+                canonical_speakers=base_snapshot.canonical_speakers or ("speaker-0001",),
+            ),
+            relabeled_transcript=transcript,
+        )
+
+
+@dataclass
+class ScriptedDecoder:
+    """One word per decode, naming the interval it came from, so ownership is readable.
+
+    `max_samples` is the real bound the adapter enforces, and the two decoders differ in it:
+    the base decoder cannot physically accept a ten-second window, which is why the wiring
+    needs a second one at all.
+    """
+
+    max_samples: int
+    label: str
+    calls: list[tuple[int, int]]
+    failure: Exception | None = None
+
+    def preflight(self):
+        from moss_transcribe_diarize.app.live_adapters import AdapterPreflight
+
+        return AdapterPreflight(True)
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        if len(pcm) != span.sample_count * 2:
+            raise AssertionError("decoder was handed PCM that does not match its span.")
+        if span.sample_count > self.max_samples:
+            raise LiveProviderError("span exceeds bounded inference capacity.")
+        self.calls.append((span.start_sample, span.end_sample))
+        if self.failure is not None:
+            raise self.failure
+        seconds = span.sample_count / LIVE_SAMPLE_RATE
+        return InferenceTranscript(
+            transcript=f"[0.00][S01] {self.label} {span.start_sample}[{seconds:g}]",
+            elapsed_sec=0.01,
+        )
+
+
+def _endpoint_config() -> EndpointPolicyConfig:
+    return EndpointPolicyConfig(
+        min_speech_samples=1600,
+        min_silence_samples=8000,
+        pre_speech_padding_samples=1600,
+        post_speech_padding_samples=1600,
+        hard_cap_samples=HARD_CAP_SAMPLES,
+    )
+
+
+def _descriptor() -> LiveServiceDescriptor:
+    return LiveServiceDescriptor(
+        source_revision="0" * 40,
+        provider_name="rolling-wiring",
+        provider_revision="test",
+        provider_manifest_hash=hashlib.sha256(b"rolling-wiring").hexdigest(),
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={"hard_cap_samples": HARD_CAP_SAMPLES},
+            identity_config={"max_speakers": 16},
+            decoder_config={"max_samples": DECODER_MAX_SAMPLES},
+        ),
+        bounds=LiveServiceBounds(
+            max_frame_samples=LIVE_SAMPLE_RATE,
+            max_queue_depth=16,
+            max_retained_samples=960000,
+            max_identity_speakers=16,
+            max_events=1000,
+            hard_cap_samples=HARD_CAP_SAMPLES,
+            stop_drain_deadline_seconds=5.0,
+        ),
+        frame_samples=FRAME_SAMPLES,
+    )
+
+
+def _runtime(*, base: ScriptedDecoder, rolling: ScriptedDecoder | None) -> LiveServiceRuntime:
+    return LiveServiceRuntime(
+        descriptor=_descriptor(),
+        endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config()),
+        speech_provider_factory=ScriptedSpeech,
+        decoder_factory=lambda: base,
+        rolling_decoder_factory=None if rolling is None else (lambda: rolling),
+        identity_preparer_factory=ScriptedIdentity,
+        session_id_factory=lambda: "rolling-session",
+    )
+
+
+def _decoders(*, rolling: bool, rolling_failure: Exception | None = None):
+    base = ScriptedDecoder(max_samples=DECODER_MAX_SAMPLES, label="base", calls=[])
+    witness = (
+        ScriptedDecoder(
+            max_samples=WINDOW_SAMPLES, label="rolling", calls=[], failure=rolling_failure
+        )
+        if rolling
+        else None
+    )
+    return base, witness
+
+
+def _run_meeting(runtime: LiveServiceRuntime, *, frames: int) -> str:
+    created = runtime.create()
+    for sequence in range(frames):
+        runtime.accept_frame(
+            created.session_id,
+            AudioFrame(
+                sequence=sequence,
+                pcm=b"\x11\x22" * FRAME_SAMPLES,
+                sample_count=FRAME_SAMPLES,
+            ),
+        )
+    asyncio.run(runtime.stop(created.session_id, 5.0))
+    return created.session_id
+
+
+# Twenty frames is 160000 samples: four hard-cap spans, which is exactly one rolling window.
+# Forty is two windows, which is what a test about the *second* window needs.
+ONE_WINDOW_FRAMES = WINDOW_SAMPLES // FRAME_SAMPLES
+TWO_WINDOW_FRAMES = 2 * ONE_WINDOW_FRAMES
+
+
+class RollingRuntimeWiringTest(unittest.TestCase):
+    def test_no_window_decoder_means_no_witness_and_no_change(self):
+        """The pre-E2 service, unchanged: the collaborator is asked for, never assumed."""
+
+        base, _ = _decoders(rolling=False)
+        runtime = _runtime(base=base, rolling=None)
+        session_id = _run_meeting(runtime, frames=ONE_WINDOW_FRAMES)
+
+        coordinator = runtime._sessions[session_id].coordinator
+        self.assertIsNone(coordinator.converger)
+        self.assertIsNone(coordinator.rolling_accounting())
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(snapshot.canonical_through_sample, 0)
+        self.assertEqual(
+            {segment.authority for segment in snapshot.effective_transcript}, {"provisional"}
+        )
+
+    def test_a_base_commit_reaches_the_converger_and_its_window_publishes(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=ONE_WINDOW_FRAMES)
+
+        snapshot = runtime.snapshot(session_id).session
+        self.assertIsNone(runtime.snapshot(session_id).terminal_failure)
+        self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+        self.assertEqual(snapshot.text_revision_version, 1)
+        self.assertEqual(snapshot.canonical_through_sample, WINDOW_SAMPLES)
+        prefix = [
+            segment
+            for segment in snapshot.effective_transcript
+            if segment.end_sample <= WINDOW_SAMPLES
+        ]
+        self.assertEqual([segment.authority for segment in prefix], ["rolling"])
+        self.assertIn("rolling 0", prefix[0].text)
+
+    def test_the_base_path_is_byte_identical_with_and_without_the_witness(self):
+        """ADR-0005 D2: the committed history is what the short path published, always."""
+
+        without_base, _ = _decoders(rolling=False)
+        without = _runtime(base=without_base, rolling=None)
+        without_id = _run_meeting(without, frames=ONE_WINDOW_FRAMES)
+
+        with_base, witness = _decoders(rolling=True)
+        with_rolling = _runtime(base=with_base, rolling=witness)
+        with_id = _run_meeting(with_rolling, frames=ONE_WINDOW_FRAMES)
+
+        def committed(runtime, session_id):
+            snapshot = runtime.snapshot(session_id).session
+            return (
+                [(item.start_sample, item.end_sample, item.transcript) for item in snapshot.committed],
+                snapshot.committed_prefix_hash,
+            )
+
+        self.assertEqual(committed(without, without_id), committed(with_rolling, with_id))
+        self.assertEqual(without_base.calls, with_base.calls)
+
+    def test_every_dispatched_witness_is_released(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+
+        self.assertEqual(
+            witness.calls, [(0, WINDOW_SAMPLES), (WINDOW_SAMPLES, 2 * WINDOW_SAMPLES)]
+        )
+        queues = runtime._sessions[session_id].arbiter.snapshot()
+        self.assertEqual((queues.live_refinement, queues.live_refinement_running), (0, 0))
+        self.assertEqual(runtime.snapshot(session_id).session.text_revision_version, 2)
+
+    def test_stop_waits_for_the_window_that_is_already_decoding(self):
+        """Without this the last correction of every meeting would be thrown away."""
+
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.status, "closed")
+        self.assertEqual(snapshot.canonical_through_sample, 2 * WINDOW_SAMPLES)
+        self.assertEqual(snapshot.accepted_samples, snapshot.accounted_samples)
+
+    def test_a_decoder_that_never_answers_stalls_rolling_and_not_the_meeting(self):
+        base, witness = _decoders(
+            rolling=True, rolling_failure=LiveProviderTransientError("witness timed out")
+        )
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+
+        self.assertIsNone(runtime.snapshot(session_id).terminal_failure)
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.status, "closed")
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(
+            {segment.authority for segment in snapshot.effective_transcript}, {"provisional"}
+        )
+        # One failed window, and no second one: a stalled converger plans nothing further.
+        self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+
+    def test_a_defect_in_the_witness_stops_rolling_instead_of_the_meeting(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        coordinator = runtime._sessions[created.session_id].coordinator
+
+        def exploding_submit(decode, item):
+            raise RuntimeError("a defect in the second listener")
+
+        coordinator.submit_refinement = exploding_submit
+        for sequence in range(TWO_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+
+        self.assertIsNone(runtime.snapshot(created.session_id).terminal_failure)
+        snapshot = runtime.snapshot(created.session_id).session
+        self.assertEqual(snapshot.status, "closed")
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(coordinator.rolling_accounting().status, RollingStatus.STOPPED)
+        self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+
+    def test_a_witness_admitted_before_the_stop_is_not_decoded_after_it(self):
+        base, witness = _decoders(rolling=True)
+        session = LiveSession(max_retained_samples=960000)
+        arbiter = InferenceArbiter()
+        coordinator = LiveCoordinator(
+            session_key="closing",
+            session=session,
+            endpoint_policy=EndpointPolicy(_endpoint_config()),
+            speech_provider=ScriptedSpeech(),
+            decoder=base,
+            identity_preparer=ScriptedIdentity(),
+            arbiter=arbiter,
+            rolling_decoder=witness,
+        )
+        request = coordinator.converger.accept_pcm(0, b"\0" * WINDOW_SAMPLES * 2)
+        self.assertEqual(request, ())
+        item = _refinement_item(coordinator, arbiter)
+
+        self.assertIsNotNone(coordinator.capture_refinement_item(item))
+        coordinator.stop_rolling()
+        self.assertIsNone(coordinator.capture_refinement_item(item))
+        self.assertEqual(witness.calls, [])
+
+    def test_the_coalesce_key_names_the_session_not_only_its_epoch(self):
+        """Two epoch-0 sessions on one arbiter must not coalesce into one witness."""
+
+        arbiter = InferenceArbiter()
+        coordinators = []
+        for name in ("session-a", "session-b"):
+            base, witness = _decoders(rolling=True)
+            session = LiveSession(max_retained_samples=960000)
+            coordinators.append(
+                LiveCoordinator(
+                    session_key=name,
+                    session=session,
+                    endpoint_policy=EndpointPolicy(_endpoint_config()),
+                    speech_provider=ScriptedSpeech(),
+                    decoder=base,
+                    identity_preparer=ScriptedIdentity(),
+                    arbiter=arbiter,
+                    rolling_decoder=witness,
+                )
+            )
+        for coordinator in coordinators:
+            _refinement_item(coordinator, arbiter, dispatch=False)
+
+        self.assertEqual(arbiter.snapshot().live_refinement, 2)
+        keys = set()
+        while True:
+            item = arbiter.next_work()
+            if item is None:
+                break
+            keys.add(item.key)
+        self.assertEqual(keys, {"session-a:rolling:0", "session-b:rolling:0"})
+
+    def test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate(self):
+        """Bounded salvage was measured on 2.5 s hard-cap spans, and stays there.
+
+        The same unparseable answer is decoded twice through the production adapter: once as
+        a hard-cap span, where M1 completes its absent closing bound and publishes it, and
+        once as a rolling window, where the gate refuses it and the window fails.
+        """
+
+        raw = "[0.00][S01] the difference between, you said the stock market."
+
+        class UnparseableRunner:
+            def transcribe(self, audio_path, **kwargs):
+                raise EmptyTranscriptionError(
+                    "zero parsed segments",
+                    cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+                    text=raw,
+                    generated_tokens=17,
+                )
+
+        adapter = RunnerBoundedWavInference(UnparseableRunner(), max_samples=WINDOW_SAMPLES)
+        salvaged = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=1, epoch=0, start_sample=0, end_sample=HARD_CAP_SAMPLES, reason=HARD_CAP_REASON
+            ),
+            pcm=b"\0" * HARD_CAP_SAMPLES * 2,
+        )
+        refused = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=2,
+                epoch=0,
+                start_sample=0,
+                end_sample=WINDOW_SAMPLES,
+                reason=ROLLING_WINDOW_REASON,
+            ),
+            pcm=b"\0" * WINDOW_SAMPLES * 2,
+        )
+
+        self.assertIn("stock market", salvaged.transcript)
+        self.assertEqual(refused.transcript, "")
+
+    def test_a_failed_window_is_named_rather_than_silent(self):
+        base, witness = _decoders(rolling=True)
+        session = LiveSession(max_retained_samples=960000)
+        arbiter = InferenceArbiter()
+        coordinator = LiveCoordinator(
+            session_key="named",
+            session=session,
+            endpoint_policy=EndpointPolicy(_endpoint_config()),
+            speech_provider=ScriptedSpeech(),
+            decoder=base,
+            identity_preparer=ScriptedIdentity(),
+            arbiter=arbiter,
+            rolling_decoder=witness,
+        )
+        coordinator.converger.accept_pcm(0, b"\0" * WINDOW_SAMPLES * 2)
+        item = _refinement_item(coordinator, arbiter)
+        request = coordinator.capture_refinement_item(item)
+
+        witness.failure = LiveProviderTransientError("no answer")
+        did_not_answer = coordinator.decode_refinement(request)
+        self.assertEqual(did_not_answer.failure, ROLLING_DECODE_DID_NOT_ANSWER)
+        witness.failure = LiveProviderError("refused")
+        failed = coordinator.decode_refinement(request)
+        self.assertEqual(failed.failure, ROLLING_DECODE_FAILED)
+
+        result = coordinator.submit_refinement(failed, item)
+        self.assertFalse(result.applied)
+        self.assertEqual(result.rolling_status, RollingStatus.WINDOW_FAILED.value)
+        self.assertEqual(result.windows_failed, 1)
+        # The submission already released it; a second release is a no-op, not a fault.
+        self.assertFalse(coordinator.release_refinement(item))
+
+
+def _refinement_item(coordinator: LiveCoordinator, arbiter: InferenceArbiter, *, dispatch: bool = True):
+    """Plan one window by hand, submit it through the coordinator, and pop it if asked.
+
+    The base is advanced far enough to own the window by committing one span over it, which
+    is what makes the window ownable at all -- a revision may not end past committed audio.
+    """
+
+    session = coordinator.session
+    if coordinator.rolling_accounting().accepted_samples == 0:
+        coordinator.converger.accept_pcm(0, b"\0" * WINDOW_SAMPLES * 2)
+    session.accept_frame(
+        AudioFrame(sequence=0, pcm=b"\0" * WINDOW_SAMPLES * 2, sample_count=WINDOW_SAMPLES)
+    )
+    span = session.freeze_until(WINDOW_SAMPLES, reason=HARD_CAP_REASON)
+    session.submit_unlabeled_canonical(
+        span_id=span.id,
+        epoch=span.epoch,
+        start_sample=span.start_sample,
+        end_sample=span.end_sample,
+        transcript=f"[0.00][S00] base[{WINDOW_SAMPLES / LIVE_SAMPLE_RATE:g}]",
+        local_speakers=("S00",),
+    )
+    queued = coordinator._observe_base_and_queue()
+    if len(queued) != 1:
+        raise AssertionError(f"expected one planned window, got {queued}")
+    if not dispatch:
+        return None
+    item = arbiter.next_work()
+    if item is None or not isinstance(item.payload, RefinementWork):
+        raise AssertionError("the arbiter did not dispatch the window that was just planned.")
+    return item
+
+
+if __name__ == "__main__":
+    unittest.main()

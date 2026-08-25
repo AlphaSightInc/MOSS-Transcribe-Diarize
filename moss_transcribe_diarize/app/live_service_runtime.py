@@ -39,6 +39,7 @@ from .live_vector_journal import LiveVectorJournal
 LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
 _VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
+_ROLLING_LOG = logging.getLogger("moss_transcribe_diarize.live.rolling")
 
 # THE TERMINAL CONTRACT, in one place so it can be tested rather than remembered.
 #
@@ -439,6 +440,7 @@ class LiveServiceRuntime:
         speech_provider_factory: Callable[[], SpeechSignalProvider],
         decoder_factory: Callable[[], Any],
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
+        rolling_decoder_factory: Callable[[], Any] | None = None,
         session_id_factory: Callable[[], str] | None = None,
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
         vector_journal: LiveVectorJournal | None = None,
@@ -450,6 +452,10 @@ class LiveServiceRuntime:
         self._speech_provider_factory = speech_provider_factory
         self._decoder_factory = decoder_factory
         self._identity_preparer_factory = identity_preparer_factory
+        # A decoder able to hear a whole rolling window, or nothing. The span decoder cannot
+        # be reused for it: the deployed adapter is bounded at the *span* cap, and a
+        # ten-second witness is four times that. No factory, no rolling convergence.
+        self._rolling_decoder_factory = rolling_decoder_factory
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._vector_journal = vector_journal
@@ -488,6 +494,11 @@ class LiveServiceRuntime:
                 decoder=self._decoder_factory(),
                 identity_preparer=self._identity_preparer_factory(),
                 arbiter=arbiter,
+                rolling_decoder=(
+                    None
+                    if self._rolling_decoder_factory is None
+                    else self._rolling_decoder_factory()
+                ),
             )
             state = _RuntimeSession(
                 session_id=session_id,
@@ -610,8 +621,10 @@ class LiveServiceRuntime:
                 )
             for item_id in result.queued_item_ids:
                 self._record_canonical_queued(state, item_id)
-            if result.queued_item_ids:
-                self._mark_ready_locked(state)
+            # Unconditional: this frame may have queued a rolling window rather than a
+            # canonical span, and `_mark_ready_locked` reads the arbiter itself rather than
+            # trusting a caller's list of what it thinks it admitted.
+            self._mark_ready_locked(state)
             return LiveServiceFrameResult(
                 ack=ack,
                 queued_item_ids=result.queued_item_ids,
@@ -704,6 +717,9 @@ class LiveServiceRuntime:
                 await self._wait_for_drain(state, end_time=end_time)
             await self._wait_for_drain(state, end_time=end_time)
             with self._lock:
+                # Rolling ends before the last identity sweep, for the sweep's own reason: a
+                # revision applied after the sweep would carry labels the sweep never saw.
+                state.coordinator.stop_rolling()
                 self._finalize_identity_locked(state)
             remaining = max(0.0, end_time - loop.time())
             snapshot = await state.session.stop(remaining)
@@ -898,7 +914,22 @@ class LiveServiceRuntime:
         )
 
     def _has_unresolved_work_locked(self, state: _RuntimeSession) -> bool:
-        return bool(self._pending_work_items(state) or state.session.snapshot().pending_span_ids)
+        """Is there work whose result the session has not seen yet?
+
+        Rolling witnesses count, and `pending_work_items` deliberately does not count them:
+        that number is the *canonical* queue depth the transport paces against
+        `max_queue_depth`, and a rolling window is not something a client may be asked to
+        slow down for. Here the question is different -- a stop that did not wait for the
+        window already decoding would discard the last correction of every meeting.
+        """
+
+        queues = state.arbiter.snapshot()
+        return bool(
+            self._pending_work_items(state)
+            or state.session.snapshot().pending_span_ids
+            or queues.live_refinement
+            or queues.live_refinement_running
+        )
 
     async def _wait_for_drain(self, state: _RuntimeSession, *, end_time: float) -> None:
         loop = asyncio.get_running_loop()
@@ -936,7 +967,8 @@ class LiveServiceRuntime:
             return
         if state.session_id in self._in_flight_session_ids or state.session_id in self._ready_session_set:
             return
-        if state.arbiter.snapshot().live_canonical <= 0:
+        queues = state.arbiter.snapshot()
+        if queues.live_canonical <= 0 and queues.live_refinement <= 0:
             return
         self._ready_session_ids.append(state.session_id)
         self._ready_session_set.add(state.session_id)
@@ -967,6 +999,14 @@ class LiveServiceRuntime:
                         if raise_errors:
                             raise LiveServiceIdentityCommitFailure(failure.message, code=failure.code)
                     continue
+                if item.kind == InferenceArbiter.LIVE_REFINEMENT:
+                    # A witness holds the session's single in-flight inference slot for as
+                    # long as it decodes, exactly as a span does. That is not an oversight:
+                    # one in-flight MOSS request per harness is the deployment contract, so
+                    # the rolling cost is a serial cost and plan §10.6 must measure it as one.
+                    self._in_flight_session_ids.add(state.session_id)
+                    span_count = 0
+                    break
                 try:
                     span_count = state.coordinator.work_item_span_count(item)
                 except Exception as exc:
@@ -994,8 +1034,57 @@ class LiveServiceRuntime:
                 break
             else:
                 return False
-        self._process_in_flight_item(state, item, span_count, raise_errors=raise_errors)
+        if item.kind == InferenceArbiter.LIVE_REFINEMENT:
+            self._process_refinement_item(state, item)
+        else:
+            self._process_in_flight_item(state, item, span_count, raise_errors=raise_errors)
         return True
+
+    def _process_refinement_item(self, state: _RuntimeSession, item: Any) -> None:
+        """Decode one rolling window and offer it to the session, or give up on rolling.
+
+        Shaped like the canonical pump -- capture under the lock, decode outside it, publish
+        under it again -- because a ten-second decode held under the runtime lock would stall
+        frame acceptance for the whole meeting.
+
+        Nothing here is terminal, and that is the difference from the canonical pump. The
+        base path is the meeting; the witness is an improvement to it, and ADR-0005 D1 gives
+        the session the last word on every revision precisely so a second listener cannot
+        take the first one down. A decode that failed is already an empty outcome by the time
+        it arrives here (`decode_refinement` names it), so what is left to catch is a defect
+        -- and a defect ends *rolling*, with the surface and the base path untouched.
+        """
+
+        try:
+            with self._lock:
+                if state.terminal_failure is not None:
+                    return
+                request = state.coordinator.capture_refinement_item(item)
+            if request is None:
+                return
+            decode = state.coordinator.decode_refinement(request)
+            with self._lock:
+                if state.terminal_failure is not None:
+                    return
+                state.coordinator.submit_refinement(decode, item)
+        except Exception:
+            # Counts and names only, never the words: the same rule the identity finalizer
+            # follows. Rolling stops for this session so the defect cannot repeat every
+            # window; the transcript keeps everything both listeners had already published.
+            _ROLLING_LOG.warning("live rolling refinement failed", exc_info=True)
+            with self._lock:
+                try:
+                    state.coordinator.stop_rolling()
+                except Exception:
+                    _ROLLING_LOG.warning("live rolling refinement stop failed", exc_info=True)
+        finally:
+            with self._lock:
+                state.coordinator.release_refinement(item)
+                self._in_flight_session_ids.discard(state.session_id)
+                state.work_changed.set()
+                self._notify_drain_waiters_locked(state)
+                if state.terminal_failure is None:
+                    self._mark_ready_locked(state)
 
     def _process_in_flight_item(
         self,
@@ -1091,7 +1180,9 @@ class LiveServiceRuntime:
                 state.canonical_timing.pop(item.id, None)
                 state.work_changed.set()
                 self._notify_drain_waiters_locked(state)
-                if state.terminal_failure is None and state.arbiter.snapshot().live_canonical > 0:
+                if state.terminal_failure is None:
+                    # `_mark_ready_locked` asks the arbiter itself, so this covers the window
+                    # this span's own commit just made plannable as well as the next span.
                     self._mark_ready_locked(state)
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:

@@ -1,0 +1,139 @@
+FFF...F.F..                                                              [100%]
+=================================== FAILURES ===================================
+_ RollingRuntimeWiringTest.test_a_base_commit_reaches_the_converger_and_its_window_publishes _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_base_commit_reaches_the_converger_and_its_window_publishes>
+
+    def test_a_base_commit_reaches_the_converger_and_its_window_publishes(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=ONE_WINDOW_FRAMES)
+    
+        snapshot = runtime.snapshot(session_id).session
+        self.assertIsNone(runtime.snapshot(session_id).terminal_failure)
+>       self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+E       AssertionError: Lists differ: [] != [(0, 160000)]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       (0, 160000)
+E       
+E       - []
+E       + [(0, 160000)]
+
+tests/test_live_rolling_wiring.py:235: AssertionError
+_ RollingRuntimeWiringTest.test_a_decoder_that_never_answers_stalls_rolling_and_not_the_meeting _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_decoder_that_never_answers_stalls_rolling_and_not_the_meeting>
+
+    def test_a_decoder_that_never_answers_stalls_rolling_and_not_the_meeting(self):
+        base, witness = _decoders(
+            rolling=True, rolling_failure=LiveProviderTransientError("witness timed out")
+        )
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+        self.assertIsNone(runtime.snapshot(session_id).terminal_failure)
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.status, "closed")
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(
+            {segment.authority for segment in snapshot.effective_transcript}, {"provisional"}
+        )
+        # One failed window, and no second one: a stalled converger plans nothing further.
+>       self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+E       AssertionError: Lists differ: [] != [(0, 160000)]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       (0, 160000)
+E       
+E       - []
+E       + [(0, 160000)]
+
+tests/test_live_rolling_wiring.py:306: AssertionError
+_ RollingRuntimeWiringTest.test_a_defect_in_the_witness_stops_rolling_instead_of_the_meeting _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_defect_in_the_witness_stops_rolling_instead_of_the_meeting>
+
+    def test_a_defect_in_the_witness_stops_rolling_instead_of_the_meeting(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        coordinator = runtime._sessions[created.session_id].coordinator
+    
+        def exploding_submit(decode, item):
+            raise RuntimeError("a defect in the second listener")
+    
+        coordinator.submit_refinement = exploding_submit
+        for sequence in range(TWO_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+    
+        self.assertIsNone(runtime.snapshot(created.session_id).terminal_failure)
+        snapshot = runtime.snapshot(created.session_id).session
+        self.assertEqual(snapshot.status, "closed")
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(coordinator.rolling_accounting().status, RollingStatus.STOPPED)
+>       self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
+E       AssertionError: Lists differ: [] != [(0, 160000)]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       (0, 160000)
+E       
+E       - []
+E       + [(0, 160000)]
+
+tests/test_live_rolling_wiring.py:332: AssertionError
+______ RollingRuntimeWiringTest.test_every_dispatched_witness_is_released ______
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_every_dispatched_witness_is_released>
+
+    def test_every_dispatched_witness_is_released(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+>       self.assertEqual(
+            witness.calls, [(0, WINDOW_SAMPLES), (WINDOW_SAMPLES, 2 * WINDOW_SAMPLES)]
+        )
+E       AssertionError: Lists differ: [] != [(0, 160000), (160000, 320000)]
+E       
+E       Second list contains 2 additional elements.
+E       First extra element 0:
+E       (0, 160000)
+E       
+E       - []
+E       + [(0, 160000), (160000, 320000)]
+
+tests/test_live_rolling_wiring.py:272: AssertionError
+_ RollingRuntimeWiringTest.test_stop_waits_for_the_window_that_is_already_decoding _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_stop_waits_for_the_window_that_is_already_decoding>
+
+    def test_stop_waits_for_the_window_that_is_already_decoding(self):
+        """Without this the last correction of every meeting would be thrown away."""
+    
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.status, "closed")
+>       self.assertEqual(snapshot.canonical_through_sample, 2 * WINDOW_SAMPLES)
+E       AssertionError: 0 != 320000
+
+tests/test_live_rolling_wiring.py:288: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_base_commit_reaches_the_converger_and_its_window_publishes
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_decoder_that_never_answers_stalls_rolling_and_not_the_meeting
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_defect_in_the_witness_stops_rolling_instead_of_the_meeting
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_every_dispatched_witness_is_released
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_stop_waits_for_the_window_that_is_already_decoding
+5 failed, 6 passed in 2.35s

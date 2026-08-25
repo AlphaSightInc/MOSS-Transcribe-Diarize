@@ -1,0 +1,84 @@
+...F..F.F..                                                              [100%]
+=================================== FAILURES ===================================
+__ RollingRuntimeWiringTest.test_a_failed_window_is_named_rather_than_silent ___
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_failed_window_is_named_rather_than_silent>
+
+    def test_a_failed_window_is_named_rather_than_silent(self):
+        base, witness = _decoders(rolling=True)
+        session = LiveSession(max_retained_samples=960000)
+        arbiter = InferenceArbiter()
+        coordinator = LiveCoordinator(
+            session_key="named",
+            session=session,
+            endpoint_policy=EndpointPolicy(_endpoint_config()),
+            speech_provider=ScriptedSpeech(),
+            decoder=base,
+            identity_preparer=ScriptedIdentity(),
+            arbiter=arbiter,
+            rolling_decoder=witness,
+        )
+        coordinator.converger.accept_pcm(0, b"\0" * WINDOW_SAMPLES * 2)
+        item = _refinement_item(coordinator, arbiter)
+        request = coordinator.capture_refinement_item(item)
+    
+        witness.failure = LiveProviderTransientError("no answer")
+        did_not_answer = coordinator.decode_refinement(request)
+        self.assertEqual(did_not_answer.failure, ROLLING_DECODE_DID_NOT_ANSWER)
+        witness.failure = LiveProviderError("refused")
+        failed = coordinator.decode_refinement(request)
+        self.assertEqual(failed.failure, ROLLING_DECODE_FAILED)
+    
+        result = coordinator.submit_refinement(failed, item)
+        self.assertFalse(result.applied)
+        self.assertEqual(result.rolling_status, RollingStatus.WINDOW_FAILED.value)
+        self.assertEqual(result.windows_failed, 1)
+        # The submission already released it; a second release is a no-op, not a fault.
+>       self.assertFalse(coordinator.release_refinement(item))
+E       AssertionError: True is not false
+
+tests/test_live_rolling_wiring.py:459: AssertionError
+______ RollingRuntimeWiringTest.test_every_dispatched_witness_is_released ______
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_every_dispatched_witness_is_released>
+
+    def test_every_dispatched_witness_is_released(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+>       self.assertEqual(
+            witness.calls, [(0, WINDOW_SAMPLES), (WINDOW_SAMPLES, 2 * WINDOW_SAMPLES)]
+        )
+E       AssertionError: Lists differ: [(0, 160000)] != [(0, 160000), (160000, 320000)]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 1:
+E       (160000, 320000)
+E       
+E       - [(0, 160000)]
+E       + [(0, 160000), (160000, 320000)]
+
+tests/test_live_rolling_wiring.py:272: AssertionError
+_ RollingRuntimeWiringTest.test_stop_waits_for_the_window_that_is_already_decoding _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_stop_waits_for_the_window_that_is_already_decoding>
+
+    def test_stop_waits_for_the_window_that_is_already_decoding(self):
+        """Without this the last correction of every meeting would be thrown away."""
+    
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+        snapshot = runtime.snapshot(session_id).session
+        self.assertEqual(snapshot.status, "closed")
+>       self.assertEqual(snapshot.canonical_through_sample, 2 * WINDOW_SAMPLES)
+E       AssertionError: 160000 != 320000
+
+tests/test_live_rolling_wiring.py:288: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_failed_window_is_named_rather_than_silent
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_every_dispatched_witness_is_released
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_stop_waits_for_the_window_that_is_already_decoding
+3 failed, 8 passed in 2.30s

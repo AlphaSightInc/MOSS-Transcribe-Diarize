@@ -33,6 +33,14 @@ from .live_session import (
     PCM16_BYTES_PER_SAMPLE,
 )
 from .live_span_bounds import span_segments
+from .live_transcript_convergence import (
+    DEFAULT_ROLLING_GEOMETRY,
+    RollingDecodeRequest,
+    RollingGeometry,
+    RollingStatus,
+    RollingTranscriptConverger,
+    TerminalDecodePlan,
+)
 from .transcription_outcome import EmptyTranscriptCause
 
 
@@ -69,6 +77,25 @@ DECODER_DID_NOT_ANSWER = "decoder_did_not_answer"
 # because "the last sweep never ran" and "the last sweep found nothing to correct" are
 # opposite facts that would otherwise both read as zero corrections.
 IDENTITY_FINALIZE_FAILED = "identity_finalize_failed"
+
+
+# The freeze reason a rolling window's decode carries into the decode seam. A window is a
+# fixed ten-second cut of already-committed audio, not a VAD freeze, so it is deliberately
+# *not* `hard_cap`: the M1 salvage gate reads this name, bounded salvage was measured on
+# 2.5 s hard-cap spans (plan §9.1), and extending it to a ten-second witness would be an
+# unmeasured policy change. A window whose decode the grammar rejects therefore publishes
+# nothing, which is exactly plan §5.2's "rolling failure".
+ROLLING_WINDOW_REASON = "rolling_window"
+
+# What the coordinator reports when a rolling decode never got an answer. The base path
+# retries a span and then degrades it; a witness is not retried at all, because the audio it
+# was going to improve is already published and the next window covers the audio after it.
+ROLLING_DECODE_DID_NOT_ANSWER = "rolling_decode_did_not_answer"
+
+# ... and when it answered with a failure the decode seam could not classify. Both names ride
+# on the refinement result rather than raising, because ADR-0005's whole point is that the
+# second listener may not end the meeting the first one is publishing.
+ROLLING_DECODE_FAILED = "rolling_decode_failed"
 
 
 class SpeechSignalProvider(Protocol):
@@ -116,6 +143,63 @@ class LiveIdentityReviser(Protocol):
 class CanonicalWork:
     session_key: str
     spans: tuple[FrozenSpan, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RefinementWork:
+    """One rolling window, addressed to the session that planned it.
+
+    Shaped like `CanonicalWork` and for its reason: the arbiter is a queue of opaque
+    payloads, and a work item that did not name its session could be handed to the wrong
+    coordinator by a shared arbiter without anything noticing.
+    """
+
+    session_key: str
+    request: RollingDecodeRequest
+
+
+@dataclass(frozen=True, slots=True)
+class RefinementDecode:
+    """What came back for one window, and -- if nothing did -- the name for that.
+
+    `outcome` is always an `InferenceTranscript` so the converger is always completed: a
+    witness that is never completed holds the converger's one in-flight slot forever and
+    rolling stops without saying so.
+    """
+
+    request: RollingDecodeRequest
+    outcome: InferenceTranscript
+    failure: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CoordinatorRefinementResult:
+    """What one rolling window did to the surface a reader is shown, and what it cost.
+
+    No transcript text, exactly as `CoordinatorWorkResult` carries none: this is the record
+    of a decision (which interval was revised, whether the session accepted it, how far the
+    rolling authority now reaches), and plan §7.4's events serialize it.
+    """
+
+    window_index: int
+    start_sample: int
+    end_sample: int
+    decode_elapsed_sec: float | None
+    decode_failure: str | None
+    applied: bool
+    refusal: str | None
+    revised_segments: int
+    text_revision_version: int
+    canonical_through_sample: int
+    rolling_status: str
+    windows_planned: int
+    windows_completed: int
+    windows_failed: int
+    stale_completions: int
+    decoded_audio_samples: int
+    retained_samples: int
+    retained_high_water_samples: int
+    admission_refusals: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +318,8 @@ class LiveCoordinator:
         decoder: BoundedWavInference,
         identity_preparer: LiveIdentityPreparer,
         arbiter: InferenceArbiter,
+        rolling_decoder: BoundedWavInference | None = None,
+        rolling_geometry: RollingGeometry = DEFAULT_ROLLING_GEOMETRY,
     ):
         if not session_key:
             raise ValueError("session_key must be non-empty.")
@@ -247,6 +333,17 @@ class LiveCoordinator:
         self._pcm = _PcmRetention()
         self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
+        # The rolling witness is asked for by name, like the identity reviser above it: a
+        # decoder able to hear a whole window is what the second listener needs and the base
+        # path does not have, because the deployed span decoder is bounded at the span cap.
+        # No decoder, no converger, and the coordinator behaves exactly as it did before E2.
+        self.rolling_decoder = rolling_decoder
+        self.converger = (
+            None
+            if rolling_decoder is None
+            else RollingTranscriptConverger(epoch=session.epoch, geometry=rolling_geometry)
+        )
+        self._rolling_admission_refusals = 0
 
     def preview_frame_work_items(self, frame: AudioFrame) -> int:
         if self._staged_frame is not None:
@@ -295,6 +392,12 @@ class LiveCoordinator:
         endpoint_spans = self._observe_endpoint(observations, ack.start_sample, ack.end_sample)
         frozen_spans = tuple(self.session.freeze_until(span.end_sample, reason=span.reason) for span in endpoint_spans)
         queued = self._queue_canonical_batch(frozen_spans)
+        # The witness hears the same audio the base does, at the moment the base accepts it.
+        # It is retained separately because the two listen over different extents: the base
+        # keeps a span until it commits, the witness keeps a bounded ring of the newest
+        # window. Planning is gated on committed audio, so this rarely emits a window on its
+        # own -- but it can, when a frame arrives after the commit that completed one.
+        self._accept_rolling_pcm(ack.start_sample, frame.pcm)
         return CoordinatorFrameResult(
             accepted_start_sample=ack.start_sample,
             accepted_end_sample=ack.end_sample,
@@ -424,6 +527,11 @@ class LiveCoordinator:
         if submission.submitted:
             self._pcm.prune_before(snapshot.committed_samples)
         revision = self._publish_identity_revision()
+        # A base commit is the event that makes a window ownable: the witness may only revise
+        # audio the session has already committed. This is one of the two `observe_base`
+        # calls the converger needs; the other is after an applied revision, which is what
+        # moves the frontier the next window must start at.
+        self._observe_base_and_queue()
         measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
@@ -596,6 +704,187 @@ class LiveCoordinator:
             result = self.submit_prepared_work(prepared)
         assert result is not None
         return result
+
+    # ------------------------------------------------------------ the rolling witness
+
+    def capture_refinement_item(self, item: ArbiterWorkItem) -> RollingDecodeRequest | None:
+        """The window this work item carries, or `None` if nobody is waiting for it.
+
+        `None` is not an error and is the reason this is a separate step: a witness admitted
+        before the meeting stopped can be dispatched after it, and decoding ten seconds of a
+        finished meeting to propose a revision the converger will refuse as stale spends GPU
+        on nothing. The caller releases it and moves on.
+        """
+
+        if item.kind != InferenceArbiter.LIVE_REFINEMENT or not isinstance(item.payload, RefinementWork):
+            raise LiveCoordinatorError("work item is not live refinement coordinator work.")
+        work = item.payload
+        if work.session_key != self.session_key:
+            raise LiveCoordinatorError("refinement work belongs to a different live session.")
+        converger = self.converger
+        if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
+            return None
+        return work.request
+
+    def decode_refinement(self, request: RollingDecodeRequest) -> RefinementDecode:
+        """Hand one window to the decoder, and name a failure instead of raising it.
+
+        Every ending arrives as an `InferenceTranscript`, because the converger must be
+        completed whatever happened: a request that is never completed keeps the one
+        in-flight slot forever, and rolling would stop with no status saying so. A decode
+        that produced nothing publishes nothing and stalls planning -- plan §5.2's rolling
+        failure -- which is a strictly better outcome than a second listener ending a meeting
+        the first one is publishing correctly.
+        """
+
+        if self.rolling_decoder is None:
+            raise LiveCoordinatorError("no rolling decoder is configured for this session.")
+        span = FrozenSpan(
+            id=request.id,
+            epoch=request.epoch,
+            start_sample=request.start_sample,
+            end_sample=request.end_sample,
+            reason=ROLLING_WINDOW_REASON,
+        )
+        try:
+            outcome = self.rolling_decoder.transcribe_pcm(span=span, pcm=request.pcm)
+        except LiveProviderTransientError:
+            return RefinementDecode(
+                request=request,
+                outcome=InferenceTranscript(transcript=""),
+                failure=ROLLING_DECODE_DID_NOT_ANSWER,
+            )
+        except LiveProviderError:
+            return RefinementDecode(
+                request=request,
+                outcome=InferenceTranscript(transcript=""),
+                failure=ROLLING_DECODE_FAILED,
+            )
+        return RefinementDecode(request=request, outcome=outcome)
+
+    def submit_refinement(
+        self, decode: RefinementDecode, item: ArbiterWorkItem
+    ) -> CoordinatorRefinementResult:
+        """Complete the window, offer what it said to the session, and plan the next one.
+
+        The release comes first, and the order is load-bearing rather than tidy. A witness
+        stops being a running MOSS request the moment its answer is back, and the arbiter
+        refuses a newer witness while one is *running* for the same key -- so planning the
+        next window before saying this one is finished loses that window permanently. It only
+        bites when the base is already far enough ahead that the next window is ownable the
+        instant this one lands, which is exactly what a replay client or a post-hiccup burst
+        produces, and never what an unhurried real-time meeting does.
+        """
+
+        converger = self.converger
+        if converger is None:
+            raise LiveCoordinatorError("no rolling converger is configured for this session.")
+        self.release_refinement(item)
+        proposal = converger.complete(decode.request.id, decode.outcome)
+        applied = False
+        refusal: str | None = None
+        revised_segments = 0
+        if proposal is not None:
+            outcome = self.session.apply_text_revision(proposal)
+            applied = outcome.applied
+            refusal = outcome.refusal
+            revised_segments = outcome.revised_segments
+        # The second `observe_base`: an applied revision is what advances the frontier the
+        # next window must begin at, so without this call the converger never plans again.
+        self._observe_base_and_queue()
+        snapshot = self.session.snapshot()
+        accounting = converger.accounting()
+        return CoordinatorRefinementResult(
+            window_index=decode.request.window_index,
+            start_sample=decode.request.start_sample,
+            end_sample=decode.request.end_sample,
+            decode_elapsed_sec=trustworthy_duration_sec(decode.outcome.elapsed_sec),
+            decode_failure=decode.failure,
+            applied=applied,
+            refusal=refusal,
+            revised_segments=revised_segments,
+            text_revision_version=snapshot.text_revision_version,
+            canonical_through_sample=snapshot.canonical_through_sample,
+            rolling_status=accounting.status.value,
+            windows_planned=accounting.windows_planned,
+            windows_completed=accounting.windows_completed,
+            windows_failed=accounting.windows_failed,
+            stale_completions=accounting.stale_completions,
+            decoded_audio_samples=accounting.decoded_audio_samples,
+            retained_samples=accounting.retained_samples,
+            retained_high_water_samples=accounting.retained_high_water_samples,
+            admission_refusals=self._rolling_admission_refusals,
+        )
+
+    def release_refinement(self, item: ArbiterWorkItem) -> bool:
+        """Tell the arbiter this witness is no longer a running MOSS request.
+
+        Owed for every dispatched item, on every path including a failed one: the coalesce
+        key stays blocked until its own release arrives, so a skipped release silently ends
+        rolling for the session. Idempotent by construction -- a second call for the same
+        item answers `False` and changes nothing -- so a caller may release at the natural
+        moment *and* keep a release in its teardown without the two colliding.
+        """
+
+        return self.arbiter.release_live_refinement(item_id=item.id)
+
+    def stop_rolling(self) -> TerminalDecodePlan | None:
+        """End rolling convergence and state what the terminal pass inherits (plan §6 M6).
+
+        Called once the meeting has stopped accepting audio. A window still in flight is not
+        waited for -- it completes into a converger that is no longer expecting it and is
+        refused as a stale result, changing nothing.
+        """
+
+        converger = self.converger
+        if converger is None:
+            return None
+        if converger.accounting().status is RollingStatus.STOPPED:
+            return None
+        return converger.stop(self.session.snapshot().accepted_samples)
+
+    def rolling_accounting(self):
+        """The converger's own counters, or `None` when no witness is configured."""
+
+        return None if self.converger is None else self.converger.accounting()
+
+    def _accept_rolling_pcm(self, start_sample: int, pcm: bytes) -> tuple[int, ...]:
+        converger = self.converger
+        if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
+            return ()
+        return self._queue_refinement(converger.accept_pcm(start_sample, pcm))
+
+    def _observe_base_and_queue(self) -> tuple[int, ...]:
+        converger = self.converger
+        if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
+            return ()
+        return self._queue_refinement(converger.observe_base(self.session.snapshot()))
+
+    def _queue_refinement(self, requests: tuple[RollingDecodeRequest, ...]) -> tuple[int, ...]:
+        """Admit each planned window under a key that names this session, not just its epoch.
+
+        The converger emits `rolling:<epoch>` and every session starts at epoch 0, so the key
+        it produces identifies a session only as long as no two sessions share an arbiter.
+        The session key is what actually distinguishes them, and it is held here.
+
+        A refusal cannot happen from this producer -- the converger plans one window at a
+        time and the arbiter allows one per key -- so it is counted rather than raised: the
+        two enforcers of the same rule disagreeing is a defect, and a defect in the second
+        listener may not end the meeting the first one is publishing. Rolling simply stops,
+        because the converger keeps holding the in-flight slot of the window that was lost.
+        """
+
+        item_ids: list[int] = []
+        for request in requests:
+            admission = self.arbiter.submit_live_refinement(
+                coalesce_key=f"{self.session_key}:{request.coalesce_key}",
+                payload=RefinementWork(session_key=self.session_key, request=request),
+            )
+            if admission.item_id is None:
+                self._rolling_admission_refusals += 1
+                continue
+            item_ids.append(admission.item_id)
+        return tuple(item_ids)
 
     def _observe_endpoint(
         self,

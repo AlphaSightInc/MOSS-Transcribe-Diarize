@@ -1166,3 +1166,130 @@ appended at the iteration 4->5 boundary]
   window short, must submit a session-qualified coalesce key, and owes `release_live_refinement`
   for every witness it pops. Then §7.3/§7.4 serialization, then the portal, then the export switch
   LAST. Plan §10.5's order is not negotiable.
+
+2026-08-25 iteration 14 (run 20260825-042645-70858) - M2 step 3, item 4 of plan §10.5: the rolling
+  witness now runs inside the real live runtime, and the hand-written driver is gone.
+- Target: context.md candidate 6f, the lowest open item. M0's G2, M1's G-M1-1 and M2's
+  D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code. §10.5's order is
+  fixed: this is its FOURTH item only -- "wire current 2.5-second base commits into the
+  converger". The §7.4 events, the portal and the export switch are each their own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_coordinator.py                                (+~190, §6 M2/M5 wiring)
+  moss_transcribe_diarize/app/live_service_runtime.py                            (+~80, dispatch)
+  moss_transcribe_diarize/app/live_provider_bundle.py                            (+~12, window decoder)
+  tests/test_live_rolling_wiring.py                                              (new, 11 T2 tests)
+  prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py    (new)
+  prototypes/streaming-diarization/live-convergence/mutate_runtime_rolling.sh    (new, 5 mutations)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                     (index + commands)
+  evidence/live-convergence-0824/M2-runtime-wiring/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                                (new, 448K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart, and that is a decision rather than an oversight: rolling would turn on in
+  the deployed web_cli before its §7.4 events and its portal render exist, and nothing measured
+  here needs the running service. web_cli stays pid 22561 on the M1 build. The restart belongs
+  with the paired rerun after §10.5 step 7 and must be recorded there.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py
+    exit 0. Frames into `LiveServiceRuntime.accept_frame`, the arm out of
+    `snapshot().effective_transcript`; deployed endpoint config, real webrtcvad, real arbiter,
+    production canonical pump, production decode seam (a runner replaying the grid's recorded
+    answers through `_validate_transcription_response`, so M1 salvage sees what it sees on the
+    4070 Ti). Each case runs TWICE on one instrument -- no window decoder, then one:
+      lex_bill_ackman    base 0.261364 (grid 0.261364)  rolling 0.198864 (grid 0.198864)
+      lex_javier_milei   base 0.144000 (grid 0.144000)  rolling 0.096000 (grid 0.096000)
+      lex_keyu_jin       base 0.194245 (grid 0.194245)  rolling 0.100719 (grid 0.100719)
+      TRIO base    wer=0.199870 recall=0.913490   (= the published live trio)
+      TRIO rolling wer=0.131861 recall=0.943916   (= the §10.4 selected arm)
+      6/6 windows planned+dispatched+applied per case; 0 failed, 0 stale, 0 admission refusals;
+      rolling PCM high-water 208000-240000 vs the 320000 bound; 178 decodes, 0 fresh (no GPU)
+    Seven gates: G1 the base arm reproduces the published live trio; G2 the rolling arm
+    reproduces `10/10`; G3 the base path is untouched (identical frozen spans, identical
+    committed transcripts, identical committed-prefix hash -- ADR-0005 D2); G4 all six windows,
+    no refusal/failure/stale/admission-refusal; G5 exact sample accounting and no terminal
+    failure in either arm; G6 retention inside `2 x window`; G7 zero fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1072 passed, 2 skipped, 386 subtests (1061 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the same digest
+    iterations 7, 11, 12 and 13 recorded, so file mode has not moved across five production
+    changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_runtime_rolling.sh <out>
+    five mutations across live_coordinator.py and live_service_runtime.py; all five caught;
+    control clean before and after.
+- WHAT SHIPPED. `LiveCoordinator` gained an optional `rolling_decoder`, and that decoder brings a
+  `RollingTranscriptConverger` with it -- no decoder, no witness, and the coordinator behaves
+  exactly as it did before E2 (which is why 1061 existing tests did not move). `accept_frame`
+  retains the newest audio in the converger; `submit_prepared_work` observes the base after every
+  commit; `capture_refinement_item` / `decode_refinement` / `submit_refinement` /
+  `release_refinement` are the dispatch cycle; `stop_rolling` ends it. Windows are admitted under
+  a SESSION-QUALIFIED coalesce key, closing iteration 13's carry-forward. The runtime counts
+  witnesses in readiness and in the stop drain, branches `next_work` on kind, and processes a
+  witness with the canonical pump's shape (capture under the lock, decode outside it, publish
+  under it again). The bundle supplies the window decoder.
+- THREE DESIGN DECISIONS, each with what it cost:
+  D1 A SECOND decoder, not a wider one. The deployed manifest bounds the span decoder at
+     `decoder_config.max_samples: 120000` (7.5 s) and a 10 s window is 160000 samples, so the base
+     decoder cannot physically accept one. The rolling adapter is a second
+     `RunnerBoundedWavInference` over the SAME runner, sized from
+     `DEFAULT_ROLLING_GEOMETRY.window_samples`. Raising the manifest value instead would change
+     `decoder_config_hash` -> provider manifest hash -> the deployed descriptor, to widen a bound
+     that describes the base path. Cost: two adapters, and a geometry change is a code change --
+     which it already was, because widening the window means re-running the §10.2 grid.
+  D2 The witness HOLDS the session's single in-flight inference slot while it decodes, so a
+     running window can delay the next canonical span by one decode (~1 s at the measured RTF).
+     Not an oversight: one in-flight vLLM request per harness is the deployment contract, so
+     rolling's cost is a serial cost. The arbiter still guarantees a witness is never dispatched
+     while canonical work waits. Cost: a bounded addition to base first-publication latency that
+     §10.6's soak must measure rather than assume.
+  D3 A rolling defect ends ROLLING, never the meeting. The canonical pump terminalizes on an
+     unexpected exception; the refinement pump logs it (counts and names only), stops rolling for
+     that session, and leaves the base path and the whole surface untouched -- ADR-0005 D1 gives
+     the session the last word precisely so the second listener cannot take down the first.
+     Cost: until step 5's §7.4 events, a stopped converger is visible only in the log and in
+     `LiveCoordinator.rolling_accounting()`. That is the first thing step 5 should fix.
+- DEFECT FOUND AND FIXED, and it is the kind only the wiring could expose: `submit_refinement`
+  originally planned the next window BEFORE releasing the witness that had just answered. The
+  arbiter refuses a newer witness while one is RUNNING for the same key (plan §6 M5, correctly --
+  it may not cancel a MOSS request already burning GPU), so the newly planned window was refused
+  and lost permanently, and the converger -- still holding it in its one in-flight slot -- stopped
+  planning for the rest of the session. It fires only when the base is already a whole window
+  ahead at the instant a witness lands, which is a replay client or a post-hiccup burst, never an
+  unhurried real-time meeting. The fix is one line of ordering. What made it findable was the
+  `_rolling_admission_refusals` counter, kept on the principle that an admission refusal from a
+  well-behaved producer is a defect rather than an error; it is now a verifier gate.
+- MUTATIONS, five, across two production files (backed up, restored by a trap on exit):
+    M1 a base commit is never observed        -> verifier (0 of 6 windows, base-arm WER) + 5 T2
+    M2 no observe_base after a revision       -> T2 ONLY (2 tests) -- see the finding
+    M3 the next window is planned before the release -> T2 ONLY (3 tests) -- the defect above
+    M4 the coalesce key drops the session     -> T2 ONLY (1 test) -- see the finding
+    M5 stop does not wait for the witness     -> verifier (5 of 6 windows; bill .198864 -> .204545)
+- FINDING: three branches the corpus cannot reach, three different reasons, all of them properties
+  of PRODUCER PACING rather than gaps in the sweep. M2 needs the base to have stopped committing
+  while a revision is outstanding -- on 60 s of continuously committing audio the next base commit
+  re-observes the frontier anyway. M3 needs the base a whole window ahead. M4 needs two sessions on
+  one arbiter and the runtime builds one per session (`live_service_runtime.py:482`). Each is
+  pinned by a T2 test that arranges the pacing the corpus never produces. Same shape as iteration
+  11's M5, iteration 12's M3 and iteration 13's M2/M4.
+- Learned:
+  - The offline runtime reproduces the DEPLOYED span grid exactly -- 24 / 32 / 24 frozen spans,
+    identical to the checked-in baseline traces, with the deployed endpoint config and real
+    webrtcvad. That is what made a GPU-free end-to-end runtime verifier possible at all, and it
+    re-confirms iteration 4's endpoint-determinism finding from a completely different direction.
+    Worth remembering as a capability: the whole live path above the decoder can be exercised on
+    real audio with no GPU, at ~10 s per trio arm.
+  - A base that falls a whole window behind stops rolling, statedly. The verifier's first draft
+    measured exactly that -- 0 windows on all three cases, `pcm_evicted`, PCM high-water pinned at
+    the 320000 bound -- because its driver handed over the whole meeting before the pump thread ran
+    once. Not a condition the deployed service can be in, but the honest reading is that rolling
+    degrades to the base path, by name, when the base falls behind. The driver now paces the base
+    within two spans, which is what real-time pacing produces; §10.6's soak measures the real thing.
+  - A verifier that runs BOTH arms on one instrument is worth more than one that compares against a
+    recorded number. The base arm landing on .199870 / .913490 to six decimals is what makes the
+    rolling arm's .131861 believable: the same code, the same audio, the same decodes, one
+    collaborator different.
+- Next: M2 step 3 item 5 = the §7.3/§7.4 snapshot and event serialization (context.md candidate
+  6g). `dataclasses.asdict` already carries the four snapshot fields, so this step is the seven
+  events -- and it is what finally makes a stopped converger, a failed window and an admission
+  refusal visible to a soak. Then the portal, then the export switch LAST. Plan §10.5's order is
+  not negotiable.

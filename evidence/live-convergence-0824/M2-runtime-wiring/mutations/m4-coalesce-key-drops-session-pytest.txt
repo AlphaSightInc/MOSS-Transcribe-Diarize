@@ -1,0 +1,36 @@
+..........F                                                              [100%]
+=================================== FAILURES ===================================
+_ RollingRuntimeWiringTest.test_the_coalesce_key_names_the_session_not_only_its_epoch _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_the_coalesce_key_names_the_session_not_only_its_epoch>
+
+    def test_the_coalesce_key_names_the_session_not_only_its_epoch(self):
+        """Two epoch-0 sessions on one arbiter must not coalesce into one witness."""
+    
+        arbiter = InferenceArbiter()
+        coordinators = []
+        for name in ("session-a", "session-b"):
+            base, witness = _decoders(rolling=True)
+            session = LiveSession(max_retained_samples=960000)
+            coordinators.append(
+                LiveCoordinator(
+                    session_key=name,
+                    session=session,
+                    endpoint_policy=EndpointPolicy(_endpoint_config()),
+                    speech_provider=ScriptedSpeech(),
+                    decoder=base,
+                    identity_preparer=ScriptedIdentity(),
+                    arbiter=arbiter,
+                    rolling_decoder=witness,
+                )
+            )
+        for coordinator in coordinators:
+            _refinement_item(coordinator, arbiter, dispatch=False)
+    
+>       self.assertEqual(arbiter.snapshot().live_refinement, 2)
+E       AssertionError: 1 != 2
+
+tests/test_live_rolling_wiring.py:380: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_the_coalesce_key_names_the_session_not_only_its_epoch
+1 failed, 10 passed in 2.23s

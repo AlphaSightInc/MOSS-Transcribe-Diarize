@@ -42,6 +42,7 @@ from .live_session import (
     LiveIdentitySnapshot,
     PCM16_BYTES_PER_SAMPLE,
 )
+from .live_transcript_convergence import DEFAULT_ROLLING_GEOMETRY
 from .live_vector_journal import LiveVectorJournal
 from .speaker_identity import TierBAssetSpec, WeSpeakerResNet152LmAdapter
 
@@ -308,6 +309,16 @@ def build_live_runtime_factory(
             decoder_factory=lambda: RunnerBoundedWavInference(
                 runner,
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
+            ),
+            # The rolling witness decodes one selected window at a time, so its capacity is
+            # the geometry plan §10.4 selected -- not `decoder_config.max_samples`, which
+            # bounds a *span* and is four times too small for a ten-second window. It is
+            # taken from the module that owns the measured arm rather than from the manifest
+            # for the same reason: widening the window is a new grid run, not a config edit,
+            # and the deployed manifest's hashes describe the base path, which is unchanged.
+            rolling_decoder_factory=lambda: RunnerBoundedWavInference(
+                runner,
+                max_samples=DEFAULT_ROLLING_GEOMETRY.window_samples,
             ),
             identity_preparer_factory=lambda: _identity_preparer(config, encoder=identity_encoder),
             vector_journal=vector_journal,
