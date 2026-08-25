@@ -1,0 +1,399 @@
+{
+  "gates": {
+    "G-M3-0": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {},
+      "value": {
+        "total_violations": 0,
+        "per_session": {
+          "keyu-5m/A": 0,
+          "keyu-5m/B": 0,
+          "lex_bill_ackman/A": 0,
+          "lex_bill_ackman/B": 0,
+          "lex_javier_milei/A": 0,
+          "lex_javier_milei/B": 0,
+          "lex_keyu_jin/A": 0,
+          "lex_keyu_jin/B": 0
+        }
+      }
+    },
+    "G-M3-1": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "prd": 0.1393,
+        "m2_exit": 0.111278
+      },
+      "value": 0.111278
+    },
+    "G-M3-2": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "lex_bill_ackman": 0.127333,
+        "lex_javier_milei": 0.117333,
+        "lex_keyu_jin": 0.089167
+      },
+      "value": {
+        "lex_bill_ackman": 0.127333,
+        "lex_javier_milei": 0.117333,
+        "lex_keyu_jin": 0.089167
+      }
+    },
+    "G-M3-3": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "prd": 0.8437,
+        "m2_exit": 0.888722
+      },
+      "value": 0.888722
+    },
+    "G-M3-4": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "prd": 0.0947,
+        "m2_exit": 0.0886
+      },
+      "value": 0.0886
+    },
+    "G-M3-5": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "lex_bill_ackman": 0.920455,
+        "lex_javier_milei": 0.92,
+        "lex_keyu_jin": 0.985612,
+        "keyu-5m": 0.954856
+      },
+      "value": {
+        "lex_bill_ackman": 0.920455,
+        "lex_javier_milei": 0.92,
+        "lex_keyu_jin": 0.985612,
+        "keyu-5m": 0.954856
+      }
+    },
+    "G-M3-6": {
+      "pass": true,
+      "arm": "served",
+      "instrument": "fresh-run",
+      "bounds": {},
+      "value": {
+        "exit_code": 0,
+        "tail": [
+          "3 passed in 2.14s"
+        ]
+      }
+    },
+    "G-M3-7": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "lex_bill_ackman": 1,
+        "lex_javier_milei": 0,
+        "lex_keyu_jin": 0,
+        "keyu-5m": 0
+      },
+      "value": {
+        "lex_bill_ackman": 1.0,
+        "lex_javier_milei": 0.0,
+        "lex_keyu_jin": 0.0,
+        "keyu-5m": 0.0
+      }
+    },
+    "G-M3-8": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {
+        "lex_bill_ackman": 0.73,
+        "lex_javier_milei": 0.0,
+        "lex_keyu_jin": 0.0,
+        "keyu-5m": 0.56
+      },
+      "value": {
+        "lex_bill_ackman": 0.33,
+        "lex_javier_milei": 0.0,
+        "lex_keyu_jin": 0.0,
+        "keyu-5m": 0.56
+      },
+      "note": "passes, and iteration 20 measured WHY it passes on lex_bill_ackman: S1 puts a confident wrong name on the two sub-quarter-second fragments the projection honestly abstained on, so S00 falls .73 -> .33 while misattributed seconds rise .48 -> .88. The gate cannot see that trade; the decomposition can."
+    },
+    "G-M3-9": {
+      "pass": true,
+      "arm": "S1",
+      "instrument": "offline-replay(M3-s1)",
+      "bounds": {},
+      "value": {
+        "many_to_one_maps": 0,
+        "examples": []
+      }
+    },
+    "G-M3-10": {
+      "pass": true,
+      "arm": "served + S1 marginal cost",
+      "instrument": "projected(deployed M2-e2-exit + offline-replay cost)",
+      "bounds": {
+        "combined_rtf": 1.0,
+        "rolling_max_depth": 1
+      },
+      "value": {
+        "max_projected_combined_rtf": 0.287598,
+        "per_session": {
+          "lex_bill_ackman/A": {
+            "deployed_combined_rtf": 0.144172,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.274766
+          },
+          "lex_bill_ackman/B": {
+            "deployed_combined_rtf": 0.157004,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.287598
+          },
+          "lex_javier_milei/A": {
+            "deployed_combined_rtf": 0.153314,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.283908
+          },
+          "lex_javier_milei/B": {
+            "deployed_combined_rtf": 0.149342,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.279936
+          },
+          "lex_keyu_jin/A": {
+            "deployed_combined_rtf": 0.141079,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.271673
+          },
+          "lex_keyu_jin/B": {
+            "deployed_combined_rtf": 0.133391,
+            "witness_wespeaker_rtf": 0.130594,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.263985
+          },
+          "keyu-5m/A": {
+            "deployed_combined_rtf": 0.14679,
+            "witness_wespeaker_rtf": 0.137078,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.283868
+          },
+          "keyu-5m/B": {
+            "deployed_combined_rtf": 0.149293,
+            "witness_wespeaker_rtf": 0.137078,
+            "rolling_max_depth": 1,
+            "projected_combined_rtf": 0.286371
+          }
+        }
+      }
+    },
+    "G-M3-11": {
+      "pass": true,
+      "arm": "served",
+      "instrument": "deployed(M2-e2-exit)",
+      "bounds": {
+        "p95_sec": 8.756675
+      },
+      "value": 8.756675,
+      "note": "passes only because nothing shipped: this IS the M2 exit's own already-unsigned number. Iteration 20 priced the arm at 1.02-1.14 s per witness embed; run serially inside the witness path (O1) that lands on this clock, which is why the fallback option was always the label seam after the text revision (O2)."
+    },
+    "G-M3-12": {
+      "pass": true,
+      "arm": "served",
+      "instrument": "deployed(M2-e2-exit) + fresh-run",
+      "bounds": {
+        "decoder_digest": "ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2"
+      },
+      "value": {
+        "a_hypotheses_byte_identical": true,
+        "b_decoder_digest": "ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2",
+        "probe_exit_code": 0
+      }
+    },
+    "G-M3-13": {
+      "pass": true,
+      "arm": "served",
+      "instrument": "deployed(M2-e2-exit)",
+      "bounds": {},
+      "value": {
+        "sessions": 8,
+        "all_equal": true
+      }
+    }
+  },
+  "gate_set": {
+    "pass": true,
+    "preregistered_gates": 14,
+    "scored_gates": 14,
+    "missing_from_scoring": [],
+    "scored_but_not_preregistered": [],
+    "bounds_not_quoted_from_the_row": []
+  },
+  "disposition_checks": {
+    "s1_bundle_intact": {
+      "pass": true,
+      "value": {
+        "console.txt": true,
+        "mutations.txt": true,
+        "NOTES.md": true,
+        "s1-5m-timed.json": true,
+        "s1-all.json": true,
+        "s1-trio-timed.json": true,
+        "selftest.txt": true,
+        "witness-decodes.json": true
+      }
+    },
+    "s1_bench_controls_green": {
+      "pass": true,
+      "value": {
+        "keyu-5m/A": {
+          "deployed": {
+            "der": 0.0886,
+            "speaker_accuracy": 0.9114,
+            "wer": 0.082079
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "keyu-5m/B": {
+          "deployed": {
+            "der": 0.0886,
+            "speaker_accuracy": 0.9114,
+            "wer": 0.082079
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_bill_ackman/A": {
+          "deployed": {
+            "der": 0.127333,
+            "speaker_accuracy": 0.872667,
+            "wer": 0.204545
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_bill_ackman/B": {
+          "deployed": {
+            "der": 0.127333,
+            "speaker_accuracy": 0.872667,
+            "wer": 0.204545
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_javier_milei/A": {
+          "deployed": {
+            "der": 0.117333,
+            "speaker_accuracy": 0.882667,
+            "wer": 0.096
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_javier_milei/B": {
+          "deployed": {
+            "der": 0.117333,
+            "speaker_accuracy": 0.882667,
+            "wer": 0.096
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_keyu_jin/A": {
+          "deployed": {
+            "der": 0.089167,
+            "speaker_accuracy": 0.910833,
+            "wer": 0.093525
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        },
+        "lex_keyu_jin/B": {
+          "deployed": {
+            "der": 0.089167,
+            "speaker_accuracy": 0.910833,
+            "wer": 0.093525
+          },
+          "export_reproduces_pass": true,
+          "s0_reproduces_deployed_scores": true
+        }
+      }
+    },
+    "s1_ties_s0_on_every_gated_axis": {
+      "pass": true,
+      "value": {
+        "keyu-5m": {
+          "der": 0.0,
+          "speaker_accuracy": 0.0,
+          "matched_word_speaker_accuracy": 0.0,
+          "wer": 0.0
+        },
+        "lex_bill_ackman": {
+          "der": 0.0,
+          "speaker_accuracy": 0.0,
+          "matched_word_speaker_accuracy": 0.0,
+          "wer": 0.0
+        },
+        "lex_javier_milei": {
+          "der": 0.0,
+          "speaker_accuracy": 0.0,
+          "matched_word_speaker_accuracy": 0.0,
+          "wer": 0.0
+        },
+        "lex_keyu_jin": {
+          "der": 0.0,
+          "speaker_accuracy": 0.0,
+          "matched_word_speaker_accuracy": 0.0,
+          "wer": 0.0
+        }
+      }
+    },
+    "nothing_shipped": {
+      "pass": true,
+      "value": {
+        "matches": [],
+        "module": "moss_transcribe_diarize/app/live_transcript_convergence.py"
+      }
+    },
+    "served_surface_unchanged_since_the_passes": {
+      "pass": true,
+      "value": {
+        "exit_code": 0,
+        "diff": ""
+      }
+    }
+  },
+  "disposition": {
+    "decision": "D-M3-2 = O3: record E3-S1 as measured-neutral, ship nothing, leave the plan \u00a718 E3 row unsigned.",
+    "why_not_O1_or_O2": [
+      "The preregistration \u00a76.2 says a passing S1 ships even on a tie, and gives one reason: 'D5's ownership is the architecture E4 builds on'. Plan \u00a712.3 steps 4-5 falsify it - the terminal pass runs the existing 150/120 WindowedRunner over the mixed tape and resolves terminal identities there, so E4 does not call the rolling resolver. The premise, not the gate, is what failed.",
+      "S1's only two output changes on the whole bench are wrong: lex_bill_ackman 39.84-40.00 'Right?' and 49.75-49.99 'You know.', both named speaker-0002 where the reference says Bill. Misattributed seconds .48 -> .88. Shipping it makes the product measurably worse on the only segments it touches and better on none.",
+      "The upside was measured before the arm existed and again after: the label-only ceiling is .00672 trio mean DER (63 % of remaining confusion is segments straddling a reference turn, 27 % is sub-floor microfragments), and S1 realises 0.000000 of it.",
+      "Cost is real: .1306 RTF trio / .1371 five-minute of extra WeSpeaker work, and 1.02-1.14 s per window against a correction p95 that is already unsigned at 8.756675 s."
+    ],
+    "what_the_gates_do_and_do_not_certify": [
+      "Every M3 gate is a no-regression gate - by construction, since \u00a71 bound each one to the stricter of the PRD bound and the M2 exit measurement. So a build that ships nothing passes all 14. These results certify that the served speaker surface did not regress and that the S1 arm is structurally correct (D5 clean, one-to-one or abstain, label-invariant). They do NOT certify that E3 delivered quality, because it did not: the delta is 0.000000 everywhere."
+    ],
+    "row": "plan \u00a718 E3 stays UNSIGNED, with this bundle and M3-s1-prototype as its evidence - the same disposition M0(d) G2, M1 G-M1-1 and M2 G-M2-4 received.",
+    "not_a_stop": "No plan \u00a715 global stop condition fired: no case-level WER regression, file mode unchanged, accounting exact, scorer self-tests green, no truth read during reconciliation.",
+    "handoff": "The speaker seconds that remain are owned by segment EXTENTS (E2's frozen text geometry) and by plan \u00a711.4 microfragments. Both belong in the \u00a718 record so the next campaign starts from the decomposition rather than from the confusion total."
+  },
+  "witness_wespeaker_rtf": {
+    "trio": 0.130594,
+    "keyu-5m": 0.137078
+  }
+}

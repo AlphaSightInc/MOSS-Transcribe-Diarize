@@ -1933,3 +1933,100 @@ appended at the iteration 4->5 boundary]
   §18 E3 row unsigned) and move to M4 (plan E4 terminal convergence, candidate 8). If the owner
   prefers D5 ownership in the code regardless of measured effect, O2 (ship through the label seam)
   is the variant that does not endanger G-M3-11. Do not re-run the arm on the way.
+
+2026-08-25 iteration 21 (run 20260825-042645-70858) - M3 (plan E3) EXIT: the 14 preregistered
+  gates are scored and D-M3-2 is decided. ALL 14 PASS AND NOTHING SHIPS - one result, not two.
+  No production file was touched.
+- Target: context.md candidate 7c (D-M3-2, the ship decision), the lowest open item. It is a
+  DECISION plus the scoring that makes the decision auditable, not a build.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py  (new; scores the
+      14 gates from checked-in evidence, checks the disposition against the tree, --selftest)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                  (index + section)
+  evidence/live-convergence-0824/M3-disposition/{NOTES.md,gates.json,console.txt,selftest.txt,
+      pytest-full.txt,sha256.txt}                                             (new bundle, 32K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart (none needed - no production change). ZERO MOSS requests. 4070 Ti untouched.
+- Validation:
+  - verify_m3_disposition.py --output /tmp/m3-disposition.json -> exit 0
+      G-M3-0  PASS  S1        zero D5 violations across 8 sessions / 118 embedded units
+      G-M3-1  PASS  S1        trio mean DER .111278 <= .111278 (PRD .1393)
+      G-M3-2  PASS  S1        .127333 / .117333 / .089167 - equal on all three
+      G-M3-3  PASS  S1        trio speaker_accuracy .888722 >= .888722 (PRD .8437)
+      G-M3-4  PASS  S1        five-minute DER .0886 <= .0886 (PRD .0947)
+      G-M3-5  PASS  S1        matched-word .920455 / .920000 / .985612 / .954856 - equal
+      G-M3-6  PASS  served    9-clip identity floor, pytest exit 0 (fresh run)
+      G-M3-7  PASS  S1        collapse 1 / 0 / 0 / 0 on the sliding screen
+      G-M3-8  PASS  S1        S00 .33 / .00 / .00 / .56  (see below - passes wrongly)
+      G-M3-9  PASS  S1        zero many-to-one maps among non-abstentions
+      G-M3-10 PASS  projected combined RTF max .287598 < 1; depth <= 1 on 8/8; 0 refusals
+      G-M3-11 PASS  served    correction p95 8.756675 = the bound (see below - passes vacuously)
+      G-M3-12 PASS  served    hypotheses byte-identical + decoder digest ad381d8b...
+      G-M3-13 PASS  served    accepted == accounted, 8/8 sessions
+    gate-set contract: 14 preregistered / 14 scored / 0 missing / 0 extra / 0 unquoted bounds.
+    disposition checks 5/5: bundle intact, bench controls green, S1 ties S0 on every gated axis,
+    nothing shipped, served surface unchanged since the passes.
+  - verify_m3_disposition.py --selftest -> 0 failures (21 reactions: each of the 14 gates pushed
+    past its own bound, the 5 disposition checks, and both gate-set contracts).
+  - .venv/bin/python -m pytest tests/ -q -> 1091 passed, 2 skipped, 392 subtests (unchanged).
+- DECISION D-M3-2 = O3: record E3-S1 as measured-neutral, ship nothing, plan §18 E3 row UNSIGNED
+  with M3-disposition/ + M3-s1-prototype/ as its evidence. Four measured reasons, all in the
+  bundle NOTES §1:
+  F1 PREREGISTRATION-M3.md §6.2 said a passing S1 ships even on a tie and gave exactly one
+     reason - "D5's ownership is the architecture E4 builds on". Plan §12.3 steps 4-5 falsify it:
+     the terminal pass runs the existing 150/120 WindowedRunner over the mixed tape and resolves
+     terminal identities THERE. E4 never calls the rolling resolver. The premise failed, not the
+     gate - and that is checkable against a document written before both, which is what separates
+     it from gate-shopping.
+  F2 S1's only two output changes on the whole bench are wrong (bill 39.84-40.00 "Right?" and
+     49.75-49.99 "You know.", both named speaker-0002 where the reference says Bill).
+     Misattributed seconds .48 -> .88. Better on nothing.
+  F3 The label-only ceiling is .00672 trio mean DER and S1 realises 0.000000 of it.
+  F4 Cost .130594 RTF trio / .137078 five-minute at 1.02-1.14 s per witness embed, against a
+     correction p95 already unsigned at 8.756675 s.
+  Not a .stop: no plan §15 global condition fired. O2 (ship through revise_labels after the text
+  revision) stays the recorded variant if a later owner wants D5 ownership in the code anyway.
+- THE HONESTY CLAUSE, which is the point of the bundle: EVERY M3 gate is a no-regression gate,
+  because preregistration §1 bound each one to the stricter of the PRD bound and the M2 exit
+  measurement. So a build that ships nothing passes all 14. The table certifies exactly two
+  things - the served speaker surface did not regress, and the S1 arm is structurally correct -
+  and it does NOT certify that E3 delivered quality. Anyone quoting "M3's gates pass" must carry
+  that sentence with it.
+- Two gates pass for reasons worth stating. G-M3-8 ("S00 must not increase") passes on bill
+  because S1 trades an honest abstention for a confident wrong name - the gate cannot see the
+  trade, the decomposition can. G-M3-11 passes only because nothing shipped: the number IS the
+  M2 exit's own already-unsigned p95.
+- HOW THE SCORER IS KEPT FROM AGREEING WITH ITSELF: (1) the gate id set is parsed out of
+  PREREGISTRATION-M3.md §4 in both directions, so editing the table without editing the driver
+  fails the command and scoring an unlisted gate fails it too; (2) every numeric bound the driver
+  applies must appear VERBATIM in that gate's own row, so a threshold cannot be tuned in the
+  scorer; (3) --selftest requires all 21 checks to flip; (4) "ship nothing" is read off the tree -
+  no speaker-encoder/album import in live_transcript_convergence.py, and git diff of
+  moss_transcribe_diarize/ from the M2-exit commit to HEAD must be empty, otherwise the deployed
+  passes are not a fresh run of the served surface; (5) the S1 bundle is hashed against its own
+  sha256.txt before a number is read from it.
+- Learned:
+  - A preregistration can be honoured by refusing its conclusion, if what failed is its PREMISE
+    and the premise is checkable against something older. §6.2's ship-a-tie rule rested on one
+    stated reason, and plan §12.3 - written weeks earlier - says E4 resolves terminal identities
+    through the WindowedRunner, not the rolling resolver. Deviating on a falsified premise is
+    auditable; deviating because a number came out wrong is not. Write the reason INTO the
+    preregistration next time so it can be checked mechanically.
+  - When every gate in a battery is a no-regression gate, "all gates pass" and "we shipped
+    nothing" are the same sentence. That is not a defect in the gates - §1 was right to bind them
+    to the M2 exit - but the report has to say it out loud, or the §18 row reads as an
+    achievement. The instrument now prints the delta beside the verdicts for that reason.
+  - A gate can be satisfied by exactly the mechanism it was written to prevent. G-M3-8 exists so
+    a witness cannot fragment the surface into more S00; S1 passes it by NAMING the fragments
+    wrongly. Any gate of the form "X must not increase" should be paired with the decomposition
+    that says which way X moved and why.
+  - Parsing the gate ids out of the preregistration and requiring each bound to appear verbatim
+    in its own row cost about 30 lines and makes the whole scoring un-tunable. Cheaper than a
+    review, and it fails loudly the moment either document moves.
+- Next: candidate 8, M4 (plan E4 terminal convergence) - the lowest unmet milestone. Step 1 is
+  PREREGISTRATION-M4.md on the M2/M3 pattern: gates against BOTH the PRD bound and the paired
+  file arm, comparators re-read from M2-e2-exit/passes/ rather than the pre-campaign baseline,
+  clocks fixed, predictions recorded. Note before starting: the 3-minute case (lex_adam_frank)
+  has never been run through the live path in this campaign, so its comparator has to be acquired
+  before it can gate anything; finalization_status has producers only for `final`; complete-tape
+  retention is Appendix B Q10 and refines ADR-0003, so its record belongs there, not in a new ADR.

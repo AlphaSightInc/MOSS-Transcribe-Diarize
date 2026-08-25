@@ -71,7 +71,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 18)
+(2026-08-25, after iteration 21)
 
 - Deployed dev stack up: `web_cli` **pid 44278, restarted 2026-08-25 05:52:14 onto the M2
   build** (repo working tree @ `4d6cb29`) at `https://127.0.0.1:7861` (bearer token
@@ -693,8 +693,44 @@
   resolver serial on the witness path adds 1.0-2.3 s per window before its revision can publish,
   against G-M3-11's already-unsigned `8.756675 s` correction p95. If S1 ever ships, it should
   publish through the existing `revise_labels` label seam AFTER the text revision, not inside it.
-- Rest of the ladder (M3 production decision, M4-M5) unimplemented; working tree carries the plan,
-  evidence prototypes, and this scaffold.
+- **M3 CLOSED (iteration 21) on the disposition D-M3-2 = O3: all 14 gates pass, and NOTHING SHIPS.**
+  `verify_m3_disposition.py` exit 0. The two halves have to be read together, which is the point of
+  the bundle. Gates: G-M3-0 zero D5 violations / G-M3-1 trio DER `.111278` <= `.111278` / G-M3-2
+  per case equal / G-M3-3 spk_acc `.888722` >= `.888722` / G-M3-4 5m DER `.0886` <= `.0886` /
+  G-M3-5 matched-word equal on 4 cases / G-M3-6 9-clip floor exit 0 (fresh) / G-M3-7 collapse
+  1/0/0/0 / G-M3-8 S00 `.33`/`.00`/`.00`/`.56` / G-M3-9 zero many-to-one / G-M3-10 projected
+  combined RTF max **.287598** < 1, depth <= 1 on 8/8 / G-M3-11 p95 `8.756675` = bound /
+  G-M3-12 both readings / G-M3-13 8/8 sessions. Full suite 1091 passed / 2 skipped / 392 subtests
+  (unchanged - no production file was touched). Evidence:
+  `evidence/live-convergence-0824/M3-disposition/`.
+- **Why O3 and not "a passing arm ships" (preregistration §6.2).** §6.2 gave exactly one reason -
+  "D5's ownership is the architecture E4 builds on" - and **plan §12.3 steps 4-5 falsify it**: the
+  terminal pass runs the existing 150/120 `WindowedRunner` over the mixed tape and resolves terminal
+  identities there, so E4 never calls the rolling resolver. The premise failed, not the gate; that is
+  checkable against a document written before either, which is what separates it from gate-shopping.
+  Plus: S1's only two output changes are wrong (F2 of the bundle), the label-only ceiling is `.00672`
+  and S1 realises `0.000000` of it, and it costs `.1306`/`.1371` RTF against an already-unsigned
+  correction p95. Recorded in the bundle NOTES §1 with all four facts.
+- **Every M3 gate is a NO-REGRESSION gate, so shipping nothing passes all 14** - a direct consequence
+  of preregistration §1 binding each gate to the stricter of the PRD bound and the M2 exit. The table
+  certifies two things and no more: the served speaker surface did not regress, and the S1 arm is
+  structurally correct. It does **not** certify that E3 delivered quality; the delta is `0.000000`.
+  Any later reader of "M3's gates pass" must be handed that sentence with it.
+- **Two gates pass for reasons worth stating.** G-M3-8 (S00 must not increase) passes on bill because
+  S1 puts a confident *wrong* name on the two fragments the projection honestly abstained on -
+  a gate satisfied by the wrong mechanism. G-M3-11 passes only because nothing shipped: the number
+  IS the M2 exit's own unsigned p95.
+- **The scorer cannot quietly agree with itself.** The gate id set is parsed out of
+  `PREREGISTRATION-M3.md` §4 in both directions (editing the table without editing the driver fails
+  the command); every numeric bound the driver applies must appear **verbatim in that gate's own
+  row**, so a threshold cannot be tuned in the scorer; `--selftest` flips all 14 gates plus the 5
+  disposition checks and 2 gate-set contracts (21 reactions, 0 failures); "ship nothing" is read off
+  the tree (no speaker-encoder import in `live_transcript_convergence.py`, `moss_transcribe_diarize/`
+  unchanged since the commit the deployed passes were taken from); the S1 bundle is hashed against
+  its own `sha256.txt` before a number is read from it.
+- Rest of the ladder (M4-M5) unimplemented; working tree carries the plan, evidence prototypes, and
+  this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build (= the current production
+  tree), so M4's first deployed measurement needs no restart until M4 ships code.
 
 ## Validation
 
@@ -841,6 +877,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py --selftest
 bash prototypes/streaming-diarization/live-convergence/mutate_speaker_authority.sh /tmp/m3-mut-out
+# M3 EXIT: the 14 preregistered gates + the D-M3-2 disposition, checked against the tree
+# (exit 0 = every gate passes AND nothing shipped AND the served surface is still the measured one)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --output /tmp/m3-disp.json
+# 21 reactions: each gate pushed past its own bound, plus the disposition and gate-set contracts
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --selftest
 ```
 
 ## Candidates
@@ -924,29 +967,33 @@ bash prototypes/streaming-diarization/live-convergence/mutate_speaker_authority.
    not about a wired-off arm. Do NOT "fix" it by lowering the 0.5 s evidence floor or the match
    thresholds - the preregistration freezes them and the microfragments it would then name are
    the ones S1 already names wrongly.
-7c. **D-M3-2, the ship decision - NEXT, and it is a DECISION, not a build.** Preregistration §6.2
-   says a passing S1 ships even if it merely ties, because "D5's ownership is the architecture E4
-   builds on". Iteration 20's evidence is that S1 cannot move a gated quality axis on this
-   corpus, costs `.13` RTF, and endangers G-M3-11. Options, one iteration each:
-   O1 ship S1 to production (plan §6 M4 internal to `live_transcript_convergence.py`) and score
-      the 14 gates on deployed passes - honours §6.2 literally, spends ~3 iterations, and the
-      prototype predicts a tie plus a latency risk;
-   O2 ship S1 **through the label seam** (`revise_labels` after the text revision lands) so the
-      correction clock is untouched, then score the gates - same cost, removes the P7 risk, and
-      is an implementation choice rather than a new arm;
-   O3 record E3-S1 as measured-neutral, ship nothing, leave the §18 E3 row unsigned with this
-      bundle as its evidence (preregistration §6.4's disposition), and move to M4.
-   RECOMMENDATION: O3, with O2 as the fallback if the owner wants D5 ownership in the code
-   regardless of measured effect. Whichever is chosen, the next milestone work is M4.
+7c. ~~**D-M3-2, the ship decision**~~ - DECIDED iteration 21: **O3, ship nothing**, and the 14
+   gates are scored. `verify_m3_disposition.py`, verdict in
+   `evidence/live-convergence-0824/M3-disposition/`. Do NOT reopen it by shipping S1 later
+   "for completeness": the decision rests on plan §12.3 falsifying §6.2's premise, on S1's two
+   wrong relabels, and on a `.00672` ceiling it realises none of - all three are measured and
+   none depends on the gate table. If a future reader wants D5 ownership in the code anyway,
+   O2 (through `revise_labels`, after the text revision) is the variant that does not land on
+   the correction clock; it is still a change with no measured quality effect.
 7d. **Where the speaker seconds actually are** (new, from iteration 20's decomposition, NOT M3's):
    63 % of the remaining confusion is segments that straddle a reference turn. That is a
    segment-EXTENT question owned by whatever chose the boundaries - E2's frozen text geometry -
    and 27 % is plan §11.4's sub-floor microfragments. Neither is in this campaign's scope; both
    should be written into the §18 record so the next campaign starts from the decomposition
    rather than from the confusion total.
-8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed
-   prerelease amendment also gates terminal DER within .020 of the paired file arm per case and
-   requires §12.2 cold/warm model-readiness reporting).
+8. **M4 terminal finalizer - NEXT, and it is the lowest unmet milestone.** Plan §12.3 + M4 gates on
+   trio / 3-min (`lex_adam_frank`) / 5-min (the owner-directed prerelease amendment also gates
+   terminal DER within .020 of the paired file arm per case and requires §12.2 cold/warm
+   model-readiness reporting). Same shape as M2: AGENTS.md wants a preregistration + a measured
+   prototype BEFORE production code, so step 1 is `PREREGISTRATION-M4.md` with the gates stated
+   against both the PRD bound and the paired file arm, and the comparators re-read from
+   `M2-e2-exit/passes/` rather than from the pre-campaign baseline (the same staleness §1 of
+   PREREGISTRATION-M3.md caught). Known inputs already measured and not to be re-derived:
+   terminal == file exactly on the trio (`live-file-gap-context`); `finalization_status` reaches
+   only `final` today and `running`/`failed`/`unavailable` have no producer (iteration 12);
+   complete-tape retention is Appendix B Q10 and refines ADR-0003, so its record belongs there;
+   the 3-minute case has never been run through the live path in this campaign, so its baseline
+   has to be acquired before it can be a comparator.
 9. **M5 evidence + records** per PRD.
 
 ## Non-candidates

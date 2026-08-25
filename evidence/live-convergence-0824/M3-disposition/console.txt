@@ -1,0 +1,50 @@
+
+M3 gate table (plan E3 rescoped) - PREREGISTRATION-M3.md §4
+
+gate      verdict arm                          instrument                                     value
+G-M3-0    PASS    S1                           offline-replay(M3-s1)                          total_violations=0
+G-M3-1    PASS    S1                           offline-replay(M3-s1)                          0.111278
+G-M3-2    PASS    S1                           offline-replay(M3-s1)                          lex_bill_ackman=0.127333
+G-M3-3    PASS    S1                           offline-replay(M3-s1)                          0.888722
+G-M3-4    PASS    S1                           offline-replay(M3-s1)                          0.0886
+G-M3-5    PASS    S1                           offline-replay(M3-s1)                          lex_bill_ackman=0.920455
+G-M3-6    PASS    served                       fresh-run                                      exit_code=0
+G-M3-7    PASS    S1                           offline-replay(M3-s1)                          lex_bill_ackman=1.0
+G-M3-8    PASS    S1                           offline-replay(M3-s1)                          lex_bill_ackman=0.33
+G-M3-9    PASS    S1                           offline-replay(M3-s1)                          many_to_one_maps=0
+G-M3-10   PASS    served + S1 marginal cost    projected(deployed M2-e2-exit + offline-replay cost) max_projected_combined_rtf=0.287598
+G-M3-11   PASS    served                       deployed(M2-e2-exit)                           8.756675
+G-M3-12   PASS    served                       deployed(M2-e2-exit) + fresh-run               a_hypotheses_byte_identical=True
+G-M3-13   PASS    served                       deployed(M2-e2-exit)                           sessions=8
+
+disposition checks
+
+  [PASS] s1_bundle_intact
+  [PASS] s1_bench_controls_green
+  [PASS] s1_ties_s0_on_every_gated_axis
+  [PASS] nothing_shipped
+  [PASS] served_surface_unchanged_since_the_passes
+
+gate-set contract
+
+  pass: True
+  preregistered_gates: 14
+  scored_gates: 14
+  missing_from_scoring: []
+  scored_but_not_preregistered: []
+  bounds_not_quoted_from_the_row: []
+
+D-M3-2
+
+  D-M3-2 = O3: record E3-S1 as measured-neutral, ship nothing, leave the plan §18 E3 row unsigned.
+
+  - The preregistration §6.2 says a passing S1 ships even on a tie, and gives one reason: 'D5's ownership is the architecture E4 builds on'. Plan §12.3 steps 4-5 falsify it - the terminal pass runs the existing 150/120 WindowedRunner over the mixed tape and resolves terminal identities there, so E4 does not call the rolling resolver. The premise, not the gate, is what failed.
+  - S1's only two output changes on the whole bench are wrong: lex_bill_ackman 39.84-40.00 'Right?' and 49.75-49.99 'You know.', both named speaker-0002 where the reference says Bill. Misattributed seconds .48 -> .88. Shipping it makes the product measurably worse on the only segments it touches and better on none.
+  - The upside was measured before the arm existed and again after: the label-only ceiling is .00672 trio mean DER (63 % of remaining confusion is segments straddling a reference turn, 27 % is sub-floor microfragments), and S1 realises 0.000000 of it.
+  - Cost is real: .1306 RTF trio / .1371 five-minute of extra WeSpeaker work, and 1.02-1.14 s per window against a correction p95 that is already unsigned at 8.756675 s.
+
+  Every M3 gate is a no-regression gate - by construction, since §1 bound each one to the stricter of the PRD bound and the M2 exit measurement. So a build that ships nothing passes all 14. These results certify that the served speaker surface did not regress and that the S1 arm is structurally correct (D5 clean, one-to-one or abstain, label-invariant). They do NOT certify that E3 delivered quality, because it did not: the delta is 0.000000 everywhere.
+
+  plan §18 E3 stays UNSIGNED, with this bundle and M3-s1-prototype as its evidence - the same disposition M0(d) G2, M1 G-M1-1 and M2 G-M2-4 received.
+
+M3 GATES PASS, DISPOSITION HOLDS

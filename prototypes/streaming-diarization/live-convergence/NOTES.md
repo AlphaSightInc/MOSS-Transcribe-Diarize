@@ -18,6 +18,8 @@ imported by `moss_transcribe_diarize/`.
 | `attribute_wer_delta.py` | which published segment is a WER delta actually made of? | measures each segment's cost by re-scoring without it — bill's salvage is worth −.034091, the S00 flip +.011363 |
 | `verify_adr_text_finalization.py` | does the text-finalization ADR still quote the plan's decisions *verbatim*, as Appendix B Q8 required? | **yes** — D1–D7 byte-identical, one contiguous block, D8–D10 absent; `evidence/live-convergence-0824/M2-text-finalization-adr/` |
 | `measure_m3_baseline.py` + `PREREGISTRATION-M3.md` | how much of the deployed DER can a speaker authority even reach, and what must M3 not regress? | at most `.016445` trio DER (`.005900` on the five-minute case); comparators restated against the M2 exit — `evidence/live-convergence-0824/M3-preregistration/` |
+| `compare_speaker_authority.py` + `mutate_speaker_authority.sh` | plan §11.1: does a witness-owned speaker authority (S1) beat the deployed projection (S0)? | **no — a tie to 6 dp on every gated axis**, Δ DER `0.000000`; the remaining confusion is segment extents, not voice identity; `evidence/live-convergence-0824/M3-s1-prototype/` |
+| `verify_m3_disposition.py` | do the 14 preregistered M3 gates pass, and does the "ship nothing" decision hold against the tree? | **14/14 pass and nothing ships** — every gate is a no-regression gate, so read them with the delta; `evidence/live-convergence-0824/M3-disposition/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -377,3 +379,47 @@ requires); `M1` collapsing every witness segment onto one local moves S1's DER `
 .135833`; `M2` an album that enrols nobody produces 6 abstentions and 0 relabels; `M3` a
 corrupted export fails the S0 control and exits 1; `M4` one second of prepended context produces
 14 D5 violations *and* changes the mapping, which is D5's premise measured rather than asserted.
+
+
+## `verify_m3_disposition.py` — iteration 21, the M3 exit: score the gates, record D-M3-2
+
+```bash
+# the 14 gates, the disposition checks and the decision record (no GPU, no service, ~10 s)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py \
+  --output /tmp/m3-disposition.json
+
+# 21 reactions: every gate pushed past its own bound, plus the disposition and gate-set contracts
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --selftest
+```
+
+**All 14 gates pass and nothing ships.** Those are one result, not two, and this driver exists so
+they cannot be quoted apart. Preregistration §1 bound every M3 gate to the stricter of the PRD
+bound and the M2 exit measurement — the right call, since the M2 surface already beat the PRD's
+pre-campaign comparators with no E3 code — but it makes every gate a **no-regression** gate, and a
+build that ships nothing regresses nothing. The table certifies exactly two things: the served
+speaker surface did not regress, and the S1 arm is structurally correct (zero D5 violations,
+one-to-one or abstain, label-invariant). It does not certify that E3 delivered quality; the
+S1-minus-S0 delta is `0.000000` on every axis of every case.
+
+D-M3-2 = **O3, ship nothing**. `PREREGISTRATION-M3.md` §6.2 said a passing S1 ships even on a tie,
+and gave one reason — *"D5's ownership is the architecture E4 builds on"*. Plan §12.3 steps 4–5
+falsify it: the terminal pass runs the existing 150/120 `WindowedRunner` over the mixed tape and
+resolves terminal identities there, so E4 never calls the rolling resolver. Deviating because a
+preregistered *premise* is falsified by a document written before it is a different act from
+deviating because a number came out wrong; the other three reasons (S1's two wrong relabels, the
+`.00672` ceiling it realises none of, the `.1306` RTF) are all measured too.
+
+Four properties keep the scoring from agreeing with itself: the gate id set is parsed out of the
+preregistration in **both** directions; every numeric bound the driver applies must appear
+**verbatim in that gate's own row**, so no threshold can be tuned here; `--selftest` flips all 14
+gates plus the 5 disposition checks and 2 gate-set contracts; and "ship nothing" is read off the
+tree (no speaker-encoder import in `live_transcript_convergence.py`, `moss_transcribe_diarize/`
+unchanged since the commit the deployed passes were taken from — otherwise those passes would not
+be a fresh run of the served surface).
+
+Two gates pass for reasons worth stating, both in the bundle NOTES §4: G-M3-8 ("S00 must not
+increase") passes on `lex_bill_ackman` because S1 trades an honest abstention for a confident
+wrong name, which the gate cannot see; G-M3-11 passes only because nothing shipped — the number
+*is* the M2 exit's own already-unsigned p95.
