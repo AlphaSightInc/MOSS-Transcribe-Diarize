@@ -1051,6 +1051,7 @@ class LiveServiceRuntime:
                             "canonical_decode_rtf": result.canonical_decode_rtf,
                             "canonical_decode_token_cap": result.canonical_decode_token_cap,
                             "canonical_decode_capped": result.canonical_decode_capped,
+                            "canonical_decode_generated_tokens": result.canonical_decode_generated_tokens,
                             "identity_revision_version": result.identity_revision_version,
                             "identity_revision_spans": result.identity_revision_spans,
                             "identity_revision_units": result.identity_revision_units,

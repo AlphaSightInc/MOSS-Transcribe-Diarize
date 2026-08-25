@@ -33,6 +33,7 @@ from .live_session import (
     PCM16_BYTES_PER_SAMPLE,
 )
 from .live_span_bounds import span_segments
+from .transcription_outcome import EmptyTranscriptCause
 
 
 class LiveCoordinatorError(RuntimeError):
@@ -149,6 +150,10 @@ class CoordinatorWorkResult:
     # transcript and mean opposite things about the decoder.
     canonical_decode_token_cap: int | None = None
     canonical_decode_capped: bool = False
+    # What the decoder actually emitted for this span. On a span with nothing to publish it is
+    # the difference between a model that stayed silent and one that spoke unparseably, which
+    # `empty_reason` alone cannot express: both of the silent endings share one reason name.
+    canonical_decode_generated_tokens: int | None = None
     empty_reason: str | None = None
     # The two words a reader needs when a span did not publish the way it was meant to.
     # `identity_reason` is the preparer's own answer -- it is the only thing that tells an
@@ -204,6 +209,7 @@ class CoordinatorPreparedWork:
     decode_elapsed_sec: float | None = None
     decode_token_cap: int | None = None
     decode_capped: bool = False
+    decode_generated_tokens: int | None = None
     empty_reason: str | None = None
 
 
@@ -332,7 +338,7 @@ class LiveCoordinator:
             return self._unanswered_span(span, exc)
         self._consecutive_unanswered_spans = 0
         transcript = inferred.transcript
-        empty_reason = _empty_transcript_reason(transcript)
+        empty_reason = _decode_empty_reason(inferred)
         if empty_reason is not None:
             # No identity work: there is no transcript to relabel and no speaker to link.
             return CoordinatorPreparedWork(
@@ -342,6 +348,7 @@ class LiveCoordinator:
                 decode_elapsed_sec=inferred.elapsed_sec,
                 decode_token_cap=inferred.token_cap,
                 decode_capped=inferred.capped,
+                decode_generated_tokens=_decode_generated_tokens(inferred),
                 empty_reason=empty_reason,
             )
         preparation = self.identity_preparer.prepare(
@@ -357,6 +364,7 @@ class LiveCoordinator:
             decode_elapsed_sec=inferred.elapsed_sec,
             decode_token_cap=inferred.token_cap,
             decode_capped=inferred.capped,
+            decode_generated_tokens=_decode_generated_tokens(inferred),
         )
 
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
@@ -418,6 +426,7 @@ class LiveCoordinator:
             canonical_decode_rtf=measurement["canonical_decode_rtf"],
             canonical_decode_token_cap=work.decode_token_cap,
             canonical_decode_capped=work.decode_capped,
+            canonical_decode_generated_tokens=work.decode_generated_tokens,
             empty_reason=empty_reason,
             identity_reason=None if preparation is None else preparation.reason,
             submission_refusal=submission.refusal,
@@ -695,6 +704,18 @@ def _merged_refusals(
     return tuple(sorted(counts.items()))
 
 
+# What the trace calls each observed cause. Two causes share one name on purpose: a decoder
+# that emitted no tokens and one that emitted only whitespace both returned no transcript, and
+# `canonical_decode_generated_tokens` on the same event is what tells those two apart. The
+# third is a different fact and has always had its own name -- it was simply unreachable while
+# the adapter flattened every empty outcome into "".
+_EMPTY_REASON_BY_CAUSE: dict[EmptyTranscriptCause, str] = {
+    EmptyTranscriptCause.NO_GENERATED_TOKENS: "decoder_returned_no_transcript",
+    EmptyTranscriptCause.EMPTY_TEXT: "decoder_returned_no_transcript",
+    EmptyTranscriptCause.UNPARSEABLE_TEXT: "decoder_returned_unparseable_transcript",
+}
+
+
 def _empty_transcript_reason(transcript: str) -> str | None:
     """Name the condition under which a span has nothing to publish, or `None`.
 
@@ -710,6 +731,36 @@ def _empty_transcript_reason(transcript: str) -> str | None:
     if not parse_transcript(transcript):
         return "decoder_returned_unparseable_transcript"
     return None
+
+
+def _decode_empty_reason(inferred: InferenceTranscript) -> str | None:
+    """The same question asked of a decode rather than of a string.
+
+    A decoder that reports *why* it had nothing is believed over the text it returned, because
+    the text it returned is "" for all three reasons. A decoder that reports nothing is read
+    the old way, off its transcript -- so the answer is the same for a scripted adapter, a
+    replayed session, and the deployed runner. `RunnerBoundedWavInference` is not the only
+    implementation of `BoundedWavInference`, so the fields it adds are read as optional facts,
+    exactly as the adapter itself reads a runner's result.
+    """
+
+    cause = getattr(inferred, "empty_cause", None)
+    if cause is not None:
+        return _EMPTY_REASON_BY_CAUSE[cause]
+    return _empty_transcript_reason(inferred.transcript)
+
+
+def _decode_generated_tokens(inferred: InferenceTranscript) -> int | None:
+    """How many tokens the decode emitted, or `None` from a decoder that does not say.
+
+    Reported rather than assumed: on a span that published nothing it is what separates a
+    decode that emitted no tokens at all from one that emitted words the parser rejected --
+    two facts that share the trace name `decoder_returned_no_transcript` until the count is
+    read beside it.
+    """
+
+    tokens = getattr(inferred, "generated_tokens", None)
+    return None if tokens is None else int(tokens)
 
 
 def _canonical_decode_measurement(span: FrozenSpan, elapsed_sec: float | None) -> dict[str, float | int | None]:

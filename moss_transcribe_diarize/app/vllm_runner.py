@@ -15,7 +15,11 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT, load_audio_i
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 from .model_runner import StatusCallback, TranscriptionResult, generation_progress
-from .transcription_outcome import EmptyTranscriptionError, TransientTranscriptionError
+from .transcription_outcome import (
+    EmptyTranscriptCause,
+    EmptyTranscriptionError,
+    TransientTranscriptionError,
+)
 
 
 # Statuses that describe the server's condition rather than the request's merits, so the same
@@ -263,19 +267,39 @@ def _validate_transcription_response(
 ) -> None:
     """Fail closed when the model produced nothing transcribable for this audio.
 
-    All three conditions describe the same thing -- the request succeeded and the model said
-    nothing usable -- so they raise the typed `EmptyTranscriptionError` rather than a bare
-    `RuntimeError`. A transport or server failure is a different thing and still leaves this
-    function as some other exception.
+    All three conditions describe the same thing to a batch caller -- the request succeeded and
+    the model said nothing usable -- so they raise the typed `EmptyTranscriptionError` rather
+    than a bare `RuntimeError`. A transport or server failure is a different thing and still
+    leaves this function as some other exception.
+
+    They are not the same *observation*, so each raise names which one it was and carries the
+    answer it saw. Nothing about the batch path changes: same type, same message, same audio
+    rejected. What changes is that the live path stops having to guess, from an empty string,
+    whether the model was silent or merely ungrammatical.
     """
 
     audio = str(Path(audio_path).expanduser())
     if generated_tokens <= 0:
-        raise EmptyTranscriptionError(f"vLLM transcription returned zero generated tokens for {audio}.")
+        raise EmptyTranscriptionError(
+            f"vLLM transcription returned zero generated tokens for {audio}.",
+            cause=EmptyTranscriptCause.NO_GENERATED_TOKENS,
+            text=text,
+            generated_tokens=generated_tokens,
+        )
     if not text:
-        raise EmptyTranscriptionError(f"vLLM transcription returned empty transcript text for {audio}.")
+        raise EmptyTranscriptionError(
+            f"vLLM transcription returned empty transcript text for {audio}.",
+            cause=EmptyTranscriptCause.EMPTY_TEXT,
+            text=text,
+            generated_tokens=generated_tokens,
+        )
     if not parse_transcript(text):
-        raise EmptyTranscriptionError(f"vLLM transcription returned zero parsed segments for {audio}.")
+        raise EmptyTranscriptionError(
+            f"vLLM transcription returned zero parsed segments for {audio}.",
+            cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+            text=text,
+            generated_tokens=generated_tokens,
+        )
 
 
 def _raise_vllm_error(error: Any) -> None:

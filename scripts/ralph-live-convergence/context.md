@@ -9,8 +9,10 @@
 - Key code paths and why they matter:
   - `moss_transcribe_diarize/live_service_replay.py:~842-935` — the payload reconstructors
     (field-complete since iteration 1; keep them so); terminal-trace write at `:488`.
-  - `moss_transcribe_diarize/app/vllm_runner.py:274-278` + `app/live_adapters.py:307-311` —
-    the unparseable→`""` collapse (M0 disposition, M1 salvage seam).
+  - `moss_transcribe_diarize/app/vllm_runner.py:_validate_transcription_response` +
+    `app/live_adapters.py:307` — the decode seam. The disposition collapse is fixed (iteration 2);
+    what remains here is M1: read `exc.text` at the adapter catch and route it through
+    `classify_live_transcript`.
   - `app/live_span_bounds.py` — clamp-never-refuse precedent; M1 `classify_live_transcript` home.
   - `app/live_session.py` — `FrozenSpan:75`, `CanonicalCommit` (~:163, `revised_transcript`
     invariant "same words, revised labels"), `revise_labels:539-563`, published-text rule `:581`,
@@ -24,7 +26,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 1)
+(2026-08-25, after iteration 2)
 
 - Deployed dev stack up: `web_cli` (pid ~32906) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
@@ -54,12 +56,30 @@
   defaulted field left unset, so this defect class cannot recur silently). Mutation-checked:
   deleting any one restored line fails the test. Evidence:
   `evidence/live-convergence-0824/M0a-replay-roundtrip/`.
+- **M0b CLOSED (iteration 2).** The three no-speech endings are no longer one. `EmptyTranscriptCause`
+  (`no_generated_tokens` / `empty_text` / `unparseable_text`) lives on `app/transcription_outcome.py`
+  and rides on `EmptyTranscriptionError` together with the raw answer and the token count; the
+  adapter catch at `live_adapters.py:307` keeps `empty_cause` + real `generated_tokens` on
+  `InferenceTranscript`; `live_coordinator._decode_empty_reason` believes a reported cause and
+  falls back to the transcript rule for decoders that report none; `canonical_decode_generated_tokens`
+  is now on `CoordinatorWorkResult` and the `canonical_processed` event. All 7 saved real decodes
+  that the baseline lost now report `decoder_returned_unparseable_transcript` with their true token
+  counts (13-24) and still publish `""` -- observation changed, policy did not. Five mutations
+  caught; file-mode decoder output byte-identical to HEAD (worktree A/B, elapsed excluded).
+  Evidence: `evidence/live-convergence-0824/M0b-decode-disposition/`.
+- **The raw unparseable text now stops at the adapter seam** (`exc.text`), deliberately not carried
+  onto `InferenceTranscript`: telemetry must never see meeting words, and M1's
+  `classify_live_transcript` is the one caller entitled to read it. That is the M1 wiring point.
+- Refusal boilerplate is *not* distinguished yet -- it classifies as `unparseable_text`, correctly,
+  because refusal detection belongs to `classify_live_transcript` (plan §6 M1). M1 adds a verdict
+  on top of this vocabulary, not beside it.
 - Replay traces written **before** this fix still read as "zero revisions / never corrected";
   `identity_finalized` events never went through these reconstructors and stay trustworthy.
   The 5-minute run's cadence sweep applied 2 label revisions — M0d re-acquisition must show
   them in the terminal snapshot now.
-- Rest of the ladder (M0b-M5) unimplemented; working tree carries the plan, evidence
-  prototypes, and this scaffold.
+- Rest of the ladder (M0c-M5) unimplemented; working tree carries the plan, evidence
+  prototypes, and this scaffold. `prototypes/streaming-diarization/live-convergence/` now
+  exists (the campaign's throwaway-experiment home per the PRD) and holds the two M0b probes.
 
 ## Validation
 
@@ -68,6 +88,12 @@
 bash scripts/ralph-live-convergence/preflight.sh
 # M0a defect reproducer (exit 0 = fixed)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/live-file-roadmap-verification/verify_replay_roundtrip.py
+# M0b disposition on the 7 saved real lost decodes (all -> unparseable, published text still "")
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/replay_saved_decode_dispositions.py
+# file-mode decoder A/B against any checkout (identical output = file mode untouched)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/probe_file_mode_decode_identity.py <repo-root>
 # targeted tests for touched modules (narrow first)
 .venv/bin/python -m pytest tests/test_live_service_replay.py -q
 .venv/bin/python -m pytest tests/test_live_session.py tests/test_live_coordinator.py -q
@@ -84,9 +110,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/live-file-roadmap-verifica
 
 1. ~~**M0a replay-adapter fix**~~ — DONE iteration 1 (see Current state). Remaining M0
    work is 0b/0c/0d below.
-2. **M0b typed disposition**: thread `EmptyTranscriptionError` variants through
-   `live_adapters`/`live_coordinator` so traces distinguish empty/unparseable/refusal.
-   Validate: unit test drives an unparseable payload and asserts the trace reason.
+2. ~~**M0b typed disposition**~~ — DONE iteration 2 (see Current state). Refusal is M1's,
+   by design.
 3. **M0c evaluator v2 prototype** under `prototypes/streaming-diarization/live-convergence/`
    per plan A0.3 gates. Validate: self-tests listed in PRD M0c.
 4. **M0d paired re-acquisition** (needs service restart onto campaign branch first — record it).

@@ -1,0 +1,14 @@
+== control (unmutated) ==
+68 passed, 3 warnings, 3 subtests passed in 3.25s
+== M1: adapter drops the cause ==
+2 failed, 66 passed, 3 warnings, 3 subtests passed in 3.05s
+== M2: adapter reports zero tokens again ==
+2 failed, 66 passed, 3 warnings, 3 subtests passed in 3.31s
+== M3: coordinator ignores the reported cause ==
+2 failed, 66 passed, 3 warnings, 3 subtests passed in 3.39s
+== M4: runner mislabels unparseable as empty text ==
+3 failed, 66 passed, 3 warnings, 2 subtests passed in 3.31s
+== M5: event drops the token count ==
+1 failed, 67 passed, 3 warnings, 3 subtests passed in 3.02s
+== control after restore ==
+68 passed, 3 warnings, 3 subtests passed in 2.93s

@@ -52,3 +52,51 @@ the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).
   EmptyTranscriptionError variants through app/vllm_runner.py:274-278 +
   app/live_adapters.py:307-311 so an unparseable payload stops reporting as
   decoder_returned_no_transcript. That also opens the M1 salvage seam.
+
+## Iteration 2 - M0b typed decode disposition reaches the trace
+- Target: context.md candidate 2 (M0b). PRD acceptance M0(b); plan A0.2.
+- Files: moss_transcribe_diarize/app/transcription_outcome.py (+EmptyTranscriptCause, typed
+  EmptyTranscriptionError), app/vllm_runner.py (3 raise sites named), app/live_adapters.py
+  (InferenceTranscript.empty_cause; catch keeps cause + real token count),
+  app/live_coordinator.py (_EMPTY_REASON_BY_CAUSE, _decode_empty_reason,
+  _decode_generated_tokens, canonical_decode_generated_tokens on prepared work + result),
+  app/live_service_runtime.py (+1 event field), tests/test_live_pipeline_seams.py,
+  tests/test_vllm_runner.py, prototypes/streaming-diarization/live-convergence/ (new; 2 probes),
+  evidence/live-convergence-0824/M0b-decode-disposition/, scripts/ralph-live-convergence/context.md
+- Validation:
+  - replay_saved_decode_dispositions.py on the 7 saved REAL lost decodes (d3.json) ->
+    before: decoder_returned_no_transcript x7 / 0 tokens x7;
+    after: decoder_returned_unparseable_transcript x7 / true token counts 13-24 x7;
+    published transcript "" x7 both sides (policy unchanged, observation restored)
+  - pytest tests/test_live_pipeline_seams.py tests/test_vllm_runner.py tests/test_live_coordinator.py
+    -q -> 77 passed, 3 subtests
+  - pytest tests/ -q -> 979 passed, 2 skipped, 386 subtests (88 s), no regressions
+  - mutation check x5 (adapter drops cause / adapter re-zeroes tokens / coordinator ignores cause /
+    runner mislabels unparseable as empty / event drops token count) -> 2,2,2,3,1 failures
+    respectively; control 68 passed before and after
+  - file-mode byte-identity at the touched seam: probe_file_mode_decode_identity.py run against a
+    `git worktree` of HEAD vs the campaign tree over 6 canned answers -> diff IDENTICAL, including
+    all three rejection messages (elapsed_sec excluded: it measures the process, not the code).
+    Worktree removed after use. Service-level file-arm re-check is M0d's.
+- Evidence: evidence/live-convergence-0824/M0b-decode-disposition/{NOTES.md,dispositions.json,
+  mutation-check.txt,pytest-seams.txt,file-mode-decoder-head.json,file-mode-decoder-campaign.json}
+- Learned: the honest label was unreachable from *two* directions, not one. Fixing only the
+  runner would have left the adapter's `transcript=""` return re-collapsing it, and fixing only
+  the adapter would have left the coordinator's text-stated rule with nothing to read. The typed
+  fact therefore rides the exception (batch callers see the identical type + message, so file
+  mode cannot move) and the coordinator reads it as an OPTIONAL attribute via getattr, because an
+  existing test node deliberately asserts the coordinator must work with a foreign
+  BoundedWavInference result object. Two causes share one trace name on purpose
+  (no_generated_tokens / empty_text -> decoder_returned_no_transcript); the new
+  canonical_decode_generated_tokens on canonical_processed is what separates them, which is why
+  A0.2 asks for the token facts and not only the disposition. Refusal is NOT distinguished here
+  by design: refusal detection is classify_live_transcript's (plan §6 M1, "callers must not
+  repeat those rules"), and the observed refusal string classifies as unparseable_text today.
+  The raw model text stops at the adapter catch (exc.text) and is deliberately not carried onto
+  InferenceTranscript, satisfying A0.2's "do not log raw words in service events" while leaving
+  M1 its one legitimate reader.
+- Next: M0c evaluator v2 prototype (context.md candidate 3) under
+  prototypes/streaming-diarization/live-convergence/compare_evaluators.py per plan A0.3 -- gates
+  are self-score exactly 1.0, "xx"x60s scoring zero lexical coverage and zero matched-word
+  speaker credit, and invariance to same-speaker segment splits. M0d (paired re-acquisition)
+  still blocks on restarting web_cli onto the campaign branch; do that before M0d, not before M0c.

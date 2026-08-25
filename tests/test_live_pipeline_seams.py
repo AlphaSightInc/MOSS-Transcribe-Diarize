@@ -45,6 +45,8 @@ from moss_transcribe_diarize.app.live_coordinator import (
     DECODER_DID_NOT_ANSWER,
     MAX_CONSECUTIVE_UNANSWERED_SPANS,
     LiveCoordinator,
+    _EMPTY_REASON_BY_CAUSE,
+    _decode_empty_reason,
 )
 from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicy,
@@ -93,6 +95,7 @@ from moss_transcribe_diarize.app.live_session import (
 from moss_transcribe_diarize.app.live_span_bounds import span_segments
 from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2Frame
 from moss_transcribe_diarize.app.live_v2_session import LiveV2SessionRegistry
+from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptCause
 from moss_transcribe_diarize.app import vllm_runner
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 
@@ -559,7 +562,12 @@ def test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting():
     assert snapshot.session.accounted_samples == 33600
 
     processed = _events(runtime, created.session_id, "canonical_processed")
-    assert [event["empty_reason"] for event in processed] == ["decoder_returned_no_transcript", None]
+    # The model answered this span with the word "silence" -- tokens were generated and the
+    # parser rejected them. The trace says exactly that; it used to say the decoder returned
+    # no transcript, which is the *other* ending and would have sent a reader looking at the
+    # microphone instead of at the decode.
+    assert [event["empty_reason"] for event in processed] == ["decoder_returned_unparseable_transcript", None]
+    assert processed[0]["canonical_decode_generated_tokens"] == 4
     assert [event["submitted"] for event in processed] == [True, True]
     assert [event["identity_status"] for event in processed] == ["empty_span", "prepared"]
     # The empty span cost real decode time and it is still measured, not reported as unknown.
@@ -600,9 +608,27 @@ def test_a_meeting_of_pure_silence_stops_with_exact_accounting():
     assert len(runner.decoded_wav_bytes) == 1
 
 
-def test_every_no_speech_answer_from_the_real_runner_reaches_the_coordinator_as_no_transcript():
-    """All three of `_validate_transcription_response`'s conditions mean the same thing."""
+# What each of the three no-speech answers actually was, and what a reader must be told about
+# it. The publishing decision is identical for all three -- the span commits empty -- which is
+# precisely why the *observation* has to survive: it is the only thing that differs.
+NO_SPEECH_DISPOSITIONS = {
+    "zero generated tokens": (EmptyTranscriptCause.NO_GENERATED_TOKENS, 0, "decoder_returned_no_transcript"),
+    "empty transcript text": (EmptyTranscriptCause.EMPTY_TEXT, 4, "decoder_returned_no_transcript"),
+    "zero parsed segments": (EmptyTranscriptCause.UNPARSEABLE_TEXT, 4, "decoder_returned_unparseable_transcript"),
+}
+
+
+def test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was():
+    """All three of `_validate_transcription_response`'s conditions publish the same thing.
+
+    They are not the same observation, and the adapter no longer flattens them into one. The
+    span still commits empty for all three -- that policy is unchanged here -- but the decode
+    now carries which ending it was and how many tokens it took to get there, so a trace can
+    tell a silent microphone from a model answering in the wrong grammar.
+    """
+
     for label, response in NO_SPEECH_RESPONSES.items():
+        cause, generated_tokens, reason = NO_SPEECH_DISPOSITIONS[label]
         runner = StubbedTransportVllmRunner([response])
         decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
         span = _span(0, DEPLOYED_MIXED_FRAME_SAMPLES)
@@ -610,9 +636,20 @@ def test_every_no_speech_answer_from_the_real_runner_reaches_the_coordinator_as_
         inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
 
         assert inferred.transcript == "", label
-        assert inferred.generated_tokens == 0, label
+        assert inferred.empty_cause is cause, label
+        assert inferred.generated_tokens == generated_tokens, label
+        # The model's own words never leave the seam: the raw answer stays on the exception,
+        # and what the coordinator receives -- and the trace publishes -- is a name and a count.
+        assert response["text"] not in str(inferred), label
+        assert _decode_empty_reason(inferred) == reason, label
         # The wall time is still reported, so an empty span cannot hide from the RTF gate.
         assert inferred.elapsed_sec is not None and inferred.elapsed_sec >= 0.0, label
+
+
+def test_every_cause_a_decode_can_report_has_a_name_in_the_trace():
+    """A new ending must be named before it can be observed, not after it is seen once."""
+
+    assert set(_EMPTY_REASON_BY_CAUSE) == set(EmptyTranscriptCause)
 
 
 def test_a_decoder_that_returns_unparseable_text_without_raising_is_also_an_empty_span():

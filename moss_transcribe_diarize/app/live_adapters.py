@@ -15,7 +15,11 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
 from .live_span_bounds import span_segments
-from .transcription_outcome import EmptyTranscriptionError, TransientTranscriptionError
+from .transcription_outcome import (
+    EmptyTranscriptCause,
+    EmptyTranscriptionError,
+    TransientTranscriptionError,
+)
 
 
 class LiveProviderError(RuntimeError):
@@ -142,6 +146,11 @@ class InferenceTranscript:
     # quiet one to everybody downstream.
     token_cap: int | None = None
     capped: bool = False
+    # Why this decode has nothing to publish, when it has nothing to publish -- `None` on
+    # every span that produced a transcript. A decoder that raises the typed empty outcome
+    # answers this; a decoder that simply returns text it cannot parse leaves it `None` and
+    # the coordinator reads the transcript instead, so the vocabulary holds for both.
+    empty_cause: EmptyTranscriptCause | None = None
 
     def __post_init__(self) -> None:
         # Timing metadata that cannot be trusted is recorded as *unknown*, never raised. See
@@ -304,14 +313,21 @@ class RunnerBoundedWavInference:
                     wav_path,
                     **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
                 )
-            except EmptyTranscriptionError:
-                # Nothing was said in this span. That is a transcript of "", not a failure:
-                # the span is committed empty upstream so the audio stays accounted for.
+            except EmptyTranscriptionError as exc:
+                # Nothing publishable came back for this span. That is a transcript of "",
+                # not a failure: the span is committed empty upstream so the audio stays
+                # accounted for. What the decoder actually did -- said nothing, emitted no
+                # tokens, or answered in a grammar that does not parse -- travels with it,
+                # because those are three different meetings and only one of them is silence.
+                # The raw words stay on the exception and are not carried forward here; a
+                # policy that wants them (salvage) reads them at this seam, telemetry never
+                # sees them.
                 return InferenceTranscript(
                     transcript="",
-                    generated_tokens=0,
+                    generated_tokens=exc.generated_tokens,
                     elapsed_sec=time.monotonic() - started,
                     token_cap=token_cap,
+                    empty_cause=exc.cause,
                 )
             except LiveProviderError:
                 raise

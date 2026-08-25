@@ -6,6 +6,28 @@ live adapters must not, so the one vocabulary both sides share lives on its own.
 
 from __future__ import annotations
 
+from enum import Enum
+
+
+class EmptyTranscriptCause(str, Enum):
+    """Which of the three endings produced nothing transcribable.
+
+    "Nothing transcribable" is one answer to the batch caller and three different facts to a
+    reader of a live meeting: a decoder that emitted no tokens at all was not asked the same
+    question as one that emitted a sentence in the wrong grammar. Collapsing them is what made
+    every empty live span report `decoder_returned_no_transcript`, including the spans where
+    the model said words that simply did not parse.
+
+    The cause names the *observation* -- what came back -- not the policy that follows from it.
+    Deciding what to publish for an unparseable answer is a separate question with a separate
+    home (`live_span_bounds`), and that decision must be free to change without renaming what
+    was seen.
+    """
+
+    NO_GENERATED_TOKENS = "no_generated_tokens"
+    EMPTY_TEXT = "empty_text"
+    UNPARSEABLE_TEXT = "unparseable_text"
+
 
 class EmptyTranscriptionError(RuntimeError):
     """The decoder answered for this audio and produced nothing transcribable.
@@ -16,7 +38,27 @@ class EmptyTranscriptionError(RuntimeError):
     a slice of a meeting chosen by an endpointer, and silence between turns is the ordinary
     case -- so it needs to tell this condition apart from a decoder that actually failed.
     That is the whole reason the type exists; the messages are unchanged.
+
+    It carries the `cause` and the decode's own token count so the live path can report what
+    was actually observed. Batch callers see exactly what they saw before -- same type, same
+    message -- because the facts travel as attributes, not in the sentence.
     """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        cause: EmptyTranscriptCause,
+        text: str = "",
+        generated_tokens: int = 0,
+    ):
+        super().__init__(message)
+        self.cause = cause
+        # The raw answer is kept on the exception and never rendered into an event: a live
+        # trace that quoted the model's words would leak meeting content into telemetry. The
+        # salvage policy is the one caller entitled to read it.
+        self.text = text
+        self.generated_tokens = int(generated_tokens)
 
 
 class TransientTranscriptionError(RuntimeError):

@@ -1,0 +1,136 @@
+{
+  "corpus": "prototypes/live-file-gap-emptyspan/out/d3.json",
+  "decodes": 7,
+  "before_reasons": {
+    "decoder_returned_no_transcript": 7
+  },
+  "after_reasons": {
+    "decoder_returned_unparseable_transcript": 7
+  },
+  "after_causes": {
+    "unparseable_text": 7
+  },
+  "generated_tokens_preserved": true,
+  "published_text_unchanged": true,
+  "rows": [
+    {
+      "case": "lex_bill_ackman",
+      "span_id": 2,
+      "window": [
+        5.0,
+        7.5
+      ],
+      "raw_text": "[S01] The difference between,[S01] you said the stock market.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 19,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 19,
+      "published_transcript": ""
+    },
+    {
+      "case": "lex_javier_milei",
+      "span_id": 3,
+      "window": [
+        5.28,
+        6.77
+      ],
+      "raw_text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 23,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 23,
+      "published_transcript": ""
+    },
+    {
+      "case": "lex_javier_milei",
+      "span_id": 5,
+      "window": [
+        7.94,
+        9.52
+      ],
+      "raw_text": "[0.00][S01]Okay.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 13,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 13,
+      "published_transcript": ""
+    },
+    {
+      "case": "lex_javier_milei",
+      "span_id": 13,
+      "window": [
+        23.73,
+        23.79
+      ],
+      "raw_text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 23,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 23,
+      "published_transcript": ""
+    },
+    {
+      "case": "lex_javier_milei",
+      "span_id": 31,
+      "window": [
+        59.76,
+        60.0
+      ],
+      "raw_text": "[0.00][S01]And.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 13,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 13,
+      "published_transcript": ""
+    },
+    {
+      "case": "acquired_jamie_dimon",
+      "span_id": 6,
+      "window": [
+        13.7,
+        14.01
+      ],
+      "raw_text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 23,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 23,
+      "published_transcript": ""
+    },
+    {
+      "case": "acquired_jamie_dimon",
+      "span_id": 22,
+      "window": [
+        51.51,
+        54.01
+      ],
+      "raw_text": "[0.15][S01] Last year, we had you on the video board at Chase.",
+      "parsed_segments": 0,
+      "generated_tokens_saved": 24,
+      "before_reason": "decoder_returned_no_transcript",
+      "before_generated_tokens": 0,
+      "after_cause": "unparseable_text",
+      "after_reason": "decoder_returned_unparseable_transcript",
+      "after_generated_tokens": 24,
+      "published_transcript": ""
+    }
+  ]
+}
