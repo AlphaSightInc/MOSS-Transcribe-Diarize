@@ -445,6 +445,74 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/phase1/w2-local-concurrency/iteration-38-overload-rendered-ownership-wait/overload-rendered-ownership-wait.json`.
   It establishes no G4/G5 result or rendered-publication product defect.
 
+- **Live-mode convergence campaign E0-E4 - the terminal live surface IS the paired file arm
+  on the trio; no cap, prompt, model or file-mode change selected (2026-08-25).** On the three
+  fully referenced 60-second interviews, the campaign's terminal live surface scores WER
+  `.103946`, DER `.102111` and speaker accuracy `.897889` - the paired file arm's own values
+  (file WER `.103946`) to six decimal places, a live-to-file distance of `0.000000` on all
+  three axes - against a 2026-08-24 live baseline of `.199870` / `.176389` / `.823611`. The
+  five-minute case moves the same way: WER `.146375` -> `.050616`, DER `.131533` -> `.057933`.
+  The trio WER ladder is `.199870` baseline -> `.192294` bounded salvage (E1) -> `.131357`
+  rolling 10 s / 10 s re-decode (E2) -> `.103946` terminal re-decode (E4), so rolling bought
+  most of the gap and the terminal pass closed the remainder to zero. The identity is
+  structural, not tuned: E4 hands the session's complete mixed tape to the same
+  `WindowedRunner` object, with the same resolved inference options, that file mode uses, so
+  on a meeting that fits one 150-second window "live" and "file" are one request. E0 repaired
+  the instrument first (a replay client silently dropping `revised_transcript` and
+  `label_revision_version`; three decode endings reported as one; a deployed scorer that
+  credits a 60-second `xx` segment with text coverage `1.0000`), and E3 measured witness-owned
+  speaker authority and **declined to ship it**: the arm ties on every gated axis (trio DER
+  `.111278`, speaker accuracy `.888722`). That answers the open speaker-authority item left by
+  the 2026-08-24 multi-view entry above - a longer witness owning its own speaker evidence
+  changes no gated number, because the terminal pass re-resolves identities from the complete
+  tape and never consults the ownership model.
+
+  Costs, measured on the deployed service over five cases: combined real-time factor during
+  capture max `.172669` against a bound of 1.0; terminal decode real-time factor mean
+  `.032575` after capture stops; stop -> published final surface cold `2.574621` s, warm p50
+  `2.586969` s, max `10.802953` s on the five-minute case; peak retained audio 9 600 000 bytes
+  under a capacity the deployment declares, and no tape survives its session. What did NOT
+  change carries as much of the verdict as what did: file mode byte-identical on every case,
+  the 2.5 s span cap / 0.5 s minimum silence / prompt / model / greedy decoding untouched, one
+  in-flight request per harness, terminal work never enters the capture clock, and the
+  terminal pass replaces the surface exactly once (a second proposal is refused). Shipped:
+  `moss_transcribe_diarize/app/live_span_bounds.py` (bounded salvage),
+  `moss_transcribe_diarize/app/live_transcript_convergence.py` (rolling convergence, word
+  revision, terminal finalizer, seam resolution),
+  `moss_transcribe_diarize/app/live_arbiter.py` (refinement scheduling),
+  `moss_transcribe_diarize/app/live_tape.py` (complete mixed tape) and
+  `moss_transcribe_diarize/app/live_service_runtime.py` (asynchronous finalization), with the
+  decisions recorded as `docs/adr/0005-live-text-finalization-authority.md` D1-D9 and
+  `docs/adr/0003-live-session-audio-retention.md` D8.
+
+  **Five gates are unsigned**, each needing an owner ruling rather than more code:
+  `G2_live_transcript_reproducible` (the deployed decoder is not bit-reproducible at five
+  minutes; all four 60-second cases are), `G_M1_1_trio_live_wer_bound` (`.192294` against a
+  `.190` bound, traced to one decode flip that entered the instrument before salvage was
+  written), `G_M2_4_correction_p95` (`8.756675` s against a 6.0 s bound - arithmetic, not
+  slowness: a 6 s p95 needs window + stride <= 12 s and the preregistered grid's four
+  geometries floor at 6.46 / 8.51 / 11.64 / 12.81 s), and `G-M4-3` / `G-M4-4` (on the
+  three-minute case the faithful terminal surface `.126177` is the file arm's own number while
+  the rolling surface it replaces scored `.122411`, so converging to file mode is there a
+  small step back). Two findings outlive the campaign. The deployed
+  `evaluation.calculate_diarization` pays a bonus for publishing the same audio twice: it sums
+  the overlap of every (reference, hypothesis) pair, so `lex_adam_frank`'s file-arm `.053222`
+  becomes `.066222` once the duplication is resolved, all of it `miss` - the §3.4 extent
+  artifact in a new shape, duplication rather than padding. And 63 % of the remaining speaker
+  error is segments straddling a reference turn, owned by text geometry rather than identity,
+  with 27 % sub-0.5-second microfragments below the evidence floor; the next campaign should
+  start from that decomposition, not from the confusion total. Every row is UNSIGNED and
+  awaiting morning sign-off. Long form, with per-case tables and reproduction commands:
+  `evidence/live-convergence-0824/CAMPAIGN_REPORT.md`; the plan's own ledger is §18 of
+  `docs/plans/live-mode-convergence-implementation-20260824.md`; the instrument that keeps
+  this paragraph honest is
+  `prototypes/streaming-diarization/live-convergence/verify_design_verdict.py`. Scored exits:
+  `evidence/live-convergence-0824/M0d-paired-reacquisition/` (E0, 4 of 5),
+  `evidence/live-convergence-0824/M1-e1-exit/` (E1, 5 of 6),
+  `evidence/live-convergence-0824/M2-e2-exit/` (E2, 7 of 8),
+  `evidence/live-convergence-0824/M3-disposition/` (E3, 14 of 14),
+  `evidence/live-convergence-0824/M4-e4-exit-2/` (E4, 12 of 14).
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

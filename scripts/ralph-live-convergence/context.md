@@ -1122,6 +1122,28 @@
   - Nothing in `moss_transcribe_diarize/` or `tests/` changed, so the suite was not re-run;
     `verify_adr_text_finalization.py` (the other instrument that reads this plan) still PASSes and
     `verify_campaign_report.py` still PASSes after the report gained the new command.
+- **M5 step 9c DONE (iteration 35): `docs/design-streaming-diarization.md` §7 carries the dated
+  campaign verdict, and it is a COMMAND too - the LAST item on the ladder.** One entry, dated
+  `2026-08-25` (the newest commit date among the five exit `gates.json`), sitting ABOVE §7's
+  accepted `Production decision (2026-07-30)` paragraph. `verify_design_verdict.py`: seven gates
+  PASS, twelve entry mutations each CAUGHT.
+  - **The index introduces no number.** G-D3 requires every six-decimal number in the entry to be
+    one `CAMPAIGN_REPORT.md` already holds, and that report's own G-R5 binds those to the evidence:
+    evidence -> report -> index, each checked against the one below it.
+  - **"What did not change" is bound to a gate.** `INVARIANT_CLAIMS` maps each such sentence to the
+    deployed gate that holds it (`file mode byte-identical` -> `G-M4-12`, `terminal work never
+    enters the capture clock` -> `G-M4-11`, `no tape survives its session` -> `G-M4-10`,
+    `replaces the surface exactly once` -> `G-M4-9`), so a re-score that flips one of those gates
+    fails the sentence instead of leaving it to outlive its evidence.
+  - **One factual correction the doc forced:** the first draft wrote "0.6 s silence split" (§7's
+    PROTOTYPE semantics, quoted at the top of the section). The deployed contract is
+    `LIVE_MIN_SILENCE_SECONDS = 0.5` (`app/live_manifest_finalizer.py:67`), which is also what the
+    2026-08-19 latency entry records. The entry says 0.5 s.
+  - The entry also closes §7's own open loop: the 2026-08-24 multi-view entry left speaker
+    authority OPEN and asked for a prototype that makes the longer witness authoritative for its
+    own speaker evidence. E3 ran it, it ties on every gated axis, and D-M3-2 = O3 declined it.
+  - `verify_campaign_report.py` still PASSes after the report gained the new command;
+    `verify_plan_record.py` and `verify_adr_text_finalization.py` still PASS.
 
 ## Validation
 
@@ -1364,8 +1386,6 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # six mutations of the report, each caught by the gate that names its defect
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --selftest
-```
-
 # M5 step 9b: does the plan's §18 record say what the bundles say, and is it still unsigned?
 # (no GPU, no service; the clock is `git log -1` on each cited gates.json)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
@@ -1376,6 +1396,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # eight mutations of the record (including two that SIGN it), each caught by its own gate
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_plan_record.py --selftest
+# M5 step 9c: does the design doc's §7 verdict say what the evidence says, and is it unsigned?
+# (no GPU, no service; the date is the newest commit date among the five exit gates.json)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py
+# the facts the entry must carry, generated from the evidence
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py --emit
+# twelve mutations of the entry (including one that SIGNS it), each caught by its own gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py --selftest
+```
 
 ## Candidates
 
@@ -1626,10 +1657,20 @@ NEW EVIDENCE, from iteration 30, that outlives this candidate:
    of the sign-off block; G-P5 and G-P6 exist to fail on exactly that, and Appendix B §18 reserves
    the signatures for morning review. Do NOT give the clock a hand-written timestamp: three of the
    five bundles write no UTC stamp of their own, which is why it is the evidence's commit date.
-9c. **The dated verdict entry in `docs/design-streaming-diarization.md` §7** - NEXT, and the LAST
-   item on the ladder. One dated campaign entry; the report is the long form, §7 is the index.
-   Read §7's existing verdict entries first and match their shape; the numbers belong to
-   `CAMPAIGN_REPORT.md` and should be cited from it, not re-derived by hand.
+9c. ~~**The dated verdict entry in `docs/design-streaming-diarization.md` §7**~~ - DONE
+   iteration 35 (see Current state), and it was the LAST item on the ladder. `verify_design_verdict.py`,
+   seven gates PASS, twelve mutations caught. Do NOT hand-edit a number into the entry: G-D3 fails
+   on any six-decimal number `CAMPAIGN_REPORT.md` does not hold, which is what keeps the index from
+   drifting away from the report that the evidence keeps honest. Do NOT move the entry below §7's
+   `Production decision (2026-07-30)` paragraph (G-D1) and do NOT sign it (G-D5) - the accepted
+   production decision stays the section's last word until morning review says otherwise. Do NOT
+   quote §7's top-of-section PROTOTYPE parameters as deployed ones: the prototype paragraph says a
+   0.6 s silence split and the deployed contract is `LIVE_MIN_SILENCE_SECONDS = 0.5`.
+
+**M5 is CLOSED, and with it every PRD-named row of the acceptance bar.** What remains is not loop
+work: four owner rulings on five unsigned gates (G2, G-M1-1, G-M2-4, G-M4-3/G-M4-4), the attended
+browser E2E, portal render time under load, and the morning sign-off itself - all recorded in
+`CAMPAIGN_REPORT.md`, in the plan's §18 rows and now in §7.
 
 ## Non-candidates
 

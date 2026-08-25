@@ -32,6 +32,7 @@ imported by `moss_transcribe_diarize/`.
 | `mutate_terminal_seam.sh` + `measure_seam_overlap.py --verify-production` | does the SHIPPED seam rule do what the selected arm was measured doing, and do its tests bite? | **yes and yes** — production `resolve_terminal_overlaps` is IDENTICAL to the measured arm on all 24 inputs (12 file arms + 12 shapes), the trio terminal surface is still the paired file arm at `0.000000`, and five mutants are each caught by the test that names the defect; `evidence/live-convergence-0824/M4-seam-ship/` |
 | `verify_campaign_report.py` | does the M5 campaign report say what the thirty-two checked-in bundles say? | **yes, seven gates** — every ledger tally, every failing gate name, every per-case before/after number and the `[C]`-vs-`[PRD]` split are re-derived from the evidence and compared against the report text; six mutations of the report are each caught; `evidence/live-convergence-0824/CAMPAIGN_REPORT.md` |
 | `verify_plan_record.py` | does the plan's §18 acceptance record say what the evidence says — and is it still unsigned? | **yes, seven gates** — each phase row's tally, failing gate names and UTC clock are recomputed from the `gates.json` it cites (the clock is that file's commit date, the one clock all five bundles have), and the record fails if any row or sign-off field acquires a signature; eight mutations caught; `docs/plans/live-mode-convergence-implementation-20260824.md` §18 |
+| `verify_design_verdict.py` | does the design doc's §7 campaign verdict say what the evidence says — and does it introduce a number of its own? | **yes, seven gates** — the entry's headline values, unsigned-gate names and count, per-phase tallies and date are recomputed from the five exit bundles (the date is the newest of their commit dates), every other six-decimal number must be one `CAMPAIGN_REPORT.md` already holds, each "what did not change" claim is bound to the deployed gate that holds it, and a signature fails the run; twelve mutations caught; `docs/design-streaming-diarization.md` §7 |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -990,4 +991,46 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # eight mutations of the record, each caught by the gate that names its defect
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_plan_record.py --selftest
+```
+
+## `verify_design_verdict.py` — iteration 35, candidate 9c: the design doc's §7 entry
+
+§7 is the project's *index* of measured verdicts — the place a future campaign looks before
+re-litigating a settled question — so its entry has to survive being read alone, months later,
+by somebody who will not open a bundle. Two failure modes matter: a number that drifted from
+the evidence, and a verdict that reads as accepted when nobody accepted it.
+
+Three choices worth keeping:
+
+- **The index introduces no number.** Every six-decimal number in the entry must be one
+  `CAMPAIGN_REPORT.md` already holds, and G-R5 over there binds those to the evidence. That is
+  the whole layering: evidence → report → index, each checked against the one below it, so a
+  digit flipped while summarising has nowhere to land.
+- **"What did not change" is bound to a gate, not to a memory.** `INVARIANT_CLAIMS` maps each
+  such sentence to the deployed gate that holds it (`file mode byte-identical` → `G-M4-12`,
+  `terminal work never enters the capture clock` → `G-M4-11`, `no tape survives its session` →
+  `G-M4-10`, `replaces the surface exactly once` → `G-M4-9`). If a re-score ever flips one of
+  those gates, the sentence fails with it instead of quietly outliving its evidence.
+- **Placement is a gate.** G-D1 requires the entry to sit *above* §7's accepted
+  `Production decision (2026-07-30)` paragraph: a verdict awaiting morning sign-off does not get
+  to be the section's last word, and moving it there is a mutation the selftest performs.
+
+`--selftest` mutates a copy twelve ways (a headline number flipped, a number the report does not
+hold, a headline value dropped, a cited path renamed, an unsigned gate's name deleted, the
+unsigned count deflated, the entry signed by a reviewer, an invariant claimed without its gate,
+a phase's exit bundle uncited, a phase's tally inflated, the entry moved below the accepted
+production decision, and the entry dated by hand) and requires each to be caught.
+
+```bash
+# does §7 match the evidence, and is it still unsigned? (no GPU, no service, < 1 s)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py
+
+# the facts the entry must carry, generated from the evidence
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py --emit
+
+# twelve mutations of the entry, each caught by the gate that names its defect
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py --selftest
 ```

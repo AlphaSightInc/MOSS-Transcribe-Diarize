@@ -3283,3 +3283,93 @@ appended at the iteration 4->5 boundary]
   docs/design-streaming-diarization.md §7, matching the shape of the existing §7 verdict entries
   and citing CAMPAIGN_REPORT.md for the numbers rather than re-deriving them. After 9c the PRD's
   acceptance bar is met, with every milestone row unsigned by design.
+
+## iteration 35 - the index that cannot drift, and the ladder's last rung
+- Focus: candidate 9c, the lowest open item and M5's third and LAST sub-step. Write the dated
+  campaign verdict into `docs/design-streaming-diarization.md` §7 - the project's index of measured
+  verdicts, the place a future campaign looks before re-litigating a settled question - and make it
+  a command rather than a summary somebody typed. No production code changed; no test changed; no
+  service touched; no MOSS request issued.
+- Target: PRD M5 (the §7 verdict row), context.md candidate 9c.
+- Files touched:
+  docs/design-streaming-diarization.md                                       (§7: the campaign
+      verdict entry, three paragraphs, above the accepted production-decision paragraph)
+  prototypes/streaming-diarization/live-convergence/verify_design_verdict.py (new, 7 gates)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                 (index row + section)
+  evidence/live-convergence-0824/CAMPAIGN_REPORT.md                          (Reproduction: the new
+      command)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - verify_design_verdict.py -> **PASS on all seven gates**. Every load-bearing fact in the entry is
+    recomputed at scoring time: the headline values from the baseline `results.json` and the M4
+    exit's `gates.json` (via verify_campaign_report's own readers), the unsigned gate names AND
+    their count from the five exit bundles, the per-phase tallies from the same `tally()` the
+    report and the §18 record use, the date from the newest commit date among those five
+    `gates.json`. Nothing about the campaign is restated in the verifier.
+  - verify_design_verdict.py --selftest -> control PASS, **12 of 12 mutations CAUGHT**, each by the
+    gate that names its defect: headline number flipped (G-D3), a number the report does not hold
+    (G-D3), a headline value dropped (G-D3), a cited path renamed (G-D2), an unsigned gate's name
+    deleted (G-D4), the unsigned count deflated (G-D4), the entry signed by a reviewer (G-D5), an
+    invariant claimed without its gate (G-D6), a phase's exit bundle uncited (G-D7), a phase's
+    tally inflated (G-D7), the entry moved below the accepted production decision (G-D1), the entry
+    dated by hand (G-D1).
+  - verify_campaign_report.py -> PASS (seven gates) after the report gained the new command;
+    verify_plan_record.py -> PASS (seven gates, still unsigned); verify_adr_text_finalization.py ->
+    PASS. All four record instruments agree.
+  - .venv/bin/python -m pytest tests/ -q -> **1157 passed, 2 skipped, 411 subtests** in 90.23 s, unchanged (no file under
+    `moss_transcribe_diarize/` or `tests/` changed; re-run anyway because this iteration closes the
+    campaign)**
+- WHAT §7 NOW SAYS, in one line: on the trio the terminal live surface scores WER `.103946`, DER
+  `.102111`, speaker accuracy `.897889` - the paired file arm's own values to six decimal places,
+  distance `0.000000` - from a `.199870` / `.176389` / `.823611` baseline; five-minute WER
+  `.146375 -> .050616`, DER `.131533 -> .057933`; the ladder `.199870 -> .192294` (E1) `-> .131357`
+  (E2) `-> .103946` (E4); five gates unsigned; nothing signed.
+- THREE DESIGN CHOICES WORTH THE RECORD:
+  D1 **The index introduces no number of its own.** G-D3 requires every six-decimal number in the
+     §7 entry to be one CAMPAIGN_REPORT.md already holds, and that report's G-R5 requires every
+     number in ITS per-case rows to be an evidence value or a difference of two. The layering is
+     evidence -> report -> index, each checked against the one below it, so a digit flipped while
+     summarising has nowhere to land. The alternative - re-deriving every number here - would have
+     produced a second implementation of the campaign's arithmetic that can disagree with the
+     first.
+  D2 **"What did not change" is bound to a gate, not to a memory.** `INVARIANT_CLAIMS` maps each
+     such sentence to the deployed gate that holds it: `file mode byte-identical` -> `G-M4-12`,
+     `terminal work never enters the capture clock` -> `G-M4-11`, `no tape survives its session` ->
+     `G-M4-10`, `replaces the surface exactly once` -> `G-M4-9`. A §7 entry outlives its campaign by
+     years; if a re-score ever flips one of those gates, the sentence fails with it instead of
+     quietly becoming false.
+  D3 **Placement is a gate.** G-D1 requires the entry to sit ABOVE §7's accepted
+     `Production decision (2026-07-30)` paragraph. A verdict awaiting morning sign-off does not get
+     to be the section's last word, and "move it below the accepted decision" is one of the twelve
+     mutations.
+- Learned:
+  - **A doc's own prose is not a source of deployed values.** The first draft of the entry wrote
+    "0.6 s silence split", which is what §7's top-of-section PROTOTYPE paragraph says; the deployed
+    contract is `LIVE_MIN_SILENCE_SECONDS = 0.5` (`moss_transcribe_diarize/app/live_manifest_finalizer.py:67`),
+    which is also what the 2026-08-19 latency entry records. Two paragraphs of the same section
+    disagreed and the newer one was right. Corrected before commit; no gate would have caught it,
+    which is the honest limit of this instrument (it checks numbers the campaign MEASURED, not
+    parameters it left alone).
+  - The entry closes §7's own open loop: the 2026-08-24 multi-view entry left speaker authority
+    OPEN and asked for a prototype making the longer witness authoritative for its own speaker
+    evidence. E3 built it, it ties on every gated axis (trio DER `.111278`, speaker `.888722`), and
+    D-M3-2 = O3 declined it - because §12.3's terminal pass re-resolves identities from the
+    complete tape and never consults the ownership model. An index that leaves a question open
+    after the campaign answered it is worse than no index.
+  - A repair on the way past: context.md's Validation block had its closing ``` fence before
+    iteration 34's commands rather than after them, so the last two blocks were outside the fence.
+    Closed after 9c's block.
+- BLOCKER: none.
+- **M5 IS CLOSED, AND WITH IT EVERY PRD-NAMED ROW OF THE ACCEPTANCE BAR.** M0 4 of 5, M1 5 of 6,
+  M2 7 of 8, M3 14 of 14, M4 12 of 14, M5 complete (CAMPAIGN_REPORT.md iteration 33, plan §18
+  iteration 34, design §7 iteration 35). What remains is not loop work and cannot be obtained by
+  this loop: four owner rulings on the five unsigned gates (G2 the five-minute decoder's
+  bit-reproducibility, G-M1-1's `.192294` against `.190`, G-M2-4's `8.756675` s against `6.0` s,
+  and G-M4-3/G-M4-4's seam trade), the attended browser E2E, portal render time under load, and
+  the morning sign-off itself - every one of them recorded in the report, in the plan's §18 rows
+  and now in §7. Per the PRD's completion contract the campaign is COMPLETE with every milestone
+  row UNSIGNED by design.
+- Next (for the human, not the loop): morning review signs the §18 rows, rules on the four open
+  questions, runs the attended browser E2E, and merges. If a ruling moves a gate, re-score that
+  milestone's bundle and re-run the four record instruments - the report, the §18 rows and the §7
+  entry all recompute from the bundles, so they will move with it or fail loudly.

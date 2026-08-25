@@ -345,6 +345,9 @@ here so a reviewer can tell the two sets apart:
 # the plan's §18 rows: same tallies, same failing gates, and still unsigned
 .venv/bin/python prototypes/streaming-diarization/live-convergence/verify_plan_record.py
 
+# the design doc's §7 verdict entry: the same numbers, gates and tallies, in the index
+.venv/bin/python prototypes/streaming-diarization/live-convergence/verify_design_verdict.py
+
 # the milestone exits, each against its own checked-in batch
 .venv/bin/python prototypes/streaming-diarization/live-convergence/verify_m1_exit.py --fresh-root <batch>
 .venv/bin/python prototypes/streaming-diarization/live-convergence/verify_m2_exit.py --fresh-root <batch>
