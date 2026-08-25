@@ -223,3 +223,48 @@ semantic from the bounded-bank representation.
   and a default would be a guess wearing a contract's clothes.
 - **Re-ASR of the tape.** Forbidden by ADR-0002 (sweeps are diarization only); nothing here
   softens it.
+
+## 2026-08-25 addendum — the complete mixed tape may live in memory
+
+ADR-0005 deferred one question to this record, to be answered by the E4 step that implements it:
+where the **complete mixed session tape** lives, given the owner's ruling in the live-mode
+convergence plan's Appendix B Q10 — *retain the complete mixed session tape for the session's
+lifetime, delete it after terminal finalization evidence is written; ≤ ~10 MB PCM at the ≤ 5-minute
+session cap, so no TTL framework is warranted.* This addendum answers it. Implemented and measured
+in the same change: `CompleteMixedTape` (`app/live_tape.py`), evidence in
+`evidence/live-convergence-0824/M4-terminal-tape/`.
+
+**D8 — the complete tape may be retained in memory, and the deployment declares how much.** A
+session may hold the whole mixed track of its own meeting, on the session sample clock, in a single
+in-memory buffer bounded by a capacity the deployment declares (`bounds_config.max_tape_bytes`).
+It inherits D2, D3 and D5 unchanged rather than restating them:
+
+- **D2 unchanged.** There is no default capacity. A deployment that declares none constructs no
+  tape and retains exactly what it retains today; terminal convergence then reports itself
+  unavailable rather than running over a partial meeting. Every gate this campaign has recorded so
+  far was measured against a service with no tape, and that is still the default.
+- **D3 unchanged.** The horizon is still the meeting. The audio is released when the meeting ends —
+  on the ordinary path after terminal finalization evidence is written, and on a terminal failure
+  immediately, because a session that ended badly has no terminal pass to run. What survives the
+  release is the *accounting* — sample count, byte high-water, gap manifest, PCM digest — which is
+  what makes "no tape survived this meeting" evidence rather than an assurance.
+- **D5 unchanged.** Pressure degrades the tape, never the meeting. No path raises at a frame: a
+  frame past the declared capacity, a frame that is not the tape's next sample, or a partial sample
+  records a typed degradation naming the reason and the byte counts, stops taping, and returns.
+  Measured: a meeting whose tape stopped at the first frame publishes exactly the words it would
+  have published with a tape ten times the size.
+
+**Why memory rather than declaring a disk root.** Two measured reasons. The whole retained tape is
+`≤ 9 600 000` bytes at the campaign's 5-minute cap (16 kHz mono PCM16), which is Q10's own premise
+and needs no filesystem. And turning the disk store on would change the deployment posture every
+gate in this campaign was measured against — which is precisely what D2 exists to prevent. A
+deployment that later wants the durable tape gets D4's root rules unchanged; the terminal reader
+does not care which substrate answers, because the seam is *give me `[0, meeting_end)` of mixed
+PCM*.
+
+**Two things this addendum does not loosen.** D7's prohibitions stand as written: the tape's own
+event carries sample counts, byte counts, a gap manifest and a PCM digest, and never a word of the
+meeting. And *"re-ASR of the tape"* in **What this record does not decide** keeps its force where it
+was aimed — inside an ADR-0002 **identity sweep**, which is still diarization only. The terminal
+finalizer is the second of the two text producers ADR-0005 defines, governed by that record's seven
+validations, and it is the only reader this tape has.

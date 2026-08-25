@@ -1,0 +1,9 @@
+lex_bill_ackman    samples= 960000 peak_bytes= 1920000 gaps=0 differing_samples=0 released_bytes=0 digest=9956f0572ff0
+lex_javier_milei   samples= 960000 peak_bytes= 1920000 gaps=0 differing_samples=0 released_bytes=0 digest=f68e6f3bf857
+lex_keyu_jin       samples= 960000 peak_bytes= 1920000 gaps=0 differing_samples=0 released_bytes=0 digest=2bae071e22f2
+lex_bill_ackman    rolling ring high water by arm: {"no_tape": 208000, "no_tape_repeat": 208000, "tape": 168000}
+lex_javier_milei   rolling ring high water by arm: {"no_tape": 240000, "no_tape_repeat": 240000, "tape": 232000}
+lex_keyu_jin       rolling ring high water by arm: {"no_tape": 208000, "no_tape_repeat": 168000, "tape": 168000}
+capacity table (bytes): {"180": 5760000, "300": 9600000, "60": 1920000}
+decode cost: {'requests': 294, 'fresh_requests': 0}
+PASS

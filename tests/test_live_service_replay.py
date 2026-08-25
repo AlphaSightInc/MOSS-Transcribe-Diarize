@@ -898,6 +898,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
             max_events=128,
             hard_cap_samples=40000,
             stop_drain_deadline_seconds=2.5,
+            max_tape_bytes=1920000,
         ),
         live_protocol=LiveV2Descriptor(
             capabilities=LiveV2Capabilities(

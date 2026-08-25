@@ -1,0 +1,51 @@
+...........F.                                                            [100%]
+=================================== FAILURES ===================================
+_ CompleteTapeRuntimeWiringTest.test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word _
+
+self = <test_live_terminal_tape.CompleteTapeRuntimeWiringTest testMethod=test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word>
+
+    def test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word(self):
+        frames = 4
+        roomy = _tape_runtime(max_tape_bytes=frames * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        roomy_session, _ = _drive(roomy, frames=frames)
+        asyncio.run(roomy.stop(roomy_session, 5.0))
+        expected = runtime_transcript(roomy, roomy_session)
+    
+        cramped = _tape_runtime(max_tape_bytes=FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        cramped_session, _ = _drive(cramped, frames=frames)
+        asyncio.run(cramped.stop(cramped_session, 5.0))
+    
+        self.assertEqual(runtime_transcript(cramped, cramped_session), expected)
+        session = cramped.snapshot(cramped_session).session
+        self.assertEqual(session.accepted_samples, session.accounted_samples)
+        self.assertIsNone(cramped.snapshot(cramped_session).terminal_failure)
+        payload = _released_events(cramped, cramped_session)[0]
+        self.assertFalse(payload["complete"])
+        self.assertEqual(payload["degradation"]["reason"], TAPE_CAPACITY_EXHAUSTED)
+        self.assertEqual(payload["sample_count"], FRAME_SAMPLES)
+        self.assertEqual(payload["refused_samples"], session.accepted_samples - FRAME_SAMPLES)
+>       self.assertEqual(
+            payload["gaps"],
+            [
+                {
+                    "start_sample": FRAME_SAMPLES,
+                    "end_sample": session.accepted_samples,
+                    "sample_count": session.accepted_samples - FRAME_SAMPLES,
+                }
+            ],
+        )
+E       AssertionError: Lists differ: [] != [{'start_sample': 8000, 'end_sample': 32000, 'sample_count': 24000}]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       {'start_sample': 8000, 'end_sample': 32000, 'sample_count': 24000}
+E       
+E       - []
+E       + [{'end_sample': 32000, 'sample_count': 24000, 'start_sample': 8000}]
+
+tests/test_live_terminal_tape.py:278: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:820 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 16000, 'retained_bytes': 16000, 'requested_bytes': 16000}
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_tape.py::CompleteTapeRuntimeWiringTest::test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word
+1 failed, 12 passed in 2.19s

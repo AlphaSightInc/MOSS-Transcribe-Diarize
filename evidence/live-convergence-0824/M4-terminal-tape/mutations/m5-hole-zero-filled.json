@@ -1,0 +1,2952 @@
+{
+  "arms": {
+    "no_tape": {
+      "lex_bill_ackman": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]"
+          ],
+          [
+            40000,
+            80000,
+            "[0][S02]to kind of weigh it. He talked about[2.42]"
+          ],
+          [
+            80000,
+            120000,
+            ""
+          ],
+          [
+            120000,
+            160000,
+            "[0][S03]It in the short term is a voting machine. It represents[2.48]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S04]Sense speculative interests.[2.42]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S05]Supply and demand of people in the short term.[2.48]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.31][S06]But in the long term, it's the stock market's a weighing machine.[2.49]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S07]mean, you know, much more accurate. It's going[2.48]"
+          ],
+          [
+            320000,
+            360000,
+            "[0][S08]Tell you what something is worth. And so if you can.[2.16]"
+          ],
+          [
+            360000,
+            400000,
+            "[0.12][S09]Divine what something's worth, then you can really take[2.49]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S10]advantage of the market because it's really here to to help[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S11]You and that's kind of the message of the book.[1.74][2.13][S12]And that's.[2.46]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]Same way, there's a kind of difference between speculation.[2.48]"
+          ],
+          [
+            520000,
+            560000,
+            "[0][S14]In a investing.[1.28][1.38][S15]Yeah.[1.68][1.71][S14]Speculation.[2.45]"
+          ],
+          [
+            560000,
+            600000,
+            "[0][S16]It's just, it's a bit like buying.[2.12]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]Trading crypto.[1.74][2.28][S00]Right.[2.5]"
+          ],
+          [
+            640000,
+            680000,
+            "[0][S00]That you're.[0.54][0.68][S00]Strong words.[1.44][2.18][S00]Well.[2.46]"
+          ],
+          [
+            680000,
+            720000,
+            "[0.54][S00]Uh, short term trading crypto.[2.28]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Maybe in the long run, there's intrinsic value, but.[1.94]"
+          ],
+          [
+            760000,
+            800000,
+            "[0.06][S00]Uh, the.[1.44]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.08][S00]You know, it's many investors, you know.[2.44]"
+          ],
+          [
+            840000,
+            880000,
+            "[0][S00]In a bubble going into the, you know.[2.5]"
+          ],
+          [
+            880000,
+            920000,
+            "[0.08][S00]The crash, we're really.[2.44]"
+          ],
+          [
+            920000,
+            960000,
+            "[0][S00]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+          ]
+        ],
+        "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+        "committed_samples": 960000,
+        "effective_segments": 21,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 208000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.11][S01]So, what is the difference?[2.41]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.25][S02]Between a madman and a genius.[2.49]"
+          ],
+          [
+            80000,
+            84480,
+            "[0][S03]S[0.06]"
+          ],
+          [
+            84480,
+            108320,
+            ""
+          ],
+          [
+            108320,
+            127040,
+            "[0.11][S04]Success.[0.92]"
+          ],
+          [
+            127040,
+            152320,
+            ""
+          ],
+          [
+            152320,
+            192320,
+            "[1.29][S05]The following is a conversation.[2.48]"
+          ],
+          [
+            192320,
+            232320,
+            "[0.08][S06]...with Javier Malley, the president.[2.44]"
+          ],
+          [
+            232320,
+            254880,
+            "[0.24][S07]of Argentina.[1.12]"
+          ],
+          [
+            254880,
+            259680,
+            "[0][S08]Yeah.[0.24]"
+          ],
+          [
+            259680,
+            299680,
+            "[0.12][S09]He is a libertarian, a narco-[2.42]"
+          ],
+          [
+            299680,
+            339680,
+            "[0][S10]Capitalist and economist.[2.12]"
+          ],
+          [
+            339680,
+            379680,
+            "[0][S11]who campaigned with a chainsaw.[2]"
+          ],
+          [
+            379680,
+            380640,
+            ""
+          ],
+          [
+            380640,
+            420640,
+            "[0][S12]That symbolized his promise to slash[2.44]"
+          ],
+          [
+            420640,
+            460640,
+            "[0][S13]The corrupt bureaucracy of the state.[1.88]"
+          ],
+          [
+            460640,
+            466240,
+            "[0][S14]\u55ef\u3002[0.22]"
+          ],
+          [
+            466240,
+            506240,
+            "[0.13][S15]He stepped into the presidency one year.[2.47]"
+          ],
+          [
+            506240,
+            546240,
+            "[0.07][S16]ago, with a country on the brink of hyperinflation.[2.45]"
+          ],
+          [
+            546240,
+            586240,
+            "[0][S00]Inflation, deepened debt, and suffering.[2.46]"
+          ],
+          [
+            586240,
+            626240,
+            "[0.29][S00]For mass unemployment and poverty.[2.31]"
+          ],
+          [
+            626240,
+            629760,
+            "[0][S00]Mm.[0.12]"
+          ],
+          [
+            629760,
+            636160,
+            "[0][S00]Yeah.[0.36]"
+          ],
+          [
+            636160,
+            676160,
+            "[0.22][S00]He took this crisis head on.[2.29]"
+          ],
+          [
+            676160,
+            716160,
+            "[0][S00]transforming one of Latin America's largest[2.44]"
+          ],
+          [
+            716160,
+            756160,
+            "[0][S00]Economies through pure free market.[2.44]"
+          ],
+          [
+            756160,
+            796160,
+            "[0][S00]Principles. In just a few months,[2.46]"
+          ],
+          [
+            796160,
+            836160,
+            "[0][S00]In office, he already achieved RGT.[2.44]"
+          ],
+          [
+            836160,
+            876160,
+            "[0.08][S00]First fiscal surplus in 16 years.[2.48]"
+          ],
+          [
+            876160,
+            916160,
+            "[0.08][S00]Years and not just avoided the hyperinflation.[2.48]"
+          ],
+          [
+            916160,
+            956160,
+            "[0.53][S00]But brought inflation down.[2.49]"
+          ],
+          [
+            956160,
+            960000,
+            ""
+          ]
+        ],
+        "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+        "committed_samples": 960000,
+        "effective_segments": 14,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            84480,
+            "end_silence"
+          ],
+          [
+            84480,
+            108320,
+            "leading_silence"
+          ],
+          [
+            108320,
+            127040,
+            "end_silence"
+          ],
+          [
+            127040,
+            152320,
+            "leading_silence"
+          ],
+          [
+            152320,
+            192320,
+            "hard_cap"
+          ],
+          [
+            192320,
+            232320,
+            "hard_cap"
+          ],
+          [
+            232320,
+            254880,
+            "end_silence"
+          ],
+          [
+            254880,
+            259680,
+            "leading_silence"
+          ],
+          [
+            259680,
+            299680,
+            "hard_cap"
+          ],
+          [
+            299680,
+            339680,
+            "hard_cap"
+          ],
+          [
+            339680,
+            379680,
+            "hard_cap"
+          ],
+          [
+            379680,
+            380640,
+            "leading_silence"
+          ],
+          [
+            380640,
+            420640,
+            "hard_cap"
+          ],
+          [
+            420640,
+            460640,
+            "hard_cap"
+          ],
+          [
+            460640,
+            466240,
+            "leading_silence"
+          ],
+          [
+            466240,
+            506240,
+            "hard_cap"
+          ],
+          [
+            506240,
+            546240,
+            "hard_cap"
+          ],
+          [
+            546240,
+            586240,
+            "hard_cap"
+          ],
+          [
+            586240,
+            626240,
+            "hard_cap"
+          ],
+          [
+            626240,
+            629760,
+            "end_silence"
+          ],
+          [
+            629760,
+            636160,
+            "leading_silence"
+          ],
+          [
+            636160,
+            676160,
+            "hard_cap"
+          ],
+          [
+            676160,
+            716160,
+            "hard_cap"
+          ],
+          [
+            716160,
+            756160,
+            "hard_cap"
+          ],
+          [
+            756160,
+            796160,
+            "hard_cap"
+          ],
+          [
+            796160,
+            836160,
+            "hard_cap"
+          ],
+          [
+            836160,
+            876160,
+            "hard_cap"
+          ],
+          [
+            876160,
+            916160,
+            "hard_cap"
+          ],
+          [
+            916160,
+            956160,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 240000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0][S01]Kind of the same thing. There's paternalism.[2.24]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.15][S02]Uh, they think that they're responsible for you.[2.47]"
+          ],
+          [
+            80000,
+            120000,
+            "[0][S03]Um but uh.[1.98]"
+          ],
+          [
+            120000,
+            160000,
+            "[0][S04]deference, a certain amount of deference to authority.[2.46]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S05]is not blind submission. It's[2.44]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S06]Been written implicitly in our contract.[2.22]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.08][S07]Uh, for thousands of years that in exchange[2.48]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S08]change for some deference uh[2.5]"
+          ],
+          [
+            320000,
+            360000,
+            "[0.11][S09]We are given stability.[2.47]"
+          ],
+          [
+            360000,
+            400000,
+            "[0][S10]Security and peace and hopefully prosperity.[2.16]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S11]So there is some element that we have in the West.[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S12]Of freedom of the individual. So[2.44]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]A little bit of the rebel is allowed.[2.44]"
+          ],
+          [
+            520000,
+            560000,
+            "[0.35][S14]Uh, in balance with the difference.[2.5]"
+          ],
+          [
+            560000,
+            600000,
+            "[0.07][S15]Authority.[0.63][0.92][S16]Yeah, absolutely. Without that.[2.48]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]How can you have this radical, dynamic entrepreneur?[2.44]"
+          ],
+          [
+            640000,
+            680000,
+            "[0.08][S00]Normalism you see in China.[1.74]"
+          ],
+          [
+            680000,
+            720000,
+            "[0][S00]You don't have a sense of self, a sense of.[2.48]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Of the fact that you can find.[2.48]"
+          ],
+          [
+            760000,
+            800000,
+            "[0][S00]Find opportunities, you look for opportunities, you.[2.24]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.15][S00]You you drive opportunities.[2.39]"
+          ],
+          [
+            840000,
+            880000,
+            "[0.28][S00]Um, it's all self motivated.[1.96]"
+          ],
+          [
+            880000,
+            920000,
+            "[0][S00]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]"
+          ],
+          [
+            920000,
+            960000,
+            "[0.21][S00]In China, it's able to dream to be[2.43]"
+          ]
+        ],
+        "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+        "committed_samples": 960000,
+        "effective_segments": 16,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 168000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      }
+    },
+    "no_tape_repeat": {
+      "lex_bill_ackman": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]"
+          ],
+          [
+            40000,
+            80000,
+            "[0][S02]to kind of weigh it. He talked about[2.42]"
+          ],
+          [
+            80000,
+            120000,
+            ""
+          ],
+          [
+            120000,
+            160000,
+            "[0][S03]It in the short term is a voting machine. It represents[2.48]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S04]Sense speculative interests.[2.42]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S05]Supply and demand of people in the short term.[2.48]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.31][S06]But in the long term, it's the stock market's a weighing machine.[2.49]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S07]mean, you know, much more accurate. It's going[2.48]"
+          ],
+          [
+            320000,
+            360000,
+            "[0][S08]Tell you what something is worth. And so if you can.[2.16]"
+          ],
+          [
+            360000,
+            400000,
+            "[0.12][S09]Divine what something's worth, then you can really take[2.49]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S10]advantage of the market because it's really here to to help[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S11]You and that's kind of the message of the book.[1.74][2.13][S12]And that's.[2.46]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]Same way, there's a kind of difference between speculation.[2.48]"
+          ],
+          [
+            520000,
+            560000,
+            "[0][S14]In a investing.[1.28][1.38][S15]Yeah.[1.68][1.71][S14]Speculation.[2.45]"
+          ],
+          [
+            560000,
+            600000,
+            "[0][S16]It's just, it's a bit like buying.[2.12]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]Trading crypto.[1.74][2.28][S00]Right.[2.5]"
+          ],
+          [
+            640000,
+            680000,
+            "[0][S00]That you're.[0.54][0.68][S00]Strong words.[1.44][2.18][S00]Well.[2.46]"
+          ],
+          [
+            680000,
+            720000,
+            "[0.54][S00]Uh, short term trading crypto.[2.28]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Maybe in the long run, there's intrinsic value, but.[1.94]"
+          ],
+          [
+            760000,
+            800000,
+            "[0.06][S00]Uh, the.[1.44]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.08][S00]You know, it's many investors, you know.[2.44]"
+          ],
+          [
+            840000,
+            880000,
+            "[0][S00]In a bubble going into the, you know.[2.5]"
+          ],
+          [
+            880000,
+            920000,
+            "[0.08][S00]The crash, we're really.[2.44]"
+          ],
+          [
+            920000,
+            960000,
+            "[0][S00]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+          ]
+        ],
+        "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+        "committed_samples": 960000,
+        "effective_segments": 21,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 208000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.11][S01]So, what is the difference?[2.41]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.25][S02]Between a madman and a genius.[2.49]"
+          ],
+          [
+            80000,
+            84480,
+            "[0][S03]S[0.06]"
+          ],
+          [
+            84480,
+            108320,
+            ""
+          ],
+          [
+            108320,
+            127040,
+            "[0.11][S04]Success.[0.92]"
+          ],
+          [
+            127040,
+            152320,
+            ""
+          ],
+          [
+            152320,
+            192320,
+            "[1.29][S05]The following is a conversation.[2.48]"
+          ],
+          [
+            192320,
+            232320,
+            "[0.08][S06]...with Javier Malley, the president.[2.44]"
+          ],
+          [
+            232320,
+            254880,
+            "[0.24][S07]of Argentina.[1.12]"
+          ],
+          [
+            254880,
+            259680,
+            "[0][S08]Yeah.[0.24]"
+          ],
+          [
+            259680,
+            299680,
+            "[0.12][S09]He is a libertarian, a narco-[2.42]"
+          ],
+          [
+            299680,
+            339680,
+            "[0][S10]Capitalist and economist.[2.12]"
+          ],
+          [
+            339680,
+            379680,
+            "[0][S11]who campaigned with a chainsaw.[2]"
+          ],
+          [
+            379680,
+            380640,
+            ""
+          ],
+          [
+            380640,
+            420640,
+            "[0][S12]That symbolized his promise to slash[2.44]"
+          ],
+          [
+            420640,
+            460640,
+            "[0][S13]The corrupt bureaucracy of the state.[1.88]"
+          ],
+          [
+            460640,
+            466240,
+            "[0][S14]\u55ef\u3002[0.22]"
+          ],
+          [
+            466240,
+            506240,
+            "[0.13][S15]He stepped into the presidency one year.[2.47]"
+          ],
+          [
+            506240,
+            546240,
+            "[0.07][S16]ago, with a country on the brink of hyperinflation.[2.45]"
+          ],
+          [
+            546240,
+            586240,
+            "[0][S00]Inflation, deepened debt, and suffering.[2.46]"
+          ],
+          [
+            586240,
+            626240,
+            "[0.29][S00]For mass unemployment and poverty.[2.31]"
+          ],
+          [
+            626240,
+            629760,
+            "[0][S00]Mm.[0.12]"
+          ],
+          [
+            629760,
+            636160,
+            "[0][S00]Yeah.[0.36]"
+          ],
+          [
+            636160,
+            676160,
+            "[0.22][S00]He took this crisis head on.[2.29]"
+          ],
+          [
+            676160,
+            716160,
+            "[0][S00]transforming one of Latin America's largest[2.44]"
+          ],
+          [
+            716160,
+            756160,
+            "[0][S00]Economies through pure free market.[2.44]"
+          ],
+          [
+            756160,
+            796160,
+            "[0][S00]Principles. In just a few months,[2.46]"
+          ],
+          [
+            796160,
+            836160,
+            "[0][S00]In office, he already achieved RGT.[2.44]"
+          ],
+          [
+            836160,
+            876160,
+            "[0.08][S00]First fiscal surplus in 16 years.[2.48]"
+          ],
+          [
+            876160,
+            916160,
+            "[0.08][S00]Years and not just avoided the hyperinflation.[2.48]"
+          ],
+          [
+            916160,
+            956160,
+            "[0.53][S00]But brought inflation down.[2.49]"
+          ],
+          [
+            956160,
+            960000,
+            ""
+          ]
+        ],
+        "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+        "committed_samples": 960000,
+        "effective_segments": 14,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            84480,
+            "end_silence"
+          ],
+          [
+            84480,
+            108320,
+            "leading_silence"
+          ],
+          [
+            108320,
+            127040,
+            "end_silence"
+          ],
+          [
+            127040,
+            152320,
+            "leading_silence"
+          ],
+          [
+            152320,
+            192320,
+            "hard_cap"
+          ],
+          [
+            192320,
+            232320,
+            "hard_cap"
+          ],
+          [
+            232320,
+            254880,
+            "end_silence"
+          ],
+          [
+            254880,
+            259680,
+            "leading_silence"
+          ],
+          [
+            259680,
+            299680,
+            "hard_cap"
+          ],
+          [
+            299680,
+            339680,
+            "hard_cap"
+          ],
+          [
+            339680,
+            379680,
+            "hard_cap"
+          ],
+          [
+            379680,
+            380640,
+            "leading_silence"
+          ],
+          [
+            380640,
+            420640,
+            "hard_cap"
+          ],
+          [
+            420640,
+            460640,
+            "hard_cap"
+          ],
+          [
+            460640,
+            466240,
+            "leading_silence"
+          ],
+          [
+            466240,
+            506240,
+            "hard_cap"
+          ],
+          [
+            506240,
+            546240,
+            "hard_cap"
+          ],
+          [
+            546240,
+            586240,
+            "hard_cap"
+          ],
+          [
+            586240,
+            626240,
+            "hard_cap"
+          ],
+          [
+            626240,
+            629760,
+            "end_silence"
+          ],
+          [
+            629760,
+            636160,
+            "leading_silence"
+          ],
+          [
+            636160,
+            676160,
+            "hard_cap"
+          ],
+          [
+            676160,
+            716160,
+            "hard_cap"
+          ],
+          [
+            716160,
+            756160,
+            "hard_cap"
+          ],
+          [
+            756160,
+            796160,
+            "hard_cap"
+          ],
+          [
+            796160,
+            836160,
+            "hard_cap"
+          ],
+          [
+            836160,
+            876160,
+            "hard_cap"
+          ],
+          [
+            876160,
+            916160,
+            "hard_cap"
+          ],
+          [
+            916160,
+            956160,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 240000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0][S01]Kind of the same thing. There's paternalism.[2.24]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.15][S02]Uh, they think that they're responsible for you.[2.47]"
+          ],
+          [
+            80000,
+            120000,
+            "[0][S03]Um but uh.[1.98]"
+          ],
+          [
+            120000,
+            160000,
+            "[0][S04]deference, a certain amount of deference to authority.[2.46]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S05]is not blind submission. It's[2.44]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S06]Been written implicitly in our contract.[2.22]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.08][S07]Uh, for thousands of years that in exchange[2.48]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S08]change for some deference uh[2.5]"
+          ],
+          [
+            320000,
+            360000,
+            "[0.11][S09]We are given stability.[2.47]"
+          ],
+          [
+            360000,
+            400000,
+            "[0][S10]Security and peace and hopefully prosperity.[2.16]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S11]So there is some element that we have in the West.[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S12]Of freedom of the individual. So[2.44]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]A little bit of the rebel is allowed.[2.44]"
+          ],
+          [
+            520000,
+            560000,
+            "[0.35][S14]Uh, in balance with the difference.[2.5]"
+          ],
+          [
+            560000,
+            600000,
+            "[0.07][S15]Authority.[0.63][0.92][S16]Yeah, absolutely. Without that.[2.48]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]How can you have this radical, dynamic entrepreneur?[2.44]"
+          ],
+          [
+            640000,
+            680000,
+            "[0.08][S00]Normalism you see in China.[1.74]"
+          ],
+          [
+            680000,
+            720000,
+            "[0][S00]You don't have a sense of self, a sense of.[2.48]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Of the fact that you can find.[2.48]"
+          ],
+          [
+            760000,
+            800000,
+            "[0][S00]Find opportunities, you look for opportunities, you.[2.24]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.15][S00]You you drive opportunities.[2.39]"
+          ],
+          [
+            840000,
+            880000,
+            "[0.28][S00]Um, it's all self motivated.[1.96]"
+          ],
+          [
+            880000,
+            920000,
+            "[0][S00]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]"
+          ],
+          [
+            920000,
+            960000,
+            "[0.21][S00]In China, it's able to dream to be[2.43]"
+          ]
+        ],
+        "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+        "committed_samples": 960000,
+        "effective_segments": 16,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 168000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      }
+    },
+    "tape": {
+      "lex_bill_ackman": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]"
+          ],
+          [
+            40000,
+            80000,
+            "[0][S02]to kind of weigh it. He talked about[2.42]"
+          ],
+          [
+            80000,
+            120000,
+            ""
+          ],
+          [
+            120000,
+            160000,
+            "[0][S03]It in the short term is a voting machine. It represents[2.48]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S04]Sense speculative interests.[2.42]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S05]Supply and demand of people in the short term.[2.48]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.31][S06]But in the long term, it's the stock market's a weighing machine.[2.49]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S07]mean, you know, much more accurate. It's going[2.48]"
+          ],
+          [
+            320000,
+            360000,
+            "[0][S08]Tell you what something is worth. And so if you can.[2.16]"
+          ],
+          [
+            360000,
+            400000,
+            "[0.12][S09]Divine what something's worth, then you can really take[2.49]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S10]advantage of the market because it's really here to to help[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S11]You and that's kind of the message of the book.[1.74][2.13][S12]And that's.[2.46]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]Same way, there's a kind of difference between speculation.[2.48]"
+          ],
+          [
+            520000,
+            560000,
+            "[0][S14]In a investing.[1.28][1.38][S15]Yeah.[1.68][1.71][S14]Speculation.[2.45]"
+          ],
+          [
+            560000,
+            600000,
+            "[0][S16]It's just, it's a bit like buying.[2.12]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]Trading crypto.[1.74][2.28][S00]Right.[2.5]"
+          ],
+          [
+            640000,
+            680000,
+            "[0][S00]That you're.[0.54][0.68][S00]Strong words.[1.44][2.18][S00]Well.[2.46]"
+          ],
+          [
+            680000,
+            720000,
+            "[0.54][S00]Uh, short term trading crypto.[2.28]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Maybe in the long run, there's intrinsic value, but.[1.94]"
+          ],
+          [
+            760000,
+            800000,
+            "[0.06][S00]Uh, the.[1.44]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.08][S00]You know, it's many investors, you know.[2.44]"
+          ],
+          [
+            840000,
+            880000,
+            "[0][S00]In a bubble going into the, you know.[2.5]"
+          ],
+          [
+            880000,
+            920000,
+            "[0.08][S00]The crash, we're really.[2.44]"
+          ],
+          [
+            920000,
+            960000,
+            "[0][S00]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+          ]
+        ],
+        "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+        "committed_samples": 960000,
+        "effective_segments": 21,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 168000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "rolling_high_water_observed": {
+          "no_tape": 208000,
+          "no_tape_repeat": 208000,
+          "tape": 168000
+        },
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.11][S01]So, what is the difference?[2.41]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.25][S02]Between a madman and a genius.[2.49]"
+          ],
+          [
+            80000,
+            84480,
+            "[0][S03]S[0.06]"
+          ],
+          [
+            84480,
+            108320,
+            ""
+          ],
+          [
+            108320,
+            127040,
+            "[0.11][S04]Success.[0.92]"
+          ],
+          [
+            127040,
+            152320,
+            ""
+          ],
+          [
+            152320,
+            192320,
+            "[1.29][S05]The following is a conversation.[2.48]"
+          ],
+          [
+            192320,
+            232320,
+            "[0.08][S06]...with Javier Malley, the president.[2.44]"
+          ],
+          [
+            232320,
+            254880,
+            "[0.24][S07]of Argentina.[1.12]"
+          ],
+          [
+            254880,
+            259680,
+            "[0][S08]Yeah.[0.24]"
+          ],
+          [
+            259680,
+            299680,
+            "[0.12][S09]He is a libertarian, a narco-[2.42]"
+          ],
+          [
+            299680,
+            339680,
+            "[0][S10]Capitalist and economist.[2.12]"
+          ],
+          [
+            339680,
+            379680,
+            "[0][S11]who campaigned with a chainsaw.[2]"
+          ],
+          [
+            379680,
+            380640,
+            ""
+          ],
+          [
+            380640,
+            420640,
+            "[0][S12]That symbolized his promise to slash[2.44]"
+          ],
+          [
+            420640,
+            460640,
+            "[0][S13]The corrupt bureaucracy of the state.[1.88]"
+          ],
+          [
+            460640,
+            466240,
+            "[0][S14]\u55ef\u3002[0.22]"
+          ],
+          [
+            466240,
+            506240,
+            "[0.13][S15]He stepped into the presidency one year.[2.47]"
+          ],
+          [
+            506240,
+            546240,
+            "[0.07][S16]ago, with a country on the brink of hyperinflation.[2.45]"
+          ],
+          [
+            546240,
+            586240,
+            "[0][S00]Inflation, deepened debt, and suffering.[2.46]"
+          ],
+          [
+            586240,
+            626240,
+            "[0.29][S00]For mass unemployment and poverty.[2.31]"
+          ],
+          [
+            626240,
+            629760,
+            "[0][S00]Mm.[0.12]"
+          ],
+          [
+            629760,
+            636160,
+            "[0][S00]Yeah.[0.36]"
+          ],
+          [
+            636160,
+            676160,
+            "[0.22][S00]He took this crisis head on.[2.29]"
+          ],
+          [
+            676160,
+            716160,
+            "[0][S00]transforming one of Latin America's largest[2.44]"
+          ],
+          [
+            716160,
+            756160,
+            "[0][S00]Economies through pure free market.[2.44]"
+          ],
+          [
+            756160,
+            796160,
+            "[0][S00]Principles. In just a few months,[2.46]"
+          ],
+          [
+            796160,
+            836160,
+            "[0][S00]In office, he already achieved RGT.[2.44]"
+          ],
+          [
+            836160,
+            876160,
+            "[0.08][S00]First fiscal surplus in 16 years.[2.48]"
+          ],
+          [
+            876160,
+            916160,
+            "[0.08][S00]Years and not just avoided the hyperinflation.[2.48]"
+          ],
+          [
+            916160,
+            956160,
+            "[0.53][S00]But brought inflation down.[2.49]"
+          ],
+          [
+            956160,
+            960000,
+            ""
+          ]
+        ],
+        "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+        "committed_samples": 960000,
+        "effective_segments": 14,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            84480,
+            "end_silence"
+          ],
+          [
+            84480,
+            108320,
+            "leading_silence"
+          ],
+          [
+            108320,
+            127040,
+            "end_silence"
+          ],
+          [
+            127040,
+            152320,
+            "leading_silence"
+          ],
+          [
+            152320,
+            192320,
+            "hard_cap"
+          ],
+          [
+            192320,
+            232320,
+            "hard_cap"
+          ],
+          [
+            232320,
+            254880,
+            "end_silence"
+          ],
+          [
+            254880,
+            259680,
+            "leading_silence"
+          ],
+          [
+            259680,
+            299680,
+            "hard_cap"
+          ],
+          [
+            299680,
+            339680,
+            "hard_cap"
+          ],
+          [
+            339680,
+            379680,
+            "hard_cap"
+          ],
+          [
+            379680,
+            380640,
+            "leading_silence"
+          ],
+          [
+            380640,
+            420640,
+            "hard_cap"
+          ],
+          [
+            420640,
+            460640,
+            "hard_cap"
+          ],
+          [
+            460640,
+            466240,
+            "leading_silence"
+          ],
+          [
+            466240,
+            506240,
+            "hard_cap"
+          ],
+          [
+            506240,
+            546240,
+            "hard_cap"
+          ],
+          [
+            546240,
+            586240,
+            "hard_cap"
+          ],
+          [
+            586240,
+            626240,
+            "hard_cap"
+          ],
+          [
+            626240,
+            629760,
+            "end_silence"
+          ],
+          [
+            629760,
+            636160,
+            "leading_silence"
+          ],
+          [
+            636160,
+            676160,
+            "hard_cap"
+          ],
+          [
+            676160,
+            716160,
+            "hard_cap"
+          ],
+          [
+            716160,
+            756160,
+            "hard_cap"
+          ],
+          [
+            756160,
+            796160,
+            "hard_cap"
+          ],
+          [
+            796160,
+            836160,
+            "hard_cap"
+          ],
+          [
+            836160,
+            876160,
+            "hard_cap"
+          ],
+          [
+            876160,
+            916160,
+            "hard_cap"
+          ],
+          [
+            916160,
+            956160,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 240000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "rolling_high_water_observed": {
+          "no_tape": 240000,
+          "no_tape_repeat": 240000,
+          "tape": 240000
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0][S01]Kind of the same thing. There's paternalism.[2.24]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.15][S02]Uh, they think that they're responsible for you.[2.47]"
+          ],
+          [
+            80000,
+            120000,
+            "[0][S03]Um but uh.[1.98]"
+          ],
+          [
+            120000,
+            160000,
+            "[0][S04]deference, a certain amount of deference to authority.[2.46]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S05]is not blind submission. It's[2.44]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S06]Been written implicitly in our contract.[2.22]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.08][S07]Uh, for thousands of years that in exchange[2.48]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S08]change for some deference uh[2.5]"
+          ],
+          [
+            320000,
+            360000,
+            "[0.11][S09]We are given stability.[2.47]"
+          ],
+          [
+            360000,
+            400000,
+            "[0][S10]Security and peace and hopefully prosperity.[2.16]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S11]So there is some element that we have in the West.[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S12]Of freedom of the individual. So[2.44]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]A little bit of the rebel is allowed.[2.44]"
+          ],
+          [
+            520000,
+            560000,
+            "[0.35][S14]Uh, in balance with the difference.[2.5]"
+          ],
+          [
+            560000,
+            600000,
+            "[0.07][S15]Authority.[0.63][0.92][S16]Yeah, absolutely. Without that.[2.48]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]How can you have this radical, dynamic entrepreneur?[2.44]"
+          ],
+          [
+            640000,
+            680000,
+            "[0.08][S00]Normalism you see in China.[1.74]"
+          ],
+          [
+            680000,
+            720000,
+            "[0][S00]You don't have a sense of self, a sense of.[2.48]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Of the fact that you can find.[2.48]"
+          ],
+          [
+            760000,
+            800000,
+            "[0][S00]Find opportunities, you look for opportunities, you.[2.24]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.15][S00]You you drive opportunities.[2.39]"
+          ],
+          [
+            840000,
+            880000,
+            "[0.28][S00]Um, it's all self motivated.[1.96]"
+          ],
+          [
+            880000,
+            920000,
+            "[0][S00]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]"
+          ],
+          [
+            920000,
+            960000,
+            "[0.21][S00]In China, it's able to dream to be[2.43]"
+          ]
+        ],
+        "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+        "committed_samples": 960000,
+        "effective_segments": 16,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 168000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "rolling_high_water_observed": {
+          "no_tape": 168000,
+          "no_tape_repeat": 168000,
+          "tape": 168000
+        },
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      }
+    }
+  },
+  "capacity_table_bytes": {
+    "180": 5760000,
+    "300": 9600000,
+    "60": 1920000
+  },
+  "declared_capacity_bytes": 9600000,
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 294
+  },
+  "degradation_vocabulary": [
+    "index.json",
+    "tape_capacity_exhausted",
+    "tape_frame_not_admissible",
+    "tape_write_failed"
+  ],
+  "failures": [],
+  "modules": [
+    "moss_transcribe_diarize/app/live_tape.py",
+    "moss_transcribe_diarize/app/live_coordinator.py",
+    "moss_transcribe_diarize/app/live_service_runtime.py",
+    "moss_transcribe_diarize/app/live_provider_bundle.py"
+  ],
+  "recorded_at": "2026-08-25T12:22:36.706293+00:00",
+  "schema": "moss-live-convergence-terminal-tape.v1",
+  "verdict": "PASS"
+}

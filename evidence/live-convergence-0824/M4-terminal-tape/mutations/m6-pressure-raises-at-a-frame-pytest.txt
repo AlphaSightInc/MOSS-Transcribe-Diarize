@@ -1,0 +1,197 @@
+....F..F...F.                                                            [100%]
+=================================== FAILURES ===================================
+_______ CompleteMixedTapeTest.test_a_stopped_tape_serves_nothing_at_all ________
+
+self = <test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_a_stopped_tape_serves_nothing_at_all>
+
+    def test_a_stopped_tape_serves_nothing_at_all(self):
+        """A terminal pass over part of a meeting is not a terminal pass."""
+    
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        tape.append(start_sample=0, pcm=_pcm(10))
+>       tape.append(start_sample=10, pcm=_pcm(10))
+
+tests/test_live_terminal_tape.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_tape.CompleteMixedTape object at 0x117a8cd40>
+start_sample = 10, pcm = b'\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"'
+
+    def append(self, *, start_sample: int, pcm: bytes) -> LiveTapeAppendResult:
+        """Retain the meeting's newest mixed audio. Never raises, by D5."""
+    
+        with self._lock:
+            samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+            if self._released:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if self._degradation is not None:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if len(pcm) % PCM16_BYTES_PER_SAMPLE:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {"condition": "pcm length", "bytes": len(pcm)},
+                )
+            if start_sample != self._sample_count:
+                # The one placement rule: audio goes where the tape ends. A frame that
+                # claims a later sample would leave a hole no reader may decode, and one
+                # that claims an earlier sample would rewrite audio already digested.
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {
+                        "condition": "non-contiguous",
+                        "expected_start_sample": self._sample_count,
+                        "received_start_sample": int(start_sample),
+                    },
+                )
+            if not samples:
+                return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
+            if len(self._buffer) + len(pcm) > self.capacity_bytes:
+                self._refused_samples += samples
+>               raise RuntimeError("tape capacity exhausted")
+E               RuntimeError: tape capacity exhausted
+
+moss_transcribe_diarize/app/live_tape.py:773: RuntimeError
+_ CompleteMixedTapeTest.test_capacity_stops_the_tape_and_names_the_tail_it_lost _
+
+self = <test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_capacity_stops_the_tape_and_names_the_tail_it_lost>
+
+    def test_capacity_stops_the_tape_and_names_the_tail_it_lost(self):
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        self.assertTrue(tape.append(start_sample=0, pcm=_pcm(10)).written)
+    
+>       overflow = tape.append(start_sample=10, pcm=_pcm(10))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_terminal_tape.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_tape.CompleteMixedTape object at 0x11947f530>
+start_sample = 10, pcm = b'\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"\x11"'
+
+    def append(self, *, start_sample: int, pcm: bytes) -> LiveTapeAppendResult:
+        """Retain the meeting's newest mixed audio. Never raises, by D5."""
+    
+        with self._lock:
+            samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+            if self._released:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if self._degradation is not None:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if len(pcm) % PCM16_BYTES_PER_SAMPLE:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {"condition": "pcm length", "bytes": len(pcm)},
+                )
+            if start_sample != self._sample_count:
+                # The one placement rule: audio goes where the tape ends. A frame that
+                # claims a later sample would leave a hole no reader may decode, and one
+                # that claims an earlier sample would rewrite audio already digested.
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {
+                        "condition": "non-contiguous",
+                        "expected_start_sample": self._sample_count,
+                        "received_start_sample": int(start_sample),
+                    },
+                )
+            if not samples:
+                return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
+            if len(self._buffer) + len(pcm) > self.capacity_bytes:
+                self._refused_samples += samples
+>               raise RuntimeError("tape capacity exhausted")
+E               RuntimeError: tape capacity exhausted
+
+moss_transcribe_diarize/app/live_tape.py:773: RuntimeError
+_ CompleteTapeRuntimeWiringTest.test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word _
+
+self = <test_live_terminal_tape.CompleteTapeRuntimeWiringTest testMethod=test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word>
+
+    def test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word(self):
+        frames = 4
+        roomy = _tape_runtime(max_tape_bytes=frames * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        roomy_session, _ = _drive(roomy, frames=frames)
+        asyncio.run(roomy.stop(roomy_session, 5.0))
+        expected = runtime_transcript(roomy, roomy_session)
+    
+        cramped = _tape_runtime(max_tape_bytes=FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+>       cramped_session, _ = _drive(cramped, frames=frames)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_terminal_tape.py:266: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_live_terminal_tape.py:202: in _drive
+    runtime.accept_frame(
+moss_transcribe_diarize/app/live_service_runtime.py:605: in accept_frame
+    result = state.coordinator.accept_frame(frame)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:468: in accept_frame
+    self.tape.append(start_sample=ack.start_sample, pcm=frame.pcm)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_tape.CompleteMixedTape object at 0x11947fdd0>
+start_sample = 8000
+pcm = b'\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01...01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07\x01\x07'
+
+    def append(self, *, start_sample: int, pcm: bytes) -> LiveTapeAppendResult:
+        """Retain the meeting's newest mixed audio. Never raises, by D5."""
+    
+        with self._lock:
+            samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+            if self._released:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if self._degradation is not None:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if len(pcm) % PCM16_BYTES_PER_SAMPLE:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {"condition": "pcm length", "bytes": len(pcm)},
+                )
+            if start_sample != self._sample_count:
+                # The one placement rule: audio goes where the tape ends. A frame that
+                # claims a later sample would leave a hole no reader may decode, and one
+                # that claims an earlier sample would rewrite audio already digested.
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {
+                        "condition": "non-contiguous",
+                        "expected_start_sample": self._sample_count,
+                        "received_start_sample": int(start_sample),
+                    },
+                )
+            if not samples:
+                return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
+            if len(self._buffer) + len(pcm) > self.capacity_bytes:
+                self._refused_samples += samples
+>               raise RuntimeError("tape capacity exhausted")
+E               RuntimeError: tape capacity exhausted
+
+moss_transcribe_diarize/app/live_tape.py:773: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_tape.py::CompleteMixedTapeTest::test_a_stopped_tape_serves_nothing_at_all
+FAILED tests/test_live_terminal_tape.py::CompleteMixedTapeTest::test_capacity_stops_the_tape_and_names_the_tail_it_lost
+FAILED tests/test_live_terminal_tape.py::CompleteTapeRuntimeWiringTest::test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word
+3 failed, 10 passed in 2.27s

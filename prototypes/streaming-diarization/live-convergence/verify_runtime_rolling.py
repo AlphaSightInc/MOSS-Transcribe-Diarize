@@ -50,6 +50,7 @@ import json
 import sys
 import time
 import wave
+from array import array
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,7 @@ sys.path.insert(0, str(REPO / "prototypes/live-file-gap-context"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import proto_context_arms as bench  # noqa: E402
+from moss_transcribe_diarize.app.live_tape import CompleteMixedTapeUnavailable  # noqa: E402
 import verify_session_text_authority as authority  # noqa: E402
 import webrtcvad  # noqa: E402
 from moss_transcribe_diarize.app.live_adapters import RunnerBoundedWavInference  # noqa: E402
@@ -183,7 +185,13 @@ def deployed_configuration() -> dict[str, Any]:
     }
 
 
-def build_runtime(config: dict[str, Any], runner: ReplayRunner, *, rolling: bool):
+def build_runtime(
+    config: dict[str, Any],
+    runner: ReplayRunner,
+    *,
+    rolling: bool,
+    tape_bytes: int | None = None,
+):
     """The deployed configuration, with the deployed (threaded) canonical pump.
 
     The production scheduler is used rather than the tests' manual one because the thing under
@@ -214,6 +222,11 @@ def build_runtime(config: dict[str, Any], runner: ReplayRunner, *, rolling: bool
             max_events=bounds["max_events"],
             hard_cap_samples=bounds["hard_cap_samples"],
             stop_drain_deadline_seconds=bounds["stop_drain_deadline_seconds"],
+            # E4's complete tape, declared by the caller rather than by the deployed
+            # manifest: `None` is the posture every gate in this campaign was measured
+            # against, so this driver's own artifact keeps its shape until a caller asks
+            # for a tape (`verify_terminal_tape.py`).
+            max_tape_bytes=tape_bytes,
         ),
         frame_samples=bounds["frame_samples"],
     )
@@ -255,6 +268,37 @@ def build_runtime(config: dict[str, Any], runner: ReplayRunner, *, rolling: bool
     return runtime
 
 
+def _tape_read_evidence(runtime, session_id: str, pcm: bytes) -> dict[str, Any]:
+    """What the tape hands a terminal reader, compared sample by sample with the corpus.
+
+    The digest alone says "these bytes are those bytes"; the sample comparison says how far
+    apart they are when they are not, which is what separates a tape defect from the
+    decoder's measured non-determinism when a terminal number misses (M4 R3).
+    """
+
+    tape = runtime._sessions[session_id].coordinator.tape
+    try:
+        read = tape.read()
+    except CompleteMixedTapeUnavailable as exc:
+        # What the terminal finalizer will see, reported rather than raised: a tape that
+        # cannot serve `[0, meeting_end)` is a milestone precondition failing, and the
+        # verifier's job is to name it, not to die of it.
+        return {"refused": str(exc), "corpus_samples": len(pcm) // 2}
+    recorded = array("h")
+    recorded.frombytes(read)
+    corpus = array("h")
+    corpus.frombytes(pcm[: len(read)])
+    deltas = [abs(a - b) for a, b in zip(recorded, corpus) if a != b]
+    return {
+        "read_bytes": len(read),
+        "read_sha256": hashlib.sha256(read).hexdigest(),
+        "corpus_samples": len(pcm) // 2,
+        "read_samples": len(recorded),
+        "differing_samples": len(deltas),
+        "max_abs_delta": max(deltas) if deltas else 0,
+    }
+
+
 def _label(canonical_speaker: str | None, speakers: tuple[str, ...]) -> str:
     """The `Sxx` a reader is shown, from the album this run actually established.
 
@@ -275,6 +319,7 @@ def run_case(
     rolling: bool,
     collect_events: bool = False,
     collect_surfaces: bool = False,
+    tape_bytes: int | None = None,
 ) -> dict[str, Any]:
     """One meeting, frame by frame, through the real runtime; then stop it and read the surface.
 
@@ -294,7 +339,7 @@ def run_case(
     pcm = bench.read_pcm(bench.CORPUS / case / "audio.wav")
     total = len(pcm) // 2
     frame_samples = config["bounds_config"]["frame_samples"]
-    runtime = build_runtime(config, runner, rolling=rolling)
+    runtime = build_runtime(config, runner, rolling=rolling, tape_bytes=tape_bytes)
     created = runtime.create()
     session_id = created.session_id
     # How far the base may fall behind the audio the driver has handed over. A real client
@@ -340,6 +385,11 @@ def run_case(
         cursor += count
         sequence += 1
         capture_surface()
+    # Read the tape while the meeting still owns it: ADR-0003 D3 releases it at the end of
+    # `stop`, and a fidelity comparison against the corpus WAV is only possible before that.
+    tape_read = (
+        None if tape_bytes is None else _tape_read_evidence(runtime, session_id, pcm)
+    )
     asyncio.run(runtime.stop(session_id, config["bounds_config"]["stop_drain_deadline_seconds"]))
     capture_surface()
 
@@ -366,6 +416,19 @@ def run_case(
         if event.kind == "span_frozen"
     ]
     collected: dict[str, Any] = {}
+    if tape_bytes is not None:
+        collected["tape"] = {
+            "declared_capacity_bytes": tape_bytes,
+            "read_before_release": tape_read,
+            "accounting": coordinator.tape_accounting().to_dict(),
+            "released_events": [
+                event.payload
+                for event in runtime.events(session_id)
+                if event.kind == "session_tape_released"
+            ],
+            "audio_sha256": hashlib.sha256(pcm).hexdigest(),
+            "audio_samples": total,
+        }
     if collect_events:
         collected["events"] = [event.to_dict() for event in runtime.events(session_id)]
         collected["service_snapshot"] = service.to_dict()

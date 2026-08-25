@@ -144,6 +144,11 @@ class LiveServiceBounds:
     max_events: int
     hard_cap_samples: int | None = None
     stop_drain_deadline_seconds: float | None = None
+    #: How many bytes of the meeting's mixed audio a session may retain so that a terminal
+    #: convergence pass has something to run over (ADR-0003 D5 in memory). `None` -- the
+    #: default -- is the opt-in posture of D2: no tape, and terminal convergence reports
+    #: itself unavailable rather than running over a partial meeting.
+    max_tape_bytes: int | None = None
 
     def __post_init__(self) -> None:
         _positive(self.max_frame_samples, "max_frame_samples")
@@ -153,6 +158,8 @@ class LiveServiceBounds:
         _positive(self.max_events, "max_events")
         if self.hard_cap_samples is not None:
             _positive(self.hard_cap_samples, "hard_cap_samples")
+        if self.max_tape_bytes is not None:
+            _positive(self.max_tape_bytes, "max_tape_bytes")
         if self.stop_drain_deadline_seconds is not None and self.stop_drain_deadline_seconds < 0:
             raise ValueError("stop_drain_deadline_seconds must be non-negative when provided.")
 
@@ -526,6 +533,7 @@ class LiveServiceRuntime:
                     if self._rolling_decoder_factory is None
                     else self._rolling_decoder_factory()
                 ),
+                tape_capacity_bytes=self.descriptor.bounds.max_tape_bytes,
             )
             state = _RuntimeSession(
                 session_id=session_id,
@@ -773,6 +781,7 @@ class LiveServiceRuntime:
                 kind, payload = journal_event
                 self._record_event(state, kind, payload)
             self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
+            self._release_tape_locked(state)
             return self._snapshot(state)
 
     def _append_vector_journal(
@@ -1415,6 +1424,24 @@ class LiveServiceRuntime:
             return
         state.terminal_failure = failure
         self._record_event(state, event_kind, {"failure": failure.to_dict()})
+        # A meeting that ended badly keeps no audio either: there is no terminal pass to
+        # run over it, and ADR-0003 D3's horizon is the meeting rather than its outcome.
+        self._release_tape_locked(state)
+
+    def _release_tape_locked(self, state: _RuntimeSession) -> None:
+        """End the meeting's audio and put its accounting on the stream (ADR-0003 D3).
+
+        The accounting is recorded rather than the audio's absence assumed: "zero tapes
+        survive a session" is only evidence if a reader outside the process can see each
+        one released, with the sample count, byte high-water and digest it was released
+        with. Counts and digests only -- a tape event may not carry a meeting's words, and
+        it has none to carry.
+        """
+
+        accounting = state.coordinator.release_tape()
+        if accounting is None:
+            return
+        self._record_event(state, "session_tape_released", accounting.to_dict())
 
     def _raise_terminal(self, state: _RuntimeSession) -> None:
         if state.terminal_failure is not None:

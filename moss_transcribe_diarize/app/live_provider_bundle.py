@@ -1297,6 +1297,9 @@ def _bounds(payload: Mapping[str, Any]) -> LiveServiceBounds:
         stop_drain_deadline_seconds=None
         if payload.get("stop_drain_deadline_seconds") is None
         else float(payload["stop_drain_deadline_seconds"]),
+        max_tape_bytes=None
+        if payload.get("max_tape_bytes") is None
+        else _positive_int(payload.get("max_tape_bytes"), "bounds_config.max_tape_bytes"),
     )
 
 

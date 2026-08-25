@@ -1,0 +1,24 @@
+live complete tape degraded: epoch=0 reason=tape_frame_not_admissible detail={'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}
+live complete tape degraded: epoch=0 reason=tape_frame_not_admissible detail={'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}
+live complete tape degraded: epoch=0 reason=tape_frame_not_admissible detail={'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}
+lex_bill_ackman    samples=      0 peak_bytes=       0 gaps=1 differing_samples=REFUSED released_bytes=0 digest=e3b0c44298fc
+lex_javier_milei   samples=      0 peak_bytes=       0 gaps=1 differing_samples=REFUSED released_bytes=0 digest=e3b0c44298fc
+lex_keyu_jin       samples=      0 peak_bytes=       0 gaps=1 differing_samples=REFUSED released_bytes=0 digest=e3b0c44298fc
+lex_bill_ackman    rolling ring high water by arm: {}
+lex_javier_milei   rolling ring high water by arm: {}
+lex_keyu_jin       rolling ring high water by arm: {}
+capacity table (bytes): {"180": 5760000, "300": 9600000, "60": 1920000}
+decode cost: {'requests': 294, 'fresh_requests': 0}
+FAIL G1 lex_bill_ackman tape holds 0 samples, session accepted 960000
+FAIL G1 lex_bill_ackman gap manifest is not empty: [{'start_sample': 0, 'end_sample': 960000, 'sample_count': 960000}]
+FAIL G1 lex_bill_ackman tape is not complete: {'reason': 'tape_frame_not_admissible', 'detail': {'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}}
+FAIL G3 lex_bill_ackman the tape refused a terminal reader: the complete tape stopped: tape_frame_not_admissible.
+FAIL G1 lex_javier_milei tape holds 0 samples, session accepted 960000
+FAIL G1 lex_javier_milei gap manifest is not empty: [{'start_sample': 0, 'end_sample': 960000, 'sample_count': 960000}]
+FAIL G1 lex_javier_milei tape is not complete: {'reason': 'tape_frame_not_admissible', 'detail': {'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}}
+FAIL G3 lex_javier_milei the tape refused a terminal reader: the complete tape stopped: tape_frame_not_admissible.
+FAIL G1 lex_keyu_jin tape holds 0 samples, session accepted 960000
+FAIL G1 lex_keyu_jin gap manifest is not empty: [{'start_sample': 0, 'end_sample': 960000, 'sample_count': 960000}]
+FAIL G1 lex_keyu_jin tape is not complete: {'reason': 'tape_frame_not_admissible', 'detail': {'condition': 'non-contiguous', 'expected_start_sample': 0, 'received_start_sample': 8000}}
+FAIL G3 lex_keyu_jin the tape refused a terminal reader: the complete tape stopped: tape_frame_not_admissible.
+FAIL

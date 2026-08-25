@@ -22,6 +22,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_m3_disposition.py` | do the 14 preregistered M3 gates pass, and does the "ship nothing" decision hold against the tree? | **14/14 pass and nothing ships** — every gate is a no-regression gate, so read them with the delta; `evidence/live-convergence-0824/M3-disposition/` |
 | `measure_m4_baseline.py` + `PREREGISTRATION-M4.md` | what must a terminal pass land on, and what does converging to the file arm cost? | trio mean WER `.131357 → .103946` is the prize; **two convergence gates are already satisfied by a build that ships nothing**, and on `lex_javier_milei` a no-regression gate is arithmetically impossible beside the PRD bound; `evidence/live-convergence-0824/M4-preregistration/` |
 | `remeasure_one_case.py` + `run_paired_case.sh` | can the three-minute case M4 gates (P-M4-A) be measured with the checked-in paired driver's shape rather than a new instrument? | **yes, and it is the one case where the rolling surface beats file mode on text** — rolling WER `.122411` vs file `.126177`, so `terminal == file` fails the preregistered G-M4-3/G-M4-4 there by `.003766` / `.001883`; `evidence/live-convergence-0824/M4-three-minute/` |
+| `verify_terminal_tape.py` + `mutate_terminal_tape.sh` | does a session now retain the complete mixed audio a terminal pass needs — all of it, only it, and no longer (P-M4-B)? | **yes** — tape digest equals the corpus digest and a read-back differs in `0` samples on all three trio cases, peak `accepted x 2` bytes, released to `0` bytes with the meeting, and declaring it changes nothing the meeting publishes; `evidence/live-convergence-0824/M4-terminal-tape/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -521,4 +522,43 @@ prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-3mi
 # the comparator table, now five measured cases (no GPU, no service)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --output /tmp/m4.json
+```
+
+
+## `verify_terminal_tape.py` + `mutate_terminal_tape.sh` — iteration 24, M4 step 3a: the complete tape
+
+`PREREGISTRATION-M4.md` §3's precondition **P-M4-B** said no session retains a complete tape, so a
+terminal 150/120 pass had nothing to run over. It does now: `CompleteMixedTape`
+(`app/live_tape.py`), declared through `LiveServiceBounds.max_tape_bytes`, held by the coordinator
+beside the two retentions it already had, released at `session_closed` and at any terminal failure
+with one `session_tape_released` event carrying the accounting. The decision record is the
+**2026-08-25 addendum to ADR-0003 (D8)**, which is where ADR-0005 deferred it.
+
+The verifier runs each trio case twice through the real runtime — once with a declared capacity and
+once with none — so inertness is a before/after on one instrument. Trio: tape samples `960 000`,
+peak `1 920 000` bytes, gap manifest empty, read-back differing samples **0**, max absolute delta
+**0**, bytes after release **0**, and zero fresh MOSS requests (294 replays). The capacity table
+read from `LIVE_SAMPLE_RATE` / `PCM16_BYTES_PER_SAMPLE` reproduces prediction P5 exactly:
+`1 920 000 / 5 760 000 / 9 600 000` bytes at 60 / 180 / 300 s.
+
+Two design points worth not re-deriving. A hole is **refused, never zero-filled** — zero-filled PCM
+is silence, and a terminal pass may not decode silence the meeting never contained, so a
+non-contiguous frame degrades the tape by name and the gap manifest reports the interval. And
+`retained_high_water_samples` on the rolling ring is reported rather than compared, because two
+identical no-tape runs already disagree about it (208000 vs 168000 measured across repeats); the
+verifier runs the control arm twice so the reader can see that rather than take it on trust.
+
+**Still owed by E4 before its exit measurement:** the deployed service declares no capacity, so it
+still retains no tape. Declaring `bounds_config.max_tape_bytes` in the deployed manifest (and
+recomputing its `bounds_config_hash` / `component_config_hash`; `combined_config_hash` is
+`f(decoder, endpoint, identity)` and does not move) plus a restart is a step the terminal build
+owes.
+
+```bash
+# nine gates on the real runtime over the trio; no GPU, zero MOSS requests
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_terminal_tape.py --output /tmp/tape.json
+
+# every property is load-bearing (production files restored on exit, including on failure)
+prototypes/streaming-diarization/live-convergence/mutate_terminal_tape.sh /tmp/tape-mutations
 ```

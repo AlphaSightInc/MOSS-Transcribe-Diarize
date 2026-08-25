@@ -36,6 +36,7 @@ this use: a backward step can only *delay* a reap, never make one premature.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -561,6 +562,270 @@ class LiveSessionTape:
             if track is not None:
                 track.restore(track_payload)
         return tape
+
+
+class CompleteMixedTapeUnavailable(RuntimeError):
+    """The complete tape cannot serve the audio a reader asked for.
+
+    Raised at a *reader*, never at a frame (D5): the terminal finalizer asking for audio a
+    short, holed or released tape does not hold gets a refusal, and that refusal is what
+    makes finalization report itself unavailable instead of decoding fabricated silence.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteMixedTapeAccounting:
+    """What one meeting's complete tape retained, and what it cost. No audio, by contract.
+
+    `sample_count` is what the tape holds; `through_sample` is the extent it was asked
+    about -- the session's own `accepted_samples` -- and `gaps` is the difference, computed
+    from the intervals the tape recorded rather than inferred from the two counts. A reader
+    that wants "is this tape a faithful record of the meeting" reads `complete`; a reader
+    that wants "and is it the same audio" compares `pcm_sha256` with the digest of what the
+    transport accepted.
+    """
+
+    epoch: int
+    sample_count: int
+    through_sample: int
+    retained_bytes: int
+    capacity_bytes: int
+    peak_retained_bytes: int
+    refused_samples: int
+    gaps: tuple[LiveTapeGap, ...]
+    pcm_sha256: str
+    released: bool
+    degradation: LiveTapeDegradation | None
+
+    @property
+    def complete(self) -> bool:
+        """The tape covers every sample the session accepted, with no hole and no stop."""
+
+        return not self.gaps and self.degradation is None and self.sample_count == self.through_sample
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "epoch": self.epoch,
+            "sample_count": self.sample_count,
+            "through_sample": self.through_sample,
+            "retained_bytes": self.retained_bytes,
+            "capacity_bytes": self.capacity_bytes,
+            "peak_retained_bytes": self.peak_retained_bytes,
+            "refused_samples": self.refused_samples,
+            "gaps": [gap.to_dict() for gap in self.gaps],
+            "pcm_sha256": self.pcm_sha256,
+            "released": self.released,
+            "complete": self.complete,
+            "degradation": None if self.degradation is None else self.degradation.to_dict(),
+        }
+
+
+class CompleteMixedTape:
+    """One meeting's whole mixed track, in memory, on the session sample clock.
+
+    The other tape in this module is the durable one: three tracks, addressed by capture
+    timestamp, written to a declared root for as long as the deployment says. This one
+    answers a single narrower question -- *give me `[0, meeting_end)` of what this session
+    decoded* -- which is the only thing a terminal finalization pass needs, and it answers
+    it without a disk. Same decisions, different substrate:
+
+    * **D2 -- opt-in.** There is no default capacity. A deployment that declares none never
+      constructs one, and the service retains exactly what it retains today. The campaign's
+      measured worst case is a five-minute meeting at 9 600 000 bytes, but the number is the
+      deployment's to state: a memory posture must not arrive as a side effect either.
+    * **D5 -- pressure degrades the tape, never the meeting.** `append` never raises. A
+      frame past the declared capacity, a frame that is not the tape's next sample, or a
+      partial sample records a typed degradation naming the reason and the byte counts,
+      stops taping, and returns. The meeting keeps publishing; only terminal convergence is
+      lost, and it is lost *stated* rather than silently.
+    * **D3 -- the tape dies with the meeting.** `release` drops the audio and keeps the
+      accounting, so the evidence that the tape was faithful outlives the samples.
+
+    Two properties are structural rather than documented. Audio is only ever appended at
+    the tape's own next sample, so the tape can never contain a splice -- a hole is refused,
+    not zero-filled, because zero-filled PCM is silence and a terminal pass may not decode
+    silence the meeting never contained. And the digest is computed as the bytes arrive, so
+    a fidelity check costs nothing at the end and cannot be recomputed from a tape that has
+    already been released.
+    """
+
+    def __init__(
+        self,
+        *,
+        epoch: int,
+        capacity_bytes: int,
+        sample_rate: int = LIVE_SAMPLE_RATE,
+    ):
+        if capacity_bytes <= 0:
+            raise ValueError("complete tape capacity_bytes must be positive.")
+        if sample_rate <= 0:
+            raise ValueError("complete tape sample_rate must be positive.")
+        self.epoch = int(epoch)
+        self.capacity_bytes = int(capacity_bytes)
+        self.sample_rate = int(sample_rate)
+        self._lock = threading.RLock()
+        self._buffer = bytearray()
+        self._covered: list[tuple[int, int]] = []
+        self._sample_count = 0
+        self._refused_samples = 0
+        self._peak_retained_bytes = 0
+        self._digest = hashlib.sha256()
+        self._degradation: LiveTapeDegradation | None = None
+        self._released = False
+
+    # -- state -------------------------------------------------------------------
+
+    @property
+    def taping(self) -> bool:
+        return self._degradation is None and not self._released
+
+    @property
+    def degradation(self) -> LiveTapeDegradation | None:
+        return self._degradation
+
+    @property
+    def sample_count(self) -> int:
+        return self._sample_count
+
+    @property
+    def retained_bytes(self) -> int:
+        return len(self._buffer)
+
+    @property
+    def peak_retained_bytes(self) -> int:
+        return self._peak_retained_bytes
+
+    def covers(self, start_sample: int, end_sample: int) -> bool:
+        if end_sample <= start_sample:
+            return False
+        if self._released:
+            return False
+        return any(low <= start_sample and end_sample <= high for low, high in self._covered)
+
+    def gaps(self, through_sample: int) -> tuple[LiveTapeGap, ...]:
+        """Everything in `[0, through_sample)` this tape does not hold -- plan §6 M6's manifest.
+
+        Computed from the intervals actually recorded, so it names a hole and a short tail
+        the same way and neither can be inferred away by subtracting two counts.
+        """
+
+        return tuple(
+            LiveTapeGap(start_sample=start, end_sample=end)
+            for start, end in _complement(self._covered, max(0, int(through_sample)))
+        )
+
+    def accounting(self, *, through_sample: int) -> CompleteMixedTapeAccounting:
+        with self._lock:
+            return CompleteMixedTapeAccounting(
+                epoch=self.epoch,
+                sample_count=self._sample_count,
+                through_sample=int(through_sample),
+                retained_bytes=len(self._buffer),
+                capacity_bytes=self.capacity_bytes,
+                peak_retained_bytes=self._peak_retained_bytes,
+                refused_samples=self._refused_samples,
+                gaps=self.gaps(through_sample),
+                pcm_sha256=self._digest.hexdigest(),
+                released=self._released,
+                degradation=self._degradation,
+            )
+
+    # -- appending ---------------------------------------------------------------
+
+    def append(self, *, start_sample: int, pcm: bytes) -> LiveTapeAppendResult:
+        """Retain the meeting's newest mixed audio. Never raises, by D5."""
+
+        with self._lock:
+            samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+            if self._released:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if self._degradation is not None:
+                self._refused_samples += samples
+                return LiveTapeAppendResult(
+                    taping=False, written=False, duplicate=False, degradation=self._degradation
+                )
+            if len(pcm) % PCM16_BYTES_PER_SAMPLE:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {"condition": "pcm length", "bytes": len(pcm)},
+                )
+            if start_sample != self._sample_count:
+                # The one placement rule: audio goes where the tape ends. A frame that
+                # claims a later sample would leave a hole no reader may decode, and one
+                # that claims an earlier sample would rewrite audio already digested.
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_FRAME_NOT_ADMISSIBLE,
+                    {
+                        "condition": "non-contiguous",
+                        "expected_start_sample": self._sample_count,
+                        "received_start_sample": int(start_sample),
+                    },
+                )
+            if not samples:
+                return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
+            if len(self._buffer) + len(pcm) > self.capacity_bytes:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_CAPACITY_EXHAUSTED,
+                    {
+                        "capacity_bytes": self.capacity_bytes,
+                        "retained_bytes": len(self._buffer),
+                        "requested_bytes": len(pcm),
+                    },
+                )
+            self._buffer.extend(pcm)
+            self._digest.update(pcm)
+            self._covered = _merge(self._covered, self._sample_count, self._sample_count + samples)
+            self._sample_count += samples
+            self._peak_retained_bytes = max(self._peak_retained_bytes, len(self._buffer))
+            return LiveTapeAppendResult(taping=True, written=True, duplicate=False)
+
+    # -- reading -----------------------------------------------------------------
+
+    def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
+        """The seam: the mixed PCM of `[start_sample, end_sample)`, or a refusal by name."""
+
+        with self._lock:
+            end = self._sample_count if end_sample is None else int(end_sample)
+            start = int(start_sample)
+            if self._released:
+                raise CompleteMixedTapeUnavailable("the complete tape has been released.")
+            if self._degradation is not None:
+                raise CompleteMixedTapeUnavailable(
+                    f"the complete tape stopped: {self._degradation.reason}."
+                )
+            if not self.covers(start, end):
+                raise CompleteMixedTapeUnavailable(
+                    f"the complete tape does not cover [{start}, {end})."
+                )
+            return bytes(self._buffer[start * PCM16_BYTES_PER_SAMPLE : end * PCM16_BYTES_PER_SAMPLE])
+
+    # -- lifecycle ---------------------------------------------------------------
+
+    def release(self) -> None:
+        """Drop the audio and keep the accounting. Idempotent, and never raises."""
+
+        with self._lock:
+            self._buffer = bytearray()
+            self._released = True
+
+    def _degrade(self, reason: str, detail: Mapping[str, object]) -> LiveTapeAppendResult:
+        degradation = LiveTapeDegradation(reason=reason, detail=detail)
+        self._degradation = degradation
+        _TAPE_LOG.warning(
+            "live complete tape degraded: epoch=%s reason=%s detail=%r",
+            self.epoch,
+            reason,
+            dict(detail),
+        )
+        return LiveTapeAppendResult(
+            taping=False, written=False, duplicate=False, degradation=degradation
+        )
 
 
 class LiveSessionTapeStore:

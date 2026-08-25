@@ -1,0 +1,61 @@
+....F..F...F.                                                            [100%]
+=================================== FAILURES ===================================
+_______ CompleteMixedTapeTest.test_a_stopped_tape_serves_nothing_at_all ________
+
+self = <test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_a_stopped_tape_serves_nothing_at_all>
+
+    def test_a_stopped_tape_serves_nothing_at_all(self):
+        """A terminal pass over part of a meeting is not a terminal pass."""
+    
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        tape.append(start_sample=0, pcm=_pcm(10))
+        tape.append(start_sample=10, pcm=_pcm(10))
+    
+>       with self.assertRaises(CompleteMixedTapeUnavailable):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: CompleteMixedTapeUnavailable not raised
+
+tests/test_live_terminal_tape.py:118: AssertionError
+_ CompleteMixedTapeTest.test_capacity_stops_the_tape_and_names_the_tail_it_lost _
+
+self = <test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_capacity_stops_the_tape_and_names_the_tail_it_lost>
+
+    def test_capacity_stops_the_tape_and_names_the_tail_it_lost(self):
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        self.assertTrue(tape.append(start_sample=0, pcm=_pcm(10)).written)
+    
+        overflow = tape.append(start_sample=10, pcm=_pcm(10))
+    
+>       self.assertFalse(overflow.written)
+E       AssertionError: True is not false
+
+tests/test_live_terminal_tape.py:97: AssertionError
+_ CompleteTapeRuntimeWiringTest.test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word _
+
+self = <test_live_terminal_tape.CompleteTapeRuntimeWiringTest testMethod=test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word>
+
+    def test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word(self):
+        frames = 4
+        roomy = _tape_runtime(max_tape_bytes=frames * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        roomy_session, _ = _drive(roomy, frames=frames)
+        asyncio.run(roomy.stop(roomy_session, 5.0))
+        expected = runtime_transcript(roomy, roomy_session)
+    
+        cramped = _tape_runtime(max_tape_bytes=FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        cramped_session, _ = _drive(cramped, frames=frames)
+        asyncio.run(cramped.stop(cramped_session, 5.0))
+    
+        self.assertEqual(runtime_transcript(cramped, cramped_session), expected)
+        session = cramped.snapshot(cramped_session).session
+        self.assertEqual(session.accepted_samples, session.accounted_samples)
+        self.assertIsNone(cramped.snapshot(cramped_session).terminal_failure)
+        payload = _released_events(cramped, cramped_session)[0]
+>       self.assertFalse(payload["complete"])
+E       AssertionError: True is not false
+
+tests/test_live_terminal_tape.py:274: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_tape.py::CompleteMixedTapeTest::test_a_stopped_tape_serves_nothing_at_all
+FAILED tests/test_live_terminal_tape.py::CompleteMixedTapeTest::test_capacity_stops_the_tape_and_names_the_tail_it_lost
+FAILED tests/test_live_terminal_tape.py::CompleteTapeRuntimeWiringTest::test_a_tape_that_runs_out_of_capacity_does_not_cost_the_meeting_a_word
+3 failed, 10 passed in 2.16s

@@ -16,6 +16,11 @@
     and the salvage call is wired (iteration 7): the catch reads `exc.text` and asks
     `classify_live_transcript`, but only for `UNPARSEABLE_TEXT` — a zero-token decode has no
     answer to repair even when its payload carries parseable text (regression test exists).
+  - `app/live_tape.py` — ADR-0003's module, and since iteration 24 it answers the retention
+    question in BOTH postures: `LiveSessionTape` (disk, three tracks, capture-timestamp clock,
+    opt-in behind a declared root) and `CompleteMixedTape` (memory, one mixed track, session
+    sample clock, opt-in behind a declared byte capacity). The terminal reader must not care
+    which answers — the seam is "give me `[0, meeting_end)` of mixed PCM".
   - `app/live_span_bounds.py` — clamp-never-refuse precedent; now also home to
     `classify_live_transcript` (iteration 7). Any future question of the form "what may this
     span publish?" is answered there, not at a caller.
@@ -795,9 +800,56 @@
   content recall and matched-word speaker accuracy are `.920000` on both arms and the gate is `>=`.
   Deliberate (the bound is the measurement); if it fires, the disposition is an owner decision with
   the decoder-noise evidence, not a re-run.
-- Rest of the ladder (M4 build, M5) unimplemented; working tree carries the plan, evidence prototypes,
-  and this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build (= the current
-  production tree), so M4's first deployed measurement needs no restart until M4 ships code.
+- **M4 STEP 3a SHIPPED (iteration 24): P-M4-B is CLOSED - a session now retains the complete mixed
+  tape a terminal pass needs.** `CompleteMixedTape` (`app/live_tape.py`) is one meeting's whole
+  mixed track on the session sample clock, in one in-memory buffer under a capacity the deployment
+  declares (`LiveServiceBounds.max_tape_bytes`, read from `bounds_config`). The coordinator holds it
+  beside the two retentions it already had; the runtime releases it at `session_closed` AND at any
+  terminal failure, recording one `session_tape_released` event with the accounting. Decision
+  record: the **2026-08-25 addendum to ADR-0003 (D8)** - memory, deployment-declared capacity,
+  D2/D3/D5 inherited unchanged - which is where ADR-0005 explicitly deferred it.
+  `verify_terminal_tape.py` exit 0 on nine gates: trio tape samples `960 000`, peak `1 920 000`
+  bytes (= `accepted x 2`, one buffer), gap manifest empty, read-back differing samples **0** at max
+  absolute delta **0**, bytes after release **0**, 0 fresh MOSS requests (294 replays). Full suite
+  1104 passed / 2 skipped / 392 subtests (1091 before). File mode byte-identical
+  (`sha ad381d8b...`, unmoved across nine production changes). Six mutations, all caught. Evidence:
+  `evidence/live-convergence-0824/M4-terminal-tape/`.
+- **The tape is measured-inert on quality, not assumed to be.** Every case runs twice through the
+  same runtime - once with a declared capacity, once without - and the two arms agree on scores,
+  frozen spans, committed transcripts, committed-prefix hash, effective surface, revision version,
+  accounting and rolling status. The one rolling field that is REPORTED rather than compared is
+  `retained_high_water_samples`, and the control arm is run TWICE to show why: two identical
+  no-tape runs already disagree (208000 vs 168000 on bill, 240000 vs 232000 on milei). What is
+  gated for that field is its bound.
+- **A hole is refused, never zero-filled.** Audio is admitted only at the tape's own next sample.
+  Zero-filling a hole would tile the bytes and keep the counts adding up while handing a terminal
+  pass *silence the meeting never contained*; so a non-contiguous frame degrades the tape by name
+  (`tape_frame_not_admissible`, expected vs received sample), the gap manifest reports the
+  interval, and a reader asking for `[0, meeting_end)` is refused rather than served fabricated
+  quiet. Mutation M5 zero-fills and is caught by the T1 test alone.
+- **Pressure degrades the tape, never the meeting, and that is measured**: a meeting whose tape
+  stopped after ONE frame published exactly the transcript it published with a tape four times the
+  size, with exact accepted/accounted equality and no terminal failure (ADR-0003 D5).
+- **Four of six mutations are caught by the tests ALONE, each for a stated reason**: the trio cannot
+  exhaust a capacity bound (M3, M6), cannot produce a hole (M5), and cannot tell a tape that grades
+  its own extent from one graded against `accepted_samples` (M2) because on a healthy meeting those
+  two numbers are equal. Seventh iteration of the E2 lesson - the corpus reading is necessary and
+  not sufficient.
+- **P5 is confirmed on its arithmetic half before any terminal pass exists**: the capacity table
+  read from `LIVE_SAMPLE_RATE` / `PCM16_BYTES_PER_SAMPLE` is `1 920 000 / 5 760 000 / 9 600 000`
+  bytes at 60 / 180 / 300 s, and trio peak retained bytes equal `accepted x 2` exactly. The process
+  high-water half ("within 5 %") is the M4 exit's measurement.
+- **The DEPLOYED service still declares no capacity, so it still retains no tape.** Declaring
+  `bounds_config.max_tape_bytes` in
+  `~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json` - recomputing that
+  file's `bounds_config_hash` and `component_config_hash`; `combined_config_hash` is
+  `f(decoder, endpoint, identity)` and does NOT move - plus a service restart is a step candidate
+  8c-3 owes before the M4 exit measurement. Until then a deployed terminal pass would correctly
+  report itself `unavailable`.
+- Rest of the ladder (M4 steps 3b/3c, the M4 exit, M5) unimplemented; working tree carries the plan,
+  evidence prototypes, and this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build,
+  which is NO LONGER the current production tree (iteration 24 shipped code), so the next deployed
+  measurement needs a restart - and the manifest declaration above should land in the same one.
 
 ## Validation
 
@@ -1080,10 +1132,28 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    the case to `cases.json`: every entry there points at a PRE-CAMPAIGN baseline hypothesis with a
    published mean for evaluator v2 to reproduce, and this case has neither; its hypotheses live in
    the M4 bundle and `measure_m4_baseline.py` reads them from `--three-minute-root`.
-8c. **M4 step 3: build plan §12.3.** Complete in-memory tape (D-M4-1) + async lifecycle (D-M4-3) +
-   terminal pass through the existing 150/120 `WindowedRunner` + the three §7.4 events + the
-   `already_finalized` single-replacement rule that `live_session.py:777` already names. Gates and
-   predictions are fixed in `PREREGISTRATION-M4.md`; do not restate them.
+8c. ~~**M4 step 3a: the complete in-memory tape (D-M4-1)**~~ - SHIPPED iteration 24, P-M4-B is
+   CLOSED. `CompleteMixedTape` in `app/live_tape.py` + `LiveServiceBounds.max_tape_bytes` + the
+   coordinator's third retention + `session_tape_released`; decision recorded as the **2026-08-25
+   addendum to ADR-0003 (D8)**. Verdict in `evidence/live-convergence-0824/M4-terminal-tape/`.
+   Do NOT zero-fill a hole to make the counts tile: zero-filled PCM is silence a terminal pass
+   would decode as the meeting's, which is why a non-contiguous frame degrades the tape by name
+   and the gap manifest reports the interval (mutation M5). Do NOT give the capacity a tool
+   default - ADR-0003 D2/D5 make it the deployment's, and a default-on tape would change the
+   posture every gate in this campaign was measured against. Do NOT compare the rolling ring's
+   `retained_high_water_samples` between runs; two identical no-tape runs already disagree.
+8c-2. **M4 step 3b: the terminal finalizer.** Plan §6 M6 - the 150/120 `WindowedRunner` over the
+   tape through a small adapter inside `live_transcript_convergence.py`, returning ONE terminal
+   `TextRevisionProposal` over `[0, meeting_end)`; the `already_finalized` single-replacement rule
+   `live_session.py:777` already names; terminal speaker identities from owned speech evidence
+   (§12.3 step 5). Gates and predictions are fixed in `PREREGISTRATION-M4.md`; do not restate them.
+8c-3. **M4 step 3c: the async lifecycle and its events.** D-M4-3's `finalization_status`
+   `not_started -> running -> final` (plus `failed` / `unavailable`, which the tape's own refusal
+   now has a producer for), the stop request returning before terminal completes, the three §7.4
+   `terminal_finalization_*` events, and the release moving to after terminal evidence is written.
+   This is the step that owes the DEPLOYED manifest its `bounds_config.max_tape_bytes` declaration
+   and a service restart (recompute `bounds_config_hash` / `component_config_hash`;
+   `combined_config_hash` is `f(decoder, endpoint, identity)` and does not move).
 8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
    `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
    directions, every bound quoted verbatim from its own row.

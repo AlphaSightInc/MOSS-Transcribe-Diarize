@@ -1,0 +1,64 @@
+..........F.F                                                            [100%]
+=================================== FAILURES ===================================
+_ CompleteTapeRuntimeWiringTest.test_a_meeting_that_ends_badly_keeps_no_audio_either _
+
+self = <test_live_terminal_tape.CompleteTapeRuntimeWiringTest testMethod=test_a_meeting_that_ends_badly_keeps_no_audio_either>
+
+    def test_a_meeting_that_ends_badly_keeps_no_audio_either(self):
+        base = ScriptedDecoder(
+            max_samples=10**9,
+            label="base",
+            calls=[],
+            failure=LiveProviderError("decoder is gone."),
+        )
+        runtime = _tape_runtime(
+            max_tape_bytes=64 * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE, base=base
+        )
+        # A decoder that goes away terminalizes the session at whichever call first
+        # observes it -- a frame or the stop drain, depending on when the pump thread
+        # lands -- so the driver tolerates both and the assertion is on the ending.
+        try:
+            session_id, _ = _drive(runtime, frames=ONE_WINDOW_FRAMES)
+            asyncio.run(runtime.stop(session_id, 5.0))
+        except Exception:
+            pass
+        session_id = next(iter(runtime._sessions))
+    
+        self.assertIsNotNone(runtime.snapshot(session_id).terminal_failure)
+        payloads = _released_events(runtime, session_id)
+        self.assertEqual(len(payloads), 1)
+>       self.assertTrue(payloads[0]["released"])
+E       AssertionError: False is not true
+
+tests/test_live_terminal_tape.py:312: AssertionError
+_ CompleteTapeRuntimeWiringTest.test_the_tape_is_what_the_transport_accepted_and_is_released_with_the_meeting _
+
+self = <test_live_terminal_tape.CompleteTapeRuntimeWiringTest testMethod=test_the_tape_is_what_the_transport_accepted_and_is_released_with_the_meeting>
+
+    def test_the_tape_is_what_the_transport_accepted_and_is_released_with_the_meeting(self):
+        runtime = _tape_runtime(max_tape_bytes=4 * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE)
+        session_id, sent = _drive(runtime, frames=4)
+    
+        during = runtime._sessions[session_id].coordinator.tape_accounting()
+        self.assertTrue(during.complete)
+        self.assertEqual(during.retained_bytes, len(sent))
+    
+        asyncio.run(runtime.stop(session_id, 5.0))
+    
+        snapshot = runtime.snapshot(session_id).session
+        payloads = _released_events(runtime, session_id)
+        self.assertEqual(len(payloads), 1)
+        payload = payloads[0]
+        self.assertEqual(payload["sample_count"], snapshot.accepted_samples)
+        self.assertEqual(payload["through_sample"], snapshot.accepted_samples)
+        self.assertEqual(payload["pcm_sha256"], hashlib.sha256(sent).hexdigest())
+        self.assertEqual(payload["gaps"], [])
+        self.assertTrue(payload["complete"])
+>       self.assertTrue(payload["released"])
+E       AssertionError: False is not true
+
+tests/test_live_terminal_tape.py:251: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_tape.py::CompleteTapeRuntimeWiringTest::test_a_meeting_that_ends_badly_keeps_no_audio_either
+FAILED tests/test_live_terminal_tape.py::CompleteTapeRuntimeWiringTest::test_the_tape_is_what_the_transport_accepted_and_is_released_with_the_meeting
+2 failed, 11 passed in 2.20s

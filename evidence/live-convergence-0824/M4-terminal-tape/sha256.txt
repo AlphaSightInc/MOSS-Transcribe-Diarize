@@ -1,0 +1,8 @@
+7c0d109014a7760ab2a3fe9f86543fc3e1e6b31fb91e22e6d81f21ef85b5a9fa  evidence/live-convergence-0824/M4-terminal-tape/NOTES.md
+cef3cabcdfede47f792109fff7e4ead6afad3c8a69f73bb1a38850248773da26  evidence/live-convergence-0824/M4-terminal-tape/verify.json
+a3f372a1984faa2afd7124ef752e93780298db215d0a30241a98f1d27918ec90  evidence/live-convergence-0824/M4-terminal-tape/console.txt
+9e02b8c36f7d8e5449f3dacb83fba6eaa94f39216d33eb4f8d7fd01cfa722ae3  evidence/live-convergence-0824/M4-terminal-tape/pytest-tape.txt
+46c3971b67be438a2173cd7027977d103711a9f24bd221a89bba647b6d60b908  evidence/live-convergence-0824/M4-terminal-tape/pytest-full.txt
+ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2  evidence/live-convergence-0824/M4-terminal-tape/file-mode-head.json
+ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2  evidence/live-convergence-0824/M4-terminal-tape/file-mode-worktree.json
+4ba288faa3ed5501d9ea64cb146d47e057df83c4d2a35aca7a2e0adff79c94b7  evidence/live-convergence-0824/M4-terminal-tape/mutations/summary.txt

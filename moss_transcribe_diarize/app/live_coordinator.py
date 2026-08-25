@@ -33,6 +33,7 @@ from .live_session import (
     PCM16_BYTES_PER_SAMPLE,
 )
 from .live_span_bounds import span_segments
+from .live_tape import CompleteMixedTape, CompleteMixedTapeAccounting
 from .live_transcript_convergence import (
     DEFAULT_ROLLING_GEOMETRY,
     RollingDecodeRequest,
@@ -369,6 +370,7 @@ class LiveCoordinator:
         arbiter: InferenceArbiter,
         rolling_decoder: BoundedWavInference | None = None,
         rolling_geometry: RollingGeometry = DEFAULT_ROLLING_GEOMETRY,
+        tape_capacity_bytes: int | None = None,
     ):
         if not session_key:
             raise ValueError("session_key must be non-empty.")
@@ -393,6 +395,18 @@ class LiveCoordinator:
             else RollingTranscriptConverger(epoch=session.epoch, geometry=rolling_geometry)
         )
         self._rolling_admission_refusals = 0
+        # The third retention, and the only one that outlives its listener. The base keeps a
+        # span until it commits and the witness keeps a bounded ring of the newest window;
+        # neither can answer "what did this whole meeting sound like", which is the only
+        # question a terminal 150/120 pass asks. Declared by the deployment or absent
+        # entirely (ADR-0003 D2), so a service that declares no capacity retains exactly
+        # what it retains today and reports terminal convergence unavailable rather than
+        # running one over a partial meeting.
+        self.tape = (
+            None
+            if tape_capacity_bytes is None
+            else CompleteMixedTape(epoch=session.epoch, capacity_bytes=tape_capacity_bytes)
+        )
 
     def preview_frame_work_items(self, frame: AudioFrame) -> int:
         if self._staged_frame is not None:
@@ -447,6 +461,11 @@ class LiveCoordinator:
         # window. Planning is gated on committed audio, so this rarely emits a window on its
         # own -- but it can, when a frame arrives after the commit that completed one.
         rolling_windows = self._accept_rolling_pcm(ack.start_sample, frame.pcm)
+        if self.tape is not None:
+            # Never checked, never raised on: ADR-0003 D5 makes a tape that cannot keep up
+            # degrade itself, and a frame acknowledged by the session is published whether
+            # or not a terminal pass will ever be possible.
+            self.tape.append(start_sample=ack.start_sample, pcm=frame.pcm)
         return CoordinatorFrameResult(
             accepted_start_sample=ack.start_sample,
             accepted_end_sample=ack.end_sample,
@@ -909,6 +928,32 @@ class LiveCoordinator:
         """The converger's own counters, or `None` when no witness is configured."""
 
         return None if self.converger is None else self.converger.accounting()
+
+    def tape_accounting(self) -> CompleteMixedTapeAccounting | None:
+        """What the complete tape holds, against what the session accepted.
+
+        Asked against `accepted_samples` rather than against the tape's own count, because
+        the question a terminal pass has is not "how much did you keep" but "did you keep
+        the meeting" -- and the difference between those two is exactly the gap manifest.
+        """
+
+        if self.tape is None:
+            return None
+        return self.tape.accounting(through_sample=self.session.snapshot().accepted_samples)
+
+    def release_tape(self) -> CompleteMixedTapeAccounting | None:
+        """Drop the meeting's audio and keep its accounting (ADR-0003 D3's zero TTL).
+
+        Reported *after* the release, on purpose: everything that makes the tape checkable
+        -- its sample count, its digest, its byte high-water and its gap manifest -- outlives
+        the samples, so the answer carries `retained_bytes = 0` and is itself the evidence
+        that no tape survived the meeting.
+        """
+
+        if self.tape is None:
+            return None
+        self.tape.release()
+        return self.tape_accounting()
 
     def _rolling_status(self) -> str | None:
         converger = self.converger
