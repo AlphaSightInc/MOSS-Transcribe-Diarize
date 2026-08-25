@@ -1,0 +1,667 @@
+{
+  "provenance": {
+    "base_url": "https://127.0.0.1:7861",
+    "vllm_base_url": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "windowing": {
+      "window_seconds": 150,
+      "stride_seconds": 120
+    },
+    "live_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "decoding": "greedy",
+    "max_new_tokens": 12000,
+    "timestamp": "2026-08-25T05:59:38-0400"
+  },
+  "cases": [
+    {
+      "case_id": "lex_bill_ackman",
+      "tier": "primary",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/reference.jsonl",
+      "reference_segments": 5,
+      "reference_speech_seconds": 60.0,
+      "reference_speakers": [
+        "Bill Ackman",
+        "Lex Fridman"
+      ],
+      "arm_order": [
+        "file",
+        "live"
+      ],
+      "arms": {
+        "file": {
+          "meta": {
+            "job_id": "01ba77a4e5ba",
+            "status": "waiting_review",
+            "wall_s": 3.08,
+            "generated_tokens": 518,
+            "segments": 18,
+            "hyp_speakers": [
+              "S01",
+              "S02"
+            ]
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.918756,
+              "text_speaker_accuracy": 0.938134,
+              "text_coverage": 0.952215,
+              "wer": 0.159091,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.0755,
+              "miss": 0.051,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.0245,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.9245,
+              "reference_coverage": 0.949,
+              "matched_speaker_seconds": 55.47,
+              "covered_reference_seconds": 56.94,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 56.94,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 2,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Bill Ackman": 0.950556,
+                "Lex Fridman": 0.69
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.949,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 56.94,
+              "true_positive_activity_seconds": 56.94,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 3.06,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 3.06,
+              "confused_speaker_seconds": 1.47,
+              "diarization_error_rate": 0.0755
+            }
+          }
+        },
+        "live": {
+          "meta": {
+            "failure": null,
+            "wall_s": 60.673,
+            "status": "succeeded",
+            "frame_count": 120,
+            "accepted_samples": 960000,
+            "decode_rtf_p95": 0.15700934999622404,
+            "span_frozen_reasons": {
+              "hard_cap": 24
+            },
+            "spans_processed": 24,
+            "spans_empty": 0,
+            "spans_empty_reason_events": 0,
+            "decode_capped_spans": 0,
+            "hyp_segments": 21,
+            "hyp_speakers": [
+              "S00",
+              "S01",
+              "S02"
+            ],
+            "label_revision_version": 0
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.876313,
+              "text_speaker_accuracy": 0.891608,
+              "text_coverage": 0.916587,
+              "wer": 0.204545,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.127333,
+              "miss": 0.090167,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.037167,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.872667,
+              "reference_coverage": 0.909833,
+              "matched_speaker_seconds": 52.36,
+              "covered_reference_seconds": 54.59,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 54.59,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 3,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Bill Ackman": 0.900185,
+                "Lex Fridman": 0.625
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.909833,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 54.59,
+              "true_positive_activity_seconds": 54.59,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 5.41,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 5.41,
+              "confused_speaker_seconds": 2.23,
+              "diarization_error_rate": 0.127333
+            }
+          }
+        }
+      }
+    },
+    {
+      "case_id": "lex_javier_milei",
+      "tier": "primary",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/audio.wav",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/reference.jsonl",
+      "reference_segments": 2,
+      "reference_speech_seconds": 60.0,
+      "reference_speakers": [
+        "Javier Milei",
+        "Lex Fridman"
+      ],
+      "arm_order": [
+        "live",
+        "file"
+      ],
+      "arms": {
+        "live": {
+          "meta": {
+            "failure": null,
+            "wall_s": 60.562,
+            "status": "succeeded",
+            "frame_count": 120,
+            "accepted_samples": 960000,
+            "decode_rtf_p95": 0.7799867413599383,
+            "span_frozen_reasons": {
+              "hard_cap": 21,
+              "end_silence": 4,
+              "leading_silence": 6
+            },
+            "spans_processed": 32,
+            "spans_empty": 4,
+            "spans_empty_reason_events": 4,
+            "decode_capped_spans": 0,
+            "hyp_segments": 14,
+            "hyp_speakers": [
+              "S01",
+              "S02"
+            ],
+            "label_revision_version": 0
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.906296,
+              "text_speaker_accuracy": 0.907061,
+              "text_coverage": 0.907061,
+              "wer": 0.096,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.117333,
+              "miss": 0.117333,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.882667,
+              "reference_coverage": 0.882667,
+              "matched_speaker_seconds": 52.96,
+              "covered_reference_seconds": 52.96,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 52.96,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 2,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Javier Milei": 0.595,
+                "Lex Fridman": 0.9402
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.882667,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 52.96,
+              "true_positive_activity_seconds": 52.96,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 7.04,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 7.04,
+              "confused_speaker_seconds": 0.0,
+              "diarization_error_rate": 0.117333
+            }
+          }
+        },
+        "file": {
+          "meta": {
+            "job_id": "2804e9a6c285",
+            "status": "waiting_review",
+            "wall_s": 2.062,
+            "generated_tokens": 474,
+            "segments": 20,
+            "hyp_speakers": [
+              "S01",
+              "S02"
+            ]
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.881244,
+              "text_speaker_accuracy": 0.870992,
+              "text_coverage": 0.870992,
+              "wer": 0.088,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.151833,
+              "miss": 0.151833,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.848167,
+              "reference_coverage": 0.848167,
+              "matched_speaker_seconds": 50.89,
+              "covered_reference_seconds": 50.89,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 50.89,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 2,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Javier Milei": 0.579,
+                "Lex Fridman": 0.902
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.848167,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 50.89,
+              "true_positive_activity_seconds": 50.89,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 9.11,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 9.11,
+              "confused_speaker_seconds": 0.0,
+              "diarization_error_rate": 0.151833
+            }
+          }
+        }
+      }
+    },
+    {
+      "case_id": "lex_keyu_jin",
+      "tier": "primary",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl",
+      "reference_segments": 4,
+      "reference_speech_seconds": 60.0,
+      "reference_speakers": [
+        "Keyu Jin",
+        "Lex Fridman"
+      ],
+      "arm_order": [
+        "file",
+        "live"
+      ],
+      "arms": {
+        "file": {
+          "meta": {
+            "job_id": "dbd9325fd3cf",
+            "status": "waiting_review",
+            "wall_s": 2.063,
+            "generated_tokens": 342,
+            "segments": 10,
+            "hyp_speakers": [
+              "S01",
+              "S02"
+            ]
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.9317,
+              "text_speaker_accuracy": 0.92538,
+              "text_coverage": 0.936387,
+              "wer": 0.064748,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.079,
+              "miss": 0.067667,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.011333,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.921,
+              "reference_coverage": 0.932333,
+              "matched_speaker_seconds": 55.26,
+              "covered_reference_seconds": 55.94,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 55.94,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 2,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Keyu Jin": 0.905333,
+                "Lex Fridman": 0.968
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.932333,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 55.94,
+              "true_positive_activity_seconds": 55.94,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 4.06,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 4.06,
+              "confused_speaker_seconds": 0.68,
+              "diarization_error_rate": 0.079
+            }
+          }
+        },
+        "live": {
+          "meta": {
+            "failure": null,
+            "wall_s": 60.75,
+            "status": "succeeded",
+            "frame_count": 120,
+            "accepted_samples": 960000,
+            "decode_rtf_p95": 0.13177273320034147,
+            "span_frozen_reasons": {
+              "hard_cap": 24
+            },
+            "spans_processed": 24,
+            "spans_empty": 0,
+            "spans_empty_reason_events": 0,
+            "decode_capped_spans": 0,
+            "hyp_segments": 15,
+            "hyp_speakers": [
+              "S01",
+              "S02"
+            ],
+            "label_revision_version": 0
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.916017,
+              "text_speaker_accuracy": 0.913683,
+              "text_coverage": 0.9255,
+              "wer": 0.093525,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "diarization": {
+              "der": 0.089167,
+              "miss": 0.077,
+              "false_alarm": 0.0,
+              "speaker_confusion": 0.012167,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.910833,
+              "reference_coverage": 0.923,
+              "matched_speaker_seconds": 54.65,
+              "covered_reference_seconds": 55.38,
+              "reference_seconds": 60.0,
+              "hypothesis_seconds": 55.38,
+              "reference_speaker_count": 2,
+              "hypothesis_speaker_count": 2,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Keyu Jin": 0.893778,
+                "Lex Fridman": 0.962
+              },
+              "speaker_activity_precision": 1.0,
+              "speaker_activity_recall": 0.923,
+              "reference_activity_seconds": 60.0,
+              "hypothesis_activity_seconds": 55.38,
+              "true_positive_activity_seconds": 55.38,
+              "false_positive_activity_seconds": 0.0,
+              "missed_activity_seconds": 4.62,
+              "false_positive_speaker_seconds": 0.0,
+              "missed_speaker_seconds": 4.62,
+              "confused_speaker_seconds": 0.73,
+              "diarization_error_rate": 0.089167
+            }
+          }
+        }
+      }
+    },
+    {
+      "case_id": "acquired_jamie_dimon",
+      "tier": "secondary",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/reference.jsonl",
+      "reference_segments": 9,
+      "reference_speech_seconds": 12.313,
+      "reference_speakers": [
+        "Ben",
+        "David",
+        "Jamie"
+      ],
+      "arm_order": [
+        "live",
+        "file"
+      ],
+      "arms": {
+        "live": {
+          "meta": {
+            "failure": null,
+            "wall_s": 60.974,
+            "status": "succeeded",
+            "frame_count": 120,
+            "accepted_samples": 960000,
+            "decode_rtf_p95": 0.33953083399683237,
+            "span_frozen_reasons": {
+              "hard_cap": 23,
+              "end_silence": 1,
+              "leading_silence": 2
+            },
+            "spans_processed": 27,
+            "spans_empty": 1,
+            "spans_empty_reason_events": 1,
+            "decode_capped_spans": 0,
+            "hyp_segments": 20,
+            "hyp_speakers": [
+              "S00",
+              "S01",
+              "S02"
+            ],
+            "label_revision_version": 1
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.696406,
+              "text_speaker_accuracy": 0.891818,
+              "text_coverage": 0.891818,
+              "wer": 0.889831,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S00"
+              }
+            },
+            "diarization": {
+              "der": 3.651019,
+              "miss": 0.284983,
+              "false_alarm": 3.366036,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S00"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.715017,
+              "reference_coverage": 0.715017,
+              "matched_speaker_seconds": 8.804,
+              "covered_reference_seconds": 8.804,
+              "reference_seconds": 12.313,
+              "hypothesis_seconds": 50.25,
+              "reference_speaker_count": 3,
+              "hypothesis_speaker_count": 3,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S00"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Ben": 1.0,
+                "David": 0.7843,
+                "Jamie": 0.201128
+              },
+              "speaker_activity_precision": 0.175204,
+              "speaker_activity_recall": 0.715017,
+              "reference_activity_seconds": 12.313,
+              "hypothesis_activity_seconds": 50.25,
+              "true_positive_activity_seconds": 8.804,
+              "false_positive_activity_seconds": 41.446,
+              "missed_activity_seconds": 3.509,
+              "false_positive_speaker_seconds": 41.446,
+              "missed_speaker_seconds": 3.509,
+              "confused_speaker_seconds": 0.0,
+              "diarization_error_rate": 3.651019
+            }
+          }
+        },
+        "file": {
+          "meta": {
+            "job_id": "b6248d2cddfd",
+            "status": "waiting_review",
+            "wall_s": 3.092,
+            "generated_tokens": 521,
+            "segments": 17,
+            "hyp_speakers": [
+              "S01",
+              "S02",
+              "S03",
+              "S04"
+            ]
+          },
+          "scores": {
+            "tbsa": {
+              "composite": 0.716462,
+              "text_speaker_accuracy": 0.899706,
+              "text_coverage": 0.90984,
+              "wer": 0.847458,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S04"
+              }
+            },
+            "diarization": {
+              "der": 3.844717,
+              "miss": 0.274994,
+              "false_alarm": 3.555835,
+              "speaker_confusion": 0.013888,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S04"
+              }
+            },
+            "speaker": {
+              "speaker_accuracy": 0.711118,
+              "reference_coverage": 0.725006,
+              "matched_speaker_seconds": 8.756,
+              "covered_reference_seconds": 8.927,
+              "reference_seconds": 12.313,
+              "hypothesis_seconds": 52.71,
+              "reference_speaker_count": 3,
+              "hypothesis_speaker_count": 4,
+              "speaker_mapping": {
+                "Ben": "S02",
+                "David": "S01",
+                "Jamie": "S04"
+              },
+              "two_sided_mapping": true,
+              "speaker_correctness": {
+                "Ben": 1.0,
+                "David": 0.778003,
+                "Jamie": 0.194862
+              },
+              "speaker_activity_precision": 0.169361,
+              "speaker_activity_recall": 0.725006,
+              "reference_activity_seconds": 12.313,
+              "hypothesis_activity_seconds": 52.71,
+              "true_positive_activity_seconds": 8.927,
+              "false_positive_activity_seconds": 43.783,
+              "missed_activity_seconds": 3.386,
+              "false_positive_speaker_seconds": 43.783,
+              "missed_speaker_seconds": 3.386,
+              "confused_speaker_seconds": 0.171,
+              "diarization_error_rate": 3.844717
+            }
+          }
+        }
+      }
+    }
+  ]
+}

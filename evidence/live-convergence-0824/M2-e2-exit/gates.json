@@ -1,0 +1,926 @@
+{
+  "fresh_root": "/private/tmp/m2-exit-20260825-055400",
+  "gates": {
+    "G_M2_1_trio_rolling_wer": {
+      "pass": true,
+      "trio_rolling_wer_mean": 0.131357,
+      "bound": 0.15,
+      "grid_projection": 0.131861,
+      "baseline_live_trio_wer": 0.19987,
+      "per_case": {
+        "lex_bill_ackman": {
+          "live_wer_per_pass": [
+            0.204545,
+            0.204545
+          ],
+          "live_wer_mean": 0.204545,
+          "content_recall_per_pass": [
+            0.926136,
+            0.926136
+          ],
+          "content_recall_mean": 0.926136,
+          "live_der_per_pass": [
+            0.127333,
+            0.127333
+          ],
+          "live_der_mean": 0.127333
+        },
+        "lex_javier_milei": {
+          "live_wer_per_pass": [
+            0.096,
+            0.096
+          ],
+          "live_wer_mean": 0.096,
+          "content_recall_per_pass": [
+            0.92,
+            0.92
+          ],
+          "content_recall_mean": 0.92,
+          "live_der_per_pass": [
+            0.117333,
+            0.117333
+          ],
+          "live_der_mean": 0.117333
+        },
+        "lex_keyu_jin": {
+          "live_wer_per_pass": [
+            0.093525,
+            0.093525
+          ],
+          "live_wer_mean": 0.093525,
+          "content_recall_per_pass": [
+            0.985612,
+            0.985612
+          ],
+          "content_recall_mean": 0.985612,
+          "live_der_per_pass": [
+            0.089167,
+            0.089167
+          ],
+          "live_der_mean": 0.089167
+        }
+      }
+    },
+    "G_M2_2_per_case_improvement": {
+      "pass": true,
+      "per_case": {
+        "lex_bill_ackman": {
+          "baseline_live_wer": 0.261364,
+          "prd_states": 0.2614,
+          "measured_mean": 0.204545,
+          "delta": -0.056819,
+          "improves": true
+        },
+        "lex_javier_milei": {
+          "baseline_live_wer": 0.144,
+          "prd_states": 0.144,
+          "measured_mean": 0.096,
+          "delta": -0.048,
+          "improves": true
+        },
+        "lex_keyu_jin": {
+          "baseline_live_wer": 0.194245,
+          "prd_states": 0.1942,
+          "measured_mean": 0.093525,
+          "delta": -0.10072,
+          "improves": true
+        }
+      }
+    },
+    "G_M2_3_content_recall": {
+      "pass": true,
+      "trio_content_recall_mean": 0.943916,
+      "bound": 0.94,
+      "grid_projection": 0.943916,
+      "baseline_live_recall": 0.91349,
+      "per_case": {
+        "lex_bill_ackman": [
+          0.926136,
+          0.926136
+        ],
+        "lex_javier_milei": [
+          0.92,
+          0.92
+        ],
+        "lex_keyu_jin": [
+          0.985612,
+          0.985612
+        ]
+      },
+      "five_minute": [
+        0.957592,
+        0.957592
+      ]
+    },
+    "G_M2_4_correction_p95": {
+      "pass": false,
+      "p95_sec": 8.756675,
+      "p95_nearest_rank_sec": 8.722057,
+      "bound_sec": 6.0,
+      "structural_floor_sec_at_10_10": 8.51,
+      "distribution": {
+        "count": 160,
+        "mean": 4.760075,
+        "p50": 5.406729,
+        "p95": 8.756675,
+        "max": 10.889786
+      },
+      "unreadable_sessions": [],
+      "per_session": {
+        "lex_bill_ackman/A": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 24,
+          "distribution": {
+            "count": 24,
+            "mean": 4.207454,
+            "p50": 4.14629,
+            "p95": 8.142333,
+            "max": 8.194944
+          }
+        },
+        "lex_bill_ackman/B": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 24,
+          "distribution": {
+            "count": 24,
+            "mean": 4.254448,
+            "p50": 4.202065,
+            "p95": 8.11301,
+            "max": 8.187024
+          }
+        },
+        "lex_javier_milei/A": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 32,
+          "distribution": {
+            "count": 32,
+            "mean": 5.56927,
+            "p50": 5.800437,
+            "p95": 10.261815,
+            "max": 10.889786
+          }
+        },
+        "lex_javier_milei/B": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 32,
+          "distribution": {
+            "count": 32,
+            "mean": 5.597051,
+            "p50": 5.69736,
+            "p95": 10.326839,
+            "max": 10.817716
+          }
+        },
+        "lex_keyu_jin/A": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 24,
+          "distribution": {
+            "count": 24,
+            "mean": 4.169481,
+            "p50": 4.24037,
+            "p95": 8.057314,
+            "max": 8.101009
+          }
+        },
+        "lex_keyu_jin/B": {
+          "changed_regions": 6,
+          "unchanged_regions": 0,
+          "latency_count": 24,
+          "distribution": {
+            "count": 24,
+            "mean": 4.214025,
+            "p50": 4.238278,
+            "p95": 8.113099,
+            "max": 8.232044
+          }
+        }
+      },
+      "note": "iteration 10 F3 preregistered this miss: with central ownership the oldest owned word has age (L+S)/2, so L+S <= 12 is required and the selected geometry is L+S = 20"
+    },
+    "G_M2_5_combined_rtf_bounded_queues": {
+      "pass": true,
+      "bound_combined_rtf": 1.0,
+      "failing_sessions": [],
+      "per_session": {
+        "lex_bill_ackman/A": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 6.200848,
+          "witness_decode_sec": 2.449474,
+          "base_rtf": 0.103347,
+          "witness_rtf": 0.040825,
+          "combined_rtf": 0.144172,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 168000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 24,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 24,
+            "mean": 0.678628,
+            "p50": 0.622188,
+            "p95": 0.965827,
+            "max": 1.460791
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.023563,
+            "p50": 0.016105,
+            "p95": 0.049333,
+            "max": 0.058583
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 24,
+            "mean": 623.187554,
+            "p50": 630.561583,
+            "p95": 738.589128,
+            "max": 811.693167
+          },
+          "canonical_decode_rtf_p95": 0.1422208168078214
+        },
+        "lex_bill_ackman/B": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 6.545807,
+          "witness_decode_sec": 2.874412,
+          "base_rtf": 0.109097,
+          "witness_rtf": 0.047907,
+          "combined_rtf": 0.157004,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 168000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 24,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 24,
+            "mean": 0.722347,
+            "p50": 0.739312,
+            "p95": 1.045381,
+            "max": 1.102875
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.023271,
+            "p50": 0.0155,
+            "p95": 0.048604,
+            "max": 0.057416
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 24,
+            "mean": 640.168851,
+            "p50": 657.884792,
+            "p95": 764.942775,
+            "max": 767.161083
+          },
+          "canonical_decode_rtf_p95": 0.15700934999622404
+        },
+        "lex_javier_milei/A": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 7.401088,
+          "witness_decode_sec": 1.797743,
+          "base_rtf": 0.123351,
+          "witness_rtf": 0.029962,
+          "combined_rtf": 0.153314,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 208000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 32,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 32,
+            "mean": 33.596066,
+            "p50": 0.696937,
+            "p95": 136.504187,
+            "max": 649.358083
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.017382,
+            "p50": 0.015104,
+            "p95": 0.025417,
+            "max": 0.028417
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 32,
+            "mean": 555.830784,
+            "p50": 610.040812,
+            "p95": 759.813358,
+            "max": 883.147666
+          },
+          "canonical_decode_rtf_p95": 0.9112829543565485
+        },
+        "lex_javier_milei/B": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 6.731253,
+          "witness_decode_sec": 2.229263,
+          "base_rtf": 0.112188,
+          "witness_rtf": 0.037154,
+          "combined_rtf": 0.149342,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 208000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 32,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 32,
+            "mean": 39.006999,
+            "p50": 0.714313,
+            "p95": 213.645804,
+            "max": 654.156166
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.017201,
+            "p50": 0.015375,
+            "p95": 0.023813,
+            "max": 0.02625
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 32,
+            "mean": 538.770232,
+            "p50": 597.321105,
+            "p95": 751.630533,
+            "max": 816.868625
+          },
+          "canonical_decode_rtf_p95": 0.7799867413599383
+        },
+        "lex_keyu_jin/A": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 6.270055,
+          "witness_decode_sec": 2.194671,
+          "base_rtf": 0.104501,
+          "witness_rtf": 0.036578,
+          "combined_rtf": 0.141079,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 176000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 24,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 24,
+            "mean": 0.843311,
+            "p50": 0.782438,
+            "p95": 1.215652,
+            "max": 1.23475
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.018722,
+            "p50": 0.018333,
+            "p95": 0.023844,
+            "max": 0.025458
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 24,
+            "mean": 642.682969,
+            "p50": 617.129541,
+            "p95": 858.38988,
+            "max": 995.463292
+          },
+          "canonical_decode_rtf_p95": 0.18243348360992967
+        },
+        "lex_keyu_jin/B": {
+          "audio_sec": 60.0,
+          "base_decode_sec": 5.56806,
+          "witness_decode_sec": 2.435401,
+          "base_rtf": 0.092801,
+          "witness_rtf": 0.04059,
+          "combined_rtf": 0.133391,
+          "windows_expected": 6,
+          "windows_planned": 6,
+          "windows_admitted": 6,
+          "windows_completed": 6,
+          "windows_applied": 6,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 168000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 24,
+          "text_revision_version": 6,
+          "canonical_queue_wait_ms": {
+            "count": 24,
+            "mean": 0.69095,
+            "p50": 0.733876,
+            "p95": 1.043273,
+            "max": 1.076
+          },
+          "rolling_queue_wait_ms": {
+            "count": 6,
+            "mean": 0.018652,
+            "p50": 0.015583,
+            "p95": 0.02749,
+            "max": 0.02975
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 24,
+            "mean": 610.750587,
+            "p50": 623.554417,
+            "p95": 727.070646,
+            "max": 743.66475
+          },
+          "canonical_decode_rtf_p95": 0.13177273320034147
+        },
+        "keyu-5m/A": {
+          "audio_sec": 300.0,
+          "base_decode_sec": 33.165376,
+          "witness_decode_sec": 10.871605,
+          "base_rtf": 0.110551,
+          "witness_rtf": 0.036239,
+          "combined_rtf": 0.14679,
+          "windows_expected": 30,
+          "windows_planned": 30,
+          "windows_admitted": 30,
+          "windows_completed": 30,
+          "windows_applied": 30,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 208000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 128,
+          "text_revision_version": 30,
+          "canonical_queue_wait_ms": {
+            "count": 128,
+            "mean": 5.060611,
+            "p50": 0.706,
+            "p95": 1.413792,
+            "max": 251.486875
+          },
+          "rolling_queue_wait_ms": {
+            "count": 30,
+            "mean": 4.458931,
+            "p50": 0.015479,
+            "p95": 0.033053,
+            "max": 133.279083
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 128,
+            "mean": 625.404729,
+            "p50": 655.425271,
+            "p95": 781.226144,
+            "max": 806.4455
+          },
+          "canonical_decode_rtf_p95": 0.2388154169311747
+        },
+        "keyu-5m/B": {
+          "audio_sec": 300.0,
+          "base_decode_sec": 33.973354,
+          "witness_decode_sec": 10.814674,
+          "base_rtf": 0.113245,
+          "witness_rtf": 0.036049,
+          "combined_rtf": 0.149293,
+          "windows_expected": 30,
+          "windows_planned": 30,
+          "windows_admitted": 30,
+          "windows_completed": 30,
+          "windows_applied": 30,
+          "windows_failed_outcomes": [],
+          "admission_refusals": 0,
+          "stale_completions": 0,
+          "rolling_max_depth": 1,
+          "rolling_final_depth": 0,
+          "retained_high_water_samples": 208000,
+          "retained_bound_samples": 320000,
+          "unsubmitted_canonical_spans": 0,
+          "canonical_spans": 128,
+          "text_revision_version": 30,
+          "canonical_queue_wait_ms": {
+            "count": 128,
+            "mean": 5.714487,
+            "p50": 0.75602,
+            "p95": 1.311863,
+            "max": 265.785583
+          },
+          "rolling_queue_wait_ms": {
+            "count": 30,
+            "mean": 4.479326,
+            "p50": 0.016146,
+            "p95": 0.025506,
+            "max": 133.881416
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 128,
+            "mean": 637.062695,
+            "p50": 667.109521,
+            "p95": 818.918041,
+            "max": 902.971
+          },
+          "canonical_decode_rtf_p95": 0.23604892043362335
+        }
+      },
+      "note": "the witness ran on the deployed service is part of this gate: a session with no planned window or no applied revision cannot satisfy it"
+    },
+    "G_M2_6_five_minute_rolling_wer": {
+      "pass": true,
+      "five_minute_rolling_wer_mean": 0.082079,
+      "per_pass": [
+        0.082079,
+        0.082079
+      ],
+      "bound": 0.0985,
+      "baseline_live_wer": 0.1464,
+      "paired_file_wer": 0.0506,
+      "der_mean": 0.0886
+    },
+    "G_M2_7_exact_sample_accounting": {
+      "pass": true,
+      "per_session": {
+        "lex_bill_ackman/A": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "lex_bill_ackman/B": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "lex_javier_milei/A": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "lex_javier_milei/B": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "lex_keyu_jin/A": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "lex_keyu_jin/B": {
+          "status": "succeeded",
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "snapshot_accepted": 960000,
+          "snapshot_accounted": 960000,
+          "exact": true
+        },
+        "keyu-5m/A": {
+          "status": "succeeded",
+          "accepted_samples": 4800000,
+          "accounted_samples": 4800000,
+          "snapshot_accepted": 4800000,
+          "snapshot_accounted": 4800000,
+          "exact": true
+        },
+        "keyu-5m/B": {
+          "status": "succeeded",
+          "accepted_samples": 4800000,
+          "accounted_samples": 4800000,
+          "snapshot_accepted": 4800000,
+          "snapshot_accounted": 4800000,
+          "exact": true
+        }
+      }
+    },
+    "G_M2_8_file_mode_byte_identical": {
+      "pass": true,
+      "per_case": {
+        "lex_bill_ackman": {
+          "baseline_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "A": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "B": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "identical": true
+        },
+        "lex_javier_milei": {
+          "baseline_sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "A": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "B": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "identical": true
+        },
+        "lex_keyu_jin": {
+          "baseline_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "A": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "B": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "identical": true
+        },
+        "acquired_jamie_dimon": {
+          "baseline_sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "A": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "B": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "identical": true
+        },
+        "keyu-5m": {
+          "baseline_sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "A": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "B": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "identical": true
+        }
+      }
+    },
+    "_soak_10_6": {
+      "pass": true,
+      "note": "Appendix B rescopes the \u00a710.6 soak to the 5-minute case; reported, not gated. Portal render time stays the attended browser item.",
+      "five_minute": {
+        "A": {
+          "combined_rtf": 0.14679,
+          "base_rtf": 0.110551,
+          "witness_rtf": 0.036239,
+          "windows": {
+            "windows_expected": 30,
+            "windows_planned": 30,
+            "windows_completed": 30,
+            "windows_applied": 30,
+            "admission_refusals": 0,
+            "stale_completions": 0,
+            "rolling_max_depth": 1,
+            "retained_high_water_samples": 208000
+          },
+          "canonical_queue_wait_ms": {
+            "count": 128,
+            "mean": 5.060611,
+            "p50": 0.706,
+            "p95": 1.413792,
+            "max": 251.486875
+          },
+          "rolling_queue_wait_ms": {
+            "count": 30,
+            "mean": 4.458931,
+            "p50": 0.015479,
+            "p95": 0.033053,
+            "max": 133.279083
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 128,
+            "mean": 625.404729,
+            "p50": 655.425271,
+            "p95": 781.226144,
+            "max": 806.4455
+          },
+          "correction_latency": {
+            "count": 128,
+            "mean": 5.514357,
+            "p50": 5.4212,
+            "p95": 10.390684,
+            "max": 10.98225
+          },
+          "snapshot_bytes": 51688,
+          "trace_bytes": 752140,
+          "text_revisions": 30,
+          "text_revision_refused": [],
+          "salvaged_spans": 0,
+          "v2": {
+            "content_recall": 0.957592,
+            "wer": 0.082079,
+            "matched_word_speaker_accuracy": 0.954856,
+            "der_reference_speech": 0.066913,
+            "hypothesis_segments": 77
+          }
+        },
+        "B": {
+          "combined_rtf": 0.149293,
+          "base_rtf": 0.113245,
+          "witness_rtf": 0.036049,
+          "windows": {
+            "windows_expected": 30,
+            "windows_planned": 30,
+            "windows_completed": 30,
+            "windows_applied": 30,
+            "admission_refusals": 0,
+            "stale_completions": 0,
+            "rolling_max_depth": 1,
+            "retained_high_water_samples": 208000
+          },
+          "canonical_queue_wait_ms": {
+            "count": 128,
+            "mean": 5.714487,
+            "p50": 0.75602,
+            "p95": 1.311863,
+            "max": 265.785583
+          },
+          "rolling_queue_wait_ms": {
+            "count": 30,
+            "mean": 4.479326,
+            "p50": 0.016146,
+            "p95": 0.025506,
+            "max": 133.881416
+          },
+          "canonical_queued_to_processed_ms": {
+            "count": 128,
+            "mean": 637.062695,
+            "p50": 667.109521,
+            "p95": 818.918041,
+            "max": 902.971
+          },
+          "correction_latency": {
+            "count": 128,
+            "mean": 5.499418,
+            "p50": 5.387855,
+            "p95": 10.404072,
+            "max": 10.97459
+          },
+          "snapshot_bytes": 51688,
+          "trace_bytes": 752006,
+          "text_revisions": 30,
+          "text_revision_refused": [],
+          "salvaged_spans": 0,
+          "v2": {
+            "content_recall": 0.957592,
+            "wer": 0.082079,
+            "matched_word_speaker_accuracy": 0.954856,
+            "der_reference_speech": 0.066913,
+            "hypothesis_segments": 77
+          }
+        }
+      },
+      "trio_sessions": {
+        "lex_bill_ackman/A": {
+          "combined_rtf": 0.144172,
+          "witness_rtf": 0.040825,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 168000,
+          "snapshot_bytes": 12812
+        },
+        "lex_bill_ackman/B": {
+          "combined_rtf": 0.157004,
+          "witness_rtf": 0.047907,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 168000,
+          "snapshot_bytes": 12812
+        },
+        "lex_javier_milei/A": {
+          "combined_rtf": 0.153314,
+          "witness_rtf": 0.029962,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 208000,
+          "snapshot_bytes": 13109
+        },
+        "lex_javier_milei/B": {
+          "combined_rtf": 0.149342,
+          "witness_rtf": 0.037154,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 208000,
+          "snapshot_bytes": 13109
+        },
+        "lex_keyu_jin/A": {
+          "combined_rtf": 0.141079,
+          "witness_rtf": 0.036578,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 176000,
+          "snapshot_bytes": 11626
+        },
+        "lex_keyu_jin/B": {
+          "combined_rtf": 0.133391,
+          "witness_rtf": 0.04059,
+          "windows_applied": 6,
+          "rolling_max_depth": 1,
+          "retained_high_water_samples": 168000,
+          "snapshot_bytes": 11626
+        }
+      }
+    },
+    "_v2_report": {
+      "pass": true,
+      "note": "evaluator v2 axes, reported for continuity (M1-M4 gates name the deployed metrics)",
+      "per_case": {
+        "lex_bill_ackman": {
+          "A": {
+            "content_recall": 0.926136,
+            "wer": 0.204545,
+            "matched_word_speaker_accuracy": 0.920455,
+            "der_reference_speech": 0.111789,
+            "hypothesis_segments": 21
+          },
+          "B": {
+            "content_recall": 0.926136,
+            "wer": 0.204545,
+            "matched_word_speaker_accuracy": 0.920455,
+            "der_reference_speech": 0.111789,
+            "hypothesis_segments": 21
+          }
+        },
+        "lex_javier_milei": {
+          "A": {
+            "content_recall": 0.92,
+            "wer": 0.096,
+            "matched_word_speaker_accuracy": 0.92,
+            "der_reference_speech": 0.052269,
+            "hypothesis_segments": 14
+          },
+          "B": {
+            "content_recall": 0.92,
+            "wer": 0.096,
+            "matched_word_speaker_accuracy": 0.92,
+            "der_reference_speech": 0.052269,
+            "hypothesis_segments": 14
+          }
+        },
+        "lex_keyu_jin": {
+          "A": {
+            "content_recall": 0.985612,
+            "wer": 0.093525,
+            "matched_word_speaker_accuracy": 0.985612,
+            "der_reference_speech": 0.078495,
+            "hypothesis_segments": 15
+          },
+          "B": {
+            "content_recall": 0.985612,
+            "wer": 0.093525,
+            "matched_word_speaker_accuracy": 0.985612,
+            "der_reference_speech": 0.078495,
+            "hypothesis_segments": 15
+          }
+        },
+        "keyu-5m": {
+          "A": {
+            "content_recall": 0.957592,
+            "wer": 0.082079,
+            "matched_word_speaker_accuracy": 0.954856,
+            "der_reference_speech": 0.066913,
+            "hypothesis_segments": 77
+          },
+          "B": {
+            "content_recall": 0.957592,
+            "wer": 0.082079,
+            "matched_word_speaker_accuracy": 0.954856,
+            "der_reference_speech": 0.066913,
+            "hypothesis_segments": 77
+          }
+        }
+      }
+    }
+  }
+}

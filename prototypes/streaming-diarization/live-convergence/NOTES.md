@@ -259,3 +259,39 @@ loads `live_speaker_accuracy.py` out of a bare checkout with `-S` and no install
 display rule therefore lives in the leaf `moss_transcribe_diarize/live_surface.py`, which the
 scorer imports as a sibling and `app.live_session` re-exports. Verdict:
 `evidence/live-convergence-0824/M2-export-switch/`.
+
+```bash
+# E2 EXIT: the gates, measured through the DEPLOYED service (needs the running stack)
+prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m2-exit-<stamp>
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m2_exit.py \
+  --fresh-root /tmp/m2-exit-<stamp> --output /tmp/m2-gates.json
+# re-score the checked-in passes instead (no GPU, no service, gzipped traces are read in place)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m2_exit.py \
+  --fresh-root evidence/live-convergence-0824/M2-e2-exit/passes
+# its eight mutations, on a COPY of the passes (originals untouched)
+prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh \
+  evidence/live-convergence-0824/M2-e2-exit/passes /tmp/m2-mutations
+```
+
+`verify_m2_exit.py` scores the PRD's eight M2 gates on four warm-decoder passes; the clocks and
+comparators are fixed beforehand in `PREREGISTRATION-M2-exit.md`. Seven pass: trio rolling WER
+**.131357** (bound .150, grid projection .131861), per case .204545 / .096000 / .093525 against
+the baseline live .2614 / .1440 / .1942, content recall **.943916** (bound .940), five-minute WER
+**.082079** (bound .0985, paired file .050616), combined base+witness RTF `.133–.157` with
+rolling depth never above 1, accounting exact on 8/8 sessions, file mode byte-identical.
+
+**G-M2-4 misses and was preregistered to miss**: correction-after-provisional p95 **8.756675 s**
+against `6.0 s`. Iteration 10's F3 fixed the floor from measured decode latencies before the
+converger existed — with central ownership the oldest owned word has age `(L+S)/2`, so `L+S <= 12`
+is required and no geometry in the plan's grid qualifies (10/5 floor 6.46 s, the selected 10/10
+8.51 s). The row is unsigned; adding an unmeasured geometry is what the preregistration forbids.
+
+Two measurements worth carrying forward. The witness's serial cost is now priced: a base span
+waits behind a running window with p50 `0.6–0.8 ms` but p95 `136–214 ms` and max `0.65 s` on
+`lex_javier_milei` — bounded, never dropped, well inside the 2.5 s span cadence. And speaker
+quality moved without any E3 work: trio live DER `.111278` mean (baseline live `.1764`), the
+five-minute case `.0886` — already inside M3's `<= .0947`, because longer surface segments shrink
+the extent artifact. M3 must restate its comparators against this measurement. Verdict:
+`evidence/live-convergence-0824/M2-e2-exit/`.

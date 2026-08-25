@@ -1,0 +1,83 @@
+{
+  "artifact_schema_versions": {
+    "evaluator": 1,
+    "manifest": 1,
+    "summary": 1,
+    "trace": 1
+  },
+  "audio": {
+    "bytes": 9600000,
+    "duration_seconds": 300.0,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/audio.wav",
+    "pcm_sha256": "aec87df70a354a8f108e8cb452c333ce24881f3b2faa16594fd25b11bb9cbdde",
+    "sample_count": 4800000,
+    "sample_rate": 16000
+  },
+  "cli": {
+    "expect_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "expect_provider_hash": "4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f",
+    "expect_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+    "max_pacing_lag": 3.0,
+    "pace": 1.0,
+    "runs": 1
+  },
+  "descriptor": {
+    "bounds": {
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "stop_drain_deadline_seconds": 5.0
+    },
+    "config_hashes": {
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+    },
+    "feature_enabled": true,
+    "frame_samples": 8000,
+    "live_protocol": {
+      "capabilities": {
+        "binary": false,
+        "idempotent_frames": true,
+        "lanes": true,
+        "resumable": true
+      },
+      "max_protocol_version": 2,
+      "min_protocol_version": 2,
+      "protocol": "moss-live-service.v2"
+    },
+    "live_protocol_version": "moss-live-service.v1",
+    "provider_manifest_hash": "4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000,
+    "schema_version": 1,
+    "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b"
+  },
+  "expect_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+  "expect_provider_hash": "4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f",
+  "expect_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+  "expected_service": {
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "provider_manifest_hash": "4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f",
+    "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b"
+  },
+  "frame_count": 600,
+  "frame_samples": 8000,
+  "max_pacing_lag": 3.0,
+  "pace": 1.0,
+  "run_artifacts": [
+    {
+      "evaluator": "run-001/evaluator.jsonl",
+      "run_index": 1,
+      "summary": "run-001/summary.json",
+      "trace": "run-001/trace.jsonl"
+    }
+  ],
+  "runs": 1,
+  "schema_version": 1
+}

@@ -1638,3 +1638,103 @@ appended at the iteration 4->5 boundary]
   5-minute rolling WER <= .0985, exact accounting, file mode byte-identical). Then the §10.6
   5-minute soak. Step 2's F3 says the p95 gate will be MISSED at this geometry -- measure it
   honestly; a gate that fails is E2's stop rule, not a tuning invitation.
+
+2026-08-25 iteration 18 (run 20260825-042645-70858) - M2 (plan E2) EXIT measured through the
+  deployed service. 7 of 8 gates pass; G-M2-4 misses exactly as preregistered.
+- Target: context.md candidate 6j, the only M2 item left and the lowest open item. A MEASUREMENT,
+  not a change: no production file was touched.
+- Service restart RECORDED (per PRD): stopped pid 22561 (M1 build), launched pid 44278 at
+  2026-08-25 05:52:14 local on repo working tree 4d6cb29, same argv, log
+  ~/.local/share/moss-transcribe-diarize/g3/web_cli-campaign-20260825-055214.log. Descriptors
+  before/after identical (evidence/.../M2-e2-exit/restart-{pre,post}.txt). 4070 Ti untouched.
+  A 65-second smoke replay before committing to the passes confirmed rolling is live on the
+  deployed path: 6 rolling_decode_queued / 6 completed / 6 text_revision_applied, 21 surface
+  segments, accepted == accounted.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M2-exit.md  (new; the clocks,
+      the comparators and seven predictions, written BEFORE the passes were launched)
+  prototypes/streaming-diarization/live-convergence/verify_m2_exit.py           (new; eight gates)
+  prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh           (new; 8 mutations
+      on a COPY of the passes)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                    (index + commands)
+  evidence/live-convergence-0824/M2-e2-exit/{NOTES.md,gates.json,gates-console.txt,mutations.txt,
+      mutations/,restart-{pre,post}.txt,pytest-full.txt,sha256.txt,passes/}     (new bundle, 1.0M)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m2-exit-20260825-055400
+    Four sequential warm-decoder passes, one in-flight vLLM request, 09:55:14-10:14:29Z. trio-A/B
+    exit 1 on acquired_nfl (pre-existing empty reference, after every scored case is written);
+    keyu5m-A/B exit 0.
+  - verify_m2_exit.py --fresh-root /tmp/m2-exit-20260825-055400 -> exit 1, seven of eight PASS:
+      G-M2-1 trio rolling WER <= .150        PASS  .131357   (grid projection .131861)
+      G-M2-2 per case < baseline live        PASS  bill .204545 (-.0568), milei .096000 (-.0480),
+                                                   keyu .093525 (-.1007)
+      G-M2-3 trio content recall >= .940     PASS  .943916   (= the grid's digits, v2 evaluator)
+      G-M2-4 correction p95 <= 6.0 s         FAIL  8.756675 s (floor at this geometry 8.51 s)
+      G-M2-5 combined RTF < 1, queues bound  PASS  .133-.157; depth <=1; 0 refusals/stale/failed;
+                                                   high-water 168000-208000 of 320000; 6/6 and
+                                                   30/30 windows planned, admitted, applied
+      G-M2-6 five-minute WER <= .0985        PASS  .082079   (baseline live .1464, file .050616)
+      G-M2-7 accepted == accounted           PASS  8/8 sessions, status succeeded
+      G-M2-8 file mode byte-identical        PASS  5 cases x 2 passes vs the 2026-08-24 baseline
+  - The checked-in bundle re-scores with no GPU and no service from its own gzipped traces:
+    verify_m2_exit.py --fresh-root evidence/live-convergence-0824/M2-e2-exit/passes -> same eight
+    verdicts, same p95 to 6 dp.
+  - .venv/bin/python -m pytest tests/ -q  ->  1091 passed, 2 skipped, 392 subtests (unchanged; no
+    production code was touched this iteration).
+  - mutate_m2_exit.sh <passes> <out>: eight artifact mutations, each flipping its own gate and no
+    other (M1 flips G-M2-1 and G-M2-2 because .40 is above the bound AND above bill's baseline);
+    control restored identically.
+- EVERY PREDICTION ON RECORD HELD. The preregistration predicted trio WER "near .131861"
+  (.131357), recall "~= .9439" (.943916), combined RTF "~= 0.2" (.133-.157) and a G-M2-4 p95 "in
+  the 8-12 s band" (8.757). The one open question -- the five-minute case, called a coin flip at
+  a projected .0966 against .0985 -- came in materially better at .082079.
+- G-M2-4, THE MISS, AND WHY IT IS NOT A `.stop`:
+  - Iteration 10's F3 fixed the structural floor from measured decode latencies BEFORE the
+    converger was written: with central ownership the oldest owned word has age (L+S)/2, so
+    L+S <= 12 is required, and the plan's grid offers 10/5 (6.46 s), the selected 10/10 (8.51 s),
+    15/10 (11.64 s), 15/7.5 (12.81 s). No geometry in the preregistered grid can pass G6.
+  - Measured 8.756675 s pooled over 160 corrections in the trio (mean 4.760, p50 5.407, max
+    10.890); the five-minute case reads p95 10.39 s on the same clock.
+  - It is not a queue defect and not a regression: depth never exceeded 1, zero admission
+    refusals, zero stale completions, zero failed windows, and the base path's own publication
+    latency is unchanged (queued->processed p50 ~0.6 s, same as the M1 exit).
+  - PRD's `.stop` rule is for a hard failure with plan §15's stop conditions applying. NONE of
+    §15's global stop conditions fired: no case-level WER regression (every case improved), file
+    mode unchanged, accepted/accounted equality holds, scorer self-tests green, no truth read
+    during reconciliation, single-session real time sustained. The row is left UNSIGNED, the same
+    disposition as M0d's G2 and M1's G-M1-1, and exactly what iteration 10's D-M2-2 recommended
+    before the measurement existed. The campaign continues to M3.
+  - D-M2-3 OPEN FOR THE OWNER: accept 10/10 with ~8.8 s corrections, or authorise an unmeasured
+    L + S <= 12 geometry (6/6, 8/4) and re-run the §10.2 grid to select it. Adding an arm now is
+    precisely what the preregistration forbids, so this iteration did not.
+- Learned:
+  - The five-minute case is REPRODUCIBLE on this build: both passes returned identical WER, DER,
+    recall and segment counts on all four scored cases. It spread .0014 WER / .0030 DER at the M1
+    exit. Fewer, longer decodes give the deployed decoder fewer chances to flip -- the surface is
+    dominated by 30 window decodes rather than 128 span decodes. Candidate 4c is answered at N=2.
+  - Speaker quality moved without any E3 code, and it invalidates M3's stated comparators. Trio
+    live DER .127333 / .117333 / .089167 (mean .111278) against the baseline live .2235 / .1945 /
+    .1112, speaker accuracy mean .888722 against M3's .8437 floor, five-minute DER .0886 against
+    M3's <= .0947. Longer surface segments shrink the extent artifact plan §3.4 named. M3 must
+    restate its bar as "no per-case regression vs THIS measurement, and the PRD's absolute
+    bounds", in its preregistration, before any S1 arm runs -- otherwise M3 passes by doing
+    nothing.
+  - The witness's serial cost (iteration 14's D2) is now priced rather than assumed: canonical
+    queue wait p50 0.62-0.76 ms on every session, p95 136-214 ms and max 649-654 ms on
+    lex_javier_milei, max 251-266 ms on the five-minute case. A base span waits behind a running
+    window and is never dropped or overtaken; 0.65 s is well inside the 2.5 s span cadence.
+  - Three mutation probes reported nothing on their first run and had to be rewritten: M2 patched
+    one of the two passes the gate AVERAGES, M4 shifted one session out of the six the pooled
+    distribution is drawn from, M6 assumed a gate that turned out to pass. Broken probes, not
+    tuned gates -- no bound, comparator or definition moved. A mutation over an aggregate has to
+    move the aggregate.
+  - The G6 "changed region" test cannot be read off the event stream, by design: payloads carry
+    no meeting words. It is decided from the terminal snapshot instead, by running the two
+    PRODUCTION exporters over the same snapshot -- `_hypothesis_from_committed` (the base) and
+    `_hypothesis_from_surface` (what the reader saw) -- and comparing words inside the owned
+    region. Same primitive the export switch shipped in iteration 17.
+- Next: candidate 7, M3 (plan E3) speaker authority. Its FIRST step is the preregistration that
+  restates the comparators against the M2 exit measurement (see above), then the §11.1 S1 arm
+  over the standing bench, 2.5 s base only, embeddings strictly from witness-owned intervals
+  (plan D5). Do not re-open the geometry or the salvage gate on the way.

@@ -1,0 +1,12 @@
+== control ==
+control exit=1 (the measurement itself; some gates may legitimately fail)
+m1_trio_wer_inflated exit=1 flipped=G_M2_1_trio_rolling_wer:True->False,G_M2_2_per_case_improvement:True->False
+m2_case_equal_to_baseline exit=1 flipped=G_M2_2_per_case_improvement:True->False
+m3_half_the_words_never_published exit=1 flipped=G_M2_3_content_recall:True->False
+m4_correction_clock_shifted_5s_earlier exit=0 flipped=G_M2_4_correction_p95:False->True
+m5_two_windows_in_flight exit=1 flipped=G_M2_5_combined_rtf_bounded_queues:True->False
+m6_five_minute_wer_inflated exit=1 flipped=G_M2_6_five_minute_rolling_wer:True->False
+m7_one_second_unaccounted exit=1 flipped=G_M2_7_exact_sample_accounting:True->False
+m8_file_arm_gained_a_row exit=1 flipped=G_M2_8_file_mode_byte_identical:True->False
+== done ==
+control restored identically: True

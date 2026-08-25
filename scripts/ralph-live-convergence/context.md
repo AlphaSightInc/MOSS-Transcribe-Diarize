@@ -71,15 +71,17 @@
 
 ## Current state
 
-(2026-08-25, after iteration 16)
+(2026-08-25, after iteration 18)
 
-- Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
-  build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 44278, restarted 2026-08-25 05:52:14 onto the M2
+  build** (repo working tree @ `4d6cb29`) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
-  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after both
-  restarts (`evidence/.../M0d-paired-reacquisition/restart-{pre,post}.txt` for the M0d build,
-  `evidence/.../M1-e1-exit/restart-{pre,post}.txt` for this one) — the build changed and
-  nothing else. Restart again after any production change, and record it.
+  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after every
+  restart (`evidence/.../M0d-paired-reacquisition/`, `.../M1-e1-exit/`, `.../M2-e2-exit/`
+  `restart-{pre,post}.txt`) — the build changed and nothing else. **The rolling witness is ON in
+  the deployed service**: the bundle wires `rolling_decoder_factory` unconditionally, so any live
+  session now plans, decodes and applies windows. Restart again after any production change, and
+  record it.
 - Paired baseline (deployed stack, 2026-08-24): trio FILE WER .1039 / TBSA .9106 / DER .1021 /
   spk_acc .8979 vs LIVE .1999 / .8384 / .1764 / .8236; 5-min keyu FILE .0506/.0579(DER) vs
   LIVE .1464/.1315. Artifacts + drivers: `prototypes/live-file-gap-baseline-20260824/`.
@@ -601,8 +603,49 @@
   relying on it). §10.5's order no longer protects anything — step 7 is done — so the restart onto
   this build is now the FIRST thing the M2 exit measurement does, and it must be recorded in
   progress.txt when it happens.
-- Rest of the ladder (M2 exit measurement + §10.6 soak, M3-M5) unimplemented; working tree carries
-  the plan, evidence prototypes, and this scaffold.
+- **M2 EXIT MEASURED (iteration 18): 7 of 8 gates pass, M2 closes on everything but G-M2-4.**
+  Service restarted onto the M2 build (pid 44278), four warm-decoder passes 09:55:14-10:14:29Z,
+  gates by `verify_m2_exit.py` (definitions preregistered in `PREREGISTRATION-M2-exit.md`).
+  PASS: trio rolling WER **.131357** (bound .150; grid projection .131861), per case
+  .204545 / .096000 / .093525 vs baseline live .2614 / .1440 / .1942 (deltas -.0568 / -.0480 /
+  -.1007), content recall **.943916** (bound .940, = the grid's digits), five-minute WER
+  **.082079** (bound .0985; paired file .050616), combined base+witness RTF **.133-.157** with
+  rolling depth never above 1 / 0 admission refusals / 0 stale / 0 failed windows / high-water
+  168000-208000 of 320000, accounting exact on 8/8 sessions, file mode byte-identical (5 cases x
+  2 passes). **FAIL: G-M2-4 correction-after-provisional p95 8.756675 s > 6.0 s.** Full suite
+  1091 passed / 2 skipped / 392 subtests. Eight artifact mutations, each flipping its own gate.
+  Evidence: `evidence/live-convergence-0824/M2-e2-exit/` (re-scorable with no GPU from its own
+  `passes/`).
+- **G-M2-4's miss was preregistered before the converger existed** (iteration 10's F3): with
+  central ownership the oldest owned word has age `(L+S)/2`, so `L+S <= 12` is required and NO
+  geometry in the plan's grid qualifies (10/5 floor 6.46 s, selected 10/10 8.51 s, 15/10 11.64 s,
+  15/7.5 12.81 s). Measured 8.757 s trio / 10.39 s five-minute, mean 4.76 s, max 10.89 s. It is
+  not a queue problem and not a regression - depth <= 1, zero refusals, base publication latency
+  unchanged. Row **unsigned**, same disposition as M0d's G2 and M1's G-M1-1; no `.stop`, because
+  none of plan §15's global stop conditions fired (no case-level WER regression, file mode
+  unchanged, accounting exact, scorer self-tests green, no truth read). **D-M2-3 open for the
+  owner**: accept 10/10 with ~8.8 s corrections, or authorise an unmeasured `L + S <= 12`
+  geometry and re-run the §10.2 grid. Adding an arm now is what the preregistration forbids.
+- **The five-minute case is reproducible now.** Both passes returned identical WER / DER / recall
+  / segment counts on all four scored cases, including the five-minute one, which spread
+  .0014 WER / .0030 DER at the M1 exit. Fewer, longer decodes give the deployed decoder fewer
+  chances to flip: 128 span decodes plus 30 window decodes, and the published surface is
+  dominated by the 30. Candidate 4c (5-minute noise floor) is answered at N=2 for this build.
+- **Speaker quality moved without any E3 work, and it moves M3's comparators.** Trio live DER
+  .127333 / .117333 / .089167 (mean **.111278**, baseline live .2235 / .1945 / .1112) and
+  duration-weighted speaker accuracy .8727 / .8827 / .9108 (mean **.888722**, M3's floor .8437);
+  five-minute DER **.0886**, already inside M3's `<= .0947`. Longer surface segments shrink the
+  extent artifact. **M3 must restate its gates against this measurement**, or it will grade
+  itself against a surface nobody serves.
+- **The witness's serial cost is priced (iteration 14's D2).** A running window holds the
+  session's single in-flight slot, so a base span can wait behind it: canonical queue wait p50
+  0.62-0.76 ms everywhere, but p95 136-214 ms and max 649-654 ms on `lex_javier_milei`, max
+  251-266 ms on the five-minute case. Never dropped, never overtaken, and well inside the 2.5 s
+  span cadence. Rolling's own queue wait is the mirror: p50 .016 ms, max 133 ms (a window waiting
+  for canonical work). §10.6's other quantities are in `gates.json` under `_soak_10_6`: snapshot
+  bytes 12.8K (1 min) / 51.7K (5 min), trace 752 KB, base RTF .09-.12, witness RTF .030-.048.
+- Rest of the ladder (M3-M5) unimplemented; working tree carries the plan, evidence prototypes,
+  and this scaffold.
 
 ## Validation
 
@@ -715,6 +758,18 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh /tmp/export-mutations
 # export tests (export == screen on a real runtime, the fallback, S00, the clamp, the refusals)
 .venv/bin/python -m pytest tests/test_live_export_surface.py -q
+# E2 EXIT: four warm-decoder passes against the running service, then the eight gates
+prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m2-exit-<stamp>
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m2_exit.py \
+  --fresh-root /tmp/m2-exit-<stamp> --output /tmp/m2-gates.json
+# re-score the checked-in M2 exit passes instead (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m2_exit.py \
+  --fresh-root evidence/live-convergence-0824/M2-e2-exit/passes
+# its eight mutations, on a COPY of the passes (originals untouched)
+prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh \
+  evidence/live-convergence-0824/M2-e2-exit/passes /tmp/m2-mutations
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -780,23 +835,22 @@ prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh /tmp/
    unrevised session, measured, and a conditional export is a branch for nothing. Do NOT import
    anything from `moss_transcribe_diarize.app` into `live_speaker_accuracy.py` - the F-cert reducer
    loads it from a bare checkout with `-S`.
-6j. **M2 EXIT - NEXT**: the E2 gates measured end-to-end through the DEPLOYED service, which is
-   what the PRD's M2 milestone asks for and the only M2 item left. Order: (1) restart `web_cli`
-   (port 7861) onto this build with the `scripts/g3-attended-session.sh` / `moss-vllm-tunnel.sh`
-   pattern and RECORD the restart in progress.txt; (2) `run_paired_passes.sh /tmp/m2-exit-<stamp>`
-   (four warm-decoder passes, trio + 5-minute, ~19 min); (3) read the gates - rolling WER <= .150
-   mean AND < baseline live per case (bill .2614 / milei .1440 / keyu .1942), content recall >=
-   .940 mean, correction-after-provisional p95 <= 6.0 s, single-session combined RTF < 1 with
-   bounded queues, 5-minute-case rolling WER <= .0985, exact sample accounting, file mode
-   byte-identical. Then the §10.6 5-minute soak, which has both a stream to read
-   (`rolling_decode_queued`/`completed` carry queue delay and the decode record) and a screen to
-   time. F3 (step 2) says G6 will be MISSED at this geometry; measure it honestly rather than
-   re-selecting an arm, and measure D2's serial witness cost (a witness holds the session's single
-   in-flight slot) in the same soak. F2 (step 2) says duplicate phrases at a join ship with this
-   geometry; do not add a de-duplicator without measuring one (corpus: `M2-rolling-grid/grid.json`).
-   A gate that fails here is E2's stop rule, not a tuning invitation.
-7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
-   2.5 s base only) → production wiring.
+6j. ~~**M2 EXIT**~~ - MEASURED iteration 18, 7 of 8 gates pass (see Current state). The open
+   item is G-M2-4 and it needs an owner ruling (D-M2-3), not more code: no geometry in the
+   preregistered grid can pass a 6.0 s correction p95, and adding one is what the preregistration
+   forbids. Do NOT re-run the passes hoping the latency falls; the floor is arithmetic. The §10.6
+   soak quantities were read off the same five-minute passes (Appendix B's rescope) and are in
+   `M2-e2-exit/gates.json` under `_soak_10_6`; only portal render time is still outstanding and
+   it is the attended browser item.
+7. **M3 S1 speaker authority - NEXT**: prototype (`compare_speaker_authority.py` per plan §11.1,
+   2.5 s base only) → production wiring. **Restate the comparators first**: M3's PRD gates name
+   the baseline live DER (.2235 / .1945 / .1112, mean bound .1393) and speaker accuracy (.8437),
+   but the M2 exit already measures DER mean .111278 / spk_acc .888722 on the trio and .0886 on
+   the five-minute case with no E3 code at all. Gating M3 against a surface nobody serves would
+   let it pass by doing nothing; the honest bar is "no per-case regression vs the M2 exit
+   measurement AND the PRD's absolute bounds", and that restatement belongs in the M3
+   preregistration, written before any S1 arm runs. The evaluator-v2 matched-word speaker axis
+   (.9549 on the five-minute case) is the non-gameable half and must be reported beside DER.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed
    prerelease amendment also gates terminal DER within .020 of the paired file arm per case and
    requires §12.2 cold/warm model-readiness reporting).
