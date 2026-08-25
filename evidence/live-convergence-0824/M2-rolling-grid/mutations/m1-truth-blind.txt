@@ -1,0 +1,13 @@
+[run 0] lex_bill_ackman base  wer=0.261364 recall=0.863636 spans=24 audio_s=60 fresh=0
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m1-truth-blind.py", line 907, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m1-truth-blind.py", line 574, in main
+    merged, report, contributed = stitch(
+                                  ^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m1-truth-blind.py", line 227, in stitch
+    bench.load_reference("lex_bill_ackman")
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m1-truth-blind.py", line 97, in _forbidden
+    raise ReferenceReadInsideReconciler(case)
+ReferenceReadInsideReconciler: lex_bill_ackman

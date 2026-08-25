@@ -31,7 +31,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 9)
+(2026-08-25, after iteration 10)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -56,11 +56,13 @@
   at zero GPU); identity misassignment 0.00 s (S00 = sub-0.5 s fragments, ceiling
   spk_acc .8437 via adoption+margin); TSA/coverage/DER carry extent artifact — WER + recall
   are the honest text metrics until evaluator v2.
-- Rolling evidence: lexical stitcher 10/5 → trio WER .1289
-  (`prototypes/live-file-gap-context/proto_context_arms.py`, arm a2); time-proportional
-  stitcher → .146 (`prototypes/streaming-diarization/live-multiview-prototype/`); seam5
-  refuted (worse than nothing); terminal = file exactly. Grid (§10.2) decides the production
-  policy; decode volume target ≤ ~2× audio.
+- Rolling evidence: 10/5 central ownership → trio WER .1289
+  (`prototypes/live-file-gap-context/proto_context_arms.py`, arm a2 — the plan calls this the
+  "lexical" stitcher but it cuts by interpolated midpoint, i.e. it is the *char* policy; see the
+  M2 grid); time-proportional stitcher → .146
+  (`prototypes/streaming-diarization/live-multiview-prototype/`); seam5 refuted (worse than
+  nothing); terminal = file exactly. **The §10.2 grid has now decided the production policy
+  (iteration 10): `10/10`, trio WER .131861, 1.000× added decode audio.**
 - **M0a CLOSED (iteration 1).** `verify_replay_roundtrip.py` now exits 0. The replay client
   dropped three fields, not two: `CanonicalCommit.revised_transcript`,
   `LiveSnapshot.label_revision_version`, and `LiveServiceDescriptor.live_protocol` (v2
@@ -288,8 +290,53 @@
 - **Still owed to the new ADR: one pointer from `docs/design-streaming-diarization.md`.** Deliberately
   deferred to M5, which already edits that file for the dated campaign verdict -- one edit, not two.
   If M5 changes shape, the pointer still has to land somewhere or the record is orphaned.
-- Rest of the ladder (M2-M5) unimplemented; working tree carries the plan, evidence prototypes,
-  and this scaffold.
+- **M2 STEP 2 MEASURED (iteration 10): the §10.2 grid ran, all preregistered gates pass, the arm is
+  selected.** `compare_rolling_grid.py` -- 4 geometries x 3 stitch policies x 3 runs, 143 distinct
+  decodes per run, 114.8 s wall. **Eleven of twelve arms pass G1-G3** (only `10/5:uniform` misses
+  G3 at recall .9346). **Plan §10.4 selects `10/10` -- a 10 s window on a 10 s stride**: trio WER
+  .199870 -> **.131861**, content recall .9135 -> **.9439**, at **1.000** added decode-audio-second
+  per audio-second (half the 10/5 reference arm's 1.833). Evidence:
+  `evidence/live-convergence-0824/M2-rolling-grid/`; preregistration
+  `prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M2-grid.md`.
+- Controls landed EXACT, which is what makes the grid trustworthy: the base control (recorded 2.5 s
+  span grid, decoded alone) reproduces the published live trio WER **.199870 / recall .913490**, and
+  `10/5:char` reproduces `proto_context_arms` arm `a2` at **.128926 / .948477** -- every printed
+  digit. **Noise floor at N=3 is ZERO**: all 12 arms and the base returned identical WER and recall
+  on three independently decoded runs, extending iteration 8's N=2 trio finding.
+- **The plan's own naming of the stitchers is wrong and the preregistration says so.** §10.2 calls
+  the lexical policy "the reference candidate ... implementation is `proto_context_arms.py` (arm
+  a2)", but a2 cuts by interpolated word midpoint against a central region -- that is the
+  *character-proportional* policy. The published `.1289` belongs to `char`, and this grid attaches
+  it there. The three names are kept; only the arm identity is corrected.
+- **F1: the selected geometry has no overlap, so it has no stitcher.** At stride == window the
+  three policies produce byte-identical word sequences (preregistered prediction P3, verified 9/9
+  case-runs). Production consequence for M2 step 3: the converger needs **no** ownership
+  arithmetic, no lexical alignment and no word-time interpolation -- a window's words replace
+  exactly `[lo, hi)` and the frontier advances to `hi`. Materially less code than plan §6's M2 sketch.
+- **F2: duplicated words at joins are real, measured, and policy-dependent.** At 10/10 every policy
+  republishes a phrase at one join per run (bill, t=50 s: window [40,50] ends "...the. You know."
+  and [50,60] starts "You know, it's many investors..."), because the speaker's phrase straddles the
+  cut and zero overlap leaves no evidence any stitcher could use. Where there IS overlap, only
+  `char` duplicates (1 join/run at 10/5 and 15/7.5); `uniform` and `lexical` duplicate nothing
+  anywhere. This does **not** violate ADR-0005 D4 -- every arm has one owner per interval -- it
+  shows that interval discipline alone does not prevent duplicated *words*.
+- **F3: no arm in the plan's grid can pass G6 (rolling correction p95 <= 6.0 s) at full-window
+  granularity.** Structural floor from measured decode latencies over changed regions only:
+  10/5 **6.46 s**, 10/10 **8.51 s**, 15/10 11.64 s, 15/7.5 12.81 s. The arithmetic: with central
+  ownership the oldest owned word has age `(L+S)/2`, so `L+S <= 12` is required and the plan's
+  cheapest geometry is `L+S = 20`. **Cost and latency rank the geometries in opposite orders.**
+  The preregistration fixed this floor as reported-not-selecting, so the selection stands; but M2
+  cannot close on G6 with any grid geometry, and that is known before the code exists.
+- **Two owner decisions are open on M2 step 2** (both in that NOTES.md, both with a recommendation,
+  neither blocking): **D-M2-1** ship the §10.4-selected `10/10` (.1319, 1.000x) or pay 1.5x for
+  `15/10:lexical` (.1075 -- within .0035 of the paired FILE arm's .103946 -- recall .9597, zero join
+  duplicates)? Recommendation: ship 10/10, record 15/10:lexical as the measured upgrade path.
+  **D-M2-2** G6 is unreachable inside the grid; recommendation is to measure it for real in the
+  §10.6 soak and leave M2's row unsigned on it if it misses, as M0d's G2 and M1's G-M1-1 already are.
+- The grid is replayable **with no GPU**: `--cache-dir evidence/live-convergence-0824/M2-rolling-grid/decode-cache`.
+  The five-mutation sweep uses the same cache and issues zero MOSS requests.
+- Rest of the ladder (M2 step 3, M3-M5) unimplemented; working tree carries the plan, evidence
+  prototypes, and this scaffold.
 
 ## Validation
 
@@ -345,6 +392,15 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # E2 step 1: is the text-finalization ADR still the plan's D1-D7 verbatim? (exit 0 = yes)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py
+# E2 step 2: the §10.2-§10.4 rolling grid (add --cache-dir <bundle>/decode-cache for no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_rolling_grid.py \
+  --cases lex_bill_ackman,lex_javier_milei,lex_keyu_jin \
+  --windows 10/5,10/10,15/7.5,15/10 --stitches char,uniform,lexical --runs 3 \
+  --output /tmp/moss-rolling-grid.json
+# its five mutations, each caught by its own guard (zero MOSS requests)
+prototypes/streaming-diarization/live-convergence/mutate_rolling_grid.sh \
+  evidence/live-convergence-0824/M2-rolling-grid/decode-cache /tmp/grid-mutations
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -377,20 +433,23 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    answer, and the preregistration forbids it.
 6. ~~**M2 step 1: the text-finalization ADR**~~ - DONE iteration 9 (see Current state). Appendix B
    Q8's precondition for E2 implementation is satisfied and mechanically checked.
-6b. **M2 step 2: the §10.2-§10.3 grid - NEXT.** Write
-   `prototypes/streaming-diarization/live-convergence/compare_rolling_grid.py`: windows 10/5,
-   10/10, 15/7.5, 15/10 x stitchers char/uniform/lexical, reconciler truth-blind, starting from
-   `prototypes/live-file-gap-context/proto_context_arms.py`'s lexical stitcher (arm `a2`, the
-   reference candidate at trio WER .1289). Preregister the questions and the §10.4 selection rule
-   (**cheapest arm passing G1-G3 and the per-case gates**, never TBSA alone; if no arm passes, no
-   rolling production code) BEFORE the first arm runs, as M1a/M1 did. The grid decodes real audio,
-   so it costs GPU: one in-flight request, and it must print every decode window, ownership region,
-   selected/dropped word, duplicate check, latency, decoded-audio work, rolling-PCM high-water mark,
-   endpoint counter delta, and final metric (§10.3).
-6c. **M2 step 3: production per plan §10.5 order** (M2 converger -> M3 word-revision authority ->
-   M5 `submit_live_refinement` -> wire base commits -> snapshot/event serialization -> portal
-   `effective_transcript` -> export switch **last**, only after terminal/effective export tests
-   pass, in the same reviewed change). The ADR of step 1 is the governing record for all of it.
+6b. ~~**M2 step 2: the §10.2-§10.4 grid**~~ - MEASURED iteration 10, all preregistered gates pass.
+   Selected arm: **`10/10`** (10 s window, 10 s stride, no stitcher). Two owner decisions recorded
+   (D-M2-1 cost-vs-quality, D-M2-2 the unreachable G6), neither blocking. Do NOT re-run the grid
+   hoping for a different arm; N=3 spread is exactly zero and the selection rule was preregistered.
+6c. **M2 step 3: production per plan §10.5 order - NEXT.** (plan M2 converger -> plan M3
+   word-revision authority -> plan M5 `submit_live_refinement` -> wire base commits ->
+   snapshot/event serialization per §7.3/§7.4 -> portal `effective_transcript` -> export switch
+   **last**, only after terminal/effective export tests pass, in the same reviewed change.)
+   `docs/adr/0005-live-text-finalization-authority.md` is the governing record: two producers, one
+   seam (`LiveSession.apply_text_revision`), seven validations, four snapshot fields, seven events.
+   Build the **selected 10/10 geometry**, and let F1 keep it small - at zero overlap there is no
+   ownership rule and no word-time interpolation to implement, just "the window's words replace
+   `[lo, hi)`, frontier advances to `hi`". F2 says the duplicate-phrase-at-a-seam behaviour ships
+   with that geometry; do not add a de-duplicator without measuring one (the corpus for it already
+   exists in the bundle's `grid.json`). F3 says G6 will be missed; measure it honestly in the §10.6
+   soak rather than designing around an unpreregistered geometry. Restart `web_cli` onto the build
+   and record it before any paired rerun; file mode must stay byte-identical.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

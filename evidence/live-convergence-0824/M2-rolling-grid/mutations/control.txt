@@ -1,0 +1,63 @@
+[run 0] lex_bill_ackman base  wer=0.261364 recall=0.863636 spans=24 audio_s=60 fresh=0
+[run 0] lex_bill_ackman        10/5:char  wer=0.198864 recall=0.931818 tbsa=0.8752 der=0.1181 win=11 added=1.833x dup=1 corr_p95=5.326184667064808
+[run 0] lex_bill_ackman     10/5:uniform  wer=0.204545 recall=0.920455 tbsa=0.8690 der=0.1251 win=11 added=1.833x dup=0 corr_p95=7.028732499922626
+[run 0] lex_bill_ackman     10/5:lexical  wer=0.176136 recall=0.937500 tbsa=0.8645 der=0.1639 win=11 added=1.833x dup=0 corr_p95=7.028732499922626
+[run 0] lex_bill_ackman       10/10:char  wer=0.198864 recall=0.926136 tbsa=0.8798 der=0.1225 win=6 added=1.000x dup=1 corr_p95=7.772710541030392
+[run 0] lex_bill_ackman    10/10:uniform  wer=0.198864 recall=0.926136 tbsa=0.8798 der=0.1225 win=6 added=1.000x dup=1 corr_p95=7.772710541030392
+[run 0] lex_bill_ackman    10/10:lexical  wer=0.198864 recall=0.926136 tbsa=0.8798 der=0.1225 win=6 added=1.000x dup=1 corr_p95=7.772710541030392
+[run 0] lex_bill_ackman      15/7.5:char  wer=0.198864 recall=0.937500 tbsa=0.8930 der=0.0937 win=7 added=1.750x dup=0 corr_p95=10.678872958058491
+[run 0] lex_bill_ackman   15/7.5:uniform  wer=0.193182 recall=0.937500 tbsa=0.8921 der=0.0980 win=7 added=1.750x dup=0 corr_p95=12.11618574988097
+[run 0] lex_bill_ackman   15/7.5:lexical  wer=0.181818 recall=0.937500 tbsa=0.8811 der=0.1274 win=7 added=1.750x dup=0 corr_p95=12.11618574988097
+[run 0] lex_bill_ackman       15/10:char  wer=0.170455 recall=0.943182 tbsa=0.8703 der=0.1360 win=6 added=1.500x dup=0 corr_p95=10.466361458064057
+[run 0] lex_bill_ackman    15/10:uniform  wer=0.176136 recall=0.943182 tbsa=0.8692 der=0.1344 win=6 added=1.500x dup=0 corr_p95=12.11618574988097
+[run 0] lex_bill_ackman    15/10:lexical  wer=0.170455 recall=0.943182 tbsa=0.8691 der=0.1526 win=6 added=1.500x dup=0 corr_p95=12.11618574988097
+[run 0] lex_javier_milei base  wer=0.144000 recall=0.920000 spans=32 audio_s=60 fresh=0
+[run 0] lex_javier_milei        10/5:char  wer=0.080000 recall=0.928000 tbsa=0.8723 der=0.1641 win=11 added=1.833x dup=0 corr_p95=6.449314334061928
+[run 0] lex_javier_milei     10/5:uniform  wer=0.104000 recall=0.912000 tbsa=0.8796 der=0.1476 win=11 added=1.833x dup=0 corr_p95=6.478772166050039
+[run 0] lex_javier_milei     10/5:lexical  wer=0.088000 recall=0.928000 tbsa=0.8997 der=0.1279 win=11 added=1.833x dup=0 corr_p95=7.597179500153288
+[run 0] lex_javier_milei       10/10:char  wer=0.096000 recall=0.920000 tbsa=0.9063 der=0.1173 win=6 added=1.000x dup=0 corr_p95=8.507251500049605
+[run 0] lex_javier_milei    10/10:uniform  wer=0.096000 recall=0.920000 tbsa=0.9063 der=0.1173 win=6 added=1.000x dup=0 corr_p95=8.507251500049605
+[run 0] lex_javier_milei    10/10:lexical  wer=0.096000 recall=0.920000 tbsa=0.9063 der=0.1173 win=6 added=1.000x dup=0 corr_p95=8.507251500049605
+[run 0] lex_javier_milei      15/7.5:char  wer=0.096000 recall=0.936000 tbsa=0.8836 der=0.1463 win=7 added=1.750x dup=1 corr_p95=11.26055216802284
+[run 0] lex_javier_milei   15/7.5:uniform  wer=0.088000 recall=0.936000 tbsa=0.8856 der=0.1463 win=7 added=1.750x dup=0 corr_p95=10.814343126043678
+[run 0] lex_javier_milei   15/7.5:lexical  wer=0.088000 recall=0.928000 tbsa=0.8680 der=0.1679 win=7 added=1.750x dup=0 corr_p95=12.722047084011137
+[run 0] lex_javier_milei       15/10:char  wer=0.104000 recall=0.928000 tbsa=0.9050 der=0.1175 win=6 added=1.500x dup=0 corr_p95=11.541199124981649
+[run 0] lex_javier_milei    15/10:uniform  wer=0.112000 recall=0.920000 tbsa=0.9052 der=0.1149 win=6 added=1.500x dup=0 corr_p95=11.541199124981649
+[run 0] lex_javier_milei    15/10:lexical  wer=0.080000 recall=0.936000 tbsa=0.9051 der=0.1248 win=6 added=1.500x dup=0 corr_p95=12.722047084011137
+[run 0] lex_keyu_jin base  wer=0.194245 recall=0.956835 spans=24 audio_s=60 fresh=0
+[run 0] lex_keyu_jin        10/5:char  wer=0.107914 recall=0.985612 tbsa=0.8986 der=0.1061 win=11 added=1.833x dup=0 corr_p95=5.271560542983934
+[run 0] lex_keyu_jin     10/5:uniform  wer=0.129496 recall=0.971223 tbsa=0.9016 der=0.0936 win=11 added=1.833x dup=0 corr_p95=7.654375709011219
+[run 0] lex_keyu_jin     10/5:lexical  wer=0.100719 recall=1.000000 tbsa=0.9058 der=0.1014 win=11 added=1.833x dup=0 corr_p95=7.654375709011219
+[run 0] lex_keyu_jin       10/10:char  wer=0.100719 recall=0.985612 tbsa=0.9055 der=0.0973 win=6 added=1.000x dup=0 corr_p95=7.746256708051078
+[run 0] lex_keyu_jin    10/10:uniform  wer=0.100719 recall=0.985612 tbsa=0.9055 der=0.0973 win=6 added=1.000x dup=0 corr_p95=7.746256708051078
+[run 0] lex_keyu_jin    10/10:lexical  wer=0.100719 recall=0.985612 tbsa=0.9055 der=0.0973 win=6 added=1.000x dup=0 corr_p95=7.746256708051078
+[run 0] lex_keyu_jin      15/7.5:char  wer=0.093525 recall=0.985612 tbsa=0.9183 der=0.0860 win=7 added=1.750x dup=0 corr_p95=12.975495041930117
+[run 0] lex_keyu_jin   15/7.5:uniform  wer=0.079137 recall=1.000000 tbsa=0.9237 der=0.0851 win=7 added=1.750x dup=0 corr_p95=10.482411083998159
+[run 0] lex_keyu_jin   15/7.5:lexical  wer=0.071942 recall=1.000000 tbsa=0.9144 der=0.1010 win=7 added=1.750x dup=0 corr_p95=12.975495041930117
+[run 0] lex_keyu_jin       15/10:char  wer=0.086331 recall=1.000000 tbsa=0.9224 der=0.0845 win=6 added=1.500x dup=0 corr_p95=10.482411083998159
+[run 0] lex_keyu_jin    15/10:uniform  wer=0.093525 recall=0.992806 tbsa=0.9186 der=0.0866 win=6 added=1.500x dup=0 corr_p95=10.482411083998159
+[run 0] lex_keyu_jin    15/10:lexical  wer=0.071942 recall=1.000000 tbsa=0.9226 der=0.0901 win=6 added=1.500x dup=0 corr_p95=12.975495041930117
+
+=== base control (P1) ===
+  wer 0.199870 (published 0.19987) recall 0.913490 (published 0.91349) -> VALID
+=== reproduction control (P2) 10/5:char ===
+  wer 0.128926 (published 0.128926) recall 0.948477 (published 0.948477) -> OK
+=== zero-overlap identity (P3) === True
+
+=== arms (mean over runs) ===
+             arm       wer   recall   added joins  dup  corr_p95  G1  G2  G3
+      10/10:char  0.131861   0.9439   1.000     5    1      8.51   Y   Y   Y
+   10/10:lexical  0.131861   0.9439   1.000     5    1      8.51   Y   Y   Y
+   10/10:uniform  0.131861   0.9439   1.000     5    1      8.51   Y   Y   Y
+      15/10:char  0.120262   0.9571   1.500     5    0     11.54   Y   Y   Y
+   15/10:lexical  0.107466   0.9597   1.500     5    0     12.98   Y   Y   Y
+   15/10:uniform  0.127220   0.9520   1.500     5    0     12.12   Y   Y   Y
+     15/7.5:char  0.129463   0.9530   1.750     6    1     12.98   Y   Y   Y
+  15/7.5:lexical  0.113920   0.9552   1.750     6    0     12.98   Y   Y   Y
+  15/7.5:uniform  0.120106   0.9578   1.750     6    0     12.12   Y   Y   Y
+       10/5:char  0.128926   0.9485   1.833    10    1      6.45   Y   Y   Y
+    10/5:lexical  0.121618   0.9552   1.833    10    0      7.65   Y   Y   Y
+    10/5:uniform  0.146014   0.9346   1.833    10    0      7.65   Y   Y   n
+
+passing arms: ['10/5:char', '10/5:lexical', '10/10:char', '10/10:uniform', '10/10:lexical', '15/7.5:char', '15/7.5:uniform', '15/7.5:lexical', '15/10:char', '15/10:uniform', '15/10:lexical']
+SELECTED (plan §10.4): 10/10:char

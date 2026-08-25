@@ -1,0 +1,10 @@
+== control: unmutated script, cached replay ==
+control exit=0  selected=SELECTED (plan §10.4): 10/10:char
+M1 truth-blind exit=1  2 tripwire hits
+M2 comparator drift exit=1  1 drift hits
+M3 a2 region formula exit=1  2 tiling-invariant hits
+   control 15/10 char: passing arms: ['10/5:char', '10/5:lexical', '10/10:char', '10/10:uniform', '10/10:lexical', '15/7.5:char', '15/7.5:uniform', '15/7.5:lexical', '15/10:char', '15/10:uniform', '15/10:lexical']
+M4 select-by-WER exit=0  SELECTED (plan §10.4): 15/10:lexical
+M5 broken base exit=1    wer 0.558319 (published 0.19987) recall 0.457841 (published 0.91349) -> INVALID
+   SELECTED (plan §10.4): None
+mutants were written beside the original as _mutant_39333-*.py and removed on exit

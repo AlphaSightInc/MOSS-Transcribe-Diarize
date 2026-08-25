@@ -74,3 +74,27 @@ symmetric: quoting one decision too many fails exactly as loudly as quoting one 
 sequential passes, plus the one discarded warm-up decode the campaign adopted after M0(d)
 measured the decoder's cold-start flip. The M0(d) script is kept unchanged because it is that
 milestone's reproducer.
+
+```bash
+# E2 step 2: plan §10.2–§10.4 rolling grid — 4 geometries × 3 stitch policies × 3 runs
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_rolling_grid.py \
+  --cases lex_bill_ackman,lex_javier_milei,lex_keyu_jin \
+  --windows 10/5,10/10,15/7.5,15/10 --stitches char,uniform,lexical --runs 3 \
+  --output /tmp/moss-rolling-grid.json
+# ...replayed with NO GPU by pointing --cache-dir at the checked-in decodes:
+#   --cache-dir evidence/live-convergence-0824/M2-rolling-grid/decode-cache
+# five mutations, each caught by its own guard (also zero MOSS requests)
+prototypes/streaming-diarization/live-convergence/mutate_rolling_grid.sh \
+  evidence/live-convergence-0824/M2-rolling-grid/decode-cache /tmp/grid-mutations
+```
+
+`compare_rolling_grid.py` imports `prototypes/live-file-gap-context/proto_context_arms.py` as a
+library — its decoder, disk cache, span loader, shared speaker timeline and scorer — instead of
+rebuilding them, which is why its base control and its `10/5:char` arm reproduce that bench's
+published `.19987` and `.128926` to every printed digit. Two things it adds are worth reusing:
+`plan_windows` asserts the ownership regions **partition** `[0, duration]` (the literal `a2`
+formula does not, once the final window is clamped, and the resulting double-publication is
+invisible to a tail-vs-head duplicate screen); and `_TruthBlind` makes reading the reference raise
+while an arm is being produced, so "the reconciler sees no reference" is enforced rather than
+asserted. Verdict, gates and the three findings: `evidence/live-convergence-0824/M2-rolling-grid/`.

@@ -1,0 +1,11 @@
+[run 0] lex_bill_ackman base  wer=0.261364 recall=0.863636 spans=24 audio_s=60 fresh=0
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m3-a2-region-formula.py", line 902, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m3-a2-region-formula.py", line 549, in main
+    windows = plan_windows(duration, window, stride)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/_mutant_39333-m3-a2-region-formula.py", line 146, in plan_windows
+    raise RegionsDoNotTile(
+RegionsDoNotTile: window 4 ends 52.5, window 5 starts 47.5

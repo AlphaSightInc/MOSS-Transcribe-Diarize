@@ -1,0 +1,2722 @@
+{
+  "entries": {
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.44044758297968656,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 261,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.51][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.05][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.48][9.51][S02] It represents-[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.51][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.05][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.48][9.51][S02] It represents-[9.99]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5094169169897214,
+      "error": null,
+      "generated_tokens": 117,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 341,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.54][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.08][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.54][9.54][S01] It represents speculative interests, you know, supply and demand of people in the short term.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[0.54][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.08][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.54][9.54][S01] It represents speculative interests, you know, supply and demand of people in the short term.[15.03]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:0:40000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.19723849999718368,
+      "error": null,
+      "generated_tokens": 42,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 85,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.51][S01] To figure out what something's worth.[1.77][2.22][S01] And you have[2.51]",
+      "token_cap": 286,
+      "transcript": "[0.51][S01] To figure out what something's worth.[1.77][2.22][S01] And you have[2.51]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:120000:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.146839041961357,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 73,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] It in the short term is a voting machine. It represents[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] It in the short term is a voting machine. It represents[2.48]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:120000:360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7075807090150192,
+      "error": null,
+      "generated_tokens": 158,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 6,
+        "raw_chars": 405,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Market in the short term is a voting machine.[1.98][2.04][S01] It represents speculative interests, you know, supply and demand of people in the short term.[7.74][7.83][S01] But in the long term, the stock market is a weighing machine.[10.23][10.83][S01] You're much more accurate.[11.91][12.18][S01] It's going to tell you what something is worth.[13.65][13.89][S01] And so if you can.[14.73]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Market in the short term is a voting machine.[1.98][2.04][S01] It represents speculative interests, you know, supply and demand of people in the short term.[7.74][7.83][S01] But in the long term, the stock market is a weighing machine.[10.23][10.83][S01] You're much more accurate.[11.91][12.18][S01] It's going to tell you what something is worth.[13.65][13.89][S01] And so if you can.[14.73]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:160000:200000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1180687079904601,
+      "error": null,
+      "generated_tokens": 20,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 45,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]Sense speculative interests.[2.42]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]Sense speculative interests.[2.42]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3819435000186786,
+      "error": null,
+      "generated_tokens": 88,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 245,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine, you're much more accurate.[9.42][9.66][S02] It's going to.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine, you're much more accurate.[9.42][9.66][S02] It's going to.[9.98]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.604324874933809,
+      "error": null,
+      "generated_tokens": 142,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 390,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine.[7.72][8.32][S01] You're much more accurate.[9.41][9.68][S01] It's going to tell you what something is worth.[11.11][11.35][S01] And so if you can divine what something's worth, then you can really take.[14.99]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine.[7.72][8.32][S01] You're much more accurate.[9.41][9.68][S01] It's going to tell you what something is worth.[11.11][11.35][S01] And so if you can divine what something's worth, then you can really take.[14.99]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:200000:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.138242166955024,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 64,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Supply and demand of people in the short term.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Supply and demand of people in the short term.[2.48]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:240000:280000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1642262499080971,
+      "error": null,
+      "generated_tokens": 32,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 83,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.31][S01] But in the long term, it's the stock market's a weighing machine.[2.49]",
+      "token_cap": 286,
+      "transcript": "[0.31][S01] But in the long term, it's the stock market's a weighing machine.[2.49]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:240000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.45616720896214247,
+      "error": null,
+      "generated_tokens": 106,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 280,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.31][S01] But in the long term, the stock market is a weighing machine.[2.71][3.28][S01] You're much more accurate.[4.38][4.68][S01] It's going to tell you what something is worth.[6.11][6.35][S01] And so if you can divine what something's worth, then you can really take.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.31][S01] But in the long term, the stock market is a weighing machine.[2.71][3.28][S01] You're much more accurate.[4.38][4.68][S01] It's going to tell you what something is worth.[6.11][6.35][S01] And so if you can divine what something's worth, then you can really take.[9.99]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:240000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7667836250038818,
+      "error": null,
+      "generated_tokens": 184,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 7,
+        "raw_chars": 458,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.33][S01] But in the long term, the stock market is a weighing machine.[3.26][3.29][S01] You're much more accurate.[4.66][4.69][S01] It's going to tell you what something is worth.[6.33][6.36][S01] And so if you can divine what something's worth, then you can really take advantage of the market[10.96][10.99][S01] because it's really here to to help you.[12.96][12.99][S01] And that's kind of the message of the book.[14.53][14.56][S02] And that's.[14.96]",
+      "token_cap": 1373,
+      "transcript": "[0.33][S01] But in the long term, the stock market is a weighing machine.[3.26][3.29][S01] You're much more accurate.[4.66][4.69][S01] It's going to tell you what something is worth.[6.33][6.36][S01] And so if you can divine what something's worth, then you can really take advantage of the market[10.96][10.99][S01] because it's really here to to help you.[12.96][12.99][S01] And that's kind of the message of the book.[14.53][14.56][S02] And that's.[14.96]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:280000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.15422408294398338,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 63,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]mean, you know, much more accurate. It's going[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]mean, you know, much more accurate. It's going[2.48]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:320000:360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.15202062507160008,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 70,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Tell you what something is worth. And so if you can.[2.16]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Tell you what something is worth. And so if you can.[2.16]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4666130000259727,
+      "error": null,
+      "generated_tokens": 110,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 297,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] And that's.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] And that's.[9.96]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6173419170081615,
+      "error": null,
+      "generated_tokens": 144,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 409,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] In that same way, there's a kind of difference between speculation and investing.[13.74][13.89][S01] Yeah, speculation is.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] In that same way, there's a kind of difference between speculation and investing.[13.74][13.89][S01] Yeah, speculation is.[14.97]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:360000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14445612498093396,
+      "error": null,
+      "generated_tokens": 28,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 73,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.12][S01] Divine what something's worth, then you can really take[2.49]",
+      "token_cap": 286,
+      "transcript": "[0.12][S01] Divine what something's worth, then you can really take[2.49]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:360000:600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6083617080003023,
+      "error": null,
+      "generated_tokens": 142,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 387,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.12][S01] Divine what something's worth, then you can really take advantage of the market[3.45][3.48][S01] because it's really here to, to help you.[5.28][5.52][S01] And that's kind of the message of the book.[6.78][7.14][S02] In that same way, there's a kind of difference between speculation and investing.[11.22][11.40][S01] Yeah, speculation is just, it's a bit like buying.[14.58]",
+      "token_cap": 1373,
+      "transcript": "[0.12][S01] Divine what something's worth, then you can really take advantage of the market[3.45][3.48][S01] because it's really here to, to help you.[5.28][5.52][S01] And that's kind of the message of the book.[6.78][7.14][S02] In that same way, there's a kind of difference between speculation and investing.[11.22][11.40][S01] Yeah, speculation is just, it's a bit like buying.[14.58]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:400000:440000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1414388749981299,
+      "error": null,
+      "generated_tokens": 30,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 76,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]advantage of the market because it's really here to to help[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]advantage of the market because it's really here to to help[2.44]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:400000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5267670419998467,
+      "error": null,
+      "generated_tokens": 104,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 283,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Take advantage of the market because it's really here to to help you.[2.82][3.03][S01] And that's kind of the message of the book.[4.26][4.62][S02] In that same way, there's a kind of difference between speculation and investing.[8.76][8.88][S01] Yeah, speculation.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Take advantage of the market because it's really here to to help you.[2.82][3.03][S01] And that's kind of the message of the book.[4.26][4.62][S02] In that same way, there's a kind of difference between speculation and investing.[8.76][8.88][S01] Yeah, speculation.[9.96]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:40000:80000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14142991707194597,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 53,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]to kind of weigh it. He talked about[2.42]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]to kind of weigh it. He talked about[2.42]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:440000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.20557366707362235,
+      "error": null,
+      "generated_tokens": 46,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 94,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] You and that's kind of the message of the book.[1.74][2.13][S02] And that's.[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] You and that's kind of the message of the book.[1.74][2.13][S02] And that's.[2.46]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:480000:520000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1423780000768602,
+      "error": null,
+      "generated_tokens": 28,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 76,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]Same way, there's a kind of difference between speculation.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]Same way, there's a kind of difference between speculation.[2.48]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3773585830349475,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 200,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto.[9.24][9.84][S01] Right?[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto.[9.24][9.84][S01] Right?[10.02]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5415390830021352,
+      "error": null,
+      "generated_tokens": 126,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 299,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto, right?[10.11][10.13][S02] You're.[10.51][10.68][S01] Strong words.[11.42][12.21][S02] Well, uh, short term trading crypto.[14.81]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto, right?[10.11][10.13][S02] You're.[10.51][10.68][S01] Strong words.[11.42][12.21][S02] Well, uh, short term trading crypto.[14.81]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:520000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.23665116704069078,
+      "error": null,
+      "generated_tokens": 53,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 86,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] In a investing.[1.28][1.38][S02] Yeah.[1.68][1.71][S01] Speculation.[2.45]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] In a investing.[1.28][1.38][S02] Yeah.[1.68][1.71][S01] Speculation.[2.45]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:560000:600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14052104204893112,
+      "error": null,
+      "generated_tokens": 27,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 52,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] It's just, it's a bit like buying.[2.12]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] It's just, it's a bit like buying.[2.12]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:560000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3992159169865772,
+      "error": null,
+      "generated_tokens": 88,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 183,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] It's just, it's a bit like buying, trading crypto, right?[5.12][5.13][S01] Your.[5.54][5.72][S02] Strong words.[6.44][7.22][S01] Well, uh, short term trading crypto.[9.74]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] It's just, it's a bit like buying, trading crypto, right?[5.12][5.13][S01] Your.[5.54][5.72][S02] Strong words.[6.44][7.22][S01] Well, uh, short term trading crypto.[9.74]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:600000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.17704670899547637,
+      "error": null,
+      "generated_tokens": 35,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 57,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Trading crypto.[1.74][2.28][S02] Right.[2.52]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Trading crypto.[1.74][2.28][S02] Right.[2.52]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:600000:840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4966968330554664,
+      "error": null,
+      "generated_tokens": 113,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 254,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Trading crypto, right?[2.61][2.62][S02] Strong words.[3.93][4.72][S01] Well, short term trading crypto.[7.35][7.38][S01] Maybe in the long run, there's intrinsic value.[9.21][9.22][S01] But the, you know, it's many investors, you know.[14.95]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Trading crypto, right?[2.61][2.62][S02] Strong words.[3.93][4.72][S01] Well, short term trading crypto.[7.35][7.38][S01] Maybe in the long run, there's intrinsic value.[9.21][9.22][S01] But the, you know, it's many investors, you know.[14.95]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:640000:680000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2341047499794513,
+      "error": null,
+      "generated_tokens": 53,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 84,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] That you're.[0.54][0.68][S02] Strong words.[1.44][2.18][S01] Well.[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] That you're.[0.54][0.68][S02] Strong words.[1.44][2.18][S01] Well.[2.46]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4335538750747219,
+      "error": null,
+      "generated_tokens": 92,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 196,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Your[0.48][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the.[8.88][9.75][S02] You know.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Your[0.48][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the.[8.88][9.75][S02] You know.[10.02]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4906064580427483,
+      "error": null,
+      "generated_tokens": 111,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 270,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] That your[0.54][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the,[8.88][9.78][S01] you know, it's many investors, you know, in a bubble going into the, you know,[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] That your[0.54][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the,[8.88][9.78][S01] you know, it's many investors, you know, in a bubble going into the, you know,[14.97]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:680000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12538529199082404,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 48,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.54][S01] Uh, short term trading crypto.[2.28]",
+      "token_cap": 286,
+      "transcript": "[0.54][S01] Uh, short term trading crypto.[2.28]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:720000:760000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14834354200866073,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 70,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Maybe in the long run, there's intrinsic value, but.[1.94]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Maybe in the long run, there's intrinsic value, but.[1.94]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:720000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.28094554191920906,
+      "error": null,
+      "generated_tokens": 53,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 157,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Maybe in the long run, there's intrinsic value, but uh the, you know, it's many investors, you know, in a bubble going into the, you know.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Maybe in the long run, there's intrinsic value, but uh the, you know, it's many investors, you know, in a bubble going into the, you know.[10.02]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:720000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4727984999772161,
+      "error": null,
+      "generated_tokens": 108,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 308,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Maybe in the long run, there's intrinsic value, but uh the, you know, it's many investors,[7.04][7.11][S01] you know, in a bubble going into the, you know, the crash uh were really just pure speculators.[13.28][13.31][S01] They didn't know what things were worth. They just knew they were.[14.96]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Maybe in the long run, there's intrinsic value, but uh the, you know, it's many investors,[7.04][7.11][S01] you know, in a bubble going into the, you know, the crash uh were really just pure speculators.[13.28][13.31][S01] They didn't know what things were worth. They just knew they were.[14.96]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:760000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.11483387497719377,
+      "error": null,
+      "generated_tokens": 20,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 26,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.06][S01] Uh, the.[1.44]",
+      "token_cap": 286,
+      "transcript": "[0.06][S01] Uh, the.[1.44]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:800000:840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1408289159880951,
+      "error": null,
+      "generated_tokens": 27,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 58,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] You know, it's many investors, you know.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] You know, it's many investors, you know.[2.44]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4016691669821739,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 242,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] You know, it's many investors, you know, in a bubble going into the, you know,[5.12][5.12][S01] the crash were really just pure speculators. They didn't know what things were worth. They[9.52][9.52][S01] just knew they were.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] You know, it's many investors, you know, in a bubble going into the, you know,[5.12][5.12][S01] the crash were really just pure speculators. They didn't know what things were worth. They[9.52][9.52][S01] just knew they were.[9.98]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:80000:120000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "unparseable",
+      "elapsed_seconds": 0.11808337492402643,
+      "error": "vLLM transcription returned zero parsed segments for /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-rolling-grid-celukipt/80000-120000-5696a90762c9a738.wav.",
+      "generated_tokens": 0,
+      "health": {
+        "closing_timestamp": false,
+        "malformed": true,
+        "parsed_segments": 0,
+        "raw_chars": 61,
+        "refusal": false,
+        "zero_parsed_with_output": true
+      },
+      "prompt_tokens": 0,
+      "raw_text": "[S01] The difference between,[S01] you said the stock market.",
+      "token_cap": 286,
+      "transcript": ""
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:80000:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4066779169952497,
+      "error": null,
+      "generated_tokens": 97,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 252,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.35][S01] The difference between, you said the stock market in the short term is a voting[3.88][3.88][S01] machine.[4.54][4.54][S01] It represents speculative interests, you know, supply and demand of people in the[9.69][9.69][S01] short term.[10.01]",
+      "token_cap": 938,
+      "transcript": "[0.35][S01] The difference between, you said the stock market in the short term is a voting[3.88][3.88][S01] machine.[4.54][4.54][S01] It represents speculative interests, you know, supply and demand of people in the[9.69][9.69][S01] short term.[10.01]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:840000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14236824994441122,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 55,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] In a bubble going into the, you know.[2.52]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] In a bubble going into the, you know.[2.52]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:880000:920000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13361700007226318,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 42,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] The crash, we're really.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] The crash, we're really.[2.44]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:920000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1786905840272084,
+      "error": null,
+      "generated_tokens": 36,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 106,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.23286716698203236,
+      "error": null,
+      "generated_tokens": 46,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 101,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] So, what is the difference between a madman and a genius?[5.12][6.88][S01] Success.[7.82]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] So, what is the difference between a madman and a genius?[5.12][6.88][S01] Success.[7.82]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43527433392591774,
+      "error": null,
+      "generated_tokens": 75,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 186,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] So what is the difference between a madman and a genius?[5.06][6.88][S01] Success.[7.74][10.88][S02] The following is a conversation with Javier Mal\u00e9, the president of[14.91]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] So what is the difference between a madman and a genius?[5.06][6.88][S01] Success.[7.74][10.88][S02] The following is a conversation with Javier Mal\u00e9, the president of[14.91]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:0:40000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13385379198007286,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 45,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.11][S01] So, what is the difference?[2.41]",
+      "token_cap": 286,
+      "transcript": "[0.11][S01] So, what is the difference?[2.41]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:108320:127040:OpenMOSS-Team/MOSS-Transcribe-Diarize:170:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.09928824997041374,
+      "error": null,
+      "generated_tokens": 18,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 26,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 116,
+      "raw_text": "[0.11][S01] Success.[0.92]",
+      "token_cap": 170,
+      "transcript": "[0.11][S01] Success.[0.92]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:120000:360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4023067500675097,
+      "error": null,
+      "generated_tokens": 93,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 224,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[3.33][S01] The following is a conversation with Javier Mal\u00e9,[6.35][6.38][S01] the president of Argentina.[8.85][8.88][S01] He is a libertarian, a narco-capitalist and economist,[13.78][13.81][S01] who campaigned with[14.98]",
+      "token_cap": 1373,
+      "transcript": "[3.33][S01] The following is a conversation with Javier Mal\u00e9,[6.35][6.38][S01] the president of Argentina.[8.85][8.88][S01] He is a libertarian, a narco-capitalist and economist,[13.78][13.81][S01] who campaigned with[14.98]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:127040:152320:OpenMOSS-Team/MOSS-Transcribe-Diarize:206:5696a90762c9a738": {
+      "capped": false,
+      "classification": "unparseable",
+      "elapsed_seconds": 0.08152758295182139,
+      "error": "vLLM transcription returned zero parsed segments for /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-rolling-grid-64la15yg/127040-152320-5696a90762c9a738.wav.",
+      "generated_tokens": 0,
+      "health": {
+        "closing_timestamp": false,
+        "malformed": true,
+        "parsed_segments": 0,
+        "raw_chars": 16,
+        "refusal": false,
+        "zero_parsed_with_output": true
+      },
+      "prompt_tokens": 0,
+      "raw_text": "[0.00][S01]Okay.",
+      "token_cap": 206,
+      "transcript": ""
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:152320:192320:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1396940000122413,
+      "error": null,
+      "generated_tokens": 22,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 50,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[1.29][S01] The following is a conversation.[2.48]",
+      "token_cap": 286,
+      "transcript": "[1.29][S01] The following is a conversation.[2.48]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.32847037503961474,
+      "error": null,
+      "generated_tokens": 72,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 174,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.90][S01] the president of Argentina.[6.27][6.30][S01] He is a libertarian, a narco-capitalist, and[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.90][S01] the president of Argentina.[6.27][6.30][S01] He is a libertarian, a narco-capitalist, and[9.99]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43644550000317395,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 255,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist,[11.25][11.25][S01] who campaigned with a chainsaw that symbolized his[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist,[11.25][11.25][S01] who campaigned with a chainsaw that symbolized his[14.88]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:192320:232320:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1388551249401644,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 55,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] ...with Javier Malley, the president.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] ...with Javier Malley, the president.[2.44]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:232320:254880:OpenMOSS-Team/MOSS-Transcribe-Diarize:191:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1474200829397887,
+      "error": null,
+      "generated_tokens": 19,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 31,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 122,
+      "raw_text": "[0.24][S01] of Argentina.[1.12]",
+      "token_cap": 191,
+      "transcript": "[0.24][S01] of Argentina.[1.12]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:240000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3308559169527143,
+      "error": null,
+      "generated_tokens": 72,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 174,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Argentina.[0.67][1.35][S01] He is a libertarian, anarcho-capitalist and economist who campaigned with a chainsaw that symbolized his[9.88][9.91][S02] Yeah.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Argentina.[0.67][1.35][S01] He is a libertarian, anarcho-capitalist and economist who campaigned with a chainsaw that symbolized his[9.88][9.91][S02] Yeah.[10.02]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:240000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43814983300399035,
+      "error": null,
+      "generated_tokens": 99,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 253,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Argentina.[0.72][1.35][S01] He is a libertarian, anarcho-capitalist and economist who campaigned with a chainsaw[8.34][8.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[13.17][14.25][S01] He stepped[14.94]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Argentina.[0.72][1.35][S01] He is a libertarian, anarcho-capitalist and economist who campaigned with a chainsaw[8.34][8.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[13.17][14.25][S01] He stepped[14.94]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:254880:259680:OpenMOSS-Team/MOSS-Transcribe-Diarize:95:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.102233917103149,
+      "error": null,
+      "generated_tokens": 18,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 22,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 94,
+      "raw_text": "[0.00][S01]Yeah.[0.24]",
+      "token_cap": 95,
+      "transcript": "[0.00][S01]Yeah.[0.24]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:259680:299680:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1316157499095425,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 47,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.12][S01] He is a libertarian, a narco-[2.42]",
+      "token_cap": 286,
+      "transcript": "[0.12][S01] He is a libertarian, a narco-[2.42]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:299680:339680:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.11592374998144805,
+      "error": null,
+      "generated_tokens": 21,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 43,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Capitalist and economist.[2.12]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Capitalist and economist.[2.12]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.31736387498676777,
+      "error": null,
+      "generated_tokens": 69,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 178,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[7.52][7.52][S01] of the state.[9.25][9.25][S01] He stepped[9.91]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[7.52][7.52][S01] of the state.[9.25][9.25][S01] He stepped[9.91]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.396552124992013,
+      "error": null,
+      "generated_tokens": 86,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 259,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash[6.27][6.27][S01] the corrupt bureaucracy of the state.[9.31][9.31][S01] He stepped into the presidency one year ago with a country on the brink of hyperinflation.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash[6.27][6.27][S01] the corrupt bureaucracy of the state.[9.31][9.31][S01] He stepped into the presidency one year ago with a country on the brink of hyperinflation.[14.88]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:339680:379680:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13120845903176814,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 48,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]who campaigned with a chainsaw.[2.00]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]who campaigned with a chainsaw.[2.00]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:360000:600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.40129675006028265,
+      "error": null,
+      "generated_tokens": 91,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 272,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] The chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state.[5.74][6.78][S01] He stepped into the presidency one year ago with the country on the brink of hyperinflation,[12.32][12.42][S01] deep in debt and suffering from mass[14.94]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] The chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state.[5.74][6.78][S01] He stepped into the presidency one year ago with the country on the brink of hyperinflation,[12.32][12.42][S01] deep in debt and suffering from mass[14.94]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:379680:380640:OpenMOSS-Team/MOSS-Transcribe-Diarize:74:5696a90762c9a738": {
+      "capped": false,
+      "classification": "refusal",
+      "elapsed_seconds": 0.12301562493667006,
+      "error": "vLLM transcription returned zero parsed segments for /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-rolling-grid-64la15yg/379680-380640-5696a90762c9a738.wav.",
+      "generated_tokens": 0,
+      "health": {
+        "closing_timestamp": false,
+        "malformed": true,
+        "parsed_segments": 0,
+        "raw_chars": 55,
+        "refusal": true,
+        "zero_parsed_with_output": true
+      },
+      "prompt_tokens": 0,
+      "raw_text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "token_cap": 74,
+      "transcript": ""
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:380640:420640:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13490491593256593,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 54,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] That symbolized his promise to slash[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] That symbolized his promise to slash[2.44]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:400000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2808710830286145,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 181,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Promise to slash the corrupt bureaucracy of the state.[3.24][4.26][S01] He stepped into the presidency one year ago, with a country on the brink of hyperinflation.[9.84]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Promise to slash the corrupt bureaucracy of the state.[3.24][4.26][S01] He stepped into the presidency one year ago, with a country on the brink of hyperinflation.[9.84]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:40000:80000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12822904193308204,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 48,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.25][S01] Between a madman and a genius.[2.49]",
+      "token_cap": 286,
+      "transcript": "[0.25][S01] Between a madman and a genius.[2.49]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:420640:460640:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12850516696926206,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 55,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] The corrupt bureaucracy of the state.[1.88]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] The corrupt bureaucracy of the state.[1.88]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:460640:466240:OpenMOSS-Team/MOSS-Transcribe-Diarize:99:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.10574141598772258,
+      "error": null,
+      "generated_tokens": 19,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 19,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 96,
+      "raw_text": "[0.00][S01]\u55ef\u3002[0.24]",
+      "token_cap": 99,
+      "transcript": "[0.00][S01]\u55ef\u3002[0.24]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:466240:506240:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13065229204948992,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 58,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.13][S01] He stepped into the presidency one year.[2.47]",
+      "token_cap": 286,
+      "transcript": "[0.13][S01] He stepped into the presidency one year.[2.47]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2836129580391571,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 181,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] Into the presidency one year ago, with the country on the brink of hyperinflation,[4.91][4.94][S01] deep in debt, and suffering from mass unemployment and poverty.[8.91]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] Into the presidency one year ago, with the country on the brink of hyperinflation,[4.91][4.94][S01] deep in debt, and suffering from mass unemployment and poverty.[8.91]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5237475419417024,
+      "error": null,
+      "generated_tokens": 121,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 319,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] Into the presidency one year ago,[2.12][2.68][S01] with the country on the brink of hyperinflation,[4.81][4.94][S01] deep in debt and suffering from mass unemployment and poverty.[9.01][10.01][S01] He took this crisis head on,[11.84][12.11][S01] transforming one of Latin America's largest economies.[15.01]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] Into the presidency one year ago,[2.12][2.68][S01] with the country on the brink of hyperinflation,[4.81][4.94][S01] deep in debt and suffering from mass unemployment and poverty.[9.01][10.01][S01] He took this crisis head on,[11.84][12.11][S01] transforming one of Latin America's largest economies.[15.01]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:506240:546240:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14939770800992846,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 69,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.07][S01] ago, with a country on the brink of hyperinflation.[2.45]",
+      "token_cap": 286,
+      "transcript": "[0.07][S01] ago, with a country on the brink of hyperinflation.[2.45]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:546240:586240:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14103745808824897,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 58,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Inflation, deepened debt, and suffering.[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Inflation, deepened debt, and suffering.[2.46]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:560000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.26445258408784866,
+      "error": null,
+      "generated_tokens": 58,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 183,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Deepened debt and suffering from mass unemployment and poverty.[4.04][5.05][S01] He took this crisis head on, transforming one of Latin America's largest economies.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Deepened debt and suffering from mass unemployment and poverty.[4.04][5.05][S01] He took this crisis head on, transforming one of Latin America's largest economies.[10.02]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:586240:626240:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12545916705857962,
+      "error": null,
+      "generated_tokens": 22,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 52,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.29][S01] For mass unemployment and poverty.[2.31]",
+      "token_cap": 286,
+      "transcript": "[0.29][S01] For mass unemployment and poverty.[2.31]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:600000:840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4391794999828562,
+      "error": null,
+      "generated_tokens": 102,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 281,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Unemployment and poverty.[1.53][2.46][S01] He took this crisis head on, transforming one of Latin America's largest economies through[8.27][8.31][S01] pure free market principles.[10.38][11.22][S01] In just a few months in office, he already achieved Argentina's[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Unemployment and poverty.[1.53][2.46][S01] He took this crisis head on, transforming one of Latin America's largest economies through[8.27][8.31][S01] pure free market principles.[10.38][11.22][S01] In just a few months in office, he already achieved Argentina's[14.97]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:626240:629760:OpenMOSS-Team/MOSS-Transcribe-Diarize:88:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.10761400009505451,
+      "error": null,
+      "generated_tokens": 19,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 20,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 92,
+      "raw_text": "[0.00][S01]Mm.[0.12]",
+      "token_cap": 88,
+      "transcript": "[0.00][S01]Mm.[0.12]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:629760:636160:OpenMOSS-Team/MOSS-Transcribe-Diarize:103:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1006195000372827,
+      "error": null,
+      "generated_tokens": 18,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 22,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 96,
+      "raw_text": "[0.00][S01]Yeah.[0.36]",
+      "token_cap": 103,
+      "transcript": "[0.00][S01]Yeah.[0.36]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:636160:676160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12647279200609773,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 46,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.22][S01] He took this crisis head on.[2.29]",
+      "token_cap": 286,
+      "transcript": "[0.22][S01] He took this crisis head on.[2.29]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2853146670386195,
+      "error": null,
+      "generated_tokens": 59,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 178,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] He took this crisis head on, transforming one of Latin America's largest economies through[5.76][5.76][S01] pure free market principles. In just a few months in[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] He took this crisis head on, transforming one of Latin America's largest economies through[5.76][5.76][S01] pure free market principles. In just a few months in[9.96]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4727477499982342,
+      "error": null,
+      "generated_tokens": 106,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 289,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] He took this crisis head on, transforming one of Latin America's largest economies[5.52][5.52][S01] through pure free market principles.[8.83][8.83][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[13.82][13.82][S01] in 16 years.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] He took this crisis head on, transforming one of Latin America's largest economies[5.52][5.52][S01] through pure free market principles.[8.83][8.83][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[13.82][13.82][S01] in 16 years.[15.03]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:676160:716160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.18034358404111117,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 60,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]transforming one of Latin America's largest[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]transforming one of Latin America's largest[2.44]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:716160:756160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.21041729196440428,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 53,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Economies through pure free market.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Economies through pure free market.[2.44]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:720000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.29536620900034904,
+      "error": null,
+      "generated_tokens": 58,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 169,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.48][S01] Through pure free market principles.[2.88][3.75][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.48][S01] Through pure free market principles.[2.88][3.75][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years.[9.99]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:720000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4052834160393104,
+      "error": null,
+      "generated_tokens": 89,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 258,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.48][S01] Through pure free market principles.[2.88][3.75][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus in 16[9.57][9.57][S01] years, and not just avoided the hyperinflation, but brought inflation down to[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.48][S01] Through pure free market principles.[2.88][3.75][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus in 16[9.57][9.57][S01] years, and not just avoided the hyperinflation, but brought inflation down to[14.97]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:756160:796160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.17141354200430214,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 50,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]Principles. In just a few months,[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]Principles. In just a few months,[2.46]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:796160:836160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1639275000197813,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 53,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] In office, he already achieved RGT.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] In office, he already achieved RGT.[2.44]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3981912499293685,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 177,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Office, he already achieved Argentina's first fiscal surplus in 16 years.[5.14][5.66][S01] And not just avoided the hyperinflation, but brought inflation down.[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Office, he already achieved Argentina's first fiscal surplus in 16 years.[5.14][5.66][S01] And not just avoided the hyperinflation, but brought inflation down.[9.94]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:80000:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2839249160606414,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 129,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[1.85][S01] Success.[2.75][5.86][S02] The following is a conversation with Javier Malley,[8.88][8.88][S02] the president of[9.94]",
+      "token_cap": 938,
+      "transcript": "[1.85][S01] Success.[2.75][5.86][S02] The following is a conversation with Javier Malley,[8.88][8.88][S02] the president of[9.94]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:80000:84480:OpenMOSS-Team/MOSS-Transcribe-Diarize:93:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.10518075001891702,
+      "error": null,
+      "generated_tokens": 18,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 18,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 94,
+      "raw_text": "[0.00][S01]S[0.06]",
+      "token_cap": 93,
+      "transcript": "[0.00][S01]S[0.06]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:836160:876160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1737238330533728,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 51,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] First fiscal surplus in 16 years.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] First fiscal surplus in 16 years.[2.48]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:84480:108320:OpenMOSS-Team/MOSS-Transcribe-Diarize:198:5696a90762c9a738": {
+      "capped": false,
+      "classification": "refusal",
+      "elapsed_seconds": 0.12118420901242644,
+      "error": "vLLM transcription returned zero parsed segments for /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-rolling-grid-64la15yg/84480-108320-5696a90762c9a738.wav.",
+      "generated_tokens": 0,
+      "health": {
+        "closing_timestamp": false,
+        "malformed": true,
+        "parsed_segments": 0,
+        "raw_chars": 55,
+        "refusal": true,
+        "zero_parsed_with_output": true
+      },
+      "prompt_tokens": 0,
+      "raw_text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "token_cap": 198,
+      "transcript": ""
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:876160:916160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1837756671011448,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 64,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] Years and not just avoided the hyperinflation.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] Years and not just avoided the hyperinflation.[2.48]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:916160:956160:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1247826669132337,
+      "error": null,
+      "generated_tokens": 21,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 45,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.53][S01] But brought inflation down.[2.49]",
+      "token_cap": 286,
+      "transcript": "[0.53][S01] But brought inflation down.[2.49]"
+    },
+    "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd:956160:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:89:5696a90762c9a738": {
+      "capped": false,
+      "classification": "unparseable",
+      "elapsed_seconds": 0.07877779204864055,
+      "error": "vLLM transcription returned zero parsed segments for /var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-rolling-grid-64la15yg/956160-960000-5696a90762c9a738.wav.",
+      "generated_tokens": 0,
+      "health": {
+        "closing_timestamp": false,
+        "malformed": true,
+        "parsed_segments": 0,
+        "raw_chars": 15,
+        "refusal": false,
+        "zero_parsed_with_output": true
+      },
+      "prompt_tokens": 0,
+      "raw_text": "[0.00][S01]And.",
+      "token_cap": 89,
+      "transcript": ""
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2973395419539884,
+      "error": null,
+      "generated_tokens": 65,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 187,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][5.65][S01] Um, but deference, a certain amount of deference to authority.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][5.65][S01] Um, but deference, a certain amount of deference to authority.[9.99]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43334091699216515,
+      "error": null,
+      "generated_tokens": 93,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 273,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][6.14][S01] But deference, a certain amount of deference to authority is not blind submission.[11.98][12.06][S01] It's been written implicitly in our contract.[14.72]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][6.14][S01] But deference, a certain amount of deference to authority is not blind submission.[11.98][12.06][S01] It's been written implicitly in our contract.[14.72]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:0:40000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.15327679191250354,
+      "error": null,
+      "generated_tokens": 27,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 62,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Kind of the same thing. There's paternalism.[2.24]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Kind of the same thing. There's paternalism.[2.24]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:120000:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14510954089928418,
+      "error": null,
+      "generated_tokens": 28,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 71,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]deference, a certain amount of deference to authority.[2.46]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]deference, a certain amount of deference to authority.[2.46]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:120000:360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3959377919090912,
+      "error": null,
+      "generated_tokens": 88,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 262,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Deference, a certain amount of deference to authority is not blind submission.[4.52][4.58][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference,[11.78][12.62][S01] we are given stability.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Deference, a certain amount of deference to authority is not blind submission.[4.52][4.58][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference,[11.78][12.62][S01] we are given stability.[14.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:160000:200000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13072837505023926,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 46,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]is not blind submission. It's[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]is not blind submission. It's[2.44]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2552602080395445,
+      "error": null,
+      "generated_tokens": 55,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 164,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Is not blind submission.[1.99][2.08][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference.[9.27]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Is not blind submission.[1.99][2.08][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference.[9.27]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4454065840691328,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 271,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Is not blind submission.[1.98][2.06][S01] It's been written implicitly in our contract for thousands of years[6.66][6.68][S01] that in exchange for some deference,[9.28][10.12][S01] we are given stability, security, and peace, and hopefully prosperity.[14.72]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Is not blind submission.[1.98][2.06][S01] It's been written implicitly in our contract for thousands of years[6.66][6.68][S01] that in exchange for some deference,[9.28][10.12][S01] we are given stability, security, and peace, and hopefully prosperity.[14.72]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:200000:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12319816590752453,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 58,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Been written implicitly in our contract.[2.22]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Been written implicitly in our contract.[2.22]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:240000:280000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.17014920804649591,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 61,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] Uh, for thousands of years that in exchange[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] Uh, for thousands of years that in exchange[2.48]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:240000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.27175020799040794,
+      "error": null,
+      "generated_tokens": 58,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 171,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] Uh, for thousands of years that in exchange for some deference,[4.25][4.81][S01] uh, we are given stability, security and peace and hopefully prosperity.[9.67]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] Uh, for thousands of years that in exchange for some deference,[4.25][4.81][S01] uh, we are given stability, security and peace and hopefully prosperity.[9.67]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:240000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.39922570798080415,
+      "error": null,
+      "generated_tokens": 91,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 270,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] Uh, for thousands of years that in exchange for some deference,[4.25][4.75][S01] uh, we are given stability, security and peace and hopefully prosperity.[9.68][10.05][S02] So there is some element that we have in the West of freedom of the individual.[14.45]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] Uh, for thousands of years that in exchange for some deference,[4.25][4.75][S01] uh, we are given stability, security and peace and hopefully prosperity.[9.68][10.05][S02] So there is some element that we have in the West of freedom of the individual.[14.45]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:280000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13306395895779133,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 45,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]change for some deference uh[2.52]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]change for some deference uh[2.52]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:320000:360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.114547667093575,
+      "error": null,
+      "generated_tokens": 21,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 41,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.11][S01] We are given stability.[2.47]",
+      "token_cap": 286,
+      "transcript": "[0.11][S01] We are given stability.[2.47]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.33919729199260473,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 205,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.44][9.78][S02] So[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.44][9.78][S02] So[9.94]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.40262729197274894,
+      "error": null,
+      "generated_tokens": 92,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 280,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.48][9.78][S02] So that a little bit of the rebel is allowed in balance with the difference.[15.01]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.48][9.78][S02] So that a little bit of the rebel is allowed in balance with the difference.[15.01]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:360000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1262215410824865,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 62,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Security and peace and hopefully prosperity.[2.16]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Security and peace and hopefully prosperity.[2.16]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:360000:600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.49332795792724937,
+      "error": null,
+      "generated_tokens": 111,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 317,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Security and peace and hopefully prosperity.[2.14][2.56][S02] So there is some element that we have in the West of freedom of the individual.[7.01][7.25][S02] So that a little bit of the rebel is allowed in balance with the deference to authority.[13.11][13.38][S01] Yeah, absolutely. Without that.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Security and peace and hopefully prosperity.[2.14][2.56][S02] So there is some element that we have in the West of freedom of the individual.[7.01][7.25][S02] So that a little bit of the rebel is allowed in balance with the deference to authority.[13.11][13.38][S01] Yeah, absolutely. Without that.[14.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:400000:440000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14148666604887694,
+      "error": null,
+      "generated_tokens": 28,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 68,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] So there is some element that we have in the West.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] So there is some element that we have in the West.[2.44]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:400000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2899263750296086,
+      "error": null,
+      "generated_tokens": 63,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 191,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.06][S01] So there is some element that we have in the West of freedom of the individual.[4.44][4.77][S01] So that a little bit of the rebel is allowed in balance with the difference.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.06][S01] So there is some element that we have in the West of freedom of the individual.[4.44][4.77][S01] So that a little bit of the rebel is allowed in balance with the difference.[9.99]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:40000:80000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1385273749474436,
+      "error": null,
+      "generated_tokens": 27,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 66,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.15][S01] Uh, they think that they're responsible for you.[2.47]",
+      "token_cap": 286,
+      "transcript": "[0.15][S01] Uh, they think that they're responsible for you.[2.47]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:440000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13944912503939122,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 49,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]Of freedom of the individual. So[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]Of freedom of the individual. So[2.44]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:480000:520000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14025774993933737,
+      "error": null,
+      "generated_tokens": 25,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 55,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] A little bit of the rebel is allowed.[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] A little bit of the rebel is allowed.[2.44]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.36333941598422825,
+      "error": null,
+      "generated_tokens": 80,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 220,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] A little bit of the rebel is allowed[2.52][3.01][S01] uh in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] A little bit of the rebel is allowed[2.52][3.01][S01] uh in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?[9.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.451437208103016,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 290,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] A little bit of the rebel is allowed in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?[11.72][12.38][S02] If you don't have a sense of self, a sense of.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] A little bit of the rebel is allowed in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?[11.72][12.38][S02] If you don't have a sense of self, a sense of.[14.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:520000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.12473870790563524,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 53,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.35][S01] Uh, in balance with the difference.[2.51]",
+      "token_cap": 286,
+      "transcript": "[0.35][S01] Uh, in balance with the difference.[2.51]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:560000:600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.18102962500415742,
+      "error": null,
+      "generated_tokens": 39,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 77,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.07][S01] Authority.[0.63][0.92][S02] Yeah, absolutely. Without that.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.07][S01] Authority.[0.63][0.92][S02] Yeah, absolutely. Without that.[2.48]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:560000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4166015420341864,
+      "error": null,
+      "generated_tokens": 97,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 233,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Authority.[0.64][0.92][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism[5.56][5.94][S02] you see in China?[6.72][7.44][S02] If you don't have a sense of self, a sense of[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Authority.[0.64][0.92][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism[5.56][5.94][S02] you see in China?[6.72][7.44][S02] If you don't have a sense of self, a sense of[9.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:600000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14500949997454882,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 69,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]How can you have this radical, dynamic entrepreneur?[2.44]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]How can you have this radical, dynamic entrepreneur?[2.44]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:600000:840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.44455091597046703,
+      "error": null,
+      "generated_tokens": 96,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 281,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] How can you have this radical, dynamic entrepreneurialism you see in China?[4.22][4.92][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[10.77][10.79][S01] you look for opportunities, you, you, you drive opportunities.[14.89]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] How can you have this radical, dynamic entrepreneurialism you see in China?[4.22][4.92][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[10.77][10.79][S01] you look for opportunities, you, you, you drive opportunities.[14.89]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:640000:680000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14389033301267773,
+      "error": null,
+      "generated_tokens": 23,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 45,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.08][S01] Normalism you see in China.[1.74]",
+      "token_cap": 286,
+      "transcript": "[0.08][S01] Normalism you see in China.[1.74]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.337169999955222,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 190,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] You see in China.[1.72][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you.[9.77]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] You see in China.[1.72][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you.[9.77]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4004437079420313,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 246,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] You see in China.[1.74][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you, you, you drive opportunities, it's all self motivated.[14.45]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] You see in China.[1.74][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you, you, you drive opportunities, it's all self motivated.[14.45]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:680000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.20474762504454702,
+      "error": null,
+      "generated_tokens": 29,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 61,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] You don't have a sense of self, a sense of.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] You don't have a sense of self, a sense of.[2.48]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:720000:760000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.18316333391703665,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 47,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01]Of the fact that you can find.[2.48]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01]Of the fact that you can find.[2.48]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:720000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.28489304205868393,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 171,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Of the fact that you can find opportunities, you look for opportunities, you, you, you drive opportunities.[7.36][7.82][S01] Um, it's all self motivated.[9.48]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Of the fact that you can find opportunities, you look for opportunities, you, you, you drive opportunities.[7.36][7.82][S01] Um, it's all self motivated.[9.48]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:720000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.40522466704715043,
+      "error": null,
+      "generated_tokens": 91,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 253,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.05][S01] Of the fact that you can find opportunities, you look for opportunities, you, you, you drive opportunities.[7.37][7.83][S01] Um, it's all self motivated.[9.49][9.98][S02] Is there still a young kid in China that's able to dream to be?[14.91]",
+      "token_cap": 1373,
+      "transcript": "[0.05][S01] Of the fact that you can find opportunities, you look for opportunities, you, you, you drive opportunities.[7.37][7.83][S01] Um, it's all self motivated.[9.49][9.98][S02] Is there still a young kid in China that's able to dream to be?[14.91]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:760000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1782119170529768,
+      "error": null,
+      "generated_tokens": 26,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 70,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Find opportunities, you look for opportunities, you.[2.24]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Find opportunities, you look for opportunities, you.[2.24]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:800000:840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1375294589670375,
+      "error": null,
+      "generated_tokens": 21,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 46,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.15][S01] You you drive opportunities.[2.39]",
+      "token_cap": 286,
+      "transcript": "[0.15][S01] You you drive opportunities.[2.39]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3198464170563966,
+      "error": null,
+      "generated_tokens": 73,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 173,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.15][S01] You you drive opportunities.[2.35][2.81][S01] Um, it's all self motivated.[4.47][4.95][S02] Is there still a young kid in China that's able to dream to be?[9.89]",
+      "token_cap": 938,
+      "transcript": "[0.15][S01] You you drive opportunities.[2.35][2.81][S01] Um, it's all self motivated.[4.47][4.95][S02] Is there still a young kid in China that's able to dream to be?[9.89]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:80000:120000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.1138384590158239,
+      "error": null,
+      "generated_tokens": 20,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 28,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Um but uh.[1.98]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Um but uh.[1.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:80000:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.26091487507801503,
+      "error": null,
+      "generated_tokens": 56,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 163,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] But deference, a certain amount of deference to authority is not blind submission.[7.06][7.11][S01] It's been written implicitly in our contract.[9.73]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] But deference, a certain amount of deference to authority is not blind submission.[7.06][7.11][S01] It's been written implicitly in our contract.[9.73]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:840000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.14794391696341336,
+      "error": null,
+      "generated_tokens": 24,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 46,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.28][S01] Um, it's all self motivated.[1.96]",
+      "token_cap": 286,
+      "transcript": "[0.28][S01] Um, it's all self motivated.[1.96]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:880000:920000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.17386524996254593,
+      "error": null,
+      "generated_tokens": 39,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 68,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.00][S01] Is there still a young kid?[1.78][2.28][S02] Yeah.[2.54]",
+      "token_cap": 286,
+      "transcript": "[0.00][S01] Is there still a young kid?[1.78][2.28][S02] Yeah.[2.54]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:920000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:286:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.13827650004532188,
+      "error": null,
+      "generated_tokens": 27,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 52,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 150,
+      "raw_text": "[0.21][S01] In China, it's able to dream to be[2.43]",
+      "token_cap": 286,
+      "transcript": "[0.21][S01] In China, it's able to dream to be[2.43]"
+    }
+  },
+  "schema": "moss-context-arms-decode-cache.v2"
+}

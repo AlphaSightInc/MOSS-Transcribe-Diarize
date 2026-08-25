@@ -1,0 +1,10 @@
+7e0cbc041c909f549f1ec2f22e613d3a1639d740fde33432f75aeb9e175aecc9  grid.json
+f935f544f8cc90e3ecd11181e6ec6a4e7ff94323cb05b25a85634e5b4b866070  grid-console.txt
+c66565c59ddc7a0b930ffc198263f2cebc0ac679a828bfecf6327e5d64591bfb  grid-console-fresh-decodes.txt
+014483797c3960e89f6fcd41bda7190e67a4aa02526986af66e57aaf18306d48  mutations.txt
+b095409b51fcd0a8ac8fa736e9bfd08f0fe4d12ea07f00f22d6cef01d6861879  decode-cache/run0.json
+1db51c3d530cc94c8a73a29a1e1ee63beb844f26d27718dbcd56228e43e67f62  decode-cache/run1.json
+d8e45449386f88581ff198226d0117ad86580466c6c47fac62dc84da8b2aa18a  decode-cache/run2.json
+9ee0a6bb98f20dd6a19011e71d4bea07871c32f86308bd86c61b6f622c65713b  ../../../prototypes/streaming-diarization/live-convergence/compare_rolling_grid.py
+348e9446d682cffada7b7379cc591f3f7f45f7fe27d3264f330a32a8955f5d98  ../../../prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M2-grid.md
+3fdf5c82af3ae1764a72643ca8f5931f2c50fd3811236328b930d6c328cea8f7  ../../../prototypes/streaming-diarization/live-convergence/mutate_rolling_grid.sh
