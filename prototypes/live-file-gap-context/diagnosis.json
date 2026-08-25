@@ -1,0 +1,5485 @@
+{
+  "aggregate": {
+    "d1": {
+      "bigram_survival": {
+        "file": {
+          "internal": {
+            "pairs": 368,
+            "survival_rate": 0.9184782608695652,
+            "survived": 338
+          },
+          "straddling": {
+            "pairs": 69,
+            "survival_rate": 0.9130434782608695,
+            "survived": 63
+          }
+        },
+        "file_on_live_clock": {
+          "internal": {
+            "pairs": 369,
+            "survival_rate": 0.9295392953929539,
+            "survived": 343
+          },
+          "straddling": {
+            "pairs": 68,
+            "survival_rate": 0.8529411764705882,
+            "survived": 58
+          }
+        },
+        "live": {
+          "internal": {
+            "pairs": 369,
+            "survival_rate": 0.8943089430894309,
+            "survived": 330
+          },
+          "straddling": {
+            "pairs": 68,
+            "survival_rate": 0.4852941176470588,
+            "survived": 33
+          }
+        }
+      },
+      "clock_a": {
+        "file": {
+          "boundary": {
+            "del": 6,
+            "errors": 12,
+            "ins": 4,
+            "miss_rate": 0.04316546762589928,
+            "n": 139,
+            "sub": 2,
+            "wer": 0.08633093525179857
+          },
+          "interior": {
+            "del": 8,
+            "errors": 36,
+            "ins": 22,
+            "miss_rate": 0.026578073089700997,
+            "n": 301,
+            "sub": 6,
+            "wer": 0.11960132890365449
+          }
+        },
+        "gap_words": {
+          "boundary": 25,
+          "boundary_share": 0.5813953488372093,
+          "interior": 18,
+          "total": 43
+        },
+        "live": {
+          "boundary": {
+            "del": 11,
+            "errors": 37,
+            "ins": 18,
+            "miss_rate": 0.07913669064748201,
+            "n": 139,
+            "sub": 8,
+            "wer": 0.26618705035971224
+          },
+          "interior": {
+            "del": 14,
+            "errors": 54,
+            "ins": 33,
+            "miss_rate": 0.046511627906976744,
+            "n": 301,
+            "sub": 7,
+            "wer": 0.17940199335548174
+          }
+        },
+        "word_share": {
+          "boundary": 0.3159090909090909
+        }
+      },
+      "clock_b": {
+        "file": {
+          "boundary": {
+            "del": 1,
+            "errors": 9,
+            "ins": 8,
+            "miss_rate": 0.0070921985815602835,
+            "n": 141,
+            "sub": 0,
+            "wer": 0.06382978723404255
+          },
+          "interior": {
+            "del": 13,
+            "errors": 39,
+            "ins": 18,
+            "miss_rate": 0.043478260869565216,
+            "n": 299,
+            "sub": 8,
+            "wer": 0.13043478260869565
+          }
+        },
+        "gap_words": {
+          "boundary": 15,
+          "boundary_share": 0.3488372093023256,
+          "interior": 28,
+          "total": 43
+        },
+        "live": {
+          "boundary": {
+            "del": 3,
+            "errors": 24,
+            "ins": 18,
+            "miss_rate": 0.02127659574468085,
+            "n": 141,
+            "sub": 3,
+            "wer": 0.1702127659574468
+          },
+          "interior": {
+            "del": 22,
+            "errors": 67,
+            "ins": 33,
+            "miss_rate": 0.07357859531772576,
+            "n": 299,
+            "sub": 12,
+            "wer": 0.22408026755852842
+          }
+        },
+        "word_share": {
+          "boundary": 0.32045454545454544
+        }
+      },
+      "clock_own": {
+        "error_density_ratio": {
+          "file": 0.7530864197530864,
+          "live": 2.720374617737003
+        },
+        "file": {
+          "boundary": {
+            "del": 1,
+            "errors": 12,
+            "ins": 8,
+            "miss_rate": 0.007407407407407408,
+            "n": 135,
+            "sub": 3,
+            "wer": 0.08888888888888889
+          },
+          "interior": {
+            "del": 13,
+            "errors": 36,
+            "ins": 18,
+            "miss_rate": 0.04262295081967213,
+            "n": 305,
+            "sub": 5,
+            "wer": 0.1180327868852459
+          }
+        },
+        "gap_words": {
+          "boundary": 31,
+          "boundary_share": 0.7209302325581395,
+          "interior": 12,
+          "total": 43
+        },
+        "live": {
+          "boundary": {
+            "del": 5,
+            "errors": 43,
+            "ins": 28,
+            "miss_rate": 0.045871559633027525,
+            "n": 109,
+            "sub": 10,
+            "wer": 0.3944954128440367
+          },
+          "interior": {
+            "del": 20,
+            "errors": 48,
+            "ins": 23,
+            "miss_rate": 0.06042296072507553,
+            "n": 331,
+            "sub": 5,
+            "wer": 0.14501510574018128
+          }
+        },
+        "word_share_boundary": 0.24772727272727274
+      },
+      "coverage": {
+        "boundary_share": 0.8961982040102229,
+        "gap_tokens": {
+          "boundary": 24.203699014778316,
+          "interior": 2.8033836891078288,
+          "total": 27.007082703886145
+        },
+        "totals": {
+          "file": {
+            "boundary": 13.707221072796935,
+            "interior": 19.671143130815587,
+            "tokens": 440
+          },
+          "live": {
+            "boundary": 37.91092008757525,
+            "interior": 22.474526819923415,
+            "tokens": 440
+          }
+        }
+      },
+      "distance_histogram": {
+        "file": {
+          "0.00-0.25": {
+            "errors": 6,
+            "wer": 0.07228915662650602,
+            "words": 83
+          },
+          "0.25-0.50": {
+            "errors": 8,
+            "wer": 0.10526315789473684,
+            "words": 76
+          },
+          "0.50-0.75": {
+            "errors": 5,
+            "wer": 0.056818181818181816,
+            "words": 88
+          },
+          "0.75-1.00": {
+            "errors": 5,
+            "wer": 0.06172839506172839,
+            "words": 81
+          },
+          "1.00-1.25": {
+            "errors": 8,
+            "wer": 0.0975609756097561,
+            "words": 82
+          },
+          "1.25-1.50": {
+            "errors": 1,
+            "wer": 0.16666666666666666,
+            "words": 6
+          },
+          "1.50-1.75": {
+            "errors": 2,
+            "wer": 0.4,
+            "words": 5
+          },
+          "1.75-2.00": {
+            "errors": 2,
+            "wer": 0.4,
+            "words": 5
+          },
+          "2.00-2.25": {
+            "errors": 2,
+            "wer": 0.5,
+            "words": 4
+          },
+          "2.25-2.50": {
+            "errors": 2,
+            "wer": 0.6666666666666666,
+            "words": 3
+          },
+          "2.50-2.75": {
+            "errors": 4,
+            "wer": 1.0,
+            "words": 4
+          },
+          "2.75-3.00": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          },
+          "3.25-3.50": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          },
+          "3.50-3.75": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          }
+        },
+        "live": {
+          "0.00-0.25": {
+            "errors": 28,
+            "wer": 0.4827586206896552,
+            "words": 58
+          },
+          "0.25-0.50": {
+            "errors": 25,
+            "wer": 0.2976190476190476,
+            "words": 84
+          },
+          "0.50-0.75": {
+            "errors": 7,
+            "wer": 0.08333333333333333,
+            "words": 84
+          },
+          "0.75-1.00": {
+            "errors": 7,
+            "wer": 0.07692307692307693,
+            "words": 91
+          },
+          "1.00-1.25": {
+            "errors": 8,
+            "wer": 0.08602150537634409,
+            "words": 93
+          },
+          "1.25-1.50": {
+            "errors": 1,
+            "wer": 0.2,
+            "words": 5
+          },
+          "1.50-1.75": {
+            "errors": 2,
+            "wer": 0.3333333333333333,
+            "words": 6
+          },
+          "1.75-2.00": {
+            "errors": 1,
+            "wer": 0.16666666666666666,
+            "words": 6
+          },
+          "2.00-2.25": {
+            "errors": 3,
+            "wer": 1.0,
+            "words": 3
+          },
+          "2.25-2.50": {
+            "errors": 2,
+            "wer": 0.6666666666666666,
+            "words": 3
+          },
+          "2.50-2.75": {
+            "errors": 4,
+            "wer": 1.0,
+            "words": 4
+          },
+          "2.75-3.00": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          },
+          "3.25-3.50": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          },
+          "3.50-3.75": {
+            "errors": 1,
+            "wer": 1.0,
+            "words": 1
+          }
+        }
+      }
+    },
+    "d2_top_seams": [
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 5,
+        "file_window_text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value. But the, you know, it's many investors, you know, in a bubble going into the, you know,",
+        "left_span": {
+          "range": [
+            45.0,
+            47.5
+          ],
+          "span_id": 18,
+          "text": "Maybe in the long run, there's intrinsic value, but."
+        },
+        "reference_window": "but",
+        "right_span": {
+          "range": [
+            47.5,
+            50.0
+          ],
+          "span_id": 19,
+          "text": "Uh, the."
+        },
+        "seam_seconds": 47.5,
+        "words_in_window": 1
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 3,
+        "file_window_text": "He talked about the difference between, you said the stock market in the short term is a voting machine.",
+        "left_span": {
+          "range": [
+            5.0,
+            7.5
+          ],
+          "span_id": 2,
+          "text": ""
+        },
+        "reference_window": "the stock market in the short",
+        "right_span": {
+          "range": [
+            7.5,
+            10.0
+          ],
+          "span_id": 3,
+          "text": "It in the short term is a voting machine. It represents"
+        },
+        "seam_seconds": 7.5,
+        "words_in_window": 6
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 3,
+        "file_window_text": "But in the long term, the stock market is a weighing machine, you're much more accurate.",
+        "left_span": {
+          "range": [
+            15.0,
+            17.5
+          ],
+          "span_id": 6,
+          "text": "But in the long term, it's the stock market's a weighing machine."
+        },
+        "reference_window": "a weighing machine",
+        "right_span": {
+          "range": [
+            17.5,
+            20.0
+          ],
+          "span_id": 7,
+          "text": "mean, you know, much more accurate. It's going"
+        },
+        "seam_seconds": 17.5,
+        "words_in_window": 3
+      },
+      {
+        "case": "lex_javier_milei",
+        "damaged_words": 3,
+        "file_window_text": "but brought inflation down.",
+        "left_span": {
+          "range": [
+            57.26,
+            59.76
+          ],
+          "span_id": 30,
+          "text": "But brought inflation down."
+        },
+        "reference_window": "inflation down to its lowest",
+        "right_span": {
+          "range": [
+            59.76,
+            60.0
+          ],
+          "span_id": 31,
+          "text": ""
+        },
+        "seam_seconds": 59.76,
+        "words_in_window": 5
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 2,
+        "file_window_text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, you said the stock market in the short term is a voting",
+        "left_span": {
+          "range": [
+            2.5,
+            5.0
+          ],
+          "span_id": 1,
+          "text": "to kind of weigh it. He talked about"
+        },
+        "reference_window": "about the difference",
+        "right_span": {
+          "range": [
+            5.0,
+            7.5
+          ],
+          "span_id": 2,
+          "text": ""
+        },
+        "seam_seconds": 5.0,
+        "words_in_window": 3
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 2,
+        "file_window_text": "But in the long term, the stock market is a weighing machine, you're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of",
+        "left_span": {
+          "range": [
+            17.5,
+            20.0
+          ],
+          "span_id": 7,
+          "text": "mean, you know, much more accurate. It's going"
+        },
+        "reference_window": "it's going to tell you what",
+        "right_span": {
+          "range": [
+            20.0,
+            22.5
+          ],
+          "span_id": 8,
+          "text": "Tell you what something is worth. And so if you can."
+        },
+        "seam_seconds": 20.0,
+        "words_in_window": 6
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 2,
+        "file_window_text": "And that's kind of the message of the book. And that same way, there's a kind of difference between speculation and investing.",
+        "left_span": {
+          "range": [
+            27.5,
+            30.0
+          ],
+          "span_id": 11,
+          "text": "You and that's kind of the message of the book. And that's."
+        },
+        "reference_window": "in that same way there's a",
+        "right_span": {
+          "range": [
+            30.0,
+            32.5
+          ],
+          "span_id": 12,
+          "text": "Same way, there's a kind of difference between speculation."
+        },
+        "seam_seconds": 30.0,
+        "words_in_window": 6
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 2,
+        "file_window_text": "And that same way, there's a kind of difference between speculation and investing. Yeah, speculation is just, it's a bit like buying, trading crypto, right?",
+        "left_span": {
+          "range": [
+            30.0,
+            32.5
+          ],
+          "span_id": 12,
+          "text": "Same way, there's a kind of difference between speculation."
+        },
+        "reference_window": "speculation and",
+        "right_span": {
+          "range": [
+            32.5,
+            35.0
+          ],
+          "span_id": 13,
+          "text": "In a investing. Yeah. Speculation."
+        },
+        "seam_seconds": 32.5,
+        "words_in_window": 2
+      },
+      {
+        "case": "lex_bill_ackman",
+        "damaged_words": 2,
+        "file_window_text": "And that same way, there's a kind of difference between speculation and investing. Yeah, speculation is just, it's a bit like buying, trading crypto, right?",
+        "left_span": {
+          "range": [
+            32.5,
+            35.0
+          ],
+          "span_id": 13,
+          "text": "In a investing. Yeah. Speculation."
+        },
+        "reference_window": "speculation is just",
+        "right_span": {
+          "range": [
+            35.0,
+            37.5
+          ],
+          "span_id": 14,
+          "text": "It's just, it's a bit like buying."
+        },
+        "seam_seconds": 35.0,
+        "words_in_window": 3
+      },
+      {
+        "case": "lex_javier_milei",
+        "damaged_words": 2,
+        "file_window_text": "for mass unemployment and poverty. He took this crisis head-on,",
+        "left_span": {
+          "range": [
+            36.64,
+            39.14
+          ],
+          "span_id": 20,
+          "text": "For mass unemployment and poverty."
+        },
+        "reference_window": "poverty",
+        "right_span": {
+          "range": [
+            39.14,
+            39.36
+          ],
+          "span_id": 21,
+          "text": "Mm."
+        },
+        "seam_seconds": 39.14,
+        "words_in_window": 1
+      },
+      {
+        "case": "lex_javier_milei",
+        "damaged_words": 2,
+        "file_window_text": "for mass unemployment and poverty. He took this crisis head-on,",
+        "left_span": {
+          "range": [
+            39.14,
+            39.36
+          ],
+          "span_id": 21,
+          "text": "Mm."
+        },
+        "reference_window": "poverty he",
+        "right_span": {
+          "range": [
+            39.36,
+            39.76
+          ],
+          "span_id": 22,
+          "text": "Yeah."
+        },
+        "seam_seconds": 39.36,
+        "words_in_window": 2
+      },
+      {
+        "case": "lex_keyu_jin",
+        "damaged_words": 2,
+        "file_window_text": "So that a little bit of the rebel is allowed in balance with the deference to authority? Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?",
+        "left_span": {
+          "range": [
+            32.5,
+            35.0
+          ],
+          "span_id": 13,
+          "text": "Uh, in balance with the difference."
+        },
+        "reference_window": "deference to authority",
+        "right_span": {
+          "range": [
+            35.0,
+            37.5
+          ],
+          "span_id": 14,
+          "text": "Authority. Yeah, absolutely. Without that."
+        },
+        "seam_seconds": 35.0,
+        "words_in_window": 3
+      }
+    ],
+    "d3": {
+      "buckets": {
+        "1.0-1.8s": {
+          "empty_spans": 0,
+          "errors": 0,
+          "mean_span_wer": 0.0,
+          "median_duration": 1.29,
+          "pooled_wer": 0.0,
+          "ref_words": 3,
+          "spans": 2
+        },
+        "2.5s(cap)": {
+          "empty_spans": 1,
+          "errors": 74,
+          "mean_span_wer": 0.26169214772155946,
+          "median_duration": 2.5,
+          "pooled_wer": 0.17330210772833723,
+          "ref_words": 427,
+          "spans": 68
+        },
+        "<=1.0s": {
+          "empty_spans": 1,
+          "errors": 1,
+          "mean_span_wer": 1.0,
+          "median_duration": 0.24,
+          "pooled_wer": 1.0,
+          "ref_words": 1,
+          "spans": 1
+        }
+      },
+      "hard_capped": {
+        "empty_spans": 1,
+        "errors": 74,
+        "mean_span_wer": 0.26169214772155946,
+        "median_duration": 2.5,
+        "pooled_wer": 0.17330210772833723,
+        "ref_words": 427,
+        "spans": 68
+      },
+      "javier_only": {
+        "hard_capped": {
+          "empty_spans": 0,
+          "errors": 7,
+          "mean_span_wer": 0.06746031746031747,
+          "median_duration": 2.5,
+          "pooled_wer": 0.0603448275862069,
+          "ref_words": 116,
+          "spans": 21
+        },
+        "shorter": {
+          "empty_spans": 1,
+          "errors": 1,
+          "mean_span_wer": 0.3333333333333333,
+          "median_duration": 1.17,
+          "pooled_wer": 0.25,
+          "ref_words": 4,
+          "spans": 3
+        }
+      },
+      "shorter": {
+        "empty_spans": 1,
+        "errors": 1,
+        "mean_span_wer": 0.3333333333333333,
+        "median_duration": 1.17,
+        "pooled_wer": 0.25,
+        "ref_words": 4,
+        "spans": 3
+      }
+    }
+  },
+  "baseline": "/private/tmp/claude-501/-Users-gao-Desktop-AI-Projects-Github-Projects-MOSS-Transcribe-Diarize/bd3632af-da27-408f-8e03-ecd56a586e8d/scratchpad/remeasure-20260824T160130",
+  "cases": {
+    "lex_bill_ackman": {
+      "anchor_rate": 0.9318181818181818,
+      "bands": {
+        "0.25": {
+          "clock_a": {
+            "boundary_share_of_words": 0.20454545454545456,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 4,
+                "ins": 3,
+                "match": 35,
+                "miss_rate": 0.0,
+                "n": 36,
+                "sub": 1,
+                "sub_rate": 0.027777777777777776,
+                "wer": 0.1111111111111111
+              },
+              "interior": {
+                "del": 8,
+                "errors": 24,
+                "ins": 13,
+                "match": 129,
+                "miss_rate": 0.05714285714285714,
+                "n": 140,
+                "sub": 3,
+                "sub_rate": 0.02142857142857143,
+                "wer": 0.17142857142857143
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 12,
+                "ins": 7,
+                "match": 31,
+                "miss_rate": 0.05555555555555555,
+                "n": 36,
+                "sub": 3,
+                "sub_rate": 0.08333333333333333,
+                "wer": 0.3333333333333333
+              },
+              "interior": {
+                "del": 14,
+                "errors": 34,
+                "ins": 15,
+                "match": 121,
+                "miss_rate": 0.1,
+                "n": 140,
+                "sub": 5,
+                "sub_rate": 0.03571428571428571,
+                "wer": 0.24285714285714285
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.2159090909090909,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 8,
+                "ins": 8,
+                "match": 38,
+                "miss_rate": 0.0,
+                "n": 38,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.21052631578947367
+              },
+              "interior": {
+                "del": 8,
+                "errors": 20,
+                "ins": 8,
+                "match": 126,
+                "miss_rate": 0.057971014492753624,
+                "n": 138,
+                "sub": 4,
+                "sub_rate": 0.028985507246376812,
+                "wer": 0.14492753623188406
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 13,
+                "ins": 9,
+                "match": 34,
+                "miss_rate": 0.02631578947368421,
+                "n": 38,
+                "sub": 3,
+                "sub_rate": 0.07894736842105263,
+                "wer": 0.34210526315789475
+              },
+              "interior": {
+                "del": 15,
+                "errors": 33,
+                "ins": 13,
+                "match": 118,
+                "miss_rate": 0.10869565217391304,
+                "n": 138,
+                "sub": 5,
+                "sub_rate": 0.036231884057971016,
+                "wer": 0.2391304347826087
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 5,
+                "ins": 4,
+                "miss_rate": 0.0,
+                "n": 35,
+                "sub": 1,
+                "wer": 0.14285714285714285
+              },
+              "interior": {
+                "del": 8,
+                "errors": 23,
+                "ins": 12,
+                "miss_rate": 0.05673758865248227,
+                "n": 141,
+                "sub": 3,
+                "wer": 0.16312056737588654
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 12,
+                "ins": 7,
+                "miss_rate": 0.07142857142857142,
+                "n": 28,
+                "sub": 3,
+                "wer": 0.42857142857142855
+              },
+              "interior": {
+                "del": 14,
+                "errors": 34,
+                "ins": 15,
+                "miss_rate": 0.0945945945945946,
+                "n": 148,
+                "sub": 5,
+                "wer": 0.22972972972972974
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.0,
+                "interior": 0.047785023884161816
+              },
+              "coverage_loss_tokens": {
+                "boundary": 0.0,
+                "interior": 8.41016420361248
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 0.0,
+                "interior": 3.060000000000001
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.05229497872816831,
+                "interior": 0.10528142415534666
+              },
+              "coverage_loss_tokens": {
+                "boundary": 9.203916256157623,
+                "interior": 18.529530651341013
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 3.1599999999999966,
+                "interior": 6.600000000000009
+              }
+            }
+          }
+        },
+        "0.4": {
+          "clock_a": {
+            "boundary_share_of_words": 0.2840909090909091,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 4,
+                "ins": 3,
+                "match": 49,
+                "miss_rate": 0.0,
+                "n": 50,
+                "sub": 1,
+                "sub_rate": 0.02,
+                "wer": 0.08
+              },
+              "interior": {
+                "del": 8,
+                "errors": 24,
+                "ins": 13,
+                "match": 115,
+                "miss_rate": 0.06349206349206349,
+                "n": 126,
+                "sub": 3,
+                "sub_rate": 0.023809523809523808,
+                "wer": 0.19047619047619047
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 3,
+                "errors": 13,
+                "ins": 7,
+                "match": 44,
+                "miss_rate": 0.06,
+                "n": 50,
+                "sub": 3,
+                "sub_rate": 0.06,
+                "wer": 0.26
+              },
+              "interior": {
+                "del": 13,
+                "errors": 33,
+                "ins": 15,
+                "match": 108,
+                "miss_rate": 0.10317460317460317,
+                "n": 126,
+                "sub": 5,
+                "sub_rate": 0.03968253968253968,
+                "wer": 0.2619047619047619
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.29545454545454547,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 8,
+                "ins": 8,
+                "match": 52,
+                "miss_rate": 0.0,
+                "n": 52,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.15384615384615385
+              },
+              "interior": {
+                "del": 8,
+                "errors": 20,
+                "ins": 8,
+                "match": 112,
+                "miss_rate": 0.06451612903225806,
+                "n": 124,
+                "sub": 4,
+                "sub_rate": 0.03225806451612903,
+                "wer": 0.16129032258064516
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 14,
+                "ins": 10,
+                "match": 48,
+                "miss_rate": 0.019230769230769232,
+                "n": 52,
+                "sub": 3,
+                "sub_rate": 0.057692307692307696,
+                "wer": 0.2692307692307692
+              },
+              "interior": {
+                "del": 15,
+                "errors": 32,
+                "ins": 12,
+                "match": 104,
+                "miss_rate": 0.12096774193548387,
+                "n": 124,
+                "sub": 5,
+                "sub_rate": 0.04032258064516129,
+                "wer": 0.25806451612903225
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 9,
+                "ins": 6,
+                "miss_rate": 0.0,
+                "n": 52,
+                "sub": 3,
+                "wer": 0.17307692307692307
+              },
+              "interior": {
+                "del": 8,
+                "errors": 19,
+                "ins": 10,
+                "miss_rate": 0.06451612903225806,
+                "n": 124,
+                "sub": 1,
+                "wer": 0.1532258064516129
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 3,
+                "errors": 18,
+                "ins": 9,
+                "miss_rate": 0.06666666666666667,
+                "n": 45,
+                "sub": 6,
+                "wer": 0.4
+              },
+              "interior": {
+                "del": 13,
+                "errors": 28,
+                "ins": 13,
+                "miss_rate": 0.09923664122137404,
+                "n": 131,
+                "sub": 2,
+                "wer": 0.21374045801526717
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.00316489245907343,
+                "interior": 0.04462013142508839
+              },
+              "coverage_loss_tokens": {
+                "boundary": 0.5570210727969237,
+                "interior": 7.853143130815557
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 0.17999999999999616,
+                "interior": 2.880000000000005
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.07454784140667745,
+                "interior": 0.08302856147683754
+              },
+              "coverage_loss_tokens": {
+                "boundary": 13.12042008757523,
+                "interior": 14.613026819923407
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 4.5699999999999905,
+                "interior": 5.1900000000000155
+              }
+            }
+          }
+        },
+        "0.6": {
+          "clock_a": {
+            "boundary_share_of_words": 0.4431818181818182,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 12,
+                "ins": 9,
+                "match": 75,
+                "miss_rate": 0.0,
+                "n": 78,
+                "sub": 3,
+                "sub_rate": 0.038461538461538464,
+                "wer": 0.15384615384615385
+              },
+              "interior": {
+                "del": 8,
+                "errors": 16,
+                "ins": 7,
+                "match": 89,
+                "miss_rate": 0.08163265306122448,
+                "n": 98,
+                "sub": 1,
+                "sub_rate": 0.01020408163265306,
+                "wer": 0.16326530612244897
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 4,
+                "errors": 26,
+                "ins": 17,
+                "match": 69,
+                "miss_rate": 0.05128205128205128,
+                "n": 78,
+                "sub": 5,
+                "sub_rate": 0.0641025641025641,
+                "wer": 0.3333333333333333
+              },
+              "interior": {
+                "del": 12,
+                "errors": 20,
+                "ins": 5,
+                "match": 83,
+                "miss_rate": 0.12244897959183673,
+                "n": 98,
+                "sub": 3,
+                "sub_rate": 0.030612244897959183,
+                "wer": 0.20408163265306123
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.48295454545454547,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 10,
+                "ins": 9,
+                "match": 84,
+                "miss_rate": 0.0,
+                "n": 85,
+                "sub": 1,
+                "sub_rate": 0.011764705882352941,
+                "wer": 0.11764705882352941
+              },
+              "interior": {
+                "del": 8,
+                "errors": 18,
+                "ins": 7,
+                "match": 80,
+                "miss_rate": 0.08791208791208792,
+                "n": 91,
+                "sub": 3,
+                "sub_rate": 0.03296703296703297,
+                "wer": 0.1978021978021978
+              },
+              "overall": {
+                "errors": 28,
+                "n": 176,
+                "wer": 0.1590909090909091
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 3,
+                "errors": 20,
+                "ins": 13,
+                "match": 78,
+                "miss_rate": 0.03529411764705882,
+                "n": 85,
+                "sub": 4,
+                "sub_rate": 0.047058823529411764,
+                "wer": 0.23529411764705882
+              },
+              "interior": {
+                "del": 13,
+                "errors": 26,
+                "ins": 9,
+                "match": 74,
+                "miss_rate": 0.14285714285714285,
+                "n": 91,
+                "sub": 4,
+                "sub_rate": 0.04395604395604396,
+                "wer": 0.2857142857142857
+              },
+              "overall": {
+                "errors": 46,
+                "n": 176,
+                "wer": 0.26136363636363635
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 11,
+                "ins": 8,
+                "miss_rate": 0.0,
+                "n": 76,
+                "sub": 3,
+                "wer": 0.14473684210526316
+              },
+              "interior": {
+                "del": 8,
+                "errors": 17,
+                "ins": 8,
+                "miss_rate": 0.08,
+                "n": 100,
+                "sub": 1,
+                "wer": 0.17
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 4,
+                "errors": 23,
+                "ins": 13,
+                "miss_rate": 0.056338028169014086,
+                "n": 71,
+                "sub": 6,
+                "wer": 0.323943661971831
+              },
+              "interior": {
+                "del": 12,
+                "errors": 23,
+                "ins": 9,
+                "miss_rate": 0.11428571428571428,
+                "n": 105,
+                "sub": 2,
+                "wer": 0.21904761904761905
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.012216398902821375,
+                "interior": 0.035568624981340446
+              },
+              "coverage_loss_tokens": {
+                "boundary": 2.150086206896562,
+                "interior": 6.260077996715919
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 0.8600000000000065,
+                "interior": 2.1999999999999944
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.10172997680001994,
+                "interior": 0.05584642608349504
+              },
+              "coverage_loss_tokens": {
+                "boundary": 17.90447591680351,
+                "interior": 9.828970990695128
+              },
+              "reference_tokens": 176,
+              "uncovered_seconds": {
+                "boundary": 6.330000000000007,
+                "interior": 3.429999999999999
+              }
+            }
+          }
+        }
+      },
+      "bigram_survival": {
+        "file": {
+          "internal": {
+            "pairs": 152,
+            "survival_rate": 0.8881578947368421,
+            "survived": 135
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.782608695652174,
+            "survived": 18
+          }
+        },
+        "file_on_live_clock": {
+          "internal": {
+            "pairs": 153,
+            "survival_rate": 0.8954248366013072,
+            "survived": 137
+          },
+          "straddling": {
+            "pairs": 22,
+            "survival_rate": 0.7272727272727273,
+            "survived": 16
+          }
+        },
+        "live": {
+          "internal": {
+            "pairs": 153,
+            "survival_rate": 0.8496732026143791,
+            "survived": 130
+          },
+          "straddling": {
+            "pairs": 22,
+            "survival_rate": 0.36363636363636365,
+            "survived": 8
+          }
+        }
+      },
+      "distance_histogram": {
+        "file": {
+          "errors": {
+            "0.00-0.25": 5,
+            "0.25-0.50": 5,
+            "0.50-0.75": 3,
+            "0.75-1.00": 2,
+            "1.00-1.25": 5,
+            "2.00-2.25": 1,
+            "2.50-2.75": 4,
+            "2.75-3.00": 1,
+            "3.25-3.50": 1,
+            "3.50-3.75": 1
+          },
+          "words": {
+            "0.00-0.25": 35,
+            "0.25-0.50": 25,
+            "0.50-0.75": 30,
+            "0.75-1.00": 36,
+            "1.00-1.25": 29,
+            "1.25-1.50": 4,
+            "1.50-1.75": 2,
+            "1.75-2.00": 3,
+            "2.00-2.25": 3,
+            "2.25-2.50": 2,
+            "2.50-2.75": 4,
+            "2.75-3.00": 1,
+            "3.25-3.50": 1,
+            "3.50-3.75": 1
+          }
+        },
+        "live": {
+          "errors": {
+            "0.00-0.25": 12,
+            "0.25-0.50": 11,
+            "0.50-0.75": 4,
+            "0.75-1.00": 5,
+            "1.00-1.25": 6,
+            "2.00-2.25": 1,
+            "2.50-2.75": 4,
+            "2.75-3.00": 1,
+            "3.25-3.50": 1,
+            "3.50-3.75": 1
+          },
+          "words": {
+            "0.00-0.25": 28,
+            "0.25-0.50": 32,
+            "0.50-0.75": 25,
+            "0.75-1.00": 35,
+            "1.00-1.25": 36,
+            "1.25-1.50": 2,
+            "1.50-1.75": 3,
+            "1.75-2.00": 4,
+            "2.00-2.25": 2,
+            "2.25-2.50": 2,
+            "2.50-2.75": 4,
+            "2.75-3.00": 1,
+            "3.25-3.50": 1,
+            "3.50-3.75": 1
+          }
+        }
+      },
+      "empty_spans": 1,
+      "hard_capped_spans": 24,
+      "reference_tokens": 176,
+      "seam_cases": [
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 5,
+          "file_window_text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value. But the, you know, it's many investors, you know, in a bubble going into the, you know,",
+          "left_span": {
+            "range": [
+              45.0,
+              47.5
+            ],
+            "span_id": 18,
+            "text": "Maybe in the long run, there's intrinsic value, but."
+          },
+          "reference_window": "but",
+          "right_span": {
+            "range": [
+              47.5,
+              50.0
+            ],
+            "span_id": 19,
+            "text": "Uh, the."
+          },
+          "seam_seconds": 47.5,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 3,
+          "file_window_text": "He talked about the difference between, you said the stock market in the short term is a voting machine.",
+          "left_span": {
+            "range": [
+              5.0,
+              7.5
+            ],
+            "span_id": 2,
+            "text": ""
+          },
+          "reference_window": "the stock market in the short",
+          "right_span": {
+            "range": [
+              7.5,
+              10.0
+            ],
+            "span_id": 3,
+            "text": "It in the short term is a voting machine. It represents"
+          },
+          "seam_seconds": 7.5,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 3,
+          "file_window_text": "But in the long term, the stock market is a weighing machine, you're much more accurate.",
+          "left_span": {
+            "range": [
+              15.0,
+              17.5
+            ],
+            "span_id": 6,
+            "text": "But in the long term, it's the stock market's a weighing machine."
+          },
+          "reference_window": "a weighing machine",
+          "right_span": {
+            "range": [
+              17.5,
+              20.0
+            ],
+            "span_id": 7,
+            "text": "mean, you know, much more accurate. It's going"
+          },
+          "seam_seconds": 17.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 2,
+          "file_window_text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, you said the stock market in the short term is a voting",
+          "left_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "to kind of weigh it. He talked about"
+          },
+          "reference_window": "about the difference",
+          "right_span": {
+            "range": [
+              5.0,
+              7.5
+            ],
+            "span_id": 2,
+            "text": ""
+          },
+          "seam_seconds": 5.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 2,
+          "file_window_text": "But in the long term, the stock market is a weighing machine, you're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of",
+          "left_span": {
+            "range": [
+              17.5,
+              20.0
+            ],
+            "span_id": 7,
+            "text": "mean, you know, much more accurate. It's going"
+          },
+          "reference_window": "it's going to tell you what",
+          "right_span": {
+            "range": [
+              20.0,
+              22.5
+            ],
+            "span_id": 8,
+            "text": "Tell you what something is worth. And so if you can."
+          },
+          "seam_seconds": 20.0,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 2,
+          "file_window_text": "And that's kind of the message of the book. And that same way, there's a kind of difference between speculation and investing.",
+          "left_span": {
+            "range": [
+              27.5,
+              30.0
+            ],
+            "span_id": 11,
+            "text": "You and that's kind of the message of the book. And that's."
+          },
+          "reference_window": "in that same way there's a",
+          "right_span": {
+            "range": [
+              30.0,
+              32.5
+            ],
+            "span_id": 12,
+            "text": "Same way, there's a kind of difference between speculation."
+          },
+          "seam_seconds": 30.0,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 2,
+          "file_window_text": "And that same way, there's a kind of difference between speculation and investing. Yeah, speculation is just, it's a bit like buying, trading crypto, right?",
+          "left_span": {
+            "range": [
+              30.0,
+              32.5
+            ],
+            "span_id": 12,
+            "text": "Same way, there's a kind of difference between speculation."
+          },
+          "reference_window": "speculation and",
+          "right_span": {
+            "range": [
+              32.5,
+              35.0
+            ],
+            "span_id": 13,
+            "text": "In a investing. Yeah. Speculation."
+          },
+          "seam_seconds": 32.5,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 2,
+          "file_window_text": "And that same way, there's a kind of difference between speculation and investing. Yeah, speculation is just, it's a bit like buying, trading crypto, right?",
+          "left_span": {
+            "range": [
+              32.5,
+              35.0
+            ],
+            "span_id": 13,
+            "text": "In a investing. Yeah. Speculation."
+          },
+          "reference_window": "speculation is just",
+          "right_span": {
+            "range": [
+              35.0,
+              37.5
+            ],
+            "span_id": 14,
+            "text": "It's just, it's a bit like buying."
+          },
+          "seam_seconds": 35.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 1,
+          "file_window_text": "He talked about the difference between, you said the stock market in the short term is a voting machine. It represents speculative interests, you know, supply and demand of people in the short term.",
+          "left_span": {
+            "range": [
+              7.5,
+              10.0
+            ],
+            "span_id": 3,
+            "text": "It in the short term is a voting machine. It represents"
+          },
+          "reference_window": "it represents",
+          "right_span": {
+            "range": [
+              10.0,
+              12.5
+            ],
+            "span_id": 4,
+            "text": "Sense speculative interests."
+          },
+          "seam_seconds": 10.0,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 1,
+          "file_window_text": "It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of",
+          "left_span": {
+            "range": [
+              20.0,
+              22.5
+            ],
+            "span_id": 8,
+            "text": "Tell you what something is worth. And so if you can."
+          },
+          "reference_window": "if you can define what",
+          "right_span": {
+            "range": [
+              22.5,
+              25.0
+            ],
+            "span_id": 9,
+            "text": "Divine what something's worth, then you can really take"
+          },
+          "seam_seconds": 22.5,
+          "words_in_window": 5
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 1,
+          "file_window_text": "the market because it's really here to to help you. And that's kind of the message of the book.",
+          "left_span": {
+            "range": [
+              25.0,
+              27.5
+            ],
+            "span_id": 10,
+            "text": "advantage of the market because it's really here to to help"
+          },
+          "reference_window": "here to help you and that's kind",
+          "right_span": {
+            "range": [
+              27.5,
+              30.0
+            ],
+            "span_id": 11,
+            "text": "You and that's kind of the message of the book. And that's."
+          },
+          "seam_seconds": 27.5,
+          "words_in_window": 7
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 1,
+          "file_window_text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right? You're Strong words.",
+          "left_span": {
+            "range": [
+              37.5,
+              40.0
+            ],
+            "span_id": 15,
+            "text": "Trading crypto. Right."
+          },
+          "reference_window": "right you're",
+          "right_span": {
+            "range": [
+              40.0,
+              42.5
+            ],
+            "span_id": 16,
+            "text": "That you're. Strong words. Well."
+          },
+          "seam_seconds": 40.0,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 1,
+          "file_window_text": "Strong words. Well, short term trading crypto, maybe in the long run, there's intrinsic value.",
+          "left_span": {
+            "range": [
+              40.0,
+              42.5
+            ],
+            "span_id": 16,
+            "text": "That you're. Strong words. Well."
+          },
+          "reference_window": "well",
+          "right_span": {
+            "range": [
+              42.5,
+              45.0
+            ],
+            "span_id": 17,
+            "text": "Uh, short term trading crypto."
+          },
+          "seam_seconds": 42.5,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, you said the stock market in the short term is a voting",
+          "left_span": {
+            "range": [
+              0.0,
+              2.5
+            ],
+            "span_id": 0,
+            "text": "To figure out what something's worth. And you have"
+          },
+          "reference_window": "and you have to kind of",
+          "right_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "to kind of weigh it. He talked about"
+          },
+          "seam_seconds": 2.5,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "It represents speculative interests, you know, supply and demand of people in the short term.",
+          "left_span": {
+            "range": [
+              10.0,
+              12.5
+            ],
+            "span_id": 4,
+            "text": "Sense speculative interests."
+          },
+          "reference_window": "interests supply and",
+          "right_span": {
+            "range": [
+              12.5,
+              15.0
+            ],
+            "span_id": 5,
+            "text": "Supply and demand of people in the short term."
+          },
+          "seam_seconds": 12.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "It represents speculative interests, you know, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine, you're much more accurate.",
+          "left_span": {
+            "range": [
+              12.5,
+              15.0
+            ],
+            "span_id": 5,
+            "text": "Supply and demand of people in the short term."
+          },
+          "reference_window": "the short term but in the long",
+          "right_span": {
+            "range": [
+              15.0,
+              17.5
+            ],
+            "span_id": 6,
+            "text": "But in the long term, it's the stock market's a weighing machine."
+          },
+          "seam_seconds": 15.0,
+          "words_in_window": 7
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to to help you.",
+          "left_span": {
+            "range": [
+              22.5,
+              25.0
+            ],
+            "span_id": 9,
+            "text": "Divine what something's worth, then you can really take"
+          },
+          "reference_window": "can really take advantage of the",
+          "right_span": {
+            "range": [
+              25.0,
+              27.5
+            ],
+            "span_id": 10,
+            "text": "advantage of the market because it's really here to to help"
+          },
+          "seam_seconds": 25.0,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?",
+          "left_span": {
+            "range": [
+              35.0,
+              37.5
+            ],
+            "span_id": 14,
+            "text": "It's just, it's a bit like buying."
+          },
+          "reference_window": "trading",
+          "right_span": {
+            "range": [
+              37.5,
+              40.0
+            ],
+            "span_id": 15,
+            "text": "Trading crypto. Right."
+          },
+          "seam_seconds": 37.5,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value. But the, you know, it's many investors, you know, in a bubble going into the, you know,",
+          "left_span": {
+            "range": [
+              42.5,
+              45.0
+            ],
+            "span_id": 17,
+            "text": "Uh, short term trading crypto."
+          },
+          "reference_window": "crypto maybe in the long run",
+          "right_span": {
+            "range": [
+              45.0,
+              47.5
+            ],
+            "span_id": 18,
+            "text": "Maybe in the long run, there's intrinsic value, but."
+          },
+          "seam_seconds": 45.0,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,",
+          "left_span": {
+            "range": [
+              50.0,
+              52.5
+            ],
+            "span_id": 20,
+            "text": "You know, it's many investors, you know."
+          },
+          "reference_window": "in a bubble",
+          "right_span": {
+            "range": [
+              52.5,
+              55.0
+            ],
+            "span_id": 21,
+            "text": "In a bubble going into the, you know."
+          },
+          "seam_seconds": 52.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "But the, you know, it's many investors, you know, in a bubble going into the, you know, the crash were really just pure speculators.",
+          "left_span": {
+            "range": [
+              52.5,
+              55.0
+            ],
+            "span_id": 21,
+            "text": "In a bubble going into the, you know."
+          },
+          "reference_window": "the",
+          "right_span": {
+            "range": [
+              55.0,
+              57.5
+            ],
+            "span_id": 22,
+            "text": "The crash, we're really."
+          },
+          "seam_seconds": 55.0,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_bill_ackman",
+          "damaged_words": 0,
+          "file_window_text": "the crash were really just pure speculators. They didn't know what things were worth.",
+          "left_span": {
+            "range": [
+              55.0,
+              57.5
+            ],
+            "span_id": 22,
+            "text": "The crash, we're really."
+          },
+          "reference_window": "really just pure speculators they",
+          "right_span": {
+            "range": [
+              57.5,
+              60.0
+            ],
+            "span_id": 23,
+            "text": "Just pure speculators. They didn't know what things were worth. They just knew they were"
+          },
+          "seam_seconds": 57.5,
+          "words_in_window": 5
+        }
+      ],
+      "seam_count": 23,
+      "span_count": 24,
+      "span_duration_histogram": {
+        "1.0-1.8s": 0,
+        "1.8-2.49s": 0,
+        "2.5s(cap)": 24,
+        "<=1.0s": 0
+      },
+      "spans": [
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 4,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 13,
+          "span_id": 0,
+          "start": 0.0,
+          "wer": 0.3076923076923077
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 8,
+          "span_id": 1,
+          "start": 2.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": true,
+          "errors": 7,
+          "hard_capped": true,
+          "hyp_words": 0,
+          "ref_words": 7,
+          "span_id": 2,
+          "start": 5.0,
+          "wer": 1.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 11,
+          "ref_words": 11,
+          "span_id": 3,
+          "start": 7.5,
+          "wer": 0.09090909090909091
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 3,
+          "ref_words": 2,
+          "span_id": 4,
+          "start": 10.0,
+          "wer": 0.5
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 9,
+          "span_id": 5,
+          "start": 12.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 12,
+          "ref_words": 11,
+          "span_id": 6,
+          "start": 15.0,
+          "wer": 0.09090909090909091
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 4,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 6,
+          "span_id": 7,
+          "start": 17.5,
+          "wer": 0.6666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 11,
+          "ref_words": 10,
+          "span_id": 8,
+          "start": 20.0,
+          "wer": 0.2
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 9,
+          "span_id": 9,
+          "start": 22.5,
+          "wer": 0.1111111111111111
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 11,
+          "ref_words": 10,
+          "span_id": 10,
+          "start": 25.0,
+          "wer": 0.1
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 12,
+          "ref_words": 12,
+          "span_id": 11,
+          "start": 27.5,
+          "wer": 0.16666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 9,
+          "span_id": 12,
+          "start": 30.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 4,
+          "span_id": 13,
+          "start": 32.5,
+          "wer": 0.5
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 3,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 5,
+          "span_id": 14,
+          "start": 35.0,
+          "wer": 0.6
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 3,
+          "ref_words": 3,
+          "span_id": 15,
+          "start": 37.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 4,
+          "span_id": 16,
+          "start": 40.0,
+          "wer": 0.25
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 4,
+          "span_id": 17,
+          "start": 42.5,
+          "wer": 0.25
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 9,
+          "span_id": 18,
+          "start": 45.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 5,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 2,
+          "span_id": 20,
+          "start": 50.0,
+          "wer": 2.5
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 3,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 5,
+          "span_id": 21,
+          "start": 52.5,
+          "wer": 0.6
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 4,
+          "ref_words": 4,
+          "span_id": 22,
+          "start": 55.0,
+          "wer": 0.25
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 15,
+          "ref_words": 15,
+          "span_id": 23,
+          "start": 57.5,
+          "wer": 0.0
+        }
+      ],
+      "tbsa": {
+        "file": {
+          "composite": 0.918756,
+          "speaker_mapping": {
+            "Bill Ackman": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.952215,
+          "text_speaker_accuracy": 0.938134,
+          "wer": 0.159091
+        },
+        "live": {
+          "composite": 0.80006,
+          "speaker_mapping": {
+            "Bill Ackman": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.842424,
+          "text_speaker_accuracy": 0.801383,
+          "wer": 0.261364
+        }
+      }
+    },
+    "lex_javier_milei": {
+      "anchor_rate": 0.92,
+      "bands": {
+        "0.25": {
+          "clock_a": {
+            "boundary_share_of_words": 0.208,
+            "file": {
+              "boundary": {
+                "del": 6,
+                "errors": 6,
+                "ins": 0,
+                "match": 20,
+                "miss_rate": 0.23076923076923078,
+                "n": 26,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.23076923076923078
+              },
+              "interior": {
+                "del": 0,
+                "errors": 5,
+                "ins": 1,
+                "match": 95,
+                "miss_rate": 0.0,
+                "n": 99,
+                "sub": 4,
+                "sub_rate": 0.04040404040404041,
+                "wer": 0.050505050505050504
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 6,
+                "errors": 8,
+                "ins": 1,
+                "match": 19,
+                "miss_rate": 0.23076923076923078,
+                "n": 26,
+                "sub": 1,
+                "sub_rate": 0.038461538461538464,
+                "wer": 0.3076923076923077
+              },
+              "interior": {
+                "del": 0,
+                "errors": 10,
+                "ins": 7,
+                "match": 96,
+                "miss_rate": 0.0,
+                "n": 99,
+                "sub": 3,
+                "sub_rate": 0.030303030303030304,
+                "wer": 0.10101010101010101
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.248,
+            "file": {
+              "boundary": {
+                "del": 1,
+                "errors": 1,
+                "ins": 0,
+                "match": 30,
+                "miss_rate": 0.03225806451612903,
+                "n": 31,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.03225806451612903
+              },
+              "interior": {
+                "del": 5,
+                "errors": 10,
+                "ins": 1,
+                "match": 85,
+                "miss_rate": 0.05319148936170213,
+                "n": 94,
+                "sub": 4,
+                "sub_rate": 0.0425531914893617,
+                "wer": 0.10638297872340426
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 3,
+                "ins": 2,
+                "match": 30,
+                "miss_rate": 0.03225806451612903,
+                "n": 31,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0967741935483871
+              },
+              "interior": {
+                "del": 5,
+                "errors": 15,
+                "ins": 6,
+                "match": 85,
+                "miss_rate": 0.05319148936170213,
+                "n": 94,
+                "sub": 4,
+                "sub_rate": 0.0425531914893617,
+                "wer": 0.1595744680851064
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "miss_rate": 0.0,
+                "n": 20,
+                "sub": 0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 6,
+                "errors": 11,
+                "ins": 1,
+                "miss_rate": 0.05714285714285714,
+                "n": 105,
+                "sub": 4,
+                "wer": 0.10476190476190476
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 8,
+                "ins": 6,
+                "miss_rate": 0.07692307692307693,
+                "n": 13,
+                "sub": 1,
+                "wer": 0.6153846153846154
+              },
+              "interior": {
+                "del": 5,
+                "errors": 10,
+                "ins": 2,
+                "miss_rate": 0.044642857142857144,
+                "n": 112,
+                "sub": 3,
+                "wer": 0.08928571428571429
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.062299200000000186,
+                "interior": 0.06670880000000003
+              },
+              "coverage_loss_tokens": {
+                "boundary": 7.787400000000023,
+                "interior": 8.338600000000003
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 4.290000000000011,
+                "interior": 4.820000000000002
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.09577920000000019,
+                "interior": 0.05784959999999996
+              },
+              "coverage_loss_tokens": {
+                "boundary": 11.972400000000023,
+                "interior": 7.231199999999995
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 6.320000000000011,
+                "interior": 4.329999999999997
+              }
+            }
+          }
+        },
+        "0.4": {
+          "clock_a": {
+            "boundary_share_of_words": 0.344,
+            "file": {
+              "boundary": {
+                "del": 6,
+                "errors": 8,
+                "ins": 1,
+                "match": 36,
+                "miss_rate": 0.13953488372093023,
+                "n": 43,
+                "sub": 1,
+                "sub_rate": 0.023255813953488372,
+                "wer": 0.18604651162790697
+              },
+              "interior": {
+                "del": 0,
+                "errors": 3,
+                "ins": 0,
+                "match": 79,
+                "miss_rate": 0.0,
+                "n": 82,
+                "sub": 3,
+                "sub_rate": 0.036585365853658534,
+                "wer": 0.036585365853658534
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 6,
+                "errors": 14,
+                "ins": 5,
+                "match": 34,
+                "miss_rate": 0.13953488372093023,
+                "n": 43,
+                "sub": 3,
+                "sub_rate": 0.06976744186046512,
+                "wer": 0.32558139534883723
+              },
+              "interior": {
+                "del": 0,
+                "errors": 4,
+                "ins": 3,
+                "match": 81,
+                "miss_rate": 0.0,
+                "n": 82,
+                "sub": 1,
+                "sub_rate": 0.012195121951219513,
+                "wer": 0.04878048780487805
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.36,
+            "file": {
+              "boundary": {
+                "del": 1,
+                "errors": 1,
+                "ins": 0,
+                "match": 44,
+                "miss_rate": 0.022222222222222223,
+                "n": 45,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.022222222222222223
+              },
+              "interior": {
+                "del": 5,
+                "errors": 10,
+                "ins": 1,
+                "match": 71,
+                "miss_rate": 0.0625,
+                "n": 80,
+                "sub": 4,
+                "sub_rate": 0.05,
+                "wer": 0.125
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 4,
+                "ins": 3,
+                "match": 44,
+                "miss_rate": 0.022222222222222223,
+                "n": 45,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.08888888888888889
+              },
+              "interior": {
+                "del": 5,
+                "errors": 14,
+                "ins": 5,
+                "match": 71,
+                "miss_rate": 0.0625,
+                "n": 80,
+                "sub": 4,
+                "sub_rate": 0.05,
+                "wer": 0.175
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 1,
+                "errors": 1,
+                "ins": 0,
+                "miss_rate": 0.02702702702702703,
+                "n": 37,
+                "sub": 0,
+                "wer": 0.02702702702702703
+              },
+              "interior": {
+                "del": 5,
+                "errors": 10,
+                "ins": 1,
+                "miss_rate": 0.056818181818181816,
+                "n": 88,
+                "sub": 4,
+                "wer": 0.11363636363636363
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 11,
+                "ins": 7,
+                "miss_rate": 0.03333333333333333,
+                "n": 30,
+                "sub": 3,
+                "wer": 0.36666666666666664
+              },
+              "interior": {
+                "del": 5,
+                "errors": 7,
+                "ins": 1,
+                "miss_rate": 0.05263157894736842,
+                "n": 95,
+                "sub": 1,
+                "wer": 0.07368421052631578
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.07329600000000018,
+                "interior": 0.055712000000000046
+              },
+              "coverage_loss_tokens": {
+                "boundary": 9.162000000000022,
+                "interior": 6.964000000000006
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 5.2500000000000115,
+                "interior": 3.8600000000000008
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.11491200000000004,
+                "interior": 0.03871680000000008
+              },
+              "coverage_loss_tokens": {
+                "boundary": 14.364000000000006,
+                "interior": 4.83960000000001
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 7.730000000000005,
+                "interior": 2.920000000000003
+              }
+            }
+          }
+        },
+        "0.6": {
+          "clock_a": {
+            "boundary_share_of_words": 0.48,
+            "file": {
+              "boundary": {
+                "del": 6,
+                "errors": 8,
+                "ins": 1,
+                "match": 53,
+                "miss_rate": 0.1,
+                "n": 60,
+                "sub": 1,
+                "sub_rate": 0.016666666666666666,
+                "wer": 0.13333333333333333
+              },
+              "interior": {
+                "del": 0,
+                "errors": 3,
+                "ins": 0,
+                "match": 62,
+                "miss_rate": 0.0,
+                "n": 65,
+                "sub": 3,
+                "sub_rate": 0.046153846153846156,
+                "wer": 0.046153846153846156
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 6,
+                "errors": 15,
+                "ins": 6,
+                "match": 51,
+                "miss_rate": 0.1,
+                "n": 60,
+                "sub": 3,
+                "sub_rate": 0.05,
+                "wer": 0.25
+              },
+              "interior": {
+                "del": 0,
+                "errors": 3,
+                "ins": 2,
+                "match": 64,
+                "miss_rate": 0.0,
+                "n": 65,
+                "sub": 1,
+                "sub_rate": 0.015384615384615385,
+                "wer": 0.046153846153846156
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.496,
+            "file": {
+              "boundary": {
+                "del": 2,
+                "errors": 3,
+                "ins": 0,
+                "match": 59,
+                "miss_rate": 0.03225806451612903,
+                "n": 62,
+                "sub": 1,
+                "sub_rate": 0.016129032258064516,
+                "wer": 0.04838709677419355
+              },
+              "interior": {
+                "del": 4,
+                "errors": 8,
+                "ins": 1,
+                "match": 56,
+                "miss_rate": 0.06349206349206349,
+                "n": 63,
+                "sub": 3,
+                "sub_rate": 0.047619047619047616,
+                "wer": 0.12698412698412698
+              },
+              "overall": {
+                "errors": 11,
+                "n": 125,
+                "wer": 0.088
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 6,
+                "ins": 4,
+                "match": 60,
+                "miss_rate": 0.03225806451612903,
+                "n": 62,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0967741935483871
+              },
+              "interior": {
+                "del": 4,
+                "errors": 12,
+                "ins": 4,
+                "match": 55,
+                "miss_rate": 0.06349206349206349,
+                "n": 63,
+                "sub": 4,
+                "sub_rate": 0.06349206349206349,
+                "wer": 0.19047619047619047
+              },
+              "overall": {
+                "errors": 18,
+                "n": 125,
+                "wer": 0.144
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 1,
+                "errors": 2,
+                "ins": 0,
+                "miss_rate": 0.01818181818181818,
+                "n": 55,
+                "sub": 1,
+                "wer": 0.03636363636363636
+              },
+              "interior": {
+                "del": 5,
+                "errors": 9,
+                "ins": 1,
+                "miss_rate": 0.07142857142857142,
+                "n": 70,
+                "sub": 3,
+                "wer": 0.12857142857142856
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 12,
+                "ins": 7,
+                "miss_rate": 0.0392156862745098,
+                "n": 51,
+                "sub": 3,
+                "wer": 0.23529411764705882
+              },
+              "interior": {
+                "del": 4,
+                "errors": 6,
+                "ins": 1,
+                "miss_rate": 0.05405405405405406,
+                "n": 74,
+                "sub": 1,
+                "wer": 0.08108108108108109
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.08825280000000012,
+                "interior": 0.0407552000000001
+              },
+              "coverage_loss_tokens": {
+                "boundary": 11.031600000000015,
+                "interior": 5.094400000000013
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 6.490000000000008,
+                "interior": 2.620000000000004
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.13330400000000017,
+                "interior": 0.020324799999999973
+              },
+              "coverage_loss_tokens": {
+                "boundary": 16.66300000000002,
+                "interior": 2.5405999999999964
+              },
+              "reference_tokens": 125,
+              "uncovered_seconds": {
+                "boundary": 9.16000000000001,
+                "interior": 1.489999999999998
+              }
+            }
+          }
+        }
+      },
+      "bigram_survival": {
+        "file": {
+          "internal": {
+            "pairs": 101,
+            "survival_rate": 0.8811881188118812,
+            "survived": 89
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.9565217391304348,
+            "survived": 22
+          }
+        },
+        "file_on_live_clock": {
+          "internal": {
+            "pairs": 101,
+            "survival_rate": 0.900990099009901,
+            "survived": 91
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.8695652173913043,
+            "survived": 20
+          }
+        },
+        "live": {
+          "internal": {
+            "pairs": 101,
+            "survival_rate": 0.900990099009901,
+            "survived": 91
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.6086956521739131,
+            "survived": 14
+          }
+        }
+      },
+      "distance_histogram": {
+        "file": {
+          "errors": {
+            "0.25-0.50": 2,
+            "0.50-0.75": 1,
+            "0.75-1.00": 3,
+            "1.00-1.25": 3,
+            "1.50-1.75": 1,
+            "1.75-2.00": 1
+          },
+          "words": {
+            "0.00-0.25": 19,
+            "0.25-0.50": 28,
+            "0.50-0.75": 28,
+            "0.75-1.00": 18,
+            "1.00-1.25": 26,
+            "1.25-1.50": 1,
+            "1.50-1.75": 2,
+            "1.75-2.00": 2,
+            "2.25-2.50": 1
+          }
+        },
+        "live": {
+          "errors": {
+            "0.00-0.25": 8,
+            "0.25-0.50": 4,
+            "0.50-0.75": 2,
+            "1.00-1.25": 2,
+            "1.25-1.50": 1,
+            "1.50-1.75": 1
+          },
+          "words": {
+            "0.00-0.25": 13,
+            "0.25-0.50": 28,
+            "0.50-0.75": 27,
+            "0.75-1.00": 24,
+            "1.00-1.25": 27,
+            "1.25-1.50": 2,
+            "1.50-1.75": 2,
+            "1.75-2.00": 1,
+            "2.25-2.50": 1
+          }
+        }
+      },
+      "empty_spans": 4,
+      "hard_capped_spans": 21,
+      "reference_tokens": 125,
+      "seam_cases": [
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 3,
+          "file_window_text": "but brought inflation down.",
+          "left_span": {
+            "range": [
+              57.26,
+              59.76
+            ],
+            "span_id": 30,
+            "text": "But brought inflation down."
+          },
+          "reference_window": "inflation down to its lowest",
+          "right_span": {
+            "range": [
+              59.76,
+              60.0
+            ],
+            "span_id": 31,
+            "text": ""
+          },
+          "seam_seconds": 59.76,
+          "words_in_window": 5
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 2,
+          "file_window_text": "for mass unemployment and poverty. He took this crisis head-on,",
+          "left_span": {
+            "range": [
+              36.64,
+              39.14
+            ],
+            "span_id": 20,
+            "text": "For mass unemployment and poverty."
+          },
+          "reference_window": "poverty",
+          "right_span": {
+            "range": [
+              39.14,
+              39.36
+            ],
+            "span_id": 21,
+            "text": "Mm."
+          },
+          "seam_seconds": 39.14,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 2,
+          "file_window_text": "for mass unemployment and poverty. He took this crisis head-on,",
+          "left_span": {
+            "range": [
+              39.14,
+              39.36
+            ],
+            "span_id": 21,
+            "text": "Mm."
+          },
+          "reference_window": "poverty he",
+          "right_span": {
+            "range": [
+              39.36,
+              39.76
+            ],
+            "span_id": 22,
+            "text": "Yeah."
+          },
+          "seam_seconds": 39.36,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "So what is the difference between a madman and a genius?",
+          "left_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "Between a madman and a genius."
+          },
+          "reference_window": "a genius",
+          "right_span": {
+            "range": [
+              5.0,
+              5.28
+            ],
+            "span_id": 2,
+            "text": "S"
+          },
+          "seam_seconds": 5.0,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "So what is the difference between a madman and a genius? Success?",
+          "left_span": {
+            "range": [
+              5.0,
+              5.28
+            ],
+            "span_id": 2,
+            "text": "S"
+          },
+          "reference_window": "genius",
+          "right_span": {
+            "range": [
+              5.28,
+              6.77
+            ],
+            "span_id": 3,
+            "text": ""
+          },
+          "seam_seconds": 5.28,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "the president of Argentina. He is a libertarian, anarcho-capitalist and economist",
+          "left_span": {
+            "range": [
+              14.52,
+              15.93
+            ],
+            "span_id": 8,
+            "text": "of Argentina."
+          },
+          "reference_window": "argentina he is",
+          "right_span": {
+            "range": [
+              15.93,
+              16.23
+            ],
+            "span_id": 9,
+            "text": "Yeah."
+          },
+          "seam_seconds": 15.93,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "He is a libertarian, anarcho-capitalist and economist",
+          "left_span": {
+            "range": [
+              16.23,
+              18.73
+            ],
+            "span_id": 10,
+            "text": "He is a libertarian, a narco-"
+          },
+          "reference_window": "anarcho capitalist",
+          "right_span": {
+            "range": [
+              18.73,
+              21.23
+            ],
+            "span_id": 11,
+            "text": "Capitalist and economist."
+          },
+          "seam_seconds": 18.73,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "He stepped into the presidency one year ago with the country on the brink of hyperinflation, deep in debt and suffering",
+          "left_span": {
+            "range": [
+              31.64,
+              34.14
+            ],
+            "span_id": 18,
+            "text": "ago, with a country on the brink of hyperinflation."
+          },
+          "reference_window": "hyperinflation",
+          "right_span": {
+            "range": [
+              34.14,
+              36.64
+            ],
+            "span_id": 19,
+            "text": "Inflation, deepened debt, and suffering."
+          },
+          "seam_seconds": 34.14,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "with the country on the brink of hyperinflation, deep in debt and suffering for mass unemployment and poverty.",
+          "left_span": {
+            "range": [
+              34.14,
+              36.64
+            ],
+            "span_id": 19,
+            "text": "Inflation, deepened debt, and suffering."
+          },
+          "reference_window": "suffering from mass",
+          "right_span": {
+            "range": [
+              36.64,
+              39.14
+            ],
+            "span_id": 20,
+            "text": "For mass unemployment and poverty."
+          },
+          "seam_seconds": 36.64,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years",
+          "left_span": {
+            "range": [
+              49.76,
+              52.26
+            ],
+            "span_id": 27,
+            "text": "In office, he already achieved RGT."
+          },
+          "reference_window": "achieved argentina's first",
+          "right_span": {
+            "range": [
+              52.26,
+              54.76
+            ],
+            "span_id": 28,
+            "text": "First fiscal surplus in 16 years."
+          },
+          "seam_seconds": 52.26,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 1,
+          "file_window_text": "first fiscal surplus in 16 years and not just avoided the hyperinflation,",
+          "left_span": {
+            "range": [
+              52.26,
+              54.76
+            ],
+            "span_id": 28,
+            "text": "First fiscal surplus in 16 years."
+          },
+          "reference_window": "in 16 years and not",
+          "right_span": {
+            "range": [
+              54.76,
+              57.26
+            ],
+            "span_id": 29,
+            "text": "Years and not just avoided the hyperinflation."
+          },
+          "seam_seconds": 54.76,
+          "words_in_window": 5
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "So what is the difference between a madman and a genius?",
+          "left_span": {
+            "range": [
+              0.0,
+              2.5
+            ],
+            "span_id": 0,
+            "text": "So, what is the difference?"
+          },
+          "reference_window": "difference between",
+          "right_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "Between a madman and a genius."
+          },
+          "seam_seconds": 2.5,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "So what is the difference between a madman and a genius? Success?",
+          "left_span": {
+            "range": [
+              5.28,
+              6.77
+            ],
+            "span_id": 3,
+            "text": ""
+          },
+          "reference_window": "success",
+          "right_span": {
+            "range": [
+              6.77,
+              7.94
+            ],
+            "span_id": 4,
+            "text": "Success."
+          },
+          "seam_seconds": 6.77,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "Success?",
+          "left_span": {
+            "range": [
+              6.77,
+              7.94
+            ],
+            "span_id": 4,
+            "text": "Success."
+          },
+          "reference_window": "success",
+          "right_span": {
+            "range": [
+              7.94,
+              9.52
+            ],
+            "span_id": 5,
+            "text": ""
+          },
+          "seam_seconds": 7.94,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "The following is a conversation with Javier Mal\u00e9,",
+          "left_span": {
+            "range": [
+              9.52,
+              12.02
+            ],
+            "span_id": 6,
+            "text": "The following is a conversation."
+          },
+          "reference_window": "is a conversation with javier",
+          "right_span": {
+            "range": [
+              12.02,
+              14.52
+            ],
+            "span_id": 7,
+            "text": "...with Javier Malley, the president."
+          },
+          "seam_seconds": 12.02,
+          "words_in_window": 5
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina.",
+          "left_span": {
+            "range": [
+              12.02,
+              14.52
+            ],
+            "span_id": 7,
+            "text": "...with Javier Malley, the president."
+          },
+          "reference_window": "president of",
+          "right_span": {
+            "range": [
+              14.52,
+              15.93
+            ],
+            "span_id": 8,
+            "text": "of Argentina."
+          },
+          "seam_seconds": 14.52,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "the president of Argentina. He is a libertarian, anarcho-capitalist and economist",
+          "left_span": {
+            "range": [
+              15.93,
+              16.23
+            ],
+            "span_id": 9,
+            "text": "Yeah."
+          },
+          "reference_window": "he is a",
+          "right_span": {
+            "range": [
+              16.23,
+              18.73
+            ],
+            "span_id": 10,
+            "text": "He is a libertarian, a narco-"
+          },
+          "seam_seconds": 16.23,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "He is a libertarian, anarcho-capitalist and economist who campaigned with a chainsaw",
+          "left_span": {
+            "range": [
+              18.73,
+              21.23
+            ],
+            "span_id": 11,
+            "text": "Capitalist and economist."
+          },
+          "reference_window": "who campaigned",
+          "right_span": {
+            "range": [
+              21.23,
+              23.73
+            ],
+            "span_id": 12,
+            "text": "who campaigned with a chainsaw."
+          },
+          "seam_seconds": 21.23,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "who campaigned with a chainsaw that symbolized his promise",
+          "left_span": {
+            "range": [
+              21.23,
+              23.73
+            ],
+            "span_id": 12,
+            "text": "who campaigned with a chainsaw."
+          },
+          "reference_window": "that",
+          "right_span": {
+            "range": [
+              23.73,
+              23.79
+            ],
+            "span_id": 13,
+            "text": ""
+          },
+          "seam_seconds": 23.73,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "who campaigned with a chainsaw that symbolized his promise",
+          "left_span": {
+            "range": [
+              23.73,
+              23.79
+            ],
+            "span_id": 13,
+            "text": ""
+          },
+          "reference_window": "that symbolized",
+          "right_span": {
+            "range": [
+              23.79,
+              26.29
+            ],
+            "span_id": 14,
+            "text": "That symbolized his promise to slash"
+          },
+          "seam_seconds": 23.79,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "that symbolized his promise to slash the corrupt bureaucracy of the state.",
+          "left_span": {
+            "range": [
+              23.79,
+              26.29
+            ],
+            "span_id": 14,
+            "text": "That symbolized his promise to slash"
+          },
+          "reference_window": "to slash the corrupt",
+          "right_span": {
+            "range": [
+              26.29,
+              28.79
+            ],
+            "span_id": 15,
+            "text": "The corrupt bureaucracy of the state."
+          },
+          "seam_seconds": 26.29,
+          "words_in_window": 4
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago",
+          "left_span": {
+            "range": [
+              26.29,
+              28.79
+            ],
+            "span_id": 15,
+            "text": "The corrupt bureaucracy of the state."
+          },
+          "reference_window": "he",
+          "right_span": {
+            "range": [
+              28.79,
+              29.14
+            ],
+            "span_id": 16,
+            "text": "\u55ef\u3002"
+          },
+          "seam_seconds": 28.79,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago",
+          "left_span": {
+            "range": [
+              28.79,
+              29.14
+            ],
+            "span_id": 16,
+            "text": "\u55ef\u3002"
+          },
+          "reference_window": "he stepped",
+          "right_span": {
+            "range": [
+              29.14,
+              31.64
+            ],
+            "span_id": 17,
+            "text": "He stepped into the presidency one year."
+          },
+          "seam_seconds": 29.14,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "He stepped into the presidency one year ago with the country on the brink of hyperinflation,",
+          "left_span": {
+            "range": [
+              29.14,
+              31.64
+            ],
+            "span_id": 17,
+            "text": "He stepped into the presidency one year."
+          },
+          "reference_window": "one year ago with a country",
+          "right_span": {
+            "range": [
+              31.64,
+              34.14
+            ],
+            "span_id": 18,
+            "text": "ago, with a country on the brink of hyperinflation."
+          },
+          "seam_seconds": 31.64,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "for mass unemployment and poverty. He took this crisis head-on,",
+          "left_span": {
+            "range": [
+              39.36,
+              39.76
+            ],
+            "span_id": 22,
+            "text": "Yeah."
+          },
+          "reference_window": "he took",
+          "right_span": {
+            "range": [
+              39.76,
+              42.26
+            ],
+            "span_id": 23,
+            "text": "He took this crisis head on."
+          },
+          "seam_seconds": 39.76,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "He took this crisis head-on, transforming one of Latin America's largest economies",
+          "left_span": {
+            "range": [
+              39.76,
+              42.26
+            ],
+            "span_id": 23,
+            "text": "He took this crisis head on."
+          },
+          "reference_window": "head on transforming",
+          "right_span": {
+            "range": [
+              42.26,
+              44.76
+            ],
+            "span_id": 24,
+            "text": "transforming one of Latin America's largest"
+          },
+          "seam_seconds": 42.26,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "transforming one of Latin America's largest economies through pure free-market principles.",
+          "left_span": {
+            "range": [
+              42.26,
+              44.76
+            ],
+            "span_id": 24,
+            "text": "transforming one of Latin America's largest"
+          },
+          "reference_window": "largest economies",
+          "right_span": {
+            "range": [
+              44.76,
+              47.26
+            ],
+            "span_id": 25,
+            "text": "Economies through pure free market."
+          },
+          "seam_seconds": 44.76,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "through pure free-market principles. In just a few months in office,",
+          "left_span": {
+            "range": [
+              44.76,
+              47.26
+            ],
+            "span_id": 25,
+            "text": "Economies through pure free market."
+          },
+          "reference_window": "free market principles",
+          "right_span": {
+            "range": [
+              47.26,
+              49.76
+            ],
+            "span_id": 26,
+            "text": "Principles. In just a few months,"
+          },
+          "seam_seconds": 47.26,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "In just a few months in office, he already achieved Argentina's",
+          "left_span": {
+            "range": [
+              47.26,
+              49.76
+            ],
+            "span_id": 26,
+            "text": "Principles. In just a few months,"
+          },
+          "reference_window": "few months in office",
+          "right_span": {
+            "range": [
+              49.76,
+              52.26
+            ],
+            "span_id": 27,
+            "text": "In office, he already achieved RGT."
+          },
+          "seam_seconds": 49.76,
+          "words_in_window": 4
+        },
+        {
+          "case": "lex_javier_milei",
+          "damaged_words": 0,
+          "file_window_text": "first fiscal surplus in 16 years and not just avoided the hyperinflation, but brought inflation down.",
+          "left_span": {
+            "range": [
+              54.76,
+              57.26
+            ],
+            "span_id": 29,
+            "text": "Years and not just avoided the hyperinflation."
+          },
+          "reference_window": "hyperinflation but",
+          "right_span": {
+            "range": [
+              57.26,
+              59.76
+            ],
+            "span_id": 30,
+            "text": "But brought inflation down."
+          },
+          "seam_seconds": 57.26,
+          "words_in_window": 2
+        }
+      ],
+      "seam_count": 31,
+      "span_count": 32,
+      "span_duration_histogram": {
+        "1.0-1.8s": 4,
+        "1.8-2.49s": 0,
+        "2.5s(cap)": 21,
+        "<=1.0s": 7
+      },
+      "spans": [
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 0,
+          "start": 0.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 1,
+          "start": 2.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 1.17,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": false,
+          "hyp_words": 1,
+          "ref_words": 1,
+          "span_id": 4,
+          "start": 6.77,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 6,
+          "start": 9.52,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 7,
+          "start": 12.02,
+          "wer": 0.2
+        },
+        {
+          "duration": 1.41,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": false,
+          "hyp_words": 2,
+          "ref_words": 2,
+          "span_id": 8,
+          "start": 14.52,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 5,
+          "span_id": 10,
+          "start": 16.23,
+          "wer": 0.4
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 3,
+          "ref_words": 3,
+          "span_id": 11,
+          "start": 18.73,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 12,
+          "start": 21.23,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 14,
+          "start": 23.79,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 15,
+          "start": 26.29,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 7,
+          "span_id": 17,
+          "start": 29.14,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 9,
+          "ref_words": 9,
+          "span_id": 18,
+          "start": 31.64,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 4,
+          "span_id": 19,
+          "start": 34.14,
+          "wer": 0.25
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 20,
+          "start": 36.64,
+          "wer": 0.2
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 23,
+          "start": 39.76,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 24,
+          "start": 42.26,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 25,
+          "start": 44.76,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 26,
+          "start": 47.26,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 27,
+          "start": 49.76,
+          "wer": 0.16666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 5,
+          "span_id": 28,
+          "start": 52.26,
+          "wer": 0.2
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 7,
+          "span_id": 29,
+          "start": 54.76,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 4,
+          "ref_words": 4,
+          "span_id": 30,
+          "start": 57.26,
+          "wer": 0.0
+        },
+        {
+          "duration": 0.24,
+          "empty": true,
+          "errors": 1,
+          "hard_capped": false,
+          "hyp_words": 0,
+          "ref_words": 1,
+          "span_id": 31,
+          "start": 59.76,
+          "wer": 1.0
+        }
+      ],
+      "tbsa": {
+        "file": {
+          "composite": 0.881244,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.870992,
+          "text_speaker_accuracy": 0.870992,
+          "wer": 0.088
+        },
+        "live": {
+          "composite": 0.841605,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.846371,
+          "text_speaker_accuracy": 0.828438,
+          "wer": 0.144
+        }
+      }
+    },
+    "lex_keyu_jin": {
+      "anchor_rate": 1.0,
+      "bands": {
+        "0.25": {
+          "clock_a": {
+            "boundary_share_of_words": 0.2158273381294964,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "match": 30,
+                "miss_rate": 0.0,
+                "n": 30,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 0,
+                "errors": 9,
+                "ins": 9,
+                "match": 109,
+                "miss_rate": 0.0,
+                "n": 109,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.08256880733944955
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 8,
+                "ins": 4,
+                "match": 26,
+                "miss_rate": 0.06666666666666667,
+                "n": 30,
+                "sub": 2,
+                "sub_rate": 0.06666666666666667,
+                "wer": 0.26666666666666666
+              },
+              "interior": {
+                "del": 1,
+                "errors": 19,
+                "ins": 17,
+                "match": 107,
+                "miss_rate": 0.009174311926605505,
+                "n": 109,
+                "sub": 1,
+                "sub_rate": 0.009174311926605505,
+                "wer": 0.1743119266055046
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.2302158273381295,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "match": 32,
+                "miss_rate": 0.0,
+                "n": 32,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 0,
+                "errors": 9,
+                "ins": 9,
+                "match": 107,
+                "miss_rate": 0.0,
+                "n": 107,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.08411214953271028
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 6,
+                "ins": 5,
+                "match": 31,
+                "miss_rate": 0.03125,
+                "n": 32,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.1875
+              },
+              "interior": {
+                "del": 2,
+                "errors": 21,
+                "ins": 16,
+                "match": 102,
+                "miss_rate": 0.018691588785046728,
+                "n": 107,
+                "sub": 3,
+                "sub_rate": 0.028037383177570093,
+                "wer": 0.19626168224299065
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 1,
+                "ins": 1,
+                "miss_rate": 0.0,
+                "n": 29,
+                "sub": 0,
+                "wer": 0.034482758620689655
+              },
+              "interior": {
+                "del": 0,
+                "errors": 8,
+                "ins": 8,
+                "miss_rate": 0.0,
+                "n": 110,
+                "sub": 0,
+                "wer": 0.07272727272727272
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 8,
+                "ins": 7,
+                "miss_rate": 0.058823529411764705,
+                "n": 17,
+                "sub": 0,
+                "wer": 0.47058823529411764
+              },
+              "interior": {
+                "del": 2,
+                "errors": 19,
+                "ins": 14,
+                "miss_rate": 0.01639344262295082,
+                "n": 122,
+                "sub": 3,
+                "wer": 0.1557377049180328
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.015578417266187073,
+                "interior": 0.048034532374100804
+              },
+              "coverage_loss_tokens": {
+                "boundary": 2.165400000000003,
+                "interior": 6.676800000000012
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 1.0300000000000011,
+                "interior": 3.0300000000000065
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.060459712230215984,
+                "interior": 0.03629136690647474
+              },
+              "coverage_loss_tokens": {
+                "boundary": 8.403900000000021,
+                "interior": 5.044499999999989
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 3.720000000000009,
+                "interior": 2.1699999999999946
+              }
+            }
+          }
+        },
+        "0.4": {
+          "clock_a": {
+            "boundary_share_of_words": 0.33093525179856115,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "match": 46,
+                "miss_rate": 0.0,
+                "n": 46,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 0,
+                "errors": 9,
+                "ins": 9,
+                "match": 93,
+                "miss_rate": 0.0,
+                "n": 93,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0967741935483871
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 10,
+                "ins": 6,
+                "match": 42,
+                "miss_rate": 0.043478260869565216,
+                "n": 46,
+                "sub": 2,
+                "sub_rate": 0.043478260869565216,
+                "wer": 0.21739130434782608
+              },
+              "interior": {
+                "del": 1,
+                "errors": 17,
+                "ins": 15,
+                "match": 91,
+                "miss_rate": 0.010752688172043012,
+                "n": 93,
+                "sub": 1,
+                "sub_rate": 0.010752688172043012,
+                "wer": 0.1827956989247312
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.31654676258992803,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "match": 44,
+                "miss_rate": 0.0,
+                "n": 44,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 0,
+                "errors": 9,
+                "ins": 9,
+                "match": 95,
+                "miss_rate": 0.0,
+                "n": 95,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.09473684210526316
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 6,
+                "ins": 5,
+                "match": 43,
+                "miss_rate": 0.022727272727272728,
+                "n": 44,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.13636363636363635
+              },
+              "interior": {
+                "del": 2,
+                "errors": 21,
+                "ins": 16,
+                "match": 90,
+                "miss_rate": 0.021052631578947368,
+                "n": 95,
+                "sub": 3,
+                "sub_rate": 0.031578947368421054,
+                "wer": 0.22105263157894736
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 2,
+                "ins": 2,
+                "miss_rate": 0.0,
+                "n": 46,
+                "sub": 0,
+                "wer": 0.043478260869565216
+              },
+              "interior": {
+                "del": 0,
+                "errors": 7,
+                "ins": 7,
+                "miss_rate": 0.0,
+                "n": 93,
+                "sub": 0,
+                "wer": 0.07526881720430108
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 1,
+                "errors": 14,
+                "ins": 12,
+                "miss_rate": 0.029411764705882353,
+                "n": 34,
+                "sub": 1,
+                "wer": 0.4117647058823529
+              },
+              "interior": {
+                "del": 2,
+                "errors": 13,
+                "ins": 9,
+                "miss_rate": 0.01904761904761905,
+                "n": 105,
+                "sub": 2,
+                "wer": 0.12380952380952381
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.02869208633093518,
+                "interior": 0.0349208633093527
+              },
+              "coverage_loss_tokens": {
+                "boundary": 3.98819999999999,
+                "interior": 4.854000000000025
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 1.8199999999999958,
+                "interior": 2.2400000000000118
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.07501079136690657,
+                "interior": 0.02174028776978416
+              },
+              "coverage_loss_tokens": {
+                "boundary": 10.426500000000013,
+                "interior": 3.0218999999999983
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 4.590000000000005,
+                "interior": 1.299999999999999
+              }
+            }
+          }
+        },
+        "0.6": {
+          "clock_a": {
+            "boundary_share_of_words": 0.5107913669064749,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 0,
+                "ins": 0,
+                "match": 71,
+                "miss_rate": 0.0,
+                "n": 71,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.0
+              },
+              "interior": {
+                "del": 0,
+                "errors": 9,
+                "ins": 9,
+                "match": 68,
+                "miss_rate": 0.0,
+                "n": 68,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.1323529411764706
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 13,
+                "ins": 8,
+                "match": 66,
+                "miss_rate": 0.028169014084507043,
+                "n": 71,
+                "sub": 3,
+                "sub_rate": 0.04225352112676056,
+                "wer": 0.18309859154929578
+              },
+              "interior": {
+                "del": 1,
+                "errors": 14,
+                "ins": 13,
+                "match": 67,
+                "miss_rate": 0.014705882352941176,
+                "n": 68,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.20588235294117646
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_b": {
+            "boundary_share_of_words": 0.48201438848920863,
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 1,
+                "ins": 1,
+                "match": 67,
+                "miss_rate": 0.0,
+                "n": 67,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.014925373134328358
+              },
+              "interior": {
+                "del": 0,
+                "errors": 8,
+                "ins": 8,
+                "match": 72,
+                "miss_rate": 0.0,
+                "n": 72,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.1111111111111111
+              },
+              "overall": {
+                "errors": 9,
+                "n": 139,
+                "wer": 0.06474820143884892
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 11,
+                "ins": 9,
+                "match": 65,
+                "miss_rate": 0.029850746268656716,
+                "n": 67,
+                "sub": 0,
+                "sub_rate": 0.0,
+                "wer": 0.16417910447761194
+              },
+              "interior": {
+                "del": 1,
+                "errors": 16,
+                "ins": 12,
+                "match": 68,
+                "miss_rate": 0.013888888888888888,
+                "n": 72,
+                "sub": 3,
+                "sub_rate": 0.041666666666666664,
+                "wer": 0.2222222222222222
+              },
+              "overall": {
+                "errors": 27,
+                "n": 139,
+                "wer": 0.19424460431654678
+              }
+            }
+          },
+          "clock_own": {
+            "file": {
+              "boundary": {
+                "del": 0,
+                "errors": 2,
+                "ins": 2,
+                "miss_rate": 0.0,
+                "n": 71,
+                "sub": 0,
+                "wer": 0.028169014084507043
+              },
+              "interior": {
+                "del": 0,
+                "errors": 7,
+                "ins": 7,
+                "miss_rate": 0.0,
+                "n": 68,
+                "sub": 0,
+                "wer": 0.10294117647058823
+              }
+            },
+            "live": {
+              "boundary": {
+                "del": 2,
+                "errors": 18,
+                "ins": 14,
+                "miss_rate": 0.03636363636363636,
+                "n": 55,
+                "sub": 2,
+                "wer": 0.32727272727272727
+              },
+              "interior": {
+                "del": 1,
+                "errors": 9,
+                "ins": 7,
+                "miss_rate": 0.011904761904761904,
+                "n": 84,
+                "sub": 1,
+                "wer": 0.10714285714285714
+              }
+            }
+          },
+          "coverage": {
+            "file": {
+              "coverage_loss_fraction": {
+                "boundary": 0.044900719424460556,
+                "interior": 0.018712230215827318
+              },
+              "coverage_loss_tokens": {
+                "boundary": 6.241200000000017,
+                "interior": 2.6009999999999973
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 2.8200000000000083,
+                "interior": 1.2399999999999993
+              }
+            },
+            "live": {
+              "coverage_loss_fraction": {
+                "boundary": 0.08591294964028796,
+                "interior": 0.010838129496402766
+              },
+              "coverage_loss_tokens": {
+                "boundary": 11.941900000000027,
+                "interior": 1.5064999999999846
+              },
+              "reference_tokens": 139,
+              "uncovered_seconds": {
+                "boundary": 5.250000000000011,
+                "interior": 0.6399999999999935
+              }
+            }
+          }
+        }
+      },
+      "bigram_survival": {
+        "file": {
+          "internal": {
+            "pairs": 115,
+            "survival_rate": 0.991304347826087,
+            "survived": 114
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 1.0,
+            "survived": 23
+          }
+        },
+        "file_on_live_clock": {
+          "internal": {
+            "pairs": 115,
+            "survival_rate": 1.0,
+            "survived": 115
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.9565217391304348,
+            "survived": 22
+          }
+        },
+        "live": {
+          "internal": {
+            "pairs": 115,
+            "survival_rate": 0.9478260869565217,
+            "survived": 109
+          },
+          "straddling": {
+            "pairs": 23,
+            "survival_rate": 0.4782608695652174,
+            "survived": 11
+          }
+        }
+      },
+      "distance_histogram": {
+        "file": {
+          "errors": {
+            "0.00-0.25": 1,
+            "0.25-0.50": 1,
+            "0.50-0.75": 1,
+            "1.25-1.50": 1,
+            "1.50-1.75": 1,
+            "1.75-2.00": 1,
+            "2.00-2.25": 1,
+            "2.25-2.50": 2
+          },
+          "words": {
+            "0.00-0.25": 29,
+            "0.25-0.50": 23,
+            "0.50-0.75": 30,
+            "0.75-1.00": 27,
+            "1.00-1.25": 27,
+            "1.25-1.50": 1,
+            "1.50-1.75": 1,
+            "2.00-2.25": 1
+          }
+        },
+        "live": {
+          "errors": {
+            "0.00-0.25": 8,
+            "0.25-0.50": 10,
+            "0.50-0.75": 1,
+            "0.75-1.00": 2,
+            "1.50-1.75": 1,
+            "1.75-2.00": 1,
+            "2.00-2.25": 2,
+            "2.25-2.50": 2
+          },
+          "words": {
+            "0.00-0.25": 17,
+            "0.25-0.50": 24,
+            "0.50-0.75": 32,
+            "0.75-1.00": 32,
+            "1.00-1.25": 30,
+            "1.25-1.50": 1,
+            "1.50-1.75": 1,
+            "1.75-2.00": 1,
+            "2.00-2.25": 1
+          }
+        }
+      },
+      "empty_spans": 0,
+      "hard_capped_spans": 24,
+      "reference_tokens": 139,
+      "seam_cases": [
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 2,
+          "file_window_text": "So that a little bit of the rebel is allowed in balance with the deference to authority? Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?",
+          "left_span": {
+            "range": [
+              32.5,
+              35.0
+            ],
+            "span_id": 13,
+            "text": "Uh, in balance with the difference."
+          },
+          "reference_window": "deference to authority",
+          "right_span": {
+            "range": [
+              35.0,
+              37.5
+            ],
+            "span_id": 14,
+            "text": "Authority. Yeah, absolutely. Without that."
+          },
+          "seam_seconds": 35.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "Kind of the same thing. There's paternalism. They think that they're responsible for you.",
+          "left_span": {
+            "range": [
+              0.0,
+              2.5
+            ],
+            "span_id": 0,
+            "text": "Kind of the same thing. There's paternalism."
+          },
+          "reference_window": "paternalism they think",
+          "right_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "Uh, they think that they're responsible for you."
+          },
+          "seam_seconds": 2.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "Kind of the same thing. There's paternalism. They think that they're responsible for you. But deference, a certain amount of deference to authority is not blind submission.",
+          "left_span": {
+            "range": [
+              2.5,
+              5.0
+            ],
+            "span_id": 1,
+            "text": "Uh, they think that they're responsible for you."
+          },
+          "reference_window": "responsible for you",
+          "right_span": {
+            "range": [
+              5.0,
+              7.5
+            ],
+            "span_id": 2,
+            "text": "Um but uh."
+          },
+          "seam_seconds": 5.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference,",
+          "left_span": {
+            "range": [
+              12.5,
+              15.0
+            ],
+            "span_id": 5,
+            "text": "Been written implicitly in our contract."
+          },
+          "reference_window": "contract for thousands",
+          "right_span": {
+            "range": [
+              15.0,
+              17.5
+            ],
+            "span_id": 6,
+            "text": "Uh, for thousands of years that in exchange"
+          },
+          "seam_seconds": 15.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference,",
+          "left_span": {
+            "range": [
+              15.0,
+              17.5
+            ],
+            "span_id": 6,
+            "text": "Uh, for thousands of years that in exchange"
+          },
+          "reference_window": "in exchange",
+          "right_span": {
+            "range": [
+              17.5,
+              20.0
+            ],
+            "span_id": 7,
+            "text": "change for some deference uh"
+          },
+          "seam_seconds": 17.5,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference, we are given stability, security, and peace, and hopefully prosperity.",
+          "left_span": {
+            "range": [
+              17.5,
+              20.0
+            ],
+            "span_id": 7,
+            "text": "change for some deference uh"
+          },
+          "reference_window": "deference we are",
+          "right_span": {
+            "range": [
+              20.0,
+              22.5
+            ],
+            "span_id": 8,
+            "text": "We are given stability."
+          },
+          "seam_seconds": 20.0,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "So there is some element that we have in the West of freedom of the individual. So that a little bit of the rebel is allowed in balance with the deference to authority?",
+          "left_span": {
+            "range": [
+              27.5,
+              30.0
+            ],
+            "span_id": 11,
+            "text": "Of freedom of the individual. So"
+          },
+          "reference_window": "individual so that a little bit",
+          "right_span": {
+            "range": [
+              30.0,
+              32.5
+            ],
+            "span_id": 12,
+            "text": "A little bit of the rebel is allowed."
+          },
+          "seam_seconds": 30.0,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "So that a little bit of the rebel is allowed in balance with the deference to authority?",
+          "left_span": {
+            "range": [
+              30.0,
+              32.5
+            ],
+            "span_id": 12,
+            "text": "A little bit of the rebel is allowed."
+          },
+          "reference_window": "is allowed in",
+          "right_span": {
+            "range": [
+              32.5,
+              35.0
+            ],
+            "span_id": 13,
+            "text": "Uh, in balance with the difference."
+          },
+          "seam_seconds": 32.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?",
+          "left_span": {
+            "range": [
+              37.5,
+              40.0
+            ],
+            "span_id": 15,
+            "text": "How can you have this radical, dynamic entrepreneur?"
+          },
+          "reference_window": "entrepreneurialism",
+          "right_span": {
+            "range": [
+              40.0,
+              42.5
+            ],
+            "span_id": 16,
+            "text": "Normalism you see in China."
+          },
+          "seam_seconds": 40.0,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China? If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,",
+          "left_span": {
+            "range": [
+              40.0,
+              42.5
+            ],
+            "span_id": 16,
+            "text": "Normalism you see in China."
+          },
+          "reference_window": "if you don't",
+          "right_span": {
+            "range": [
+              42.5,
+              45.0
+            ],
+            "span_id": 17,
+            "text": "You don't have a sense of self, a sense of."
+          },
+          "seam_seconds": 42.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,",
+          "left_span": {
+            "range": [
+              42.5,
+              45.0
+            ],
+            "span_id": 17,
+            "text": "You don't have a sense of self, a sense of."
+          },
+          "reference_window": "a sense of the",
+          "right_span": {
+            "range": [
+              45.0,
+              47.5
+            ],
+            "span_id": 18,
+            "text": "Of the fact that you can find."
+          },
+          "seam_seconds": 45.0,
+          "words_in_window": 4
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,",
+          "left_span": {
+            "range": [
+              45.0,
+              47.5
+            ],
+            "span_id": 18,
+            "text": "Of the fact that you can find."
+          },
+          "reference_window": "can find opportunities",
+          "right_span": {
+            "range": [
+              47.5,
+              50.0
+            ],
+            "span_id": 19,
+            "text": "Find opportunities, you look for opportunities, you."
+          },
+          "seam_seconds": 47.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 1,
+          "file_window_text": "you you you drive opportunities, it's all self motivated.",
+          "left_span": {
+            "range": [
+              50.0,
+              52.5
+            ],
+            "span_id": 20,
+            "text": "You you drive opportunities."
+          },
+          "reference_window": "opportunities it's",
+          "right_span": {
+            "range": [
+              52.5,
+              55.0
+            ],
+            "span_id": 21,
+            "text": "Um, it's all self motivated."
+          },
+          "seam_seconds": 52.5,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "But deference, a certain amount of deference to authority is not blind submission.",
+          "left_span": {
+            "range": [
+              5.0,
+              7.5
+            ],
+            "span_id": 2,
+            "text": "Um but uh."
+          },
+          "reference_window": "a certain",
+          "right_span": {
+            "range": [
+              7.5,
+              10.0
+            ],
+            "span_id": 3,
+            "text": "deference, a certain amount of deference to authority."
+          },
+          "seam_seconds": 7.5,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "But deference, a certain amount of deference to authority is not blind submission.",
+          "left_span": {
+            "range": [
+              7.5,
+              10.0
+            ],
+            "span_id": 3,
+            "text": "deference, a certain amount of deference to authority."
+          },
+          "reference_window": "to authority is not",
+          "right_span": {
+            "range": [
+              10.0,
+              12.5
+            ],
+            "span_id": 4,
+            "text": "is not blind submission. It's"
+          },
+          "seam_seconds": 10.0,
+          "words_in_window": 4
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "But deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract for thousands of years that in exchange for some deference,",
+          "left_span": {
+            "range": [
+              10.0,
+              12.5
+            ],
+            "span_id": 4,
+            "text": "is not blind submission. It's"
+          },
+          "reference_window": "it's been written",
+          "right_span": {
+            "range": [
+              12.5,
+              15.0
+            ],
+            "span_id": 5,
+            "text": "Been written implicitly in our contract."
+          },
+          "seam_seconds": 12.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "we are given stability, security, and peace, and hopefully prosperity.",
+          "left_span": {
+            "range": [
+              20.0,
+              22.5
+            ],
+            "span_id": 8,
+            "text": "We are given stability."
+          },
+          "reference_window": "stability security and",
+          "right_span": {
+            "range": [
+              22.5,
+              25.0
+            ],
+            "span_id": 9,
+            "text": "Security and peace and hopefully prosperity."
+          },
+          "seam_seconds": 22.5,
+          "words_in_window": 3
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "we are given stability, security, and peace, and hopefully prosperity. So there is some element that we have in the West of freedom of the individual.",
+          "left_span": {
+            "range": [
+              22.5,
+              25.0
+            ],
+            "span_id": 9,
+            "text": "Security and peace and hopefully prosperity."
+          },
+          "reference_window": "prosperity so there is some",
+          "right_span": {
+            "range": [
+              25.0,
+              27.5
+            ],
+            "span_id": 10,
+            "text": "So there is some element that we have in the West."
+          },
+          "seam_seconds": 25.0,
+          "words_in_window": 5
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "So there is some element that we have in the West of freedom of the individual.",
+          "left_span": {
+            "range": [
+              25.0,
+              27.5
+            ],
+            "span_id": 10,
+            "text": "So there is some element that we have in the West."
+          },
+          "reference_window": "have in the west of freedom",
+          "right_span": {
+            "range": [
+              27.5,
+              30.0
+            ],
+            "span_id": 11,
+            "text": "Of freedom of the individual. So"
+          },
+          "seam_seconds": 27.5,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?",
+          "left_span": {
+            "range": [
+              35.0,
+              37.5
+            ],
+            "span_id": 14,
+            "text": "Authority. Yeah, absolutely. Without that."
+          },
+          "reference_window": "without that how can you have",
+          "right_span": {
+            "range": [
+              37.5,
+              40.0
+            ],
+            "span_id": 15,
+            "text": "How can you have this radical, dynamic entrepreneur?"
+          },
+          "seam_seconds": 37.5,
+          "words_in_window": 6
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities, you you you drive opportunities, it's all self motivated.",
+          "left_span": {
+            "range": [
+              47.5,
+              50.0
+            ],
+            "span_id": 19,
+            "text": "Find opportunities, you look for opportunities, you."
+          },
+          "reference_window": "you",
+          "right_span": {
+            "range": [
+              50.0,
+              52.5
+            ],
+            "span_id": 20,
+            "text": "You you drive opportunities."
+          },
+          "seam_seconds": 50.0,
+          "words_in_window": 1
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "you you you drive opportunities, it's all self motivated. Is there still a young kid in China that's able to dream to be?",
+          "left_span": {
+            "range": [
+              52.5,
+              55.0
+            ],
+            "span_id": 21,
+            "text": "Um, it's all self motivated."
+          },
+          "reference_window": "is there",
+          "right_span": {
+            "range": [
+              55.0,
+              57.5
+            ],
+            "span_id": 22,
+            "text": "Is there still a young kid? Yeah."
+          },
+          "seam_seconds": 55.0,
+          "words_in_window": 2
+        },
+        {
+          "case": "lex_keyu_jin",
+          "damaged_words": 0,
+          "file_window_text": "Is there still a young kid in China that's able to dream to be?",
+          "left_span": {
+            "range": [
+              55.0,
+              57.5
+            ],
+            "span_id": 22,
+            "text": "Is there still a young kid? Yeah."
+          },
+          "reference_window": "in china",
+          "right_span": {
+            "range": [
+              57.5,
+              60.0
+            ],
+            "span_id": 23,
+            "text": "In China, it's able to dream to be"
+          },
+          "seam_seconds": 57.5,
+          "words_in_window": 2
+        }
+      ],
+      "seam_count": 23,
+      "span_count": 24,
+      "span_duration_histogram": {
+        "1.0-1.8s": 0,
+        "1.8-2.49s": 0,
+        "2.5s(cap)": 24,
+        "<=1.0s": 0
+      },
+      "spans": [
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 5,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 2,
+          "span_id": 0,
+          "start": 0.0,
+          "wer": 2.5
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 7,
+          "span_id": 1,
+          "start": 2.5,
+          "wer": 0.14285714285714285
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 3,
+          "ref_words": 1,
+          "span_id": 2,
+          "start": 5.0,
+          "wer": 2.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 7,
+          "span_id": 3,
+          "start": 7.5,
+          "wer": 0.14285714285714285
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 4,
+          "start": 10.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 5,
+          "start": 12.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 7,
+          "span_id": 6,
+          "start": 15.0,
+          "wer": 0.14285714285714285
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 3,
+          "span_id": 7,
+          "start": 17.5,
+          "wer": 0.6666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 4,
+          "ref_words": 4,
+          "span_id": 8,
+          "start": 20.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 9,
+          "start": 22.5,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 11,
+          "ref_words": 11,
+          "span_id": 10,
+          "start": 25.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 7,
+          "span_id": 11,
+          "start": 27.5,
+          "wer": 0.14285714285714285
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 8,
+          "span_id": 12,
+          "start": 30.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 3,
+          "hard_capped": true,
+          "hyp_words": 6,
+          "ref_words": 6,
+          "span_id": 13,
+          "start": 32.5,
+          "wer": 0.5
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 0,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 5,
+          "span_id": 14,
+          "start": 35.0,
+          "wer": 0.0
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 7,
+          "span_id": 15,
+          "start": 37.5,
+          "wer": 0.14285714285714285
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 6,
+          "span_id": 16,
+          "start": 40.0,
+          "wer": 0.3333333333333333
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 10,
+          "ref_words": 9,
+          "span_id": 17,
+          "start": 42.5,
+          "wer": 0.1111111111111111
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 6,
+          "span_id": 18,
+          "start": 45.0,
+          "wer": 0.16666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 6,
+          "span_id": 19,
+          "start": 47.5,
+          "wer": 0.16666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 4,
+          "ref_words": 3,
+          "span_id": 20,
+          "start": 50.0,
+          "wer": 0.3333333333333333
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 5,
+          "ref_words": 4,
+          "span_id": 21,
+          "start": 52.5,
+          "wer": 0.25
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 1,
+          "hard_capped": true,
+          "hyp_words": 7,
+          "ref_words": 6,
+          "span_id": 22,
+          "start": 55.0,
+          "wer": 0.16666666666666666
+        },
+        {
+          "duration": 2.5,
+          "empty": false,
+          "errors": 2,
+          "hard_capped": true,
+          "hyp_words": 8,
+          "ref_words": 7,
+          "span_id": 23,
+          "start": 57.5,
+          "wer": 0.2857142857142857
+        }
+      ],
+      "tbsa": {
+        "file": {
+          "composite": 0.9317,
+          "speaker_mapping": {
+            "Keyu Jin": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.936387,
+          "text_speaker_accuracy": 0.92538,
+          "wer": 0.064748
+        },
+        "live": {
+          "composite": 0.873604,
+          "speaker_mapping": {
+            "Keyu Jin": "S01",
+            "Lex Fridman": "S02"
+          },
+          "text_coverage": 0.903249,
+          "text_speaker_accuracy": 0.890069,
+          "wer": 0.194245
+        }
+      }
+    }
+  },
+  "primary_band_seconds": 0.4,
+  "schema": "moss-live-gap-boundary-diagnosis.v1"
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "moss-live-file-gap-context-preregistration.v1",
+  "registered_at": "2026-08-24",
+  "question": "The deployed live lane decodes independent ~2.5 s spans with no preceding audio and no text history. Does restoring context -- either by re-decoding longer windows after the fact (A1/A2/A3) or by feeding context in-line at first decode (A4/A5) -- close the live-vs-file accuracy gap on the primary lex trio, and at what added decode cost?",
+  "hypotheses": {
+    "H1_context_starvation": "A 2.5 s decode window degrades ASR quality everywhere in the span because the model has no acoustic or lexical history.",
+    "H2_seam_loss": "Words adjacent to a span edge, and phrases that cross an edge, are lost or mangled because the span boundary cuts them."
+  },
+  "phase1_finding_that_shapes_this": "Diagnosis (diagnosis.json) localises the gap to the seams: live word-error rate is 0.082 for reference words more than 0.5 s from any span seam versus 0.072 for file mode over the same words, but 0.373 versus 0.088 within 0.5 s of a seam; 89.6% of the coverage gap and 58-72% of the word-error gap sit inside a +/-0.4 s seam band; reference bigrams that straddle a seam survive in the live transcript 48.5% of the time versus 89.4% for bigrams inside a span. H2 dominates; H1 contributes about one WER point.",
+  "corpus": {
+    "cases": ["lex_bill_ackman", "lex_javier_milei", "lex_keyu_jin"],
+    "tier": "primary",
+    "excluded": "acquired_* samples carry partial references and are never scored",
+    "audio_seconds_per_case": 60.0
+  },
+  "baseline": {
+    "path": "/private/tmp/claude-501/-Users-gao-Desktop-AI-Projects-Github-Projects-MOSS-Transcribe-Diarize/bd3632af-da27-408f-8e03-ecd56a586e8d/scratchpad/remeasure-20260824T160130",
+    "live_primary_trio_means": {"tbsa": 0.8384, "wer": 0.1999, "coverage": 0.8640, "der": 0.1764},
+    "file_primary_trio_means": {"tbsa": 0.9106, "wer": 0.1039, "coverage": 0.9199, "der": 0.1021}
+  },
+  "arms": {
+    "a0": "Production replica. The exact committed span grid recorded in the baseline trace, each span decoded independently at the canonical token cap. Validates the bench.",
+    "a1_5s": "Seam re-ASR. A0's spans stand; each internal seam additionally decodes a 5 s window centred on it, and the window's words replace A0's inside the seam's Voronoi cell.",
+    "a1_10s": "Seam re-ASR with a 10 s window, same reconciliation.",
+    "a2": "Rolling refinement. 10 s windows on a 5 s stride; each window's central 5 s replaces A0's words there.",
+    "a3": "Full-context upper bound. One 60 s decode, which is what file mode does on a 60 s clip. Bounds any revision scheme.",
+    "a4": "Prefix audio. Each span decoded as [t0-1.8 s, t1]; output segments whose midpoint lies in the prefix are dropped; committed timestamps stay on the span's own clock.",
+    "a5": "Prefix audio plus decaying text conditioning. A4 plus the running committed transcript tail (<= 180 tokens, <= 30 s old, plain text) appended to DEFAULT_PROMPT."
+  },
+  "identity_stage_is_held_fixed": {
+    "decision": "Every arm's output segments are relabelled from one shared speaker timeline built from the baseline live snapshot's committed labels (greatest time overlap wins). A0 therefore reproduces the baseline's labels exactly and every other arm inherits the same identity decisions.",
+    "why": "The deployed live lane assigns canonical speaker labels with a wespeaker album stage that this bench does not re-run. Holding it fixed makes every TBSA and DER difference between arms attributable to text, coverage and timing -- which is what H1+H2 is about.",
+    "limitation": "No arm can be credited or penalised for changing diarization. text_coverage and wer are label-free and so are unaffected by this choice; text_speaker_accuracy and the DER confusion term are frozen. A3 is additionally reported with its own decoder labels, which is what file mode uses.",
+    "prefix_audio_caveat": "Prefix audio must never reach the identity embedder -- a sibling controlled experiment collapsed two speakers into one when it did. This bench does not recompute embeddings, so A4/A5 do not exercise that risk and do not clear it either."
+  },
+  "gates": {
+    "primary_trio_means": {
+      "tbsa_min": 0.8745,
+      "wer_max": 0.1519,
+      "coverage_min": 0.8920,
+      "der_max": 0.1393
+    },
+    "per_case": {
+      "max_tbsa_regression_vs_live_baseline": 0.02
+    },
+    "cost": {
+      "metric": "added decode-audio-seconds per real-time audio-second, relative to A0",
+      "uncontended_target": 1.0,
+      "note": "the shared RTX 4070 Ti carries three sibling agents, so every wall-clock and RTF number this bench reports is CONTENDED and is not a latency verdict"
+    }
+  },
+  "decision_rule": "An arm passes only if all four aggregate gates hold and no case regresses more than 0.02 TBSA against the live baseline. Among passing arms the recommendation is the cheapest by added decode-audio-seconds. A0 failing to reproduce the baseline live means within 0.01 TBSA invalidates the whole bench and no other arm is reported as a verdict.",
+  "priority_order_if_gpu_time_is_short": ["a0", "a4", "a5", "a1_5s", "a2", "a1_10s", "a3"],
+  "decoding": {
+    "endpoint": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "sampling": "greedy",
+    "request_concurrency": 1,
+    "token_cap": "canonical_decode_token_cap(sample_count) = 68 + ceil(86.4 * seconds), except A3 which uses file mode's 12000"
+  },
+  "scorers": [
+    "moss_transcribe_diarize.evaluation.calculate_tbsa",
+    "moss_transcribe_diarize.evaluation.calculate_diarization"
+  ]
+}

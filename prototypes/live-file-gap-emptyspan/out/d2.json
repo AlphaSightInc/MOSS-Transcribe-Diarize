@@ -1,0 +1,218 @@
+{
+ "empty_spans": [
+  {
+   "case": "lex_bill_ackman",
+   "span_id": 2,
+   "window": [
+    5.0,
+    7.5
+   ],
+   "dur_s": 2.5,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.708,
+     "token_cap": 286,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_bill_ackman-span02.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.087,
+     "token_cap": 286,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_bill_ackman-span02.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "lex_javier_milei",
+   "span_id": 3,
+   "window": [
+    5.28,
+    6.77
+   ],
+   "dur_s": 1.49,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.096,
+     "token_cap": 198,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span03.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.102,
+     "token_cap": 198,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span03.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "lex_javier_milei",
+   "span_id": 5,
+   "window": [
+    7.94,
+    9.52
+   ],
+   "dur_s": 1.58,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.064,
+     "token_cap": 206,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span05.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.066,
+     "token_cap": 206,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span05.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "lex_javier_milei",
+   "span_id": 13,
+   "window": [
+    23.73,
+    23.79
+   ],
+   "dur_s": 0.06,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.095,
+     "token_cap": 74,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span13.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.098,
+     "token_cap": 74,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span13.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "lex_javier_milei",
+   "span_id": 31,
+   "window": [
+    59.76,
+    60.0
+   ],
+   "dur_s": 0.24,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.059,
+     "token_cap": 89,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span31.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.071,
+     "token_cap": 89,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/lex_javier_milei-span31.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "acquired_jamie_dimon",
+   "span_id": 6,
+   "window": [
+    13.7,
+    14.01
+   ],
+   "dur_s": 0.31,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.101,
+     "token_cap": 95,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/acquired_jamie_dimon-span06.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.102,
+     "token_cap": 95,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/acquired_jamie_dimon-span06.wav."
+    }
+   ],
+   "deterministic_empty": true
+  },
+  {
+   "case": "acquired_jamie_dimon",
+   "span_id": 22,
+   "window": [
+    51.51,
+    54.01
+   ],
+   "dur_s": 2.5,
+   "attempts": [
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.151,
+     "token_cap": 286,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/acquired_jamie_dimon-span22.wav."
+    },
+    {
+     "text": "",
+     "generated_tokens": 0,
+     "elapsed_s": 0.12,
+     "token_cap": 286,
+     "empty_error": "vLLM transcription returned zero parsed segments for /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-emptyspan/spans/acquired_jamie_dimon-span22.wav."
+    }
+   ],
+   "deterministic_empty": true
+  }
+ ],
+ "controls": [
+  {
+   "case": "lex_bill_ackman",
+   "span_id": 1,
+   "matches_baseline": false,
+   "baseline": "[0][S01]to kind of weigh it. He talked about[2.42]",
+   "redecode": "[0.00][S01]to kind of weigh it. He talked about[2.42]",
+   "generated_tokens": 26,
+   "elapsed_s": 0.131,
+   "token_cap": 286
+  },
+  {
+   "case": "lex_bill_ackman",
+   "span_id": 3,
+   "matches_baseline": false,
+   "baseline": "[0][S01]It in the short term is a voting machine. It represents[2.48]",
+   "redecode": "[0.00][S01] It in the short term is a voting machine. It represents[2.48]",
+   "generated_tokens": 29,
+   "elapsed_s": 0.145,
+   "token_cap": 286
+  },
+  {
+   "case": "lex_javier_milei",
+   "span_id": 30,
+   "matches_baseline": false,
+   "baseline": "[0.53][S02]But brought inflation down.[2.49]",
+   "redecode": "[0.53][S01] But brought inflation down.[2.49]",
+   "generated_tokens": 21,
+   "elapsed_s": 0.179,
+   "token_cap": 286
+  }
+ ]
+}

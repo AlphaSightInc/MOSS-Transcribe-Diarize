@@ -140,6 +140,20 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   burst loss; gap manifests exactly account for dropped frames; checkpoint/resume at
   40%+70% reproduced the uninterrupted mixed tape byte-identically.
 
+- **Short provisional / longer joint-MOSS witness (2026-08-24) — rolling text PASS,
+  speaker authority OPEN.** On three fully referenced real 60-second interviews, reducing
+  the live hard cap from 2.5 seconds to one second cut mean first-word age 3.04→1.00 seconds,
+  but worsened WER `.200→.377`, DER `.176→.457`, and endpoint inference RTF `.057→.115`.
+  A truth-blind ten-second view every five seconds brought WER to `.146` from either base,
+  proving that a longer joint-MOSS witness can overwrite the one-second provisional words.
+  DER remained `.292` from the one-second base versus `.114` from the 2.5-second base,
+  because the prototype still reconciled witness speakers through the base identity anchors.
+  Every-seam five-second witnesses worsened WER and DER and are rejected. A terminal full-
+  minute view scored WER `.104` / DER `.102`. No production cap change is authorized: next
+  prototype must make the longer witness authoritative for its own speaker evidence while
+  keeping the one-second lane explicitly provisional. Full contract and results:
+  `prototypes/streaming-diarization/live-multiview-prototype/NOTES.md`.
+
 - **Live retained-tape diagnostic — upstream capture bug proved (2026-08-02).** Exact
   `c2e6248` clean truth replay scored 91.35%; the retained system lane scored 61.61%
   and mixed scored 54.66%. The Mac boundary flattened an interleaved multi-channel

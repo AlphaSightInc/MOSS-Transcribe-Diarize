@@ -1,0 +1,1252 @@
+[
+ {
+  "case": "lex_bill_ackman",
+  "tier": "trio",
+  "span_id": 2,
+  "start_sample": 80000,
+  "end_sample": 120000,
+  "next_end_sample": 160000,
+  "oracle": "the difference between, you said the stock market in the",
+  "dur_s": 2.5,
+  "vad": 0.904,
+  "rms_dbfs": -21.06,
+  "baseline_raw": "[S01] The difference between,[S01] you said the stock market.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      1.17,
+      "S01",
+      "The difference between,"
+     ],
+     [
+      1.17,
+      2.5,
+      "S01",
+      "you said the stock market."
+     ]
+    ],
+    "kept_text": "the difference between you said the stock market",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [
+     [
+      0.0,
+      1.17,
+      "S01",
+      "The difference between,"
+     ],
+     [
+      1.17,
+      2.5,
+      "S01",
+      "you said the stock market."
+     ]
+    ],
+    "kept_text": "the difference between you said the stock market",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.904 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [
+     [
+      0.0,
+      1.17,
+      "S01",
+      "The difference between,"
+     ],
+     [
+      1.17,
+      2.5,
+      "S01",
+      "you said the stock market."
+     ]
+    ],
+    "kept_text": "the difference between you said the stock market",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [
+     [
+      0.0,
+      2.44,
+      "S01",
+      "the difference between, he said, the stock market."
+     ]
+    ],
+    "kept_text": "the difference between he said the stock market",
+    "recovered": 7,
+    "false_additions": 1,
+    "extra_requests": 1,
+    "extra_audio_s": 3.5,
+    "wall_s_contended": 0.163,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [
+     [
+      0.0,
+      2.48,
+      "S01",
+      "the difference between, you said, the stock market."
+     ]
+    ],
+    "kept_text": "the difference between you said the stock market",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 5.0,
+    "wall_s_contended": 0.191,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.5,
+    "wall_s_contended": 0.097,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [
+     [
+      0.35,
+      2.5,
+      "S01",
+      "The difference between, you said the stock market"
+     ]
+    ],
+    "kept_text": "the difference between you said the stock market",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 5.0,
+    "wall_s_contended": 0.251,
+    "note": "merged window 5.00s"
+   },
+   "B4_pad0.25": {
+    "segments": [
+     [
+      0.32,
+      2.5,
+      "S01",
+      "The difference between, you said the stock"
+     ]
+    ],
+    "kept_text": "the difference between you said the stock",
+    "recovered": 7,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 3.0,
+    "wall_s_contended": 0.131,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_javier_milei",
+  "tier": "trio",
+  "span_id": 3,
+  "start_sample": 84480,
+  "end_sample": 108320,
+  "next_end_sample": 127040,
+  "oracle": "",
+  "dur_s": 1.49,
+  "vad": 0.0,
+  "rms_dbfs": -999.0,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      1.49,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.49,
+    "wall_s_contended": 0.123,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 3.99,
+    "wall_s_contended": 0.143,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.49,
+    "wall_s_contended": 0.058,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.66,
+    "wall_s_contended": 0.114,
+    "note": "merged window 2.66s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.99,
+    "wall_s_contended": 0.111,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_javier_milei",
+  "tier": "trio",
+  "span_id": 5,
+  "start_sample": 127040,
+  "end_sample": 152320,
+  "next_end_sample": 192320,
+  "oracle": "",
+  "dur_s": 1.58,
+  "vad": 0.0633,
+  "rms_dbfs": -102.83,
+  "baseline_raw": "[0.00][S01]Okay.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      1.58,
+      "S01",
+      "Okay."
+     ]
+    ],
+    "kept_text": "okay",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.063 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [
+     [
+      0.8,
+      1.52,
+      "S02",
+      "Success."
+     ]
+    ],
+    "kept_text": "success",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 1,
+    "extra_audio_s": 2.58,
+    "wall_s_contended": 0.176,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 4.08,
+    "wall_s_contended": 0.123,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.58,
+    "wall_s_contended": 0.069,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 4.08,
+    "wall_s_contended": 0.13,
+    "note": "merged window 4.08s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.08,
+    "wall_s_contended": 0.091,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_javier_milei",
+  "tier": "trio",
+  "span_id": 13,
+  "start_sample": 379680,
+  "end_sample": 380640,
+  "next_end_sample": 420640,
+  "oracle": "",
+  "dur_s": 0.06,
+  "vad": 0.0,
+  "rms_dbfs": -999.0,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.06,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.06,
+    "wall_s_contended": 0.117,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.56,
+    "wall_s_contended": 0.18,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.06,
+    "wall_s_contended": 0.05,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.56,
+    "wall_s_contended": 0.267,
+    "note": "merged window 2.56s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.56,
+    "wall_s_contended": 0.068,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_javier_milei",
+  "tier": "trio",
+  "span_id": 31,
+  "start_sample": 956160,
+  "end_sample": 960000,
+  "next_end_sample": null,
+  "oracle": "",
+  "dur_s": 0.24,
+  "vad": 1.0,
+  "rms_dbfs": -22.5,
+  "baseline_raw": "[0.00][S01]And.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.24,
+      "S01",
+      "And."
+     ]
+    ],
+    "kept_text": "and",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [
+     [
+      0.0,
+      0.24,
+      "S01",
+      "And."
+     ]
+    ],
+    "kept_text": "and",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=1.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [
+     [
+      0.0,
+      0.24,
+      "S01",
+      "And."
+     ]
+    ],
+    "kept_text": "and",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [
+     [
+      0.0,
+      0.22,
+      "S01",
+      "down"
+     ]
+    ],
+    "kept_text": "down",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 1,
+    "extra_audio_s": 1.24,
+    "wall_s_contended": 0.127,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.74,
+    "wall_s_contended": 0.254,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.24,
+    "wall_s_contended": 0.14,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no following span (session tail)"
+   },
+   "B4_pad0.25": {
+    "segments": [
+     [
+      0.0,
+      0.19,
+      "S01",
+      "down"
+     ]
+    ],
+    "kept_text": "down",
+    "recovered": 0,
+    "false_additions": 1,
+    "extra_requests": 1,
+    "extra_audio_s": 0.49,
+    "wall_s_contended": 0.097,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "acquired_jamie_dimon",
+  "tier": "secondary",
+  "span_id": 6,
+  "start_sample": 219200,
+  "end_sample": 224160,
+  "next_end_sample": 264160,
+  "oracle": "",
+  "dur_s": 0.31,
+  "vad": 0.0,
+  "rms_dbfs": -105.09,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.31,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.31,
+    "wall_s_contended": 0.119,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.81,
+    "wall_s_contended": 0.137,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.31,
+    "wall_s_contended": 0.06,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.81,
+    "wall_s_contended": 0.209,
+    "note": "merged window 2.81s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.81,
+    "wall_s_contended": 0.082,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "acquired_jamie_dimon",
+  "tier": "secondary",
+  "span_id": 22,
+  "start_sample": 824160,
+  "end_sample": 864160,
+  "next_end_sample": 904160,
+  "oracle": "Last year, we had you on the video board",
+  "dur_s": 2.5,
+  "vad": 0.984,
+  "rms_dbfs": -20.88,
+  "baseline_raw": "[0.15][S01] Last year, we had you on the video board at Chase.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.15,
+      2.5,
+      "S01",
+      "Last year, we had you on the video board at Chase."
+     ]
+    ],
+    "kept_text": "last year we had you on the video board at chase",
+    "recovered": 9,
+    "false_additions": 2,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [
+     [
+      0.15,
+      2.5,
+      "S01",
+      "Last year, we had you on the video board at Chase."
+     ]
+    ],
+    "kept_text": "last year we had you on the video board at chase",
+    "recovered": 9,
+    "false_additions": 2,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.984 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [
+     [
+      0.15,
+      2.5,
+      "S01",
+      "Last year, we had you on the video board at Chase."
+     ]
+    ],
+    "kept_text": "last year we had you on the video board at chase",
+    "recovered": 9,
+    "false_additions": 2,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [
+     [
+      0.15,
+      2.45,
+      "S01",
+      "Last year, we had you on the video board at Chase."
+     ]
+    ],
+    "kept_text": "last year we had you on the video board at chase",
+    "recovered": 9,
+    "false_additions": 2,
+    "extra_requests": 1,
+    "extra_audio_s": 3.5,
+    "wall_s_contended": 0.218,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [
+     [
+      0.14,
+      2.48,
+      "S02",
+      "Last year, we had you on the video board at Chase."
+     ]
+    ],
+    "kept_text": "last year we had you on the video board at chase",
+    "recovered": 9,
+    "false_additions": 2,
+    "extra_requests": 1,
+    "extra_audio_s": 5.0,
+    "wall_s_contended": 0.261,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.5,
+    "wall_s_contended": 0.07,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [
+     [
+      0.12,
+      2.5,
+      "S01",
+      "Last year, we had you on the video"
+     ]
+    ],
+    "kept_text": "last year we had you on the video",
+    "recovered": 8,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 5.0,
+    "wall_s_contended": 0.234,
+    "note": "merged window 5.00s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 3.0,
+    "wall_s_contended": 0.11,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_adam_frank",
+  "tier": "3min",
+  "span_id": 18,
+  "start_sample": 686240,
+  "end_sample": 700160,
+  "next_end_sample": 740160,
+  "oracle": "",
+  "dur_s": 0.87,
+  "vad": 0.0,
+  "rms_dbfs": -999.0,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.87,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.87,
+    "wall_s_contended": 0.105,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 3.37,
+    "wall_s_contended": 0.132,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.87,
+    "wall_s_contended": 0.056,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 3.37,
+    "wall_s_contended": 0.126,
+    "note": "merged window 3.37s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.37,
+    "wall_s_contended": 0.107,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_adam_frank",
+  "tier": "3min",
+  "span_id": 47,
+  "start_sample": 1781760,
+  "end_sample": 1782400,
+  "next_end_sample": 1822400,
+  "oracle": "",
+  "dur_s": 0.04,
+  "vad": 0.0,
+  "rms_dbfs": -999.0,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.04,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.04,
+    "wall_s_contended": 0.109,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.54,
+    "wall_s_contended": 0.134,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.04,
+    "wall_s_contended": 0.037,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.54,
+    "wall_s_contended": 0.151,
+    "note": "merged window 2.54s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.54,
+    "wall_s_contended": 0.111,
+    "note": "+0.25s each side"
+   }
+  }
+ },
+ {
+  "case": "lex_adam_frank",
+  "tier": "3min",
+  "span_id": 62,
+  "start_sample": 2342400,
+  "end_sample": 2347200,
+  "next_end_sample": 2387200,
+  "oracle": "",
+  "dur_s": 0.3,
+  "vad": 0.0,
+  "rms_dbfs": -999.0,
+  "baseline_raw": "[0.00][S01]I'm sorry, I can't assist with that request.",
+  "policies": {
+   "P0_baseline": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "commits empty transcript"
+   },
+   "P1_salvage": {
+    "segments": [
+     [
+      0.0,
+      0.3,
+      "S01",
+      "I'm sorry, I can't assist with that request."
+     ]
+    ],
+    "kept_text": "i'm sorry i can't assist with that request",
+    "recovered": 0,
+    "false_additions": 8,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "no new request"
+   },
+   "P1v_salvage_vad": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad=0.000 gate=0.5"
+   },
+   "P1r_salvage_vad_norefusal": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 0,
+    "extra_audio_s": 0.0,
+    "wall_s_contended": 0.0,
+    "note": "vad gate + refusal filter"
+   },
+   "B1a_lead1.0": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 1.3,
+    "wall_s_contended": 0.124,
+    "note": "lead=1.00s"
+   },
+   "B1b_lead2.5": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.8,
+    "wall_s_contended": 0.137,
+    "note": "lead=2.50s"
+   },
+   "B2_altprompt": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.3,
+    "wall_s_contended": 0.037,
+    "note": "english instruction prompt"
+   },
+   "B3_mergeforward": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 2.8,
+    "wall_s_contended": 0.145,
+    "note": "merged window 2.80s"
+   },
+   "B4_pad0.25": {
+    "segments": [],
+    "kept_text": "",
+    "recovered": 0,
+    "false_additions": 0,
+    "extra_requests": 1,
+    "extra_audio_s": 0.8,
+    "wall_s_contended": 0.111,
+    "note": "+0.25s each side"
+   }
+  }
+ }
+]

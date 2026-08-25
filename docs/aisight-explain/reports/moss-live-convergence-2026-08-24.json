@@ -1,0 +1,743 @@
+{
+  "schema_version": 6,
+  "skill_version": "v20260821",
+  "report_id": "moss-live-convergence-2026-08-24",
+  "generated_at": "2026-08-24T21:15:00-04:00",
+  "question": "How do short rolling and terminal MOSS windows cooperate to make live mode immediate convergent and file-quality after stop?",
+  "title": "Make MOSS live mode fast now and correct later",
+  "audience": "Product owner familiar with basic ASR VAD and diarization but unfamiliar with window ownership and sequencing",
+  "mode": "plan-against-codebase",
+  "target": "docs/plans/live-mode-convergence-implementation-20260824.md against the MOSS-Transcribe-Diarize codebase",
+  "mission": {
+    "statement": "Enable the reader to reconstruct the three-authority architecture reason about window and stride trade-offs and decide whether to authorize each implementation phase",
+    "basis": "explicit"
+  },
+  "engine": {
+    "method": "codebase",
+    "signals": [
+      {
+        "kind": "dependency_centrality",
+        "finding": "EndpointPolicy creates every bounded live span and its hard-cap seam",
+        "evidence_ids": [
+          "ev-endpoint-code",
+          "ev-deployed-config"
+        ]
+      },
+      {
+        "kind": "schema_centrality",
+        "finding": "The rolling converger creates exactly one owner per interval and advances one monotonic frontier",
+        "evidence_ids": [
+          "ev-plan-ownership",
+          "ev-plan-decisions"
+        ]
+      },
+      {
+        "kind": "decision_record_density",
+        "finding": "Three transcript authorities separate first publication correction and finalization",
+        "evidence_ids": [
+          "ev-plan-authority",
+          "ev-session-commit"
+        ]
+      }
+    ],
+    "selected": [
+      {
+        "id": "eng-endpoint",
+        "name": "Short endpoint and hard cap",
+        "why": "it creates seams that dominate measured quality loss while bounding publication delay",
+        "chapter_id": "ch-endpoint"
+      },
+      {
+        "id": "eng-witness",
+        "name": "Rolling witness ownership",
+        "why": "it is the central corrective algorithm and establishes one owner per interval",
+        "chapter_id": "ch-witness"
+      },
+      {
+        "id": "eng-authority",
+        "name": "Session transcript authority",
+        "why": "it lets fast corrected and settled outputs coexist without mutating audit history",
+        "chapter_id": "ch-authority"
+      }
+    ]
+  },
+  "specimen": {
+    "description": "A simulated sentence cut inside the word between and corrected by rolling and terminal hearings",
+    "origin": "simulated",
+    "evidence_ids": [
+      "ev-context-verdict",
+      "ev-plan-ownership",
+      "ev-multiview-verdict"
+    ]
+  },
+  "chapter_plan": [
+    {
+      "id": "ch-orientation",
+      "title": "The goal and present system",
+      "part": "I",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-five-primitives",
+      "title": "Five primitives",
+      "part": "I",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-specimen",
+      "title": "One sentence heard three times",
+      "part": "I",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-misconceptions",
+      "title": "What most people get wrong",
+      "part": "I",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-endpoint",
+      "title": "The short endpoint",
+      "part": "II",
+      "class": "engine",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-witness",
+      "title": "Rolling witness ownership",
+      "part": "II",
+      "class": "engine",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-authority",
+      "title": "Transcript authority",
+      "part": "II",
+      "class": "engine",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-clocks",
+      "title": "Three latency clocks",
+      "part": "III",
+      "class": "deep",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-compute",
+      "title": "Compute and reuse",
+      "part": "III",
+      "class": "deep",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-speakers",
+      "title": "Speaker evidence",
+      "part": "III",
+      "class": "deep",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-terminal",
+      "title": "Terminal windows",
+      "part": "III",
+      "class": "deep",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-roadmap",
+      "title": "Review-gated roadmap",
+      "part": "IV",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-decisions",
+      "title": "Decision framework",
+      "part": "IV",
+      "class": "synthesis",
+      "status": "delivered"
+    },
+    {
+      "id": "ch-boundaries",
+      "title": "Known limits",
+      "part": "V",
+      "class": "synthesis",
+      "status": "delivered"
+    }
+  ],
+  "production_passes": [
+    {
+      "pass": 1,
+      "chapters": [
+        "ch-orientation",
+        "ch-five-primitives",
+        "ch-endpoint",
+        "ch-witness",
+        "ch-authority"
+      ],
+      "summary": "Established joint-MOSS path and cut owned-region frontier and authority primitives"
+    },
+    {
+      "pass": 2,
+      "chapters": [
+        "ch-specimen",
+        "ch-clocks",
+        "ch-compute",
+        "ch-speakers",
+        "ch-terminal"
+      ],
+      "summary": "Threaded one sentence through measured text speaker latency work and terminal behavior"
+    },
+    {
+      "pass": 3,
+      "chapters": [
+        "ch-misconceptions",
+        "ch-roadmap",
+        "ch-decisions",
+        "ch-boundaries"
+      ],
+      "summary": "Converted evidence into owner decisions gates conformance cases unknowns and rebuild sequence"
+    }
+  ],
+  "production_pass_count": 3,
+  "evidence": [
+    {
+      "id": "ev-xreview",
+      "claim": "The plan completed independent Claude and Codex review and was judged implementation-ready",
+      "source_root": "repo",
+      "source": ".aisight/xreview/active/session-summary.md:29",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "All five Codex round-3 findings verified first-hand and confirmed:"
+    },
+    {
+      "id": "ev-plan-authority",
+      "claim": "The plan establishes three transcript authorities",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:24",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Live mode should become a **three-authority transcript**:"
+    },
+    {
+      "id": "ev-current-lanes",
+      "claim": "MOSS jointly emits words timestamps and local speaker labels while VAD and WeSpeaker are external",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:150",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "MOSS does **not** expose an independent ASR lane in this project. One MOSS decode jointly emits"
+    },
+    {
+      "id": "ev-plan-ownership",
+      "claim": "The rolling design trusts the center of a longer overlapping window",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:171",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "For a 10-second window, trust only its central 5 seconds:"
+    },
+    {
+      "id": "ev-plan-preview",
+      "claim": "One-second preview reduces first-word age but worsens isolated quality",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:190",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Measured one-second isolated MOSS requests cut first-word age from 3.04 to 1.00 seconds, but WER"
+    },
+    {
+      "id": "ev-context-verdict",
+      "claim": "Seam-local word loss dominates the measured live-file gap",
+      "source_root": "repo",
+      "source": "prototypes/live-file-gap-context/NOTES.md:26",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "**It is seam loss, not context starvation.** Live words more than 0.5 s from a span seam are"
+    },
+    {
+      "id": "ev-multiview-results",
+      "claim": "Rolling10 corrects one-second text to WER .146 but leaves DER .292",
+      "source_root": "repo",
+      "source": "prototypes/streaming-diarization/live-multiview-prototype/NOTES.md:52",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "| Rolling10 on 1 s | .804 | .146 | .905 | .292 | same provisional | 4.65 s after provisional | .115 + .056 = .171 |"
+    },
+    {
+      "id": "ev-multiview-verdict",
+      "claim": "Rolling text passed while one-second rolling speaker authority did not",
+      "source_root": "repo",
+      "source": "prototypes/streaming-diarization/live-multiview-prototype/NOTES.md:85",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "**D3 — Rolling10 text correction: PASS as the next prototype direction.** It"
+    },
+    {
+      "id": "ev-endpoint-code",
+      "claim": "The endpoint emits a hard-cap span and resets speech state",
+      "source_root": "repo",
+      "source": "moss_transcribe_diarize/app/live_endpoint.py:69",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "spans.append(self._emit_until(end, \"hard_cap\"))"
+    },
+    {
+      "id": "ev-deployed-config",
+      "claim": "The deployed hard cap is 40000 samples",
+      "source_root": "repo",
+      "source": "tests/test_live_pipeline_seams.py:105",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "DEPLOYED_PADDING_SAMPLES = 1600\nDEPLOYED_HARD_CAP_SAMPLES = 40000"
+    },
+    {
+      "id": "ev-terminal-code",
+      "claim": "The file runner plans 150-second windows at 120-second stride",
+      "source_root": "repo",
+      "source": "moss_transcribe_diarize/app/windowed_transcription.py:99",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "def plan_windows(duration_seconds: float, *, window_seconds: float = 150.0, stride_seconds: float = 120.0) -> list[WindowPlan]:"
+    },
+    {
+      "id": "ev-plan-phases",
+      "claim": "Implementation has five independently reviewable phases",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:39",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Implementation must proceed in five independently reviewable phases:"
+    },
+    {
+      "id": "ev-plan-gates",
+      "claim": "Promotion gates are proposals not production claims",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:75",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "These gates are proposals for reviewer approval, not claims that production meets them now."
+    },
+    {
+      "id": "ev-plan-resources",
+      "claim": "Terminal tape is separate and rolling memory has a measured high-water gate",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:533",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "The complete terminal tape is separate, explicitly authorized storage. The soak test records"
+    },
+    {
+      "id": "ev-plan-speaker",
+      "claim": "The witness selects speaker evidence from its own local-speaker intervals",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:354",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "The witness's local MOSS speaker segments select their own PCM intervals. WeSpeaker embeds those"
+    },
+    {
+      "id": "ev-plan-multiview",
+      "claim": "Extra phase views are allowed only for disagreement regions after measured benefit",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:382",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Naturally overlapping rolling windows are the first multi-view evidence. Additional VAD/embedding"
+    },
+    {
+      "id": "ev-plan-decisions",
+      "claim": "Rolling revisions use one interval owner",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:351",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "**Reason:** one owner per interval prevents duplicated text, holes, out-of-order corrections, and"
+    },
+    {
+      "id": "ev-plan-failure",
+      "claim": "A failed terminal pass falls back without claiming file quality",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:444",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Terminal tape incomplete/degraded: do not claim final file quality; export the rolling surface"
+    },
+    {
+      "id": "ev-session-commit",
+      "claim": "Current session separates immutable words from speaker relabeling",
+      "source_root": "repo",
+      "source": "moss_transcribe_diarize/app/live_session.py:166",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "What this span's words are labelled with *now*, when a retrospective sweep has moved"
+    },
+    {
+      "id": "ev-plan-authorization",
+      "claim": "Production implementation remains owner-blocked",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:1243",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "Implementation remains blocked until this section is completed by reviewers/owner."
+    },
+    {
+      "id": "ev-evaluator-limit",
+      "claim": "Current TBSA can credit time overlap without hypothesis words",
+      "source_root": "repo",
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md:295",
+      "source_kind": "file",
+      "confidence": "Confirmed",
+      "quote": "The first two terms currently credit temporal overlap without comparing hypothesis words. A"
+    }
+  ],
+  "closed_sets": [
+    {
+      "id": "set-transcript-authorities",
+      "name": "Transcript authority states",
+      "importance": "Exactly one authority supplies the trusted surface for each interval and lifecycle point",
+      "cardinality": 3,
+      "coverage_mode": "members",
+      "owning_chapter_id": "ch-authority",
+      "evidence_ids": [
+        "ev-plan-authority",
+        "ev-plan-decisions"
+      ],
+      "coverage": [
+        {
+          "name": "provisional",
+          "member_count": 1,
+          "assignment_rule": "A short decode publishes before rolling ownership reaches its interval",
+          "conformance_case_ids": [
+            "case-provisional"
+          ]
+        },
+        {
+          "name": "rolling canonical",
+          "member_count": 1,
+          "assignment_rule": "A valid witness begins at the frontier and advances it",
+          "conformance_case_ids": [
+            "case-rolling"
+          ]
+        },
+        {
+          "name": "terminal final",
+          "member_count": 1,
+          "assignment_rule": "After stop all terminal windows complete and replace the effective surface once",
+          "conformance_case_ids": [
+            "case-final"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "set-implementation-phases",
+      "name": "Review-gated implementation phases",
+      "importance": "Each phase has a distinct risk and cannot borrow a later expected benefit",
+      "cardinality": 5,
+      "coverage_mode": "members",
+      "owning_chapter_id": "ch-roadmap",
+      "evidence_ids": [
+        "ev-plan-phases",
+        "ev-plan-gates",
+        "ev-plan-authorization"
+      ],
+      "coverage": [
+        {
+          "name": "E0 measurement integrity",
+          "member_count": 1,
+          "assignment_rule": "Repair replay and evaluator truth before quality promotion",
+          "conformance_case_ids": [
+            "case-e0"
+          ]
+        },
+        {
+          "name": "E1 bounded salvage",
+          "member_count": 1,
+          "assignment_rule": "Recover only safe malformed output without another model call",
+          "conformance_case_ids": [
+            "case-e1"
+          ]
+        },
+        {
+          "name": "E2 rolling text",
+          "member_count": 1,
+          "assignment_rule": "Ship selected witness and word authority on the 2.5-second base",
+          "conformance_case_ids": [
+            "case-e2"
+          ]
+        },
+        {
+          "name": "E3 speaker authority and preview",
+          "member_count": 1,
+          "assignment_rule": "Promote one-second output only after speaker and latency gates",
+          "conformance_case_ids": [
+            "case-e3"
+          ]
+        },
+        {
+          "name": "E4 terminal convergence",
+          "member_count": 1,
+          "assignment_rule": "Finalize authorized tape through bounded file windowing",
+          "conformance_case_ids": [
+            "case-e4"
+          ]
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "id": "corr-independent-lanes",
+      "belief": "MOSS has independent ASR VAD and diarization lanes to vote",
+      "reality": "VAD is external one MOSS call jointly emits text timestamps and local speakers and WeSpeaker reconciles identity",
+      "evidence_ids": [
+        "ev-current-lanes"
+      ]
+    },
+    {
+      "id": "corr-history-growth",
+      "belief": "Every live request prefills the full meeting",
+      "reality": "Current requests are history-free and planned rolling and terminal windows remain bounded",
+      "evidence_ids": [
+        "ev-plan-ownership",
+        "ev-terminal-code"
+      ]
+    },
+    {
+      "id": "corr-overlap",
+      "belief": "Any overlap improves quality",
+      "reality": "Per-seam five-second views worsened WER and overlap needs sufficient context plus one owner",
+      "evidence_ids": [
+        "ev-context-verdict"
+      ]
+    },
+    {
+      "id": "corr-one-second",
+      "belief": "Matching corrected WER proves one-second live is ready",
+      "reality": "WER corrected to .146 but one-second rolling DER remained .292 so speaker authority is a gate",
+      "evidence_ids": [
+        "ev-multiview-results",
+        "ev-multiview-verdict"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Which rolling schedule wins among 10/10 and 15/10 against 10/5",
+    "Whether witness-owned speaker evidence brings one-second base within G4",
+    "Two-session queue and inference RTF on a quiet RTX 4070 Ti",
+    "Browser correction paint and long-session DOM cost",
+    "Terminal behavior on longer meetings",
+    "Whether targeted phase views improve MOSS speaker accuracy",
+    "Whether owner authorizes tape retention and terminal text authority"
+  ],
+  "follow_ups": [
+    "Complete owner decisions and authorization",
+    "Execute E0 and review measurement bundle",
+    "Run E2 rolling schedule and stitcher grid",
+    "Run E3 witness-owned speaker prototype",
+    "Run E4 duration and two-session prototype"
+  ],
+  "judge": {
+    "rounds": [
+      {
+        "round": 1,
+        "context": "fresh_session",
+        "answers": [
+          {
+            "q": "conceptual_rebuildability",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-five-primitives",
+                "quote": "The audio interval sent to one fresh MOSS decode. Longer windows give more context but become eligible later."
+              },
+              {
+                "dom_id": "ch-witness",
+                "quote": "One owner per interval; ordered non-overlapping segments; forward-only frontier; immutable base commits; stale work changes nothing; rolling PCM bounded to 2 × W seconds."
+              },
+              {
+                "dom_id": "ch-authority",
+                "quote": "Rolling failure leaves the visible surface unchanged. Stale work is refused. Terminal failure keeps capture successful and preserves the best rolling surface with a failed finalization status."
+              }
+            ],
+            "note": "Five primitives, monotonic ownership rules, authority transitions, and explicit failure behavior form a coherent rebuildable model."
+          },
+          {
+            "q": "engine_depth",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-endpoint",
+                "quote": "WebRTC VAD reports speech on ordered, gap-free observations. The endpoint accumulates audio. Enough silence closes naturally. Continuous speech crossing the hard boundary emits hard_cap, resets speech state, and starts the next exact partition."
+              },
+              {
+                "dom_id": "ch-witness",
+                "quote": "The witness sends a longer retained-audio window through the same MOSS model, then grants it authority over one central interval."
+              },
+              {
+                "dom_id": "ownership-caption",
+                "quote": "Context is input; ownership is publication authority. Separating them is the central algorithm."
+              }
+            ],
+            "note": "The report explains the endpoint, rolling witness, coordinate mapping, reconciliation, and authority transfer at causal algorithm depth."
+          },
+          {
+            "q": "closed_set_completeness",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "case-provisional",
+                "quote": "The suffix may display provisionally; immutable history records it."
+              },
+              {
+                "dom_id": "case-rolling",
+                "quote": "A proposal begins at the frontier and fits committed audio."
+              },
+              {
+                "dom_id": "case-final",
+                "quote": "Finalization fails visibly; rolling remains."
+              }
+            ],
+            "note": "All three authority states receive distinct acceptance, replacement, refusal, and fallback behaviors, supplemented by the five phase outcomes."
+          },
+          {
+            "q": "subject_swap",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "exec",
+                "quote": "A short MOSS request gives immediate provisional words; a longer overlapping MOSS witness replaces them with a monotonic rolling transcript; a stop-time file-style pass produces the final surface."
+              },
+              {
+                "dom_id": "ch-speakers",
+                "quote": "Correct words do not guarantee correct speakers. MOSS local S01 is meaningful only inside one request."
+              },
+              {
+                "dom_id": "ch-terminal",
+                "quote": "At 60 minutes, each terminal request still hears at most 150 seconds. Window count grows linearly; per-request prefill does not."
+              }
+            ],
+            "note": "The claims depend on MOSS joint decoding, WeSpeaker identity reconciliation, measured seam behavior, and the specific 150/120 terminal policy."
+          },
+          {
+            "q": "decision_rationale",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-endpoint",
+                "quote": "Pressure: continuous speech can delay publication and grow requests. Choice: cap at 2.5 seconds. Alternative: wait only for silence. Trade-off: bounded latency/memory versus arbitrary speech seams."
+              },
+              {
+                "dom_id": "ch-witness",
+                "quote": "Measured 10 / 5 rolling reached WER .1289, recovering 74% of the gap to file. Five seconds at every seam worsened WER to .2298."
+              },
+              {
+                "dom_id": "ch-speakers",
+                "quote": "If 10% of regions need four extra views, regional extra work is roughly 0.10 × 4 = 0.40 of one blanket pass, not four whole-meeting passes."
+              }
+            ],
+            "note": "Material choices consistently expose pressure, alternatives, measured trade-offs, and operational consequences."
+          },
+          {
+            "q": "decision_readiness",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-clocks",
+                "quote": "A 1-second base can improve L1 only if E3 proves timely L2 correction and witness-owned speaker evidence. Until then, keep 2.5 seconds."
+              },
+              {
+                "dom_id": "ch-compute",
+                "quote": "MOSS/vLLM exposes no reusable encoder or decoder state across requests. Each overlap re-encodes and re-decodes."
+              },
+              {
+                "dom_id": "ch-speakers",
+                "quote": "If they agree, publish without another view. If they disagree, add phase-shifted views only there and cache exact-interval embeddings."
+              }
+            ],
+            "note": "A reader can evaluate preview duration, rolling schedules, compute reuse, and targeted extra views using explicit predictions and promotion gates."
+          },
+          {
+            "q": "specimen_thread",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-specimen",
+                "quote": "A hard cap lands inside between. The exact phrase is illustrative; the error concentration and correction measurements are recorded evidence."
+              },
+              {
+                "dom_id": "primitive-caption",
+                "quote": "Steady-state example. A rolling request hears ten seconds but owns its five-second middle. Start/end edge rules give leftovers to the nearest valid owner."
+              },
+              {
+                "dom_id": "terminal-caption",
+                "quote": "Adjacent windows 0–150 and 120–270 overlap for 30 seconds. Their midpoint, 135, transfers ownership. Every time point has one final owner and every interior seam has context."
+              }
+            ],
+            "note": "The honestly simulated sentence and ownership diagrams expose seam damage, correction, terminal replacement, and exact boundary rules."
+          },
+          {
+            "q": "audience_fit",
+            "answer": "yes",
+            "citations": [
+              {
+                "dom_id": "ch-orientation",
+                "quote": "The mission is not “make every first guess perfect.” The user accepts temporary mistakes. The mission is: publish quickly, improve predictably, then settle once."
+              },
+              {
+                "dom_id": "ch-misconceptions",
+                "quote": "Current live requests carry no meeting history. The seam failure repeats; it does not accumulate. Bounded witnesses preserve that property."
+              },
+              {
+                "dom_id": "part-6",
+                "quote": "The exact interval whose words and speaker evidence one result may publish."
+              }
+            ],
+            "note": "Message-first prose, repeated plain-language distinctions, misconception corrections, diagrams, examples, and a minimal glossary make the technical model accessible."
+          }
+        ],
+        "verdict": "pass",
+        "defects": []
+      }
+    ],
+    "final": "pass"
+  },
+  "plan_layers": {
+    "current": {
+      "status": "Confirmed",
+      "summary": "Endpointing closes on silence or 2.5 seconds one MOSS call jointly emits words timestamps and local speakers and WeSpeaker reconciles identity.",
+      "evidence_ids": [
+        "ev-current-lanes",
+        "ev-endpoint-code",
+        "ev-deployed-config",
+        "ev-session-commit"
+      ]
+    },
+    "change": {
+      "status": "Confirmed",
+      "summary": "Reviewed plan specifies rolling ownership separate word authority witness-owned speakers and terminal windowing in five phases.",
+      "evidence_ids": [
+        "ev-plan-authority",
+        "ev-plan-ownership",
+        "ev-plan-decisions",
+        "ev-plan-phases"
+      ]
+    },
+    "projected": {
+      "status": "Projected",
+      "summary": "If prototypes and owner gates pass the system publishes provisional output corrects a rolling prefix and settles a terminal surface.",
+      "evidence_ids": [
+        "ev-plan-gates",
+        "ev-plan-speaker",
+        "ev-plan-multiview",
+        "ev-plan-authorization"
+      ]
+    }
+  }
+}

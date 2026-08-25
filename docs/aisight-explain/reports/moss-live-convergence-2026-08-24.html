@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOSS live-mode convergence — an implementation-ready mental model</title>
+<!-- aisight-explain v20260821; skeleton base CSS and flow controller preserved, project extensions follow. -->
+<style>
+:root {
+  --paper: #fdfcf9; --ink: #1d2129; --muted: #5b6472; --line: #e3ded4;
+  --accent: #0f6b5c; --accent-soft: #e7f2ef; --warn: #8a4b0f; --warn-soft: #f8ecd9;
+  --specimen: #fff3c4; --specimen-ink: #4a3b00; --code-bg: #f4f2ec;
+  --max-prose: 76ch;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #16181d; --ink: #e6e4de; --muted: #9aa2ad; --line: #33363e;
+    --accent: #58b8a6; --accent-soft: #1d2f2b; --warn: #d9a05b; --warn-soft: #33281a;
+    --specimen: #3d3410; --specimen-ink: #f2e6b0; --code-bg: #22252c;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; transition: none !important; }
+}
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 17px/1.65 Georgia, 'Times New Roman', serif;
+}
+h1, h2, h3, h4, .toc, .stage-title, .flow-controls, .report-head .meta, .part-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+code, pre, mark.specimen { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, summary:focus-visible, [data-flow]:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+#progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 30; }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 8px; top: 8px; background: var(--accent); color: #fff; padding: 6px 10px; z-index: 40; }
+
+.layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); max-width: 1280px; margin: 0 auto; }
+.toc {
+  position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto;
+  padding: 28px 20px 40px 24px; border-right: 1px solid var(--line); font-size: 13.5px;
+}
+.toc h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 18px 0 6px; }
+.toc a { display: block; color: var(--ink); text-decoration: none; padding: 3px 8px; border-radius: 5px; line-height: 1.4; }
+.toc a:hover { background: var(--accent-soft); }
+.toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+main { padding: 40px 48px 90px; min-width: 0; }
+@media (max-width: 1020px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--line); }
+  main { padding: 28px 20px 70px; }
+}
+
+.report-head { max-width: var(--max-prose); margin-bottom: 8px; }
+.report-head h1 { font-size: 34px; line-height: 1.2; margin: 0 0 10px; }
+.report-head .question { font-size: 19px; color: var(--muted); font-style: italic; margin: 0 0 14px; }
+.report-head .meta { font-size: 13px; color: var(--muted); }
+.exec { max-width: var(--max-prose); margin: 26px 0 46px; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--accent-soft); }
+.exec .answer { font-size: 20px; line-height: 1.45; }
+.exec .takeaways { padding-left: 22px; }
+.diagram-html { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.diagram-html .node { padding: 8px 12px; border: 1px solid var(--accent); border-radius: 8px; }
+.diagram-html .arrow { color: var(--muted); font-weight: 700; }
+.glossary { max-width: var(--max-prose); }
+.glossary dt { font-weight: 700; margin-top: 14px; }
+.glossary dd { margin: 2px 0 0; }
+.part { margin-top: 56px; }
+.part-label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.part > h2 { font-size: 27px; margin: 6px 0 4px; line-height: 1.25; }
+.part-intro, .chapter, .flow, .rebuild-kit, .conformance-set, .corrections { max-width: var(--max-prose); }
+.chapter { margin-top: 40px; padding-top: 8px; }
+.chapter h3 { font-size: 21.5px; margin: 0 0 10px; line-height: 1.3; }
+.chapter .job { font-size: 18px; }
+p { margin: 0 0 14px; }
+.mechanism, .decision, .failure, .invariants { margin: 18px 0; }
+.mechanism > h4, .decision > h4, .failure > h4, .invariants > h4 {
+  font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
+}
+.tenet {
+  border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: 10px 14px; border-radius: 0 8px 8px 0; font-style: italic; margin: 20px 0 0;
+}
+mark.specimen { background: var(--specimen); color: var(--specimen-ink); padding: 0 4px; border-radius: 4px; font-size: .92em; }
+pre {
+  background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+}
+details.excerpt { border: 1px solid var(--line); border-radius: 8px; margin: 14px 0; background: var(--code-bg); }
+details.excerpt > summary { cursor: pointer; padding: 9px 14px; font-size: 14px; color: var(--muted); }
+details.excerpt[open] > summary { border-bottom: 1px solid var(--line); }
+details.excerpt pre { border: 0; margin: 0; background: transparent; }
+.shape { display: grid; gap: 10px; margin: 14px 0; }
+.shape pre { margin: 0; }
+figure.diagram { margin: 20px 0; max-width: var(--max-prose); }
+figure.diagram svg { max-width: 100%; height: auto; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+.flow { border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin: 22px 0; }
+.stage { display: none; }
+.stage.active { display: block; }
+.no-js .stage, .print-expanded .stage { display: block !important; border-top: 1px dashed var(--line); padding-top: 14px; margin-top: 14px; }
+.stage-title { font-weight: 700; font-size: 15px; margin: 0 0 8px; }
+.stage-scene {
+  border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: var(--code-bg);
+  font-size: 14px; overflow-x: auto;
+}
+.stage-scene p { margin: 0 0 6px; }
+.stage-note { font-size: 15px; margin: 10px 0 0; }
+.flow-controls { display: flex; gap: 6px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.flow-controls button {
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.flow-controls button[aria-current="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.flow-controls button:hover { border-color: var(--accent); }
+.flow-status { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+
+.corrections { display: grid; gap: 12px; margin: 18px 0; }
+aside.correction { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+aside.correction .belief { color: var(--warn); margin: 0 0 6px; }
+aside.correction .belief::before { content: "Belief — "; font-weight: 700; }
+aside.correction .reality { margin: 0; }
+aside.correction .reality::before { content: "Reality — "; font-weight: 700; color: var(--accent); }
+
+.rebuild-kit { list-style: none; counter-reset: step; padding: 0; margin: 26px 0 0; }
+.rebuild-kit > li { counter-increment: step; border: 1px solid var(--line); border-radius: 12px; padding: 18px 18px 12px; margin: 0 0 18px; position: relative; }
+.rebuild-kit > li::before {
+  content: counter(step); position: absolute; top: -13px; left: 14px; background: var(--accent);
+  color: #fff; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700;
+}
+.rebuild-kit .question { font-weight: 700; margin: 2px 0 8px; }
+.rebuild-kit .pressure::before { content: "Pressure — "; font-weight: 700; color: var(--muted); }
+.rebuild-kit .tenet { margin: 12px 0; }
+.rebuild-kit .alternative::before { content: "Road not taken — "; font-weight: 700; color: var(--muted); }
+.rebuild-kit .breaks::before { content: "Choose otherwise — "; font-weight: 700; color: var(--warn); }
+.conformance-set { list-style: none; padding: 0; margin: 30px 0 0; display: grid; gap: 14px; }
+.conformance-case { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 4px; break-inside: avoid; }
+.conformance-case .capability { font-weight: 700; }
+.conformance-case .given::before { content: "Given — "; font-weight: 700; color: var(--muted); }
+.conformance-case .when::before { content: "When — "; font-weight: 700; color: var(--muted); }
+.conformance-case .then::before { content: "Then — "; font-weight: 700; color: var(--accent); }
+.conformance-case .otherwise::before { content: "Otherwise — "; font-weight: 700; color: var(--warn); }
+.conformance-case .chapter-ref { font-size: 14px; }
+.report-foot { margin-top: 70px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+
+@media print {
+  .toc, .flow-controls, #progress, .skip { display: none !important; }
+  .layout { display: block; }
+  main { padding: 0; }
+  body { font-size: 11.5pt; }
+  .stage { display: block !important; border-top: 1px dashed #999; padding-top: 10pt; margin-top: 10pt; }
+  a { color: inherit; text-decoration: none; }
+}
+
+/* MOSS extension — tokens from the live portal; self-contained analytical components. */
+:root {
+  --paper: #f7f5f0; --ink: #1d1f22; --muted: #6d6a63; --line: #d8d3c7;
+  --accent: #007d77; --accent-soft: #e4f1ee; --warn: #a33c2c; --warn-soft: #f7e7e2;
+  --specimen: #fff0b8; --specimen-ink: #443600; --code-bg: #efede7;
+  --coral: #c94b35; --panel: #fffdfa; --blue: #315f87; --blue-soft: #e7eef4;
+}
+body { font: 16px/1.62 Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.report-head h1 { font-size: clamp(32px, 5vw, 54px); letter-spacing: -.035em; max-width: 18ch; }
+.eyebrow { color: var(--coral); font: 700 12px/1.2 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+.status-line { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+.pill { border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: 12px; background: var(--panel); }
+.pill.ready { border-color: var(--accent); color: var(--accent); }
+.pill.blocked { border-color: var(--coral); color: var(--coral); }
+.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 22px 0; }
+.metric { background: var(--panel); padding: 14px; min-width: 0; }
+.metric .value { display: block; color: var(--accent); font-size: 26px; font-weight: 750; letter-spacing: -.03em; }
+.metric .label { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.metric.bad .value, .bad { color: var(--coral); }
+.metric.neutral .value { color: var(--blue); }
+.good { color: var(--accent); }
+.callout { border-left: 4px solid var(--coral); background: var(--warn-soft); padding: 14px 16px; margin: 18px 0; max-width: var(--max-prose); }
+.callout.good { border-color: var(--accent); background: var(--accent-soft); }
+.callout.blue { border-color: var(--blue); background: var(--blue-soft); }
+.small { color: var(--muted); font-size: 13px; }
+.term { color: var(--accent); font-weight: 750; }
+.authority-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+.authority { border-top: 4px solid var(--line); padding: 14px 2px 0; }
+.authority:nth-child(1) { border-color: var(--coral); }
+.authority:nth-child(2) { border-color: var(--accent); }
+.authority:nth-child(3) { border-color: var(--blue); }
+.authority h4 { margin: 0 0 6px; }
+.authority p { font-size: 14px; }
+.compare { width: 100%; border-collapse: collapse; margin: 18px 0 26px; font-size: 13px; }
+.compare th, .compare td { text-align: left; vertical-align: top; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+.compare th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.compare td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.compare tr.recommended td { background: var(--accent-soft); }
+.formula { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; border-left: 3px solid var(--blue); padding: 12px 14px; background: var(--blue-soft); margin: 16px 0; }
+.formula dt { font-family: ui-monospace, monospace; font-weight: 700; }
+.formula dd { margin: 0; }
+.gate-list { list-style: none; padding: 0; margin: 22px 0; counter-reset: gate -1; }
+.gate-list li { counter-increment: gate; display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.gate-list li::before { content: "E" counter(gate); color: var(--accent); font: 700 12px/1.5 ui-monospace, monospace; }
+.gate-list strong { display: block; }
+.decision-strip { display: grid; grid-template-columns: 160px 1fr; border-top: 1px solid var(--line); }
+.decision-strip > * { padding: 10px; border-bottom: 1px solid var(--line); }
+.decision-strip dt { color: var(--muted); font-weight: 700; }
+.decision-strip dd { margin: 0; }
+.diagram-frame { fill: var(--panel); stroke: var(--line); }
+.diagram-context { fill: #d9ddd8; }
+.diagram-owned { fill: #77bbb3; }
+.diagram-preview { fill: #f1c4b9; }
+.diagram-final { fill: #9ab3ca; }
+.diagram-line { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+.diagram-soft-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+.diagram-text { fill: var(--ink); font: 12px ui-sans-serif, sans-serif; }
+.diagram-mono { fill: var(--muted); font: 11px ui-monospace, monospace; }
+.diagram-title { fill: var(--ink); font: 700 13px ui-sans-serif, sans-serif; }
+.wide, .chapter.wide, .part-intro.wide { max-width: 960px; }
+.wide-svg { width: min(100%, 960px); }
+@media (max-width: 800px) {
+  .metric-grid, .authority-grid { grid-template-columns: 1fr; }
+  .decision-strip { grid-template-columns: 1fr; }
+  .decision-strip dt { padding-bottom: 0; border-bottom: 0; }
+  .compare { display: block; overflow-x: auto; white-space: nowrap; }
+  .report-head h1 { font-size: 36px; }
+  .toc { display: flex; align-items: center; gap: 6px; overflow-x: auto; white-space: nowrap; padding: 10px 14px; }
+  .toc > .eyebrow, .toc > a:not(:first-of-type) { display: none; }
+  .toc > a:first-of-type, .toc h2 { display: block; flex: 0 0 auto; margin: 0; }
+  .toc h2 a, .toc > a:first-of-type { display: block; padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; letter-spacing: 0; }
+}
+@media print {
+  :root { --paper: #fff; --panel: #fff; --code-bg: #f5f5f5; }
+  .metric, .authority, .conformance-case, .rebuild-step, figure { break-inside: avoid; }
+  .part { break-before: page; }
+  .part:first-of-type { break-before: auto; }
+}
+</style>
+</head>
+<body data-schema-version="6" data-skill-version="v20260821" class="no-js">
+<script>document.body.classList.remove('no-js');</script>
+<a class="skip" href="#main">Skip to report</a>
+<div id="progress" aria-hidden="true"></div>
+
+<article class="report" data-report-id="moss-live-convergence-2026-08-24" data-mode="plan-against-codebase">
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <p class="eyebrow">MOSS live mode</p>
+  <a href="#exec">Executive brief</a>
+  <h2><a href="#part-1">I · Mental model</a></h2>
+  <a href="#ch-orientation">Present system</a>
+  <a href="#ch-five-primitives">Five primitives</a>
+  <a href="#ch-specimen">One sentence, three hearings</a>
+  <a href="#ch-misconceptions">Misconceptions</a>
+  <h2><a href="#part-2">II · Window engine</a></h2>
+  <a href="#ch-endpoint">Short endpoint</a>
+  <a href="#ch-witness">Rolling witness</a>
+  <a href="#ch-authority">Transcript authority</a>
+  <h2><a href="#part-3">III · Trade-offs</a></h2>
+  <a href="#ch-clocks">Latency clocks</a>
+  <a href="#ch-compute">Compute and reuse</a>
+  <a href="#ch-speakers">Speaker evidence</a>
+  <a href="#ch-terminal">Terminal windows</a>
+  <h2><a href="#part-4">IV · Implementation</a></h2>
+  <a href="#ch-roadmap">Roadmap</a>
+  <a href="#ch-decisions">Decisions and gates</a>
+  <a href="#part-4">Rebuild kit</a>
+  <h2><a href="#part-5">V · Boundaries</a></h2>
+  <a href="#ch-boundaries">Known limits</a>
+  <h2><a href="#part-6">VI · Shared language</a></h2>
+</nav>
+
+<main id="main">
+<header class="report-head">
+  <p class="eyebrow">Implementation-ready architecture explainer</p>
+  <h1>Make MOSS live mode fast now and correct later</h1>
+  <p class="question">How do short, rolling, and terminal time windows cooperate without duplicating words, corrupting speakers, or letting a long meeting grow slower?</p>
+  <p class="meta">Plan against codebase · evidence through 2026-08-24 · aisight-explain v20260821</p>
+  <div class="status-line" aria-label="Plan status">
+    <span class="pill ready">Technical plan: implementation-ready</span>
+    <span class="pill blocked">Owner authorization: still required</span>
+    <span class="pill">Cross-review: Claude + Codex, 4 rounds</span>
+  </div>
+</header>
+
+<section class="exec" id="exec" aria-labelledby="exec-title" data-evidence-ids="ev-xreview ev-plan-authority ev-context-verdict ev-multiview-results ev-plan-authorization">
+  <h2 id="exec-title">Executive brief</h2>
+  <p class="answer"><strong>Use three hearings of the same retained audio, each with a different job.</strong> A short MOSS request gives immediate provisional words; a longer overlapping MOSS witness replaces them with a monotonic rolling transcript; a stop-time file-style pass produces the final surface.</p>
+  <ol class="takeaways">
+    <li><a href="#ch-endpoint">The 2.5-second cap is a responsiveness and bounded-work policy</a>, not a model requirement. It is also where most word damage occurs.</li>
+    <li><a href="#ch-witness">A 10–15 second witness fixes seam words by owning only an interior region</a>. Context is heard but not necessarily published.</li>
+    <li><a href="#ch-speakers">One-second preview is viable only after the witness owns speaker evidence</a>. Text compensation was measured; speaker compensation is not yet good enough.</li>
+    <li><a href="#ch-roadmap">The plan is technically executable but review-gated</a>: E0 through E4 each need measured evidence and explicit authorization.</li>
+  </ol>
+  <figure class="diagram wide" role="img" aria-label="Retained audio feeds short rolling and terminal MOSS hearings which publish through one transcript authority" aria-labelledby="arch-title arch-caption">
+    <svg class="wide-svg" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg">
+      <title id="arch-title">Three-hearing MOSS live architecture</title>
+      <defs><marker id="arrow-main" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6d6a63"/></marker></defs>
+      <rect class="diagram-frame" x="10" y="55" width="145" height="95" rx="8"/>
+      <text class="diagram-title" x="28" y="84">Retained PCM</text><text class="diagram-text" x="28" y="106">one audio clock</text><text class="diagram-text" x="28" y="126">16 kHz mixed audio</text>
+      <path class="diagram-line" d="M155 102 H205" marker-end="url(#arrow-main)"/>
+      <rect x="215" y="14" width="190" height="74" rx="8" fill="#f1c4b9" stroke="#c94b35"/>
+      <text class="diagram-title" x="233" y="40">1 · Short hearing</text><text class="diagram-text" x="233" y="60">2.5 s now; 1 s candidate</text><text class="diagram-mono" x="233" y="78">provisional · fastest</text>
+      <rect x="215" y="101" width="190" height="74" rx="8" fill="#d8ece8" stroke="#007d77"/>
+      <text class="diagram-title" x="233" y="127">2 · Rolling hearing</text><text class="diagram-text" x="233" y="147">10–15 s witness</text><text class="diagram-mono" x="233" y="165">canonical prefix · corrected</text>
+      <rect x="215" y="188" width="190" height="52" rx="8" fill="#e7eef4" stroke="#315f87"/>
+      <text class="diagram-title" x="233" y="214">3 · Terminal hearing</text><text class="diagram-mono" x="233" y="231">150 / 120 s · after stop</text>
+      <path class="diagram-line" d="M405 51 H500 V122"/><path class="diagram-line" d="M405 138 H500"/><path class="diagram-line" d="M405 214 H500 V154"/>
+      <rect class="diagram-frame" x="510" y="78" width="180" height="108" rx="8"/>
+      <text class="diagram-title" x="530" y="107">Transcript authority</text><text class="diagram-text" x="530" y="130">one owner per region</text><text class="diagram-text" x="530" y="151">word + speaker revisions</text><text class="diagram-mono" x="530" y="171">effective transcript</text>
+      <path class="diagram-line" d="M690 132 H745" marker-end="url(#arrow-main)"/>
+      <rect class="diagram-frame" x="755" y="93" width="130" height="78" rx="8"/>
+      <text class="diagram-title" x="773" y="122">Portal</text><text class="diagram-text" x="773" y="143">and export</text><text class="diagram-mono" x="773" y="161">same surface</text>
+    </svg>
+    <figcaption id="arch-caption"><strong>The model is the same joint MOSS model in all three hearings.</strong> What changes is how much audio it hears, when the result may replace earlier text, and which interval it owns.</figcaption>
+  </figure>
+  <div class="callout good"><strong>Confirmation.</strong> Claude–Codex cross-review completed in four rounds with no remaining technical defect. “Implementation-ready” means a junior engineer can execute the gated plan; it does not replace unsigned owner decisions about text-finalization authority and complete tape retention.</div>
+</section>
+
+<section class="part" data-part="I" id="part-1">
+  <p class="part-label">Part I · Mental model</p>
+  <h2>Start with one audio clock and five primitives</h2>
+
+  <section class="chapter" data-chapter-id="ch-orientation" data-chapter-class="synthesis" id="ch-orientation" data-evidence-ids="ev-current-lanes ev-plan-authority">
+    <h3>The goal and the present system</h3>
+    <p>MOSS live mode has one fact that controls the design: <strong>MOSS does not expose a separate automatic speech recognition (ASR) lane here.</strong> A single MOSS request jointly returns words, timestamps, and within-request speaker labels. WebRTC voice activity detection (VAD) sits before it and decides where to cut audio. WeSpeaker sits after it and maps request-local labels such as <code>S01</code> to stable meeting identities.</p>
+    <div class="shape"><pre>mixed PCM → WebRTC VAD / endpoint → one bounded MOSS request
+          → words + timestamps + local speaker turns
+          → WeSpeaker identity → published span</pre></div>
+    <p>The mission is not “make every first guess perfect.” The user accepts temporary mistakes. The mission is: <strong>publish quickly, improve predictably, then settle once.</strong></p>
+    <p class="tenet">Latency and accuracy do not need one compromise window if the transcript has more than one explicit authority.</p>
+  </section>
+
+  <section class="chapter wide" data-chapter-id="ch-five-primitives" data-chapter-class="synthesis" id="ch-five-primitives" data-evidence-ids="ev-plan-ownership ev-plan-preview ev-terminal-code">
+    <h3>Five primitives are enough to reconstruct the design</h3>
+    <dl class="decision-strip">
+      <dt>P1 · Audio position</dt><dd>An exact sample number on one 16 kHz clock. Sample 40,000 is 2.5 seconds.</dd>
+      <dt>P2 · Request window</dt><dd>The audio interval sent to one fresh MOSS decode. Longer windows give more context but become eligible later.</dd>
+      <dt>P3 · Owned region</dt><dd>The smaller interval whose output a request may publish. Edge audio can be heard as context while another request owns its words.</dd>
+      <dt>P4 · Authority</dt><dd>Which result wins for an interval: provisional, rolling canonical, or terminal final.</dd>
+      <dt>P5 · Clock</dt><dd>The latency question: first publication, later correction, or finalization after stop.</dd>
+    </dl>
+    <figure class="diagram wide" role="img" aria-label="Short requests tile one audio clock while overlapping rolling windows own only their central regions" aria-labelledby="primitive-title primitive-caption">
+      <svg class="wide-svg" viewBox="0 0 920 285" xmlns="http://www.w3.org/2000/svg">
+        <title id="primitive-title">Request windows and owned regions on one audio clock</title>
+        <line class="diagram-line" x1="80" y1="45" x2="870" y2="45"/>
+        <g class="diagram-mono"><text x="70" y="28">0 s</text><text x="260" y="28">5</text><text x="455" y="28">10</text><text x="650" y="28">15</text><text x="845" y="28">20</text></g>
+        <g stroke="#6d6a63"><line x1="80" y1="38" x2="80" y2="52"/><line x1="275" y1="38" x2="275" y2="52"/><line x1="470" y1="38" x2="470" y2="52"/><line x1="665" y1="38" x2="665" y2="52"/><line x1="860" y1="38" x2="860" y2="52"/></g>
+        <text class="diagram-title" x="10" y="86">short</text>
+        <g><rect class="diagram-preview" x="80" y="66" width="97.5" height="30"/><rect class="diagram-preview" x="177.5" y="66" width="97.5" height="30"/><rect class="diagram-preview" x="275" y="66" width="97.5" height="30"/><rect class="diagram-preview" x="372.5" y="66" width="97.5" height="30"/><rect class="diagram-preview" x="470" y="66" width="97.5" height="30"/><text class="diagram-mono" x="106" y="86">2.5</text><text class="diagram-mono" x="202" y="86">2.5</text><text class="diagram-mono" x="300" y="86">2.5</text></g>
+        <text class="diagram-title" x="10" y="147">rolling</text>
+        <rect class="diagram-context" x="80" y="112" width="390" height="42" stroke="#6d6a63"/><rect class="diagram-owned" x="177.5" y="112" width="195" height="42"/><text class="diagram-mono" x="90" y="137">window 0–10; trust 2.5–7.5</text>
+        <rect class="diagram-context" x="275" y="163" width="390" height="42" stroke="#6d6a63"/><rect class="diagram-owned" x="372.5" y="163" width="195" height="42"/><text class="diagram-mono" x="285" y="188">window 5–15; trust 7.5–12.5</text>
+        <text class="diagram-title" x="10" y="252">authority</text><rect class="diagram-owned" x="80" y="226" width="487.5" height="34"/><rect class="diagram-preview" x="567.5" y="226" width="292.5" height="34"/><text class="diagram-mono" x="225" y="248">rolling canonical prefix</text><text class="diagram-mono" x="642" y="248">provisional suffix</text>
+      </svg>
+      <figcaption id="primitive-caption">Steady-state example. A rolling request <strong>hears</strong> ten seconds but <strong>owns</strong> its five-second middle. Start/end edge rules give leftovers to the nearest valid owner.</figcaption>
+    </figure>
+  </section>
+
+  <section class="chapter" data-chapter-id="ch-specimen" data-chapter-class="synthesis" id="ch-specimen" data-evidence-ids="ev-context-verdict ev-multiview-results ev-plan-preview">
+    <h3>One sentence, heard three times</h3>
+    <p>Follow a <strong>Simulated</strong> specimen derived from measured seam behavior: Ana says <mark class="specimen">“the difference between the stock market and the bond market”</mark>. A hard cap lands inside <mark class="specimen">between</mark>. The exact phrase is illustrative; the error concentration and correction measurements are recorded evidence.</p>
+    <div class="flow" data-flow tabindex="0" aria-label="One sentence moving from provisional to rolling and terminal authority">
+      <div class="stage" data-stage-id="stage-capture">
+        <p class="stage-title">1 · Short hearing publishes quickly</p>
+        <div class="stage-scene" role="img" aria-label="A short request cuts the word between" data-evidence-ids="ev-context-verdict ev-endpoint-code">
+          <p><span class="term">Audio:</span> the difference <mark class="specimen">bet │ ween</mark> the stock market …</p>
+          <p><span class="term">Requests:</span> [ 0.0 ───── 2.5 ] [ 2.5 ───── 5.0 ]</p>
+          <p><span class="term">Provisional:</span> “the difference … in the stock market”</p>
+        </div>
+        <p class="stage-note">Each request starts fresh. Neither side hears the whole cut word. The UI may show the guess because low latency is valuable.</p>
+      </div>
+      <div class="stage" data-stage-id="stage-rolling">
+        <p class="stage-title">2 · Rolling witness re-hears both sides</p>
+        <div class="stage-scene" role="img" aria-label="A ten second witness hears both sides and owns its center" data-evidence-ids="ev-plan-ownership ev-multiview-verdict">
+          <p><span class="term">Witness:</span> [ left context │ owned middle │ right context ]</p>
+          <p><span class="term">Heard:</span> “the difference <mark class="specimen">between</mark> the stock market and …”</p>
+          <p><span class="term">Revision:</span> replace the next owned interval; advance frontier →</p>
+        </div>
+        <p class="stage-note">The witness replaces one contiguous interval beginning at the frontier. This prevents duplicates, holes, and oscillation.</p>
+      </div>
+      <div class="stage" data-stage-id="stage-terminal">
+        <p class="stage-title">3 · Terminal hearing settles the export</p>
+        <div class="stage-scene" role="img" aria-label="Terminal file-style decode owns the complete retained meeting" data-evidence-ids="ev-multiview-results ev-terminal-code">
+          <p><span class="term">After stop:</span> retained tape → 150 / 120 s windows</p>
+          <p><span class="term">Final:</span> “the difference between the stock market and the bond market”</p>
+          <p><span class="term">Authority:</span> terminal final replaces the complete rolling surface once</p>
+        </div>
+        <p class="stage-note">Portal and export use the same final surface. Failure leaves the best rolling surface without a false final claim.</p>
+      </div>
+      <div class="flow-controls"><button type="button" data-flow-prev>← Previous</button><button type="button" data-flow-dot="stage-capture">1</button><button type="button" data-flow-dot="stage-rolling">2</button><button type="button" data-flow-dot="stage-terminal">3</button><button type="button" data-flow-next>Next →</button></div>
+      <p class="flow-status" aria-live="polite">Stage 1 of 3</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-chapter-id="ch-misconceptions" data-chapter-class="synthesis" id="ch-misconceptions" data-evidence-ids="ev-current-lanes ev-context-verdict ev-plan-ownership ev-multiview-verdict">
+    <h3>What most people get wrong</h3>
+    <div class="corrections">
+      <aside class="correction"><p class="belief">MOSS has three independent ASR, VAD, and diarization lanes we can vote.</p><p class="reality">WebRTC VAD is external, one MOSS request jointly emits text/timestamps/local speakers, and WeSpeaker reconciles identity afterward. Another “ASR view” is another MOSS request over retained audio.</p></aside>
+      <aside class="correction"><p class="belief">A long meeting slows because MOSS prefills the whole transcript history.</p><p class="reality">Current live requests carry no meeting history. The seam failure repeats; it does not accumulate. Bounded witnesses preserve that property.</p></aside>
+      <aside class="correction"><p class="belief">More overlap automatically means better output.</p><p class="reality">Only overlap plus one-owner reconciliation helps. A five-second decode at every seam spent more and worsened WER.</p></aside>
+      <aside class="correction"><p class="belief">One-second preview is proven once rolling text reaches the same WER.</p><p class="reality">Text reached .146 from both bases, but one-second rolling DER stayed .292 versus .114 on the 2.5-second base.</p></aside>
+    </div>
+  </section>
+</section>
+
+<section class="part" data-part="II" id="part-2">
+  <p class="part-label">Part II · Time-window engine</p>
+  <h2>Cut, re-hear, then transfer authority</h2>
+
+  <section class="chapter" data-chapter-id="ch-endpoint" data-chapter-class="engine" id="ch-endpoint" data-evidence-ids="ev-endpoint-code ev-deployed-config ev-context-verdict">
+    <h3>The short endpoint — why 2.5 seconds exists</h3>
+    <p class="job">The endpoint turns an endless stream into bounded requests. It closes on silence, flush/stop, or the deployed 40,000-sample hard cap: 40,000 ÷ 16,000 Hz = 2.5 seconds.</p>
+    <div class="mechanism"><h4>The mechanism, walked</h4><p>WebRTC VAD reports speech on ordered, gap-free observations. The endpoint accumulates audio. Enough silence closes naturally. Continuous speech crossing the hard boundary emits <code>hard_cap</code>, resets speech state, and starts the next exact partition.</p>
+      <details class="excerpt"><summary>Confirmed endpoint rule · app/live_endpoint.py</summary><pre>if hit_hard_cap:
+    spans.append(self._emit_until(end, "hard_cap"))
+    self._reset_speech_state()
+
+def _next_hard_boundary(self):
+    return self._open_start + self.config.hard_cap_samples</pre></details>
+    </div>
+    <div class="decision"><h4>Why it is built this way</h4><p><strong>Pressure:</strong> continuous speech can delay publication and grow requests. <strong>Choice:</strong> cap at 2.5 seconds. <strong>Alternative:</strong> wait only for silence. <strong>Trade-off:</strong> bounded latency/memory versus arbitrary speech seams.</p></div>
+    <table class="compare" aria-label="Short endpoint duration trade-offs"><thead><tr><th>Base cap</th><th>First response</th><th>First guess</th><th>Burden</th><th>Decision</th></tr></thead><tbody>
+      <tr><td>1.0 s</td><td class="good">fastest</td><td class="bad">WER .377; DER .457</td><td>189 vs 80 requests / 180 s</td><td>preview candidate only</td></tr>
+      <tr class="recommended"><td>2.5 s</td><td>first-word age 3.04 s</td><td>WER .200; DER .176</td><td>current reference</td><td>keep through E2</td></tr>
+      <tr><td>longer</td><td>slower eligibility</td><td>fewer cuts</td><td>fewer, larger requests</td><td>not needed for first surface</td></tr>
+      <tr><td>silence only</td><td class="bad">unbounded on speech</td><td>natural when silence exists</td><td>unbounded span</td><td>reject</td></tr>
+    </tbody></table>
+    <div class="failure"><h4>Measured failure</h4><p>More than 0.5 seconds from a seam, live WER was <strong>.082</strong> versus file <strong>.072</strong>. Near a seam, live was <strong>.373</strong> versus file <strong>.088</strong>. Straddling bigrams survived <strong>48.5%</strong> versus <strong>89.4%</strong> inside spans.</p></div>
+    <p class="tenet">The short window is a publication deadline, not the final unit of truth.</p>
+  </section>
+
+  <section class="chapter wide" data-chapter-id="ch-witness" data-chapter-class="engine" id="ch-witness" data-evidence-ids="ev-plan-ownership ev-context-verdict ev-multiview-verdict ev-plan-resources">
+    <h3>Rolling witness — hear wide, publish narrow</h3>
+    <p class="job">The witness sends a longer retained-audio window through the same MOSS model, then grants it authority over one central interval.</p>
+    <div class="mechanism"><h4>The mechanism, walked</h4><ol>
+      <li>Retain bounded mixed PCM on the absolute sample clock.</li>
+      <li>When enough right context exists, enqueue one rolling MOSS request.</li>
+      <li>Map relative word/speaker times back to absolute samples.</li>
+      <li>Reconcile overlap without reference truth.</li>
+      <li>Accept only a proposal beginning at the current frontier and advancing it.</li>
+      <li>Refuse stale results; never move the frontier backward.</li>
+    </ol>
+    <figure class="diagram wide" role="img" aria-label="A ten-second witness hears edge context but may publish only a central region beginning at the rolling frontier" aria-labelledby="ownership-title ownership-caption">
+      <svg class="wide-svg" viewBox="0 0 940 310" xmlns="http://www.w3.org/2000/svg">
+        <title id="ownership-title">One rolling owner per region</title>
+        <text class="diagram-title" x="20" y="30">Request window</text><text class="diagram-title" x="20" y="125">May publish</text><text class="diagram-title" x="20" y="245">Visible surface</text>
+        <rect class="diagram-context" x="170" y="10" width="480" height="50" stroke="#6d6a63"/><rect class="diagram-owned" x="290" y="10" width="240" height="50"/>
+        <text class="diagram-mono" x="185" y="40">2.5 context</text><text class="diagram-mono" x="355" y="40">5.0 owned</text><text class="diagram-mono" x="545" y="40">2.5 context</text>
+        <path class="diagram-soft-line" d="M290 60 V118 M530 60 V118"/><rect class="diagram-owned" x="290" y="105" width="240" height="46"/><text class="diagram-mono" x="340" y="133">revision proposal</text>
+        <path class="diagram-line" d="M410 151 V210"/><text class="diagram-mono" x="425" y="185">starts at frontier?</text>
+        <rect class="diagram-owned" x="170" y="225" width="360" height="46"/><rect class="diagram-preview" x="530" y="225" width="300" height="46"/>
+        <text class="diagram-mono" x="255" y="254">rolling prefix</text><text class="diagram-mono" x="595" y="254">provisional suffix</text>
+        <line x1="530" y1="214" x2="530" y2="284" stroke="#007d77" stroke-width="3"/><text class="diagram-title" x="492" y="301">frontier</text>
+      </svg>
+      <figcaption id="ownership-caption">Context is input; ownership is publication authority. Separating them is the central algorithm.</figcaption>
+    </figure></div>
+    <div class="invariants"><h4>Invariants</h4><p>One owner per interval; ordered non-overlapping segments; forward-only frontier; immutable base commits; stale work changes nothing; rolling PCM bounded to <code>2 × W</code> seconds.</p></div>
+    <div class="decision"><h4>Why rolling, not one request per seam</h4><p>Measured 10 / 5 rolling reached WER <strong>.1289</strong>, recovering 74% of the gap to file. Five seconds at every seam worsened WER to <strong>.2298</strong>. The lever is <strong>few, wide owned regions</strong>, not maximum decode count.</p></div>
+    <p class="tenet">Every correction must answer: what did this request hear, and what exact interval may it own?</p>
+  </section>
+
+  <section class="chapter" data-chapter-id="ch-authority" data-chapter-class="engine" id="ch-authority" data-evidence-ids="ev-plan-authority ev-plan-decisions ev-session-commit ev-plan-failure">
+    <h3>Transcript authority — three states, one visible surface</h3>
+    <p class="job">A result can be fast, corrected, or settled. Those are states, not styling adjectives.</p>
+    <div class="authority-grid">
+      <div class="authority"><h4>1 · Provisional</h4><p>Short result. Fastest. May be wrong. Immutable audit history, but not permanently visible.</p></div>
+      <div class="authority"><h4>2 · Rolling canonical</h4><p>Longer witness owns a prefix through the frontier. Accepted revisions extend it monotonically.</p></div>
+      <div class="authority"><h4>3 · Terminal final</h4><p>Complete retained tape, file-style windowing. Replaces the full effective surface once.</p></div>
+    </div>
+    <div class="mechanism"><h4>Current state and proposed split</h4><p>Today <code>CanonicalCommit.transcript</code> is immutable and <code>revised_transcript</code> means “same words, changed labels.” Preserve that history; add <code>text_revision_version</code>, <code>canonical_through_sample</code>, and <code>effective_transcript</code>. Word and label revisions validate different facts.</p></div>
+    <div class="failure"><h4>Failure behavior</h4><p>Rolling failure leaves the visible surface unchanged. Stale work is refused. Terminal failure keeps capture successful and preserves the best rolling surface with a failed finalization status.</p></div>
+    <p class="tenet">Immutable history answers “what was first published”; authority answers “what should the user trust now.”</p>
+  </section>
+</section>
+
+<section class="part" data-part="III" id="part-3">
+  <p class="part-label">Part III · Trade-offs</p>
+  <h2>Latency, compute, speakers, and long meetings</h2>
+
+  <section class="chapter" data-chapter-id="ch-clocks" data-chapter-class="deep" id="ch-clocks" data-evidence-ids="ev-plan-gates ev-multiview-results">
+    <h3>Three latency clocks — never blend them</h3>
+    <p class="job">“Latency” is ambiguous until start and end events are named.</p>
+    <dl class="formula">
+      <dt>L1</dt><dd><strong>First-word age</strong> = provisional publication − first spoken-word audio start. Includes capture, queue, decode.</dd>
+      <dt>L2</dt><dd><strong>Correction age</strong> = changed rolling publication − provisional publication of the replaced region.</dd>
+      <dt>L3</dt><dd><strong>Finalization lag</strong> = final publication − meeting stop.</dd>
+    </dl>
+    <div class="metric-grid">
+      <div class="metric"><span class="value">3.04 s</span><span class="label">mean first-word age · 2.5 s base</span></div>
+      <div class="metric"><span class="value">1.00 s</span><span class="label">mean first-word age · 1 s base</span></div>
+      <div class="metric neutral"><span class="value">3.69–4.65 s</span><span class="label">mean correction after provisional</span></div>
+      <div class="metric neutral"><span class="value">1.86 s</span><span class="label">mean finalization after stop · 60 s cases</span></div>
+      <div class="metric"><span class="value">≤ 2.0 s</span><span class="label">proposed p95 G5 first-word gate</span></div>
+      <div class="metric"><span class="value">≤ 6.0 s</span><span class="label">proposed p95 G6 correction gate</span></div>
+    </div>
+    <p>Browser capture and paint are a fourth diagnostic, reported beside these clocks—not silently folded into or removed from user-perceived delay.</p>
+    <div class="decision"><h4>Decision</h4><p>A 1-second base can improve L1 only if E3 proves timely L2 correction and witness-owned speaker evidence. Until then, keep 2.5 seconds.</p></div>
+  </section>
+
+  <section class="chapter wide" data-chapter-id="ch-compute" data-chapter-class="deep" id="ch-compute" data-evidence-ids="ev-plan-ownership ev-context-verdict ev-multiview-results ev-plan-resources">
+    <h3>Compute and reuse — retained audio is reusable; neural work is not</h3>
+    <p class="job">Bound two concurrent sessions by separating audio work from GPU real-time factor.</p>
+    <dl class="formula">
+      <dt>window / stride</dt><dd>Approximate added audio-work multiplier. A 10/5 witness decodes about 2 witness seconds per captured second.</dd>
+      <dt>total work</dt><dd>Base (~1×) + rolling. 10/5 is roughly 3× audio in steady state; the finite 60 s bench measured +1.83× witness work.</dd>
+      <dt>GPU RTF</dt><dd>GPU seconds per meeting second. Batching, request overhead, window efficiency, and contention affect it.</dd>
+    </dl>
+    <table class="compare" aria-label="Rolling window choices"><thead><tr><th>Witness</th><th>Added work</th><th>Context</th><th>Evidence</th><th>Role</th></tr></thead><tbody>
+      <tr><td>10 / 5 s</td><td>~2×; measured +1.83×</td><td>2.5 s each side</td><td class="good">WER .129–.146</td><td>quality reference</td></tr>
+      <tr><td>15 / 10 s</td><td>~1.5×</td><td>~2.5 s each side</td><td>unmeasured</td><td class="good">grid candidate</td></tr>
+      <tr><td>10 / 10 s</td><td>~1×</td><td>little overlap</td><td>unmeasured</td><td>cost candidate</td></tr>
+      <tr><td>5 s per seam</td><td>measured +2.14×</td><td>1.25 s each side</td><td class="bad">WER .230</td><td>reject</td></tr>
+    </tbody></table>
+    <p>MOSS/vLLM exposes no reusable encoder or decoder state across requests. Each overlap re-encodes and re-decodes. Reusable assets are retained PCM, a completed witness across text/speaker strategies, exact-interval WeSpeaker embeddings, and accepted authority state. Neural-state reuse needs a later model-server architecture change.</p>
+    <div class="callout blue"><strong>Measured GPU result.</strong> Current 2.5 s RTF .057 plus rolling .056 = .113. A 1 s base .115 plus rolling .056 = .171. G7 still requires a quiet-GPU, paced two-session test with bounded queues.</div>
+  </section>
+
+  <section class="chapter" data-chapter-id="ch-speakers" data-chapter-class="deep" id="ch-speakers" data-evidence-ids="ev-current-lanes ev-plan-speaker ev-multiview-verdict ev-plan-multiview">
+    <h3>Speaker evidence — the longer witness must own it</h3>
+    <p class="job">Correct words do not guarantee correct speakers. MOSS local <code>S01</code> is meaningful only inside one request.</p>
+    <div class="mechanism"><h4>The speaker path</h4><ol>
+      <li>The longer witness emits local speaker turns.</li>
+      <li>Only its <strong>owned middle</strong> selects PCM evidence.</li>
+      <li>WeSpeaker embeds each exact local-speaker interval—not a mixed-speaker full window.</li>
+      <li>The meeting album maps embeddings to stable identities.</li>
+      <li>The revision carries witness-owned words and speaker assignments.</li>
+    </ol></div>
+    <div class="metric-grid">
+      <div class="metric bad"><span class="value">.457</span><span class="label">DER · isolated 1 s</span></div>
+      <div class="metric bad"><span class="value">.292</span><span class="label">DER · rolling words on 1 s anchors</span></div>
+      <div class="metric"><span class="value">.114</span><span class="label">DER · rolling words on 2.5 s anchors</span></div>
+    </div>
+    <div class="decision"><h4>Can five-phase views avoid 5× compute?</h4><p><strong>Yes as an uncertainty router; no as blanket processing.</strong> Natural rolling overlap already gives multiple boundary views. If they agree, publish without another view. If they disagree, add phase-shifted views only there and cache exact-interval embeddings. If 10% of regions need four extra views, regional extra work is roughly <code>0.10 × 4 = 0.40</code> of one blanket pass, not four whole-meeting passes.</p></div>
+    <div class="failure"><h4>Why voting is not authority</h4><p>Sibling evidence found all 20 phase views could agree on a wrong merged handoff. Plurality or 4-of-5 is only uncertainty. It cannot override owned evidence unless a MOSS prototype improves accuracy and targeted extra work stays within 40% of a blanket view.</p></div>
+    <p class="tenet">Use disagreement to decide where to spend compute; never treat agreement alone as proof.</p>
+  </section>
+
+  <section class="chapter wide" data-chapter-id="ch-terminal" data-chapter-class="deep" id="ch-terminal" data-evidence-ids="ev-terminal-code ev-multiview-results ev-plan-authorization">
+    <h3>Terminal windows — 150 seconds heard, 120 seconds advanced</h3>
+    <p class="job">Reach file-mode quality without sending the entire growing meeting in one request.</p>
+    <figure class="diagram wide" role="img" aria-label="Three terminal windows cover a 300-second meeting with midpoint ownership boundaries at 135 and 255 seconds" aria-labelledby="terminal-title terminal-caption">
+      <svg class="wide-svg" viewBox="0 0 940 300" xmlns="http://www.w3.org/2000/svg">
+        <title id="terminal-title">Three terminal windows over a 300-second meeting</title>
+        <line class="diagram-line" x1="70" y1="45" x2="880" y2="45"/>
+        <g class="diagram-mono"><text x="60" y="27">0</text><text x="375" y="27">120</text><text x="455" y="27">150</text><text x="700" y="27">240</text><text x="805" y="27">270</text><text x="865" y="27">300 s</text></g>
+        <text class="diagram-title" x="10" y="90">W0</text><rect class="diagram-context" x="70" y="66" width="405" height="42" stroke="#6d6a63"/><rect class="diagram-final" x="70" y="66" width="364.5" height="42"/><text class="diagram-mono" x="180" y="92">hears 0–150 · owns 0–135</text>
+        <text class="diagram-title" x="10" y="153">W1</text><rect class="diagram-context" x="394" y="129" width="405" height="42" stroke="#6d6a63"/><rect class="diagram-final" x="434.5" y="129" width="324" height="42"/><text class="diagram-mono" x="505" y="155">hears 120–270 · owns 135–255</text>
+        <text class="diagram-title" x="10" y="216">W2</text><rect class="diagram-context" x="718" y="192" width="162" height="42" stroke="#6d6a63"/><rect class="diagram-final" x="758.5" y="192" width="121.5" height="42"/><text class="diagram-mono" x="742" y="218">240–300</text>
+        <path class="diagram-soft-line" d="M434.5 50 V250 M758.5 50 V250"/><text class="diagram-mono" x="398" y="273">owner boundary 135</text><text class="diagram-mono" x="718" y="273">owner boundary 255</text>
+      </svg>
+      <figcaption id="terminal-caption">Adjacent windows 0–150 and 120–270 overlap for 30 seconds. Their midpoint, 135, transfers ownership. Every time point has one final owner and every interior seam has context.</figcaption>
+    </figure>
+    <div class="mechanism"><h4>Why history stays bounded</h4><p>At 60 minutes, each terminal request still hears at most 150 seconds. Window count grows linearly; per-request prefill does not. Rolling memory remains separately bounded to <code>2 × W</code>.</p></div>
+    <div class="decision"><h4>Why wait until stop</h4><p>Terminal WER <strong>.104</strong> matched paired file mode on the 60-second trio, but future context cannot exist live. This serves “settled,” not “fast.”</p></div>
+    <div class="callout"><strong>Owner decision required.</strong> E4 needs permission to retain complete mixed audio and an ADR granting terminal re-ASR authority. The technical plan is ready; authorization is not.</div>
+  </section>
+</section>
+
+<section class="part" data-part="IV" id="part-4">
+  <p class="part-label">Part IV · Implementation</p>
+  <h2>A measured sequence with stop gates</h2>
+
+  <section class="chapter" data-chapter-id="ch-roadmap" data-chapter-class="synthesis" id="ch-roadmap" data-evidence-ids="ev-plan-phases ev-plan-gates ev-xreview ev-plan-authorization">
+    <h3>Review-gated roadmap</h3>
+    <p>The plan is <strong>implementation-ready</strong>: modules, seams, prototype commands, corpora, metrics, queue/memory bounds, and exit gates are specified and cross-reviewed. It is <strong>not implementation-authorized</strong>: owner approvals and the phase ledger remain unsigned.</p>
+    <ol class="gate-list">
+      <li><div><strong>Measurement integrity</strong>Repair replay reconstruction, preserve raw decode disposition, establish evaluator v2. Later metrics stay blocked until honest.</div></li>
+      <li><div><strong>Bounded malformed-output salvage</strong>Complete only a safely missing closing timestamp. No extra GPU. Stop if refusal text or silence is promoted.</div></li>
+      <li><div><strong>Rolling text on 2.5 s base</strong>Prototype 10/10 and 15/10 against 10/5; choose by quality then work. Ship monotonic word authority only after gates pass.</div></li>
+      <li><div><strong>Witness-owned speakers; optional 1 s preview</strong>Prove speaker correction first. Only then test one-second provisional output. Failure retains 2.5 s.</div></li>
+      <li><div><strong>Terminal convergence</strong>Reuse 150/120 file windowing over authorized retained tape. Require file-paired quality and duration/concurrency proof.</div></li>
+    </ol>
+    <div class="callout good"><strong>Prototype rule.</strong> Every medium/high-risk policy produces measurements before production code. A failed gate stops that phase; it does not trigger compensating complexity.</div>
+  </section>
+
+  <section class="chapter wide" data-chapter-id="ch-decisions" data-chapter-class="synthesis" id="ch-decisions" data-evidence-ids="ev-plan-decisions ev-plan-gates ev-plan-authorization ev-plan-multiview">
+    <h3>Decision framework</h3>
+    <table class="compare" aria-label="Implementation decisions"><thead><tr><th>Decision</th><th>Recommendation</th><th>Why</th><th>What can change it</th></tr></thead><tbody>
+      <tr class="recommended"><td>D1 · Authority</td><td>provisional → rolling → final</td><td>one window cannot optimize immediacy and context</td><td>owner rejection</td></tr>
+      <tr class="recommended"><td>D2 · Base through E2</td><td>keep 2.5 s</td><td>isolates risk; better speaker anchors</td><td>none before E2</td></tr>
+      <tr><td>D3 · Rolling schedule</td><td>test 10/10, 15/10 vs 10/5</td><td>10/5 quality passes; cost misses</td><td>measured frontier</td></tr>
+      <tr><td>D4 · 1 s preview</td><td>after speaker gate only</td><td>text passed; DER did not</td><td>G4 + G5</td></tr>
+      <tr><td>D5 · Extra views</td><td>uncertainty-routed</td><td>blanket votes can agree wrong</td><td>targeted bench</td></tr>
+      <tr><td>D6 · Terminal tape</td><td>explicit owner authority</td><td>needed for finalization</td><td>Q10 + ADR</td></tr>
+    </tbody></table>
+    <h4>Load-bearing promotion gates</h4>
+    <div class="metric-grid">
+      <div class="metric"><span class="value">≤ .15</span><span class="label">mean rolling WER · G1</span></div>
+      <div class="metric"><span class="value">≥ .94</span><span class="label">rolling recall · G3</span></div>
+      <div class="metric"><span class="value">&lt; 1</span><span class="label">two-session inference RTF · G7</span></div>
+      <div class="metric"><span class="value">≤ .01</span><span class="label">terminal WER gap · G8</span></div>
+      <div class="metric"><span class="value">0</span><span class="label">file regressions · G9</span></div>
+      <div class="metric"><span class="value">exact</span><span class="label">accepted = accounted samples · G10</span></div>
+    </div>
+  </section>
+
+  <h3>Rebuild kit — decisions in order</h3>
+  <p class="part-intro">A new team can reconstruct the architecture from these choices.</p>
+  <ol class="rebuild-kit">
+    <li class="rebuild-step"><p class="question">What is the canonical coordinate?</p><p class="pressure">Multiple decoders must name the same audio without drift.</p><p class="tenet">Use absolute 16 kHz sample intervals for windows, ownership, proposals, and frontier.</p><p class="alternative">Floating seconds per component — rejected; rounding makes ownership ambiguous.</p><p class="breaks">Revisions overlap or leave holes.</p></li>
+    <li class="rebuild-step"><p class="question">Who publishes first?</p><p class="pressure">Feedback is needed before high-quality context exists.</p><p class="tenet">Short output is provisional and retained as immutable base history.</p><p class="alternative">Wait for witness — credible but less responsive.</p><p class="breaks">The UI feels slow or weak output is mistaken for final.</p></li>
+    <li class="rebuild-step"><p class="question">How does a witness replace words?</p><p class="pressure">Overlaps can duplicate, omit, or oscillate.</p><p class="tenet">One owned region begins at the frontier and advances it.</p><p class="alternative">Arbitrary patches — rejected; ownership becomes global.</p><p class="breaks">Text repeats or disappears at joins.</p></li>
+    <li class="rebuild-step"><p class="question">Who owns speaker evidence?</p><p class="pressure">One-second labels and mixed context collapse voices.</p><p class="tenet">The witness embeds only its local-speaker PCM inside its owned region.</p><p class="alternative">Inherit short identities — measured text passes while DER remains poor.</p><p class="breaks">Correct words carry the wrong person.</p></li>
+    <li class="rebuild-step"><p class="question">How is a meeting settled?</p><p class="pressure">Rolling lacks future context; entire history cannot fit one request.</p><p class="tenet">After stop, use 150 s windows / 120 s stride with midpoint ownership.</p><p class="alternative">One growing request — rejected by bounded context.</p><p class="breaks">Long files fail or portal/export disagree.</p></li>
+  </ol>
+
+  <h3>Conformance set</h3>
+  <p class="part-intro">Cases distinguish all three authorities and five phase outcomes.</p>
+  <ol class="conformance-set">
+    <li class="conformance-case" id="case-provisional" data-evidence-ids="ev-plan-authority"><p class="capability">Publish short output without permanent authority.</p><p class="given">Short MOSS finishes before the witness.</p><p class="when">The base commit is accepted.</p><p class="then">The suffix may display provisionally; immutable history records it.</p><p class="otherwise">It cannot block a later frontier revision.</p><p class="chapter-ref"><a href="#ch-authority">Transcript authority</a></p></li>
+    <li class="conformance-case" id="case-rolling" data-evidence-ids="ev-plan-decisions"><p class="capability">Advance rolling authority once over one interval.</p><p class="given">A proposal begins at the frontier and fits committed audio.</p><p class="when">Ordered, non-overlapping absolute segments validate.</p><p class="then">Text version increments and frontier advances.</p><p class="otherwise">Stale or overlapping work changes nothing.</p><p class="chapter-ref"><a href="#ch-witness">Rolling witness</a></p></li>
+    <li class="conformance-case" id="case-final" data-evidence-ids="ev-plan-failure ev-terminal-code"><p class="capability">Publish final or preserve rolling honestly.</p><p class="given">Capture stopped and complete tape is authorized.</p><p class="when">All terminal windows stitch.</p><p class="then">Portal and export use one final surface.</p><p class="otherwise">Finalization fails visibly; rolling remains.</p><p class="chapter-ref"><a href="#ch-terminal">Terminal windows</a></p></li>
+    <li class="conformance-case" id="case-e0" data-evidence-ids="ev-plan-phases"><p class="capability">Make measurement trustworthy.</p><p class="given">Replay loses revision fields.</p><p class="when">E0 runs.</p><p class="then">Round trips, raw dispositions, evaluators are honest.</p><p class="otherwise">Later promotion stays blocked.</p><p class="chapter-ref"><a href="#ch-roadmap">Roadmap</a></p></li>
+    <li class="conformance-case" id="case-e1" data-evidence-ids="ev-plan-phases"><p class="capability">Salvage only structurally recoverable output.</p><p class="given">Useful segments lack one closing bound.</p><p class="when">Classifier proves stable rendering and speech evidence.</p><p class="then">Words publish without another decode.</p><p class="otherwise">Unsafe output remains empty.</p><p class="chapter-ref"><a href="#ch-roadmap">Roadmap</a></p></li>
+    <li class="conformance-case" id="case-e2" data-evidence-ids="ev-plan-gates"><p class="capability">Ship rolling text on a stable base.</p><p class="given">Selected arm passes quality, work, concurrency, accounting.</p><p class="when">E2 integrates converger and authority.</p><p class="then">Corrections advance on the 2.5 s base.</p><p class="otherwise">Stop; do not shorten base.</p><p class="chapter-ref"><a href="#ch-roadmap">Roadmap</a></p></li>
+    <li class="conformance-case" id="case-e3" data-evidence-ids="ev-multiview-verdict ev-plan-speaker"><p class="capability">Promote 1 s only with corrected speakers.</p><p class="given">Witness identity passes G4; preview passes G5.</p><p class="when">E3 evaluates the base.</p><p class="then">One-second text stays provisional; witness owns corrected words/speakers.</p><p class="otherwise">Retain 2.5 s.</p><p class="chapter-ref"><a href="#ch-speakers">Speaker evidence</a></p></li>
+    <li class="conformance-case" id="case-e4" data-evidence-ids="ev-plan-authorization ev-terminal-code"><p class="capability">Converge to file quality after stop.</p><p class="given">Tape/authority are approved; gates pass.</p><p class="when">150/120 terminal processing completes.</p><p class="then">The meeting receives one final surface.</p><p class="otherwise">Keep rolling export.</p><p class="chapter-ref"><a href="#ch-terminal">Terminal windows</a></p></li>
+  </ol>
+</section>
+
+<section class="part" data-part="V" id="part-5">
+  <p class="part-label">Part V · Boundaries</p>
+  <h2>What is proven, projected, and blocked</h2>
+  <section class="chapter" data-chapter-id="ch-boundaries" data-chapter-class="synthesis" id="ch-boundaries" data-evidence-ids="ev-context-verdict ev-multiview-results ev-plan-gates ev-plan-authorization ev-evaluator-limit">
+    <h3>Known limits</h3>
+    <ul>
+      <li><strong>Confirmed:</strong> seam loss dominates the measured word gap on three referenced 60-second interviews.</li>
+      <li><strong>Confirmed:</strong> rolling10 improves text from both 2.5 s and 1 s bases to WER .146; independent lexical stitch reached .129.</li>
+      <li><strong>Confirmed:</strong> 1 s speaker performance remains worse; witness-owned speaker authority is unimplemented/unmeasured.</li>
+      <li><strong>Confirmed:</strong> terminal150 matches paired file WER on the three 60-second cases.</li>
+      <li><strong>Unmeasured:</strong> selected 10/10 or 15/10 schedule, two sessions, browser paint, long DOM cost, and long terminal behavior.</li>
+      <li><strong>Projected:</strong> uncertainty-routed phase views reduce blanket compute; MOSS accuracy benefit is not proven.</li>
+      <li><strong>Scorer caution:</strong> TBSA/DER can improve through wider timestamp extent without better words. WER and recall remain primary pending evaluator v2.</li>
+      <li><strong>Governance block:</strong> signatures, text-finalization ADR, and complete mixed-tape retention authority remain open.</li>
+    </ul>
+    <div class="callout"><strong>Do not overclaim.</strong> This is an implementation-ready, review-gated architecture—not a claim that production exists, one-second preview is promotable, or two-session capacity has passed.</div>
+  </section>
+</section>
+
+<section class="part" data-part="VI" id="part-6">
+  <p class="part-label">Part VI · Shared language</p>
+  <h2>Minimal glossary</h2>
+  <dl class="glossary">
+    <dt id="term-audio-clock">Audio clock</dt><dd>The one absolute 16 kHz sample coordinate.</dd>
+    <dt id="term-endpoint">Endpoint</dt><dd>The policy that turns accumulated live audio into a bounded request.</dd>
+    <dt id="term-hard-cap">Hard cap</dt><dd>Maximum endpoint span; currently 40,000 samples or 2.5 seconds.</dd>
+    <dt id="term-request-window">Request window</dt><dd>All audio sent to one fresh MOSS decode, including context it may not own.</dd>
+    <dt id="term-stride">Stride</dt><dd>How far the next window start advances. Window ÷ stride approximates repeated work.</dd>
+    <dt id="term-owned-region">Owned region</dt><dd>The exact interval whose words and speaker evidence one result may publish.</dd>
+    <dt id="term-witness">Witness</dt><dd>A longer MOSS request that re-hears provisional regions and proposes correction.</dd>
+    <dt id="term-frontier">Rolling frontier</dt><dd>The first sample not yet owned by rolling authority. It moves forward only.</dd>
+    <dt id="term-authority">Authority</dt><dd>The output allowed to win: provisional, rolling canonical, terminal final.</dd>
+    <dt id="term-effective">Effective transcript</dt><dd>The visible rolling prefix plus provisional suffix, or terminal final surface.</dd>
+    <dt id="term-local-speaker">Local speaker</dt><dd>A label such as S01 meaningful only inside one MOSS request until reconciled.</dd>
+    <dt id="term-rtf">GPU real-time factor</dt><dd>GPU inference seconds divided by meeting seconds; lower is better.</dd>
+    <dt id="term-wer">Word error rate (WER)</dt><dd>Substitutions, deletions, insertions divided by reference words; lower is better.</dd>
+    <dt id="term-der">Diarization error rate (DER)</dt><dd>Speaker-time error from missed speech, false speech, and speaker confusion; lower is better.</dd>
+    <dt id="term-tbsa">TBSA</dt><dd>Composite transcript/speaker score; useful for continuity but currently extent-sensitive.</dd>
+  </dl>
+</section>
+
+<footer class="report-foot">
+  <p><strong>Design source:</strong> MOSS portal tokens from <code>moss_transcribe_diarize/app/live_portal.py</code> — cream paper, teal authority, coral provisional/error, system sans.</p>
+  <p>Controlling artifact: <code>docs/plans/live-mode-convergence-implementation-20260824.md</code>. Cross-review: <code>.aisight/xreview/active/session-summary.md</code>.</p>
+</footer>
+</main>
+</div>
+</article>
+
+<script>
+(function () {
+  'use strict';
+  /* ---- flow walkthroughs ---- */
+  document.querySelectorAll('[data-flow]').forEach(function (flow) {
+    var stages = Array.prototype.slice.call(flow.querySelectorAll('.stage'));
+    var dots = Array.prototype.slice.call(flow.querySelectorAll('[data-flow-dot]'));
+    var status = flow.querySelector('.flow-status');
+    var idx = 0;
+    function render() {
+      stages.forEach(function (s, i) { s.classList.toggle('active', i === idx); });
+      dots.forEach(function (d, i) { d.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
+      if (status) status.textContent = 'Stage ' + (idx + 1) + ' of ' + stages.length;
+    }
+    function go(n) { idx = (n + stages.length) % stages.length; render(); }
+    var prev = flow.querySelector('[data-flow-prev]');
+    var next = flow.querySelector('[data-flow-next]');
+    if (prev) prev.addEventListener('click', function () { go(idx - 1); });
+    if (next) next.addEventListener('click', function () { go(idx + 1); });
+    dots.forEach(function (d, i) { d.addEventListener('click', function () { go(i); }); });
+    flow.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+    });
+    render();
+  });
+
+  /* ---- print: expand everything, restore after ---- */
+  var openedForPrint = [];
+  window.addEventListener('beforeprint', function () {
+    document.body.classList.add('print-expanded');
+    openedForPrint = [];
+    document.querySelectorAll('details:not([open])').forEach(function (d) {
+      d.setAttribute('open', ''); openedForPrint.push(d);
+    });
+  });
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('print-expanded');
+    openedForPrint.forEach(function (d) { d.removeAttribute('open'); });
+    openedForPrint = [];
+  });
+
+  /* ---- reading progress + TOC scroll spy ---- */
+  var bar = document.getElementById('progress');
+  function onScroll() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    if (bar) bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          var current = en.target.id;
+          links.forEach(function (a) {
+            a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+          });
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    targets.forEach(function (t) { if (t) io.observe(t); });
+  }
+}());
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+{
+ "file": {
+  "trio": {
+   "composite": 0.910567,
+   "text_speaker_accuracy": 0.911502,
+   "text_coverage": 0.919865,
+   "wer": 0.103946
+  },
+  "per_case": {
+   "lex_bill_ackman": {
+    "composite": 0.918756,
+    "text_speaker_accuracy": 0.938134,
+    "text_coverage": 0.952215,
+    "wer": 0.159091,
+    "speaker_mapping": {
+     "Bill Ackman": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_javier_milei": {
+    "composite": 0.881244,
+    "text_speaker_accuracy": 0.870992,
+    "text_coverage": 0.870992,
+    "wer": 0.088,
+    "speaker_mapping": {
+     "Javier Milei": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_keyu_jin": {
+    "composite": 0.9317,
+    "text_speaker_accuracy": 0.92538,
+    "text_coverage": 0.936387,
+    "wer": 0.064748,
+    "speaker_mapping": {
+     "Keyu Jin": "S01",
+     "Lex Fridman": "S02"
+    }
+   }
+  }
+ },
+ "live": {
+  "trio": {
+   "composite": 0.838423,
+   "text_speaker_accuracy": 0.839963,
+   "text_coverage": 0.864015,
+   "wer": 0.19987
+  },
+  "per_case": {
+   "lex_bill_ackman": {
+    "composite": 0.80006,
+    "text_speaker_accuracy": 0.801383,
+    "text_coverage": 0.842424,
+    "wer": 0.261364,
+    "speaker_mapping": {
+     "Bill Ackman": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_javier_milei": {
+    "composite": 0.841605,
+    "text_speaker_accuracy": 0.828438,
+    "text_coverage": 0.846371,
+    "wer": 0.144,
+    "speaker_mapping": {
+     "Javier Milei": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_keyu_jin": {
+    "composite": 0.873604,
+    "text_speaker_accuracy": 0.890069,
+    "text_coverage": 0.903249,
+    "wer": 0.194245,
+    "speaker_mapping": {
+     "Keyu Jin": "S01",
+     "Lex Fridman": "S02"
+    }
+   }
+  }
+ },
+ "C1_speech_only": {
+  "trio": {
+   "composite": 0.854382,
+   "text_speaker_accuracy": 0.858717,
+   "text_coverage": 0.882768,
+   "wer": 0.192294
+  },
+  "per_case": {
+   "lex_bill_ackman": {
+    "composite": 0.844682,
+    "text_speaker_accuracy": 0.853303,
+    "text_coverage": 0.894344,
+    "wer": 0.238636,
+    "speaker_mapping": {
+     "Bill Ackman": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_javier_milei": {
+    "composite": 0.84486,
+    "text_speaker_accuracy": 0.832778,
+    "text_coverage": 0.85071,
+    "wer": 0.144,
+    "speaker_mapping": {
+     "Javier Milei": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_keyu_jin": {
+    "composite": 0.873604,
+    "text_speaker_accuracy": 0.890069,
+    "text_coverage": 0.903249,
+    "wer": 0.194245,
+    "speaker_mapping": {
+     "Keyu Jin": "S01",
+     "Lex Fridman": "S02"
+    }
+   }
+  }
+ },
+ "C2_metric_max": {
+  "trio": {
+   "composite": 0.860114,
+   "text_speaker_accuracy": 0.864134,
+   "text_coverage": 0.892953,
+   "wer": 0.192294
+  },
+  "per_case": {
+   "lex_bill_ackman": {
+    "composite": 0.844682,
+    "text_speaker_accuracy": 0.853303,
+    "text_coverage": 0.894344,
+    "wer": 0.238636,
+    "speaker_mapping": {
+     "Bill Ackman": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_javier_milei": {
+    "composite": 0.862056,
+    "text_speaker_accuracy": 0.84903,
+    "text_coverage": 0.881267,
+    "wer": 0.144,
+    "speaker_mapping": {
+     "Javier Milei": "S01",
+     "Lex Fridman": "S02"
+    }
+   },
+   "lex_keyu_jin": {
+    "composite": 0.873604,
+    "text_speaker_accuracy": 0.890069,
+    "text_coverage": 0.903249,
+    "wer": 0.194245,
+    "speaker_mapping": {
+     "Keyu Jin": "S01",
+     "Lex Fridman": "S02"
+    }
+   }
+  }
+ },
+ "gaps": {
+  "coverage": 0.055850000000000066,
+  "wer": 0.095924,
+  "composite": 0.07214399999999999
+ },
+ "detail": {
+  "lex_bill_ackman": {
+   "empty_spans": [
+    [
+     2,
+     5.0,
+     7.5
+    ]
+   ]
+  },
+  "lex_javier_milei": {
+   "empty_spans": [
+    [
+     3,
+     5.28,
+     6.77
+    ],
+    [
+     5,
+     7.94,
+     9.52
+    ],
+    [
+     13,
+     23.73,
+     23.79
+    ],
+    [
+     31,
+     59.76,
+     60.0
+    ]
+   ]
+  },
+  "lex_keyu_jin": {
+   "empty_spans": []
+  }
+ }
+}

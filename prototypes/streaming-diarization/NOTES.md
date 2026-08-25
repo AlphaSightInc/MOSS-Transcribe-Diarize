@@ -2618,3 +2618,31 @@ arms, and this instrumentation does not override its quality gates. Raw evidence
 `faf22dcc...65e`) and
 `evidence/phase1/g3-attended/server-stage-timing-deployed-20advance-20260819.json` (SHA-256
 `97c9e3ad...210`).
+
+### Short provisional + longer MOSS witness (`live-multiview-prototype`, 2026-08-24)
+
+**Question:** can longer joint-MOSS views correct independent short live spans, especially a
+one-second first-publication cap?
+
+**VERDICT: ROLLING10 TEXT PASS; ONE-SECOND CANONICAL AND SEAM5 REJECTED; ROLLING10 SPEAKER
+AUTHORITY OPEN.** Three fully referenced real 60-second interviews used the deployed MOSS endpoint,
+production VAD/endpoint policy, production WeSpeaker identity, and truth-blind reconciliation.
+Current 2.5-second live scored TBSA/WER/coverage/DER `.838/.200/.864/.176`; current one-second
+scored `.638/.377/.783/.457`. Mean first-word age fell from 3.04 seconds to 1.00 second, but
+requests rose 80→189 and endpoint inference RTF rose `.057→.115` for the same 180 seconds of audio.
+
+A shared rolling ten-second/five-second-stride witness scored WER/coverage `.146/.905` on both
+bases: it fully compensated the one-second arm's word loss on this corpus. Its DER was `.114` on
+the 2.5-second base but `.292` on the one-second base, isolating speaker reconciliation through
+weak short-span identity anchors as the remaining problem. Every-seam five-second witnesses
+worsened WER `.200→.217` and DER `.176→.231`; reject. One terminal 60-second request per case
+scored `.911/.104/.920/.102` and remains the delayed quality upper bound.
+
+All endpoint metric deltas matched the exact expected request counts with no boundary queue.
+Correction timing is a replay from real isolated request wall times, not a concurrent browser E2E:
+rolling correction arrived 3.69 seconds after 2.5-second provisional publication and 4.65 seconds
+after one-second provisional publication; terminal final arrived 1.86 seconds after meeting end.
+Coarse reference turns can inflate timestamp-derived metrics, so WER controls the text verdict.
+Next prototype: rolling views own text **and** long-window identity evidence; one-second labels do
+not become canonical. Command, full metric contract, stitch diagnosis, and per-case results:
+`live-multiview-prototype/NOTES.md`.

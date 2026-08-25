@@ -1,0 +1,20 @@
+# Ralph Progress Journal - Live-mode convergence campaign
+
+Append-only. Agents add one entry per iteration; the launcher adds one-line
+"[loop <run-id>] ..." markers at run boundaries. Never rewrite or delete
+entries — context.md is the place for current state, this file is history.
+
+Entry format (concise, a few lines each):
+
+  ## Iteration <n> - <short focus>
+  - Target: <candidate from context.md, or off-list + justification>
+  - Files: <paths>
+  - Validation: <command> -> <result>
+  - Evidence: <artifact/log paths>
+  - Learned: <what changed in understanding>
+  - Next: <recommended next step>
+
+Started: 2026-08-24 night - Campaign setup complete. Plan (with Appendix B owner
+overrides) cross-reviewed and final; paired baseline + root-cause prototypes checked in
+under prototypes/live-file-gap-*; replay-adapter defect reproducer exits 1; nothing on
+the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).

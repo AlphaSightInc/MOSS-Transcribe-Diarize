@@ -1,0 +1,490 @@
+{
+ "file": {
+  "composite": 0.910567,
+  "text_speaker_accuracy": 0.911502,
+  "text_coverage": 0.919865,
+  "wer": 0.103946
+ },
+ "live": {
+  "composite": 0.838423,
+  "text_speaker_accuracy": 0.839963,
+  "text_coverage": 0.864015,
+  "wer": 0.19987
+ },
+ "gaps": {
+  "text_coverage": 0.055850000000000066,
+  "wer": 0.095924,
+  "composite": 0.07214399999999999,
+  "text_speaker_accuracy": 0.07153900000000002
+ },
+ "policies": {
+  "P0_baseline": {
+   "trio": {
+    "composite": 0.838423,
+    "text_speaker_accuracy": 0.839963,
+    "text_coverage": 0.864015,
+    "wer": 0.19987
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.80006,
+     "text_speaker_accuracy": 0.801383,
+     "text_coverage": 0.842424,
+     "wer": 0.261364,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.841605,
+     "text_speaker_accuracy": 0.828438,
+     "text_coverage": 0.846371,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.0,
+    "wer": 0.0,
+    "composite": 0.0
+   },
+   "gap_closed_pct": {
+    "text_coverage": 0.0,
+    "wer": 0.0,
+    "composite": 0.0
+   },
+   "extra_requests": 0,
+   "extra_audio_s": 0.0
+  },
+  "P1_salvage": {
+   "trio": {
+    "composite": 0.849728,
+    "text_speaker_accuracy": 0.864134,
+    "text_coverage": 0.892953,
+    "wer": 0.233839
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.847523,
+     "text_speaker_accuracy": 0.853303,
+     "text_coverage": 0.894344,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.828056,
+     "text_speaker_accuracy": 0.84903,
+     "text_coverage": 0.881267,
+     "wer": 0.28,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.02893800000000002,
+    "wer": -0.033969,
+    "composite": 0.01130500000000001
+   },
+   "gap_closed_pct": {
+    "text_coverage": 51.81378692927482,
+    "wer": -35.41240982444435,
+    "composite": 15.670048791306293
+   },
+   "extra_requests": 0,
+   "extra_audio_s": 0.0
+  },
+  "P1v_salvage_vad": {
+   "trio": {
+    "composite": 0.855329,
+    "text_speaker_accuracy": 0.858717,
+    "text_coverage": 0.882768,
+    "wer": 0.188506
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.847523,
+     "text_speaker_accuracy": 0.853303,
+     "text_coverage": 0.894344,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.84486,
+     "text_speaker_accuracy": 0.832778,
+     "text_coverage": 0.85071,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.01875300000000002,
+    "wer": 0.011363999999999985,
+    "composite": 0.016905999999999977
+   },
+   "gap_closed_pct": {
+    "text_coverage": 33.57743957027753,
+    "wer": 11.846878779033387,
+    "composite": 23.433688179197134
+   },
+   "extra_requests": 0,
+   "extra_audio_s": 0.0
+  },
+  "P1r_salvage_vad_norefusal": {
+   "trio": {
+    "composite": 0.855329,
+    "text_speaker_accuracy": 0.858717,
+    "text_coverage": 0.882768,
+    "wer": 0.188506
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.847523,
+     "text_speaker_accuracy": 0.853303,
+     "text_coverage": 0.894344,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.84486,
+     "text_speaker_accuracy": 0.832778,
+     "text_coverage": 0.85071,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.01875300000000002,
+    "wer": 0.011363999999999985,
+    "composite": 0.016905999999999977
+   },
+   "gap_closed_pct": {
+    "text_coverage": 33.57743957027753,
+    "wer": 11.846878779033387,
+    "composite": 23.433688179197134
+   },
+   "extra_requests": 0,
+   "extra_audio_s": 0.0
+  },
+  "B1a_lead1.0": {
+   "trio": {
+    "composite": 0.856462,
+    "text_speaker_accuracy": 0.860485,
+    "text_coverage": 0.884536,
+    "wer": 0.189279
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.848009,
+     "text_speaker_accuracy": 0.852057,
+     "text_coverage": 0.893098,
+     "wer": 0.221591,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.847772,
+     "text_speaker_accuracy": 0.839328,
+     "text_coverage": 0.857261,
+     "wer": 0.152,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.02052100000000001,
+    "wer": 0.01059099999999999,
+    "composite": 0.018038999999999916
+   },
+   "gap_closed_pct": {
+    "text_coverage": 36.74306177260517,
+    "wer": 11.041032484049863,
+    "composite": 25.004158349966623
+   },
+   "extra_requests": 5,
+   "extra_audio_s": 10.87
+  },
+  "B1b_lead2.5": {
+   "trio": {
+    "composite": 0.85414,
+    "text_speaker_accuracy": 0.857131,
+    "text_coverage": 0.881183,
+    "wer": 0.188506
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.847212,
+     "text_speaker_accuracy": 0.852887,
+     "text_coverage": 0.893928,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.841605,
+     "text_speaker_accuracy": 0.828438,
+     "text_coverage": 0.846371,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.017168000000000072,
+    "wer": 0.011363999999999985,
+    "composite": 0.01571699999999998
+   },
+   "gap_closed_pct": {
+    "text_coverage": 30.739480752014416,
+    "wer": 11.846878779033387,
+    "composite": 21.785595475715215
+   },
+   "extra_requests": 5,
+   "extra_audio_s": 18.37
+  },
+  "B2_altprompt": {
+   "trio": {
+    "composite": 0.838423,
+    "text_speaker_accuracy": 0.839963,
+    "text_coverage": 0.864015,
+    "wer": 0.19987
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.80006,
+     "text_speaker_accuracy": 0.801383,
+     "text_coverage": 0.842424,
+     "wer": 0.261364,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.841605,
+     "text_speaker_accuracy": 0.828438,
+     "text_coverage": 0.846371,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.0,
+    "wer": 0.0,
+    "composite": 0.0
+   },
+   "gap_closed_pct": {
+    "text_coverage": 0.0,
+    "wer": 0.0,
+    "composite": 0.0
+   },
+   "extra_requests": 5,
+   "extra_audio_s": 5.87
+  },
+  "B3_mergeforward": {
+   "trio": {
+    "composite": 0.852427,
+    "text_speaker_accuracy": 0.854847,
+    "text_coverage": 0.878898,
+    "wer": 0.188506
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.842072,
+     "text_speaker_accuracy": 0.846034,
+     "text_coverage": 0.887075,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.841605,
+     "text_speaker_accuracy": 0.828438,
+     "text_coverage": 0.846371,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.01488299999999998,
+    "wer": 0.011363999999999985,
+    "composite": 0.014004000000000016
+   },
+   "gap_closed_pct": {
+    "text_coverage": 26.648164726947112,
+    "wer": 11.846878779033387,
+    "composite": 19.411177644710605
+   },
+   "extra_requests": 4,
+   "extra_audio_s": 14.3
+  },
+  "B4_pad0.25": {
+   "trio": {
+    "composite": 0.853442,
+    "text_speaker_accuracy": 0.8562,
+    "text_coverage": 0.880251,
+    "wer": 0.188506
+   },
+   "per_case": {
+    "lex_bill_ackman": {
+     "composite": 0.842539,
+     "text_speaker_accuracy": 0.846657,
+     "text_coverage": 0.887698,
+     "wer": 0.227273,
+     "speaker_mapping": {
+      "Bill Ackman": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_javier_milei": {
+     "composite": 0.844182,
+     "text_speaker_accuracy": 0.831874,
+     "text_coverage": 0.849806,
+     "wer": 0.144,
+     "speaker_mapping": {
+      "Javier Milei": "S01",
+      "Lex Fridman": "S02"
+     }
+    },
+    "lex_keyu_jin": {
+     "composite": 0.873604,
+     "text_speaker_accuracy": 0.890069,
+     "text_coverage": 0.903249,
+     "wer": 0.194245,
+     "speaker_mapping": {
+      "Keyu Jin": "S01",
+      "Lex Fridman": "S02"
+     }
+    }
+   },
+   "delta": {
+    "text_coverage": 0.016236000000000028,
+    "wer": 0.011363999999999985,
+    "composite": 0.015019000000000005
+   },
+   "gap_closed_pct": {
+    "text_coverage": 29.070725156669667,
+    "wer": 11.846878779033387,
+    "composite": 20.818086050121988
+   },
+   "extra_requests": 5,
+   "extra_audio_s": 8.12
+  }
+ }
+}
