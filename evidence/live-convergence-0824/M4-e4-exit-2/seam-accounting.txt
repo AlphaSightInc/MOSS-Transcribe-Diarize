@@ -1,0 +1,19 @@
+seam accounting on every terminal pass of the batch
+(the three fields resolve_terminal_overlaps writes onto the plan §7.4 terminal events)
+
+session                                segments  merged  dropped  displaced_samples  outcome  applied
+keyu5m-A                                     67       0        0                  0  finalized  True
+keyu5m-B                                     67       0        0                  0  finalized  True
+three-minute/adam3m-A                        37       1        0                  0  finalized  True
+three-minute/adam3m-B                        37       1        0                  0  finalized  True
+trio-A/acquired_jamie_dimon                  17       0        0                  0  finalized  True
+trio-A/lex_bill_ackman                       18       0        0                  0  finalized  True
+trio-A/lex_javier_milei                      20       0        0                  0  finalized  True
+trio-A/lex_keyu_jin                          10       0        0                  0  finalized  True
+trio-B/acquired_jamie_dimon                  18       0        0                  0  finalized  True
+trio-B/lex_bill_ackman                       18       0        0                  0  finalized  True
+trio-B/lex_javier_milei                      20       0        0                  0  finalized  True
+trio-B/lex_keyu_jin                          10       0        0                  0  finalized  True
+
+sessions whose terminal proposal contained a window-seam overlap: 2 of 12
+every pass applied (`applied=True`, `outcome=finalized`); no refusal on the batch.

@@ -1,0 +1,48 @@
+
+M4 gate table (plan E4 rescoped) - PREREGISTRATION-M4.md §5
+
+gate      verdict arm                    instrument                                           value
+G-M4-0    PASS    terminal               deployed(fresh)                                      sessions=10
+G-M4-1    PASS    terminal               deployed(fresh)                                      max_distance=0.0
+G-M4-2    PASS    terminal               deployed(fresh)                                      max_distance=0.013
+G-M4-3    FAIL    terminal vs rolling    deployed(fresh) vs deployed(M4-three-minute) for the 3-minute case three_minute_comparator=0.122411
+G-M4-4    FAIL    terminal vs rolling    deployed(fresh) vs deployed(M4-three-minute) for the 3-minute case see json
+G-M4-5    PASS    terminal               deployed(fresh)                                      see json
+G-M4-6    PASS    terminal               deployed(fresh)                                      see json
+G-M4-7    PASS    terminal failure       in-memory(fresh)                                     driver_exit_code=0
+G-M4-8    PASS    terminal               deployed(fresh)                                      warm_sessions=9
+G-M4-9    PASS    terminal               deployed(fresh) + fresh-run + in-memory(fresh)       second_proposal_refused=True
+G-M4-10   PASS    terminal               deployed(fresh)                                      max_peak_retained_bytes=9600000
+G-M4-11   PASS    terminal + capture     deployed(fresh)                                      max_combined_rtf=0.172669
+G-M4-12   PASS    file                   deployed(fresh) + fresh-run                          a_hypotheses_byte_identical=True
+G-M4-13   PASS    terminal               deployed(fresh)                                      see json
+
+per-case quality, both runs (terminal vs the paired file arm of the same pass)
+
+case               run   terminal WER   file WER  terminal DER   file DER
+lex_bill_ackman    A         0.159091   0.159091      0.075500   0.075500
+lex_bill_ackman    B         0.159091   0.159091      0.075500   0.075500
+lex_javier_milei   A         0.088000   0.088000      0.151833   0.151833
+lex_javier_milei   B         0.088000   0.088000      0.151833   0.151833
+lex_keyu_jin       A         0.064748   0.064748      0.079000   0.079000
+lex_keyu_jin       B         0.064748   0.064748      0.079000   0.079000
+lex_adam_frank     A         0.126177   0.126177      0.066222   0.053222
+lex_adam_frank     B         0.126177   0.126177      0.066222   0.053222
+keyu-5m            A         0.050616   0.050616      0.057933   0.057933
+keyu-5m            B         0.050616   0.050616      0.057933   0.057933
+
+gate-set contract
+
+  pass: True
+  preregistered_gates: 14
+  scored_gates: 14
+  missing_from_scoring: []
+  scored_but_not_preregistered: []
+  bounds_not_quoted_from_the_row: []
+
+failing gates, in full
+
+  G-M4-3: ["lex_adam_frank/A", "lex_adam_frank/B"]
+  G-M4-4: ["lex_adam_frank/A", "lex_adam_frank/B"]
+
+M4 GATE FAILURE

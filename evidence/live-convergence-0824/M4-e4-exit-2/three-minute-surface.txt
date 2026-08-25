@@ -1,0 +1,15 @@
+lex_adam_frank / run A - the surface the reader is served, before and after
+
+surface                                      segments  words  span
+iteration 29: rolling (terminal refused)           56    546  [0.00, 179.96]
+iteration 32: terminal, seam resolved              37    546  [0.00, 179.52]
+the paired file arm of this same pass              38    546  [0.00, 179.52]
+
+terminal word stream == file word stream: True (546 words)
+terminal segments == file segments - 1: the one overlapping pair, merged.
+
+first (and only) structural divergence, index 25:
+  terminal [131.19, 136.62] S01
+  file     [131.19, 136.29] S01
+  file +1  [133.95, 136.62] S01   <- overlaps the row above by 2.34 s
+  the terminal segment is the UNION of those two file segments, their texts joined in order.

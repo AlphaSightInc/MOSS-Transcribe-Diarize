@@ -1,0 +1,161 @@
+{
+  "case": "lex_adam_frank",
+  "case_dir": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank",
+  "duration_sec": 180.0,
+  "provenance": {
+    "base_url": "https://127.0.0.1:7861",
+    "vllm_base_url": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "windowing": {
+      "window_seconds": 150,
+      "stride_seconds": 120
+    },
+    "live_source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "decoding": "greedy",
+    "max_new_tokens": 12000,
+    "timestamp": "2026-08-25T11:52:44-0400"
+  },
+  "results": {
+    "file": {
+      "meta": {
+        "job_id": "1e95b619bc2a",
+        "status": "waiting_review",
+        "wall_s": 8.1,
+        "generated_tokens": 1507,
+        "segments": 38,
+        "speakers": [
+          "S01",
+          "S02"
+        ]
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.93058,
+          "text_speaker_accuracy": 0.947083,
+          "text_coverage": 0.95226,
+          "wer": 0.126177,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "diarization": {
+          "der": 0.053222,
+          "miss": 0.048833,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.004389,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.946778,
+          "reference_coverage": 0.938167,
+          "matched_speaker_seconds": 170.42,
+          "covered_reference_seconds": 168.87,
+          "reference_seconds": 180.0,
+          "hypothesis_seconds": 171.21,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 2,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Adam Frank": 0.959248,
+            "Lex Fridman": 0.911489
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.938167,
+          "reference_activity_seconds": 180.0,
+          "hypothesis_activity_seconds": 168.87,
+          "true_positive_activity_seconds": 168.87,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 11.13,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 11.13,
+          "confused_speaker_seconds": 0.79,
+          "diarization_error_rate": 0.066222
+        }
+      }
+    },
+    "live": {
+      "meta": {
+        "failure": null,
+        "wall_s": 187.0,
+        "status": "succeeded",
+        "frame_count": 360,
+        "accepted_samples": 2880000,
+        "decode_rtf_p95": 0.32379252310746753,
+        "span_reasons": {
+          "hard_cap": 71,
+          "end_silence": 1,
+          "leading_silence": 4
+        },
+        "spans_empty": 3,
+        "segments": 37,
+        "speakers": [
+          "S01",
+          "S02"
+        ],
+        "label_revision_version": 1,
+        "text_revision_version": 19
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.921019,
+          "text_speaker_accuracy": 0.934335,
+          "text_coverage": 0.939511,
+          "wer": 0.126177,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "diarization": {
+          "der": 0.066222,
+          "miss": 0.061833,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.004389,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.933778,
+          "reference_coverage": 0.938167,
+          "matched_speaker_seconds": 168.08,
+          "covered_reference_seconds": 168.87,
+          "reference_seconds": 180.0,
+          "hypothesis_seconds": 168.87,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 2,
+          "speaker_mapping": {
+            "Adam Frank": "S01",
+            "Lex Fridman": "S02"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Adam Frank": 0.941654,
+            "Lex Fridman": 0.911489
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.938167,
+          "reference_activity_seconds": 180.0,
+          "hypothesis_activity_seconds": 168.87,
+          "true_positive_activity_seconds": 168.87,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 11.13,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 11.13,
+          "confused_speaker_seconds": 0.79,
+          "diarization_error_rate": 0.066222
+        }
+      }
+    }
+  }
+}

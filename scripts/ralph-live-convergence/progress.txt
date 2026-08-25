@@ -3080,3 +3080,86 @@ appended at the iteration 4->5 boundary]
   G-M4-2 / G-M4-6 / G-M4-9 recover on `lex_adam_frank` and G-M4-3 (`.126177` vs rolling
   `.122411`) / G-M4-4 (`.949153` vs `.951036`) fail there instead - D-M4-3, an owner ruling
   already recorded, not a moved bound. Then M5.
+
+## iteration 32 - the meeting that could not finalize now publishes, and M4 scores 12 of 14
+- Focus: candidate 8f, the lowest open item. Restart the deployed service onto the seam-resolved
+  build and RE-SCORE the M4 exit on a fresh five-case paired batch. No production code changed.
+- Target: context.md candidate 8f, PRD M4, PREREGISTRATION-M4.md (bounds untouched).
+- Service restart (recorded per PRD): stopped pid 86813 (the pre-8e-2 build, up since 10:14:53
+  local), launched pid 37488 at 2026-08-25 11:28:31 local / 15:28:31Z on repo HEAD 22dc5b8 with a
+  CLEAN working tree, same argv, log
+  ~/.local/share/moss-transcribe-diarize/g3/web_cli-campaign-20260825-112831.log. /api/runtime
+  descriptor IDENTICAL field for field, 62 of 62 - the seam resolution is finalizer-internal and no
+  declared capability can see it. 4070 Ti untouched.
+- Real MOSS traffic: 6 discarded warm-ups + 12 live meetings + 12 file jobs + 12 terminal passes,
+  15:29:18Z -> 15:55:59Z, one in-flight request throughout.
+- Files touched:
+  evidence/live-convergence-0824/M4-e4-exit-2/{NOTES.md,gates.json,console.txt,selftest.txt,
+      seam-accounting.txt,hypothesis-identity.txt,three-minute-surface.txt,pytest-full.txt,
+      passes/,sha256.txt}                                        (new bundle, 1.3M, 107 files)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO production file, NO test, NO prototype changed this iteration.
+- Validation:
+  - verify_m4_exit.py --fresh-root <batch> -> **12 of 14 gates PASS** (was 11). Gate-set contract
+    green: 14 preregistered, 14 scored, no extras, every bound quoted from its own row.
+      recovered: G-M4-2 (FAIL .026667 -> PASS .013000), G-M4-6 (8/10 -> 10/10),
+                 G-M4-9 (8/10 -> 10/10)
+      newly failing: G-M4-3 (lex_adam_frank .122411 -> .126177, +.003766) and
+                 G-M4-4 (.951036 -> .949153, -.001883), both runs, that case only
+      unchanged PASS: G-M4-0/1/5/7/8/10/11/12/13
+  - verify_m4_exit.py --selftest -> 0 failures over 14 gates; reports the two failing gates.
+  - Scoring the CHECKED-IN bundle copy reproduces the batch's gates.json field for field: 1743
+    fields, 5 differing - three `*_root` paths and one pytest wall time.
+  - .venv/bin/python -m pytest tests/ -q -> 1157 passed, 2 skipped, 411 subtests (unchanged).
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-e4-exit-2/sha256.txt -> 107 files, all OK.
+- THE NUMBERS (run A; run B identical to 6 dp on every case):
+      case               live(terminal) WER   file WER    live DER   file DER   live spk   file spk
+      lex_bill_ackman              .159091    .159091     .075500    .075500    .924500    .924500
+      lex_javier_milei             .088000    .088000     .151833    .151833    .848167    .848167
+      lex_keyu_jin                 .064748    .064748     .079000    .079000    .921000    .921000
+      lex_adam_frank               .126177    .126177     .066222    .053222    .933778    .946778
+      keyu-5m                      .050616    .050616     .057933    .057933    .942067    .942067
+      trio mean                    .103946    .103946     .102111    .102111    .897889    .897889
+  Against the campaign's opening baseline: trio live WER .1999 -> .103946, trio live DER
+  .1764 -> .102111, five-minute live WER .1464 -> .050616.
+- FOUR FINDINGS.
+  F1 THE LIVE SURFACE IS NO LONGER CONVERGING TOWARD THE FILE SURFACE ON THE TRIO; IT IS THE FILE
+     SURFACE. G-M4-1 max_distance is 0.000000 across all five cases - and for the first time all
+     five are TERMINAL arms (iteration 29's .003766 was a rolling stand-in on the case that could
+     not publish). WER, DER and speaker accuracy agree to six decimal places on the trio.
+  F2 D-M4-3 PREDICTED FIVE NUMBERS AND THE BATCH REPRODUCED ALL FIVE. .126177 / .122411 /
+     .949153 / .951036 / .013000 - the ruling was made from a prototype's arithmetic before the
+     deployed run existed, and it was exact, not approximately right. That is what makes the two
+     failing gates a recorded trade rather than a surprise.
+  F3 THE DEPLOYMENT MOVED EXACTLY WHERE IT WAS SUPPOSED TO AND NOWHERE ELSE. Against the
+     iteration-29 batch, 12 of 12 file arms and 10 of 12 live arms are BYTE-IDENTICAL; the two
+     that moved are the only two sessions whose terminal proposal contained a seam. The 5-minute
+     case has THREE windows and two seams and still reports seam 0/0/0, so the identity is not
+     "no overlaps existed" - it is "the rule fired only where an overlap did".
+  F4 THE SUCCESS COSTS THE CAMPAIGN ITS ONLY REAL-TRAFFIC FAILURE-PATH EVIDENCE. No session in
+     this batch refuses, so G-M4-7 is scored from the in-memory failure arm again and G-M4-13's
+     string set loses `failed` / `segments_out_of_order`. The iteration-29 bundle stays checked in
+     as the deployed instance of a terminal failure preserving and exporting the rolling surface.
+- Learned:
+  - G-M4-8 reads the restart record from the BATCH ROOT (<fresh-root>/restart-post-ps.txt,
+    restart-utc.txt, restart-{pre,post}.json). Capturing them beside the batch instead of inside
+    it cost one scoring pass: the gate reported present=false on a batch that WAS taken behind a
+    restart. Recorded in context.md's Validation block as part of the command.
+  - A descriptor that does not move is not proof that nothing shipped. The seam resolution is
+    inside TerminalTranscriptFinalizer._segments_of, so /api/runtime cannot see it; what proves
+    the build reached the service is the seam_* accounting on the deployed terminal events
+    (seam_merged_segments=1 on exactly the two 3-minute sessions) and the byte-level arm
+    comparison against the previous batch.
+  - descriptor.source_revision is a MANIFEST declaration, not a build stamp: it still reads
+    iteration 27's 29681e04 while the deployed code is 22dc5b8. Nothing reads it
+    (live_service_replay.py:765 checks it only when a caller supplies an expected revision, and no
+    driver does), and re-finalizing the manifest to refresh it would perturb provider_manifest_hash
+    for six instruments' checked-in artifacts. Left alone, recorded in the bundle's restart.txt.
+- BLOCKER: none. M4's PRD-named rows are all met with evidence; G-M4-3 / G-M4-4 are the campaign's
+  own added no-regression-vs-rolling gates and their disposition is D-M4-3, recorded before the
+  numbers existed. The M4 row stays UNSIGNED for morning review.
+- Next: candidate 9 (M5), the last open item: 9a the campaign report
+  (evidence/live-convergence-0824/CAMPAIGN_REPORT.md, per-milestone before/after against
+  prototypes/live-file-gap-baseline-20260824/), 9b the plan §18 row annotations, 9c the dated
+  verdict entry in docs/design-streaming-diarization.md §7. The report must state which gates the
+  campaign ADDED beyond the PRD's rows rather than blur the two sets.

@@ -1,0 +1,14 @@
+service restart the batch was taken behind
+
+stopped   pid 86813  (the pre-8e-2 build, up since 2026-08-25 10:14:53 local)
+launched  pid 37488  at 2026-08-25T15:28:31Z  (same argv, log web_cli-campaign-20260825-112831.log)
+build     repo HEAD 22dc5b8de3ed31a94dcb1b93d2256f8cb8ac75d8, working tree CLEAN
+
+/api/runtime descriptor: 62 fields before, 62 after, 0 differing
+  (identical, field for field)
+
+Reading: the seam resolution lives inside TerminalTranscriptFinalizer._segments_of and is
+not a declared capability, so nothing in the descriptor can see it. The manifest was NOT
+re-finalized, so descriptor.source_revision still reads 29681e04... (iteration 27's
+declaration) while the deployed code is 22dc5b8. No driver reads that field; the campaign's
+provenance for this batch is this file plus the ps records beside it.

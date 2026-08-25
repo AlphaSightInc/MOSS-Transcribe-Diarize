@@ -1,0 +1,3 @@
+gates failing on the scored batch: ['G-M4-3', 'G-M4-4']
+reactions are measured from the converged fixture, not from the scored batch
+selftest: 0 failures over 14 gates

@@ -1,0 +1,36 @@
+Every arm of this batch against the SAME arm of the iteration-29 batch
+(evidence/live-convergence-0824/M4-e4-exit/passes) - the batch taken on the pre-8e-2 build.
+Same audio, same protocol, one production change between them: the terminal seam resolution.
+
+--- file-hypothesis.jsonl ---
+SAME  keyu5m-A/file-hypothesis.jsonl                     574020bf7ea2a744
+SAME  keyu5m-B/file-hypothesis.jsonl                     574020bf7ea2a744
+SAME  three-minute/adam3m-A/file-hypothesis.jsonl        0df633b50ea8befe
+SAME  three-minute/adam3m-B/file-hypothesis.jsonl        0df633b50ea8befe
+SAME  trio-A/acquired_jamie_dimon/file-hypothesis.jsonl  e567148dd1d1d82f
+SAME  trio-A/lex_bill_ackman/file-hypothesis.jsonl       8d33dba7835dcb55
+SAME  trio-A/lex_javier_milei/file-hypothesis.jsonl      f8c75b8d1f6970b8
+SAME  trio-A/lex_keyu_jin/file-hypothesis.jsonl          01431a29e5eb546f
+SAME  trio-B/acquired_jamie_dimon/file-hypothesis.jsonl  e567148dd1d1d82f
+SAME  trio-B/lex_bill_ackman/file-hypothesis.jsonl       8d33dba7835dcb55
+SAME  trio-B/lex_javier_milei/file-hypothesis.jsonl      f8c75b8d1f6970b8
+SAME  trio-B/lex_keyu_jin/file-hypothesis.jsonl          01431a29e5eb546f
+12 of 12 byte-identical
+
+--- live-hypothesis.jsonl ---
+SAME  keyu5m-A/live-hypothesis.jsonl                     574020bf7ea2a744
+SAME  keyu5m-B/live-hypothesis.jsonl                     574020bf7ea2a744
+DIFF  three-minute/adam3m-A/live-hypothesis.jsonl        e098a24308826d0b
+DIFF  three-minute/adam3m-B/live-hypothesis.jsonl        e098a24308826d0b
+SAME  trio-A/acquired_jamie_dimon/live-hypothesis.jsonl  a0e17e36404ae861
+SAME  trio-A/lex_bill_ackman/live-hypothesis.jsonl       8d33dba7835dcb55
+SAME  trio-A/lex_javier_milei/live-hypothesis.jsonl      f8c75b8d1f6970b8
+SAME  trio-A/lex_keyu_jin/live-hypothesis.jsonl          01431a29e5eb546f
+SAME  trio-B/acquired_jamie_dimon/live-hypothesis.jsonl  04f6cb3713a46f64
+SAME  trio-B/lex_bill_ackman/live-hypothesis.jsonl       8d33dba7835dcb55
+SAME  trio-B/lex_javier_milei/live-hypothesis.jsonl      f8c75b8d1f6970b8
+SAME  trio-B/lex_keyu_jin/live-hypothesis.jsonl          01431a29e5eb546f
+10 of 12 byte-identical
+
+The only two arms that moved are the only two sessions that had a seam to resolve
+(three-minute/adam3m-{A,B}); file mode did not move at all.

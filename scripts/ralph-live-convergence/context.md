@@ -86,14 +86,18 @@
 
 ## Current state
 
-(2026-08-25, after iteration 31)
+(2026-08-25, after iteration 32)
 
-- Deployed dev stack up: `web_cli` **pid 86813, restarted 2026-08-25 10:14:58 local /
-  14:15:08Z** onto the SAME E4 build and manifest (repo HEAD `29681e0` + iteration 27's working
-  tree; iteration 27's process was pid 65689). That restart is iteration 29's and it changed
-  NOTHING - the descriptor is identical field for field either side
-  (`evidence/.../M4-e4-exit/passes/restart-{pre,post}.json`); its only purpose was G-M4-8's clock,
-  which defines cold as the first terminal pass in a fresh process at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 37488, restarted 2026-08-25 11:28:31 local /
+  15:28:31Z** onto **repo HEAD `22dc5b8` with a CLEAN tree** — i.e. the iteration-31 build, seam
+  resolution included (iteration 29's process was pid 86813). Descriptor **identical field for
+  field, 62 of 62** either side (`evidence/.../M4-e4-exit-2/passes/restart{,-pre,-post}*`): the
+  seam resolution is finalizer-internal and no declared capability can see it. **Provenance
+  caveat:** the live provider manifest was not re-finalized, so `descriptor.source_revision` still
+  reads iteration 27's `29681e04…` while the deployed code is `22dc5b8`; no driver reads that
+  field (`live_service_replay.py:765` only checks it when a caller passes an expected revision,
+  and none do), so the batch's provenance is its `restart.txt` + `ps` records. Service at
+  `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
   4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after every
   restart (`evidence/.../M0d-paired-reacquisition/`, `.../M1-e1-exit/`, `.../M2-e2-exit/`
@@ -104,7 +108,10 @@
   `9600000`, `source_revision` `cc8f778a…` → `29681e04…`, `provider_manifest_hash` `46895832…` →
   `07e32598…`, and `config_hashes` identical (`combined_config_hash` is `f(decoder, endpoint,
   identity)` and cannot see retention) — `evidence/.../M4-deployed-terminal/restart-{pre,post}.txt`.
-  Restart again after any production change, and record it.
+  Restart again after any production change, and record it. **G-M4-8 reads the restart record from
+  the batch ROOT** (`<fresh-root>/restart-post-ps.txt`, `restart-utc.txt`, `restart-{pre,post}.json`):
+  capture those five files INTO the batch directory or the gate fails on a batch that was in fact
+  taken behind a restart (iteration 32 lost one scoring pass to exactly that).
 - Paired baseline (deployed stack, 2026-08-24): trio FILE WER .1039 / TBSA .9106 / DER .1021 /
   spk_acc .8979 vs LIVE .1999 / .8384 / .1764 / .8236; 5-min keyu FILE .0506/.0579(DER) vs
   LIVE .1464/.1315. Artifacts + drivers: `prototypes/live-file-gap-baseline-20260824/`.
@@ -982,35 +989,52 @@
   documented rolling-ring high-water readings, the portal's documented poll-observation sequence,
   and Python set-repr ordering inside a rejected arm's message - whose gate ids are compared
   anyway).
-- **M4 IS SCORED (iteration 29): 11 of 14 gates pass, and the three misses are ONE refusal on ONE
-  case.** `verify_m4_exit.py` over a fresh batch of all five gated cases (10 scored sessions, two
-  runs each, `14:15:20Z -> 14:41:57Z`), evidence `evidence/live-convergence-0824/M4-e4-exit/`.
-  - **Terminal IS the paired file arm on four of five cases, both runs, delta `0.000000` on WER,
-    DER, speaker accuracy and coverage** - P1 held rather than a bound being cleared. Trio mean WER
-    `.131357 -> .103946`, five-minute `.082079 -> .050616` (P2). Trio mean DER `.111278 -> .102111`,
-    trio mean speaker accuracy `.888722 -> .897889` (P4), with `lex_javier_milei` paying D-M4-2's
-    price exactly as predicted (`.117333 -> .151833`).
-  - **`lex_adam_frank` (180 s, the only two-window meeting) decoded the whole tape, reproduced the
-    file arm's 38 segments and 1507 tokens, and was REFUSED publication `segments_out_of_order`.**
-    File mode's own windows `[0,150)` + `[120,180)` publish `[131.19,136.29]` then `[133.95,136.62]`
-    - a 2.34 s overlap at the seam - and `LiveSession._text_revision_refusal` forbids overlapping
-    segments. G-M4-2 / G-M4-6 / G-M4-9 fail on that case and nowhere else. One overlapping pair in
-    all 12 file arms of the batch (`M4-e4-exit/three-minute-seam.txt`).
-  - **The failure path behaved as E4 promised**, so the batch is also the first DEPLOYED instance of
-    G-M4-7: `finalization_status=failed`, the rolling surface survived and exported (`.122411`), the
-    tape was released after the evidence, the refusal is on the stream by name, accounting exact.
-  - **That case's gate set is unsatisfiable either way** - rolling misses G-M4-2 by `.026667`,
-    terminal-==-file would miss G-M4-3 by `.003766` (TWO words of 526) and G-M4-4 by `.001883`
-    (one word) while buying `.026667` DER, `+.026667` speaker accuracy and `+.024238` coverage.
-    D-M4-2's arithmetic on a second case; an owner ruling, not a bound.
-  - Green on all 10 sessions: tape fidelity (digest == corpus PCM, zero gaps), accepted ==
-    accounted == terminal accounted, retention (peak `accepted x 2`, max `9 600 000`, released after
-    the evidence, zero survive), combined RTF max `.167161` with depth <= 1 and the terminal pass
-    starting one seq after `session_closed`, file mode byte-identical both readings (`ad381d8b...`
-    unmoved across fourteen production changes), and no meeting word on any terminal event.
-  - **Cold vs warm readiness (G-M4-8)**: cold terminal decode `2.182 s` (RTF `.036372`), warm RTF
-    p50 `.035081` / p95 `.038011` over 9 sessions. P8 is FALSIFIED in its premise - there is no
-    local model to load, so cold sits inside the warm distribution.
+- **M4 IS RE-SCORED ON THE SEAM-RESOLVED BUILD (iteration 32): 12 of 14 gates pass, and the two
+  misses are the D-M4-3 trade on ONE case.** `verify_m4_exit.py` over a fresh batch of all five
+  gated cases behind a restart onto HEAD `22dc5b8` (10 scored sessions, two runs each,
+  `15:29:18Z -> 15:55:59Z`), evidence `evidence/live-convergence-0824/M4-e4-exit-2/`.
+  **Every PRD-named M4 requirement is now met with evidence**; G-M4-3 / G-M4-4 are the campaign's
+  own added no-regression-vs-rolling gates, not PRD M4 rows.
+  - **Terminal IS the paired file arm on ALL FIVE cases on WER (`max_distance 0.000000`)** and on
+    four of five on DER; the trio's live surface equals its file surface to 6 dp on WER
+    (`.103946`), DER (`.102111`) and speaker accuracy (`.897889`). Against the campaign's opening
+    baseline: trio live WER `.1999 -> .103946`, trio live DER `.1764 -> .102111`, five-minute
+    live WER `.1464 -> .050616`.
+  - **`lex_adam_frank` publishes now**: `outcome=finalized applied=true segments=37
+    seam_merged_segments=1 seam_dropped_segments=0 seam_displaced_samples=0`, the file arm's 546
+    words exactly. G-M4-2 recovers at `.013000` (inside `.020`), G-M4-6 and G-M4-9 go 10/10, and
+    G-M4-3 (`.122411 -> .126177`, two words of 526) / G-M4-4 (`.951036 -> .949153`, one word) fail
+    there instead - **D-M4-3, ruled before the numbers existed**. That `.013000` DER distance is
+    the duplication bonus the file arm still collects (iteration 30 F1), not a quality gap:
+    evaluator v2 reads `.054079` for both.
+  - **The deployment moved exactly where it was supposed to and nowhere else**: against the
+    iteration-29 batch, 12 of 12 file arms and 10 of 12 live arms are BYTE-IDENTICAL; the two that
+    moved are the only two sessions with a seam. The 5-minute case has three windows and two
+    seams and still reports `0/0/0` - so the identity is not "no overlaps existed", it is "the
+    rule fired only where an overlap did" (`M4-e4-exit-2/hypothesis-identity.txt`,
+    `seam-accounting.txt`).
+  - No refusal anywhere in the batch, so G-M4-7 is again scored from the in-memory failure arm
+    rather than a real one, and `G-M4-13`'s string set loses `failed` / `segments_out_of_order`.
+  - Cold terminal decode `2.1536 s`; warm RTF p50 `.034667` / p95 `.036925` over 9 sessions; max
+    combined RTF `.172669`. `pytest tests/ -q` on the deployed tree: 1157 passed, 2 skipped, 411
+    subtests.
+- **The iteration-29 scoring, superseded but still the reason the seam work happened**
+  (evidence `evidence/live-convergence-0824/M4-e4-exit/`): 11 of 14, three misses from ONE refusal.
+  - P1 (terminal == file exactly, not merely inside the bound), P2 (trio WER `.131357 -> .103946`,
+    5-min `.082079 -> .050616`) and P4 held on the four cases that published, with
+    `lex_javier_milei` paying D-M4-2's price exactly as predicted (DER `.117333 -> .151833`).
+  - `lex_adam_frank` decoded the whole tape and reproduced the file arm's 38 segments and 1507
+    tokens, and the surface REFUSED it `segments_out_of_order`: file mode's own windows publish
+    `[131.19,136.29]` then `[133.95,136.62]`, a 2.34 s overlap, and `_text_revision_refusal`
+    forbids overlapping segments. That is the ONLY overlapping pair in all 12 file arms
+    (`M4-e4-exit/three-minute-seam.txt`) and the reason candidates 8e/8e-2 exist.
+  - **The only DEPLOYED instance of G-M4-7 the campaign has**: `finalization_status=failed`, the
+    rolling surface survived and exported (`.122411`), the tape released after the evidence, the
+    refusal on the stream by name, accounting exact. The iteration-32 batch has no refusal in it,
+    so this artifact stays the real-traffic evidence for the failure path.
+  - **P8 is FALSIFIED in its premise** - there is no local model to load, so cold (`2.182 s`,
+    RTF `.036372`) sits inside the warm distribution (p50 `.035081` / p95 `.038011`). Iteration
+    32 reproduced that on a second batch.
 - **THE SEAM REFUSAL IS ANSWERED (iteration 30) AND SHIPPED (iteration 31): `merge_overlapping`, 6 of 6
   preregistered gates.** `measure_seam_overlap.py` over the iteration-29 batch, five arms, no MOSS
   request; evidence `evidence/live-convergence-0824/M4-seam-overlap/`, preregistration
@@ -1029,12 +1053,13 @@
     later-ends-earlier, unsorted, cross-speaker); the identity on all 10 non-overlapping file arms;
     no arm emits a boundary the input never claimed; admissibility checked by calling the
     PRODUCTION `LiveSession._text_revision_refusal`, not a restatement of it.
-  - **D-M4-3 (owner ruling, recorded in the bundle):** shipping it is expected to take M4 from 11
-    to **12 of 14** - G-M4-2 / G-M4-6 / G-M4-9 recover on that case, and G-M4-3 / G-M4-4 fail there
-    instead (`.126177` vs rolling `.122411`; `.949153` vs `.951036`). Recommended: take it. The
-    milestone's subject is terminal convergence, G-M4-1 is honoured at `0.000000`, and a meeting
-    that cannot finalize at all is the worse outcome.
-- **THE SEAM RESOLUTION IS IN PRODUCTION (iteration 31), NOT YET DEPLOYED.**
+  - **D-M4-3 (owner ruling, recorded in the bundle):** shipping it takes M4 from 11 to
+    **12 of 14** - G-M4-2 / G-M4-6 / G-M4-9 recover on that case, G-M4-3 / G-M4-4 fail there
+    instead (`.126177` vs rolling `.122411`; `.949153` vs `.951036`). Recommended: take it; the
+    milestone's subject is terminal convergence and a meeting that cannot finalize at all is the
+    worse outcome. **Iteration 32's batch confirms every one of those five numbers to 6 dp** -
+    the prediction was exact, not approximately right.
+- **THE SEAM RESOLUTION IS IN PRODUCTION (iteration 31) AND DEPLOYED (iteration 32).**
   `resolve_terminal_overlaps` + `TerminalSeamResolution` in `live_transcript_convergence.py`,
   called from `TerminalTranscriptFinalizer._segments_of` on the decoder's LOCAL speakers and
   BEFORE `terminal_speaker_mapping`; three accounting fields (`seam_merged_segments`,
@@ -1059,8 +1084,8 @@
     one-to-one an inflated weight can take a name away from the speaker whose audio earned it
     (constructed shape in `TerminalSeamAndSpeakerNamesTest`: both names swap). On the corpus's own
     seam no name moves - checked, not assumed.
-- Rest of the ladder: 8f (redeploy + re-score M4) is open, then M5 (evidence + records),
-  unimplemented.
+- Rest of the ladder: **only M5 (evidence + records) is open**; M0-M4 are all measured, and M4's
+  PRD rows are all met (candidate 9).
 
 ## Validation
 
@@ -1259,7 +1284,12 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --selftest
 # M4 EXIT: score the 14 preregistered gates on a fresh batch of all five cases
 # (the batch needs the RUNNING service, ~27 min; restart the service FIRST if a cold
-#  readiness reading is wanted -- G-M4-8's clock is "the first terminal pass in a fresh process")
+#  readiness reading is wanted -- G-M4-8's clock is "the first terminal pass in a fresh process".
+#  Capture the restart INTO the batch root, which is where G-M4-8 reads it from:
+#    curl -sk -H "Authorization: Bearer $(cat ~/.local/share/moss-transcribe-diarize/g3/shared-token)" \
+#      https://127.0.0.1:7861/api/runtime > <root>/restart-pre.json   # and restart-post.json after
+#    ps -o pid,lstart,command -p <pid> > <root>/restart-{pre,post}-ps.txt
+#    date -u +%Y-%m-%dT%H:%M:%SZ > <root>/restart-utc.txt             # at launch time)
 prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m4-exit-<stamp>
 prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-exit-<stamp> \
   adam3m lex_adam_frank \
@@ -1269,11 +1299,11 @@ mkdir /tmp/m4-exit-<stamp>/three-minute && \
 # the gates themselves (no GPU, no service, no MOSS request; works on the checked-in copy too)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
-  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --output /tmp/m4-gates.json
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit-2/passes --output /tmp/m4-gates.json
 # 14 reactions, each from a fixture in which the refused pass published
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
-  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --selftest
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit-2/passes --selftest
 # M4 step 1: what must a terminal pass land on, and what does converging to file cost?
 # (no GPU, no service; prints ALREADY INSIDE for gates today's surface already satisfies,
 #  and MISSING COMPARATOR for lex_adam_frank)
@@ -1467,7 +1497,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    `remeasure_one_case.py --selftest`'s checked-in-shape comparison meaningful. Do NOT wait on
    `not_started` / `unavailable` / `failed` - each is already an answer and waiting on one
    spends the whole deadline on every ordinary run (mutations 7 and 8).
-8d. ~~**M4 exit: score the 14 gates**~~ - MEASURED iteration 29, **11 of 14 pass**.
+8d. ~~**M4 exit: score the 14 gates**~~ - MEASURED iteration 29, **11 of 14 pass**; SUPERSEDED by
+   candidate 8f's re-score on the seam-resolved build (12 of 14, `M4-e4-exit-2/`). This row stays
+   because its batch holds the campaign's only real-traffic G-M4-7 instance.
    `verify_m4_exit.py` (+ `--selftest`, 14 reactions from a converged fixture), verdict in
    `evidence/live-convergence-0824/M4-e4-exit/`. Terminal IS the paired file arm on four of five
    cases at `0.000000`; the three failures are ONE refused publication on `lex_adam_frank`
@@ -1500,13 +1532,14 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    deletes words the audio supports, and `drop_later` was measured and rejected. Do NOT delete
    `measure_seam_overlap.py --verify-production`; it is the only thing tying the shipped rule to
    the numbers that selected it.
-8f. **Redeploy and re-score the M4 exit on a fresh paired batch** - NEXT, and the lowest open
-   item. 8e-2 changed production, so the running `web_cli` (pid 86813) still serves the pre-8e-2
-   build: restart it per the Validation section and record the restart, then `verify_m4_exit.py
-   --fresh-root`, five cases, two runs. Expect **12 of 14**: G-M4-2 / G-M4-6 / G-M4-9 recover,
-   and `lex_adam_frank` fails G-M4-3 (`.126177` vs rolling `.122411`) and G-M4-4 (`.949153` vs
-   `.951036`) instead. That trade is D-M4-3, an owner ruling already recorded in the
-   M4-seam-overlap bundle - do NOT move a bound to avoid it (PRD: gates immutable mid-run).
+8f. ~~**Redeploy and re-score the M4 exit on a fresh paired batch**~~ - MEASURED iteration 32,
+   **12 of 14**, exactly as D-M4-3 predicted (see Current state). Evidence
+   `evidence/live-convergence-0824/M4-e4-exit-2/`. Do NOT re-run the batch hoping G-M4-3 / G-M4-4
+   go green: both runs agree to 6 dp, the deltas are two words and one word of a 526-word meeting,
+   and re-rolling until a gate passes is tuning the instrument to the answer. Do NOT move a bound
+   to avoid the trade (PRD: gates immutable mid-run). Do NOT re-finalize the live provider manifest
+   just to refresh `descriptor.source_revision` - nothing reads it, and a new
+   `provider_manifest_hash` would perturb the artifacts six instruments compare against.
 NEW EVIDENCE, from iteration 30, that outlives this candidate:
    **The deployed DER pays a bonus for publishing the same audio twice.**
    `evaluation.calculate_diarization` computes `overlapped_by_reference` by summing the overlap
@@ -1516,9 +1549,15 @@ NEW EVIDENCE, from iteration 30, that outlives this candidate:
    `2.34 / 180`. Evaluator v2 unions hypothesis intervals first and does not move (`.054079`
    either way). This is the plan §3.4 extent artifact in a new shape (duplication, not padding)
    and it belongs in the §18 record beside candidate 7d's decomposition.
-9. **M5 evidence + records** per PRD - the campaign report, the §18 annotations and the
-   `docs/design-streaming-diarization.md` §7 verdict entry. Writable for M0-M4 as they stand;
-   the M4 row is UNSIGNED and must carry 8e's disposition beside its 11 passing gates.
+9. **M5 evidence + records** per PRD - NEXT, and the only open item on the ladder: the campaign
+   report (`evidence/live-convergence-0824/CAMPAIGN_REPORT.md`, per-milestone before/after against
+   `prototypes/live-file-gap-baseline-20260824/`), the plan's §18 row annotations, and the dated
+   verdict entry in `docs/design-streaming-diarization.md` §7. What each milestone's row must
+   carry, from the measured record: M0 4/5 with G2 disposed by owner ruling; M1 5/6 with G-M1-1
+   disposed; M2 8/8; M3 14/14 + D-M3-2; M4 **12 of 14** with D-M4-3 beside G-M4-3 / G-M4-4 and
+   every PRD-named M4 row met. The M4 row is UNSIGNED (morning review signs it), and the report
+   must say which gates the campaign ADDED beyond the PRD rather than blur the two sets.
+   Sub-steps, in order: 9a the campaign report, 9b the §18 annotations, 9c the §7 verdict entry.
 
 ## Non-candidates
 
