@@ -16,6 +16,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_production_salvage.py` | does the shipped `classify_live_transcript` decide what §9.1 measured? | **yes** — 184 corpus spans + 5 constructed spans agree with the adjudicated O1 column; `evidence/live-convergence-0824/M1-salvage-production/` |
 | `run_paired_passes.sh` + `verify_m1_exit.py` | does the M1 build clear the plan E1 exit gates on the deployed service? | 5 of 6 — G-M1-1 misses by .0023 on a pre-M1 decode flip; `evidence/live-convergence-0824/M1-e1-exit/` |
 | `attribute_wer_delta.py` | which published segment is a WER delta actually made of? | measures each segment's cost by re-scoring without it — bill's salvage is worth −.034091, the S00 flip +.011363 |
+| `verify_adr_text_finalization.py` | does the text-finalization ADR still quote the plan's decisions *verbatim*, as Appendix B Q8 required? | **yes** — D1–D7 byte-identical, one contiguous block, D8–D10 absent; `evidence/live-convergence-0824/M2-text-finalization-adr/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -57,6 +58,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/attribute_wer_delta.py \
   <hypothesis.jsonl> --case lex_bill_ackman --drop 49.75:50.0
 ```
+
+```bash
+# E2 step 1: is docs/adr/0005 still the plan's D1–D7 verbatim? (exit 0 = yes; no service, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py
+```
+
+`verify_adr_text_finalization.py` reads the plan for every instance fact it needs — including
+*which* decisions the record must carry, parsed out of the Appendix B Q8 row's own wording — so
+amending the plan's decisions fails the check until the record is amended too. The check is
+symmetric: quoting one decision too many fails exactly as loudly as quoting one too few.
 
 `run_paired_passes.sh` supersedes `run_paired_reacquisition.sh` from M1 onward: same four
 sequential passes, plus the one discarded warm-up decode the campaign adopted after M0(d)

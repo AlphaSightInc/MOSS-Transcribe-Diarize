@@ -1,0 +1,3 @@
+?? docs/adr/0005-live-text-finalization-authority.md
+?? evidence/live-convergence-0824/M2-text-finalization-adr/
+?? prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py

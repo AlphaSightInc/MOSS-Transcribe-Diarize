@@ -639,3 +639,74 @@ appended at the iteration 4->5 boundary]
   E2 and it needs no measurement. Then the §10.2-§10.3 grid. Do NOT re-run the M1 passes hoping
   the pre-M1 decode flip goes away; the preregistration forbids re-rolling and the cause is the
   read-only 4070 Ti host.
+
+2026-08-25 iteration 9 (run 20260825-042645-70858) - M2 step 1: the text-finalization ADR (plan E2's
+  preregistered first step, Appendix B Q8).
+- Target: context.md candidate 6, the lowest open item. M0's G2 and M1's G-M1-1 are unsigned pending
+  an owner ruling and need no more code; the ladder's next unblocked work is E2, whose FIRST step is
+  the decision record, not the grid. No measurement is required for it and none was invented.
+- Files touched:
+  docs/adr/0005-live-text-finalization-authority.md                                (new, 270 lines)
+  prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py (new verifier)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                        (index row + command)
+  evidence/live-convergence-0824/M2-text-finalization-adr/{NOTES.md,verify-verbatim.txt,
+      mutations.txt,tree-status.txt,sha256.txt}                                     (new bundle)
+  (edited: scripts/ralph-live-convergence/context.md)
+- No file under moss_transcribe_diarize/ was touched. The PRD's file-mode byte-identity check has
+  nothing to compare here and is not claimed; no service restart was needed and none was performed.
+- What the record says, in one paragraph: D1-D7 appear byte-for-byte (spliced from the plan by
+  script, not retyped), and around them the record states the authority D7 asked someone to define --
+  TWO producers (the rolling converger over [0, canonical_through_sample), the terminal finalizer
+  once per session), ONE seam (LiveSession.apply_text_revision), SEVEN validations, FOUR snapshot
+  fields, SEVEN events, ZERO silent rewrites. Nothing else may change transcript text: not the
+  ADR-0002 identity sweep, not the portal, not export, not a decoder retry.
+- One override is recorded BESIDE the verbatim text instead of edited into it: D6's last sentence
+  ("Only E3 may promote one-second output") is superseded by Appendix B Q6, which deletes the
+  one-second preview from scope. D6's operative half -- do not move the 2.5 s cap while rolling text
+  is being proved -- stands and is now unconditional. Editing the quote would have broken the
+  verbatim contract; dropping the note would have left a superseded clause reading as live policy.
+- The record also carries an explicit "what this does NOT authorize" section, because an ADR that
+  only grants is an ADR that grows: no re-ASR inside an identity sweep (ADR-0002 L1/L2 keep that
+  clause intact), no redefinition of revised_transcript (label-only), no cap change, no evaluator-v2
+  promotion (D8), no extra VAD/embedding phases (D9), no tape-retention decision (Appendix B Q10
+  refines ADR-0003 and belongs THERE, recorded by the E4 step that implements it), and no authority
+  to ship an E2 arm whose gates fail (plan §10.4).
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py
+    exit 0. D1 240 B / D2 339 / D3 337 / D4 374 / D5 388 / D6 326 / D7 302, each appearing exactly
+    once; one contiguous 2318-byte block in plan order; D8, D9, D10 absent.
+  - Five mutations, all caught (evidence/.../mutations.txt), each on a /tmp copy so neither the
+    record nor the plan was edited: (M1) one word changed inside the record's D4 -> D4 + contiguous
+    fail; (M2) editor commentary inserted between D3 and D4 -> contiguous fails while every section
+    still matches, which is the point; (M3) D8 copied in -> "D8 excluded" fails; (M4) D7 dropped ->
+    D7 + contiguous fail; (M5) the PLAN's Q8 clause widened to D1-D8 with the record untouched ->
+    fails, i.e. the check is symmetric and a later plan amendment cannot drift away silently.
+- Learned:
+  - "Verbatim" is a checkable property, so it is checked rather than asserted. The verifier reads the
+    plan for all three instance facts it needs -- WHICH decisions are required (parsed out of the
+    Appendix B Q8 row's own "D1-D7 verbatim" wording), WHAT each says, and where each ends -- so no
+    decision range, heading text, or file offset is hard-coded in its logic.
+  - Requiring one CONTIGUOUS block, not seven independent matches, is what makes M2 fail. Seven
+    separate matches would let commentary be interleaved between quoted decisions, which is exactly
+    how a "verbatim" quote turns into a paraphrase over time.
+  - The exclusion half matters as much as the inclusion half. A record scoped by an owner to D1-D7
+    that quietly grows D8 has changed scope without anyone deciding to; M3 is the mutation that
+    proves that direction is covered.
+  - Two verifier bugs were found and fixed before the evidence was written, both cosmetic but both
+    fatal to the mutation runs: Path.relative_to raises on an out-of-repo /tmp copy (now falls back
+    to the absolute path), and $PIPESTATUS is a bashism that reads empty under this repo's zsh, so
+    the first mutation sweep recorded no exit codes at all. Redirect to a file, then read $?.
+- Deliberately NOT done, recorded so it is not lost: no pointer to the new ADR was added to
+  docs/design-streaming-diarization.md. M5 already edits that file for the dated campaign verdict;
+  the pointer goes in with it, one edit instead of two. If M5 changes shape, the pointer still has
+  to land somewhere or the record is orphaned.
+- Next: M2 step 2, the §10.2-§10.3 grid (context.md candidate 6b). Write compare_rolling_grid.py --
+  windows 10/5, 10/10, 15/7.5, 15/10 x stitchers char/uniform/lexical, reconciler truth-blind,
+  starting from prototypes/live-file-gap-context/proto_context_arms.py's lexical stitcher (arm a2,
+  the reference candidate at trio WER .1289). PREREGISTER the questions and the §10.4 selection rule
+  (cheapest arm passing G1-G3 and the per-case gates, never TBSA alone; if no arm passes, no rolling
+  production code) before the first arm runs, as M1a and M1 did. Unlike this iteration the grid
+  decodes real audio: one in-flight request, and it must print every decode window, ownership region,
+  selected/dropped word, duplicate check, latency, decoded-audio work, rolling-PCM high-water mark,
+  endpoint counter delta, and final metric (§10.3).

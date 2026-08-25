@@ -1,0 +1,2 @@
+64559e79b26e703e23f428f6ad671f6ab58f8e4fc09268e295984b1fba94dd7f  docs/adr/0005-live-text-finalization-authority.md
+a7877d01d39e36126e7f110af58c1d52b3828b8341b6054532618f2b10badcff  docs/plans/live-mode-convergence-implementation-20260824.md

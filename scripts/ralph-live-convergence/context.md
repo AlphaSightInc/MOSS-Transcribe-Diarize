@@ -31,7 +31,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 8)
+(2026-08-25, after iteration 9)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -267,6 +267,27 @@
   holds the one-word decode `[0.00][S01]And.`, and "and" appears in any minute of English
   speech. G-M1-5 asks whether a refused span published a row inside its own bounds, with the
   salvaged spans as a positive control so it cannot pass vacuously.
+- **M2 STEP 1 DONE (iteration 9): the text-finalization ADR is written.**
+  `docs/adr/0005-live-text-finalization-authority.md` carries plan D1-D7 **byte-for-byte** (spliced
+  mechanically, not retyped) plus the authority D7 asked for, stated once: two producers (rolling
+  converger over `[0, canonical_through_sample)`, terminal finalizer once per session), one seam
+  (`LiveSession.apply_text_revision`), seven validations, four snapshot fields, seven events, zero
+  silent rewrites. One override is recorded beside the verbatim text rather than edited into it:
+  D6's "Only E3 may promote one-second output" is superseded by Appendix B Q6; D6's operative half
+  (do not move the 2.5 s cap while rolling text is being proved) is now unconditional. The record
+  also states what it does **not** authorize -- re-ASR inside an identity sweep, redefining
+  `revised_transcript`, cap changes, evaluator-v2 promotion, extra VAD/embedding phases,
+  tape retention (Q10 refines ADR-0003 and belongs there, at M4), and shipping an E2 arm whose
+  gates fail. `verify_adr_text_finalization.py` exit 0; five mutations caught. Evidence:
+  `evidence/live-convergence-0824/M2-text-finalization-adr/`.
+- The verbatim check is **symmetric and plan-driven**: it parses which decisions are required out of
+  the Appendix B Q8 row's own wording, so amending the plan's decisions fails the command until the
+  record is amended too, and quoting one decision too many fails as loudly as one too few. No
+  production code was touched, so the file-mode byte-identity check has nothing to compare and is
+  not claimed.
+- **Still owed to the new ADR: one pointer from `docs/design-streaming-diarization.md`.** Deliberately
+  deferred to M5, which already edits that file for the dated campaign verdict -- one edit, not two.
+  If M5 changes shape, the pointer still has to land somewhere or the record is orphaned.
 - Rest of the ladder (M2-M5) unimplemented; working tree carries the plan, evidence prototypes,
   and this scaffold.
 
@@ -321,6 +342,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   <live-hypothesis.jsonl> --case lex_bill_ackman --drop 49.75:50.0
 # salvage tests (table over the 10 zero-parse decodes + 5 constructed spans, and the seam)
 .venv/bin/python -m pytest tests/test_live_transcript_salvage.py tests/test_live_pipeline_seams.py -q
+# E2 step 1: is the text-finalization ADR still the plan's D1-D7 verbatim? (exit 0 = yes)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_adr_text_finalization.py
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -351,9 +375,22 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    one open item and it needs an owner ruling, not more code (see Current state). Do NOT re-run
    the passes hoping the pre-M1 decode flip goes away; that is tuning the instrument to the
    answer, and the preregistration forbids it.
-6. **M2 ADR then grid - NEXT**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
-   (Appendix B Q8); then run `compare_rolling_grid.py` per plan §10.3, starting from
-   `proto_context_arms.py`'s lexical stitcher; then production per plan §10.5 order.
+6. ~~**M2 step 1: the text-finalization ADR**~~ - DONE iteration 9 (see Current state). Appendix B
+   Q8's precondition for E2 implementation is satisfied and mechanically checked.
+6b. **M2 step 2: the §10.2-§10.3 grid - NEXT.** Write
+   `prototypes/streaming-diarization/live-convergence/compare_rolling_grid.py`: windows 10/5,
+   10/10, 15/7.5, 15/10 x stitchers char/uniform/lexical, reconciler truth-blind, starting from
+   `prototypes/live-file-gap-context/proto_context_arms.py`'s lexical stitcher (arm `a2`, the
+   reference candidate at trio WER .1289). Preregister the questions and the §10.4 selection rule
+   (**cheapest arm passing G1-G3 and the per-case gates**, never TBSA alone; if no arm passes, no
+   rolling production code) BEFORE the first arm runs, as M1a/M1 did. The grid decodes real audio,
+   so it costs GPU: one in-flight request, and it must print every decode window, ownership region,
+   selected/dropped word, duplicate check, latency, decoded-audio work, rolling-PCM high-water mark,
+   endpoint counter delta, and final metric (§10.3).
+6c. **M2 step 3: production per plan §10.5 order** (M2 converger -> M3 word-revision authority ->
+   M5 `submit_live_refinement` -> wire base commits -> snapshot/event serialization -> portal
+   `effective_transcript` -> export switch **last**, only after terminal/effective export tests
+   pass, in the same reviewed change). The ADR of step 1 is the governing record for all of it.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

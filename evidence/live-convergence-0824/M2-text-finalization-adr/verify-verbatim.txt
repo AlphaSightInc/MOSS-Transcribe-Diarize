@@ -1,0 +1,19 @@
+plan            : docs/plans/live-mode-convergence-implementation-20260824.md
+record          : docs/adr/0005-live-text-finalization-authority.md
+required range  : D1-D7 (read from the plan's own verbatim clause)
+decisions found : D1, D2, D3, D4, D5, D6, D7, D8, D9, D10
+
+  D1 verbatim   OK      240 bytes  ### D1 — Three transcript authorities
+  D2 verbatim   OK      339 bytes  ### D2 — Preserve immutable base commits
+  D3 verbatim   OK      337 bytes  ### D3 — Separate word revisions from label revisions
+  D4 verbatim   OK      374 bytes  ### D4 — Monotonic rolling prefix, not arbitrary patches
+  D5 verbatim   OK      388 bytes  ### D5 — Longer witness owns its speaker evidence
+  D6 verbatim   OK      326 bytes  ### D6 — Keep 2.5 seconds until rolling text ships green
+  D7 verbatim   OK      302 bytes  ### D7 — Terminal re-ASR requires a new decision record
+
+  contiguous block  OK    2318 bytes, one block, in plan order
+  D8 excluded   OK    not quoted  ### D8 — Current TBSA remains compatibility evidence, not sole promotion authority
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+PASS  the record carries D1-D7 exactly as the plan states them, and nothing else

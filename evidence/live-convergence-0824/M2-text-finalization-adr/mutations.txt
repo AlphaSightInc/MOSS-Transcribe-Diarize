@@ -1,0 +1,78 @@
+Mutation checks for verify_adr_text_finalization.py  (2026-08-25, iteration 9)
+Every mutation is applied to a COPY under /tmp; the real record and plan are never edited.
+
+=== M1: one word changed inside the record's copy of D4 (duplicated -> duplicate) ===
+  D4 verbatim   FAIL  appears 0x  ### D4 — Monotonic rolling prefix, not arbitrary patches
+  D5 verbatim   OK      388 bytes  ### D5 — Longer witness owns its speaker evidence
+  D6 verbatim   OK      326 bytes  ### D6 — Keep 2.5 seconds until rolling text ships green
+  D7 verbatim   OK      302 bytes  ### D7 — Terminal re-ASR requires a new decision record
+
+  contiguous block  FAIL  found 0x
+  D8 excluded   OK    not quoted  ### D8 — Current TBSA remains compatibility evidence, not sole promotion authority
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+FAIL
+  - D4 appears 0 times in the record, expected exactly 1
+  - the required decisions are not one contiguous block in plan order (interleaved commentary would let the record drift from the plan silently)
+exit=1
+
+=== M2: editor commentary inserted between D3 and D4 in the record ===
+  D3 verbatim   OK      337 bytes  ### D3 — Separate word revisions from label revisions
+  D4 verbatim   OK      374 bytes  ### D4 — Monotonic rolling prefix, not arbitrary patches
+  D5 verbatim   OK      388 bytes  ### D5 — Longer witness owns its speaker evidence
+  D6 verbatim   OK      326 bytes  ### D6 — Keep 2.5 seconds until rolling text ships green
+  D7 verbatim   OK      302 bytes  ### D7 — Terminal re-ASR requires a new decision record
+
+  contiguous block  FAIL  found 0x
+  D8 excluded   OK    not quoted  ### D8 — Current TBSA remains compatibility evidence, not sole promotion authority
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+FAIL
+  - the required decisions are not one contiguous block in plan order (interleaved commentary would let the record drift from the plan silently)
+exit=1
+
+=== M3: D8 copied into the record (scope widened past the owner's D1-D7) ===
+
+  contiguous block  OK    2318 bytes, one block, in plan order
+  D8 excluded   FAIL  quoted but outside D1-D7  ### D8 — Current TBSA remains compatibility evidence, not sole promotion authority
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+FAIL
+  - D8 is quoted verbatim but the owner scoped the record to D1-D7
+exit=1
+
+=== M4: D7 dropped from the record ===
+  D4 verbatim   OK      374 bytes  ### D4 — Monotonic rolling prefix, not arbitrary patches
+  D5 verbatim   OK      388 bytes  ### D5 — Longer witness owns its speaker evidence
+  D6 verbatim   OK      326 bytes  ### D6 — Keep 2.5 seconds until rolling text ships green
+  D7 verbatim   FAIL  appears 0x  ### D7 — Terminal re-ASR requires a new decision record
+
+  contiguous block  FAIL  found 0x
+  D8 excluded   OK    not quoted  ### D8 — Current TBSA remains compatibility evidence, not sole promotion authority
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+FAIL
+  - D7 appears 0 times in the record, expected exactly 1
+  - the required decisions are not one contiguous block in plan order (interleaved commentary would let the record drift from the plan silently)
+exit=1
+
+=== M5: the PLAN's Q8 clause widened to D1-D8; the record no longer satisfies it ===
+
+  contiguous block  FAIL  found 0x
+  D9 excluded   OK    not quoted  ### D9 — Five-phase processing is uncertainty-routed only
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+FAIL
+  - D8 appears 0 times in the record, expected exactly 1
+  - the required decisions are not one contiguous block in plan order (interleaved commentary would let the record drift from the plan silently)
+exit=1
+
+=== control: unmutated record + unmutated plan ===
+  D10 excluded   OK    not quoted  ### D10 — No production implementation before plan approval
+
+PASS  the record carries D1-D7 exactly as the plan states them, and nothing else
+exit=0
