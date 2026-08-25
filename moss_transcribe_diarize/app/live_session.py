@@ -759,6 +759,37 @@ class LiveSession:
         self._notify_waiters()
         return self._text_revision_outcome(applied=True, revised_segments=len(segments))
 
+    def note_finalization(self, status: str) -> str:
+        """Publish where terminal finalization stands, for the words a *pass* can report.
+
+        `final` is deliberately unsayable here, and `not_started` too. A surface is final
+        because a terminal revision replaced it, and `apply_text_revision` above is the only
+        place that can know that; a surface that has not been finalized has never left the
+        state it was born in. What this method exists for is the other three (plan §7.3):
+        `running` while a pass is in flight, `failed` and `unavailable` when one ends without
+        one -- so a reader polling a closed meeting can tell "still converging" from "this is
+        all there will be".
+
+        Monotonic in the one direction that matters: a finalized surface is never un-
+        finalized, because the words a reader was shown do not become provisional again when
+        a straggler reports. The version bump is not decoration -- a polling client asks with
+        `since_version`, so a status change that did not bump would never reach it.
+        """
+
+        if status not in FINALIZATION_STATUSES:
+            raise ValueError(f"unknown finalization status {status!r}.")
+        if status in {"not_started", "final"}:
+            raise ValueError(
+                f"{status!r} is not a terminal pass's to report: a surface is final only "
+                "through a terminal text revision."
+            )
+        if self._finalization_status in {"final", status}:
+            return self._finalization_status
+        self._finalization_status = status
+        self._bump()
+        self._notify_waiters()
+        return self._finalization_status
+
     def _text_revision_refusal(self, proposal: TextRevisionProposal) -> str | None:
         """The word for why this proposal may not publish, or `None` if it may.
 

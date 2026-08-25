@@ -1,0 +1,38 @@
+== control: unmutated modules ==
+control: verify exit=0  pytest exit=0  12 passed in 2.20s
+    PASS: the meeting keeps its reader, its surface, and its last listener.
+== M1: the tape is released before its reader runs ==
+m1-release-before-terminal: verify exit=1  pytest exit=1  7 failed, 5 passed in 2.19s
+    FAIL (15)
+      - L3 healthy/lex_bill_ackman finalization_status is unavailable
+      - L3 healthy/lex_bill_ackman the surface is not all terminal: ['rolling']
+      - L3 healthy/lex_bill_ackman the pass wrote more than one revision
+      - L3 healthy/lex_bill_ackman the pass decoded audio that is not the meeting
+== M2: the stop request decodes the whole meeting ==
+m2-stop-decodes-inline: verify exit=1  pytest exit=1  3 failed, 9 passed in 2.22s
+    FAIL (8)
+      - L1 healthy/lex_bill_ackman the stop request decoded 1 times
+      - L1 healthy/lex_bill_ackman stop returned final
+      - L1 healthy/lex_bill_ackman 0 passes were scheduled
+      - L2 healthy/lex_bill_ackman at stop the surface already carries ['terminal']
+== M3: a failed pass leaves the status running ==
+m3-failed-pass-stays-running: verify exit=1  pytest exit=1  1 failed, 11 passed in 2.18s
+    FAIL (1)
+      - L6 decode_failure/lex_bill_ackman a pass that published nothing says running
+== M4: a meeting with no tape is silently not finalized ==
+m4-silent-when-unavailable: verify exit=1  pytest exit=1  2 failed, 10 passed in 2.21s
+    FAIL (4)
+      - L1 no_tape/lex_bill_ackman no-tape deployment says not_started
+      - L6 no_tape/lex_bill_ackman a pass that published nothing says not_started
+      - L5 no_tape/lex_bill_ackman a deployment with no tape said nothing about it
+      - L6 no_tape/lex_bill_ackman failure reasons [] != ['no_retained_tape']
+== M5: a finalized surface can be un-finalized ==
+m5-status-not-monotonic: verify exit=1  pytest exit=1  1 failed, 11 passed in 2.18s
+    FAIL (1)
+      - L7 healthy/lex_bill_ackman a second pass moved the status to unavailable
+== M6: a witness that died mid-meeting cancels terminal ==
+m6-rolling-death-cancels-terminal: verify exit=0  pytest exit=1  1 failed, 11 passed in 2.18s
+    PASS: the meeting keeps its reader, its surface, and its last listener.
+== control: restored modules ==
+control-restored: verify exit=0  pytest exit=0  12 passed in 2.17s
+    PASS: the meeting keeps its reader, its surface, and its last listener.

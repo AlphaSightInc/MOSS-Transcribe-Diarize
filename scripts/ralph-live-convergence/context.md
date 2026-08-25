@@ -892,11 +892,48 @@
   tape's bytes are OBSERVED on their way past (`stop_rolling`'s return is dropped at
   `live_service_runtime.py:758`; the tape is released inside `stop`) and the captured bytes are
   re-taped through the same production class with digest equality as the gate (G1).
-- Rest of the ladder (M4 step 3c, the M4 exit, M5) unimplemented; working tree carries the plan,
-  evidence prototypes, and this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build,
-  which is NO LONGER the current production tree (iterations 24-25 shipped code), so the next
-  deployed measurement needs a restart - and the manifest declaration above should land in the same
-  one.
+- **M4 STEP 3c SHIPPED (iteration 26): the meeting keeps its reader while its last listener runs.**
+  `LiveServiceRuntime` now owns plan §12.3's lifecycle. `stop` captures the `TerminalDecodePlan`
+  into `state.terminal_plan`, and at the end either schedules the pass (`_begin_terminal_locked`)
+  or releases the tape as before - so the release moved BEHIND the pass and happens on every one of
+  its endings. `_run_terminal` reads under the lock, decodes outside it, publishes under it again
+  (the refinement pump's shape, for the same reason), and `_publish_terminal_locked` offers the
+  proposal to `apply_text_revision` and writes the §7.4 events. Statuses: `note_finalization` on
+  `LiveSession` publishes `running` / `failed` / `unavailable` and CANNOT say `final` or
+  `not_started` - a surface is final only through a terminal revision - and it is monotonic, so a
+  straggler cannot un-finalize what a reader was shown. Two schedulers: `_ThreadTerminalScheduler`
+  (one daemon thread per pass; deliberately NOT the canonical pump's coalescing scheduler, which
+  would drop one of two simultaneous meetings) and `_ManualTerminalScheduler` for tests/drivers.
+  Nine gates PASS on three arms x three cases: `verify_terminal_lifecycle.py`, evidence in
+  `evidence/live-convergence-0824/M4-terminal-lifecycle/`.
+- **The lifecycle costs the surface NOTHING**: the healthy arm reproduces iteration 25's terminal
+  numbers exactly (bill `.159091`, milei `.088000`, keyu `.064748` - the file arm's, to `1e-12` on
+  five axes), from `.198864` / `.096000` / `.100719` at stop. What is new is the runtime reading of
+  `G-M4-6` (stop returns `running` with ZERO terminal decodes issued and one pass scheduled),
+  `G-M4-7` (a failed pass says `failed` and preserves the identical rolling surface; a deployment
+  with no tape says `unavailable` / `no_retained_tape`), `G-M4-9` (a second pass cannot un-finalize),
+  `G-M4-10` (`session_tape_released` AFTER the terminal evidence, zero retained bytes, corpus
+  digest) and `G-M4-13` (every payload string is a name read out of the production sources).
+- **`RollingTranscriptConverger.stop` is now idempotent about ROLLING's ending**, and that is a
+  defect fix rather than tidying: a refinement defect calls `stop_rolling()` mid-meeting
+  (`_process_refinement_item`), so the old "already stopped -> return None" left exactly those
+  meetings with no plan and silently no terminal pass. Status / frontier / window counts freeze at
+  the first call; the extent stays the caller's, because that is the meeting's fact. Mutation M6
+  restores the old behaviour and is caught by tests ALONE - healthy corpus audio never takes the
+  branch.
+- **The shared driver now has one meeting-feeding loop.** `verify_runtime_rolling.feed_meeting`
+  carries the pacing rule and `run_case` calls it; `build_runtime` takes an optional
+  `terminal_finalizer` / `terminal_scheduler`. All SIX instruments that share the driver reproduce
+  their checked-in artifacts field for field and still pass their own gates
+  (`M4-terminal-lifecycle/inertness.txt`, four excluded categories named: wall-clock timings, the
+  documented rolling-ring high-water readings, the portal's documented poll-observation sequence,
+  and Python set-repr ordering inside a rejected arm's message - whose gate ids are compared
+  anyway).
+- Rest of the ladder (M4 step 3d deploy, the M4 exit, M5) unimplemented; working tree carries the
+  plan, evidence prototypes, and this scaffold. The deployed `web_cli` is still pid 44278 on the M2
+  build, which is NO LONGER the current production tree (iterations 24-26 shipped code), so every
+  deployed meeting still reads `not_started`; 8c-4 owes the wiring, the manifest declaration and the
+  restart together.
 
 ## Validation
 
@@ -1030,6 +1067,14 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_terminal_finalizer.py \
   --output /tmp/m4-terminal-finalizer.json
 prototypes/streaming-diarization/live-convergence/mutate_terminal_finalizer.sh /tmp/mut-terminal
+# M4 step 3c: does the RUNTIME run that pass without taking the meeting away? (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_terminal_lifecycle.py \
+  --output /tmp/m4-lifecycle.json
+prototypes/streaming-diarization/live-convergence/mutate_terminal_lifecycle.sh /tmp/lifecycle-mut
+.venv/bin/python -m pytest tests/test_live_terminal_lifecycle.py -q
+# do the SIX instruments that share verify_runtime_rolling still reproduce their artifacts?
+.venv/bin/python evidence/live-convergence-0824/M4-terminal-lifecycle/inertness.py
 ```
 
 
@@ -1207,13 +1252,28 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    makes `terminal == file` an identity instead of two configurations that must agree. Do NOT let a
    refused tape fall back to "whatever you hold": a healthy short tape would then publish words over
    a clock its audio never covered (mutation M5).
-8c-3. **M4 step 3c: the async lifecycle and its events.** D-M4-3's `finalization_status`
-   `not_started -> running -> final` (plus `failed` / `unavailable`, which the tape's own refusal
-   now has a producer for), the stop request returning before terminal completes, the three §7.4
-   `terminal_finalization_*` events, and the release moving to after terminal evidence is written.
-   This is the step that owes the DEPLOYED manifest its `bounds_config.max_tape_bytes` declaration
-   and a service restart (recompute `bounds_config_hash` / `component_config_hash`;
-   `combined_config_hash` is `f(decoder, endpoint, identity)` and does not move).
+8c-3. ~~**M4 step 3c: the async lifecycle and its events**~~ - SHIPPED iteration 26, nine gates
+   pass on three arms x three cases and the lifecycle costs the surface `0` (the healthy arm
+   reproduces iteration 25's terminal WERs exactly). `LiveServiceRuntime._begin_terminal_locked` /
+   `_run_terminal` / `_publish_terminal_locked` + `_ThreadTerminalScheduler`; `note_finalization`
+   on `LiveSession`; `stop_rolling` always answers; `RollingTranscriptConverger.stop` idempotent
+   about rolling's ending. Verdict in `evidence/live-convergence-0824/M4-terminal-lifecycle/`.
+   Do NOT move the release back into `stop`: the tape and its only reader are one lifetime, and
+   the mutation that splits them fails 15 gates. Do NOT let the stop request run the pass "since
+   it is fast on a 60 s meeting" - the 5-minute case is minutes of decode on a request a client
+   holds open (plan §12.3 last paragraph, M2). Do NOT re-couple the terminal plan to rolling
+   being alive at stop: a witness defect ends rolling mid-meeting and those are the meetings that
+   most need a terminal pass (mutation M6, tests only).
+8c-4. **M4 step 3d: DEPLOY the E4 build.** Wire `TerminalTranscriptFinalizer` into
+   `build_live_runtime_factory` (it must hold FILE MODE's own `WindowedRunner` and file mode's own
+   inference arguments - `web_cli` has the prompt / max_length / max_new_tokens / decoding /
+   temperature the `JobManager` uses, `build_live_runtime_factory` today gets only the raw runner
+   proxy, so the arguments have to be plumbed rather than guessed), declare
+   `bounds_config.max_tape_bytes` in the DEPLOYED manifest (recompute `bounds_config_hash` /
+   `component_config_hash` with `live_manifest_finalizer`; `combined_config_hash` is
+   `f(decoder, endpoint, identity)` and does not move), restart `web_cli`, and record the restart
+   plus the pre/post descriptor here. Without this the deployed service still reads `not_started`
+   on every meeting and 8d cannot be scored.
 8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
    `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
    directions, every bound quoted verbatim from its own row.

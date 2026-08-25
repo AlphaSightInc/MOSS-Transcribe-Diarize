@@ -24,6 +24,7 @@ imported by `moss_transcribe_diarize/`.
 | `remeasure_one_case.py` + `run_paired_case.sh` | can the three-minute case M4 gates (P-M4-A) be measured with the checked-in paired driver's shape rather than a new instrument? | **yes, and it is the one case where the rolling surface beats file mode on text** — rolling WER `.122411` vs file `.126177`, so `terminal == file` fails the preregistered G-M4-3/G-M4-4 there by `.003766` / `.001883`; `evidence/live-convergence-0824/M4-three-minute/` |
 | `verify_terminal_tape.py` + `mutate_terminal_tape.sh` | does a session now retain the complete mixed audio a terminal pass needs — all of it, only it, and no longer (P-M4-B)? | **yes** — tape digest equals the corpus digest and a read-back differs in `0` samples on all three trio cases, peak `accepted x 2` bytes, released to `0` bytes with the meeting, and declaring it changes nothing the meeting publishes; `evidence/live-convergence-0824/M4-terminal-tape/` |
 | `verify_terminal_finalizer.py` + `mutate_terminal_finalizer.sh` | handed the paired file arm's own decode, does the terminal adapter publish the paired file arm's own surface — and how should a terminal pass name its speakers? | **yes, delta `0.000000` on WER, DER, coverage, text-speaker accuracy and content recall, 3/3 cases**; and the naming policy is decided by measurement — the per-segment projection costs `+.38…+.57` DER, so terminal names speakers **per speaker** (ADR-0005 D8); `evidence/live-convergence-0824/M4-terminal-finalizer/` |
+| `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` | does the RUNTIME give a meeting its last listener without taking the meeting away first (plan §12.3, D-M4-3)? | **yes** — the stop request returns `running` with zero terminal decodes issued, the surface a reader polls stays the rolling one for the whole interval, the pass then publishes the file arm's surface to `1e-12`, and the tape is released *after* the terminal evidence; a failed pass says `failed` and keeps the rolling surface, a deployment with no tape says `unavailable` with a reason; `evidence/live-convergence-0824/M4-terminal-lifecycle/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -629,4 +630,62 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 
 # every mutation, with the production file restored on exit
 prototypes/streaming-diarization/live-convergence/mutate_terminal_finalizer.sh /tmp/mut-terminal
+```
+
+## `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` — iteration 26, M4 step 3c: the lifecycle
+
+**Question.** The adapter is measured (above): handed the file arm's decode it publishes the
+file arm's surface. Does the *meeting* get one — asynchronously, without the stop request
+waiting for it, without the surface going blank, and without the audio being thrown away
+before its only reader runs (plan §12.3, §7.3, §7.4; D-M4-3)?
+
+**Answer: yes, and the lifecycle costs the surface nothing.** Trio, three arms per case, real
+runtime, replayed decodes, zero MOSS requests:
+
+| arm | at stop | after the pass | trio WER at stop → after |
+|---|---|---|---|
+| `healthy` | `running`, 0 terminal decodes, 1 pass scheduled | `final`, all-`terminal` authority | `.198864/.096000/.100719` → `.159091/.088000/.064748` (the file arm's, to `1e-12`) |
+| `decode_failure` | `running` | `failed`, reason `RuntimeError` | unchanged, surface identical to the rolling one |
+| `no_tape` | `unavailable`, reason `no_retained_tape` | `unavailable` | unchanged |
+
+Nine gates (L1–L9) map onto `G-M4-6`, `G-M4-7`, `G-M4-9`, `G-M4-10` and `G-M4-13`; the exit
+still scores those on a fresh deployed pass with a real decoder. The healthy numbers are
+iteration 25's `mapped` arm exactly, which is the claim: production driving the pass changes
+nothing about what the pass produces.
+
+**Two design facts came out of building it.**
+
+*Rolling and the meeting do not end at the same moment.* A refinement defect calls
+`stop_rolling()` mid-meeting, so a coordinator that answered a second call with `None` would
+have left exactly those meetings with no `TerminalDecodePlan` and silently no last listener.
+`RollingTranscriptConverger.stop` is now idempotent about **rolling's** ending — status,
+frontier and window counts frozen at the first call — while the extent stays the caller's,
+because that is the meeting's fact and not the witness's.
+
+*`unavailable` needs a reason beside it.* "Nobody tried" and "there was nothing to try on" both
+used to read `not_started`. A deployment that names a finalizer and keeps no tape now says
+`unavailable` / `no_retained_tape`; one with no rolling witness says `no_terminal_plan`. The
+status word comes from `TerminalOutcome.finalization_status` so the vocabulary keeps one author.
+
+**Mutations.** `mutate_terminal_lifecycle.sh` — control PASS, six mutations each caught,
+control-restored PASS. M1 (release before the reader runs), M2 (the stop request decodes), M3
+(a failed pass stays `running`), M4 (a meeting with no tape is silently not finalized) and M5
+(a finalized surface can be un-finalized) are caught by the corpus verifier *and* the tests; M6
+(a witness that died mid-meeting cancels terminal) is caught by tests alone, because sixty
+seconds of healthy corpus audio never takes that branch.
+
+**The shared driver grew a shared loop.** `verify_runtime_rolling.feed_meeting` is now the one
+meeting-feeding loop with its pacing rule, and `build_runtime` takes an optional finalizer and
+scheduler. All **six** instruments that share the driver reproduce their checked-in artifacts
+field for field and still pass their own gates (`inertness.txt` in the bundle, with its four
+excluded categories named).
+
+```bash
+# the lifecycle on the trio, no GPU and no service
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_terminal_lifecycle.py \
+  --output /tmp/m4-lifecycle.json
+
+# every mutation, with all three production files restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_terminal_lifecycle.sh /tmp/lifecycle-mut
 ```

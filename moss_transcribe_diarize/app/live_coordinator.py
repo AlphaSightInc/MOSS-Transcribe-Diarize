@@ -915,12 +915,15 @@ class LiveCoordinator:
         Called once the meeting has stopped accepting audio. A window still in flight is not
         waited for -- it completes into a converger that is no longer expecting it and is
         refused as a stale result, changing nothing.
+
+        A converger that already ended answers with the same plan rather than with nothing:
+        rolling can die mid-meeting (a witness defect stops it and keeps the meeting going),
+        and the terminal pass inherits the meeting either way. The converger owns that
+        idempotence, so this stays one call.
         """
 
         converger = self.converger
         if converger is None:
-            return None
-        if converger.accounting().status is RollingStatus.STOPPED:
             return None
         return converger.stop(self.session.snapshot().accepted_samples)
 

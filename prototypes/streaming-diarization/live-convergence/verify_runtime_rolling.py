@@ -194,6 +194,8 @@ def build_runtime(
     *,
     rolling: bool,
     tape_bytes: int | None = None,
+    terminal_finalizer: Any = None,
+    terminal_scheduler: Any = None,
 ):
     """The deployed configuration, with the deployed (threaded) canonical pump.
 
@@ -267,6 +269,13 @@ def build_runtime(
             ),
             evidence_provider=None,
         ),
+        # E4's last listener and where it runs, both declared by the caller for the reason
+        # the tape is: `None` is the posture every gate in this campaign was measured
+        # against, and the deployed manifest is what turns it on. A caller that hands over a
+        # manual scheduler is asking to hold the pass still and read the surface a reader is
+        # served *while* it runs (`verify_terminal_lifecycle.py`).
+        terminal_finalizer=terminal_finalizer,
+        _terminal_scheduler=terminal_scheduler,
     )
     return runtime
 
@@ -438,6 +447,59 @@ def _label(canonical_speaker: str | None, speakers: tuple[str, ...]) -> str:
     return display_speaker_label(canonical_speaker, speakers)
 
 
+def feed_meeting(
+    runtime,
+    session_id: str,
+    *,
+    pcm: bytes,
+    config: dict[str, Any],
+    case: str,
+    after_frame: Any = None,
+) -> int:
+    """Hand one meeting to the runtime frame by frame, at a pace the deployed service can be in.
+
+    The one loop every live-path driver in this campaign runs, so that what is measured is
+    the same meeting however it is later read. Returns the sample count handed over.
+
+    The pacing is the whole reason it is a loop rather than a `for`. How far the base may
+    fall behind the audio handed over: a real client sends one 0.5 s frame every 0.5 s and
+    the base decodes a span at RTF ~0.1, so the committed prefix tracks the accepted one
+    within a span or two. A driver with no GPU to wait for would otherwise hand over the
+    whole meeting before the pump thread ran once, which is not a condition the deployed
+    service can be in. Two spans is the bound, and it is deliberately far tighter than the
+    converger's own `2 x window` retention bound, so the pacing never decides what the
+    retention bound reports.
+    """
+
+    total = len(pcm) // 2
+    frame_samples = config["bounds_config"]["frame_samples"]
+    max_base_lag_samples = 2 * config["bounds_config"]["hard_cap_samples"]
+    cursor = 0
+    sequence = 0
+    while cursor < total:
+        deadline = time.monotonic() + 30.0
+        while True:
+            live = runtime.snapshot(session_id).session
+            if live.accepted_samples - live.committed_samples <= max_base_lag_samples:
+                break
+            if time.monotonic() > deadline:
+                raise RuntimeError(
+                    f"{case}: base fell {live.accepted_samples - live.committed_samples} samples "
+                    "behind and never caught up."
+                )
+            time.sleep(0.001)
+        count = min(frame_samples, total - cursor)
+        runtime.accept_frame(
+            session_id,
+            AudioFrame(sequence=sequence, pcm=pcm[cursor * 2 : (cursor + count) * 2], sample_count=count),
+        )
+        cursor += count
+        sequence += 1
+        if after_frame is not None:
+            after_frame()
+    return total
+
+
 def run_case(
     config: dict[str, Any],
     runner: ReplayRunner,
@@ -467,7 +529,6 @@ def run_case(
 
     pcm = bench.read_pcm(bench.CORPUS / case / "audio.wav")
     total = len(pcm) // 2
-    frame_samples = config["bounds_config"]["frame_samples"]
     runtime = build_runtime(config, runner, rolling=rolling, tape_bytes=tape_bytes)
     created = runtime.create()
     session_id = created.session_id
@@ -479,15 +540,6 @@ def run_case(
         if terminal is None
         else _terminal_capture(runtime._sessions[session_id].coordinator)
     )
-    # How far the base may fall behind the audio the driver has handed over. A real client
-    # sends one 0.5 s frame every 0.5 s and the base decodes a span at RTF ~0.1, so the
-    # committed prefix tracks the accepted one within a span or two; this driver has no GPU
-    # to wait for and would otherwise hand over the whole meeting before the pump thread ran
-    # once, which is not a condition the deployed service can be in. Two spans is the bound,
-    # and it is deliberately far tighter than the converger's own `2 x window` retention
-    # bound, so the pacing never decides what the retention bound reports.
-    max_base_lag_samples = 2 * config["bounds_config"]["hard_cap_samples"]
-
     surfaces: list[dict[str, Any]] = []
     seen_version = -1
 
@@ -500,28 +552,7 @@ def run_case(
             seen_version = served.session.version
             surfaces.append(served.to_dict())
 
-    cursor = 0
-    sequence = 0
-    while cursor < total:
-        deadline = time.monotonic() + 30.0
-        while True:
-            live = runtime.snapshot(session_id).session
-            if live.accepted_samples - live.committed_samples <= max_base_lag_samples:
-                break
-            if time.monotonic() > deadline:
-                raise RuntimeError(
-                    f"{case}: base fell {live.accepted_samples - live.committed_samples} samples "
-                    "behind and never caught up."
-                )
-            time.sleep(0.001)
-        count = min(frame_samples, total - cursor)
-        runtime.accept_frame(
-            session_id,
-            AudioFrame(sequence=sequence, pcm=pcm[cursor * 2 : (cursor + count) * 2], sample_count=count),
-        )
-        cursor += count
-        sequence += 1
-        capture_surface()
+    feed_meeting(runtime, session_id, pcm=pcm, config=config, case=case, after_frame=capture_surface)
     # Read the tape while the meeting still owns it: ADR-0003 D3 releases it at the end of
     # `stop`, and a fidelity comparison against the corpus WAV is only possible before that.
     tape_read = (

@@ -26,6 +26,11 @@ from .live_coordinator import (
 from .live_endpoint import EndpointPolicy, EndpointPolicyError
 from .live_lane_contract import LiveV2Descriptor
 from .live_span_bounds import LiveTranscriptDisposition
+from .live_transcript_convergence import (
+    TerminalDecodePlan,
+    TerminalFinalization,
+    TerminalOutcome,
+)
 from .live_session import (
     AudioFrame,
     FrameAck,
@@ -43,6 +48,7 @@ LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
 _VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
 _ROLLING_LOG = logging.getLogger("moss_transcribe_diarize.live.rolling")
+_TERMINAL_LOG = logging.getLogger("moss_transcribe_diarize.live.terminal")
 
 # The one disposition that means words the grammar rejected were published anyway. Read from
 # the enum rather than spelled again here: a second spelling of a policy name is how a gate
@@ -416,6 +422,62 @@ class _ManualCanonicalPumpScheduler:
         return runs
 
 
+class _TerminalScheduler(Protocol):
+    """Where a meeting's terminal pass runs, so it is not the stop request that runs it.
+
+    One method, and the runtime never learns which thread answered. Plan §12.3's last
+    paragraph is the whole reason this seam exists: a 150/120 decode of a whole meeting is
+    minutes of work, and the stop request must return the meeting's final accounting long
+    before that. Injected rather than assumed so a test can hold the pass still and read the
+    surface a reader sees *while* it runs -- the interval G-M4-6 is about.
+    """
+
+    def submit(self, callback: Callable[[], None]) -> None:
+        ...
+
+
+class _ThreadTerminalScheduler:
+    """One daemon thread per terminal pass. No queue, no pool, no coalescing.
+
+    Deliberately not the canonical pump's scheduler: that one keeps a single *pending*
+    callback and replaces it, which is right for "pump whatever is ready" and wrong here --
+    two meetings stopping together would leave one of them silently unfinalized. A terminal
+    pass is one-shot, per meeting, and rare (a meeting ends once), so the cheapest correct
+    thing is a thread that runs exactly one of them.
+    """
+
+    def submit(self, callback: Callable[[], None]) -> None:
+        threading.Thread(
+            target=callback, name="moss-live-terminal-finalization", daemon=True
+        ).start()
+
+
+class _ManualTerminalScheduler:
+    """Deterministic scheduler adapter for runtime-interface tests and measured drivers."""
+
+    def __init__(self):
+        self._pending: deque[Callable[[], None]] = deque()
+
+    @property
+    def pending(self) -> int:
+        return len(self._pending)
+
+    def submit(self, callback: Callable[[], None]) -> None:
+        self._pending.append(callback)
+
+    def run_one(self) -> bool:
+        if not self._pending:
+            return False
+        self._pending.popleft()()
+        return True
+
+    def drain(self) -> int:
+        runs = 0
+        while self.run_one():
+            runs += 1
+        return runs
+
+
 @dataclass(slots=True)
 class _RuntimeSession:
     session_id: str
@@ -431,6 +493,10 @@ class _RuntimeSession:
     drain_waiters: set[_DrainWaiter] = field(default_factory=set)
     canonical_timing: dict[int, "_CanonicalTiming"] = field(default_factory=dict)
     rolling_timing: dict[int, "_RollingTiming"] = field(default_factory=dict)
+    # What the terminal pass inherits, captured at the moment rolling ends because that is
+    # the only moment it is knowable -- `stop_rolling` is called under the lock in the
+    # middle of `stop`, and the pass itself starts minutes of decoding later.
+    terminal_plan: TerminalDecodePlan | None = None
 
 
 @dataclass(slots=True)
@@ -475,8 +541,10 @@ class LiveServiceRuntime:
         decoder_factory: Callable[[], Any],
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
         rolling_decoder_factory: Callable[[], Any] | None = None,
+        terminal_finalizer: Any | None = None,
         session_id_factory: Callable[[], str] | None = None,
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
+        _terminal_scheduler: _TerminalScheduler | None = None,
         vector_journal: LiveVectorJournal | None = None,
         wall_time: Callable[[], float] | None = None,
         monotonic_ns: Callable[[], int] | None = None,
@@ -490,8 +558,16 @@ class LiveServiceRuntime:
         # be reused for it: the deployed adapter is bounded at the *span* cap, and a
         # ten-second witness is four times that. No factory, no rolling convergence.
         self._rolling_decoder_factory = rolling_decoder_factory
+        # The meeting's last listener, or nothing. Held once for the whole deployment rather
+        # than built per session, because it is stateless by construction: it holds file
+        # mode's own runner and file mode's own inference arguments, and `finalize` is a
+        # function of the plan, the tape and the surface it is handed. A deployment that
+        # names no finalizer never starts a terminal pass and every meeting reads
+        # `not_started`, which is what the service does today.
+        self._terminal_finalizer = terminal_finalizer
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
+        self._terminal_scheduler = _terminal_scheduler or _ThreadTerminalScheduler()
         self._vector_journal = vector_journal
         self._wall_time = wall_time or time.time
         self._monotonic_ns = monotonic_ns or time.monotonic_ns
@@ -755,7 +831,7 @@ class LiveServiceRuntime:
             with self._lock:
                 # Rolling ends before the last identity sweep, for the sweep's own reason: a
                 # revision applied after the sweep would carry labels the sweep never saw.
-                state.coordinator.stop_rolling()
+                state.terminal_plan = state.coordinator.stop_rolling()
                 self._finalize_identity_locked(state)
             remaining = max(0.0, end_time - loop.time())
             snapshot = await state.session.stop(remaining)
@@ -781,7 +857,13 @@ class LiveServiceRuntime:
                 kind, payload = journal_event
                 self._record_event(state, kind, payload)
             self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
-            self._release_tape_locked(state)
+            # ADR-0003 D3 still ends the meeting's audio with the meeting -- but "the
+            # meeting" now includes its last listener, so the release moves behind the
+            # terminal pass and happens on every one of its endings (plan §12.3 step 7).
+            # When no pass is scheduled nothing has changed: the tape is released here, in
+            # the stop that created it.
+            if not self._begin_terminal_locked(state):
+                self._release_tape_locked(state)
             return self._snapshot(state)
 
     def _append_vector_journal(
@@ -875,6 +957,172 @@ class LiveServiceRuntime:
                 "identity_revision_merges": result.identity_revision_merges,
                 "identity_revision_refusals": dict(result.identity_revision_refusals),
             },
+        )
+
+    # ------------------------------------------------------------------ terminal (plan E4)
+
+    def _begin_terminal_locked(self, state: _RuntimeSession) -> bool:
+        """Start the meeting's last listener, or say why this meeting gets none.
+
+        Answers whether a pass was scheduled -- which is the same question as "does the tape
+        still belong to someone", so the caller knows whether to release it.
+
+        Three meetings get no pass, and only the first is silent. A deployment that named no
+        finalizer is the service as it shipped before E4 and every meeting reads
+        `not_started`. A deployment that named one but kept no tape, or ran no rolling
+        witness to hand the pass its extent, gets `unavailable` and a reason: "nobody tried"
+        and "there was nothing to try on" are different facts about a meeting, and a reader
+        who is shown neither cannot tell them apart.
+        """
+
+        if self._terminal_finalizer is None:
+            return False
+        plan = state.terminal_plan
+        tape = state.coordinator.tape
+        if plan is None or tape is None:
+            # One word, two reasons. `unavailable` is what a reader needs -- there will be no
+            # terminal surface for this meeting -- and it is taken from the outcome enum so
+            # the status vocabulary keeps one author; the reason carries which of the two
+            # preconditions was missing, because that is the deployment's to fix.
+            reason = "no_retained_tape" if tape is None else "no_terminal_plan"
+            status = state.session.note_finalization(
+                TerminalOutcome.TAPE_UNAVAILABLE.finalization_status
+            )
+            self._record_event(
+                state,
+                "terminal_finalization_failed",
+                {"reason": reason, "finalization_status": status, "applied": False},
+            )
+            return False
+        status = state.session.note_finalization("running")
+        self._record_event(
+            state,
+            "terminal_finalization_started",
+            {
+                "epoch": plan.epoch,
+                "end_sample": plan.end_sample,
+                "rolling_through_sample": plan.rolling_through_sample,
+                "rolling_status": plan.rolling_status.value,
+                "rolling_windows_completed": plan.windows_completed,
+                "rolling_windows_failed": plan.windows_failed,
+                "finalization_status": status,
+            },
+        )
+        self._terminal_scheduler.submit(lambda: self._run_terminal(state, plan, tape))
+        return True
+
+    def _run_terminal(self, state: _RuntimeSession, plan: TerminalDecodePlan, tape: Any) -> None:
+        """Decode the whole meeting, off the stop request's clock (plan §12.3).
+
+        Shaped like the refinement pump and for the same reason: read under the lock, decode
+        outside it, publish under it again. The decode is minutes long and the surface it
+        replaces is being polled the entire time, so holding the lock across it would freeze
+        every reader of the meeting it is trying to improve.
+
+        Nothing here is terminal for the session. A meeting that was captured succeeded; the
+        worst a failed last listener can do is leave the rolling surface exactly where it
+        already was, with a word for why (plan §5.2, PRD E4 exit).
+        """
+
+        finalization: TerminalFinalization | None = None
+        try:
+            with self._lock:
+                snapshot = state.session.snapshot()
+            finalization = self._terminal_finalizer.finalize(
+                plan=plan,
+                tape=tape,
+                base_text_revision_version=snapshot.text_revision_version,
+                base_surface=snapshot.effective_transcript,
+                canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+            )
+        except Exception:
+            # Counts and names only, never the words -- the rule every listener in this
+            # runtime follows. The adapter answers with a named refusal for the failures it
+            # expects, so reaching here means a defect, and a defect is still not the
+            # meeting's problem.
+            _TERMINAL_LOG.warning("live terminal finalization failed", exc_info=True)
+        with self._lock:
+            try:
+                self._publish_terminal_locked(state, finalization)
+            finally:
+                # The tape outlives the meeting by exactly one listener (Appendix B Q10).
+                # In the `finally` because every ending owes it: a refused proposal, a
+                # defect, and a published surface all end the only reason the audio was
+                # kept.
+                self._release_tape_locked(state)
+                state.work_changed.set()
+                self._notify_drain_waiters_locked(state)
+
+    def _publish_terminal_locked(
+        self, state: _RuntimeSession, finalization: TerminalFinalization | None
+    ) -> None:
+        """Offer the pass's proposal to the session and put what happened on the stream."""
+
+        if finalization is None:
+            state.session.note_finalization("failed")
+            self._record_event(
+                state,
+                "terminal_finalization_failed",
+                {"reason": "finalizer_defect", "finalization_status": "failed", "applied": False},
+            )
+            return
+        payload = dict(finalization.accounting.to_dict())
+        outcome = None
+        if finalization.proposal is None:
+            # The pass named its own ending -- no tape, no answer, no words in the answer --
+            # and `TerminalOutcome` already maps each to the word a reader is told.
+            status = state.session.note_finalization(payload["finalization_status"])
+        elif state.terminal_failure is not None:
+            # The meeting died between the stop that scheduled this pass and its answer.
+            # A dead meeting's surface is not revised; it is reported.
+            payload["reason"] = "session_terminal"
+            status = state.session.note_finalization("failed")
+        else:
+            outcome = state.session.apply_text_revision(finalization.proposal)
+            # Refused is a failure of this pass, not of the meeting: `already_finalized`,
+            # a stale version, an interval the session does not recognise. The rolling
+            # surface stays exactly where it was, which is the PRD's E4-exit requirement.
+            status = (
+                state.session.snapshot().finalization_status
+                if outcome.applied
+                else state.session.note_finalization("failed")
+            )
+        payload.update(
+            {
+                "finalization_status": status,
+                "applied": bool(outcome is not None and outcome.applied),
+                "refusal": None if outcome is None else outcome.refusal,
+                "text_revision_version": state.session.snapshot().text_revision_version,
+                "canonical_through_sample": state.session.snapshot().canonical_through_sample,
+            }
+        )
+        if outcome is not None:
+            # The same two events the rolling producer writes, for the same seam: a reader
+            # counting revisions does not have to know which listener proposed one. Recorded
+            # before the terminal event because it happened first -- the terminal event's
+            # status is only true once the revision has landed or been refused.
+            self._record_event(
+                state,
+                "text_revision_applied" if outcome.applied else "text_revision_refused",
+                {
+                    "source": "terminal",
+                    "item_id": None,
+                    "window_index": None,
+                    "start_sample": finalization.proposal.start_sample,
+                    "end_sample": finalization.proposal.end_sample,
+                    "revised_segments": outcome.revised_segments,
+                    "refusal": outcome.refusal,
+                    "text_revision_version": outcome.version,
+                    "canonical_through_sample": outcome.canonical_through_sample,
+                    "finalization_status": status,
+                },
+            )
+        self._record_event(
+            state,
+            "terminal_finalization_completed"
+            if payload["applied"]
+            else "terminal_finalization_failed",
+            payload,
         )
 
     def _require_one_span_cap(self, endpoint_policy: EndpointPolicy) -> None:

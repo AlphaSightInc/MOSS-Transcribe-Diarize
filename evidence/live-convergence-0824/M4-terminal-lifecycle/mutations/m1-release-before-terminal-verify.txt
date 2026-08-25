@@ -1,0 +1,33 @@
+cases: lex_bill_ackman
+  healthy         lex_bill_ackman    stop=running     after=unavailable WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> session_tape_released -> terminal_finalization_failed -> session_tape_released
+  decode_failure  lex_bill_ackman    stop=running     after=unavailable WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> session_tape_released -> terminal_finalization_failed -> session_tape_released
+  no_tape         lex_bill_ackman    stop=unavailable after=unavailable WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_failed
+file arm: {
+  "lex_bill_ackman": {
+    "wer": 0.159091,
+    "der": 0.0755,
+    "coverage": 0.952215,
+    "text_speaker_accuracy": 0.938134,
+    "content_recall": 0.9318181818181818
+  }
+}
+wrote /tmp/lifecycle-mutations/m1-release-before-terminal.json
+FAIL (15)
+  - L3 healthy/lex_bill_ackman finalization_status is unavailable
+  - L3 healthy/lex_bill_ackman the surface is not all terminal: ['rolling']
+  - L3 healthy/lex_bill_ackman the pass wrote more than one revision
+  - L3 healthy/lex_bill_ackman the pass decoded audio that is not the meeting
+  - L4 healthy/lex_bill_ackman wer 0.198864 != file arm 0.159091
+  - L4 healthy/lex_bill_ackman der 0.666667 != file arm 0.075500
+  - L4 healthy/lex_bill_ackman coverage 0.917557 != file arm 0.952215
+  - L4 healthy/lex_bill_ackman text_speaker_accuracy 0.290715 != file arm 0.938134
+  - L4 healthy/lex_bill_ackman content_recall 0.926136 != file arm 0.931818
+  - L5 healthy/lex_bill_ackman the tape was released before its terminal evidence: ['text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'terminal_finalization_started', 'session_tape_released', 'terminal_finalization_failed', 'session_tape_released']
+  - L7 healthy/lex_bill_ackman a second pass moved the status to unavailable
+  - L8 healthy/lex_bill_ackman terminal_finalization_failed carries a non-name string 'the complete tape has been released.'
+  - L5 decode_failure/lex_bill_ackman the tape was released before its terminal evidence: ['text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'text_revision_applied', 'terminal_finalization_started', 'session_tape_released', 'terminal_finalization_failed', 'session_tape_released']
+  - L6 decode_failure/lex_bill_ackman failure reasons ['the complete tape has been released.'] != ['RuntimeError']
+  - L8 decode_failure/lex_bill_ackman terminal_finalization_failed carries a non-name string 'the complete tape has been released.'

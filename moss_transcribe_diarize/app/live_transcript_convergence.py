@@ -189,6 +189,21 @@ class TerminalDecodePlan:
 
 
 @dataclass(frozen=True, slots=True)
+class _RollingEnd:
+    """What rolling had reached when it ended, kept because it can be asked for twice.
+
+    Not merged into `TerminalDecodePlan`: the plan's `end_sample` is the meeting's and is
+    known only to whoever stops the session, so the two facts have different owners and
+    different moments.
+    """
+
+    through_sample: int
+    status: RollingStatus
+    windows_completed: int
+    windows_failed: int
+
+
+@dataclass(frozen=True, slots=True)
 class RollingConvergerAccounting:
     """Counts and timing for the plan §7.4 events and the §10.6 resource gate.
 
@@ -245,6 +260,7 @@ class RollingTranscriptConverger:
         self._stale_completions = 0
         self._decoded_audio_samples = 0
         self._retained_high_water = 0
+        self._ended: _RollingEnd | None = None
 
     # ---------------------------------------------------------------- audio in
 
@@ -339,6 +355,16 @@ class RollingTranscriptConverger:
         The ring is released here: the terminal pass reads the retained session tape, which is
         separate, explicitly authorized storage, so holding a second copy of the last twenty
         seconds past the end of the meeting buys nothing.
+
+        Idempotent, and that is a requirement rather than a convenience, because rolling and
+        the meeting do not end at the same moment. A witness whose refinement raised ends
+        rolling *mid-meeting* (`live_service_runtime._process_refinement_item`), and the
+        meeting still stops later and still owes the terminal pass a plan; a version of this
+        that answered only its first caller would silently cancel terminal convergence for
+        exactly the meetings that needed it most. So what ROLLING left -- how far its
+        authority reached, why it ended, what it completed -- is frozen at the first call,
+        while the extent to finalize stays the caller's, because that is the meeting's fact
+        and not the witness's.
         """
 
         if end_sample < self._accepted_samples:
@@ -346,19 +372,25 @@ class RollingTranscriptConverger:
                 f"session ended at sample {end_sample}, behind the {self._accepted_samples} "
                 "samples the converger was given."
             )
-        plan = TerminalDecodePlan(
+        if self._ended is None:
+            self._ended = _RollingEnd(
+                through_sample=self._observed_frontier_sample,
+                status=self._status,
+                windows_completed=self._windows_completed,
+                windows_failed=self._windows_failed,
+            )
+            self._status = RollingStatus.STOPPED
+            self._in_flight = None
+            self._buffer = bytearray()
+            self._buffer_start_sample = self._accepted_samples
+        return TerminalDecodePlan(
             epoch=self.epoch,
             end_sample=int(end_sample),
-            rolling_through_sample=self._observed_frontier_sample,
-            rolling_status=self._status,
-            windows_completed=self._windows_completed,
-            windows_failed=self._windows_failed,
+            rolling_through_sample=self._ended.through_sample,
+            rolling_status=self._ended.status,
+            windows_completed=self._ended.windows_completed,
+            windows_failed=self._ended.windows_failed,
         )
-        self._status = RollingStatus.STOPPED
-        self._in_flight = None
-        self._buffer = bytearray()
-        self._buffer_start_sample = self._accepted_samples
-        return plan
 
     # ---------------------------------------------------------------- accounting
 

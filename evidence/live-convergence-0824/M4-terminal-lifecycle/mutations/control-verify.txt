@@ -1,0 +1,18 @@
+cases: lex_bill_ackman
+  healthy         lex_bill_ackman    stop=running     after=final       WER 0.198864 -> 0.159091
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> text_revision_applied -> terminal_finalization_completed -> session_tape_released
+  decode_failure  lex_bill_ackman    stop=running     after=failed      WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> terminal_finalization_failed -> session_tape_released
+  no_tape         lex_bill_ackman    stop=unavailable after=unavailable WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_failed
+file arm: {
+  "lex_bill_ackman": {
+    "wer": 0.159091,
+    "der": 0.0755,
+    "coverage": 0.952215,
+    "text_speaker_accuracy": 0.938134,
+    "content_recall": 0.9318181818181818
+  }
+}
+wrote /tmp/lifecycle-mutations/control.json
+PASS: the meeting keeps its reader, its surface, and its last listener.

@@ -1,0 +1,44 @@
+cases: lex_bill_ackman, lex_javier_milei, lex_keyu_jin
+  healthy         lex_bill_ackman    stop=running     after=final       WER 0.198864 -> 0.159091
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> text_revision_applied -> terminal_finalization_completed -> session_tape_released
+  decode_failure  lex_bill_ackman    stop=running     after=failed      WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> terminal_finalization_failed -> session_tape_released
+  no_tape         lex_bill_ackman    stop=unavailable after=unavailable WER 0.198864 -> 0.198864
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_failed
+  healthy         lex_javier_milei   stop=running     after=final       WER 0.096000 -> 0.088000
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> text_revision_applied -> terminal_finalization_completed -> session_tape_released
+  decode_failure  lex_javier_milei   stop=running     after=failed      WER 0.096000 -> 0.096000
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> terminal_finalization_failed -> session_tape_released
+  no_tape         lex_javier_milei   stop=unavailable after=unavailable WER 0.096000 -> 0.096000
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_failed
+  healthy         lex_keyu_jin       stop=running     after=final       WER 0.100719 -> 0.064748
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> text_revision_applied -> terminal_finalization_completed -> session_tape_released
+  decode_failure  lex_keyu_jin       stop=running     after=failed      WER 0.100719 -> 0.100719
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_started -> terminal_finalization_failed -> session_tape_released
+  no_tape         lex_keyu_jin       stop=unavailable after=unavailable WER 0.100719 -> 0.100719
+    text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> text_revision_applied -> terminal_finalization_failed
+file arm: {
+  "lex_bill_ackman": {
+    "wer": 0.159091,
+    "der": 0.0755,
+    "coverage": 0.952215,
+    "text_speaker_accuracy": 0.938134,
+    "content_recall": 0.9318181818181818
+  },
+  "lex_javier_milei": {
+    "wer": 0.088,
+    "der": 0.151833,
+    "coverage": 0.870992,
+    "text_speaker_accuracy": 0.870992,
+    "content_recall": 0.92
+  },
+  "lex_keyu_jin": {
+    "wer": 0.064748,
+    "der": 0.079,
+    "coverage": 0.936387,
+    "text_speaker_accuracy": 0.92538,
+    "content_recall": 1.0
+  }
+}
+wrote evidence/live-convergence-0824/M4-terminal-lifecycle/verify.json
+PASS: the meeting keeps its reader, its surface, and its last listener.

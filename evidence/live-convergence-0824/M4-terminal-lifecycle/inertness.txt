@@ -1,0 +1,40 @@
+Do the instruments that share the driver still reproduce their CHECKED-IN artifacts?
+
+The shared driver (`verify_runtime_rolling.py`) changed twice this iteration: `build_runtime`
+gained two optional parameters (`terminal_finalizer`, `terminal_scheduler`, both `None`
+unless a caller asks) and `run_case`'s frame loop moved into `feed_meeting`, which `run_case`
+now calls and which `verify_terminal_lifecycle.py` calls too. Neither change is supposed to
+move a number, in any of the SIX instruments that share the driver.
+
+Compared field by field, excluding four categories of value that a rerun moves on its own.
+Each exclusion is a category, named with its reason, not a hand-picked field that differed:
+
+  recorded_at                                     when the run happened
+  decode_elapsed_sec, completion_queue_wait_ms,   wall-clock readings of this machine
+  completion_rtf
+  retained_high_water_samples,                    the rolling ring's high-water mark, which
+  rolling_high_water_observed, peak_retained_bytes  two identical runs already disagree on
+                                                  (verify_terminal_tape.py G6 documents it)
+  text_revision_versions                          WHICH poll a driver happened to catch;
+                                                  verify_portal_surface.py documents the
+                                                  sequence as evidence, not an expectation
+  findings                                        Python set-repr ordering inside a rejected
+                                                  arm's message string (the sets are equal;
+                                                  every gate id in them is compared below)
+
+Every instrument's own exit code is reported beside the comparison: an instrument that
+reproduced its artifact but stopped passing its gates would be the same defect.
+
+verify_runtime_rolling.py        vs evidence/live-convergence-0824/M2-runtime-wiring/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_rolling_events.py         vs evidence/live-convergence-0824/M2-event-serialization/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_portal_surface.py         vs evidence/live-convergence-0824/M2-portal-surface/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_export_surface.py         vs evidence/live-convergence-0824/M2-export-switch/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_terminal_tape.py          vs evidence/live-convergence-0824/M4-terminal-tape/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_terminal_finalizer.py     vs evidence/live-convergence-0824/M4-terminal-finalizer/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+PASS
