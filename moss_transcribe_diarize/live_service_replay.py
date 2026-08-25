@@ -33,6 +33,7 @@ from .app.live_lane_contract import LiveV2Descriptor
 from .app.live_session import (
     AudioFrame,
     CanonicalCommit,
+    EffectiveTranscriptSegment,
     FrameAck,
     LIVE_SAMPLE_RATE,
     LiveIdentitySnapshot,
@@ -958,6 +959,22 @@ def _live_snapshot_from_dict(payload: dict[str, Any]) -> LiveSnapshot:
         pending_span_ids=tuple(int(item) for item in payload.get("pending_span_ids", ())),
         failure_reason=payload.get("failure_reason"),
         label_revision_version=int(payload.get("label_revision_version", 0)),
+        text_revision_version=int(payload.get("text_revision_version", 0)),
+        canonical_through_sample=int(payload.get("canonical_through_sample", 0)),
+        effective_transcript=tuple(
+            _effective_segment_from_dict(item) for item in payload.get("effective_transcript", ())
+        ),
+        finalization_status=str(payload.get("finalization_status", "not_started")),
+    )
+
+
+def _effective_segment_from_dict(payload: dict[str, Any]) -> EffectiveTranscriptSegment:
+    return EffectiveTranscriptSegment(
+        start_sample=int(payload["start_sample"]),
+        end_sample=int(payload["end_sample"]),
+        text=str(payload["text"]),
+        canonical_speaker=_optional_str(payload.get("canonical_speaker")),
+        authority=str(payload["authority"]),
     )
 
 

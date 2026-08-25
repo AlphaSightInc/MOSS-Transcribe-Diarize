@@ -115,3 +115,22 @@ audio, proposals tiling `[0, 60 s)` exactly). The decoder is handed a runner tha
 cache miss is a failure rather than a fresh GPU call: a module that asks for a different decode
 than the one that was measured cannot quietly pass. Verdict:
 `evidence/live-convergence-0824/M2-converger-production/`.
+
+```bash
+# E2 step 3b: does the SHIPPED session authority publish that arm, and attribute it? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_session_text_authority.py
+# five mutations, in `live_session.py` itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh /tmp/authority-mutations
+```
+
+`verify_session_text_authority.py` closes the loop the grid left open. The grid scored every arm
+through `proto_context_arms.SpeakerTimeline` — an *external* relabelling step that presumed the
+session would attribute rolling words from the base's own labels. This replays the baseline spans
+through the real `LiveSession` publication path, feeds the production converger, applies each
+proposal through `LiveSession.apply_text_revision`, and scores `snapshot().effective_transcript`.
+The arm survives the trip (trio WER `.131861`, recall `.943916`) **and** the shipped projection
+agrees with the measured timeline on 51 of 51 rolling segments. It also samples the surface after
+every commit — 98 surfaces, 66 with a rolling prefix beside a provisional suffix — because plan
+§5.1's ownership boundary is invisible at the end of a case, where six 10-second windows have
+tiled the whole minute. Verdict: `evidence/live-convergence-0824/M2-session-authority/`.

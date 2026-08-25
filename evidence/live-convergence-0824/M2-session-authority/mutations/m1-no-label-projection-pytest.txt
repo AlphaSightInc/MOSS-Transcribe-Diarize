@@ -1,0 +1,165 @@
+.FF.FF.F.F....F.................                                         [100%]
+=================================== FAILURES ===================================
+_ test_the_effective_surface_is_the_revised_prefix_then_the_untouched_base_suffix _
+
+    def test_the_effective_surface_is_the_revised_prefix_then_the_untouched_base_suffix():
+        """Plan §5.1: rolling authority to the frontier, provisional base after it."""
+    
+        session = session_with_base(
+            "[0][S01]one[1]", "[0][S01]two[1]", "[0][S02]three[1]"
+        )
+    
+        session.apply_text_revision(
+            proposal(session, 0, 2 * SECOND, (segment(0, 2 * SECOND, "one two"),))
+        )
+    
+>       assert surface(session) == [
+            (0, 2 * SECOND, "one two", "speaker-a", "rolling"),
+            (2 * SECOND, 3 * SECOND, "three", "speaker-b", "provisional"),
+        ]
+E       AssertionError: assert [(0, 32000, '...provisional')] == [(0, 32000, '...provisional')]
+E         
+E         At index 0 diff: (0, 32000, 'one two', None, 'rolling') != (0, 32000, 'one two', 'speaker-a', 'rolling')
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:117: AssertionError
+_ test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice _
+
+    def test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice():
+        """D4's whole point: one owner per interval, keyed on where a segment begins."""
+    
+        session = session_with_base("[0][S01]held over[1]", "[0][S01]after[1]")
+        frontier = SECOND // 2
+    
+        session.apply_text_revision(
+            proposal(session, 0, frontier, (segment(0, frontier, "held"),))
+        )
+    
+>       assert surface(session) == [
+            (0, frontier, "held", "speaker-a", "rolling"),
+            (SECOND, 2 * SECOND, "after", "speaker-a", "provisional"),
+        ]
+E       AssertionError: assert [(0, 8000, 'h...provisional')] == [(0, 8000, 'h...provisional')]
+E         
+E         At index 0 diff: (0, 8000, 'held', None, 'rolling') != (0, 8000, 'held', 'speaker-a', 'rolling')
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:133: AssertionError
+_____ test_a_revision_arrives_unattributed_and_the_session_says_who_spoke ______
+
+    def test_a_revision_arrives_unattributed_and_the_session_says_who_spoke():
+        """A witness's local `S01` is one decode's bookkeeping; meeting identity lives here."""
+    
+        session = session_with_base("[0][S01]mine[1]", "[0][S02]yours[1]")
+    
+        session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (segment(0, SECOND, "mine"), segment(SECOND, 2 * SECOND, "yours")),
+            )
+        )
+    
+>       assert [item[3] for item in surface(session)] == ["speaker-a", "speaker-b"]
+E       AssertionError: assert [None, None] == ['speaker-a', 'speaker-b']
+E         
+E         At index 0 diff: None != 'speaker-a'
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:174: AssertionError
+__________ test_the_identity_that_owns_the_most_of_a_stretch_wins_it ___________
+
+    def test_the_identity_that_owns_the_most_of_a_stretch_wins_it():
+        session = session_with_base("[0][S01]a[1]", "[0][S02]b[1]", "[0][S02]c[1]")
+    
+        session.apply_text_revision(
+            proposal(session, 0, 3 * SECOND, (segment(0, 3 * SECOND, "a b c"),))
+        )
+    
+>       assert surface(session)[0][3] == "speaker-b"
+E       AssertionError: assert None == 'speaker-b'
+
+tests/test_live_text_revision.py:184: AssertionError
+_____ test_a_revision_over_a_silent_gap_takes_the_nearest_committed_speech _____
+
+    def test_a_revision_over_a_silent_gap_takes_the_nearest_committed_speech():
+        session = session_with_base("[0][S01]early[0.25]", "[0.75][S02]late[1]")
+    
+        session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (segment(SECOND // 2, SECOND // 2 + 800, "between"),),
+            )
+        )
+    
+        # The gap runs [0.25 s, 1.75 s); its first half is nearer the S01 segment that ends at
+        # 0.25 s than the S02 segment that starts at 1.75 s.
+>       assert surface(session)[0][3] == "speaker-a"
+E       AssertionError: assert None == 'speaker-a'
+
+tests/test_live_text_revision.py:214: AssertionError
+__________ test_a_later_label_revision_reprojects_the_rolling_surface __________
+
+    def test_a_later_label_revision_reprojects_the_rolling_surface():
+        """Both dimensions of the living document meet here: the words are the revision's, the
+        speaker is whoever the base now says spoke them."""
+    
+        session = session_with_base("[0][S00]who said this[1]")
+        session.apply_text_revision(
+            proposal(session, 0, SECOND, (segment(0, SECOND, "who said this"),))
+        )
+        assert surface(session)[0][3] is None
+    
+        outcome = session.revise_labels(
+            [LabelRevision(span_id=0, local_speaker="S01", canonical_speaker="speaker-b")]
+        )
+    
+        assert outcome.revised_spans == 1
+>       assert surface(session)[0][3] == "speaker-b"
+E       AssertionError: assert None == 'speaker-b'
+
+tests/test_live_text_revision.py:244: AssertionError
+__________ test_terminal_finalization_replaces_the_whole_surface_once __________
+
+    def test_terminal_finalization_replaces_the_whole_surface_once():
+        session = session_with_base("[0][S01]a[1]", "[0][S02]b[1]")
+        session.apply_text_revision(proposal(session, 0, SECOND, (segment(0, SECOND, "a"),)))
+        assert session.snapshot().finalization_status == "not_started"
+    
+        outcome = session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (
+                    EffectiveTranscriptSegment(0, SECOND, "a", None, "final"),
+                    EffectiveTranscriptSegment(SECOND, 2 * SECOND, "b", None, "final"),
+                ),
+                source="terminal",
+            )
+        )
+    
+        assert outcome.applied is True
+        assert outcome.finalization_status == "final"
+>       assert surface(session) == [
+            (0, SECOND, "a", "speaker-a", "final"),
+            (SECOND, 2 * SECOND, "b", "speaker-b", "final"),
+        ]
+E       AssertionError: assert [(0, 16000, '...one, 'final')] == [(0, 16000, '...-b', 'final')]
+E         
+E         At index 0 diff: (0, 16000, 'a', None, 'final') != (0, 16000, 'a', 'speaker-a', 'final')
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:369: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_text_revision.py::test_the_effective_surface_is_the_revised_prefix_then_the_untouched_base_suffix
+FAILED tests/test_live_text_revision.py::test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice
+FAILED tests/test_live_text_revision.py::test_a_revision_arrives_unattributed_and_the_session_says_who_spoke
+FAILED tests/test_live_text_revision.py::test_the_identity_that_owns_the_most_of_a_stretch_wins_it
+FAILED tests/test_live_text_revision.py::test_a_revision_over_a_silent_gap_takes_the_nearest_committed_speech
+FAILED tests/test_live_text_revision.py::test_a_later_label_revision_reprojects_the_rolling_surface
+FAILED tests/test_live_text_revision.py::test_terminal_finalization_replaces_the_whole_surface_once
+7 failed, 25 passed in 2.17s

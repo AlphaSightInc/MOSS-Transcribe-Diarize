@@ -1,0 +1,24 @@
+.............F..................                                         [100%]
+=================================== FAILURES ===================================
+______ test_a_second_rolling_revision_extends_the_first_from_the_frontier ______
+
+    def test_a_second_rolling_revision_extends_the_first_from_the_frontier():
+        session = session_with_base("[0][S01]a[1]", "[0][S01]b[1]")
+    
+        session.apply_text_revision(proposal(session, 0, SECOND, (segment(0, SECOND, "a"),)))
+        second = session.apply_text_revision(
+            proposal(session, SECOND, 2 * SECOND, (segment(SECOND, 2 * SECOND, "b"),))
+        )
+    
+        assert second.applied is True
+>       assert [item[2] for item in surface(session)] == ["a", "b"]
+E       AssertionError: assert ['b'] == ['a', 'b']
+E         
+E         At index 0 diff: 'b' != 'a'
+E         Right contains one more item: 'b'
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:342: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_text_revision.py::test_a_second_rolling_revision_extends_the_first_from_the_frontier
+1 failed, 31 passed in 2.19s

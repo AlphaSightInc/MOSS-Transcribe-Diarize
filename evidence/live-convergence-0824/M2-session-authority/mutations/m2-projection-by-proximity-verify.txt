@@ -1,0 +1,8 @@
+lex_bill_ackman    wer=0.198864 (grid 0.198864) recall=0.926136 rolling=21 base=0 frontiers=20/30 revisions=6 projection_disagreements=1
+lex_javier_milei   wer=0.096000 (grid 0.096000) recall=0.920000 rolling=14 base=0 frontiers=26/38 revisions=6 projection_disagreements=0
+lex_keyu_jin       wer=0.100719 (grid 0.100719) recall=0.985612 rolling=16 base=0 frontiers=20/30 revisions=6 projection_disagreements=1
+TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+decode cost: {'requests': 18, 'fresh_requests': 0, 'decode_audio_seconds': 180.0, 'wall_seconds_contended': 6.323426208109595, 'p50_request_seconds_contended': 0.345532167062629, 'max_request_seconds_contended': 0.6127948329085484}
+FAIL G2 lex_bill_ackman projection disagrees with the measured timeline on 1 of 21 segments
+FAIL G2 lex_keyu_jin projection disagrees with the measured timeline on 1 of 16 segments
+FAILED 2 gate(s)

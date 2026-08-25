@@ -948,3 +948,114 @@ appended at the iteration 4->5 boundary]
   fields, the label projection above, and -- in the same change -- an extension of
   `ReplayReconstructorRoundTripTest` for every field added, because the hand-written reconstructors
   are the one place a new field is silently lost (that was M0a's defect).
+
+2026-08-25 iteration 12 (run 20260825-042645-70858) - M2 step 3, item 2 of plan §10.5: the session
+  is now the text authority, and it attributes the words the rolling witness brings it.
+- Target: context.md candidate 6d, the lowest open item. M0's G2, M1's G-M1-1 and M2's
+  D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code. Plan §10.5's order is
+  fixed: this iteration is its SECOND item only -- "M3 word-revision authority". The arbiter, the
+  runtime wiring, the §7.4 events, the portal and the export switch are each their own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_session.py                                        (+~230, §6 M3)
+  moss_transcribe_diarize/live_service_replay.py                                     (+~15, §7.3)
+  tests/test_live_text_revision.py                                                   (new, 17 T1 tests)
+  tests/test_live_service_replay.py                                                  (round-trip fixture)
+  prototypes/streaming-diarization/live-convergence/verify_session_text_authority.py  (new)
+  prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh       (new, 5 mutations)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                          (index + commands)
+  evidence/live-convergence-0824/M2-session-authority/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                                     (new, 120K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  No service restart was needed and none was performed: the seam has no runtime caller yet
+  (§10.5 steps 3-7), so nothing the running web_cli executes changed.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_session_text_authority.py
+    exit 0. The REAL objects, end to end -- baseline spans replayed through the real
+    freeze/submit path into a real LiveSession, the production converger, every proposal applied
+    through the production apply_text_revision, scored off snapshot().effective_transcript:
+      lex_bill_ackman    wer=0.198864 (grid 0.198864) recall=0.926136 rolling=21 frontiers=20/30 revisions=6 disagreements=0
+      lex_javier_milei   wer=0.096000 (grid 0.096000) recall=0.920000 rolling=14 frontiers=26/38 revisions=6 disagreements=0
+      lex_keyu_jin       wer=0.100719 (grid 0.100719) recall=0.985612 rolling=16 frontiers=20/30 revisions=6 disagreements=0
+      TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      18 requests, 0 fresh (no GPU)
+    Six gates: G1 per-case WER == the grid's 10/10 column at 6 dp and trio means ==
+    .131861/.943916; G2 the shipped projection agrees with the SpeakerTimeline the arm was
+    measured through on 51 of 51 rolling segments; G3 one owner per interval on 98 sampled
+    surfaces (66 of them a rolling prefix beside a provisional suffix) -- ordered, non-overlapping,
+    no base segment inside the revised prefix; G4 every base commit byte-identical to the
+    baseline span it replays, revised_transcript still None, label_revision_version still 0;
+    G5 6/6 windows applied per case, text_revision_version == revisions applied, zero refusals;
+    G6 zero fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1050 passed, 2 skipped, 386 subtests (1033 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the same digest
+    iterations 7 and 11 recorded, so file mode has not moved across three production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh <out>
+    five mutations in live_session.py itself; ALL FIVE caught by the verifier AND by a named test;
+    control clean before and after.
+- WHAT SHIPPED. One seam -- LiveSession.apply_text_revision(proposal) -> TextRevisionOutcome --
+  and the four §7.3 snapshot fields (text_revision_version, canonical_through_sample,
+  effective_transcript[], finalization_status). The seven ADR-0005 validations all live in
+  _text_revision_refusal and are returned by stable name, never raised: stale_epoch,
+  unknown_revision_source, stale_text_revision_version, not_at_frontier /
+  terminal_must_replace_full_surface / already_finalized, interval_does_not_advance,
+  beyond_committed_audio, segment_outside_owned_interval / segment_does_not_advance /
+  segments_out_of_order. Refusals are counted by reason and carried on every outcome.
+  CanonicalCommit.transcript, its prefix chain and revised_transcript are untouched (D2/D3).
+- THE LABEL PROJECTION, which iteration 11 flagged as the thing that had to ship or the E2 gates
+  could not be met as measured. The grid scored every arm through proto_context_arms.SpeakerTimeline
+  -- an EXTERNAL relabelling step -- so the arm's speaker surface was a presumption about code that
+  did not exist. It exists now and the presumption is measured: 51 of 51 rolling segments get the
+  same answer. The rule is the measured one: the identity owning the most of a stretch wins,
+  nearest committed speech decides a stretch that overlaps nothing, ties break on the identity's
+  own name, and S00 (unattributed) is a real candidate that can win.
+- FOUR DESIGN DECISIONS, each with what it cost:
+  D1 The projection is COMPUTED, not stored. A revision keeps only its words; the speaker is
+     recomputed from the base timeline whenever the surface is rebuilt. That is what makes a later
+     revise_labels flow into the rolling prefix for free instead of freezing a stale identity into
+     a revision. Cost: a rebuild per surface change, bounded by a _surface_version counter that
+     only a published span, an applied label revision or an applied text revision bumps -- a
+     polling portal does not pay for it.
+  D2 The projection is a FALLBACK, not the last word: a producer that sets canonical_speaker itself
+     is left alone. E3's witness-owned speaker evidence (plan D5) will do exactly that, so
+     milestone M3 needs no change to this seam.
+  D3 Ownership at the frontier is keyed on where a segment BEGINS. A base segment straddling the
+     frontier belongs to the revision that already owns its first sample, so nothing is published
+     twice (D4). Its tail is not lost -- the next rolling window starts at that frontier and
+     decodes that audio again. The alternative (keep it whole if it ends after the frontier)
+     transiently duplicates words, which is the one thing D4 exists to prevent.
+  D4 Terminal is exempt from the frontier rule, not from validation. It REPLACES the surface, so it
+     must own it from sample 0, and may do so once. finalization_status can only reach `final`
+     today; running/failed/unavailable are E4's (§12.3) and have no producer yet.
+- MUTATIONS, five, in live_session.py (backed up, restored by trap on exit):
+    M1 the label projection never runs        -> G2 (49 of 51 segments disagree) + 7 T1 tests
+    M2 projection by proximity, not ownership -> G2 (2 of 51) + 3 T1 tests
+    M3 two owners at the frontier             -> G3 (24 straddles / 19 out-of-order surfaces) + T1
+    M4 rolling replaces instead of extends    -> G1 (trio WER .131861 -> .851088) + T1
+    M5 the text revision version never bumps  -> G5 (6 applied, version 0) + 2 T1 tests
+- Learned:
+  - M0a's tripwire works exactly as designed and cost nothing to obey: adding the four snapshot
+    fields made ReplayReconstructorRoundTripTest fail with "LiveSnapshot.text_revision_version
+    still holds its default; vary it so the round-trip check can see it" BEFORE the reconstructors
+    were extended. A defect class that used to ship silently now stops the change that would
+    introduce it.
+  - The first draft of the verifier gated "some surface shows a rolling prefix beside a provisional
+    suffix" sampled only at the instant a revision lands, and it FAILED on 2 of 3 cases. The code
+    was right and the sampling was wrong: a 10 s window decodes in ~0.35 s while base spans are
+    2.5 s, so at the instant a revision lands the frontier IS the committed prefix and there is no
+    suffix. Sampling after every commit finds 66 of 98 surfaces carrying both. Worth remembering:
+    a gate over an intermediate state has to be sampled where that state exists.
+  - Plan §5.1's ownership boundary is nearly invisible to this corpus: six 10 s windows tile the
+    whole minute, so at the end of a case there is no base suffix at all, and only lex_javier_milei
+    has a base segment straddling a 10 s frontier. Mutation M3 is caught by the corpus on 1 of 3
+    cases and by the T1 test unconditionally -- recorded rather than papered over, same shape as
+    iteration 11's M5 finding.
+  - LiveSnapshot now satisfies the converger's BaseTranscriptSurface protocol as-is, which is what
+    made the end-to-end driver possible without a single adapter. The one thing the runtime must
+    not forget when it wires this (§10.5 step 4): call observe_base AGAIN after applying a
+    revision, or the frontier the converger sees stops one window short.
+- Next: M2 step 3 item 3 = submit_live_refinement in the arbiter (context.md candidate 6e), then
+  wire base commits into the converger, then §7.3/§7.4 serialization, then the portal, then the
+  export switch LAST. Plan §10.5's order is not negotiable.

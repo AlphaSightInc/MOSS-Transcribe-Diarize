@@ -260,6 +260,31 @@ class TextRevisionProposal:
     decode_elapsed_sec: float | None = None
 
 
+#: Where terminal finalization stands (plan §7.3). `not_started` until a terminal pass begins,
+#: `final` once one has replaced the surface. The three unhappy words are E4's to publish: a
+#: meeting that was captured but not finalized must say so rather than read as final.
+FINALIZATION_STATUSES = ("not_started", "running", "final", "failed", "unavailable")
+
+
+@dataclass(frozen=True, slots=True)
+class TextRevisionOutcome:
+    """What one `apply_text_revision` call did, and -- by name -- why it did nothing.
+
+    Shaped like `LabelRevisionOutcome` because it answers the same question about the other
+    dimension of the living document, and for the same reason: a producer that is refused
+    must be able to tell a race (`stale_text_revision_version`) from a contract violation
+    (`segments_out_of_order`) without reading the session's mind.
+    """
+
+    applied: bool
+    version: int
+    canonical_through_sample: int
+    finalization_status: str
+    revised_segments: int = 0
+    refusal: str | None = None
+    refusals: tuple[tuple[str, int], ...] = ()
+
+
 @dataclass(frozen=True, slots=True)
 class LiveSnapshot:
     status: str
@@ -281,6 +306,15 @@ class LiveSnapshot:
     # whole of a meeting whose live labels were never corrected, so a client can tell "this
     # transcript is settled" from "this transcript is still being repaired" without diffing.
     label_revision_version: int = 0
+    # The other dimension of the living document (ADR-0005, plan §7.3). `label_revision_version`
+    # counts corrections to *who spoke*; these four report corrections to *what was said*:
+    # how many word revisions have landed, how far the rolling authority owns, the surface a
+    # reader is shown, and whether a terminal pass has finalized it. A client that reads
+    # `committed` still sees exactly what the short path published (D2).
+    text_revision_version: int = 0
+    canonical_through_sample: int = 0
+    effective_transcript: tuple[EffectiveTranscriptSegment, ...] = ()
+    finalization_status: str = "not_started"
 
 
 @dataclass(frozen=True, slots=True)
@@ -336,6 +370,21 @@ class LiveSession:
         # strings against a committed list that is already O(meeting).
         self._label_tracks: dict[int, tuple[str, ...]] = {}
         self._label_revision_version = 0
+        # The word-revision authority of ADR-0005. `_revision_segments` is the surface the
+        # two producers own over `[0, _canonical_through_sample)`; the committed spans behind
+        # it are untouched (D2), which is what makes every revision a diff against a
+        # preserved original. Refusals are counted by stable reason rather than raised: a
+        # producer's race is not the meeting's failure.
+        self._text_revision_version = 0
+        self._canonical_through_sample = 0
+        self._revision_segments: tuple[EffectiveTranscriptSegment, ...] = ()
+        self._finalization_status = "not_started"
+        self._text_revision_refusals: dict[str, int] = {}
+        # Bumped only by the three things that change what a reader is shown -- a published
+        # span, an applied label revision, an applied text revision -- so the effective
+        # surface is rebuilt when it changed and not once per poll.
+        self._surface_version = 0
+        self._effective_cache: tuple[int, tuple[EffectiveTranscriptSegment, ...]] | None = None
         self._prefix_hash = _hash_payload({"schema_version": 1, "prefix": []})
         self._identity_snapshot = LiveIdentitySnapshot()
         self._provisional_generation = 0
@@ -611,6 +660,7 @@ class LiveSession:
 
         if revised_spans:
             self._label_revision_version += 1
+            self._surface_version += 1
             self._bump()
             self._notify_waiters()
         return LabelRevisionOutcome(
@@ -679,6 +729,181 @@ class LiveSession:
         )
         return render_segments(relabelled, lambda segment: segment.speaker), applied
 
+    def apply_text_revision(self, proposal: TextRevisionProposal) -> TextRevisionOutcome:
+        """Publish better words over audio this session already committed, or refuse by name.
+
+        The one seam ADR-0005 defines. Two producers may reach it -- the rolling converger over
+        `[0, canonical_through_sample)` and the terminal finalizer, once -- and neither carries
+        any of the rules: a proposal is inert data, and every check below lives here so that a
+        second caller cannot re-implement a fifth of them.
+
+        Seven validations, none optional (ADR-0005 §3): same session epoch; the proposal starts
+        exactly at the frontier it claims to extend; it ends after its start and no later than
+        committed audio; every segment's absolute samples stay inside the owned interval;
+        segments are ordered and non-overlapping; the base text-revision version is current;
+        and terminal finalization replaces the full rolling surface at most once.
+
+        Nothing here raises and nothing here is terminal, for `revise_labels`' reason: a
+        refused revision is a producer's race or a producer's defect, and a meeting does not
+        end because a second listener arrived late. `CanonicalCommit.transcript` and its prefix
+        chain are never touched (D2), so what the short path actually published survives every
+        revision and replay can always reconstruct it.
+
+        Revising a *closed* session is deliberately allowed: the terminal pass runs after the
+        last span by construction, and the version bump is what tells a still-polling reader to
+        come back for it.
+        """
+
+        refusal = self._text_revision_refusal(proposal)
+        if refusal is not None:
+            _count_refusal(self._text_revision_refusals, refusal, 1)
+            return self._text_revision_outcome(applied=False, refusal=refusal)
+
+        segments = tuple(proposal.segments)
+        if proposal.source == "terminal":
+            self._revision_segments = segments
+            self._finalization_status = "final"
+        else:
+            self._revision_segments = self._revision_segments + segments
+        self._canonical_through_sample = int(proposal.end_sample)
+        self._text_revision_version += 1
+        self._surface_version += 1
+        self._bump()
+        self._notify_waiters()
+        return self._text_revision_outcome(applied=True, revised_segments=len(segments))
+
+    def _text_revision_refusal(self, proposal: TextRevisionProposal) -> str | None:
+        """The word for why this proposal may not publish, or `None` if it may.
+
+        Ordered from the cheapest, most-likely race outward, so the reason a producer is told
+        is the first thing that was actually wrong with what it sent.
+        """
+
+        if proposal.epoch != self._epoch:
+            return "stale_epoch"
+        if proposal.source not in TEXT_REVISION_SOURCES:
+            return "unknown_revision_source"
+        if proposal.base_text_revision_version != self._text_revision_version:
+            return "stale_text_revision_version"
+        if proposal.source == "terminal":
+            if self._finalization_status == "final":
+                return "already_finalized"
+            # Terminal finalization is exempt from the frontier rule precisely because it
+            # *replaces* the rolling surface rather than extending it -- and for that it must
+            # own all of it, from the first sample.
+            if proposal.start_sample != 0:
+                return "terminal_must_replace_full_surface"
+        elif proposal.start_sample != self._canonical_through_sample:
+            return "not_at_frontier"
+        if proposal.end_sample <= proposal.start_sample:
+            return "interval_does_not_advance"
+        if proposal.end_sample > self._committed_samples:
+            return "beyond_committed_audio"
+
+        previous_end = proposal.start_sample
+        for segment in proposal.segments:
+            if segment.start_sample < proposal.start_sample or segment.end_sample > proposal.end_sample:
+                return "segment_outside_owned_interval"
+            if segment.end_sample <= segment.start_sample:
+                return "segment_does_not_advance"
+            if segment.start_sample < previous_end:
+                return "segments_out_of_order"
+            previous_end = segment.end_sample
+        return None
+
+    def _text_revision_outcome(
+        self, *, applied: bool, revised_segments: int = 0, refusal: str | None = None
+    ) -> TextRevisionOutcome:
+        return TextRevisionOutcome(
+            applied=applied,
+            version=self._text_revision_version,
+            canonical_through_sample=self._canonical_through_sample,
+            finalization_status=self._finalization_status,
+            revised_segments=revised_segments,
+            refusal=refusal,
+            refusals=tuple(sorted(self._text_revision_refusals.items())),
+        )
+
+    def _effective_transcript(self) -> tuple[EffectiveTranscriptSegment, ...]:
+        """The surface a reader is shown: revised prefix, then the base's provisional suffix.
+
+        Rebuilt only when something changed it (`_surface_version`), because a portal polls
+        this several times a second and a meeting's committed spans are O(minutes).
+        """
+
+        if self._effective_cache is not None and self._effective_cache[0] == self._surface_version:
+            return self._effective_cache[1]
+        surface = self._build_effective_transcript()
+        self._effective_cache = (self._surface_version, surface)
+        return surface
+
+    def _build_effective_transcript(self) -> tuple[EffectiveTranscriptSegment, ...]:
+        base = self._base_segments()
+        frontier = self._canonical_through_sample
+        revised = tuple(
+            segment
+            if segment.canonical_speaker is not None
+            else replace(
+                segment,
+                canonical_speaker=_project_canonical_speaker(
+                    segment.start_sample, segment.end_sample, base
+                ),
+            )
+            for segment in self._revision_segments
+        )
+        # One owner per interval (D4), keyed on where a segment *begins*: a base segment that
+        # straddles the frontier belongs to the revision that already owns its first sample,
+        # so nothing is published twice. Its tail is not lost -- the next rolling window starts
+        # at this frontier and decodes that audio again.
+        suffix = tuple(segment for segment in base if segment.start_sample >= frontier)
+        return revised + suffix
+
+    def _base_segments(self) -> tuple[EffectiveTranscriptSegment, ...]:
+        """Every committed span's published segments, on the session clock.
+
+        Published means what a reader is shown: a span a sweep has relabelled contributes its
+        corrected labels, so the base timeline the projection votes on is the same one the
+        portal renders.
+        """
+
+        segments: list[EffectiveTranscriptSegment] = []
+        for commit in self._committed:
+            published = commit.revised_transcript if commit.revised_transcript is not None else commit.transcript
+            for parsed in span_segments(published, sample_count=commit.end_sample - commit.start_sample):
+                start = commit.start_sample + int(round(parsed.start * LIVE_SAMPLE_RATE))
+                end = commit.start_sample + int(round(parsed.end * LIVE_SAMPLE_RATE))
+                if end <= start or not parsed.text.strip():
+                    continue
+                segments.append(
+                    EffectiveTranscriptSegment(
+                        start_sample=start,
+                        end_sample=end,
+                        text=parsed.text,
+                        canonical_speaker=self._canonical_speaker_of(parsed.speaker),
+                        authority="provisional",
+                    )
+                )
+        return tuple(segments)
+
+    def _canonical_speaker_of(self, label: str) -> str | None:
+        """Which established speaker a published `Sxx` label names, or `None`.
+
+        The inverse of `display_speaker_label`, and it is total rather than raising: `S00` is
+        the honest "nobody attributed", and a label whose index the session has not established
+        is the same fact about an older snapshot's words.
+        """
+
+        if label == UNATTRIBUTED_SPEAKER or not label.startswith("S"):
+            return None
+        try:
+            index = int(label[1:]) - 1
+        except ValueError:
+            return None
+        canonical_speakers = self._identity_snapshot.canonical_speakers
+        if 0 <= index < len(canonical_speakers):
+            return canonical_speakers[index]
+        return None
+
     def snapshot(self) -> LiveSnapshot:
         return LiveSnapshot(
             status=self._status,
@@ -697,6 +922,10 @@ class LiveSession:
             pending_span_ids=tuple(self._span_order),
             failure_reason=self._failure_reason,
             label_revision_version=self._label_revision_version,
+            text_revision_version=self._text_revision_version,
+            canonical_through_sample=self._canonical_through_sample,
+            effective_transcript=self._effective_transcript(),
+            finalization_status=self._finalization_status,
         )
 
     async def stop(self, deadline: float) -> LiveSnapshot:
@@ -868,6 +1097,7 @@ class LiveSession:
             identity_snapshot_version=identity_snapshot.version,
         )
         self._committed.append(commit)
+        self._surface_version += 1
         self._retain_label_track(span, result)
         self._committed_samples = span.end_sample
         self._prefix_hash = prefix_hash
@@ -914,6 +1144,51 @@ class LiveSession:
     def _notify_waiters(self) -> None:
         for waiter in list(self._waiters):
             waiter.set()
+
+
+def _project_canonical_speaker(
+    start_sample: int,
+    end_sample: int,
+    base: Sequence[EffectiveTranscriptSegment],
+) -> str | None:
+    """Who a revised stretch of audio is attributed to, from the base path's own labels.
+
+    A rolling witness hears words, not people: its local `S01` is one decode's bookkeeping and
+    means nothing across spans, so a revision arrives unattributed and the session -- which is
+    where meeting identity lives -- says who spoke. The rule is the one the E2 grid was
+    measured through (`proto_context_arms.SpeakerTimeline`): the identity that owns the most
+    of this stretch wins; with no overlap at all, the nearest committed speech does. Ties break
+    on the identity's own name so two readers of the same state always agree.
+
+    `None` -- unattributed, rendered `S00` -- is a real candidate and can win, because the base
+    path publishes it honestly wherever identity abstained, and a projection that suppressed it
+    would invent attribution the meeting never had.
+
+    This is the *fallback* authority, not the last word: a producer that carries its own
+    witness-owned speaker evidence (plan D5) sets `canonical_speaker` itself and is left alone.
+    """
+
+    overlap: dict[str | None, int] = {}
+    for segment in base:
+        value = min(end_sample, segment.end_sample) - max(start_sample, segment.start_sample)
+        if value > 0:
+            overlap[segment.canonical_speaker] = overlap.get(segment.canonical_speaker, 0) + value
+    if overlap:
+        return max(sorted(overlap, key=_speaker_order), key=lambda speaker: overlap[speaker])
+    if not base:
+        return None
+    middle = (start_sample + end_sample) / 2
+    return min(
+        base,
+        key=lambda segment: (
+            min(abs(middle - segment.start_sample), abs(middle - segment.end_sample)),
+            segment.start_sample,
+        ),
+    ).canonical_speaker
+
+
+def _speaker_order(speaker: str | None) -> tuple[int, str]:
+    return (1, speaker) if speaker is not None else (0, "")
 
 
 def _count_refusal(refusals: dict[str, int], reason: str, amount: int) -> None:

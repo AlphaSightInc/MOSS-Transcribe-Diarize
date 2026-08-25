@@ -1,0 +1,50 @@
+F............F..................                                         [100%]
+=================================== FAILURES ===================================
+_ test_a_rolling_revision_publishes_better_words_and_leaves_the_committed_record_alone _
+
+    def test_a_rolling_revision_publishes_better_words_and_leaves_the_committed_record_alone():
+        """D2: the base commits are the preserved original every revision is a diff against."""
+    
+        session = session_with_base("[0][S01]alpha bet[1]", "[0][S02]gamma delta[1]")
+        before = session.snapshot()
+    
+        outcome = session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (segment(0, SECOND, "alpha beta"), segment(SECOND, 2 * SECOND, "gamma delta")),
+            )
+        )
+    
+        after = session.snapshot()
+>       assert (outcome.applied, outcome.version, outcome.revised_segments) == (True, 1, 2)
+E       assert (True, 0, 2) == (True, 1, 2)
+E         
+E         At index 1 diff: 0 != 1
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:95: AssertionError
+______ test_a_second_rolling_revision_extends_the_first_from_the_frontier ______
+
+    def test_a_second_rolling_revision_extends_the_first_from_the_frontier():
+        session = session_with_base("[0][S01]a[1]", "[0][S01]b[1]")
+    
+        session.apply_text_revision(proposal(session, 0, SECOND, (segment(0, SECOND, "a"),)))
+        second = session.apply_text_revision(
+            proposal(session, SECOND, 2 * SECOND, (segment(SECOND, 2 * SECOND, "b"),))
+        )
+    
+        assert second.applied is True
+        assert [item[2] for item in surface(session)] == ["a", "b"]
+>       assert session.snapshot().text_revision_version == 2
+E       AssertionError: assert 0 == 2
+E        +  where 0 = LiveSnapshot(status='active', epoch=0, version=6, accepted_samples=32000, accounted_samples=32000, retained_samples=0,...0, end_sample=32000, text='b', canonical_speaker='speaker-a', authority='rolling')), finalization_status='not_started').text_revision_version
+E        +    where LiveSnapshot(status='active', epoch=0, version=6, accepted_samples=32000, accounted_samples=32000, retained_samples=0,...0, end_sample=32000, text='b', canonical_speaker='speaker-a', authority='rolling')), finalization_status='not_started') = snapshot()
+E        +      where snapshot = <moss_transcribe_diarize.app.live_session.LiveSession object at 0x117d455e0>.snapshot
+
+tests/test_live_text_revision.py:343: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_text_revision.py::test_a_rolling_revision_publishes_better_words_and_leaves_the_committed_record_alone
+FAILED tests/test_live_text_revision.py::test_a_second_rolling_revision_extends_the_first_from_the_frontier
+2 failed, 30 passed in 2.19s

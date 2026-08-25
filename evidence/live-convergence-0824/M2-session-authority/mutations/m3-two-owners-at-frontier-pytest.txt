@@ -1,0 +1,28 @@
+..F.............................                                         [100%]
+=================================== FAILURES ===================================
+_ test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice _
+
+    def test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice():
+        """D4's whole point: one owner per interval, keyed on where a segment begins."""
+    
+        session = session_with_base("[0][S01]held over[1]", "[0][S01]after[1]")
+        frontier = SECOND // 2
+    
+        session.apply_text_revision(
+            proposal(session, 0, frontier, (segment(0, frontier, "held"),))
+        )
+    
+>       assert surface(session) == [
+            (0, frontier, "held", "speaker-a", "rolling"),
+            (SECOND, 2 * SECOND, "after", "speaker-a", "provisional"),
+        ]
+E       AssertionError: assert [(0, 8000, 'h...provisional')] == [(0, 8000, 'h...provisional')]
+E         
+E         At index 1 diff: (0, 16000, 'held over', 'speaker-a', 'provisional') != (16000, 32000, 'after', 'speaker-a', 'provisional')
+E         Left contains one more item: (16000, 32000, 'after', 'speaker-a', 'provisional')
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:133: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_text_revision.py::test_a_base_segment_that_straddles_the_frontier_is_owned_by_the_revision_not_published_twice
+1 failed, 31 passed in 2.17s

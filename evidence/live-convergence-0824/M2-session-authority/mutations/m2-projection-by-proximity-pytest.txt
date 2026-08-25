@@ -1,0 +1,80 @@
+....FF........F.................                                         [100%]
+=================================== FAILURES ===================================
+_____ test_a_revision_arrives_unattributed_and_the_session_says_who_spoke ______
+
+    def test_a_revision_arrives_unattributed_and_the_session_says_who_spoke():
+        """A witness's local `S01` is one decode's bookkeeping; meeting identity lives here."""
+    
+        session = session_with_base("[0][S01]mine[1]", "[0][S02]yours[1]")
+    
+        session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (segment(0, SECOND, "mine"), segment(SECOND, 2 * SECOND, "yours")),
+            )
+        )
+    
+>       assert [item[3] for item in surface(session)] == ["speaker-a", "speaker-b"]
+E       AssertionError: assert ['speaker-a', 'speaker-a'] == ['speaker-a', 'speaker-b']
+E         
+E         At index 1 diff: 'speaker-a' != 'speaker-b'
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:174: AssertionError
+__________ test_the_identity_that_owns_the_most_of_a_stretch_wins_it ___________
+
+    def test_the_identity_that_owns_the_most_of_a_stretch_wins_it():
+        session = session_with_base("[0][S01]a[1]", "[0][S02]b[1]", "[0][S02]c[1]")
+    
+        session.apply_text_revision(
+            proposal(session, 0, 3 * SECOND, (segment(0, 3 * SECOND, "a b c"),))
+        )
+    
+>       assert surface(session)[0][3] == "speaker-b"
+E       AssertionError: assert 'speaker-a' == 'speaker-b'
+E         
+E         - speaker-b
+E         ?         ^
+E         + speaker-a
+E         ?         ^
+
+tests/test_live_text_revision.py:184: AssertionError
+__________ test_terminal_finalization_replaces_the_whole_surface_once __________
+
+    def test_terminal_finalization_replaces_the_whole_surface_once():
+        session = session_with_base("[0][S01]a[1]", "[0][S02]b[1]")
+        session.apply_text_revision(proposal(session, 0, SECOND, (segment(0, SECOND, "a"),)))
+        assert session.snapshot().finalization_status == "not_started"
+    
+        outcome = session.apply_text_revision(
+            proposal(
+                session,
+                0,
+                2 * SECOND,
+                (
+                    EffectiveTranscriptSegment(0, SECOND, "a", None, "final"),
+                    EffectiveTranscriptSegment(SECOND, 2 * SECOND, "b", None, "final"),
+                ),
+                source="terminal",
+            )
+        )
+    
+        assert outcome.applied is True
+        assert outcome.finalization_status == "final"
+>       assert surface(session) == [
+            (0, SECOND, "a", "speaker-a", "final"),
+            (SECOND, 2 * SECOND, "b", "speaker-b", "final"),
+        ]
+E       AssertionError: assert [(0, 16000, '...-a', 'final')] == [(0, 16000, '...-b', 'final')]
+E         
+E         At index 1 diff: (16000, 32000, 'b', 'speaker-a', 'final') != (16000, 32000, 'b', 'speaker-b', 'final')
+E         Use -v to get more diff
+
+tests/test_live_text_revision.py:369: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_text_revision.py::test_a_revision_arrives_unattributed_and_the_session_says_who_spoke
+FAILED tests/test_live_text_revision.py::test_the_identity_that_owns_the_most_of_a_stretch_wins_it
+FAILED tests/test_live_text_revision.py::test_terminal_finalization_replaces_the_whole_surface_once
+3 failed, 29 passed in 2.16s

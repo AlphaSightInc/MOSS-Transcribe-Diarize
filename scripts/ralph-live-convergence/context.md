@@ -19,14 +19,17 @@
   - `app/live_span_bounds.py` — clamp-never-refuse precedent; now also home to
     `classify_live_transcript` (iteration 7). Any future question of the form "what may this
     span publish?" is answered there, not at a caller.
-  - `app/live_session.py` — `FrozenSpan:75`, `CanonicalCommit` (~:163, `revised_transcript`
-    invariant "same words, revised labels"), `revise_labels:539-563`, published-text rule `:581`,
-    snapshot ctor `:630-646`. The plan §7.1/§7.2 contracts (`EffectiveTranscriptSegment`,
-    `TextRevisionProposal`) now live here too, inert, because ADR-0005 puts all seven validations
-    in the session. M3 adds `apply_text_revision` + the §7.3 snapshot fields here.
+  - `app/live_session.py` — `FrozenSpan`, `CanonicalCommit` (`revised_transcript` invariant
+    "same words, revised labels"), `revise_labels`, `_publish_span`. **The §6 M3 authority ships
+    here since iteration 12**: `apply_text_revision` (seven validations in `_text_revision_refusal`),
+    the four §7.3 snapshot fields, and the label projection
+    (`_project_canonical_speaker` / `_base_segments` / `_build_effective_transcript`). Anything
+    that changes what a reader is shown must bump `_surface_version`, or the effective-surface
+    cache goes stale.
   - `app/live_transcript_convergence.py` — **M2, shipped iteration 11**: the rolling converger.
     Four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the selected 10/10
-    geometry, bounded PCM ring, one witness in flight. No caller yet — §10.5 steps 2-7 wire it.
+    geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
+    `BaseTranscriptSurface` protocol since iteration 12. Still no runtime caller — §10.5 steps 3-7.
   - `app/live_arbiter.py:62,68,81` — the three submit methods; M2 adds `submit_live_refinement`.
   - `app/live_endpoint.py` — 2.5 s hard cap (`hard_cap_samples=40000` via bounds config; stays 2.5 s).
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
@@ -36,7 +39,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 11)
+(2026-08-25, after iteration 12)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -367,12 +370,40 @@
   carry-forward alternative (reprint the base's words over the failed region so the frontier can
   advance) is recorded as the thing to build **if the §10.6 soak ever observes a failed window**,
   not before. Mutation M5 shows only the T1 test can hold this — the corpus is blind to it.
-- **M3 MUST SHIP A LABEL PROJECTION or the E2 gates cannot be met as measured.** Every proposed
-  segment carries `canonical_speaker=None`: a decoder's local `S01` is not a meeting identity, and
-  witness-owned speaker evidence is E3's (plan D5). But the grid scored every arm through the
-  frozen baseline speaker timeline, i.e. it presumed such a projection exists. Without it rolling
-  words publish as `S00` and every speaker-surface number the E2 arm was selected on disappears.
-- Rest of the ladder (M2 step 3 items 2-7, M3-M5) unimplemented; working tree carries the plan,
+- **M2 STEP 3b SHIPPED (iteration 12): the session is the text authority, and it attributes.**
+  `LiveSession.apply_text_revision` + seven validations (`_text_revision_refusal`) + the four §7.3
+  snapshot fields + the label projection, all in `app/live_session.py`; the replay reconstructors
+  and the round-trip tripwire extended in the same change (the tripwire fired on the new fields
+  before they were varied -- it works). 17 T1 tests in `tests/test_live_text_revision.py`.
+  `verify_session_text_authority.py` drives the REAL objects end to end -- baseline spans through
+  the real freeze/submit path -> production converger -> `apply_text_revision` ->
+  `snapshot().effective_transcript` -> the grid's own scorer -- and lands on **trio WER .131861 /
+  recall .943916**, per case .198864 / .096000 / .100719, 6 revisions each, **0 fresh MOSS
+  requests**. Full suite 1050 passed / 2 skipped / 386 subtests (1033 before). File mode
+  byte-identical (`sha ad381d8b...`, the same digest since iteration 7). Five mutations, each
+  caught by the verifier AND a test. Evidence:
+  `evidence/live-convergence-0824/M2-session-authority/`.
+- **The grid's presumption is now a measured fact: the projection agrees with the timeline the arm
+  was selected through on 51 of 51 rolling segments.** The rule is `SpeakerTimeline`'s -- most
+  overlap wins, nearest committed speech when a stretch overlaps nothing, ties on the identity's
+  own name -- and `S00` is a real candidate that can win, because the base publishes it honestly
+  where identity abstained.
+- **The projection is computed, not stored, and it is a fallback rather than the last word.** A
+  revision keeps only its words; the speaker is recomputed from the base timeline whenever the
+  surface is rebuilt, so a later `revise_labels` flows into the rolling prefix for free (T1 test).
+  A producer that sets `canonical_speaker` itself is left alone -- which is exactly what E3's
+  witness-owned evidence (plan D5) will do, so M3 needs no change here.
+- **Ownership at the frontier is keyed on where a segment BEGINS.** A base segment straddling the
+  frontier belongs to the revision that already owns its first sample (D4, no duplication); its
+  tail is not lost because the next window decodes that audio again. This is invisible at the end
+  of a trio case -- six 10 s windows tile the whole minute and no base suffix survives -- so the
+  verifier samples the surface after every commit (98 surfaces, 66 with both authorities). Even
+  then only `lex_javier_milei` has a base segment straddling a 10 s frontier: mutation M3 is caught
+  by the corpus on 1 of 3 cases and by the T1 test unconditionally.
+- **Terminal is exempt from the frontier rule, not from validation**: it replaces the surface, so
+  it must own it from sample 0, once (`already_finalized`). `finalization_status` can only reach
+  `final` today; `running`/`failed`/`unavailable` are E4's (§12.3) and have no producer yet.
+- Rest of the ladder (M2 step 3 items 3-7, M3-M5) unimplemented; working tree carries the plan,
   evidence prototypes, and this scaffold.
 
 ## Validation
@@ -445,6 +476,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh /tmp/converger-mutations
 # converger interface tests
 .venv/bin/python -m pytest tests/test_live_transcript_convergence.py -q
+# E2 step 3b: does the SHIPPED session authority publish that arm, and attribute it? (exit 0, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_session_text_authority.py
+# its five mutations, in live_session.py itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh /tmp/authority-mutations
+# text-revision authority tests (seven validations, projection, terminal)
+.venv/bin/python -m pytest tests/test_live_text_revision.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -484,20 +522,19 @@ prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh
 6c. ~~**M2 step 3 item 1: the M2 converger**~~ - SHIPPED iteration 11, reproduces the selected
    arm at 6 dp (see Current state). Do NOT re-open the geometry: `RollingGeometry` refuses an
    overlapping stride on purpose, and changing it means re-running the §10.2 grid.
-6d. **M2 step 3 item 2: M3 word-revision authority - NEXT.** `LiveSession.apply_text_revision`
-   (ADR-0005: seven validations, all in the session) + the four §7.3 snapshot fields
-   (`text_revision_version`, `canonical_through_sample`, `effective_transcript[]`,
-   `finalization_status`). Two things that are easy to miss and both are load-bearing:
-   (a) **the label projection** - rolling segments arrive with `canonical_speaker=None`, and the
-   grid's numbers presume the session attributes them from the base's own labels; without it the
-   speaker surface collapses to `S00`; (b) **extend `ReplayReconstructorRoundTripTest`** in the
-   same change for every field added - the hand-written reconstructors are the one place a new
-   field is silently lost (ADR-0005 consequence, M0a's defect).
-6e. **M2 step 3 items 3-7**, in this fixed order: `submit_live_refinement` in the arbiter (M5,
-   coalesce key `rolling:<epoch>` is already emitted) -> wire base commits into the converger ->
-   snapshot/event serialization (§7.3/§7.4) -> portal `effective_transcript` -> export switch
-   **last**, only after terminal/effective export tests pass, in the same reviewed change. Then the
-   headless portal render/serialization test and the 5-minute soak (§10.6). F2 says the
+6d. ~~**M2 step 3 item 2: M3 word-revision authority**~~ - SHIPPED iteration 12 (see Current
+   state). The seam, the seven validations, the four §7.3 fields, the label projection and the
+   extended replay tripwire all landed together, and the arm reproduces end to end through the
+   real session. Do NOT re-open the projection rule: it agrees with the timeline the arm was
+   selected through on 51 of 51 segments, and changing it means re-running the §10.2 grid.
+6e. **M2 step 3 items 3-7 - NEXT**, in this fixed order: `submit_live_refinement` in the arbiter
+   (M5, coalesce key `rolling:<epoch>` is already emitted) -> wire base commits into the converger
+   (the runtime must call `observe_base` again after every applied revision, or the frontier the
+   converger sees stops one window short - the verifier does exactly this) -> snapshot/event
+   serialization (§7.3/§7.4; `dataclasses.asdict` already carries the four new fields, so this
+   step is the seven events) -> portal `effective_transcript` -> export switch **last**, only
+   after terminal/effective export tests pass, in the same reviewed change. Then the headless
+   portal render/serialization test and the 5-minute soak (§10.6). F2 says the
    duplicate-phrase-at-a-join behaviour ships with this geometry; do not add a de-duplicator
    without measuring one (the corpus for it is in `M2-rolling-grid/grid.json`). F3 says G6 will be
    missed; measure it honestly in the soak. Restart `web_cli` onto the build and record it before

@@ -32,6 +32,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     CanonicalCommit,
+    EffectiveTranscriptSegment,
     FrameAck,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
@@ -943,6 +944,25 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
         pending_span_ids=(1,),
         failure_reason="stop_drain_deadline",
         label_revision_version=7,
+        text_revision_version=5,
+        canonical_through_sample=32000,
+        effective_transcript=(
+            EffectiveTranscriptSegment(
+                start_sample=0,
+                end_sample=32000,
+                text="hello there",
+                canonical_speaker="speaker-0002",
+                authority="rolling",
+            ),
+            EffectiveTranscriptSegment(
+                start_sample=32000,
+                end_sample=39840,
+                text="hello",
+                canonical_speaker=None,
+                authority="provisional",
+            ),
+        ),
+        finalization_status="running",
     )
     return LiveServiceSnapshot(
         session_id="session-round-trip",
