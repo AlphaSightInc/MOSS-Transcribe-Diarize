@@ -1,0 +1,7 @@
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1147 passed, 2 skipped, 4 warnings, 396 subtests passed in 88.25s (0:01:28)
+
+[exited with code 0]

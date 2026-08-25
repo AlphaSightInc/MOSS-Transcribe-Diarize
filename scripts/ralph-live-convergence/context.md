@@ -35,7 +35,9 @@
     that changes what a reader is shown must bump `_surface_version`, or the effective-surface
     cache goes stale. **`_text_revision_refusal` is now load-bearing for E4** (iteration 29): its
     `segment.start_sample < previous_end -> segments_out_of_order` rule is what refuses a terminal
-    proposal that reproduces file mode's own overlapping seam, and candidate 8e is that collision.
+    proposal that reproduces file mode's own overlapping seam. Iteration 30 MEASURED the answer
+    (`merge_overlapping`, candidate 8e-2 ships it): the producer sends an admissible proposal; the
+    session's rule does NOT relax, because ADR-0005 D4's one-owner-per-interval rests on it.
   - `app/live_transcript_convergence.py` — the two longer listeners. **M2, shipped iteration 11**:
     the rolling converger — four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the
     selected 10/10 geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
@@ -84,7 +86,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 29)
+(2026-08-25, after iteration 30)
 
 - Deployed dev stack up: `web_cli` **pid 86813, restarted 2026-08-25 10:14:58 local /
   14:15:08Z** onto the SAME E4 build and manifest (repo HEAD `29681e0` + iteration 27's working
@@ -1009,8 +1011,33 @@
   - **Cold vs warm readiness (G-M4-8)**: cold terminal decode `2.182 s` (RTF `.036372`), warm RTF
     p50 `.035081` / p95 `.038011` over 9 sessions. P8 is FALSIFIED in its premise - there is no
     local model to load, so cold sits inside the warm distribution.
-- Rest of the ladder: M5 (evidence + records) unimplemented, and the seam refusal above is an open
-  defect with no fix attempted yet.
+- **THE SEAM REFUSAL IS ANSWERED, NOT YET SHIPPED (iteration 30): `merge_overlapping`, 6 of 6
+  preregistered gates.** `measure_seam_overlap.py` over the iteration-29 batch, five arms, no MOSS
+  request; evidence `evidence/live-convergence-0824/M4-seam-overlap/`, preregistration
+  `PREREGISTRATION-M4-seam.md`.
+  - On the overlapping arm (`lex_adam_frank`, both runs, 546 words in): `merge_overlapping` 37
+    segments / 0 words lost / 0.00 s displaced / WER `.126177` / DER `.066222`; `clip_later_start`
+    and `clip_earlier_end` are IDENTICAL on every scored axis but displace 2.34 s each;
+    `drop_later` deletes 7 words for WER `.116761` and still fails G-M4-4.
+  - **F1, and it outlives this candidate: the deployed DER pays a bonus for publishing the same
+    audio twice.** `calculate_diarization` sums the overlap of every (reference, hypothesis) pair,
+    so duplicated hypothesis seconds are credited twice. All of `.053222 -> .066222` is `miss`
+    (`.048833 -> .061833`, exactly `2.34 / 180`); evaluator v2 unions first and does not move
+    (`der_reference_speech` `.054079` either way). Resolving the seam is a metric CORRECTION, not a
+    quality regression - plan §3.4's artifact in a new shape (duplication, not padding).
+  - Total on 12 synthetic overlap shapes (containment, identical extents, chains of three,
+    later-ends-earlier, unsorted, cross-speaker); the identity on all 10 non-overlapping file arms;
+    no arm emits a boundary the input never claimed; admissibility checked by calling the
+    PRODUCTION `LiveSession._text_revision_refusal`, not a restatement of it.
+  - **D-M4-3 (owner ruling, recorded in the bundle):** shipping it is expected to take M4 from 11
+    to **12 of 14** - G-M4-2 / G-M4-6 / G-M4-9 recover on that case, and G-M4-3 / G-M4-4 fail there
+    instead (`.126177` vs rolling `.122411`; `.949153` vs `.951036`). Recommended: take it. The
+    milestone's subject is terminal convergence, G-M4-1 is honoured at `0.000000`, and a meeting
+    that cannot finalize at all is the worse outcome.
+- No production code changed in iteration 30; pytest unchanged at 1147 passed / 2 skipped / 396
+  subtests.
+- Rest of the ladder: 8e-2 (ship the resolution) and 8f (re-score M4) are open, then M5 (evidence
+  + records), unimplemented.
 
 ## Validation
 
@@ -1428,20 +1455,39 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    as convergence: it is R2's "already inside", a ROLLING arm sitting `.003766` from file. Do NOT
    re-derive the readiness clock: the batch's own `console/runner.log` is the one UTC clock every
    pass script writes, and the driver stamps disagree (the 5-minute driver writes none).
-8e. **The seam refusal**: a terminal pass can reproduce the paired file arm exactly and be refused
-   `segments_out_of_order`, because file mode's own multi-window output may overlap at a seam
-   (`lex_adam_frank`: `[131.19,136.29]` then `[133.95,136.62]`, 2.34 s) and
-   `LiveSession._text_revision_refusal` forbids overlapping segments. **NEXT, and the lowest open
-   item**, because three M4 gates and one case's whole terminal surface hang on it. Prototype first
-   and MEASURE, per AGENTS.md: (O1) make the proposal admissible by resolving the overlap in the
-   finalizer - the campaign has never authorized inventing timestamps (plan §3.4's extent trap), so
-   any resolution must be measured on WER/DER/coverage/v2 against the file arm it claims to
-   reproduce; (O2) let the surface hold overlapping segments, which changes what every reader and
-   the DER scorer sees; (O3) leave it refused, which is today's behaviour and costs that meeting its
-   terminal surface. Re-score the M4 gates on a fresh batch only after a fix lands, and expect that
-   case to then fail G-M4-3/G-M4-4 instead - that is 8d's owner ruling, not a reason to choose O3.
-   The 5-minute case has THREE windows and no overlap, so this is data-dependent, not structural:
-   a fix cannot be validated on a corpus of one.
+8e. ~~**The seam refusal: which resolution?**~~ - MEASURED iteration 30, 6 of 6 preregistered
+   gates pass and the arm is selected: **`merge_overlapping`**. `measure_seam_overlap.py` +
+   `PREREGISTRATION-M4-seam.md`, verdict in `evidence/live-convergence-0824/M4-seam-overlap/`.
+   Five arms over the iteration-29 batch, no MOSS request. Of the three arms that tie on every
+   scored axis, merge is the only one that displaces no segment extent; `drop_later` deletes
+   seven of the meeting's words and fails G-M4-4 anyway. Do NOT re-run it hoping for a
+   different arm: both runs of the case give identical numbers and the selection rule was
+   preregistered. Do NOT reach for `admit` (relaxing `_text_revision_refusal`): it is a change
+   every producer on the surface is bound by and ADR-0005 D4 rests on it, and its `.053222` DER
+   is a DOUBLE COUNT (F1 below), not a better surface.
+8e-2. **SHIP the seam resolution** - NEXT, and the lowest open item. Put the selected rule in
+   `TerminalTranscriptFinalizer._segments_of`, on `placed`, i.e. on the decoder's LOCAL speakers
+   and BEFORE `terminal_speaker_mapping` (merging after the mapping would merge two local
+   speakers that map to one person - a different rule than the one measured). CHECK, do not
+   assume, that the mapping is unaffected: the merged segment's overlap weight against the base
+   surface becomes the union rather than the sum, and the mapping votes on those weights - a
+   named test on this case's seam. Table-driven tests from the twelve synthetic shapes plus a
+   regression that a non-overlapping proposal is returned unchanged. File mode must stay
+   byte-identical (`_stitch_segments` untouched). Then re-score M4 (8f).
+8f. **Re-score the M4 exit on a fresh paired batch** after 8e-2 lands - `verify_m4_exit.py
+   --fresh-root`, five cases, two runs. Expect **12 of 14**: G-M4-2 / G-M4-6 / G-M4-9 recover,
+   and `lex_adam_frank` fails G-M4-3 (`.126177` vs rolling `.122411`) and G-M4-4 (`.949153` vs
+   `.951036`) instead. That trade is D-M4-3, an owner ruling already recorded in the
+   M4-seam-overlap bundle - do NOT move a bound to avoid it (PRD: gates immutable mid-run).
+NEW EVIDENCE, from iteration 30, that outlives this candidate:
+   **The deployed DER pays a bonus for publishing the same audio twice.**
+   `evaluation.calculate_diarization` computes `overlapped_by_reference` by summing the overlap
+   of every (reference, hypothesis) pair, so reference seconds that two hypothesis segments both
+   claim are credited twice and that much real `miss` disappears. On `lex_adam_frank` the file
+   arm's `.053222` is `.066222` once the duplication is resolved - all of it `miss`, exactly
+   `2.34 / 180`. Evaluator v2 unions hypothesis intervals first and does not move (`.054079`
+   either way). This is the plan §3.4 extent artifact in a new shape (duplication, not padding)
+   and it belongs in the §18 record beside candidate 7d's decomposition.
 9. **M5 evidence + records** per PRD - the campaign report, the §18 annotations and the
    `docs/design-streaming-diarization.md` §7 verdict entry. Writable for M0-M4 as they stand;
    the M4 row is UNSIGNED and must carry 8e's disposition beside its 11 passing gates.

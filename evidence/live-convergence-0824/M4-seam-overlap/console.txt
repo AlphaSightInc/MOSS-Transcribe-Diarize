@@ -1,0 +1,90 @@
+P-M4-C - the seam refusal, six arms over one batch
+
+batch: evidence/live-convergence-0824/M4-e4-exit/passes
+
+WHERE THE OVERLAP IS
+  clean    5m-lex-keyu-jin        A   67 segments  input refusal=None
+  clean    5m-lex-keyu-jin        B   67 segments  input refusal=None
+  OVERLAP  lex_adam_frank         A   38 segments  input refusal=segments_out_of_order  2.34s at [131.19,136.29]/[133.95,136.62]  same_speaker=True
+  OVERLAP  lex_adam_frank         B   38 segments  input refusal=segments_out_of_order  2.34s at [131.19,136.29]/[133.95,136.62]  same_speaker=True
+  clean    acquired_jamie_dimon   A   17 segments  input refusal=None
+  clean    lex_bill_ackman        A   18 segments  input refusal=None
+  clean    lex_javier_milei       A   20 segments  input refusal=None
+  clean    lex_keyu_jin           A   10 segments  input refusal=None
+  clean    acquired_jamie_dimon   B   17 segments  input refusal=None
+  clean    lex_bill_ackman        B   18 segments  input refusal=None
+  clean    lex_javier_milei       B   20 segments  input refusal=None
+  clean    lex_keyu_jin           B   10 segments  input refusal=None
+
+WHAT EACH ARM COSTS, ON THE ARM THAT OVERLAPS
+  lex_adam_frank/A  (546 words in)
+  arm                   segs  words lost  displaced s       wer       der  v2 recall  v2 mw-spk  refusal
+  admit                   38           0         0.00  0.126177  0.053222   0.949153   0.949153  segments_out_of_order
+  clip_earlier_end        38           0         2.34  0.126177  0.066222   0.949153   0.949153  None
+  clip_later_start        38           0         2.34  0.126177  0.066222   0.949153   0.949153  None
+  drop_later              37           7         2.67  0.116761  0.068056   0.947269   0.947269  None
+  merge_overlapping       37           0         0.00  0.126177  0.066222   0.949153   0.949153  None
+  lex_adam_frank/B  (546 words in)
+  arm                   segs  words lost  displaced s       wer       der  v2 recall  v2 mw-spk  refusal
+  admit                   38           0         0.00  0.126177  0.053222   0.949153   0.949153  segments_out_of_order
+  clip_earlier_end        38           0         2.34  0.126177  0.066222   0.949153   0.949153  None
+  clip_later_start        38           0         2.34  0.126177  0.066222   0.949153   0.949153  None
+  drop_later              37           7         2.67  0.116761  0.068056   0.947269   0.947269  None
+  merge_overlapping       37           0         0.00  0.126177  0.066222   0.949153   0.949153  None
+
+THE FOUR M4 ROWS THIS CASE IS FAILING, UNDER EACH ARM
+  lex_adam_frank/A
+  arm                        wer       der   G-M4-1   G-M4-2   G-M4-3   G-M4-4
+  admit                 0.126177  0.053222     PASS     PASS     FAIL     FAIL
+  clip_earlier_end      0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  clip_later_start      0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  drop_later            0.116761  0.068056     PASS     PASS     PASS     FAIL
+  merge_overlapping     0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  refuse                0.122411         -     PASS     FAIL     PASS     PASS
+  lex_adam_frank/B
+  arm                        wer       der   G-M4-1   G-M4-2   G-M4-3   G-M4-4
+  admit                 0.126177  0.053222     PASS     PASS     FAIL     FAIL
+  clip_earlier_end      0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  clip_later_start      0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  drop_later            0.116761  0.068056     PASS     PASS     PASS     FAIL
+  merge_overlapping     0.126177  0.066222     PASS     PASS     FAIL     FAIL
+  refuse                0.122411         -     PASS     FAIL     PASS     PASS
+
+SYNTHETIC SHAPES (totality)
+  shape                      overlaps  clip_later_start  clip_earlier_end  merge_overlappin  drop_later      
+  disjoint                          0  ok 2seg -0w       ok 2seg -0w       ok 2seg -0w       ok 2seg -0w     
+  touching                          0  ok 3seg -0w       ok 3seg -0w       ok 3seg -0w       ok 3seg -0w     
+  pair_same_speaker                 1  ok 2seg -0w       ok 2seg -0w       ok 1seg -0w       ok 1seg -1w     
+  pair_cross_speaker                1  ok 2seg -0w       ok 2seg -0w       ok 2seg -0w       ok 1seg -1w     
+  contained                         1  ok 1seg -1w       ok 2seg -0w       ok 1seg -0w       ok 1seg -1w     
+  contained_cross_speaker           1  ok 1seg -1w       ok 2seg -0w       ok 1seg -1w       ok 1seg -1w     
+  identical                         1  ok 1seg -1w       ok 1seg -1w       ok 1seg -0w       ok 1seg -1w     
+  chain_of_three                    2  ok 3seg -0w       ok 3seg -0w       ok 1seg -0w       ok 2seg -1w     
+  chain_mixed_speakers              2  ok 3seg -0w       ok 3seg -0w       ok 3seg -0w       ok 2seg -1w     
+  later_ends_earlier                1  ok 2seg -1w       ok 3seg -0w       ok 2seg -0w       ok 2seg -1w     
+  unsorted_input                    0  ok 3seg -0w       ok 3seg -0w       ok 3seg -0w       ok 3seg -0w     
+  single                            0  ok 1seg -0w       ok 1seg -0w       ok 1seg -0w       ok 1seg -0w     
+
+SELECTION (preregistered order: words lost, displaced seconds, max delta, simplicity)
+  arm                  eligible  words lost  displaced s  max |d| vs file
+  merge_overlapping        True           0         0.00         0.013000
+  clip_later_start         True           0         4.68         0.013000
+  clip_earlier_end         True           0         4.68         0.013000
+  drop_later               True          14         5.34         0.014834
+  SELECTED: merge_overlapping
+
+GATES
+  PASS  G-S1   every candidate arm yields a proposal the production rule accepts
+          48 file arms + 48 synthetic; refused: none
+  PASS  G-S2   on a file arm with no overlapping pair every candidate is the identity
+          10 of 12 arms have no overlap; changed: none
+  PASS  G-S3   no arm emits a boundary the input never claimed
+          none
+  PASS  G-S4   every candidate is total: sorted, advancing, non-overlapping, inside the meeting
+          12 shapes x 4 arms; faults: none
+  PASS  G-S5   the reference arm reproduces the shipped batch's own file-arm scores
+          48 axis comparisons; mismatched: none
+  PASS  G-S6   the word-conserving candidates lose no word of the meeting
+          ['clip_earlier_end', 'clip_later_start', 'merge_overlapping']; lost: none
+
+  6 of 6 gates pass

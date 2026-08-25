@@ -1,0 +1,3533 @@
+{
+ "arms": [
+  "admit",
+  "clip_earlier_end",
+  "clip_later_start",
+  "drop_later",
+  "merge_overlapping"
+ ],
+ "batch": "evidence/live-convergence-0824/M4-e4-exit/passes",
+ "cases": [
+  {
+   "case": "5m-lex-keyu-jin",
+   "end_sample": 4799680,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/keyu5m-A/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 67,
+   "input_words": 735,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.057933,
+    "false_alarm": 0.0,
+    "miss": 0.0478,
+    "segments": 67,
+    "speaker_accuracy": 0.942067,
+    "speaker_confusion": 0.010133,
+    "text_coverage": 0.952109,
+    "wer": 0.050616
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "primary"
+  },
+  {
+   "case": "5m-lex-keyu-jin",
+   "end_sample": 4799680,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/keyu5m-B/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 67,
+   "input_words": 735,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.057933,
+    "false_alarm": 0.0,
+    "miss": 0.0478,
+    "segments": 67,
+    "speaker_accuracy": 0.942067,
+    "speaker_confusion": 0.010133,
+    "text_coverage": 0.952109,
+    "wer": 0.050616
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.057933,
+      "false_alarm": 0.0,
+      "miss": 0.0478,
+      "segments": 67,
+      "speaker_accuracy": 0.942067,
+      "speaker_confusion": 0.010133,
+      "text_coverage": 0.952109,
+      "v2": {
+       "content_recall": 0.97264,
+       "der_reference_speech": 0.044897,
+       "matched_word_speaker_accuracy": 0.97264,
+       "wer": 0.050616
+      },
+      "wer": 0.050616
+     },
+     "segments": 67,
+     "structure_faults": [],
+     "words": 735,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_adam_frank",
+   "end_sample": 2872320,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/three-minute/adam3m-A/file-hypothesis.jsonl",
+   "input_refusal": "segments_out_of_order",
+   "input_segments": 38,
+   "input_words": 546,
+   "overlaps": [
+    {
+     "earlier": [
+      2099040,
+      2180640,
+      "S01"
+     ],
+     "index": 26,
+     "later": [
+      2143200,
+      2185920,
+      "S01"
+     ],
+     "overlap_sec": 2.34,
+     "same_speaker": true
+    }
+   ],
+   "recorded_file_axes": {
+    "der": 0.053222,
+    "false_alarm": 0.0,
+    "miss": 0.048833,
+    "segments": 38,
+    "speaker_accuracy": 0.946778,
+    "speaker_confusion": 0.004389,
+    "text_coverage": 0.95226,
+    "wer": 0.126177
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": "segments_out_of_order",
+     "scores": {
+      "der": 0.053222,
+      "false_alarm": 0.0,
+      "miss": 0.048833,
+      "segments": 38,
+      "speaker_accuracy": 0.946778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.95226,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [
+      "segment 26 overlaps its predecessor"
+     ],
+     "words": 546,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 2.34,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 38,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 2.34,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 38,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 2.67,
+     "dropped": 1,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.068056,
+      "false_alarm": 0.0,
+      "miss": 0.063667,
+      "segments": 37,
+      "speaker_accuracy": 0.931944,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.937714,
+      "v2": {
+       "content_recall": 0.947269,
+       "der_reference_speech": 0.055949,
+       "matched_word_speaker_accuracy": 0.947269,
+       "wer": 0.116761
+      },
+      "wer": 0.116761
+     },
+     "segments": 37,
+     "structure_faults": [],
+     "words": 539,
+     "words_lost": 7
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 1,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 37,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 37,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_adam_frank",
+   "end_sample": 2872320,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/three-minute/adam3m-B/file-hypothesis.jsonl",
+   "input_refusal": "segments_out_of_order",
+   "input_segments": 38,
+   "input_words": 546,
+   "overlaps": [
+    {
+     "earlier": [
+      2099040,
+      2180640,
+      "S01"
+     ],
+     "index": 26,
+     "later": [
+      2143200,
+      2185920,
+      "S01"
+     ],
+     "overlap_sec": 2.34,
+     "same_speaker": true
+    }
+   ],
+   "recorded_file_axes": {
+    "der": 0.053222,
+    "false_alarm": 0.0,
+    "miss": 0.048833,
+    "segments": 38,
+    "speaker_accuracy": 0.946778,
+    "speaker_confusion": 0.004389,
+    "text_coverage": 0.95226,
+    "wer": 0.126177
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": "segments_out_of_order",
+     "scores": {
+      "der": 0.053222,
+      "false_alarm": 0.0,
+      "miss": 0.048833,
+      "segments": 38,
+      "speaker_accuracy": 0.946778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.95226,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [
+      "segment 26 overlaps its predecessor"
+     ],
+     "words": 546,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 2.34,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 38,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 2.34,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 38,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 38,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 2.67,
+     "dropped": 1,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.068056,
+      "false_alarm": 0.0,
+      "miss": 0.063667,
+      "segments": 37,
+      "speaker_accuracy": 0.931944,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.937714,
+      "v2": {
+       "content_recall": 0.947269,
+       "der_reference_speech": 0.055949,
+       "matched_word_speaker_accuracy": 0.947269,
+       "wer": 0.116761
+      },
+      "wer": 0.116761
+     },
+     "segments": 37,
+     "structure_faults": [],
+     "words": 539,
+     "words_lost": 7
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": false,
+     "invented_boundaries": [],
+     "merged": 1,
+     "refusal": null,
+     "scores": {
+      "der": 0.066222,
+      "false_alarm": 0.0,
+      "miss": 0.061833,
+      "segments": 37,
+      "speaker_accuracy": 0.933778,
+      "speaker_confusion": 0.004389,
+      "text_coverage": 0.939511,
+      "v2": {
+       "content_recall": 0.949153,
+       "der_reference_speech": 0.054079,
+       "matched_word_speaker_accuracy": 0.949153,
+       "wer": 0.126177
+      },
+      "wer": 0.126177
+     },
+     "segments": 37,
+     "structure_faults": [],
+     "words": 546,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "primary"
+  },
+  {
+   "case": "acquired_jamie_dimon",
+   "end_sample": 959520,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-A/acquired_jamie_dimon/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 17,
+   "input_words": 207,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 3.844717,
+    "false_alarm": 3.555835,
+    "miss": 0.274994,
+    "segments": 17,
+    "speaker_accuracy": 0.711118,
+    "speaker_confusion": 0.013888,
+    "text_coverage": 0.90984,
+    "wer": 0.847458
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "diagnostic"
+  },
+  {
+   "case": "lex_bill_ackman",
+   "end_sample": 959040,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-A/lex_bill_ackman/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 18,
+   "input_words": 184,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.0755,
+    "false_alarm": 0.0,
+    "miss": 0.051,
+    "segments": 18,
+    "speaker_accuracy": 0.9245,
+    "speaker_confusion": 0.0245,
+    "text_coverage": 0.952215,
+    "wer": 0.159091
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_javier_milei",
+   "end_sample": 959680,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-A/lex_javier_milei/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 20,
+   "input_words": 117,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.151833,
+    "false_alarm": 0.0,
+    "miss": 0.151833,
+    "segments": 20,
+    "speaker_accuracy": 0.848167,
+    "speaker_confusion": 0.0,
+    "text_coverage": 0.870992,
+    "wer": 0.088
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_keyu_jin",
+   "end_sample": 958080,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-A/lex_keyu_jin/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 10,
+   "input_words": 148,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.079,
+    "false_alarm": 0.0,
+    "miss": 0.067667,
+    "segments": 10,
+    "speaker_accuracy": 0.921,
+    "speaker_confusion": 0.011333,
+    "text_coverage": 0.936387,
+    "wer": 0.064748
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    }
+   },
+   "run": "A",
+   "tier": "primary"
+  },
+  {
+   "case": "acquired_jamie_dimon",
+   "end_sample": 959520,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-B/acquired_jamie_dimon/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 17,
+   "input_words": 207,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 3.844717,
+    "false_alarm": 3.555835,
+    "miss": 0.274994,
+    "segments": 17,
+    "speaker_accuracy": 0.711118,
+    "speaker_confusion": 0.013888,
+    "text_coverage": 0.90984,
+    "wer": 0.847458
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 3.844717,
+      "false_alarm": 3.555835,
+      "miss": 0.274994,
+      "segments": 17,
+      "speaker_accuracy": 0.711118,
+      "speaker_confusion": 0.013888,
+      "text_coverage": 0.90984,
+      "v2": {
+       "content_recall": 0.932203,
+       "der_reference_speech": 3.826597,
+       "matched_word_speaker_accuracy": 0.864407,
+       "wer": 0.847458
+      },
+      "wer": 0.847458
+     },
+     "segments": 17,
+     "structure_faults": [],
+     "words": 207,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "diagnostic"
+  },
+  {
+   "case": "lex_bill_ackman",
+   "end_sample": 959040,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-B/lex_bill_ackman/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 18,
+   "input_words": 184,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.0755,
+    "false_alarm": 0.0,
+    "miss": 0.051,
+    "segments": 18,
+    "speaker_accuracy": 0.9245,
+    "speaker_confusion": 0.0245,
+    "text_coverage": 0.952215,
+    "wer": 0.159091
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.0755,
+      "false_alarm": 0.0,
+      "miss": 0.051,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "speaker_confusion": 0.0245,
+      "text_coverage": 0.952215,
+      "v2": {
+       "content_recall": 0.931818,
+       "der_reference_speech": 0.075863,
+       "matched_word_speaker_accuracy": 0.931818,
+       "wer": 0.159091
+      },
+      "wer": 0.159091
+     },
+     "segments": 18,
+     "structure_faults": [],
+     "words": 184,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_javier_milei",
+   "end_sample": 959680,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-B/lex_javier_milei/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 20,
+   "input_words": 117,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.151833,
+    "false_alarm": 0.0,
+    "miss": 0.151833,
+    "segments": 20,
+    "speaker_accuracy": 0.848167,
+    "speaker_confusion": 0.0,
+    "text_coverage": 0.870992,
+    "wer": 0.088
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.151833,
+      "false_alarm": 0.0,
+      "miss": 0.151833,
+      "segments": 20,
+      "speaker_accuracy": 0.848167,
+      "speaker_confusion": 0.0,
+      "text_coverage": 0.870992,
+      "v2": {
+       "content_recall": 0.92,
+       "der_reference_speech": 0.059524,
+       "matched_word_speaker_accuracy": 0.92,
+       "wer": 0.088
+      },
+      "wer": 0.088
+     },
+     "segments": 20,
+     "structure_faults": [],
+     "words": 117,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "primary"
+  },
+  {
+   "case": "lex_keyu_jin",
+   "end_sample": 958080,
+   "hypothesis": "evidence/live-convergence-0824/M4-e4-exit/passes/trio-B/lex_keyu_jin/file-hypothesis.jsonl",
+   "input_refusal": null,
+   "input_segments": 10,
+   "input_words": 148,
+   "overlaps": [],
+   "recorded_file_axes": {
+    "der": 0.079,
+    "false_alarm": 0.0,
+    "miss": 0.067667,
+    "segments": 10,
+    "speaker_accuracy": 0.921,
+    "speaker_confusion": 0.011333,
+    "text_coverage": 0.936387,
+    "wer": 0.064748
+   },
+   "resolutions": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "dropped": 0,
+     "identity": true,
+     "invented_boundaries": [],
+     "merged": 0,
+     "refusal": null,
+     "scores": {
+      "der": 0.079,
+      "false_alarm": 0.0,
+      "miss": 0.067667,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "speaker_confusion": 0.011333,
+      "text_coverage": 0.936387,
+      "v2": {
+       "content_recall": 1.0,
+       "der_reference_speech": 0.068361,
+       "matched_word_speaker_accuracy": 1.0,
+       "wer": 0.064748
+      },
+      "wer": 0.064748
+     },
+     "segments": 10,
+     "structure_faults": [],
+     "words": 148,
+     "words_lost": 0
+    }
+   },
+   "run": "B",
+   "tier": "primary"
+  }
+ ],
+ "gates": {
+  "passed": 6,
+  "rows": [
+   {
+    "detail": "48 file arms + 48 synthetic; refused: none",
+    "id": "G-S1",
+    "pass": true,
+    "title": "every candidate arm yields a proposal the production rule accepts"
+   },
+   {
+    "detail": "10 of 12 arms have no overlap; changed: none",
+    "id": "G-S2",
+    "pass": true,
+    "title": "on a file arm with no overlapping pair every candidate is the identity"
+   },
+   {
+    "detail": "none",
+    "id": "G-S3",
+    "pass": true,
+    "title": "no arm emits a boundary the input never claimed"
+   },
+   {
+    "detail": "12 shapes x 4 arms; faults: none",
+    "id": "G-S4",
+    "pass": true,
+    "title": "every candidate is total: sorted, advancing, non-overlapping, inside the meeting"
+   },
+   {
+    "detail": "48 axis comparisons; mismatched: none",
+    "id": "G-S5",
+    "pass": true,
+    "title": "the reference arm reproduces the shipped batch's own file-arm scores"
+   },
+   {
+    "detail": "['clip_earlier_end', 'clip_later_start', 'merge_overlapping']; lost: none",
+    "id": "G-S6",
+    "pass": true,
+    "title": "the word-conserving candidates lose no word of the meeting"
+   }
+  ],
+  "total": 6
+ },
+ "m4_arithmetic": {
+  "lex_adam_frank/A": {
+   "admit": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.053222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "clip_earlier_end": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "clip_later_start": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "drop_later": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": true,
+    "G-M4-4": false,
+    "der": 0.068056,
+    "v2_content_recall": 0.947269,
+    "v2_matched_word_speaker_accuracy": 0.947269,
+    "wer": 0.116761
+   },
+   "merge_overlapping": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "refuse": {
+    "G-M4-1": true,
+    "G-M4-2": false,
+    "G-M4-3": true,
+    "G-M4-4": true,
+    "der": null,
+    "v2_content_recall": 0.951036,
+    "v2_matched_word_speaker_accuracy": 0.951036,
+    "wer": 0.122411
+   }
+  },
+  "lex_adam_frank/B": {
+   "admit": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.053222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "clip_earlier_end": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "clip_later_start": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "drop_later": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": true,
+    "G-M4-4": false,
+    "der": 0.068056,
+    "v2_content_recall": 0.947269,
+    "v2_matched_word_speaker_accuracy": 0.947269,
+    "wer": 0.116761
+   },
+   "merge_overlapping": {
+    "G-M4-1": true,
+    "G-M4-2": true,
+    "G-M4-3": false,
+    "G-M4-4": false,
+    "der": 0.066222,
+    "v2_content_recall": 0.949153,
+    "v2_matched_word_speaker_accuracy": 0.949153,
+    "wer": 0.126177
+   },
+   "refuse": {
+    "G-M4-1": true,
+    "G-M4-2": false,
+    "G-M4-3": true,
+    "G-M4-4": true,
+    "der": null,
+    "v2_content_recall": 0.951036,
+    "v2_matched_word_speaker_accuracy": 0.951036,
+    "wer": 0.122411
+   }
+  }
+ },
+ "selection": {
+  "ranked": [
+   {
+    "arm": "merge_overlapping",
+    "deltas_vs_file": {
+     "der": 0.013,
+     "v2_content_recall": 0.0,
+     "v2_matched_word_speaker_accuracy": 0.0,
+     "wer": 0.0
+    },
+    "displaced_sec": 0.0,
+    "eligible": true,
+    "max_delta_vs_file": 0.013,
+    "words_lost": 0
+   },
+   {
+    "arm": "clip_later_start",
+    "deltas_vs_file": {
+     "der": 0.013,
+     "v2_content_recall": 0.0,
+     "v2_matched_word_speaker_accuracy": 0.0,
+     "wer": 0.0
+    },
+    "displaced_sec": 4.68,
+    "eligible": true,
+    "max_delta_vs_file": 0.013,
+    "words_lost": 0
+   },
+   {
+    "arm": "clip_earlier_end",
+    "deltas_vs_file": {
+     "der": 0.013,
+     "v2_content_recall": 0.0,
+     "v2_matched_word_speaker_accuracy": 0.0,
+     "wer": 0.0
+    },
+    "displaced_sec": 4.68,
+    "eligible": true,
+    "max_delta_vs_file": 0.013,
+    "words_lost": 0
+   },
+   {
+    "arm": "drop_later",
+    "deltas_vs_file": {
+     "der": 0.014834,
+     "v2_content_recall": 0.001884,
+     "v2_matched_word_speaker_accuracy": 0.001884,
+     "wer": 0.009416
+    },
+    "displaced_sec": 5.34,
+    "eligible": true,
+    "max_delta_vs_file": 0.014834,
+    "words_lost": 14
+   }
+  ],
+  "selected": "merge_overlapping"
+ },
+ "synthetic": {
+  "chain_mixed_speakers": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       100,
+       250,
+       "B"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 3,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor",
+      "segment 2 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "B"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       150,
+       250,
+       "B"
+      ],
+      [
+       250,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.009375,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       150,
+       250,
+       "B"
+      ],
+      [
+       250,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 3,
+   "input_words": 3,
+   "overlaps": 2
+  },
+  "chain_of_three": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       100,
+       250,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 3,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor",
+      "segment 2 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       150,
+       250,
+       "A"
+      ],
+      [
+       250,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.009375,
+     "extents": [
+      [
+       0,
+       150,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 3,
+   "input_words": 3,
+   "overlaps": 2
+  },
+  "contained": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       50,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 2,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.009375,
+     "extents": [
+      [
+       0,
+       50,
+       "A"
+      ],
+      [
+       50,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "drop_later": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 1
+  },
+  "contained_cross_speaker": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       50,
+       100,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 2,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.009375,
+     "extents": [
+      [
+       0,
+       50,
+       "A"
+      ],
+      [
+       50,
+       100,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "drop_later": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 1
+  },
+  "disjoint": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 0
+  },
+  "identical": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 2,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "drop_later": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 1
+  },
+  "later_ends_earlier": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       100,
+       150,
+       "A"
+      ],
+      [
+       220,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 3,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.00625,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       150,
+       "A"
+      ],
+      [
+       220,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       220,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "drop_later": {
+     "displaced_sec": 0.003125,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       220,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ],
+      [
+       220,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 3,
+   "input_words": 3,
+   "overlaps": 1
+  },
+  "pair_cross_speaker": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ],
+      [
+       120,
+       200,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 2,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0025,
+     "extents": [
+      [
+       0,
+       120,
+       "A"
+      ],
+      [
+       120,
+       200,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0025,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ],
+      [
+       160,
+       200,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.005,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0025,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ],
+      [
+       160,
+       200,
+       "B"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 1
+  },
+  "pair_same_speaker": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ],
+      [
+       120,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": "segments_out_of_order",
+     "segments": 2,
+     "structure_faults": [
+      "segment 1 overlaps its predecessor"
+     ],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0025,
+     "extents": [
+      [
+       0,
+       120,
+       "A"
+      ],
+      [
+       120,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0025,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ],
+      [
+       160,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 2,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.005,
+     "extents": [
+      [
+       0,
+       160,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 1
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       200,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 2,
+   "input_words": 2,
+   "overlaps": 1
+  },
+  "single": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 1,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 1,
+   "input_words": 1,
+   "overlaps": 0
+  },
+  "touching": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 3,
+   "input_words": 3,
+   "overlaps": 0
+  },
+  "unsorted_input": {
+   "arms": {
+    "admit": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_earlier_end": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "clip_later_start": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "drop_later": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    },
+    "merge_overlapping": {
+     "displaced_sec": 0.0,
+     "extents": [
+      [
+       0,
+       100,
+       "A"
+      ],
+      [
+       100,
+       200,
+       "A"
+      ],
+      [
+       200,
+       300,
+       "A"
+      ]
+     ],
+     "invented_boundaries": [],
+     "refusal": null,
+     "segments": 3,
+     "structure_faults": [],
+     "words_lost": 0
+    }
+   },
+   "input_segments": 3,
+   "input_words": 3,
+   "overlaps": 0
+  }
+ }
+}

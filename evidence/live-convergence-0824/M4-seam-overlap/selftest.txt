@@ -1,0 +1,7 @@
+selftest - does a gate notice when its arm is wrong?
+  invented boundary        broke ['G-S3']  (expected ['G-S3'])
+  no resolution at all     broke ['G-S1', 'G-S4']  (expected ['G-S1', 'G-S4'])
+  touches a clean arm      broke ['G-S2']  (expected ['G-S2'])
+  loses words              broke ['G-S6']  (expected ['G-S6'])
+
+  0 failures over 4 mutations

@@ -28,6 +28,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_deployed_terminal.py` | did the E4 build reach the DEPLOYED service, and does a real meeting get a terminal pass there? | **yes** — `bounds.max_tape_bytes=9600000` on the wire, the pass starts after `POST /stop` has already answered, decodes 960 000 samples in `1.918 s` through file mode's own runner, and publishes the file arm's transcript word for word (WER `.096000 → .088000` = file's `.088000`); nine gates, nine reactions; `evidence/live-convergence-0824/M4-deployed-terminal/` |
 | `verify_replay_terminal_wait.py` | does the MEASURING CLIENT see the surface the meeting ended on, or the one it left (F1 of the deploy)? | **it does now** — after the stop response the client polls until `finalization_status` leaves `running` (`2.055 s`, 4 polls, 300 s deadline on the deployed 60 s case) and reports the terminal snapshot: the paired driver's own live arm moved WER `.096000 → .088000` = the file arm's, with no driver edited; nine gates, nine reactions; `evidence/live-convergence-0824/M4-replay-wait/` |
 | `verify_m4_exit.py` | do the 14 preregistered M4 gates hold on a fresh paired batch of all five cases? | **11 of 14** — terminal *is* the paired file arm to `0.000000` on four cases (trio mean WER `.131357 → .103946`, five-minute `.082079 → .050616`), and on `lex_adam_frank` the pass reproduced the file arm's 38 segments and was refused publication `segments_out_of_order`, because file mode's own two windows overlap at their seam; the three failures are that one refusal; `evidence/live-convergence-0824/M4-e4-exit/` |
+| `measure_seam_overlap.py` + `PREREGISTRATION-M4-seam.md` | when a terminal proposal reproduces the paired file arm and that arm overlaps at a window seam, what should the finalizer send instead? | **`merge_overlapping`** — of five arms it is the only one that drops no word and displaces no second of extent; the whole `.053222 → .066222` DER cost is the deployed scorer's **double count** disappearing (evaluator v2, which unions, does not move: `.054079` either way); 6 of 6 gates, 4 isolated reactions; `evidence/live-convergence-0824/M4-seam-overlap/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -822,4 +823,58 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
   --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --selftest
+```
+
+
+## `measure_seam_overlap.py` — iteration 30, the seam refusal: five arms, one batch, no decode
+
+**Question (P-M4-C, preregistered in `PREREGISTRATION-M4-seam.md` before any number below).**
+Iteration 29 left the M4 exit at 11 of 14, and all three failures are one refused publication
+on one case. File mode may not change (PRD: byte-identical), so: what should the terminal
+finalizer, as a *producer*, send when its proposal overlaps at a window seam — and what does
+each resolution cost?
+
+**Answer: `merge_overlapping`, and the cost of resolving is a metric correction rather than a
+quality loss.** `lex_adam_frank` is the only gated meeting long enough for two windows, and
+`_stitch_segments` keeps a segment whose *midpoint* falls in the window's ownership interval —
+so `[131.19, 136.29]` (midpoint 133.74, window 0) and `[133.95, 136.62]` (midpoint 135.285,
+window 1) both survive, overlapping by 2.34 s and carrying the same seven words twice. 2 of the
+batch's 12 file arms overlap; both are this case.
+
+| arm | segs | words lost | displaced s | WER | DER | v2 recall | v2 DER | refusal |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `admit` (reference, not a candidate) | 38 | 0 | 0.00 | .126177 | .053222 | .949153 | .054079 | **segments_out_of_order** |
+| **`merge_overlapping`** | 37 | 0 | 0.00 | .126177 | .066222 | .949153 | .054079 | none |
+| `clip_later_start` | 38 | 0 | 2.34 | .126177 | .066222 | .949153 | .054079 | none |
+| `clip_earlier_end` | 38 | 0 | 2.34 | .126177 | .066222 | .949153 | .054079 | none |
+| `drop_later` | 37 | 7 | 2.67 | .116761 | .068056 | .947269 | .055949 | none |
+
+The finding that matters is F1: **the deployed DER pays a bonus for publishing the same audio
+twice.** All of `.053222 → .066222` is `miss` (`.048833 → .061833`, exactly `2.34 / 180`),
+because `calculate_diarization` sums the overlap of every (reference, hypothesis) pair and
+therefore credits duplicated hypothesis seconds twice. Evaluator v2 unions first and does not
+move at all. So three arms tie on every scored axis — they all preserve the union and the word
+stream — and the preregistered tie-break is *displaced seconds*: `clip_later_start` would
+publish 8 words over 0.33 s, `clip_earlier_end` would claim a tail the decoder said was speech,
+and `merge_overlapping` displaces nothing.
+
+Twelve synthetic shapes (containment, identical extents, chains of three, later-ends-earlier,
+unsorted input, and the cross-speaker cases the corpus never shows) prove the rule is total; ten
+clean file arms prove it is the identity off the seam. Admissibility is not restated here — the
+harness calls `LiveSession._text_revision_refusal` itself, on a stand-in carrying the five
+attributes that rule reads.
+
+Shipping it is expected to take M4 from 11 to **12 of 14**, moving `lex_adam_frank`'s failures
+from "never finalizes" (G-M4-2/6/9) to "terminal is two words behind rolling" (G-M4-3/4) —
+D-M4-2's arithmetic again, an owner ruling recorded in the bundle, not a moved bound.
+
+```bash
+# five arms over the iteration-29 batch (no GPU, no service, no MOSS request)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py \
+  --json /tmp/seam-gates.json
+
+# four mutations, each caught by the gate that names its defect
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py --selftest
 ```

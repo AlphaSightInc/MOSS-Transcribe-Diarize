@@ -2908,3 +2908,95 @@ appended at the iteration 4->5 boundary]
   production, and never by inventing timestamps (plan §3.4). Then re-score M4 on a fresh batch,
   expecting that case to trade G-M4-2 for G-M4-3/G-M4-4 - which is 8d's owner ruling, not a
   reason to prefer today's behaviour. Then M5.
+
+## iteration 30 - the seam refusal, measured: merge, and the DER was paying a bonus for the duplicate
+- Focus: candidate 8e, the seam refusal that cost iteration 29 three M4 gates. PROTOTYPED and
+  MEASURED five resolutions offline (AGENTS.md: prototype before you implement) and SELECTED one:
+  **`merge_overlapping`**, 6 of 6 preregistered gates. NO production code changed.
+- Target: context.md candidate 8e, the lowest open item. `PREREGISTRATION-M4-seam.md` (written
+  first, before any number below), PRD M4.
+- Real MOSS traffic this iteration: **none**. No service restart, no GPU, no decode. Every input is
+  a file arm already on disk under `evidence/live-convergence-0824/M4-e4-exit/passes` - the terminal
+  proposal IS the paired file arm (measured `0.000000` on five axes in iterations 25/27/29), so
+  every arm can be applied to it offline. 4070 Ti untouched; `web_cli` pid 86813 left alone.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M4-seam.md  (new; the question,
+      6 arms, 6 gates, the selection rule, all fixed before measuring)
+  prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py     (new; 5 arms, the
+      production refusal rule imported not restated, 12 synthetic shapes, `--selftest`)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                    (index row + section)
+  evidence/live-convergence-0824/M4-seam-overlap/{NOTES.md,gates.json,console.txt,selftest.txt,
+      pytest-full.txt,PREREGISTRATION-M4-seam.md,sha256.txt}                    (new bundle, 116K)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - measure_seam_overlap.py -> exit 0, **6 of 6 gates PASS**:
+      G-S1 admissible: 48 file-arm x arm combinations + 48 synthetic, none refused by the
+           PRODUCTION `LiveSession._text_revision_refusal`
+      G-S2 identity off the seam: 10 of 12 file arms have no overlap, none changed by any candidate
+      G-S3 no invented boundary: none, across all five arms
+      G-S4 total: 12 synthetic shapes x 4 candidates, no structural fault
+      G-S5 clock identity: the `admit` arm reproduces the shipped batch's own recorded file-arm
+           wer/der/coverage/speaker_accuracy at 6 dp, 48 comparisons
+      G-S6 word conservation: clip_later_start / clip_earlier_end / merge_overlapping lose 0 words
+  - measure_seam_overlap.py --selftest -> exit 0, 4 mutations, each caught by the gate that NAMES
+    its defect and by no other (invented boundary -> G-S3; touches a clean arm -> G-S2; loses words
+    -> G-S6); the one two-gate reaction is `no resolution at all` -> G-S1 + G-S4, both correct.
+  - .venv/bin/python -m pytest tests/ -q -> 1147 passed, 2 skipped, 396 subtests (unchanged; no
+    production code moved).
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-seam-overlap/sha256.txt -> 6 files, all OK.
+- THE NUMBERS (lex_adam_frank, both runs identical, 546 words in):
+      arm                 segs  words lost  displaced s      WER      DER  v2 recall  v2 DER  refusal
+      admit (reference)     38           0         0.00  .126177  .053222    .949153 .054079  segments_out_of_order
+      merge_overlapping     37           0         0.00  .126177  .066222    .949153 .054079  none
+      clip_later_start      38           0         2.34  .126177  .066222    .949153 .054079  none
+      clip_earlier_end      38           0         2.34  .126177  .066222    .949153 .054079  none
+      drop_later            37           7         2.67  .116761  .068056    .947269 .055949  none
+  2 of the batch's 12 file arms overlap; both are this case, both runs, the identical pair.
+- THREE FINDINGS.
+  F1 THE DEPLOYED DER PAYS A BONUS FOR PUBLISHING THE SAME AUDIO TWICE. All of `.053222 ->
+     .066222` is `miss` (`.048833 -> .061833`, exactly `2.34 / 180`).
+     `evaluation.calculate_diarization` builds `overlapped_by_reference` by summing the overlap of
+     every (reference, hypothesis) pair, so reference seconds two hypothesis segments both claim are
+     credited TWICE and that much real miss disappears. Evaluator v2 unions hypothesis intervals
+     before it scores and does not move at all (`.054079` for admit, merge and both clips alike).
+     `text_coverage` carries the same artifact (`.952260 -> .939511`). So the cost of resolving the
+     seam is a metric CORRECTION, not a quality loss - and that reframes the whole decision.
+  F2 THREE ARMS TIE ON EVERY SCORED AXIS; THE TIE-BREAK IS WHAT THE EXTENT CLAIMS. merge,
+     clip_later_start and clip_earlier_end all preserve the union `[131.19,136.62]` and the word
+     stream, and the scorer reads exactly those - so they are identical to 6 dp on WER, DER,
+     coverage, speaker accuracy and all four v2 axes. The preregistered second criterion separates
+     them: DISPLACED SECONDS, the extent an arm removes from segments it keeps. clip_later_start
+     would publish 8 words over 0.33 s; clip_earlier_end would call a tail silent that the decoder
+     called speech; merge displaces nothing and asserts nothing the decoder did not say.
+  F3 THE ONE ARM THAT WOULD PASS G-M4-3 BUYS IT BY DELETING WORDS, AND FAILS ANYWAY. `drop_later`
+     reaches WER `.116761` (under rolling's `.122411`) by discarding seven of the meeting's words,
+     and still misses G-M4-4 at `.947269 < .951036`. It costs the campaign a deletion the audio does
+     not support and buys nothing.
+- D-M4-3 (owner ruling, recorded in the bundle, NOT a moved bound): shipping the selected arm moves
+  `lex_adam_frank` from no terminal surface at all to the paired file arm, and moves the failures
+  from G-M4-2 / G-M4-6 / G-M4-9 (three rows, a meeting that never finalizes) to G-M4-3 / G-M4-4 (two
+  rows, a terminal surface `.003766` WER and `.001883` recall behind the rolling one - two words of
+  526). Expected M4 score after the fix: **12 of 14**, up from 11. Recommended: take it. The
+  milestone's subject is terminal convergence and G-M4-1 is honoured at `0.000000`.
+- Learned:
+  - The corpus could not have validated a seam rule: it holds exactly ONE overlapping pair, same
+    speaker, later-ends-later. Twelve synthetic shapes (containment, identical extents, chains of
+    three, later-ends-earlier, unsorted input, cross-speaker) are what make totality a measurement.
+  - Import the rule you are testing against. `LiveSession._text_revision_refusal` reads five
+    attributes and nothing else, so the harness calls it on a stand-in carrying exactly those five.
+    A restatement of the rule here would have drifted from the one that actually refuses.
+  - A selftest whose mutations all break the same gates is measuring the harness, not the system
+    (iteration 28's lesson, applied): each mutant here is otherwise a WORKING arm, so the gate it
+    trips is the gate that names its defect. Making that true took a second pass - the first
+    mutants left the seam unresolved as a side effect and lit up G-S1/G-S4 every time.
+  - `admit` had to be priced and excluded by construction, before the numbers: it wins on |dDER|
+    (`0.000000`) precisely BECAUSE it keeps the double count, and it is not a finalizer policy at
+    all but a change to the contract every producer on the surface is bound by.
+- Next: candidate 8e-2, SHIP the resolution - in `TerminalTranscriptFinalizer._segments_of`, on
+  `placed`, i.e. on the decoder's LOCAL speakers and BEFORE `terminal_speaker_mapping` (merging
+  after the mapping would merge two local speakers that map to one person, a different rule than
+  the one measured). CHECK rather than assume that the mapping is unaffected: the merged segment's
+  overlap weight against the base surface becomes the union rather than the sum and the mapping
+  votes on those weights - a named test on this case's seam. Table-driven tests from the twelve
+  shapes plus a regression that a non-overlapping proposal comes back unchanged; file mode stays
+  byte-identical (`_stitch_segments` untouched). Then 8f, re-score M4 on a fresh paired batch.
