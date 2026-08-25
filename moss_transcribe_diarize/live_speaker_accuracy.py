@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Any, NamedTuple
 
+from .live_surface import published_speaker_label
 from .reference_jsonl import load_reference_records
 
 LIVE_SAMPLE_RATE = 16000
@@ -85,22 +86,121 @@ def hypothesis_from_live_snapshot(
     corpus_start_sample: int,
     corpus_duration_sec: float,
 ) -> tuple[Segment, ...]:
+    """What this session exports: the surface a reader was shown (plan §10.5 step 7).
+
+    A snapshot that carries `effective_transcript` is exported from it, and from nothing else.
+    That field is the living document -- the base spans until a rolling or terminal authority
+    replaces words over an interval it owns -- so exporting it is what makes the plan's §1.2
+    promise true: the file and the screen say the same thing. Re-deriving the export from
+    `committed` instead would silently publish superseded words the reader watched disappear.
+
+    A snapshot from before the surface existed has no such field, and is exported exactly as
+    it always was: its committed spans, re-parsed here, `revised_transcript` first. The two
+    readings agree on such a session by construction (the surface *is* the parsed base until
+    something revises it), so the fallback exists for older artifacts, not for a choice.
+    """
+
     if (
         not isinstance(payload, dict)
         or not isinstance(payload.get("snapshot"), dict)
         or not isinstance(payload["snapshot"].get("session"), dict)
     ):
         raise ValueError("live snapshot must contain snapshot.session")
-    committed = payload["snapshot"]["session"].get("committed")
-    if not isinstance(committed, list):
-        raise ValueError("live snapshot session committed must be a list")
+    session = payload["snapshot"]["session"]
     if isinstance(corpus_start_sample, bool) or not isinstance(corpus_start_sample, int):
         raise ValueError("corpus_start_sample must be an integer")
     if not isinstance(corpus_duration_sec, (int, float)) or not math.isfinite(corpus_duration_sec):
         raise ValueError("corpus_duration_sec must be finite")
     if corpus_duration_sec <= 0:
         raise ValueError("corpus_duration_sec must be positive")
+    if "effective_transcript" in session:
+        return _hypothesis_from_surface(
+            session,
+            corpus_start_sample=corpus_start_sample,
+            corpus_duration_sec=corpus_duration_sec,
+        )
+    return _hypothesis_from_committed(
+        session,
+        corpus_start_sample=corpus_start_sample,
+        corpus_duration_sec=corpus_duration_sec,
+    )
 
+
+def _hypothesis_from_surface(
+    session: dict[str, Any],
+    *,
+    corpus_start_sample: int,
+    corpus_duration_sec: float,
+) -> tuple[Segment, ...]:
+    """The exported segments of a session that publishes a surface.
+
+    Sample integers are authoritative (plan §7.1); seconds are this exporter's presentation of
+    them, clamped to the corpus the way the committed reading has always clamped. The text is
+    taken as published -- the session parsed it once, and an exporter that re-parsed the words
+    a reader already saw would be a second grammar with a second opinion.
+    """
+
+    surface = session.get("effective_transcript")
+    if not isinstance(surface, list):
+        raise ValueError("live snapshot session effective_transcript must be a list")
+    speakers = _canonical_speakers(session)
+    hypothesis = []
+    for index, item in enumerate(surface):
+        if not isinstance(item, dict):
+            raise ValueError(f"effective_transcript item {index} must be an object")
+        start_sample = _required_sample(item, "start_sample", index, "effective_transcript")
+        end_sample = _required_sample(item, "end_sample", index, "effective_transcript")
+        if end_sample <= start_sample:
+            raise ValueError(f"effective_transcript item {index} has an invalid sample interval")
+        text = item.get("text")
+        if not isinstance(text, str):
+            raise ValueError(f"effective_transcript item {index} text must be a string")
+        canonical_speaker = item.get("canonical_speaker")
+        if canonical_speaker is not None and not isinstance(canonical_speaker, str):
+            raise ValueError(
+                f"effective_transcript item {index} canonical_speaker must be a string or null"
+            )
+        if not text.strip():
+            continue
+        start = max(0.0, (start_sample - corpus_start_sample) / float(LIVE_SAMPLE_RATE))
+        end = min(
+            float(corpus_duration_sec), (end_sample - corpus_start_sample) / float(LIVE_SAMPLE_RATE)
+        )
+        if end > start:
+            hypothesis.append(
+                Segment(
+                    start=start,
+                    end=end,
+                    speaker=published_speaker_label(canonical_speaker, speakers),
+                    text=text,
+                )
+            )
+    return tuple(hypothesis)
+
+
+def _canonical_speakers(session: dict[str, Any]) -> tuple[str, ...]:
+    """The album positions a surface's identities are published against."""
+
+    identity = session.get("identity_snapshot")
+    if not isinstance(identity, dict):
+        raise ValueError("live snapshot session identity_snapshot must be an object")
+    speakers = identity.get("canonical_speakers")
+    if not isinstance(speakers, (list, tuple)) or not all(
+        isinstance(item, str) for item in speakers
+    ):
+        raise ValueError("live snapshot identity_snapshot canonical_speakers must be strings")
+    return tuple(speakers)
+
+
+def _hypothesis_from_committed(
+    session: dict[str, Any],
+    *,
+    corpus_start_sample: int,
+    corpus_duration_sec: float,
+) -> tuple[Segment, ...]:
+    committed = session.get("committed")
+    if not isinstance(committed, list):
+        raise ValueError("live snapshot session committed must be a list")
     hypothesis = []
     for index, item in enumerate(committed):
         if not isinstance(item, dict):
@@ -607,10 +707,12 @@ def _required_text(record: dict[str, Any], key: str, line_number: int) -> str:
     return value
 
 
-def _required_sample(record: dict[str, Any], key: str, index: int) -> int:
+def _required_sample(
+    record: dict[str, Any], key: str, index: int, subject: str = "committed"
+) -> int:
     value = record.get(key)
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise ValueError(f"committed item {index} {key} must be a non-negative integer")
+        raise ValueError(f"{subject} item {index} {key} must be a non-negative integer")
     return value
 
 

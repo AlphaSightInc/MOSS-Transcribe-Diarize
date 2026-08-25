@@ -1,0 +1,38 @@
+....F..........................                                    [100%]
+=================================== FAILURES ===================================
+_ ExportIsTheVisibleSurfaceTest.test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token>
+
+    def test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token(self):
+        """Two ways of not knowing who spoke, one honest answer, never a guess."""
+    
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "nobody attributed", None),
+                surface_segment(LIVE_SAMPLE_RATE, 2 * LIVE_SAMPLE_RATE, "never established", "speaker-0009"),
+                surface_segment(2 * LIVE_SAMPLE_RATE, 3 * LIVE_SAMPLE_RATE, "second speaker", "speaker-0002"),
+            ]
+        )
+        exported = export(payload)
+    
+>       self.assertEqual(
+            [item.speaker for item in exported],
+            [UNATTRIBUTED_SPEAKER, UNATTRIBUTED_SPEAKER, "S02"],
+        )
+E       AssertionError: Lists differ: ['S00', 'S01', 'S02'] != ['S00', 'S00', 'S02']
+E       
+E       First differing element 1:
+E       'S01'
+E       'S00'
+E       
+E       - ['S00', 'S01', 'S02']
+E       ?            ^
+E       
+E       + ['S00', 'S00', 'S02']
+E       ?            ^
+
+tests/test_live_export_surface.py:207: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token
+1 failed, 30 passed, 6 subtests passed in 2.37s

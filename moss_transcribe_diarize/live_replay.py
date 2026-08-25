@@ -19,11 +19,12 @@ from .app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObser
 from .app.live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
 from .app.live_session import AudioFrame, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
 from .app.live_session import LiveIdentitySnapshot, LiveSession
+from .live_surface import published_speaker_label
 
 
 TRACE_SCHEMA_VERSION = 1
 SUMMARY_SCHEMA_VERSION = 1
-EVALUATOR_SCHEMA_VERSION = 1
+EVALUATOR_SCHEMA_VERSION = 2
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -324,7 +325,7 @@ def run_replay(
             snapshot=snapshot,
             failure=None,
         )
-        _write_evaluator(evaluator_path, snapshot.committed)
+        _write_evaluator(evaluator_path, snapshot)
         trace.add("summary", status="passed", accepted_samples=snapshot.accepted_samples, committed_samples=snapshot.committed_samples)
         return ReplayOutputs(trace_path=trace_path, summary_path=summary_path, evaluator_path=evaluator_path)
     except ReplayFailure as exc:
@@ -543,21 +544,31 @@ def _summary_payload(
     }
 
 
-def _write_evaluator(path: Path, committed) -> None:
+def _write_evaluator(path: Path, snapshot) -> None:
+    """The transcript this replay exports: the surface, and nothing re-derived beside it.
+
+    Schema 2 reads `effective_transcript` rather than re-parsing the committed spans. Two
+    things change for a reader. The words and labels are the ones the session published -- the
+    old reading took `commit.transcript`, the text as first decoded, so a span a retrospective
+    sweep had relabelled exported the label the sweep already replaced. And a segment carries
+    the sample integers it is defined by (plan §7.1) instead of a `span_id`, which a revision
+    spanning several base spans cannot name.
+    """
+
+    speakers = snapshot.identity_snapshot.canonical_speakers
     rows: list[dict[str, Any]] = []
-    for commit in committed:
-        span_offset = commit.start_sample / float(LIVE_SAMPLE_RATE)
-        for segment in parse_transcript(commit.transcript):
-            rows.append(
-                {
-                    "schema_version": EVALUATOR_SCHEMA_VERSION,
-                    "span_id": commit.span_id,
-                    "start": round(span_offset + segment.start, 6),
-                    "end": round(span_offset + segment.end, 6),
-                    "speaker": segment.speaker,
-                    "text": segment.text,
-                }
-            )
+    for segment in snapshot.effective_transcript:
+        rows.append(
+            {
+                "schema_version": EVALUATOR_SCHEMA_VERSION,
+                "start_sample": segment.start_sample,
+                "end_sample": segment.end_sample,
+                "start": round(segment.start_sample / float(LIVE_SAMPLE_RATE), 6),
+                "end": round(segment.end_sample / float(LIVE_SAMPLE_RATE), 6),
+                "speaker": published_speaker_label(segment.canonical_speaker, speakers),
+                "text": segment.text,
+            }
+        )
     path.write_text(
         "".join(json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n" for row in rows),
         encoding="utf-8",

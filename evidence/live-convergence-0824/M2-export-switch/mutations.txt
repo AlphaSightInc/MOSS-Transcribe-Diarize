@@ -1,0 +1,30 @@
+== control: unmutated export ==
+control: verify exit=0  pytest exit=0  31 passed, 6 subtests passed in 2.25s
+    PASS
+== M1: export the committed spans even when a surface exists ==
+M1: verify exit=1  pytest exit=1  12 failed, 25 passed in 2.30s
+    FAIL G3 lex_bill_ackman rolling export wer 0.261364 != grid 0.198864
+    FAIL G4 lex_bill_ackman/rolling export-vs-screen: 30 segments vs 21
+    FAIL G3 lex_javier_milei rolling export wer 0.144000 != grid 0.096000
+    FAIL G4 lex_javier_milei/rolling export-vs-screen: 28 segments vs 14
+== M2: export the canonical identity, not the Sxx token ==
+M2: verify exit=1  pytest exit=1  3 failed, 28 passed, 6 subtests passed in 2.37s
+    FAIL G1 lex_bill_ackman: segment 0 speaker speaker-0001 vs S01
+    FAIL G1 lex_bill_ackman: segment 1 speaker speaker-0001 vs S01
+    FAIL G1 lex_bill_ackman: segment 2 speaker speaker-0002 vs S02
+    FAIL G4 lex_bill_ackman/base export-vs-screen: segment 0 speaker speaker-0001 vs S01
+== M3: an unestablished identity is exported as the first speaker ==
+M3: verify exit=0  pytest exit=1  1 failed, 30 passed, 6 subtests passed in 2.37s
+    PASS
+== M4: the export no longer clamps to the corpus window ==
+M4: verify exit=0  pytest exit=1  1 failed, 30 passed, 6 subtests passed in 2.28s
+    PASS
+== M5: the fallback ignores a sweep's correction ==
+M5: verify exit=0  pytest exit=1  2 failed, 29 passed, 6 subtests passed in 2.33s
+    PASS
+== M6: whitespace-only surface segments become rows ==
+M6: verify exit=0  pytest exit=1  1 failed, 30 passed, 6 subtests passed in 2.34s
+    PASS
+== control: restored export ==
+control-after: verify exit=0  pytest exit=0  31 passed, 6 subtests passed in 2.31s
+    PASS

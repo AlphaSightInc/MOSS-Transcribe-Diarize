@@ -1,0 +1,34 @@
+........F......................                                    [100%]
+=================================== FAILURES ===================================
+__ ExportIsTheVisibleSurfaceTest.test_whitespace_only_words_are_not_a_segment __
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_whitespace_only_words_are_not_a_segment>
+
+    def test_whitespace_only_words_are_not_a_segment(self):
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "   ", "speaker-0001"),
+                surface_segment(LIVE_SAMPLE_RATE, 2 * LIVE_SAMPLE_RATE, "said something", "speaker-0001"),
+            ]
+        )
+    
+>       self.assertEqual([item.text for item in export(payload)], ["said something"])
+E       AssertionError: Lists differ: ['   ', 'said something'] != ['said something']
+E       
+E       First differing element 0:
+E       '   '
+E       'said something'
+E       
+E       First list contains 1 additional elements.
+E       First extra element 1:
+E       'said something'
+E       
+E       - ['   ', 'said something']
+E       ?  -------
+E       
+E       + ['said something']
+
+tests/test_live_export_surface.py:237: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_whitespace_only_words_are_not_a_segment
+1 failed, 30 passed, 6 subtests passed in 2.34s

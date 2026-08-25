@@ -235,3 +235,27 @@ render's, but it is why the screen shows `S01`..`S16`. And the rolling arm print
 26 → 16): a ten-second witness publishes sentences where twenty-four 2.5-second spans publish
 fragments, and that is visible before any metric is computed. Verdict:
 `evidence/live-convergence-0824/M2-portal-surface/`.
+
+```bash
+# E2 step 7: does the EXPORT carry the surface the reader was shown? (no GPU, node required)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_export_surface.py
+# six mutations, in `live_speaker_accuracy.py` / `live_surface.py`, restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh /tmp/export-mutations
+```
+
+`verify_export_surface.py` reads one meeting **three ways** — the production export, the same
+export with the surface removed (the pre-§7.3 reading), and the served portal page's DOM — so the
+switch is measured against both the thing it replaced and the thing it must agree with. Plan §14
+T3's property, *export text equals visible effective text*, is the gate: 3 cases × 2 arms, same
+speaker, same words, same seconds. The rolling arm's numbers now come out of the **export**
+(`.131861` / `.943916`), which is the point of the switch — a paired rerun reports the arm the
+reader is reading.
+
+Two findings. On the base arm the surface reading and the committed reading agree word for word
+with every timestamp inside **one sample**, so preferring the surface whenever the field exists
+costs nothing and removes a branch. And the switch first broke the F-certification reducer, which
+loads `live_speaker_accuracy.py` out of a bare checkout with `-S` and no installed package: the
+display rule therefore lives in the leaf `moss_transcribe_diarize/live_surface.py`, which the
+scorer imports as a sibling and `app.live_session` re-exports. Verdict:
+`evidence/live-convergence-0824/M2-export-switch/`.

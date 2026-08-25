@@ -1,0 +1,110 @@
+.F..F.F........................                                    [100%]
+=================================== FAILURES ===================================
+_ ExportIsTheVisibleSurfaceTest.test_a_session_with_no_revision_exports_what_its_committed_spans_always_did _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_session_with_no_revision_exports_what_its_committed_spans_always_did>
+
+    def test_a_session_with_no_revision_exports_what_its_committed_spans_always_did(self):
+        """The surface reading is not a second opinion: with no witness, the two agree.
+    
+        The same real meeting is exported twice -- once as served, once with the surface
+        removed so the export falls back to re-parsing the committed spans. Sample-derived
+        seconds and parsed seconds are not the same arithmetic, so the tolerance is one
+        sample; the words and the speakers must match exactly.
+        """
+    
+        payload = served_snapshot(rolling=False)
+        self.assertEqual(payload["session"]["text_revision_version"], 0)
+    
+        from_surface = export(payload)
+        without_surface = dict(payload)
+        without_surface["session"] = {
+            key: value
+            for key, value in payload["session"].items()
+            if key != "effective_transcript"
+        }
+        from_commits = export(without_surface)
+    
+        self.assertGreater(len(from_surface), 0)
+        self.assertEqual(len(from_surface), len(from_commits))
+        for surfaced, committed in zip(from_surface, from_commits):
+            self.assertEqual(surfaced.text, committed.text)
+>           self.assertEqual(surfaced.speaker, committed.speaker)
+E           AssertionError: 'speaker-0001' != 'S01'
+E           - speaker-0001
+E           + S01
+
+tests/test_live_export_surface.py:173: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token>
+
+    def test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token(self):
+        """Two ways of not knowing who spoke, one honest answer, never a guess."""
+    
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "nobody attributed", None),
+                surface_segment(LIVE_SAMPLE_RATE, 2 * LIVE_SAMPLE_RATE, "never established", "speaker-0009"),
+                surface_segment(2 * LIVE_SAMPLE_RATE, 3 * LIVE_SAMPLE_RATE, "second speaker", "speaker-0002"),
+            ]
+        )
+        exported = export(payload)
+    
+>       self.assertEqual(
+            [item.speaker for item in exported],
+            [UNATTRIBUTED_SPEAKER, UNATTRIBUTED_SPEAKER, "S02"],
+        )
+E       AssertionError: Lists differ: ['None', 'speaker-0009', 'speaker-0002'] != ['S00', 'S00', 'S02']
+E       
+E       First differing element 0:
+E       'None'
+E       'S00'
+E       
+E       - ['None', 'speaker-0009', 'speaker-0002']
+E       + ['S00', 'S00', 'S02']
+
+tests/test_live_export_surface.py:207: AssertionError
+_____ ExportIsTheVisibleSurfaceTest.test_the_export_is_what_the_reader_saw _____
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_the_export_is_what_the_reader_saw>
+
+    def test_the_export_is_what_the_reader_saw(self):
+        """Plan §14 T3: export text equals visible effective text.
+    
+        One meeting, two readers: the export reads the served snapshot, the portal page
+        renders the same one in the headless browser, and the screen is parsed back with the
+        production parser. Speaker, words and seconds must agree segment for segment --
+        anything else means the file and the screen disagree about a meeting that happened.
+        """
+    
+        payload = served_snapshot(rolling=True, frames=MIXED_SURFACE_FRAMES)
+        self.assertGreater(payload["session"]["text_revision_version"], 0)
+        # Not a vacuous comparison: a surface of one authority could not tell a page that
+        # replaces its prefix from one that appends to it.
+        self.assertEqual(
+            {segment["authority"] for segment in payload["session"]["effective_transcript"]},
+            {"rolling", "provisional"},
+        )
+    
+        exported = export(payload)
+        on_screen = [
+            item
+            for row in rendered_transcript(payload).split("\n\n")
+            for item in parse_transcript(row)
+        ]
+    
+        self.assertEqual(len(exported), len(on_screen))
+        self.assertGreater(len(exported), 0)
+        for shown, written in zip(on_screen, exported):
+>           self.assertEqual(written.speaker, shown.speaker)
+E           AssertionError: 'speaker-0001' != 'S01'
+E           - speaker-0001
+E           + S01
+
+tests/test_live_export_surface.py:132: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_session_with_no_revision_exports_what_its_committed_spans_always_did
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_the_export_is_what_the_reader_saw
+3 failed, 28 passed, 6 subtests passed in 2.37s

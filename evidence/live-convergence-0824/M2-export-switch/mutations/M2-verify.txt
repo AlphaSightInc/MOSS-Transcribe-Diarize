@@ -1,0 +1,31 @@
+lex_bill_ackman    base    export_segments=30  dom=30  wer=0.261364 recall=0.863636
+lex_bill_ackman    rolling export_segments=21  dom=21  wer=0.198864 recall=0.926136
+lex_javier_milei   base    export_segments=28  dom=28  wer=0.144000 recall=0.920000
+lex_javier_milei   rolling export_segments=14  dom=14  wer=0.096000 recall=0.920000
+TRIO base          wer=0.202682 (grid 0.199870) recall=0.891818 (grid 0.913490)
+TRIO rolling       wer=0.147432 (grid 0.131861) recall=0.923068 (grid 0.943916)
+FALLBACK trio-60s/acquired_jamie_dimon   rows=32   identical
+FALLBACK trio-60s/lex_bill_ackman        rows=30   identical
+FALLBACK trio-60s/lex_javier_milei       rows=28   identical
+FALLBACK trio-60s/lex_keyu_jin           rows=26   identical
+FALLBACK keyu-5m                         rows=127  identical
+124 replayed decodes, 0 fresh (no GPU)
+FAIL G1 lex_bill_ackman: segment 0 speaker speaker-0001 vs S01
+FAIL G1 lex_bill_ackman: segment 1 speaker speaker-0001 vs S01
+FAIL G1 lex_bill_ackman: segment 2 speaker speaker-0002 vs S02
+FAIL G4 lex_bill_ackman/base export-vs-screen: segment 0 speaker speaker-0001 vs S01
+FAIL G4 lex_bill_ackman/base export-vs-screen: segment 1 speaker speaker-0001 vs S01
+FAIL G4 lex_bill_ackman/base export-vs-screen: segment 2 speaker speaker-0002 vs S02
+FAIL G4 lex_bill_ackman/rolling export-vs-screen: segment 0 speaker speaker-0001 vs S01
+FAIL G4 lex_bill_ackman/rolling export-vs-screen: segment 1 speaker speaker-0003 vs S03
+FAIL G4 lex_bill_ackman/rolling export-vs-screen: segment 2 speaker speaker-0003 vs S03
+FAIL G1 lex_javier_milei: segment 0 speaker speaker-0001 vs S01
+FAIL G1 lex_javier_milei: segment 1 speaker speaker-0002 vs S02
+FAIL G1 lex_javier_milei: segment 2 speaker speaker-0003 vs S03
+FAIL G4 lex_javier_milei/base export-vs-screen: segment 0 speaker speaker-0001 vs S01
+FAIL G4 lex_javier_milei/base export-vs-screen: segment 1 speaker speaker-0002 vs S02
+FAIL G4 lex_javier_milei/base export-vs-screen: segment 2 speaker speaker-0003 vs S03
+FAIL G4 lex_javier_milei/rolling export-vs-screen: segment 0 speaker speaker-0001 vs S01
+FAIL G4 lex_javier_milei/rolling export-vs-screen: segment 1 speaker speaker-0004 vs S04
+FAIL G4 lex_javier_milei/rolling export-vs-screen: segment 2 speaker speaker-0006 vs S06
+FAILED 18 gate checks

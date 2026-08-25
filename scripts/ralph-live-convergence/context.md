@@ -59,7 +59,15 @@
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
     witness-owned evidence through the existing album, never context audio.
   - `app/windowed_transcription.py` — 150/120 file pipeline M4 reuses via a small adapter.
+  - `moss_transcribe_diarize/live_surface.py` — **NEW iteration 17**: how a surface segment names
+    its speaker (`UNATTRIBUTED_SPEAKER`, `display_speaker_label`, `published_speaker_label`), in a
+    LEAF module because the F-cert reducer loads the scorer from a bare checkout with no `app`
+    import available. `app/live_session.py` re-exports all three, so every existing caller is
+    unchanged.
   - Scorers: `moss_transcribe_diarize/evaluation.py`, `moss_transcribe_diarize/live_speaker_accuracy.py`.
+    The second is also **the export** (plan §10.5 step 7, since iteration 17):
+    `hypothesis_from_live_snapshot` reads `effective_transcript` when the snapshot carries one and
+    re-parses `committed` only for a pre-§7.3 snapshot. Import nothing from `app` into it.
 
 ## Current state
 
@@ -557,12 +565,44 @@
   span it freezes and never publishes a provisional suffix, so sixty seconds of real audio cannot
   see the live tail disappear; the `happy` scenario reads the transcript after a poll that has one.
   Fifth iteration of the same lesson (11-16): the corpus reading is necessary and not sufficient.
-- **The deployed `web_cli` was NOT restarted onto this build** (still pid 22561 on the M1 build).
-  Rolling would turn on in the live service before its export is settled, and nothing iterations
-  14-16 measured needs the running service. The restart belongs with the paired rerun after
-  §10.5 step 7, and must be recorded then.
-- Rest of the ladder (M2 step 3 item 7, M3-M5) unimplemented; working tree carries the plan,
-  evidence prototypes, and this scaffold.
+- **M2 STEP 7 SHIPPED (iteration 17): the export carries the surface, and §10.5 is complete.**
+  `hypothesis_from_live_snapshot` — the one place that turns a served snapshot into the transcript
+  the campaign scores, the F-cert harness reads and `remeasure_live_vs_file.py` saves — reads
+  `effective_transcript` when the snapshot carries one, and re-parses the committed spans only for
+  a snapshot from before §7.3 existed. `live_replay.py`'s `evaluator.jsonl` is schema 2, written
+  from the same surface. `verify_export_surface.py` exit 0 on six gates: base trio **.199870** /
+  **.913490** and rolling **.131861** / **.943916** *through the export*, per case to 6 dp; export
+  == the portal DOM on 3 cases x 2 arms (§14 T3); five checked-in pre-surface `live-hypothesis.jsonl`
+  reproduced byte for byte; 0 fresh MOSS requests. Full suite 1091 passed / 2 skipped / 392 subtests
+  (1082 / 386 before). File mode byte-identical (`sha ad381d8b...`, unmoved across eight production
+  changes). Six mutations, all caught. Evidence:
+  `evidence/live-convergence-0824/M2-export-switch/`.
+- **The surface reading and the committed reading agree on a session nobody revised** — word for
+  word, speaker for speaker, every timestamp inside ONE sample (`6.25e-5` s), scores equal to 6 dp
+  on the base arm of all three cases. That measurement is why the switch is unconditional (prefer
+  the surface whenever the field exists) rather than gated on `text_revision_version > 0`: two live
+  readings of a current snapshot would be a branch a reader has to reason about, for nothing.
+- **The display rule now lives in `moss_transcribe_diarize/live_surface.py`, a leaf module, and
+  `app/live_session.py` re-exports it.** The first attempt imported it from `app.live_session` into
+  the scorer and the test tier caught it in one run: `scripts/ralph-afk/live-canary-clauses.py`
+  loads `live_speaker_accuracy.py` straight out of a bare checkout with `-S` and no installed
+  package, so ANY `app` import breaks the F-certification reducer. Treat that as a standing
+  constraint on `live_speaker_accuracy.py`: siblings only.
+- **`published_speaker_label` is the total form of `display_speaker_label`** — `None` and an
+  identity this snapshot never established both read as `S00`, because neither may be rendered as a
+  guess. The strict primitive still refuses, and both callers that write a label still use it.
+- **Four of six mutations are caught by the T3 tests ALONE** (unestablished identity, no corpus
+  clamp, the fallback ignoring a sweep's correction, whitespace rows). Each has a stated reason:
+  the trio corpora establish every identity their surfaces carry, their sessions end inside their
+  own corpus window, no checked-in baseline carries a relabelled span (0 of 5 bundles, 0 of 235
+  commits), and the deployed session drops empty segments before the surface. Sixth iteration of
+  the same lesson (11-17).
+- **The deployed `web_cli` is STILL on the M1 build** (pid 22561 as of iteration 13; verify before
+  relying on it). §10.5's order no longer protects anything — step 7 is done — so the restart onto
+  this build is now the FIRST thing the M2 exit measurement does, and it must be recorded in
+  progress.txt when it happens.
+- Rest of the ladder (M2 exit measurement + §10.6 soak, M3-M5) unimplemented; working tree carries
+  the plan, evidence prototypes, and this scaffold.
 
 ## Validation
 
@@ -668,6 +708,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh /tmp/portal-mutations
 # portal render tests (the surface, the replacement, S00, the missing rate, the headless browser)
 .venv/bin/python -m pytest tests/test_live_portal.py -q
+# E2 step 7: does the EXPORT carry the surface the reader saw? (exit 0, no GPU, node required)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_export_surface.py
+# its six mutations, in live_speaker_accuracy.py / live_surface.py, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh /tmp/export-mutations
+# export tests (export == screen on a real runtime, the fallback, S00, the clamp, the refusals)
+.venv/bin/python -m pytest tests/test_live_export_surface.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -728,16 +775,26 @@ prototypes/streaming-diarization/live-convergence/mutate_portal_surface.sh /tmp/
    in `tests/test_live_portal.py`, one of them driven entirely by real server payloads. Do NOT add
    render state across polls (a diff, an animation buffer, a join de-duplicator) without replacing
    the purity gate with something at least as strong, and do NOT let the page assume a sample rate.
-6i. **M2 step 3 item 7 - NEXT**: the export switch, and it goes **last** (§10.5 step 7). Exports
-   still read current commits; switch them to the effective/terminal surface only once
-   terminal/effective export tests pass, in one reviewed change. Then the 5-minute soak (§10.6),
-   which now has a stream to read: `rolling_decode_queued`/`completed` carry queue delay and the
-   decode record, so per-kind queue delay, stale/coalesced counts and rolling correction latency
-   come off the events rather than out of the process. F2 (step 2) says the duplicate-phrase-at-a-
-   join behaviour ships with this geometry; do not add a de-duplicator without measuring one (the
-   corpus for it is in `M2-rolling-grid/grid.json`). F3 (step 2) says G6 will be missed; measure it
-   honestly in the soak, and measure D2's serial witness cost there too. Restart `web_cli` onto the
-   build and record it before any paired rerun; file mode must stay byte-identical.
+6i. ~~**M2 step 3 item 7: the export switch**~~ - SHIPPED iteration 17 (see Current state). §10.5
+   is complete. Do NOT gate the switch on `text_revision_version > 0`: the two readings agree on an
+   unrevised session, measured, and a conditional export is a branch for nothing. Do NOT import
+   anything from `moss_transcribe_diarize.app` into `live_speaker_accuracy.py` - the F-cert reducer
+   loads it from a bare checkout with `-S`.
+6j. **M2 EXIT - NEXT**: the E2 gates measured end-to-end through the DEPLOYED service, which is
+   what the PRD's M2 milestone asks for and the only M2 item left. Order: (1) restart `web_cli`
+   (port 7861) onto this build with the `scripts/g3-attended-session.sh` / `moss-vllm-tunnel.sh`
+   pattern and RECORD the restart in progress.txt; (2) `run_paired_passes.sh /tmp/m2-exit-<stamp>`
+   (four warm-decoder passes, trio + 5-minute, ~19 min); (3) read the gates - rolling WER <= .150
+   mean AND < baseline live per case (bill .2614 / milei .1440 / keyu .1942), content recall >=
+   .940 mean, correction-after-provisional p95 <= 6.0 s, single-session combined RTF < 1 with
+   bounded queues, 5-minute-case rolling WER <= .0985, exact sample accounting, file mode
+   byte-identical. Then the §10.6 5-minute soak, which has both a stream to read
+   (`rolling_decode_queued`/`completed` carry queue delay and the decode record) and a screen to
+   time. F3 (step 2) says G6 will be MISSED at this geometry; measure it honestly rather than
+   re-selecting an arm, and measure D2's serial witness cost (a witness holds the session's single
+   in-flight slot) in the same soak. F2 (step 2) says duplicate phrases at a join ship with this
+   geometry; do not add a de-duplicator without measuring one (corpus: `M2-rolling-grid/grid.json`).
+   A gate that fails here is E2's stop rule, not a tuning invitation.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

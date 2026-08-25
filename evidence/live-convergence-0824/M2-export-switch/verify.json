@@ -1,0 +1,365 @@
+{
+  "arms": {
+    "base": {
+      "_trio": {
+        "content_recall_mean": 0.9134902986701547,
+        "wer_mean": 0.19986966666666664
+      },
+      "lex_bill_ackman": {
+        "dom_segments": 30,
+        "driver_scores": {
+          "content_recall": 0.8636363636363636,
+          "coverage": 0.842424,
+          "der": 0.675667,
+          "der_confusion": 0.513,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.162667,
+          "hypothesis_seconds": 50.23999999999999,
+          "hypothesis_words": 182,
+          "mean_segment_seconds": 1.6746666666666663,
+          "recovered_words": 152,
+          "reference_words": 176,
+          "segments": 30,
+          "tbsa": 0.58827,
+          "text_speaker_accuracy": 0.271907,
+          "wer": 0.261364
+        },
+        "fallback_scores": {
+          "content_recall": 0.8636363636363636,
+          "coverage": 0.842424,
+          "der": 0.675667,
+          "der_confusion": 0.513,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.162667,
+          "hypothesis_seconds": 50.239999999999995,
+          "hypothesis_words": 182,
+          "mean_segment_seconds": 1.6746666666666665,
+          "recovered_words": 152,
+          "reference_words": 176,
+          "segments": 30,
+          "tbsa": 0.58827,
+          "text_speaker_accuracy": 0.271907,
+          "wer": 0.261364
+        },
+        "fallback_segments": 30,
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.8636363636363636,
+          "coverage": 0.842424,
+          "der": 0.675667,
+          "der_confusion": 0.513,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.162667,
+          "hypothesis_seconds": 50.23999999999999,
+          "hypothesis_words": 182,
+          "mean_segment_seconds": 1.6746666666666663,
+          "recovered_words": 152,
+          "reference_words": 176,
+          "segments": 30,
+          "tbsa": 0.58827,
+          "text_speaker_accuracy": 0.271907,
+          "wer": 0.261364
+        },
+        "segments": 30,
+        "text_revision_version": 0
+      },
+      "lex_javier_milei": {
+        "dom_segments": 28,
+        "driver_scores": {
+          "content_recall": 0.92,
+          "coverage": 0.84601,
+          "der": 0.568833,
+          "der_confusion": 0.391,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.177833,
+          "hypothesis_seconds": 49.33000000000003,
+          "hypothesis_words": 127,
+          "mean_segment_seconds": 1.7617857142857152,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 28,
+          "tbsa": 0.689394,
+          "text_speaker_accuracy": 0.448226,
+          "wer": 0.144
+        },
+        "fallback_scores": {
+          "content_recall": 0.92,
+          "coverage": 0.84601,
+          "der": 0.568833,
+          "der_confusion": 0.391,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.177833,
+          "hypothesis_seconds": 49.32999999999999,
+          "hypothesis_words": 127,
+          "mean_segment_seconds": 1.761785714285714,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 28,
+          "tbsa": 0.689394,
+          "text_speaker_accuracy": 0.448226,
+          "wer": 0.144
+        },
+        "fallback_segments": 28,
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.84601,
+          "der": 0.568833,
+          "der_confusion": 0.391,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.177833,
+          "hypothesis_seconds": 49.33000000000003,
+          "hypothesis_words": 127,
+          "mean_segment_seconds": 1.7617857142857152,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 28,
+          "tbsa": 0.689394,
+          "text_speaker_accuracy": 0.448226,
+          "wer": 0.144
+        },
+        "segments": 28,
+        "text_revision_version": 0
+      },
+      "lex_keyu_jin": {
+        "dom_segments": 26,
+        "driver_scores": {
+          "content_recall": 0.9568345323741008,
+          "coverage": 0.903249,
+          "der": 0.705667,
+          "der_confusion": 0.6075,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.098167,
+          "hypothesis_seconds": 54.10999999999999,
+          "hypothesis_words": 157,
+          "mean_segment_seconds": 2.0811538461538457,
+          "recovered_words": 133,
+          "reference_words": 139,
+          "segments": 26,
+          "tbsa": 0.639294,
+          "text_speaker_accuracy": 0.304295,
+          "wer": 0.194245
+        },
+        "fallback_scores": {
+          "content_recall": 0.9568345323741008,
+          "coverage": 0.903249,
+          "der": 0.705667,
+          "der_confusion": 0.6075,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.098167,
+          "hypothesis_seconds": 54.11,
+          "hypothesis_words": 157,
+          "mean_segment_seconds": 2.081153846153846,
+          "recovered_words": 133,
+          "reference_words": 139,
+          "segments": 26,
+          "tbsa": 0.639294,
+          "text_speaker_accuracy": 0.304295,
+          "wer": 0.194245
+        },
+        "fallback_segments": 26,
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.9568345323741008,
+          "coverage": 0.903249,
+          "der": 0.705667,
+          "der_confusion": 0.6075,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.098167,
+          "hypothesis_seconds": 54.10999999999999,
+          "hypothesis_words": 157,
+          "mean_segment_seconds": 2.0811538461538457,
+          "recovered_words": 133,
+          "reference_words": 139,
+          "segments": 26,
+          "tbsa": 0.639294,
+          "text_speaker_accuracy": 0.304295,
+          "wer": 0.194245
+        },
+        "segments": 26,
+        "text_revision_version": 0
+      }
+    },
+    "rolling": {
+      "_trio": {
+        "content_recall_mean": 0.9439159581425769,
+        "wer_mean": 0.131861
+      },
+      "lex_bill_ackman": {
+        "dom_segments": 21,
+        "driver_scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "segments": 21,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "dom_segments": 14,
+        "driver_scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "segments": 14,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "dom_segments": 16,
+        "driver_scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "provisional": null,
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "segments": 16,
+        "text_revision_version": 6
+      }
+    }
+  },
+  "baseline_fallback": {
+    "keyu-5m": {
+      "checked_in_sha256": "3c0c6115663c4d07b2e3ebc738a13b87d2e494bbec8ca4a01f39c1eb823a0a43",
+      "duration_sec": 300.0,
+      "identical": true,
+      "rows": 127,
+      "sha256": "3c0c6115663c4d07b2e3ebc738a13b87d2e494bbec8ca4a01f39c1eb823a0a43"
+    },
+    "trio-60s/acquired_jamie_dimon": {
+      "checked_in_sha256": "1ee0e269c89d487ff18a994828be0bcc9841116d9937c74affa5d94b857f4b89",
+      "duration_sec": 60.0,
+      "identical": true,
+      "rows": 32,
+      "sha256": "1ee0e269c89d487ff18a994828be0bcc9841116d9937c74affa5d94b857f4b89"
+    },
+    "trio-60s/lex_bill_ackman": {
+      "checked_in_sha256": "2cecfa178626d38d198bb5458f0dc14b16d1f1faffee7f2154dbd0791d0c2c2b",
+      "duration_sec": 60.0,
+      "identical": true,
+      "rows": 30,
+      "sha256": "2cecfa178626d38d198bb5458f0dc14b16d1f1faffee7f2154dbd0791d0c2c2b"
+    },
+    "trio-60s/lex_javier_milei": {
+      "checked_in_sha256": "9cf79b7e27a9034559bbaf8f890cba677d5fe84becd9bc02d90f6d8e5b88e0a8",
+      "duration_sec": 60.0,
+      "identical": true,
+      "rows": 28,
+      "sha256": "9cf79b7e27a9034559bbaf8f890cba677d5fe84becd9bc02d90f6d8e5b88e0a8"
+    },
+    "trio-60s/lex_keyu_jin": {
+      "checked_in_sha256": "4be39c09c63d3b66779cb39008f9e2da6bde988c482ee94d016e125e67995709",
+      "duration_sec": 60.0,
+      "identical": true,
+      "rows": 26,
+      "sha256": "4be39c09c63d3b66779cb39008f9e2da6bde988c482ee94d016e125e67995709"
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 178
+  },
+  "failures": [],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json",
+    "sha256": "7e0cbc041c909f549f1ec2f22e613d3a1639d740fde33432f75aeb9e175aecc9"
+  },
+  "modules": [
+    "moss_transcribe_diarize/live_speaker_accuracy.py",
+    "moss_transcribe_diarize/live_surface.py",
+    "moss_transcribe_diarize/live_replay.py"
+  ],
+  "passed": true,
+  "recorded_at": "2026-08-25T09:44:04.159146+00:00",
+  "schema": "moss-live-convergence-export-surface.v1"
+}

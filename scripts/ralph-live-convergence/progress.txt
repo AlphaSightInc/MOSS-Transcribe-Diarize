@@ -1528,3 +1528,113 @@ appended at the iteration 4->5 boundary]
   once in the same reviewed change. Then the §10.6 5-minute soak, which now has both a stream to
   read (queue delay, stale/coalesced counts) and a screen to time (portal render). Plan §10.5's
   order is not negotiable.
+
+2026-08-25 iteration 17 (run 20260825-042645-70858) - M2 step 3, item 7 of plan §10.5: the export
+  switch. §10.5's production sequence is COMPLETE.
+- Target: context.md candidate 6i, the lowest open item and the LAST of §10.5's seven. M0's G2,
+  M1's G-M1-1 and M2's D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code.
+- Files touched:
+  moss_transcribe_diarize/live_surface.py                                       (new, the display rule)
+  moss_transcribe_diarize/app/live_session.py                                   (re-export, -34/+9)
+  moss_transcribe_diarize/live_speaker_accuracy.py                              (+~95, the switch)
+  moss_transcribe_diarize/live_replay.py                                        (evaluator schema 2)
+  tests/test_live_export_surface.py                                             (new, 9 T3 tests)
+  prototypes/streaming-diarization/live-convergence/verify_export_surface.py    (new, six gates)
+  prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh    (new, 6 mutations)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                    (index + commands)
+  evidence/live-convergence-0824/M2-export-switch/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                               (new, 120K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart. The restart is now the FIRST step of the M2 exit measurement (candidate 6j),
+  not this change's; web_cli is still believed to be pid 22561 on the M1 build and must be verified
+  before it is relied on.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_export_surface.py
+    exit 0. It reads one meeting THREE ways -- the production export, the same export with the
+    surface removed (the pre-§7.3 reading), and the served portal page's DOM.
+      lex_bill_ackman    base    export_segments=30  dom=30  wer=0.261364 recall=0.863636
+      lex_bill_ackman    rolling export_segments=21  dom=21  wer=0.198864 recall=0.926136
+      lex_javier_milei   base    export_segments=28  dom=28  wer=0.144000 recall=0.920000
+      lex_javier_milei   rolling export_segments=14  dom=14  wer=0.096000 recall=0.920000
+      lex_keyu_jin       base    export_segments=26  dom=26  wer=0.194245 recall=0.956835
+      lex_keyu_jin       rolling export_segments=16  dom=16  wer=0.100719 recall=0.985612
+      TRIO base    wer=0.199870 (grid 0.199870) recall=0.913490 (grid 0.913490)
+      TRIO rolling wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      FALLBACK (5 checked-in pre-surface bundles) rows=32/30/28/26/127 all identical
+      178 replayed decodes, 0 fresh (no GPU)
+    Six gates: G1 the switch does not move a session nobody revised (base arm: export == the
+    committed reading word for word and speaker for speaker, every timestamp inside ONE sample,
+    scores equal to 6 dp); G2 the base arm still reproduces the published live trio THROUGH THE
+    EXPORT; G3 the rolling arm reproduces the §10.4 selected arm through the export -- the point
+    of the switch, since a paired rerun now reports the arm the reader is reading; G4 plan §14
+    T3, export text equals visible effective text, on 3 cases x 2 arms against the portal DOM;
+    G5 every checked-in `live-hypothesis.jsonl` reproduced BYTE FOR BYTE from its own trace;
+    G6 zero fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1091 passed, 2 skipped, 392 subtests (1082/386 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- unmoved across eight
+    production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_export_surface.sh <out>
+    six mutations across live_speaker_accuracy.py and live_surface.py; all six caught; control
+    clean before and after.
+- WHAT SHIPPED. One branch, in the one place that turns a served snapshot into a transcript:
+  `hypothesis_from_live_snapshot` exports `effective_transcript` when the snapshot carries one,
+  and re-parses the committed spans only for a snapshot from before §7.3 existed. That function is
+  what `remeasure_live_vs_file.py` writes `live-hypothesis.jsonl` from and what the F-certification
+  harness scores, so the campaign's live numbers now come off the surface the reader saw.
+  `live_replay.py`'s `evaluator.jsonl` moved to schema 2 on the same terms: written from the
+  surface, carrying the sample integers a segment is defined by instead of a `span_id` that a
+  revision spanning several base spans cannot name.
+- THREE DESIGN DECISIONS, each with what it cost:
+  D1 The switch is UNCONDITIONAL (prefer the surface whenever the field exists), not gated on
+     `text_revision_version > 0`. G1 is what makes that safe: on the base arm the two readings
+     agree word for word with every timestamp inside one sample. A conditional export would mean
+     two live readings of a current snapshot, chosen by whether a witness had landed yet. Cost:
+     sample-derived seconds replace parsed seconds, moving a timestamp by up to 6.25e-5 s; the
+     gate states that slack rather than hiding it, and no score moves at 6 dp.
+  D2 The display rule moved to a LEAF module, `moss_transcribe_diarize/live_surface.py`. The first
+     attempt imported `published_speaker_label` from `app.live_session` into the scorer and the
+     test tier caught it in one run: `scripts/ralph-afk/live-canary-clauses.py` loads
+     `live_speaker_accuracy.py` straight out of a bare checkout, with `-S` and no installed
+     package, so any `app` import breaks the F-certification reducer. `app.live_session`
+     re-exports the three names, so no existing caller changed. Cost: one more module -- against
+     a second Python spelling of a rule the portal already spells twice.
+  D3 `published_speaker_label` is the TOTAL form of `display_speaker_label`: `None` and an identity
+     this snapshot never established both read as `S00`, because neither may be published as a
+     guess. The strict primitive still refuses, and the two callers that WRITE a label still use
+     it. Cost: two functions where there was one; the alternative was every reader of the surface
+     writing its own try/except, which is how the portal verifier and the runtime driver had each
+     already spelled it.
+- MUTATIONS, six, restored by a trap on exit:
+    M1 export the committed spans even when a surface exists  -> verifier G3/G4 + T3
+    M2 export the canonical identity, not the Sxx token       -> verifier G1/G4 + T3
+    M3 an unestablished identity exports as the first speaker -> T3 ONLY
+    M4 the export no longer clamps to the corpus window       -> T3 ONLY
+    M5 the fallback ignores a sweep's correction              -> T3 ONLY
+    M6 whitespace-only surface segments become rows           -> T3 ONLY
+- Learned:
+  - The two readings of an unrevised session agree to within ONE SAMPLE on real audio. That is
+    the measurement that turned the switch from a risk into a branch deletion, and it is why the
+    fallback exists for older artifacts rather than as a policy choice.
+  - A module's dependency budget is a contract somebody already depends on. `live_speaker_accuracy`
+    is loaded by the F-cert reducer from a bare checkout with `-S`; an `app` import is invisible in
+    a normal test run and fatal there. The failure took one pytest run to find because that
+    reducer's own test drives it as a subprocess -- worth remembering as the reason that test
+    exists.
+  - Four of six mutations are caught by the T3 tier ALONE, each for a stated reason: the trio
+    corpora establish every identity their surfaces carry, their sessions end inside their own
+    corpus window, no checked-in baseline carries a relabelled span (0 of 5 bundles, 0 of 235
+    commits), and the deployed session drops empty segments before they reach the surface. Sixth
+    iteration of the same lesson (11-17): the corpus reading is necessary and not sufficient.
+  - G5 is the cheapest strong control in this campaign: five real pre-surface bundles are checked
+    in, so "the fallback is exactly what it always was" is a byte comparison against artifacts
+    nobody can quietly regenerate.
+- Next: candidate 6j, the M2 EXIT, which is the only M2 item left and is a MEASUREMENT rather than
+  a change. Order: restart `web_cli` (7861) onto this build and record the restart; run
+  `run_paired_passes.sh` (four warm-decoder passes, trio + 5-minute); read the E2 gates (rolling
+  WER <= .150 mean and < baseline live per case, recall >= .940, correction p95 <= 6.0 s, RTF < 1,
+  5-minute rolling WER <= .0985, exact accounting, file mode byte-identical). Then the §10.6
+  5-minute soak. Step 2's F3 says the p95 gate will be MISSED at this geometry -- measure it
+  honestly; a gate that fails is E2's stop rule, not a tuning invitation.

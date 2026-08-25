@@ -1,0 +1,45 @@
+.....F.........................                                    [100%]
+=================================== FAILURES ===================================
+_ ExportIsTheVisibleSurfaceTest.test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it>
+
+    def test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it(self):
+        """A corpus window is what the reference covers; the export may not run past it."""
+    
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "before the window", "speaker-0001"),
+                surface_segment(LIVE_SAMPLE_RATE, 3 * LIVE_SAMPLE_RATE, "across the end", "speaker-0001"),
+                surface_segment(4 * LIVE_SAMPLE_RATE, 5 * LIVE_SAMPLE_RATE, "past the end", "speaker-0001"),
+            ]
+        )
+        exported = export(payload, duration_sec=2.0, start_sample=LIVE_SAMPLE_RATE)
+    
+>       self.assertEqual(
+            [(item.start, item.end, item.text) for item in exported],
+            [(0.0, 2.0, "across the end")],
+        )
+E       AssertionError: Lists differ: [(-1.0, 0.0, 'before the window'), (0.0, 2.[44 chars]nd')] != [(0.0, 2.0, 'across the end')]
+E       
+E       First differing element 0:
+E       (-1.0, 0.0, 'before the window')
+E       (0.0, 2.0, 'across the end')
+E       
+E       First list contains 2 additional elements.
+E       First extra element 1:
+E       (0.0, 2.0, 'across the end')
+E       
+E       - [(-1.0, 0.0, 'before the window'),
+E       -  (0.0, 2.0, 'across the end'),
+E       ? ^                            ^
+E       
+E       + [(0.0, 2.0, 'across the end')]
+E       ? ^                            ^
+E       
+E       -  (3.0, 4.0, 'past the end')]
+
+tests/test_live_export_surface.py:224: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it
+1 failed, 30 passed, 6 subtests passed in 2.28s

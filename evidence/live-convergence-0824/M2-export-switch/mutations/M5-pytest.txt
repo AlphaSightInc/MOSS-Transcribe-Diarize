@@ -1,0 +1,69 @@
+...F........F..................                                    [100%]
+=================================== FAILURES ===================================
+_ ExportIsTheVisibleSurfaceTest.test_an_older_snapshot_without_a_surface_still_exports_its_corrected_labels _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_an_older_snapshot_without_a_surface_still_exports_its_corrected_labels>
+
+    def test_an_older_snapshot_without_a_surface_still_exports_its_corrected_labels(self):
+        """The fallback is the whole of the old reading, `revised_transcript` first."""
+    
+        payload = snapshot_payload(
+            None,
+            committed=[
+                commit(
+                    0,
+                    LIVE_SAMPLE_RATE,
+                    "[0][S01]who spoke was wrong[1]",
+                    revised="[0][S02]who spoke was wrong[1]",
+                )
+            ],
+        )
+        exported = export(payload)
+    
+>       self.assertEqual([(item.speaker, item.text) for item in exported], [("S02", "who spoke was wrong")])
+E       AssertionError: Lists differ: [('S01', 'who spoke was wrong')] != [('S02', 'who spoke was wrong')]
+E       
+E       First differing element 0:
+E       ('S01', 'who spoke was wrong')
+E       ('S02', 'who spoke was wrong')
+E       
+E       - [('S01', 'who spoke was wrong')]
+E       ?      ^
+E       
+E       + [('S02', 'who spoke was wrong')]
+E       ?      ^
+
+tests/test_live_export_surface.py:193: AssertionError
+_____ test_final_revised_transcript_is_scored_instead_of_stale_live_label ______
+
+    def test_final_revised_transcript_is_scored_instead_of_stale_live_label() -> None:
+        reference = (Segment(0.0, 2.0, "Alice", "alpha"),)
+        snapshot = live_snapshot(
+            [
+                commit(
+                    0,
+                    32000,
+                    "[0][S01]alpha[2]",
+                    revised_transcript="[0][S03]alpha[2]",
+                )
+            ]
+        )
+    
+        hypothesis = hypothesis_from_live_snapshot(
+            snapshot,
+            corpus_start_sample=0,
+            corpus_duration_sec=2.0,
+        )
+        result = score_live_speaker_accuracy(reference, hypothesis)
+    
+>       assert [item.speaker for item in hypothesis] == ["S03"]
+E       AssertionError: assert ['S01'] == ['S03']
+E         
+E         At index 0 diff: 'S01' != 'S03'
+E         Use -v to get more diff
+
+tests/test_live_speaker_accuracy.py:127: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_an_older_snapshot_without_a_surface_still_exports_its_corrected_labels
+FAILED tests/test_live_speaker_accuracy.py::test_final_revised_transcript_is_scored_instead_of_stale_live_label
+2 failed, 29 passed, 6 subtests passed in 2.33s

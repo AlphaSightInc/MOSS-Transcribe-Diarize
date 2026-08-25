@@ -1,0 +1,346 @@
+..F.FFFFF......................                                    [100%]
+=================================== FAILURES ===================================
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [not a list] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [item not an object] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [negative sample] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [empty interval] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [text not a string] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_malformed_surface_is_refused_by_name [speaker not a string] _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_malformed_surface_is_refused_by_name>
+
+    def test_a_malformed_surface_is_refused_by_name(self):
+        malformed_list = snapshot_payload(None)
+        malformed_list["session"]["effective_transcript"] = {"segments": []}
+        cases = {
+            "not a list": malformed_list,
+            "item not an object": snapshot_payload(["a segment"]),
+            "negative sample": snapshot_payload(
+                [surface_segment(-1, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "empty interval": snapshot_payload(
+                [surface_segment(LIVE_SAMPLE_RATE, LIVE_SAMPLE_RATE, "x", None)]
+            ),
+            "text not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": None, "text": 7}]
+            ),
+            "speaker not a string": snapshot_payload(
+                [{"start_sample": 0, "end_sample": 1, "canonical_speaker": 7, "text": "x"}]
+            ),
+        }
+        for name, payload in cases.items():
+>           with self.subTest(name), self.assertRaises(ValueError):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:259: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_a_surface_without_an_identity_snapshot_is_refused _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_a_surface_without_an_identity_snapshot_is_refused>
+
+    def test_a_surface_without_an_identity_snapshot_is_refused(self):
+        payload = snapshot_payload([surface_segment(0, LIVE_SAMPLE_RATE, "x", "speaker-0001")])
+        del payload["session"]["identity_snapshot"]
+    
+>       with self.assertRaises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ValueError not raised
+
+tests/test_live_export_surface.py:266: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token>
+
+    def test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token(self):
+        """Two ways of not knowing who spoke, one honest answer, never a guess."""
+    
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "nobody attributed", None),
+                surface_segment(LIVE_SAMPLE_RATE, 2 * LIVE_SAMPLE_RATE, "never established", "speaker-0009"),
+                surface_segment(2 * LIVE_SAMPLE_RATE, 3 * LIVE_SAMPLE_RATE, "second speaker", "speaker-0002"),
+            ]
+        )
+        exported = export(payload)
+    
+>       self.assertEqual(
+            [item.speaker for item in exported],
+            [UNATTRIBUTED_SPEAKER, UNATTRIBUTED_SPEAKER, "S02"],
+        )
+E       AssertionError: Lists differ: [] != ['S00', 'S00', 'S02']
+E       
+E       Second list contains 3 additional elements.
+E       First extra element 0:
+E       'S00'
+E       
+E       - []
+E       + ['S00', 'S00', 'S02']
+
+tests/test_live_export_surface.py:207: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it>
+
+    def test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it(self):
+        """A corpus window is what the reference covers; the export may not run past it."""
+    
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "before the window", "speaker-0001"),
+                surface_segment(LIVE_SAMPLE_RATE, 3 * LIVE_SAMPLE_RATE, "across the end", "speaker-0001"),
+                surface_segment(4 * LIVE_SAMPLE_RATE, 5 * LIVE_SAMPLE_RATE, "past the end", "speaker-0001"),
+            ]
+        )
+        exported = export(payload, duration_sec=2.0, start_sample=LIVE_SAMPLE_RATE)
+    
+>       self.assertEqual(
+            [(item.start, item.end, item.text) for item in exported],
+            [(0.0, 2.0, "across the end")],
+        )
+E       AssertionError: Lists differ: [] != [(0.0, 2.0, 'across the end')]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       (0.0, 2.0, 'across the end')
+E       
+E       - []
+E       + [(0.0, 2.0, 'across the end')]
+
+tests/test_live_export_surface.py:224: AssertionError
+_____ ExportIsTheVisibleSurfaceTest.test_the_export_is_what_the_reader_saw _____
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_the_export_is_what_the_reader_saw>
+
+    def test_the_export_is_what_the_reader_saw(self):
+        """Plan §14 T3: export text equals visible effective text.
+    
+        One meeting, two readers: the export reads the served snapshot, the portal page
+        renders the same one in the headless browser, and the screen is parsed back with the
+        production parser. Speaker, words and seconds must agree segment for segment --
+        anything else means the file and the screen disagree about a meeting that happened.
+        """
+    
+        payload = served_snapshot(rolling=True, frames=MIXED_SURFACE_FRAMES)
+        self.assertGreater(payload["session"]["text_revision_version"], 0)
+        # Not a vacuous comparison: a surface of one authority could not tell a page that
+        # replaces its prefix from one that appends to it.
+        self.assertEqual(
+            {segment["authority"] for segment in payload["session"]["effective_transcript"]},
+            {"rolling", "provisional"},
+        )
+    
+        exported = export(payload)
+        on_screen = [
+            item
+            for row in rendered_transcript(payload).split("\n\n")
+            for item in parse_transcript(row)
+        ]
+    
+>       self.assertEqual(len(exported), len(on_screen))
+E       AssertionError: 6 != 3
+
+tests/test_live_export_surface.py:129: AssertionError
+_ ExportIsTheVisibleSurfaceTest.test_the_export_publishes_the_revision_and_not_the_words_it_replaced _
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_the_export_publishes_the_revision_and_not_the_words_it_replaced>
+
+    def test_the_export_publishes_the_revision_and_not_the_words_it_replaced(self):
+        """A reader watched the words change; the file must not restore the old ones."""
+    
+        payload = snapshot_payload(
+            [surface_segment(0, LIVE_SAMPLE_RATE, "what the witness heard", "speaker-0001")],
+            committed=[commit(0, LIVE_SAMPLE_RATE, "[0][S01]what the short span heard[1]")],
+        )
+        exported = export(payload)
+    
+>       self.assertEqual([item.text for item in exported], ["what the witness heard"])
+E       AssertionError: Lists differ: ['what the short span heard'] != ['what the witness heard']
+E       
+E       First differing element 0:
+E       'what the short span heard'
+E       'what the witness heard'
+E       
+E       - ['what the short span heard']
+E       ?             ----- ---
+E       
+E       + ['what the witness heard']
+E       ?            +++++
+
+tests/test_live_export_surface.py:146: AssertionError
+__ ExportIsTheVisibleSurfaceTest.test_whitespace_only_words_are_not_a_segment __
+
+self = <test_live_export_surface.ExportIsTheVisibleSurfaceTest testMethod=test_whitespace_only_words_are_not_a_segment>
+
+    def test_whitespace_only_words_are_not_a_segment(self):
+        payload = snapshot_payload(
+            [
+                surface_segment(0, LIVE_SAMPLE_RATE, "   ", "speaker-0001"),
+                surface_segment(LIVE_SAMPLE_RATE, 2 * LIVE_SAMPLE_RATE, "said something", "speaker-0001"),
+            ]
+        )
+    
+>       self.assertEqual([item.text for item in export(payload)], ["said something"])
+E       AssertionError: Lists differ: [] != ['said something']
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       'said something'
+E       
+E       - []
+E       + ['said something']
+
+tests/test_live_export_surface.py:237: AssertionError
+=========================== short test summary info ============================
+SUBFAILED[not a list] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+SUBFAILED[item not an object] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+SUBFAILED[negative sample] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+SUBFAILED[empty interval] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+SUBFAILED[text not a string] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+SUBFAILED[speaker not a string] tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_malformed_surface_is_refused_by_name
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_a_surface_without_an_identity_snapshot_is_refused
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_nobody_attributed_and_nobody_established_both_export_as_the_unattributed_token
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_the_export_is_clamped_to_the_corpus_and_drops_what_falls_outside_it
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_the_export_is_what_the_reader_saw
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_the_export_publishes_the_revision_and_not_the_words_it_replaced
+FAILED tests/test_live_export_surface.py::ExportIsTheVisibleSurfaceTest::test_whitespace_only_words_are_not_a_segment
+12 failed, 25 passed in 2.30s
