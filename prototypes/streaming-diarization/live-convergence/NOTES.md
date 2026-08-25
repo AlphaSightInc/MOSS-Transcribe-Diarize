@@ -325,3 +325,55 @@ aligned, 3 sliding). Gates use the sliding screen. Instance values come from pro
 (`UNATTRIBUTED_SPEAKER`, `DEFAULT_ROLLING_GEOMETRY`, `ALBUM_BIRTH_MIN_SECONDS`, and the hard cap
 read from each pass's own manifest), never from this file. Contract: `PREREGISTRATION-M3.md`;
 verdict and mutation sweep: `evidence/live-convergence-0824/M3-preregistration/`.
+
+---
+
+## `compare_speaker_authority.py` + `mutate_speaker_authority.sh` — iteration 20, M3 step 2: the S1 arm
+
+Verdict: **S1 is measured-neutral.** All four cases, both passes, every gated quality axis
+identical to S0 at six decimal places (Δ DER `0.000000`). Full bundle:
+`evidence/live-convergence-0824/M3-s1-prototype/`.
+
+```bash
+# the arm -- trio costs ZERO MOSS requests (the §10.2 grid already decoded this geometry)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py \
+  --cases lex_bill_ackman,lex_javier_milei,lex_keyu_jin,keyu-5m --runs A,B \
+  --decode-cache evidence/live-convergence-0824/M3-s1-prototype/witness-decodes.json \
+  --output /tmp/m3-s1-all.json
+# the derived quantities react
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py --selftest
+bash prototypes/streaming-diarization/live-convergence/mutate_speaker_authority.sh /tmp/m3-mut-out
+```
+
+This is plan §11.1's S0-vs-S1 comparison. S0 is not recomputed: it is the M2 exit bundle read
+through the production export, and the run refuses unless that export reproduces each pass's own
+`live-hypothesis.jsonl` and the deployed `results.json` axes to `1e-6`. S1 embeds each 10 s
+witness's **owned** speaker intervals with the production WeSpeaker encoder and matches them
+against a causally-rebuilt production `FingerprintAlbum` using the production matcher
+(`assign_speakers`); a local speaker the album cannot name is left to the session's projection,
+and the witness never births a canonical speaker (plan §6 M4 step 5). Every identity rule --
+`min_segment_samples`, the admission and birth floors, `min_match_score`/`min_match_margin`,
+the encoder asset -- is read from the DEPLOYED provider manifest, never spelled here.
+
+Why S1 ties, and it is the finding worth keeping: the surface's remaining confusion is **not a
+voice-identity error**. Post-hoc decomposition (no arm reads truth) puts 63 % of the bench's
+4.73 confused seconds in segments that *straddle a reference turn* -- a segment-extent defect no
+label from any authority can fix -- 27 % in `S00` fragments below the 0.5 s evidence floor
+(plan §11.4's separate candidate), and only 10 % (0.48 s in the whole bench) in the one class a
+better voice match wins outright. The label-only ceiling is `.00672` trio mean DER, not the
+`.016445` the confusion-free floor suggested, and S1 realises none of it: its only two changes
+are 0.16 s and 0.24 s microfragments on `lex_bill_ackman` where it replaces `S00` with a name the
+reference says is the wrong one.
+
+Cost, measured: marginal WeSpeaker RTF `.1306` (trio) / `.1371` (5 m) on top of the M2 exit's
+`.133-.157`, at ~1.0-1.1 s per witness embed. That per-window latency is why P7 is at risk: a
+resolver serial on the witness path would very likely breach G-M3-11's `8.756675 s` correction
+p95, which is already unsigned.
+
+Probes: `I1` swapping every local `Sxx` name changes nothing (the label-invariance plan §11.1
+requires); `M1` collapsing every witness segment onto one local moves S1's DER `.127333 ->
+.135833`; `M2` an album that enrols nobody produces 6 abstentions and 0 relabels; `M3` a
+corrupted export fails the S0 control and exits 1; `M4` one second of prepended context produces
+14 D5 violations *and* changes the mapping, which is D5's premise measured rather than asserted.

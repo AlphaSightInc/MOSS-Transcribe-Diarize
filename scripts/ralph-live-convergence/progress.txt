@@ -1819,3 +1819,117 @@ appended at the iteration 4->5 boundary]
   hit/miss, mapping, abstention and per-resource RTF, decodes each witness once. Score it with
   measure_m3_baseline.py --passes-root against the 14 preregistered gates. Do not re-open the
   bounds, the arms or the geometry on the way.
+
+2026-08-25 iteration 20 (run 20260825-042645-70858) - M3 (plan E3) step 2: the S1 arm is built,
+  measured on all four cases, and it is a TIE on every gated axis. No production file was touched.
+- Target: context.md candidate 7b, the lowest open item, and the step AGENTS.md requires before
+  any production code ("prototype before you implement, and MEASURE").
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py  (new; plan
+      §11.1's S0-vs-S1 comparison, with --selftest)
+  prototypes/streaming-diarization/live-convergence/mutate_speaker_authority.sh   (new; 1
+      invariance probe + 4 mutations, on copies)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                      (index + commands)
+  evidence/live-convergence-0824/M3-s1-prototype/{NOTES.md,s1-all.json,s1-trio-timed.json,
+      s1-5m-timed.json,witness-decodes.json,console.txt,selftest.txt,mutations.txt,sha256.txt}
+      (new bundle, 872K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart. 30 MOSS requests total, all for the five-minute case's witness windows
+  (one in-flight, production runner); the trio cost ZERO because the §10.2 grid had already
+  decoded exactly this geometry and its cache was still on disk. 4070 Ti untouched.
+- Validation:
+  - compare_speaker_authority.py --cases lex_bill_ackman,lex_javier_milei,lex_keyu_jin,keyu-5m
+      --runs A,B  ->  exit 0, bench_controls_pass=True, d5_violations=0
+      case              arm   DER      miss     conf     spk_acc  v2_word  WER      S00s
+      lex_bill_ackman   S0    .127333  .090167  .037167  .872667  .920455  .204545  0.73
+      lex_bill_ackman   S1    .127333  .090167  .037167  .872667  .920455  .204545  0.33
+      lex_javier_milei  S0/S1 .117333  .117333  .000000  .882667  .920000  .096000  0.00
+      lex_keyu_jin      S0/S1 .089167  .077000  .012167  .910833  .985612  .093525  0.00
+      keyu-5m           S0/S1 .088600  .082700  .005900  .911400  .954856  .082079  0.56
+      trio mean, BOTH arms: DER .111278, speaker_accuracy .888722, matched-word .942022.
+      Delta DER = 0.000000 on every case. The two passes agree exactly.
+  - --selftest -> 0 failures (D5 catches prefix context / mixed audio / a crossing interval; the
+    label application leaves an unmapped local and a provisional segment alone; the album holds
+    back the span whose vectors production has not reconciled; an S00 span never enrols).
+  - mutate_speaker_authority.sh -> I1 label swap changes NOTHING (label invariance, which plan
+    §11.1 requires); M1 collapsing every witness segment onto one local moves S1 DER .127333 ->
+    .135833 with 3 relabels and 1 abstention; M2 an album that enrols nobody gives 6 abstentions
+    and 0 relabels; M3 a corrupted export fails the S0 control and exits 1; M4 one second of
+    prepended context gives 14 D5 violations AND changes the mapping. Control identical
+    before/after.
+  - .venv/bin/python -m pytest tests/ -q -> 1091 passed, 2 skipped, 392 subtests (unchanged).
+- BENCH CONTROLS, both green on all 8 case-runs: the production export
+  (hypothesis_from_live_snapshot) reproduces each pass's own live-hypothesis.jsonl exactly, and
+  the locally-scored S0 arm reproduces the deployed results.json DER / speaker accuracy / WER to
+  1e-6. S0 is therefore the surface the service served, not a reconstruction of it. Witness
+  fidelity: the replayed decode reproduces the served surface on 32 of the trio's 36 window-runs
+  (two recurring exceptions - one word on bill w1, one same-speaker split on keyu w3, neither at
+  a speaker boundary) and 60 of 60 on the five-minute case.
+- WHY S1 TIES, and it reframes the speaker axis. The remaining confusion is NOT a voice-identity
+  error. Post-hoc decomposition (the arm itself never reads a reference) of the bench's 4.73
+  confused seconds:
+      segment_straddles_turn  2.96 s (63 %)  the published segment contains two reference
+                                             speakers -> a segment-EXTENT defect; no label from
+                                             any authority can fix it
+      unattributed            1.29 s (27 %)  S00 fragments below the 0.5 s evidence floor ->
+                                             plan §11.4's separate candidate
+      misattributed           0.48 s (10 %)  one speaker's audio published as another -> the ONLY
+                                             class a better voice match wins outright
+  So iteration 19's `.016445` ceiling was an over-estimate: it assumed all confusion was
+  label-fixable. The label-only ceiling is **.00672** trio mean DER, and S1 realises zero of it.
+- WHAT S1 DOES CHANGE, AND IT IS WRONG. Two segments in the whole bench, both on bill, both sub-
+  quarter-second microfragments the projection had published as S00: "Right?" (39.84-40.00) and
+  "You know." (49.75-49.99). S1 names both speaker-0002; the reference says both are Bill. DER
+  does not move (an S00 second already counted as confusion), S00 seconds fall .73 -> .33, and
+  bill's misattributed seconds rise .48 -> .88. G-M3-8 ("S00 must not increase") would score that
+  as a PASS. The one visible effect of S1 on this bench is trading an honest abstention for a
+  confident error.
+- THE MECHANISM IS CORRECT, THERE IS JUST NOTHING TO WIN. 118 witness-owned units embedded, zero
+  D5 violations, zero whole-window abstentions, zero ambiguity refusals, every local mapped
+  one-to-one or left to the projection (G-M3-9 by construction - the matcher is production's
+  assign_speakers). The mapping re-anchors correctly across windows: bill w3 maps
+  S01->speaker-0002 / S02->speaker-0001, the REVERSE of its neighbours, because MOSS's local Sxx
+  names are arbitrary per window. Of the trio's 50 surface segments, 45 got a witness answer
+  identical to the projection's.
+- COST, MEASURED (album embeddings excluded - those are the base path's existing work): witness
+  embeddings alone are .130594 RTF on the trio and .137078 on the five-minute case, at 1.02-1.14 s
+  per embed. Combined would be ~.27-.29 against G-M3-10's `< 1`, so P6 holds. P7 does NOT look
+  safe: 1.0-2.3 s per window added serially to the witness path, against G-M3-11's already-
+  unsigned 8.756675 s correction p95. If S1 ever ships it should publish through the existing
+  `revise_labels` label seam AFTER the text revision lands, which leaves the text clock untouched
+  - an implementation choice, not a new arm.
+- PREDICTIONS SCORED: P1 held at the upper endpoint exactly (.111278); P2 vacuous (no gain
+  anywhere); P3 held; P4 held (.000000); P5 held (.73 -> .33) but for a reason it did not
+  anticipate - a wrong name on the fragments, not less fragmentation; P6 held; P7 AT RISK.
+- D-M3-2 OPEN FOR THE OWNER (recorded in context.md as candidate 7c). Preregistration §6.2 says a
+  tie still ships. This evidence says the arm cannot move a gated quality axis, costs .13 RTF and
+  endangers G-M3-11. O1 ship as written and score the 14 gates on deployed passes; O2 ship through
+  the label seam so the correction clock is untouched; O3 record E3-S1 as measured-neutral, ship
+  nothing, leave the §18 row unsigned (preregistration §6.4's own disposition) and move to M4.
+  RECOMMENDATION: O3, with O2 as the fallback. No plan §15 global stop condition fired, so this
+  is not a `.stop`.
+- Learned:
+  - A decomposition needs a decomposition. Iteration 19 split DER into miss / false alarm /
+    confusion and called confusion "what a speaker authority could have got right". Splitting
+    confusion again - straddle / unattributed / misattributed - cut the reachable number by 60 %
+    and named the real owner of the rest (segment extents). Two iterations, same lesson: the
+    total is never the answer.
+  - The cheapest way to build an arm is to notice the decodes already exist. The §10.2 grid ran
+    the identical geometry in iteration 10 and its cache was still on disk, so the trio's 18
+    witness decodes cost nothing. Checking that cache into the bundle (25 KB) is what makes the
+    whole measurement re-runnable with no GPU and no service.
+  - A mutation whose expected answer is "no change" is not a mutation, it is an invariance test,
+    and the two must be labelled differently. The first version of the probe swapped S01<->S02 in
+    the witness transcripts and reported "no change" as a FAILURE to react - but the arm decides
+    from embeddings, so renaming locals is exactly what must not matter. The probe that actually
+    proves the arm is live is collapsing every witness segment onto ONE local, and it moves DER.
+  - An arm can be correct, cheap to verify, and still not worth shipping. Every structural claim
+    E3 makes about witness-owned evidence held: D5 clean, one-to-one or abstain, label-invariant,
+    no births. It changed nothing a reader would see, and the two things it did change it got
+    wrong. That is the prototype-first rule paying for itself: the same finding would have cost
+    three iterations and a deployed pass to reach in production.
+- Next: candidate 7c, D-M3-2 - the ship decision, which is a decision rather than a build. The
+  recommendation on the evidence is O3 (record E3-S1 as measured-neutral, ship nothing, leave the
+  §18 E3 row unsigned) and move to M4 (plan E4 terminal convergence, candidate 8). If the owner
+  prefers D5 ownership in the code regardless of measured effect, O2 (ship through the label seam)
+  is the variant that does not endanger G-M3-11. Do not re-run the arm on the way.

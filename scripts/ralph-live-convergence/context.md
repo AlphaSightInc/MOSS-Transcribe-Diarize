@@ -664,8 +664,37 @@
   is alignment-dependent - `lex_javier_milei`'s only reference turn falls exactly on a window
   boundary and produces 0 mixed windows aligned vs 3 sliding. **Gates use the sliding screen**
   (window 10 s, hop = the deployed hard cap read from each pass's manifest).
-- Rest of the ladder (M3 arms, M4-M5) unimplemented; working tree carries the plan, evidence
-  prototypes, and this scaffold.
+- **S1 IS MEASURED-NEUTRAL (iteration 20).** `compare_speaker_authority.py` ran plan §11.1's
+  S0-vs-S1 comparison on all four cases, both passes: **every gated quality axis is identical to
+  six decimal places, Δ DER `0.000000`**. Bundle: `evidence/live-convergence-0824/M3-s1-prototype/`.
+  The arm is not broken - it is correct and unnecessary. 118 witness-owned units embedded, ZERO
+  D5 violations, zero whole-window abstentions, every local mapped one-to-one or left to the
+  projection, and the mapping is label-invariant and re-anchors correctly across windows (bill
+  w3 maps S01->speaker-0002 / S02->speaker-0001, the reverse of its neighbours). Of the trio's 50
+  surface segments: 2 relabelled, 3 with no witness answer, **45 where the witness's answer WAS
+  the projection's answer**.
+- **Why it ties, and this reframes what is left on the speaker axis.** The remaining confusion is
+  not a voice-identity error. Post-hoc decomposition of the bench's 4.73 confused seconds:
+  **63 % `segment_straddles_turn`** (the published segment contains two reference speakers, so
+  whatever single label it carries is partly wrong - a segment-EXTENT defect no label can fix),
+  27 % `unattributed` (S00 fragments below the 0.5 s floor - plan §11.4's separate candidate),
+  **10 % `misattributed`** (0.48 s in the whole bench - the only class a better voice match wins
+  outright). So the label-only ceiling is **.00672** trio mean DER, not iteration 19's `.016445`:
+  that number assumed all confusion was label-fixable and it is not. S1 realises none of it.
+- **S1's only two changes are wrong.** It names bill's 0.16 s "Right?" (39.84-40.00) and 0.24 s
+  "You know." (49.75-49.99) as speaker-0002; the reference says both are Bill. DER does not move
+  (an S00 second already counted as confusion), S00 seconds fall .73 -> .33, `misattributed`
+  seconds rise .48 -> .88. The one visible effect of S1 on this bench is trading an honest
+  abstention for a confident error - and G-M3-8 (S00 must not increase) would score that as a
+  PASS, which is worth knowing before the gate is read.
+- **S1's marginal cost is priced**: witness embeddings only (album embeddings are the base path's
+  existing work) = **.1306 RTF trio / .1371 RTF five-minute**, at ~1.0-1.1 s per witness embed.
+  Combined would be ~.27-.29 against G-M3-10's `< 1`, so P6 holds. **P7 does not look safe**: a
+  resolver serial on the witness path adds 1.0-2.3 s per window before its revision can publish,
+  against G-M3-11's already-unsigned `8.756675 s` correction p95. If S1 ever ships, it should
+  publish through the existing `revise_labels` label seam AFTER the text revision, not inside it.
+- Rest of the ladder (M3 production decision, M4-M5) unimplemented; working tree carries the plan,
+  evidence prototypes, and this scaffold.
 
 ## Validation
 
@@ -802,6 +831,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --output /tmp/m3.json
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_m3_baseline.py --selftest
+# M3 S1 arm (plan §11.1): S0 vs S1 on all four cases. No GPU, no service, ZERO MOSS requests --
+# the 63 witness decodes are checked in; only the pinned WeSpeaker ONNX runs (~2.5 min of CPU).
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py \
+  --cases lex_bill_ackman,lex_javier_milei,lex_keyu_jin,keyu-5m --runs A,B \
+  --decode-cache evidence/live-convergence-0824/M3-s1-prototype/witness-decodes.json \
+  --output /tmp/m3-s1-all.json
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_speaker_authority.py --selftest
+bash prototypes/streaming-diarization/live-convergence/mutate_speaker_authority.sh /tmp/m3-mut-out
 ```
 
 ## Candidates
@@ -877,17 +916,34 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    whichever is stricter, and the PRD forbids moving one after a number is seen. Do NOT gate on
    the deployed collapse screen; it reports 0 mixed windows on `lex_javier_milei` for alignment
    reasons alone.
-7b. **M3 step 2: the S1 arm - NEXT**: plan §11.1 S1 (2.5 s base only), embeddings strictly from
-   witness-owned local speaker intervals (plan D5), reconciled against the existing album; the
-   §6 M4 resolver is internal to `live_transcript_convergence.py` "until a second caller exists".
-   The prototype (`compare_speaker_authority.py`) must print every embedded interval, cache
-   hit/miss, mapping, abstention and per-resource RTF, and must decode each witness ONCE and
-   reuse it - only changed segmentation earns new WeSpeaker work. Score it with
-   `measure_m3_baseline.py --passes-root` against the 14 preregistered gates. Read the ceiling
-   first: at most .016445 trio DER is available and three quarters of it is in one case, so an
-   arm that "improves" by more than that is measuring something else. S2 only if S1 fails, and
-   record that S2's premise (overlapping witnesses) does not exist at the selected 10/10
-   geometry.
+7b. ~~**M3 step 2: the S1 arm**~~ - MEASURED iteration 20, and it is a TIE on every gated axis
+   (see Current state). `compare_speaker_authority.py` + `mutate_speaker_authority.sh`, verdict in
+   `evidence/live-convergence-0824/M3-s1-prototype/`. Do NOT re-run it hoping for a different
+   number: both passes agree exactly, the probes show the arm reacts (collapsing the witness's
+   locals moves S1 DER .127333 -> .135833), and the tie is a fact about where the confusion is,
+   not about a wired-off arm. Do NOT "fix" it by lowering the 0.5 s evidence floor or the match
+   thresholds - the preregistration freezes them and the microfragments it would then name are
+   the ones S1 already names wrongly.
+7c. **D-M3-2, the ship decision - NEXT, and it is a DECISION, not a build.** Preregistration §6.2
+   says a passing S1 ships even if it merely ties, because "D5's ownership is the architecture E4
+   builds on". Iteration 20's evidence is that S1 cannot move a gated quality axis on this
+   corpus, costs `.13` RTF, and endangers G-M3-11. Options, one iteration each:
+   O1 ship S1 to production (plan §6 M4 internal to `live_transcript_convergence.py`) and score
+      the 14 gates on deployed passes - honours §6.2 literally, spends ~3 iterations, and the
+      prototype predicts a tie plus a latency risk;
+   O2 ship S1 **through the label seam** (`revise_labels` after the text revision lands) so the
+      correction clock is untouched, then score the gates - same cost, removes the P7 risk, and
+      is an implementation choice rather than a new arm;
+   O3 record E3-S1 as measured-neutral, ship nothing, leave the §18 E3 row unsigned with this
+      bundle as its evidence (preregistration §6.4's disposition), and move to M4.
+   RECOMMENDATION: O3, with O2 as the fallback if the owner wants D5 ownership in the code
+   regardless of measured effect. Whichever is chosen, the next milestone work is M4.
+7d. **Where the speaker seconds actually are** (new, from iteration 20's decomposition, NOT M3's):
+   63 % of the remaining confusion is segments that straddle a reference turn. That is a
+   segment-EXTENT question owned by whatever chose the boundaries - E2's frozen text geometry -
+   and 27 % is plan §11.4's sub-floor microfragments. Neither is in this campaign's scope; both
+   should be written into the §18 record so the next campaign starts from the decomposition
+   rather than from the confusion total.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed
    prerelease amendment also gates terminal DER within .020 of the paired file arm per case and
    requires §12.2 cold/warm model-readiness reporting).

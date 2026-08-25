@@ -1,0 +1,20 @@
+== control (before) ==
+exit=0  s0_der=0.127333 s1_der=0.127333 relabelled=2 abstentions=0 d5_violations=0 control=True
+
+== I1  witness local labels swapped in the decode cache (expect NO change) ==
+exit=0  s0_der=0.127333 s1_der=0.127333 relabelled=2 abstentions=0 d5_violations=0 control=True
+
+== M1  every witness segment collapsed onto one local speaker ==
+exit=0  s0_der=0.127333 s1_der=0.135833 relabelled=3 abstentions=1 d5_violations=0 control=True
+
+== M2  every committed span published as S00 (album enrols nobody) ==
+exit=0  s0_der=0.127333 s1_der=0.127333 relabelled=0 abstentions=6 d5_violations=0 control=True
+
+== M3  one exported hypothesis row corrupted (S0 control) ==
+exit=1  s0_der=0.127333 s1_der=0.127333 relabelled=2 abstentions=0 d5_violations=0 control=False
+
+== M4  one second of context prepended to every witness-owned interval ==
+exit=1  s0_der=0.127333 s1_der=0.127333 relabelled=1 abstentions=1 d5_violations=14 control=True
+
+== control (after) ==
+exit=0  s0_der=0.127333 s1_der=0.127333 relabelled=2 abstentions=0 d5_violations=0 control=True

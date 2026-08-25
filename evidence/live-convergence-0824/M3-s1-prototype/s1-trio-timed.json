@@ -1,0 +1,5580 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "runs": {
+        "A": {
+          "album": {
+            "observations": [
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "provisional",
+                "published_label": "S01",
+                "seconds": 1.26,
+                "span_id": 0
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.42,
+                "span_id": 1
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 2
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 3
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.42,
+                "span_id": 4
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 5
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.18,
+                "span_id": 6
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 7
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.16,
+                "span_id": 8
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 9
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 10
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 11
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.48,
+                "span_id": 12
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_weaker_than_bank",
+                "published_label": "S01",
+                "seconds": 2.12,
+                "span_id": 14
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 15
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 0.54,
+                "span_id": 16
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.76,
+                "span_id": 16
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 17
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.94,
+                "span_id": 18
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.38,
+                "span_id": 19
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 20
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 21
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 22
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [
+              {
+                "end_seconds": 40.0,
+                "local_speaker": "S01",
+                "projection_said": null,
+                "start_seconds": 39.84,
+                "text": "Right?",
+                "window_index": 3,
+                "witness_says": "speaker-0002"
+              },
+              {
+                "end_seconds": 49.99,
+                "local_speaker": "S02",
+                "projection_said": null,
+                "start_seconds": 49.75,
+                "text": "You know.",
+                "window_index": 4,
+                "witness_says": "speaker-0002"
+              }
+            ],
+            "segments_left_to_projection": 3,
+            "segments_relabelled": 2,
+            "windows": 6,
+            "windows_witness_matches_surface": 5
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [
+                  {
+                    "published_speakers": [
+                      "S01"
+                    ],
+                    "reference_voices": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "window": [
+                      20.0,
+                      30.0
+                    ]
+                  }
+                ],
+                "collapsed_windows": 1,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 2.23,
+                "confused_segments": 6,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      33.78
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.78,
+                    "text": "Same way, there's a kind of difference between speculation and investing."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      40.0,
+                      40.48
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.48,
+                    "text": "Your"
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      29.63,
+                      29.96
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.33,
+                    "text": "And that's."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      28.04,
+                      29.24
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "And that's kind of the message of the book."
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      49.75,
+                      49.99
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "You know."
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      39.84,
+                      40.0
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.16,
+                    "text": "Right?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "misattributed": 0.48,
+                  "segment_straddles_turn": 1.02,
+                  "unattributed": 0.73
+                }
+              },
+              "der": 0.127333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.920455,
+              "miss": 0.090167,
+              "published_speakers": [
+                "S00",
+                "S01",
+                "S02"
+              ],
+              "segments": 21,
+              "speaker_accuracy": 0.872667,
+              "speaker_confusion": 0.037167,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.891608,
+              "unattributed": {
+                "fraction_of_published": 0.013372,
+                "intervals": [
+                  [
+                    29.63,
+                    29.96
+                  ],
+                  [
+                    39.84,
+                    40.0
+                  ],
+                  [
+                    49.75,
+                    49.99
+                  ]
+                ],
+                "label": "S00",
+                "published_seconds": 54.59,
+                "seconds": 0.73,
+                "segments": 3
+              },
+              "wer": 0.204545
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [
+                  {
+                    "published_speakers": [
+                      "S01"
+                    ],
+                    "reference_voices": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "window": [
+                      20.0,
+                      30.0
+                    ]
+                  }
+                ],
+                "collapsed_windows": 1,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 2.23,
+                "confused_segments": 6,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      33.78
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.78,
+                    "text": "Same way, there's a kind of difference between speculation and investing."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      40.0,
+                      40.48
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.48,
+                    "text": "Your"
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      29.63,
+                      29.96
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.33,
+                    "text": "And that's."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      28.04,
+                      29.24
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "And that's kind of the message of the book."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      49.75,
+                      49.99
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "You know."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      39.84,
+                      40.0
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.16,
+                    "text": "Right?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "misattributed": 0.88,
+                  "segment_straddles_turn": 1.02,
+                  "unattributed": 0.33
+                }
+              },
+              "der": 0.127333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.920455,
+              "miss": 0.090167,
+              "published_speakers": [
+                "S00",
+                "S01",
+                "S02"
+              ],
+              "segments": 21,
+              "speaker_accuracy": 0.872667,
+              "speaker_confusion": 0.037167,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.891608,
+              "unattributed": {
+                "fraction_of_published": 0.006045,
+                "intervals": [
+                  [
+                    29.63,
+                    29.96
+                  ]
+                ],
+                "label": "S00",
+                "published_seconds": 54.59,
+                "seconds": 0.33,
+                "segments": 1
+              },
+              "wer": 0.204545
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.127333,
+              "speaker_accuracy": 0.872667,
+              "wer": 0.204545
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.253659,
+          "encoder_seconds": 15.219548,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      8160,
+                      52320
+                    ],
+                    [
+                      64800,
+                      142080
+                    ],
+                    [
+                      142080,
+                      151680
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.51,
+                      3.27
+                    ],
+                    [
+                      4.05,
+                      8.88
+                    ],
+                    [
+                      8.88,
+                      9.48
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.19
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.854568
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 52320,
+                  "local_speaker": "S01",
+                  "start_sample": 8160,
+                  "text": "To figure out what something's worth and you have to kind of weigh it."
+                },
+                {
+                  "end_sample": 142080,
+                  "local_speaker": "S01",
+                  "start_sample": 64800,
+                  "text": "He talked about the difference between, he said, \"The stock market in the short term is a voting"
+                },
+                {
+                  "end_sample": 151680,
+                  "local_speaker": "S01",
+                  "start_sample": 142080,
+                  "text": "machine.\""
+                },
+                {
+                  "end_sample": 159840,
+                  "local_speaker": "S02",
+                  "start_sample": 152160,
+                  "text": "It represents-"
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      160000,
+                      244160
+                    ],
+                    [
+                      244960,
+                      310720
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.26
+                    ],
+                    [
+                      5.31,
+                      9.42
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.37
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.971507
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 244160,
+                  "local_speaker": "S01",
+                  "start_sample": 160000,
+                  "text": "Sense speculative interests, you know, supply and demand of people in the short term."
+                },
+                {
+                  "end_sample": 310720,
+                  "local_speaker": "S01",
+                  "start_sample": 244960,
+                  "text": "But in the long term, it's the stock market's a weighing machine, you're much more accurate."
+                },
+                {
+                  "end_sample": 319680,
+                  "local_speaker": "S02",
+                  "start_sample": 314560,
+                  "text": "It's going to."
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      320000,
+                      381440
+                    ],
+                    [
+                      387680,
+                      444320
+                    ],
+                    [
+                      448640,
+                      467840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      3.84
+                    ],
+                    [
+                      4.23,
+                      7.77
+                    ],
+                    [
+                      8.04,
+                      9.24
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.58
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.940385
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 381440,
+                  "local_speaker": "S01",
+                  "start_sample": 320000,
+                  "text": "Tell you what something is worth. And so if you can divine what something's worth,"
+                },
+                {
+                  "end_sample": 444320,
+                  "local_speaker": "S01",
+                  "start_sample": 387680,
+                  "text": "then you can really take advantage of the market because it's really here to to help you."
+                },
+                {
+                  "end_sample": 467840,
+                  "local_speaker": "S01",
+                  "start_sample": 448640,
+                  "text": "And that's kind of the message of the book."
+                },
+                {
+                  "end_sample": 479360,
+                  "local_speaker": "S02",
+                  "start_sample": 474080,
+                  "text": "And that's."
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      480000,
+                      540480
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      3.78
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 3.78
+                },
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      542080,
+                      627840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      3.88,
+                      9.24
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 5.36
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.952634
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.877646
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.0
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0002",
+                "S02": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 540480,
+                  "local_speaker": "S01",
+                  "start_sample": 480000,
+                  "text": "Same way, there's a kind of difference between speculation and investing."
+                },
+                {
+                  "end_sample": 627840,
+                  "local_speaker": "S02",
+                  "start_sample": 542080,
+                  "text": "Yeah, speculation is just, it's a bit like buying, trading crypto."
+                },
+                {
+                  "end_sample": 640000,
+                  "local_speaker": "S01",
+                  "start_sample": 637440,
+                  "text": "Right?"
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      675040,
+                      782080
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      2.19,
+                      8.88
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 6.69
+                },
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      651040,
+                      663040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.69,
+                      1.44
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 0.75
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.819969
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.4724
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 647680,
+                  "local_speaker": "S01",
+                  "start_sample": 640000,
+                  "text": "Your"
+                },
+                {
+                  "end_sample": 663040,
+                  "local_speaker": "S02",
+                  "start_sample": 651040,
+                  "text": "Strong words."
+                },
+                {
+                  "end_sample": 782080,
+                  "local_speaker": "S01",
+                  "start_sample": 675040,
+                  "text": "Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the."
+                },
+                {
+                  "end_sample": 800000,
+                  "local_speaker": "S02",
+                  "start_sample": 796000,
+                  "text": "You know."
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      801280,
+                      881920
+                    ],
+                    [
+                      881920,
+                      952320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      5.12
+                    ],
+                    [
+                      5.12,
+                      9.52
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.44
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.948125
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 881920,
+                  "local_speaker": "S01",
+                  "start_sample": 801280,
+                  "text": "You know, it's many investors, you know, in a bubble going into the, you know,"
+                },
+                {
+                  "end_sample": 952320,
+                  "local_speaker": "S01",
+                  "start_sample": 881920,
+                  "text": "the crash were really just pure speculators. They didn't know what things were worth. They"
+                },
+                {
+                  "end_sample": 959680,
+                  "local_speaker": "S01",
+                  "start_sample": 952320,
+                  "text": "just knew they were."
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        },
+        "B": {
+          "album": {
+            "observations": [
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "provisional",
+                "published_label": "S01",
+                "seconds": 1.26,
+                "span_id": 0
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.42,
+                "span_id": 1
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 2
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 3
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.42,
+                "span_id": 4
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 5
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.18,
+                "span_id": 6
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 7
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.16,
+                "span_id": 8
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 9
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 10
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 11
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.48,
+                "span_id": 12
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_weaker_than_bank",
+                "published_label": "S01",
+                "seconds": 2.12,
+                "span_id": 14
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 15
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 0.54,
+                "span_id": 16
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.76,
+                "span_id": 16
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.74,
+                "span_id": 17
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.94,
+                "span_id": 18
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.38,
+                "span_id": 19
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 20
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 21
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 22
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [
+              {
+                "end_seconds": 40.0,
+                "local_speaker": "S01",
+                "projection_said": null,
+                "start_seconds": 39.84,
+                "text": "Right?",
+                "window_index": 3,
+                "witness_says": "speaker-0002"
+              },
+              {
+                "end_seconds": 49.99,
+                "local_speaker": "S02",
+                "projection_said": null,
+                "start_seconds": 49.75,
+                "text": "You know.",
+                "window_index": 4,
+                "witness_says": "speaker-0002"
+              }
+            ],
+            "segments_left_to_projection": 3,
+            "segments_relabelled": 2,
+            "windows": 6,
+            "windows_witness_matches_surface": 5
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [
+                  {
+                    "published_speakers": [
+                      "S01"
+                    ],
+                    "reference_voices": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "window": [
+                      20.0,
+                      30.0
+                    ]
+                  }
+                ],
+                "collapsed_windows": 1,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 2.23,
+                "confused_segments": 6,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      33.78
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.78,
+                    "text": "Same way, there's a kind of difference between speculation and investing."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      40.0,
+                      40.48
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.48,
+                    "text": "Your"
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      29.63,
+                      29.96
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.33,
+                    "text": "And that's."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      28.04,
+                      29.24
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "And that's kind of the message of the book."
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      49.75,
+                      49.99
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "You know."
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      39.84,
+                      40.0
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.16,
+                    "text": "Right?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "misattributed": 0.48,
+                  "segment_straddles_turn": 1.02,
+                  "unattributed": 0.73
+                }
+              },
+              "der": 0.127333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.920455,
+              "miss": 0.090167,
+              "published_speakers": [
+                "S00",
+                "S01",
+                "S02"
+              ],
+              "segments": 21,
+              "speaker_accuracy": 0.872667,
+              "speaker_confusion": 0.037167,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.891608,
+              "unattributed": {
+                "fraction_of_published": 0.013372,
+                "intervals": [
+                  [
+                    29.63,
+                    29.96
+                  ],
+                  [
+                    39.84,
+                    40.0
+                  ],
+                  [
+                    49.75,
+                    49.99
+                  ]
+                ],
+                "label": "S00",
+                "published_seconds": 54.59,
+                "seconds": 0.73,
+                "segments": 3
+              },
+              "wer": 0.204545
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [
+                  {
+                    "published_speakers": [
+                      "S01"
+                    ],
+                    "reference_voices": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "window": [
+                      20.0,
+                      30.0
+                    ]
+                  }
+                ],
+                "collapsed_windows": 1,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 2.23,
+                "confused_segments": 6,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      33.78
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.78,
+                    "text": "Same way, there's a kind of difference between speculation and investing."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      40.0,
+                      40.48
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.48,
+                    "text": "Your"
+                  },
+                  {
+                    "class": "unattributed",
+                    "published_interval": [
+                      29.63,
+                      29.96
+                    ],
+                    "published_speaker": "S00",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.33,
+                    "text": "And that's."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      28.04,
+                      29.24
+                    ],
+                    "published_speaker": "S01",
+                    "reference_speaker": "Lex Fridman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "And that's kind of the message of the book."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      49.75,
+                      49.99
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.24,
+                    "text": "You know."
+                  },
+                  {
+                    "class": "misattributed",
+                    "published_interval": [
+                      39.84,
+                      40.0
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Bill Ackman",
+                    "reference_voices_in_segment": [
+                      "Bill Ackman"
+                    ],
+                    "seconds": 0.16,
+                    "text": "Right?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "misattributed": 0.88,
+                  "segment_straddles_turn": 1.02,
+                  "unattributed": 0.33
+                }
+              },
+              "der": 0.127333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.920455,
+              "miss": 0.090167,
+              "published_speakers": [
+                "S00",
+                "S01",
+                "S02"
+              ],
+              "segments": 21,
+              "speaker_accuracy": 0.872667,
+              "speaker_confusion": 0.037167,
+              "speaker_mapping": {
+                "Bill Ackman": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.891608,
+              "unattributed": {
+                "fraction_of_published": 0.006045,
+                "intervals": [
+                  [
+                    29.63,
+                    29.96
+                  ]
+                ],
+                "label": "S00",
+                "published_seconds": 54.59,
+                "seconds": 0.33,
+                "segments": 1
+              },
+              "wer": 0.204545
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.127333,
+              "speaker_accuracy": 0.872667,
+              "wer": 0.204545
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.0,
+          "encoder_seconds": 0.0,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      8160,
+                      52320
+                    ],
+                    [
+                      64800,
+                      142080
+                    ],
+                    [
+                      142080,
+                      151680
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.51,
+                      3.27
+                    ],
+                    [
+                      4.05,
+                      8.88
+                    ],
+                    [
+                      8.88,
+                      9.48
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.19
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.854568
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 52320,
+                  "local_speaker": "S01",
+                  "start_sample": 8160,
+                  "text": "To figure out what something's worth and you have to kind of weigh it."
+                },
+                {
+                  "end_sample": 142080,
+                  "local_speaker": "S01",
+                  "start_sample": 64800,
+                  "text": "He talked about the difference between, he said, \"The stock market in the short term is a voting"
+                },
+                {
+                  "end_sample": 151680,
+                  "local_speaker": "S01",
+                  "start_sample": 142080,
+                  "text": "machine.\""
+                },
+                {
+                  "end_sample": 159840,
+                  "local_speaker": "S02",
+                  "start_sample": 152160,
+                  "text": "It represents-"
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      160000,
+                      244160
+                    ],
+                    [
+                      244960,
+                      310720
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.26
+                    ],
+                    [
+                      5.31,
+                      9.42
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.37
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.971507
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 244160,
+                  "local_speaker": "S01",
+                  "start_sample": 160000,
+                  "text": "Sense speculative interests, you know, supply and demand of people in the short term."
+                },
+                {
+                  "end_sample": 310720,
+                  "local_speaker": "S01",
+                  "start_sample": 244960,
+                  "text": "But in the long term, it's the stock market's a weighing machine, you're much more accurate."
+                },
+                {
+                  "end_sample": 319680,
+                  "local_speaker": "S02",
+                  "start_sample": 314560,
+                  "text": "It's going to."
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      320000,
+                      381440
+                    ],
+                    [
+                      387680,
+                      444320
+                    ],
+                    [
+                      448640,
+                      467840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      3.84
+                    ],
+                    [
+                      4.23,
+                      7.77
+                    ],
+                    [
+                      8.04,
+                      9.24
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.58
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.940385
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 381440,
+                  "local_speaker": "S01",
+                  "start_sample": 320000,
+                  "text": "Tell you what something is worth. And so if you can divine what something's worth,"
+                },
+                {
+                  "end_sample": 444320,
+                  "local_speaker": "S01",
+                  "start_sample": 387680,
+                  "text": "then you can really take advantage of the market because it's really here to to help you."
+                },
+                {
+                  "end_sample": 467840,
+                  "local_speaker": "S01",
+                  "start_sample": 448640,
+                  "text": "And that's kind of the message of the book."
+                },
+                {
+                  "end_sample": 479360,
+                  "local_speaker": "S02",
+                  "start_sample": 474080,
+                  "text": "And that's."
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      480000,
+                      540480
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      3.78
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 3.78
+                },
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      542080,
+                      627840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      3.88,
+                      9.24
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 5.36
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.952634
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.877646
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.0
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0002",
+                "S02": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 540480,
+                  "local_speaker": "S01",
+                  "start_sample": 480000,
+                  "text": "Same way, there's a kind of difference between speculation and investing."
+                },
+                {
+                  "end_sample": 627840,
+                  "local_speaker": "S02",
+                  "start_sample": 542080,
+                  "text": "Yeah, speculation is just, it's a bit like buying, trading crypto."
+                },
+                {
+                  "end_sample": 640000,
+                  "local_speaker": "S01",
+                  "start_sample": 637440,
+                  "text": "Right?"
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      675040,
+                      782080
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      2.19,
+                      8.88
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 6.69
+                },
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      651040,
+                      663040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.69,
+                      1.44
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 0.75
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.819969
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.0
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.4724
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 647680,
+                  "local_speaker": "S01",
+                  "start_sample": 640000,
+                  "text": "Your"
+                },
+                {
+                  "end_sample": 663040,
+                  "local_speaker": "S02",
+                  "start_sample": 651040,
+                  "text": "Strong words."
+                },
+                {
+                  "end_sample": 782080,
+                  "local_speaker": "S01",
+                  "start_sample": 675040,
+                  "text": "Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the."
+                },
+                {
+                  "end_sample": 800000,
+                  "local_speaker": "S02",
+                  "start_sample": 796000,
+                  "text": "You know."
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      801280,
+                      881920
+                    ],
+                    [
+                      881920,
+                      952320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      5.12
+                    ],
+                    [
+                      5.12,
+                      9.52
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.44
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.948125
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.0
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 881920,
+                  "local_speaker": "S01",
+                  "start_sample": 801280,
+                  "text": "You know, it's many investors, you know, in a bubble going into the, you know,"
+                },
+                {
+                  "end_sample": 952320,
+                  "local_speaker": "S01",
+                  "start_sample": 881920,
+                  "text": "the crash were really just pure speculators. They didn't know what things were worth. They"
+                },
+                {
+                  "end_sample": 959680,
+                  "local_speaker": "S01",
+                  "start_sample": 952320,
+                  "text": "just knew they were."
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        }
+      }
+    },
+    "lex_javier_milei": {
+      "runs": {
+        "A": {
+          "album": {
+            "observations": [
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.3,
+                "span_id": 0
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 1
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 0.81,
+                "span_id": 4
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "provisional",
+                "published_label": "S02",
+                "seconds": 1.19,
+                "span_id": 6
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.36,
+                "span_id": 7
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.88,
+                "span_id": 8
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.3,
+                "span_id": 10
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.12,
+                "span_id": 11
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.0,
+                "span_id": 12
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 14
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.88,
+                "span_id": 15
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.34,
+                "span_id": 17
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.38,
+                "span_id": 18
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.46,
+                "span_id": 19
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.02,
+                "span_id": 20
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.07,
+                "span_id": 23
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 24
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 25
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.46,
+                "span_id": 26
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 27
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.4,
+                "span_id": 28
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.4,
+                "span_id": 29
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.96,
+                "span_id": 30
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [],
+            "segments_left_to_projection": 0,
+            "segments_relabelled": 0,
+            "windows": 6,
+            "windows_witness_matches_surface": 6
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 3,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0,
+                "confused_segments": 0,
+                "rows": [],
+                "seconds_by_class": {}
+              },
+              "der": 0.117333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.92,
+              "miss": 0.117333,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 14,
+              "speaker_accuracy": 0.882667,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.907061,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 52.96,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.096
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 3,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0,
+                "confused_segments": 0,
+                "rows": [],
+                "seconds_by_class": {}
+              },
+              "der": 0.117333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.92,
+              "miss": 0.117333,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 14,
+              "speaker_accuracy": 0.882667,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.907061,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 52.96,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.096
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.117333,
+              "speaker_accuracy": 0.882667,
+              "wer": 0.096
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.254447,
+          "encoder_seconds": 15.266815,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      1760,
+                      81920
+                    ],
+                    [
+                      110080,
+                      125120
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      5.12
+                    ],
+                    [
+                      6.88,
+                      7.82
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 5.95
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.86784
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 81920,
+                  "local_speaker": "S01",
+                  "start_sample": 1760,
+                  "text": "So, what is the difference between a madman and a genius?"
+                },
+                {
+                  "end_sample": 125120,
+                  "local_speaker": "S01",
+                  "start_sample": 110080,
+                  "text": "Success."
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      173920,
+                      221920
+                    ],
+                    [
+                      222400,
+                      260320
+                    ],
+                    [
+                      260800,
+                      319840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.87,
+                      3.87
+                    ],
+                    [
+                      3.9,
+                      6.27
+                    ],
+                    [
+                      6.3,
+                      9.99
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.06
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.10159
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.844717
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 221920,
+                  "local_speaker": "S01",
+                  "start_sample": 173920,
+                  "text": "The following is a conversation with Javier Mal\u00e9,"
+                },
+                {
+                  "end_sample": 260320,
+                  "local_speaker": "S01",
+                  "start_sample": 222400,
+                  "text": "the president of Argentina."
+                },
+                {
+                  "end_sample": 319840,
+                  "local_speaker": "S01",
+                  "start_sample": 260800,
+                  "text": "He is a libertarian, a narco-capitalist, and"
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      321760,
+                      440320
+                    ],
+                    [
+                      440320,
+                      468000
+                    ],
+                    [
+                      468000,
+                      478560
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      7.52
+                    ],
+                    [
+                      7.52,
+                      9.25
+                    ],
+                    [
+                      9.25,
+                      9.91
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.8
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.101529
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.726644
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 440320,
+                  "local_speaker": "S01",
+                  "start_sample": 321760,
+                  "text": "economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy"
+                },
+                {
+                  "end_sample": 468000,
+                  "local_speaker": "S01",
+                  "start_sample": 440320,
+                  "text": "of the state."
+                },
+                {
+                  "end_sample": 478560,
+                  "local_speaker": "S01",
+                  "start_sample": 468000,
+                  "text": "He stepped"
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      481760,
+                      558560
+                    ],
+                    [
+                      559040,
+                      622560
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      4.91
+                    ],
+                    [
+                      4.94,
+                      8.91
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.77
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.102393
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.956199
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 558560,
+                  "local_speaker": "S01",
+                  "start_sample": 481760,
+                  "text": "Into the presidency one year ago, with the country on the brink of hyperinflation,"
+                },
+                {
+                  "end_sample": 622560,
+                  "local_speaker": "S01",
+                  "start_sample": 559040,
+                  "text": "deep in debt, and suffering from mass unemployment and poverty."
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      640000,
+                      732160
+                    ],
+                    [
+                      732160,
+                      799360
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.76
+                    ],
+                    [
+                      5.76,
+                      9.96
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.96
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.105262
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.939679
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 732160,
+                  "local_speaker": "S01",
+                  "start_sample": 640000,
+                  "text": "He took this crisis head on, transforming one of Latin America's largest economies through"
+                },
+                {
+                  "end_sample": 799360,
+                  "local_speaker": "S01",
+                  "start_sample": 732160,
+                  "text": "pure free market principles. In just a few months in"
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      800000,
+                      882240
+                    ],
+                    [
+                      890560,
+                      959040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.14
+                    ],
+                    [
+                      5.66,
+                      9.94
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.42
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.113349
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.949493
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 882240,
+                  "local_speaker": "S01",
+                  "start_sample": 800000,
+                  "text": "Office, he already achieved Argentina's first fiscal surplus in 16 years."
+                },
+                {
+                  "end_sample": 959040,
+                  "local_speaker": "S01",
+                  "start_sample": 890560,
+                  "text": "And not just avoided the hyperinflation, but brought inflation down."
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        },
+        "B": {
+          "album": {
+            "observations": [
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.3,
+                "span_id": 0
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 1
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 0.81,
+                "span_id": 4
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "provisional",
+                "published_label": "S02",
+                "seconds": 1.19,
+                "span_id": 6
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.36,
+                "span_id": 7
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.88,
+                "span_id": 8
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.3,
+                "span_id": 10
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.12,
+                "span_id": 11
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.0,
+                "span_id": 12
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 14
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.88,
+                "span_id": 15
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.34,
+                "span_id": 17
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.38,
+                "span_id": 18
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.46,
+                "span_id": 19
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.02,
+                "span_id": 20
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.07,
+                "span_id": 23
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 24
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 25
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.46,
+                "span_id": 26
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 27
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.4,
+                "span_id": 28
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.4,
+                "span_id": 29
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.96,
+                "span_id": 30
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [],
+            "segments_left_to_projection": 0,
+            "segments_relabelled": 0,
+            "windows": 6,
+            "windows_witness_matches_surface": 6
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 3,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0,
+                "confused_segments": 0,
+                "rows": [],
+                "seconds_by_class": {}
+              },
+              "der": 0.117333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.92,
+              "miss": 0.117333,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 14,
+              "speaker_accuracy": 0.882667,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.907061,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 52.96,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.096
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 3,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0,
+                "confused_segments": 0,
+                "rows": [],
+                "seconds_by_class": {}
+              },
+              "der": 0.117333,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.92,
+              "miss": 0.117333,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 14,
+              "speaker_accuracy": 0.882667,
+              "speaker_confusion": 0.0,
+              "speaker_mapping": {
+                "Javier Milei": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.907061,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 52.96,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.096
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.117333,
+              "speaker_accuracy": 0.882667,
+              "wer": 0.096
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.0,
+          "encoder_seconds": 0.0,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      1760,
+                      81920
+                    ],
+                    [
+                      110080,
+                      125120
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      5.12
+                    ],
+                    [
+                      6.88,
+                      7.82
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 5.95
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.86784
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 81920,
+                  "local_speaker": "S01",
+                  "start_sample": 1760,
+                  "text": "So, what is the difference between a madman and a genius?"
+                },
+                {
+                  "end_sample": 125120,
+                  "local_speaker": "S01",
+                  "start_sample": 110080,
+                  "text": "Success."
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      173920,
+                      221920
+                    ],
+                    [
+                      222400,
+                      260320
+                    ],
+                    [
+                      260800,
+                      319840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.87,
+                      3.87
+                    ],
+                    [
+                      3.9,
+                      6.27
+                    ],
+                    [
+                      6.3,
+                      9.99
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.06
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.10159
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.844717
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 221920,
+                  "local_speaker": "S01",
+                  "start_sample": 173920,
+                  "text": "The following is a conversation with Javier Mal\u00e9,"
+                },
+                {
+                  "end_sample": 260320,
+                  "local_speaker": "S01",
+                  "start_sample": 222400,
+                  "text": "the president of Argentina."
+                },
+                {
+                  "end_sample": 319840,
+                  "local_speaker": "S01",
+                  "start_sample": 260800,
+                  "text": "He is a libertarian, a narco-capitalist, and"
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      321760,
+                      440320
+                    ],
+                    [
+                      440320,
+                      468000
+                    ],
+                    [
+                      468000,
+                      478560
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      7.52
+                    ],
+                    [
+                      7.52,
+                      9.25
+                    ],
+                    [
+                      9.25,
+                      9.91
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.8
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.101529
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.726644
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 440320,
+                  "local_speaker": "S01",
+                  "start_sample": 321760,
+                  "text": "economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy"
+                },
+                {
+                  "end_sample": 468000,
+                  "local_speaker": "S01",
+                  "start_sample": 440320,
+                  "text": "of the state."
+                },
+                {
+                  "end_sample": 478560,
+                  "local_speaker": "S01",
+                  "start_sample": 468000,
+                  "text": "He stepped"
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      481760,
+                      558560
+                    ],
+                    [
+                      559040,
+                      622560
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      4.91
+                    ],
+                    [
+                      4.94,
+                      8.91
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.77
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.102393
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.956199
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 558560,
+                  "local_speaker": "S01",
+                  "start_sample": 481760,
+                  "text": "Into the presidency one year ago, with the country on the brink of hyperinflation,"
+                },
+                {
+                  "end_sample": 622560,
+                  "local_speaker": "S01",
+                  "start_sample": 559040,
+                  "text": "deep in debt, and suffering from mass unemployment and poverty."
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      640000,
+                      732160
+                    ],
+                    [
+                      732160,
+                      799360
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.76
+                    ],
+                    [
+                      5.76,
+                      9.96
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.96
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.105262
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.939679
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 732160,
+                  "local_speaker": "S01",
+                  "start_sample": 640000,
+                  "text": "He took this crisis head on, transforming one of Latin America's largest economies through"
+                },
+                {
+                  "end_sample": 799360,
+                  "local_speaker": "S01",
+                  "start_sample": 732160,
+                  "text": "pure free market principles. In just a few months in"
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      800000,
+                      882240
+                    ],
+                    [
+                      890560,
+                      959040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.14
+                    ],
+                    [
+                      5.66,
+                      9.94
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.42
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.113349
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.949493
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 882240,
+                  "local_speaker": "S01",
+                  "start_sample": 800000,
+                  "text": "Office, he already achieved Argentina's first fiscal surplus in 16 years."
+                },
+                {
+                  "end_sample": 959040,
+                  "local_speaker": "S01",
+                  "start_sample": 890560,
+                  "text": "And not just avoided the hyperinflation, but brought inflation down."
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        }
+      }
+    },
+    "lex_keyu_jin": {
+      "runs": {
+        "A": {
+          "album": {
+            "observations": [
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 0
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.32,
+                "span_id": 1
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.98,
+                "span_id": 2
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.46,
+                "span_id": 3
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 4
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.22,
+                "span_id": 5
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.4,
+                "span_id": 6
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 7
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 8
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.16,
+                "span_id": 9
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.38,
+                "span_id": 10
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 11
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 12
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.15,
+                "span_id": 13
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.55,
+                "span_id": 14
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.56,
+                "span_id": 14
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 15
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.66,
+                "span_id": 16
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 17
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 18
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 19
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 20
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.7,
+                "span_id": 21
+              },
+              {
+                "cached": false,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.78,
+                "span_id": 22
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [],
+            "segments_left_to_projection": 0,
+            "segments_relabelled": 0,
+            "windows": 6,
+            "windows_witness_matches_surface": 5
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0.73,
+                "confused_segments": 2,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      35.68
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.68,
+                    "text": "A little bit of the rebel is allowed in balance with the deference to authority."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      54.95,
+                      59.89
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.05,
+                    "text": "Is there still a young kid in China that's able to dream to be?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "segment_straddles_turn": 0.73
+                }
+              },
+              "der": 0.089167,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.985612,
+              "miss": 0.077,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 15,
+              "speaker_accuracy": 0.910833,
+              "speaker_confusion": 0.012167,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.913683,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 55.38,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.093525
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0.73,
+                "confused_segments": 2,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      35.68
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.68,
+                    "text": "A little bit of the rebel is allowed in balance with the deference to authority."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      54.95,
+                      59.89
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.05,
+                    "text": "Is there still a young kid in China that's able to dream to be?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "segment_straddles_turn": 0.73
+                }
+              },
+              "der": 0.089167,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.985612,
+              "miss": 0.077,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 15,
+              "speaker_accuracy": 0.910833,
+              "speaker_confusion": 0.012167,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.913683,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 55.38,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.093525
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.089167,
+              "speaker_accuracy": 0.910833,
+              "wer": 0.093525
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.273399,
+          "encoder_seconds": 16.403936,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      0,
+                      84480
+                    ],
+                    [
+                      90400,
+                      159840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.28
+                    ],
+                    [
+                      5.65,
+                      9.99
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.62
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.937196
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 84480,
+                  "local_speaker": "S01",
+                  "start_sample": 0,
+                  "text": "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+                },
+                {
+                  "end_sample": 159840,
+                  "local_speaker": "S01",
+                  "start_sample": 90400,
+                  "text": "Um, but deference, a certain amount of deference to authority."
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      161280,
+                      191840
+                    ],
+                    [
+                      193280,
+                      308320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      1.99
+                    ],
+                    [
+                      2.08,
+                      9.27
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.1
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.943572
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 191840,
+                  "local_speaker": "S01",
+                  "start_sample": 161280,
+                  "text": "Is not blind submission."
+                },
+                {
+                  "end_sample": 308320,
+                  "local_speaker": "S01",
+                  "start_sample": 193280,
+                  "text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference."
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      321760,
+                      395040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      4.69
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 4.58
+                },
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      400960,
+                      471040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      5.06,
+                      9.44
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.38
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.852866
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.008915
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.026427
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.926425
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 395040,
+                  "local_speaker": "S01",
+                  "start_sample": 321760,
+                  "text": "We are given stability, security, and peace, and hopefully prosperity."
+                },
+                {
+                  "end_sample": 471040,
+                  "local_speaker": "S02",
+                  "start_sample": 400960,
+                  "text": "So there is some element that we have in the West of freedom of the individual."
+                },
+                {
+                  "end_sample": 479040,
+                  "local_speaker": "S02",
+                  "start_sample": 476480,
+                  "text": "So"
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      480000,
+                      520320
+                    ],
+                    [
+                      528160,
+                      570880
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      2.52
+                    ],
+                    [
+                      3.01,
+                      5.68
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 5.19
+                },
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      574080,
+                      639680
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      5.88,
+                      9.98
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.1
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.102393
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.905878
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.822519
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.139592
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0002",
+                "S02": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 520320,
+                  "local_speaker": "S01",
+                  "start_sample": 480000,
+                  "text": "A little bit of the rebel is allowed"
+                },
+                {
+                  "end_sample": 570880,
+                  "local_speaker": "S01",
+                  "start_sample": 528160,
+                  "text": "uh in balance with the deference to authority."
+                },
+                {
+                  "end_sample": 639680,
+                  "local_speaker": "S02",
+                  "start_sample": 574080,
+                  "text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?"
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      641280,
+                      667520
+                    ],
+                    [
+                      679200,
+                      772320
+                    ],
+                    [
+                      772320,
+                      796320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      1.72
+                    ],
+                    [
+                      2.45,
+                      8.27
+                    ],
+                    [
+                      8.27,
+                      9.77
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.96
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.897554
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.093081
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 667520,
+                  "local_speaker": "S01",
+                  "start_sample": 641280,
+                  "text": "You see in China."
+                },
+                {
+                  "end_sample": 772320,
+                  "local_speaker": "S01",
+                  "start_sample": 679200,
+                  "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+                },
+                {
+                  "end_sample": 796320,
+                  "local_speaker": "S01",
+                  "start_sample": 772320,
+                  "text": "you look for opportunities, you."
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      802400,
+                      837600
+                    ],
+                    [
+                      844960,
+                      871520
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.15,
+                      2.35
+                    ],
+                    [
+                      2.81,
+                      4.47
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 3.86
+                },
+                {
+                  "cache_hit": false,
+                  "intervals_samples": [
+                    [
+                      879200,
+                      958240
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      4.95,
+                      9.89
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.94
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.828648
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.092668
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.047697
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.673787
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 837600,
+                  "local_speaker": "S01",
+                  "start_sample": 802400,
+                  "text": "You you drive opportunities."
+                },
+                {
+                  "end_sample": 871520,
+                  "local_speaker": "S01",
+                  "start_sample": 844960,
+                  "text": "Um, it's all self motivated."
+                },
+                {
+                  "end_sample": 958240,
+                  "local_speaker": "S02",
+                  "start_sample": 879200,
+                  "text": "Is there still a young kid in China that's able to dream to be?"
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        },
+        "B": {
+          "album": {
+            "observations": [
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 0
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.32,
+                "span_id": 1
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.98,
+                "span_id": 2
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.46,
+                "span_id": 3
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 4
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.22,
+                "span_id": 5
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.4,
+                "span_id": 6
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.5,
+                "span_id": 7
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.36,
+                "span_id": 8
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.16,
+                "span_id": 9
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.38,
+                "span_id": 10
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 11
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.44,
+                "span_id": 12
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "admitted",
+                "published_label": "S02",
+                "seconds": 2.15,
+                "span_id": 13
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.55,
+                "span_id": 14
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 0.56,
+                "span_id": 14
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.44,
+                "span_id": 15
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.66,
+                "span_id": 16
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 17
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.48,
+                "span_id": 18
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 19
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "admitted",
+                "published_label": "S01",
+                "seconds": 2.24,
+                "span_id": 20
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0001",
+                "disposition": "rejected_below_admission",
+                "published_label": "S01",
+                "seconds": 1.7,
+                "span_id": 21
+              },
+              {
+                "cached": true,
+                "canonical_speaker": "speaker-0002",
+                "disposition": "rejected_below_admission",
+                "published_label": "S02",
+                "seconds": 1.78,
+                "span_id": 22
+              }
+            ],
+            "references": [
+              "speaker-0001",
+              "speaker-0002"
+            ]
+          },
+          "application": {
+            "relabelled": [],
+            "segments_left_to_projection": 0,
+            "segments_relabelled": 0,
+            "windows": 6,
+            "windows_witness_matches_surface": 5
+          },
+          "arms": {
+            "s0": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0.73,
+                "confused_segments": 2,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      35.68
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.68,
+                    "text": "A little bit of the rebel is allowed in balance with the deference to authority."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      54.95,
+                      59.89
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.05,
+                    "text": "Is there still a young kid in China that's able to dream to be?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "segment_straddles_turn": 0.73
+                }
+              },
+              "der": 0.089167,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.985612,
+              "miss": 0.077,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 15,
+              "speaker_accuracy": 0.910833,
+              "speaker_confusion": 0.012167,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.913683,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 55.38,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.093525
+            },
+            "s1": {
+              "collapse_sliding": {
+                "collapsed_detail": [],
+                "collapsed_windows": 0,
+                "floor_seconds": 1.0,
+                "hop_seconds": 2.5,
+                "mixed_windows": 9,
+                "window_seconds": 10.0
+              },
+              "confusion_attribution": {
+                "confused_seconds": 0.73,
+                "confused_segments": 2,
+                "rows": [
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      30.0,
+                      35.68
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.68,
+                    "text": "A little bit of the rebel is allowed in balance with the deference to authority."
+                  },
+                  {
+                    "class": "segment_straddles_turn",
+                    "published_interval": [
+                      54.95,
+                      59.89
+                    ],
+                    "published_speaker": "S02",
+                    "reference_speaker": "Keyu Jin",
+                    "reference_voices_in_segment": [
+                      "Keyu Jin",
+                      "Lex Fridman"
+                    ],
+                    "seconds": 0.05,
+                    "text": "Is there still a young kid in China that's able to dream to be?"
+                  }
+                ],
+                "seconds_by_class": {
+                  "segment_straddles_turn": 0.73
+                }
+              },
+              "der": 0.089167,
+              "false_alarm": 0.0,
+              "matched_word_speaker_accuracy": 0.985612,
+              "miss": 0.077,
+              "published_speakers": [
+                "S01",
+                "S02"
+              ],
+              "segments": 15,
+              "speaker_accuracy": 0.910833,
+              "speaker_confusion": 0.012167,
+              "speaker_mapping": {
+                "Keyu Jin": "S01",
+                "Lex Fridman": "S02"
+              },
+              "text_speaker_accuracy": 0.913683,
+              "unattributed": {
+                "fraction_of_published": 0.0,
+                "intervals": [],
+                "label": "S00",
+                "published_seconds": 55.38,
+                "seconds": 0,
+                "segments": 0
+              },
+              "wer": 0.093525
+            }
+          },
+          "bench_control": {
+            "deployed": {
+              "der": 0.089167,
+              "speaker_accuracy": 0.910833,
+              "wer": 0.093525
+            },
+            "export_reproduces_pass": true,
+            "s0_reproduces_deployed_scores": true
+          },
+          "canonical_speakers": [
+            "speaker-0001",
+            "speaker-0002"
+          ],
+          "d5_violations": [],
+          "duration_sec": 60.0,
+          "encoder_rtf": 0.0,
+          "encoder_seconds": 0.0,
+          "windows": [
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      0,
+                      84480
+                    ],
+                    [
+                      90400,
+                      159840
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      5.28
+                    ],
+                    [
+                      5.65,
+                      9.99
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.62
+                }
+              ],
+              "end_sample": 160000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.937196
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 84480,
+                  "local_speaker": "S01",
+                  "start_sample": 0,
+                  "text": "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+                },
+                {
+                  "end_sample": 159840,
+                  "local_speaker": "S01",
+                  "start_sample": 90400,
+                  "text": "Um, but deference, a certain amount of deference to authority."
+                }
+              ],
+              "start_sample": 0,
+              "unmapped_locals": [],
+              "window_index": 0
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      161280,
+                      191840
+                    ],
+                    [
+                      193280,
+                      308320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      1.99
+                    ],
+                    [
+                      2.08,
+                      9.27
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 9.1
+                }
+              ],
+              "end_sample": 320000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.943572
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 191840,
+                  "local_speaker": "S01",
+                  "start_sample": 161280,
+                  "text": "Is not blind submission."
+                },
+                {
+                  "end_sample": 308320,
+                  "local_speaker": "S01",
+                  "start_sample": 193280,
+                  "text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference."
+                }
+              ],
+              "start_sample": 160000,
+              "unmapped_locals": [],
+              "window_index": 1
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      321760,
+                      395040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.11,
+                      4.69
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 4.58
+                },
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      400960,
+                      471040
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      5.06,
+                      9.44
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.38
+                }
+              ],
+              "end_sample": 480000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.852866
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.008915
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.026427
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.926425
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 395040,
+                  "local_speaker": "S01",
+                  "start_sample": 321760,
+                  "text": "We are given stability, security, and peace, and hopefully prosperity."
+                },
+                {
+                  "end_sample": 471040,
+                  "local_speaker": "S02",
+                  "start_sample": 400960,
+                  "text": "So there is some element that we have in the West of freedom of the individual."
+                },
+                {
+                  "end_sample": 479040,
+                  "local_speaker": "S02",
+                  "start_sample": 476480,
+                  "text": "So"
+                }
+              ],
+              "start_sample": 320000,
+              "unmapped_locals": [],
+              "window_index": 2
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      480000,
+                      520320
+                    ],
+                    [
+                      528160,
+                      570880
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.0,
+                      2.52
+                    ],
+                    [
+                      3.01,
+                      5.68
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 5.19
+                },
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      574080,
+                      639680
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      5.88,
+                      9.98
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.1
+                }
+              ],
+              "end_sample": 640000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.102393
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.905878
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.822519
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.139592
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0002",
+                "S02": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 520320,
+                  "local_speaker": "S01",
+                  "start_sample": 480000,
+                  "text": "A little bit of the rebel is allowed"
+                },
+                {
+                  "end_sample": 570880,
+                  "local_speaker": "S01",
+                  "start_sample": 528160,
+                  "text": "uh in balance with the deference to authority."
+                },
+                {
+                  "end_sample": 639680,
+                  "local_speaker": "S02",
+                  "start_sample": 574080,
+                  "text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?"
+                }
+              ],
+              "start_sample": 480000,
+              "unmapped_locals": [],
+              "window_index": 3
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      641280,
+                      667520
+                    ],
+                    [
+                      679200,
+                      772320
+                    ],
+                    [
+                      772320,
+                      796320
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.08,
+                      1.72
+                    ],
+                    [
+                      2.45,
+                      8.27
+                    ],
+                    [
+                      8.27,
+                      9.77
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 8.96
+                }
+              ],
+              "end_sample": 800000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.897554
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.093081
+                }
+              ],
+              "local_speakers": [
+                "S01"
+              ],
+              "mapping": {
+                "S01": "speaker-0001"
+              },
+              "segments": [
+                {
+                  "end_sample": 667520,
+                  "local_speaker": "S01",
+                  "start_sample": 641280,
+                  "text": "You see in China."
+                },
+                {
+                  "end_sample": 772320,
+                  "local_speaker": "S01",
+                  "start_sample": 679200,
+                  "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+                },
+                {
+                  "end_sample": 796320,
+                  "local_speaker": "S01",
+                  "start_sample": 772320,
+                  "text": "you look for opportunities, you."
+                }
+              ],
+              "start_sample": 640000,
+              "unmapped_locals": [],
+              "window_index": 4
+            },
+            {
+              "abstention": null,
+              "album_references": [
+                "speaker-0001",
+                "speaker-0002"
+              ],
+              "embedded_units": [
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      802400,
+                      837600
+                    ],
+                    [
+                      844960,
+                      871520
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      0.15,
+                      2.35
+                    ],
+                    [
+                      2.81,
+                      4.47
+                    ]
+                  ],
+                  "local_speaker": "S01",
+                  "seconds": 3.86
+                },
+                {
+                  "cache_hit": true,
+                  "intervals_samples": [
+                    [
+                      879200,
+                      958240
+                    ]
+                  ],
+                  "intervals_seconds": [
+                    [
+                      4.95,
+                      9.89
+                    ]
+                  ],
+                  "local_speaker": "S02",
+                  "seconds": 4.94
+                }
+              ],
+              "end_sample": 960000,
+              "evidence": [
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S01",
+                  "score": 0.828648
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S01",
+                  "score": 0.092668
+                },
+                {
+                  "canonical_speaker": "speaker-0001",
+                  "local_speaker": "S02",
+                  "score": 0.047697
+                },
+                {
+                  "canonical_speaker": "speaker-0002",
+                  "local_speaker": "S02",
+                  "score": 0.673787
+                }
+              ],
+              "local_speakers": [
+                "S01",
+                "S02"
+              ],
+              "mapping": {
+                "S01": "speaker-0001",
+                "S02": "speaker-0002"
+              },
+              "segments": [
+                {
+                  "end_sample": 837600,
+                  "local_speaker": "S01",
+                  "start_sample": 802400,
+                  "text": "You you drive opportunities."
+                },
+                {
+                  "end_sample": 871520,
+                  "local_speaker": "S01",
+                  "start_sample": 844960,
+                  "text": "Um, it's all self motivated."
+                },
+                {
+                  "end_sample": 958240,
+                  "local_speaker": "S02",
+                  "start_sample": 879200,
+                  "text": "Is there still a young kid in China that's able to dream to be?"
+                }
+              ],
+              "start_sample": 800000,
+              "unmapped_locals": [],
+              "window_index": 5
+            }
+          ],
+          "witness_disagreements": []
+        }
+      }
+    }
+  },
+  "decode_accounting": {
+    "cache_hits": 36,
+    "fresh_moss_requests": 0
+  },
+  "embedding_accounting": {
+    "by_tag": {
+      "album": {
+        "cache_hits": 70,
+        "cache_misses": 70,
+        "encoded_audio_seconds": 146.79,
+        "encoder_seconds": 23.383424,
+        "seconds_per_embed": 0.334049
+      },
+      "witness": {
+        "cache_hits": 23,
+        "cache_misses": 23,
+        "encoded_audio_seconds": 159.85,
+        "encoder_seconds": 23.506875,
+        "seconds_per_embed": 1.022038
+      }
+    },
+    "cache_hits": 93,
+    "cache_misses": 93,
+    "encoded_audio_seconds": 306.64,
+    "encoder_seconds": 46.890299,
+    "seconds_per_embed": 0.504197
+  },
+  "passes_root": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M2-e2-exit/passes",
+  "rules": {
+    "album_admission_seconds": 2.0,
+    "birth_min_seconds": 1.0,
+    "manifest": "/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
+    "max_speakers": 16,
+    "min_match_margin": 0.1,
+    "min_match_score": 0.35,
+    "min_segment_samples": 8000,
+    "onnx_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+    "rolling_stride_samples": 160000,
+    "rolling_window_samples": 160000
+  },
+  "runs": [
+    "A",
+    "B"
+  ],
+  "summary": {
+    "per_case": {
+      "lex_bill_ackman": {
+        "der_delta_s1_minus_s0": 0.0,
+        "s0": {
+          "collapsed_windows": 1.0,
+          "der": 0.127333,
+          "matched_word_speaker_accuracy": 0.920455,
+          "miss": 0.090167,
+          "speaker_accuracy": 0.872667,
+          "speaker_confusion": 0.037167,
+          "unattributed_seconds": 0.73,
+          "wer": 0.204545
+        },
+        "s1": {
+          "collapsed_windows": 1.0,
+          "der": 0.127333,
+          "matched_word_speaker_accuracy": 0.920455,
+          "miss": 0.090167,
+          "speaker_accuracy": 0.872667,
+          "speaker_confusion": 0.037167,
+          "unattributed_seconds": 0.33,
+          "wer": 0.204545
+        }
+      },
+      "lex_javier_milei": {
+        "der_delta_s1_minus_s0": 0.0,
+        "s0": {
+          "collapsed_windows": 0.0,
+          "der": 0.117333,
+          "matched_word_speaker_accuracy": 0.92,
+          "miss": 0.117333,
+          "speaker_accuracy": 0.882667,
+          "speaker_confusion": 0.0,
+          "unattributed_seconds": 0.0,
+          "wer": 0.096
+        },
+        "s1": {
+          "collapsed_windows": 0.0,
+          "der": 0.117333,
+          "matched_word_speaker_accuracy": 0.92,
+          "miss": 0.117333,
+          "speaker_accuracy": 0.882667,
+          "speaker_confusion": 0.0,
+          "unattributed_seconds": 0.0,
+          "wer": 0.096
+        }
+      },
+      "lex_keyu_jin": {
+        "der_delta_s1_minus_s0": 0.0,
+        "s0": {
+          "collapsed_windows": 0.0,
+          "der": 0.089167,
+          "matched_word_speaker_accuracy": 0.985612,
+          "miss": 0.077,
+          "speaker_accuracy": 0.910833,
+          "speaker_confusion": 0.012167,
+          "unattributed_seconds": 0.0,
+          "wer": 0.093525
+        },
+        "s1": {
+          "collapsed_windows": 0.0,
+          "der": 0.089167,
+          "matched_word_speaker_accuracy": 0.985612,
+          "miss": 0.077,
+          "speaker_accuracy": 0.910833,
+          "speaker_confusion": 0.012167,
+          "unattributed_seconds": 0.0,
+          "wer": 0.093525
+        }
+      }
+    },
+    "trio_mean": {
+      "der_delta_s1_minus_s0": 0.0,
+      "s0": {
+        "der": 0.111278,
+        "matched_word_speaker_accuracy": 0.942022,
+        "speaker_accuracy": 0.888722,
+        "wer": 0.131357
+      },
+      "s1": {
+        "der": 0.111278,
+        "matched_word_speaker_accuracy": 0.942022,
+        "speaker_accuracy": 0.888722,
+        "wer": 0.131357
+      }
+    }
+  }
+}

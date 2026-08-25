@@ -1,0 +1,77 @@
+[lex_bill_ackman A] scored in 0.0s  s0 der=0.127333 s1 der=0.127333
+[lex_bill_ackman B] scored in 0.0s  s0 der=0.127333 s1 der=0.127333
+[lex_javier_milei A] scored in 0.0s  s0 der=0.117333 s1 der=0.117333
+[lex_javier_milei B] scored in 0.0s  s0 der=0.117333 s1 der=0.117333
+[lex_keyu_jin A] scored in 0.0s  s0 der=0.089167 s1 der=0.089167
+[lex_keyu_jin B] scored in 0.0s  s0 der=0.089167 s1 der=0.089167
+[keyu-5m A] scored in 0.5s  s0 der=0.088600 s1 der=0.088600
+[keyu-5m B] scored in 0.5s  s0 der=0.088600 s1 der=0.088600
+
+== bench controls ==
+  lex_bill_ackman    A  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  lex_bill_ackman    B  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  lex_javier_milei   A  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  lex_javier_milei   B  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  lex_keyu_jin       A  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  lex_keyu_jin       B  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  keyu-5m            A  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+  keyu-5m            B  export_reproduces_pass=True  s0_reproduces_deployed_scores=True
+
+== D5 (G-M3-0): every embedding input inside one witness-owned local speaker interval ==
+  embedded units=118  violations=0
+
+== per case (mean of runs) ==
+  case               arm        DER      miss      conf   spk_acc   v2_word       WER   S00 s collapse
+  lex_bill_ackman    s0    0.127333  0.090167  0.037167  0.872667  0.920455  0.204545    0.73      1.0
+  lex_bill_ackman    s1    0.127333  0.090167  0.037167  0.872667  0.920455  0.204545    0.33      1.0
+                     Δder(s1-s0) = 0.0
+  lex_javier_milei   s0    0.117333  0.117333  0.000000  0.882667  0.920000  0.096000    0.00      0.0
+  lex_javier_milei   s1    0.117333  0.117333  0.000000  0.882667  0.920000  0.096000    0.00      0.0
+                     Δder(s1-s0) = 0.0
+  lex_keyu_jin       s0    0.089167  0.077000  0.012167  0.910833  0.985612  0.093525    0.00      0.0
+  lex_keyu_jin       s1    0.089167  0.077000  0.012167  0.910833  0.985612  0.093525    0.00      0.0
+                     Δder(s1-s0) = 0.0
+  keyu-5m            s0    0.088600  0.082700  0.005900  0.911400  0.954856  0.082079    0.56      0.0
+  keyu-5m            s1    0.088600  0.082700  0.005900  0.911400  0.954856  0.082079    0.56      0.0
+                     Δder(s1-s0) = 0.0
+
+== trio mean ==
+  s0   der=0.111278 speaker_accuracy=0.888722 v2_word=0.942022 wer=0.131357
+  s1   der=0.111278 speaker_accuracy=0.888722 v2_word=0.942022 wer=0.131357
+  Δder(s1-s0) = 0.0
+
+== witness resolution ==
+  lex_bill_ackman    A  windows=6 relabelled=2 kept_projection=3 unmapped_locals=0 abstentions=0 witness==surface 5/6 encoder_rtf=0.0
+  lex_bill_ackman    B  windows=6 relabelled=2 kept_projection=3 unmapped_locals=0 abstentions=0 witness==surface 5/6 encoder_rtf=0.0
+  lex_javier_milei   A  windows=6 relabelled=0 kept_projection=0 unmapped_locals=0 abstentions=0 witness==surface 6/6 encoder_rtf=0.0
+  lex_javier_milei   B  windows=6 relabelled=0 kept_projection=0 unmapped_locals=0 abstentions=0 witness==surface 6/6 encoder_rtf=0.0
+  lex_keyu_jin       A  windows=6 relabelled=0 kept_projection=0 unmapped_locals=0 abstentions=0 witness==surface 5/6 encoder_rtf=0.0
+  lex_keyu_jin       B  windows=6 relabelled=0 kept_projection=0 unmapped_locals=0 abstentions=0 witness==surface 5/6 encoder_rtf=0.0
+  keyu-5m            A  windows=30 relabelled=0 kept_projection=2 unmapped_locals=2 abstentions=0 witness==surface 30/30 encoder_rtf=0.0
+  keyu-5m            B  windows=30 relabelled=0 kept_projection=2 unmapped_locals=2 abstentions=0 witness==surface 30/30 encoder_rtf=0.0
+
+== what the remaining confusion is (post-hoc; no arm reads truth) ==
+  lex_bill_ackman    A s0  confused=  2.23s {"segment_straddles_turn": 1.02, "misattributed": 0.48, "unattributed": 0.73}
+  lex_bill_ackman    A s1  confused=  2.23s {"segment_straddles_turn": 1.02, "misattributed": 0.88, "unattributed": 0.33}
+  lex_bill_ackman    B s0  confused=  2.23s {"segment_straddles_turn": 1.02, "misattributed": 0.48, "unattributed": 0.73}
+  lex_bill_ackman    B s1  confused=  2.23s {"segment_straddles_turn": 1.02, "misattributed": 0.88, "unattributed": 0.33}
+  lex_javier_milei   A s0  confused=  0.00s {}
+  lex_javier_milei   A s1  confused=  0.00s {}
+  lex_javier_milei   B s0  confused=  0.00s {}
+  lex_javier_milei   B s1  confused=  0.00s {}
+  lex_keyu_jin       A s0  confused=  0.73s {"segment_straddles_turn": 0.73}
+  lex_keyu_jin       A s1  confused=  0.73s {"segment_straddles_turn": 0.73}
+  lex_keyu_jin       B s0  confused=  0.73s {"segment_straddles_turn": 0.73}
+  lex_keyu_jin       B s1  confused=  0.73s {"segment_straddles_turn": 0.73}
+  keyu-5m            A s0  confused=  1.77s {"segment_straddles_turn": 1.21, "unattributed": 0.56}
+  keyu-5m            A s1  confused=  1.77s {"segment_straddles_turn": 1.21, "unattributed": 0.56}
+  keyu-5m            B s0  confused=  1.77s {"segment_straddles_turn": 1.21, "unattributed": 0.56}
+  keyu-5m            B s1  confused=  1.77s {"segment_straddles_turn": 1.21, "unattributed": 0.56}
+
+== cost ==
+  embeddings: {"cache_hits": 496, "cache_misses": 0, "encoder_seconds": 0.0, "encoded_audio_seconds": 0.0, "seconds_per_embed": null, "by_tag": {"album": {"cache_hits": 378, "cache_misses": 0, "encoder_seconds": 0.0, "encoded_audio_seconds": 0.0, "seconds_per_embed": null}, "witness": {"cache_hits": 118, "cache_misses": 0, "encoder_seconds": 0.0, "encoded_audio_seconds": 0.0, "seconds_per_embed": null}}}
+  witness decodes: {"cache_hits": 96, "fresh_moss_requests": 0}
+
+wrote /tmp/m3-s1-all.json
+
+bench_controls_pass=True d5_violations=0
