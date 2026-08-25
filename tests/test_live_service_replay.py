@@ -17,6 +17,7 @@ from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPo
 from moss_transcribe_diarize.app.live_lane_contract import LiveV2Capabilities, LiveV2Descriptor
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
+    _ManualTerminalScheduler,
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceEvent,
@@ -29,6 +30,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceSnapshot,
     hash_config,
 )
+from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     CanonicalCommit,
@@ -39,8 +41,12 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     LiveSnapshot,
+    PCM16_BYTES_PER_SAMPLE,
     ProvisionalSuffix,
 )
+from tests.test_live_terminal_finalizer import WholeMeetingStub
+from tests.test_live_terminal_lifecycle import MEETING_SAMPLES as _TERMINAL_MEETING_SAMPLES
+from tests.test_live_terminal_lifecycle import _runtime as _terminal_runtime
 
 
 UVICORN_AVAILABLE = importlib.util.find_spec("uvicorn") is not None
@@ -846,6 +852,181 @@ class LiveServiceReplayContractTest(unittest.TestCase):
             thread.join(timeout=5)
 
 
+class ReplayTerminalFinalizationWaitTest(unittest.TestCase):
+    """Plan §12.3 from the measuring client's side: a run ends when the *meeting* does.
+
+    The terminal pass deliberately runs behind the stop response, so a client that returned
+    the moment `POST /stop` answered wrote the ROLLING surface into `trace.jsonl` while every
+    filename around it said the run had completed -- measured on the deployed service and
+    recorded as finding F1 of `evidence/live-convergence-0824/M4-deployed-terminal/`, where
+    the terminal events arrived after the artifacts were closed and the numbers had to be
+    recovered by polling the session afterwards.
+
+    Waiting belongs here rather than in a synchronous stop (plan §12.3 M2 refuses that: on the
+    longest audio this repo measures the terminal decode is minutes, on a request a browser
+    holds open), and here rather than in each driver, because the three paired drivers share
+    exactly one client. These tests pin the four endings a meeting can have as an outside
+    reader sees them: a pass that lands, a deployment that runs none, a pass that ends without
+    a surface, and a pass that never ends.
+    """
+
+    def test_the_run_reports_the_terminal_surface_and_the_events_that_made_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(Path(tmp), finalizer=_terminal_finalizer())
+
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+        terminal = _one_trace_record(self, trace, "terminal")
+        session = terminal["snapshot"]["session"]
+        kinds = [
+            record["event"]["kind"] for record in trace if record["kind"] == "service_event"
+        ]
+
+        self.assertEqual(wait["stop_finalization_status"], "running")
+        self.assertEqual(wait["finalization_status"], "final")
+        self.assertTrue(wait["waited"])
+        self.assertEqual(wait["polls"], 2)
+        self.assertEqual(session["finalization_status"], "final")
+        self.assertEqual(session["text_revision_version"], wait["text_revision_version"])
+        self.assertEqual(
+            {segment["authority"] for segment in session["effective_transcript"]},
+            {"terminal"},
+        )
+        self.assertEqual(summary["status"], "succeeded")
+        self.assertEqual(summary["finalization_status"], "final")
+        self.assertTrue(summary["finalization_waited"])
+        for kind in (
+            "terminal_finalization_started",
+            "text_revision_applied",
+            "terminal_finalization_completed",
+            "session_tape_released",
+        ):
+            self.assertIn(kind, kinds)
+
+    def test_a_deployment_that_runs_no_terminal_pass_is_not_waited_on(self):
+        """`not_started` is an answer. A client that waited on it would wait every run."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(Path(tmp), finalizer=None)
+
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+
+        self.assertEqual(wait["stop_finalization_status"], "not_started")
+        self.assertEqual(wait["finalization_status"], "not_started")
+        self.assertFalse(wait["waited"])
+        self.assertEqual(wait["polls"], 0)
+        self.assertEqual(summary["finalization_status"], "not_started")
+        self.assertFalse(summary["finalization_waited"])
+        self.assertEqual(
+            {
+                segment["authority"]
+                for segment in _one_trace_record(self, trace, "terminal")["snapshot"]["session"][
+                    "effective_transcript"
+                ]
+            },
+            {"rolling"},
+        )
+
+    def test_a_pass_that_ends_without_a_surface_is_an_answer_too(self):
+        """No tape, no pass: `unavailable` reaches the artifact and the run still succeeds."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(
+                Path(tmp), finalizer=_terminal_finalizer(), tape_bytes=None
+            )
+
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+
+        self.assertEqual(wait["stop_finalization_status"], "unavailable")
+        self.assertFalse(wait["waited"])
+        self.assertEqual(summary["status"], "succeeded")
+        self.assertEqual(summary["finalization_status"], "unavailable")
+
+    def test_a_pass_that_never_answers_fails_the_run_by_name(self):
+        """The deadline is the instrument's patience, and spending it is not a measurement.
+
+        Writing the artifacts anyway would reproduce F1 with extra steps: the surface in them
+        would be the rolling one under a run that called itself complete.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(live_service_replay.ServiceReplayFinalizationTimeout) as cm:
+                _run_terminal_replay(
+                    root,
+                    finalizer=_terminal_finalizer(),
+                    delay_polls=None,
+                    finalization_deadline=2.0,
+                )
+            trace = _jsonl(root / "out/run-001/trace.jsonl")
+            summary = json.loads((root / "out/run-001/summary.json").read_text(encoding="utf-8"))
+
+        terminal = _one_trace_record(self, trace, "terminal")
+
+        self.assertEqual(cm.exception.exit_code, 8)
+        self.assertEqual(cm.exception.failure_kind, "finalization_timeout")
+        self.assertIn("'running'", str(cm.exception))
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["failure_kind"], "finalization_timeout")
+        self.assertEqual(terminal["status"], "failed")
+        self.assertEqual(
+            [record["kind"] for record in trace].count("terminal_finalization_wait"), 0
+        )
+
+    def test_the_deadline_is_the_callers_and_reaches_the_manifest(self):
+        args = live_service_replay.parse_args(
+            [
+                "--base-url",
+                "http://127.0.0.1:7860",
+                "--audio",
+                "audio.wav",
+                "--out-dir",
+                "runs/live-service-replay",
+                "--expect-revision",
+                "revision",
+                "--expect-provider-hash",
+                "a" * 64,
+                "--expect-config-hash",
+                "b" * 64,
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            trace, _ = _run_terminal_replay(root, finalizer=None, finalization_deadline=12.5)
+            manifest = json.loads((root / "out/replay-manifest.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            args.finalization_deadline, live_service_replay.TERMINAL_FINALIZATION_DEADLINE_SECONDS
+        )
+        self.assertEqual(manifest["cli"]["finalization_deadline"], 12.5)
+        self.assertEqual(
+            _one_trace_record(self, trace, "terminal_finalization_wait")["deadline_seconds"], 12.5
+        )
+
+    def test_a_non_positive_deadline_is_refused_before_any_audio_is_sent(self):
+        service = RecordingService(
+            _runtime(descriptor=_descriptor(), speech=(False,), session_ids=("session-1",))
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=400)
+            with self.assertRaises(live_service_replay.ServiceReplayFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision="revision",
+                    expect_provider_hash="a" * 64,
+                    expect_config_hash="b" * 64,
+                    finalization_deadline=0.0,
+                )
+
+        self.assertEqual(service.frame_sequences, [])
+
+
 class ReplayReconstructorRoundTripTest(unittest.TestCase):
     """The replay client's reconstructors must be exact inverses of the service's `asdict`.
 
@@ -1238,6 +1419,78 @@ class ScriptedClock:
 
     def sleep(self, seconds: float) -> None:
         self.now += seconds
+
+
+class TerminalScriptedClock(ScriptedClock):
+    """A replay clock that lets a scheduled terminal pass finish after `delay_polls` polls.
+
+    The client's wait is a real loop over a real service; what a test cannot afford is its
+    wall-clock cost or its timing luck. Driving the manual scheduler from `sleep` makes the
+    pass land at an exact poll: the runtime is untouched and the interleaving is chosen, not
+    raced. `delay_polls=None` is the pass that never answers.
+    """
+
+    def __init__(self, scheduler, *, delay_polls: int | None = 1):
+        super().__init__()
+        self.scheduler = scheduler
+        self.delay_polls = delay_polls
+        self.polls = 0
+
+    def sleep(self, seconds: float) -> None:
+        super().sleep(seconds)
+        if not self.scheduler.pending:
+            return
+        self.polls += 1
+        if self.delay_polls is not None and self.polls > self.delay_polls:
+            self.scheduler.run_one()
+
+
+def _terminal_finalizer(text: str = "[0][S01]the whole meeting[10]"):
+    return TerminalTranscriptFinalizer(runner=WholeMeetingStub(text))
+
+
+def _run_terminal_replay(
+    root: Path,
+    *,
+    finalizer,
+    tape_bytes: int | None = _TERMINAL_MEETING_SAMPLES * PCM16_BYTES_PER_SAMPLE,
+    delay_polls: int | None = 1,
+    finalization_deadline: float = 60.0,
+) -> tuple[list[dict], dict]:
+    """One replayed meeting through the runtime that has E4 wired, and its artifacts."""
+
+    scheduler = _ManualTerminalScheduler()
+    runtime, _ = _terminal_runtime(
+        finalizer=finalizer, tape_bytes=tape_bytes, scheduler=scheduler
+    )
+    descriptor = runtime.descriptor
+    clock = TerminalScriptedClock(scheduler, delay_polls=delay_polls)
+    audio = root / "audio.wav"
+    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES)
+    live_service_replay.run_service_replay(
+        service=live_service_replay.InMemoryLiveReplayService(runtime),
+        audio_path=audio,
+        out_dir=root / "out",
+        pace=1.0,
+        max_pacing_lag=0.5,
+        runs=1,
+        expect_revision=descriptor.source_revision,
+        expect_provider_hash=descriptor.provider_manifest_hash,
+        expect_config_hash=descriptor.config_hashes.combined_config_hash,
+        finalization_deadline=finalization_deadline,
+        monotonic=clock.monotonic,
+        sleep=clock.sleep,
+    )
+    return (
+        _jsonl(root / "out/run-001/trace.jsonl"),
+        json.loads((root / "out/run-001/summary.json").read_text(encoding="utf-8")),
+    )
+
+
+def _one_trace_record(case: unittest.TestCase, trace: list[dict], kind: str) -> dict:
+    records = [record for record in trace if record["kind"] == kind]
+    case.assertEqual(len(records), 1, f"expected exactly one {kind} record")
+    return records[0]
 
 
 def _write_wav(path: Path, *, samples: int) -> None:

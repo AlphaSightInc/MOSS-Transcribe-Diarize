@@ -26,6 +26,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_terminal_finalizer.py` + `mutate_terminal_finalizer.sh` | handed the paired file arm's own decode, does the terminal adapter publish the paired file arm's own surface — and how should a terminal pass name its speakers? | **yes, delta `0.000000` on WER, DER, coverage, text-speaker accuracy and content recall, 3/3 cases**; and the naming policy is decided by measurement — the per-segment projection costs `+.38…+.57` DER, so terminal names speakers **per speaker** (ADR-0005 D8); `evidence/live-convergence-0824/M4-terminal-finalizer/` |
 | `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` | does the RUNTIME give a meeting its last listener without taking the meeting away first (plan §12.3, D-M4-3)? | **yes** — the stop request returns `running` with zero terminal decodes issued, the surface a reader polls stays the rolling one for the whole interval, the pass then publishes the file arm's surface to `1e-12`, and the tape is released *after* the terminal evidence; a failed pass says `failed` and keeps the rolling surface, a deployment with no tape says `unavailable` with a reason; `evidence/live-convergence-0824/M4-terminal-lifecycle/` |
 | `verify_deployed_terminal.py` | did the E4 build reach the DEPLOYED service, and does a real meeting get a terminal pass there? | **yes** — `bounds.max_tape_bytes=9600000` on the wire, the pass starts after `POST /stop` has already answered, decodes 960 000 samples in `1.918 s` through file mode's own runner, and publishes the file arm's transcript word for word (WER `.096000 → .088000` = file's `.088000`); nine gates, nine reactions; `evidence/live-convergence-0824/M4-deployed-terminal/` |
+| `verify_replay_terminal_wait.py` | does the MEASURING CLIENT see the surface the meeting ended on, or the one it left (F1 of the deploy)? | **it does now** — after the stop response the client polls until `finalization_status` leaves `running` (`2.055 s`, 4 polls, 300 s deadline on the deployed 60 s case) and reports the terminal snapshot: the paired driver's own live arm moved WER `.096000 → .088000` = the file arm's, with no driver edited; nine gates, nine reactions; `evidence/live-convergence-0824/M4-replay-wait/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -737,4 +738,42 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
   --bundle evidence/live-convergence-0824/M4-deployed-terminal --selftest
+```
+
+## `verify_replay_terminal_wait.py` — iteration 28, M4 step 3e: the client's wait
+
+**Question.** Plan §12.3 puts the terminal decode behind the stop response, so what does an
+instrument that returns when `POST /stop` answers actually measure? (Finding F1 of the deploy:
+the rolling surface, under a run that looks complete.)
+
+**Answer: the rolling one — and the fix belongs in the client, where all three paired drivers
+share it.** `run_service_replay` now polls the snapshot after the stop response until
+`finalization_status` leaves `running`, draining the event stream on every poll, then reports
+the polled snapshot; `not_started` / `final` / `failed` / `unavailable` are already answers and
+are not waited on. A pass that outlives `--finalization-deadline` (default 300 s) raises
+`ServiceReplayFinalizationTimeout` (exit 8) rather than writing a rolling surface under a
+completed run. The artifacts gained one trace record (`terminal_finalization_wait`) and two
+summary fields (`finalization_status`, `finalization_waited`).
+
+On the deployed service, one warm-decoder pass of `lex_javier_milei` through the *unchanged*
+deployment (client-side change; no restart):
+
+| arm | WER | TBSA | DER | speaker accuracy | segments |
+|---|---|---|---|---|---|
+| file | `.088000` | `.881244` | `.151833` | `.848167` | 20 |
+| live before the wait (rolling) | `.096000` | `.906296` | `.117333` | `.882667` | 14 |
+| **live after the wait (terminal)** | **`.088000`** | `.881244` | `.151833` | `.848167` | 20 |
+
+The wait cost `2.055 s` over 4 polls. Note what the same row says about speakers: terminal *is*
+file, so on this case convergence costs DER `.117333 → .151833` — D-M4-2's collision, now
+visible in a driver artifact rather than a hand poll. Its disposition is the M4 exit's.
+
+```bash
+# nine gates against the in-memory E4 runtime (no GPU, no service, zero MOSS requests)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py
+
+# nine defective clients, each caught by its own gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py --selftest
 ```

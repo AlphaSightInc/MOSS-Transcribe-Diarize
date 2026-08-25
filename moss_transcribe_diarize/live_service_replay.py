@@ -46,6 +46,30 @@ from .app.live_session import (
 REPLAY_ARTIFACT_SCHEMA_VERSION = 1
 CANONICAL_DECODE_RTF_BOUND = 1.0
 
+#: How long this client waits for a terminal pass it watched start, and how often it asks.
+#:
+#: Plan §12.3 puts the whole-meeting decode deliberately *behind* the stop response, so a
+#: client that returns when `POST /stop` answers writes the **rolling** surface into its
+#: artifacts and every paired comparison built on them scores the wrong transcript. The
+#: waiting therefore belongs here, in the one client all the measurement drivers share,
+#: rather than in a synchronous stop (which §12.3 M2 refuses: minutes of decode on a request
+#: a browser holds open).
+#:
+#: The deadline is the instrument's patience, not the service's contract, which is why it is
+#: generous: a terminal pass decodes the meeting through the same 150/120 `WindowedRunner`
+#: file mode uses -- three windows for the longest audio this repo measures -- and the
+#: measured whole-meeting decode of a 60-second meeting is ~2 s.
+TERMINAL_FINALIZATION_DEADLINE_SECONDS = 300.0
+TERMINAL_FINALIZATION_POLL_SECONDS = 0.5
+
+#: The finalization statuses that are already an answer (plan §7.3). `running` is the only
+#: one worth waiting on: `not_started` is a deployment that asked for no terminal pass,
+#: `final` is one that landed, and `failed` / `unavailable` are passes that ended without a
+#: surface. A client that waited on any of these four would wait for the deadline every time.
+TERMINAL_FINALIZATION_SETTLED = frozenset(
+    {"not_started", "final", "failed", "unavailable"}
+)
+
 
 class ServiceReplayFailure(RuntimeError):
     exit_code = 2
@@ -75,6 +99,20 @@ class ServiceReplayTransportFailure(ServiceReplayFailure):
 class ServiceReplayEventLossFailure(ServiceReplayFailure):
     exit_code = 7
     failure_kind = "event_loss"
+
+
+class ServiceReplayFinalizationTimeout(ServiceReplayFailure):
+    """A terminal pass this client watched start had not ended within its deadline.
+
+    Typed, and fatal to the run, on purpose. The alternative -- write the artifacts anyway
+    and note the timeout in them -- is exactly the trap this wait exists to close: the
+    surface in `trace.jsonl` would be the rolling one while every filename around it says
+    the run completed, and a scorer would have to know to look. A run that could not see the
+    terminal surface produced no terminal measurement, so it fails by name.
+    """
+
+    exit_code = 8
+    failure_kind = "finalization_timeout"
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +277,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pace", type=float, default=1.0, help="Replay pace multiplier.")
     parser.add_argument("--max-pacing-lag", type=float, default=1.0, help="Maximum allowed pacing lag in seconds.")
     parser.add_argument("--runs", type=int, default=1, help="Number of replay runs.")
+    parser.add_argument(
+        "--finalization-deadline",
+        type=float,
+        default=TERMINAL_FINALIZATION_DEADLINE_SECONDS,
+        help="Seconds to wait after stop for a running terminal pass to answer.",
+    )
     parser.add_argument("--expect-revision", required=True, help="Expected service source revision.")
     parser.add_argument("--expect-provider-hash", required=True, help="Expected provider manifest hash.")
     parser.add_argument("--expect-config-hash", required=True, help="Expected combined configuration hash.")
@@ -265,6 +309,7 @@ def main(argv: list[str] | None = None) -> int:
             expect_revision=args.expect_revision,
             expect_provider_hash=args.expect_provider_hash,
             expect_config_hash=args.expect_config_hash,
+            finalization_deadline=args.finalization_deadline,
         )
     except ServiceReplayFailure as exc:
         print(f"live service replay failed [{exc.failure_kind}]: {exc}", file=sys.stderr)
@@ -318,6 +363,77 @@ def _drain_service_events(
     return next_seq
 
 
+def _await_terminal_finalization(
+    service: LiveReplayService,
+    session_id: str,
+    *,
+    stop_snapshot: LiveServiceSnapshot,
+    next_event_seq: int,
+    sink: list[LiveServiceEvent],
+    deadline_seconds: float,
+    poll_seconds: float,
+    monotonic,
+    sleep,
+) -> tuple[LiveServiceSnapshot, int, dict[str, Any]]:
+    """Hold the run open until the meeting's last listener has answered.
+
+    The stop response already says which of the two meetings this is: `_begin_terminal_locked`
+    publishes `running` under the same lock that builds that snapshot, so a `running` stop
+    response means a pass was scheduled and this client has not yet seen its surface, and any
+    other status means there is nothing to come back for. Nothing here asks the service to
+    behave differently -- the wait is one reader polling a contract that already exists.
+
+    Draining events on every poll rather than once at the end is `_drain_service_events`'s
+    argument applied to the new interval: the terminal decode is minutes long on the longest
+    audio this repo measures, the runtime holds events in a bounded deque, and a client that
+    slept through the interval and then read from its old cursor would be told the stream had
+    moved on. Polls also keep the *snapshot* fresh, which is what the trace ultimately carries.
+
+    Returns the snapshot the run should report, the advanced event cursor, and the record of
+    what the wait did -- including the deadline it was given, so an artifact reader can tell a
+    pass that was quick from one that merely fit.
+    """
+
+    started = float(monotonic())
+    snapshot = stop_snapshot
+    status = snapshot.session.finalization_status
+    polls = 0
+    while status not in TERMINAL_FINALIZATION_SETTLED:
+        elapsed = float(monotonic()) - started
+        if elapsed >= deadline_seconds:
+            raise ServiceReplayFinalizationTimeout(
+                f"terminal finalization was still {status!r} after {elapsed:.3f}s "
+                f"(deadline {deadline_seconds:.3f}s); the run observed the rolling surface "
+                f"only and has no terminal measurement to report."
+            )
+        sleep(poll_seconds)
+        next_event_seq = _drain_service_events(service, session_id, next_event_seq, sink)
+        polled = service.snapshot(session_id)
+        polls += 1
+        if polled is None:
+            raise ServiceReplayFailure(
+                "the service stopped answering for a session whose terminal finalization "
+                "was still running; the terminal surface is unobservable."
+            )
+        snapshot = polled
+        status = snapshot.session.finalization_status
+    next_event_seq = _drain_service_events(service, session_id, next_event_seq, sink)
+    return (
+        snapshot,
+        next_event_seq,
+        {
+            "stop_finalization_status": stop_snapshot.session.finalization_status,
+            "finalization_status": status,
+            "waited": polls > 0,
+            "polls": polls,
+            "elapsed_seconds": round(float(monotonic()) - started, 6),
+            "deadline_seconds": deadline_seconds,
+            "poll_seconds": poll_seconds,
+            "text_revision_version": snapshot.session.text_revision_version,
+        },
+    )
+
+
 def run_service_replay(
     *,
     service: LiveReplayService,
@@ -329,6 +445,7 @@ def run_service_replay(
     expect_revision: str,
     expect_provider_hash: str,
     expect_config_hash: str,
+    finalization_deadline: float = TERMINAL_FINALIZATION_DEADLINE_SECONDS,
     monotonic=time.monotonic,
     sleep=time.sleep,
 ) -> ServiceReplayOutputs:
@@ -338,6 +455,8 @@ def run_service_replay(
         raise ServiceReplayFailure("max_pacing_lag must be non-negative.")
     if runs <= 0:
         raise ServiceReplayFailure("runs must be positive.")
+    if finalization_deadline <= 0:
+        raise ServiceReplayFailure("finalization_deadline must be positive.")
 
     pcm = _read_mono_pcm16_wav(audio_path)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -363,6 +482,7 @@ def run_service_replay(
             "expect_config_hash": expect_config_hash,
             "expect_provider_hash": expect_provider_hash,
             "expect_revision": expect_revision,
+            "finalization_deadline": finalization_deadline,
             "max_pacing_lag": max_pacing_lag,
             "pace": pace,
             "runs": runs,
@@ -483,8 +603,21 @@ def run_service_replay(
                     service, session_id, next_event_seq, service_event_log
                 )
 
-            snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
-            _drain_service_events(service, session_id, next_event_seq, service_event_log)
+            stop_snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
+            next_event_seq = _drain_service_events(
+                service, session_id, next_event_seq, service_event_log
+            )
+            snapshot, next_event_seq, finalization_wait = _await_terminal_finalization(
+                service,
+                session_id,
+                stop_snapshot=stop_snapshot,
+                next_event_seq=next_event_seq,
+                sink=service_event_log,
+                deadline_seconds=finalization_deadline,
+                poll_seconds=TERMINAL_FINALIZATION_POLL_SECONDS,
+                monotonic=monotonic,
+                sleep=sleep,
+            )
             service_events = tuple(service_event_log)
             for event in service_events:
                 trace.append(
@@ -495,6 +628,14 @@ def run_service_replay(
                         "event": event.to_dict(),
                     }
                 )
+            trace.append(
+                {
+                    "schema_version": REPLAY_ARTIFACT_SCHEMA_VERSION,
+                    "seq": len(trace),
+                    "kind": "terminal_finalization_wait",
+                    **finalization_wait,
+                }
+            )
             rtf_evaluation = _canonical_decode_rtf_evaluation(service_events)
             summary.update(rtf_evaluation)
             trace.append(
@@ -520,6 +661,12 @@ def run_service_replay(
                     "accepted_samples": snapshot.session.accepted_samples,
                     "accounted_samples": snapshot.session.accounted_samples,
                     "committed_prefix_hash": snapshot.session.committed_prefix_hash,
+                    # Which surface the artifacts beside this file carry. A scorer that reads
+                    # `final` is reading a terminal transcript; anything else and the run's
+                    # live arm is the rolling one, by the service's own word rather than by
+                    # the scorer's assumption.
+                    "finalization_status": finalization_wait["finalization_status"],
+                    "finalization_waited": finalization_wait["waited"],
                 }
             )
             trace.append(

@@ -1,0 +1,11 @@
+[PASS] G-W1 the stop response already names which meeting this is, and the run records it
+[PASS] G-W2 F1 reproduced: the pre-wait client publishes the rolling surface and stops reading at terminal_finalization_started
+[PASS] G-W3 the shipped client publishes the terminal surface instead
+[PASS] G-W4 the four events that made that surface reach the trace, after session_closed, in order
+[PASS] G-W5 a deployment that runs no terminal pass is not waited on, and its run is otherwise the pre-wait client's
+[PASS] G-W6 a pass that ends without a surface is an answer, not a wait
+[PASS] G-W7 a pass that never answers fails the run by name rather than publishing the rolling surface as complete
+[PASS] G-W8 the deadline is the caller's, and every artifact names the one that was spent
+[PASS] G-W9 all three paired drivers inherit the wait unedited: each calls the shared client and none of them declares a deadline of its own
+wrote: evidence/live-convergence-0824/M4-replay-wait/gates.json
+PASS

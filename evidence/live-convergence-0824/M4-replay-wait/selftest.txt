@@ -1,0 +1,10 @@
+[PASS] G-W3 reacts to: the client does not wait at all (the defect this change repairs)  also: ['G-W4', 'G-W7', 'G-W8']
+[PASS] G-W3 reacts to: `running` counts as an already-terminal answer  also: ['G-W4', 'G-W7', 'G-W8']
+[PASS] G-W3 reacts to: the wait reports the stop snapshot it started from
+[PASS] G-W4 reacts to: the wait never re-reads the event stream it waited through
+[PASS] G-W7 reacts to: a timed-out pass is written up as a completed run  also: ['G-W8']
+[PASS] G-W8 reacts to: the wait spends its own deadline rather than the caller's
+[PASS] G-W5 reacts to: `not_started` is not treated as an answer  also: ['G-W1']
+[PASS] G-W6 reacts to: `unavailable` is not treated as an answer  also: ['G-W1']
+[PASS] G-W1 reacts to: the record claims a wait the stop response never asked for  also: ['G-W5', 'G-W6']
+PASS

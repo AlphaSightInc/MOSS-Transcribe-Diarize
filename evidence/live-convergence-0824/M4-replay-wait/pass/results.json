@@ -1,0 +1,161 @@
+{
+  "case": "lex_javier_milei",
+  "case_dir": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei",
+  "duration_sec": 60.0,
+  "provenance": {
+    "base_url": "https://127.0.0.1:7861",
+    "vllm_base_url": "http://127.0.0.1:18000/v1",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "windowing": {
+      "window_seconds": 150,
+      "stride_seconds": 120
+    },
+    "live_source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "decoding": "greedy",
+    "max_new_tokens": 12000,
+    "timestamp": "2026-08-25T10:04:57-0400"
+  },
+  "results": {
+    "file": {
+      "meta": {
+        "job_id": "ac7bf0faa96c",
+        "status": "waiting_review",
+        "wall_s": 4.0,
+        "generated_tokens": 474,
+        "segments": 20,
+        "speakers": [
+          "S01",
+          "S02"
+        ]
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.881244,
+          "text_speaker_accuracy": 0.870992,
+          "text_coverage": 0.870992,
+          "wer": 0.088,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "diarization": {
+          "der": 0.151833,
+          "miss": 0.151833,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.0,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.848167,
+          "reference_coverage": 0.848167,
+          "matched_speaker_seconds": 50.89,
+          "covered_reference_seconds": 50.89,
+          "reference_seconds": 60.0,
+          "hypothesis_seconds": 50.89,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 2,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Javier Milei": 0.579,
+            "Lex Fridman": 0.902
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.848167,
+          "reference_activity_seconds": 60.0,
+          "hypothesis_activity_seconds": 50.89,
+          "true_positive_activity_seconds": 50.89,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 9.11,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 9.11,
+          "confused_speaker_seconds": 0.0,
+          "diarization_error_rate": 0.151833
+        }
+      }
+    },
+    "live": {
+      "meta": {
+        "failure": null,
+        "wall_s": 62.7,
+        "status": "succeeded",
+        "frame_count": 120,
+        "accepted_samples": 960000,
+        "decode_rtf_p95": 0.5378813998374555,
+        "span_reasons": {
+          "hard_cap": 21,
+          "end_silence": 4,
+          "leading_silence": 6
+        },
+        "spans_empty": 4,
+        "segments": 20,
+        "speakers": [
+          "S01",
+          "S02"
+        ],
+        "label_revision_version": 0,
+        "text_revision_version": 7
+      },
+      "scores": {
+        "tbsa": {
+          "composite": 0.881244,
+          "text_speaker_accuracy": 0.870992,
+          "text_coverage": 0.870992,
+          "wer": 0.088,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "diarization": {
+          "der": 0.151833,
+          "miss": 0.151833,
+          "false_alarm": 0.0,
+          "speaker_confusion": 0.0,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          }
+        },
+        "speaker": {
+          "speaker_accuracy": 0.848167,
+          "reference_coverage": 0.848167,
+          "matched_speaker_seconds": 50.89,
+          "covered_reference_seconds": 50.89,
+          "reference_seconds": 60.0,
+          "hypothesis_seconds": 50.89,
+          "reference_speaker_count": 2,
+          "hypothesis_speaker_count": 2,
+          "speaker_mapping": {
+            "Javier Milei": "S01",
+            "Lex Fridman": "S02"
+          },
+          "two_sided_mapping": true,
+          "speaker_correctness": {
+            "Javier Milei": 0.579,
+            "Lex Fridman": 0.902
+          },
+          "speaker_activity_precision": 1.0,
+          "speaker_activity_recall": 0.848167,
+          "reference_activity_seconds": 60.0,
+          "hypothesis_activity_seconds": 50.89,
+          "true_positive_activity_seconds": 50.89,
+          "false_positive_activity_seconds": 0.0,
+          "missed_activity_seconds": 9.11,
+          "false_positive_speaker_seconds": 0.0,
+          "missed_speaker_seconds": 9.11,
+          "confused_speaker_seconds": 0.0,
+          "diarization_error_rate": 0.151833
+        }
+      }
+    }
+  }
+}

@@ -11,6 +11,9 @@
     (field-complete since iteration 1; keep them so). `_drain_service_events` (~`:290`) is the
     event-stream cursor added in iteration 5; the trace is written from what it collected, so
     any new read of the stream must go through it rather than calling `service.events` again.
+    Since iteration 28 the client also OUTLIVES the stop response: `_await_terminal_finalization`
+    (~`:400`) polls until `finalization_status` settles and the trace's `terminal` record carries
+    the POLLED snapshot, so every paired driver reports the terminal surface without an edit.
   - `moss_transcribe_diarize/app/vllm_runner.py:_validate_transcription_response` +
     `app/live_adapters.py:~330` — the decode seam. The disposition collapse is fixed (iteration 2)
     and the salvage call is wired (iteration 7): the catch reads `exc.text` and asks
@@ -132,12 +135,28 @@
   terminal_finalization_started(263) → text_revision_applied(source=terminal, 264) →
   terminal_finalization_completed(265) → session_tape_released(266)`. Nine gates + nine reactions.
   Evidence: `evidence/live-convergence-0824/M4-deployed-terminal/`.
-- **The paired driver cannot see that surface, and that blocks the M4 exit (iteration 27).**
-  `run_service_replay` returns when `POST /stop` answers, which is now BEFORE the terminal pass
-  runs, so the pass's `live-hypothesis.jsonl` is the ROLLING surface and its trace ends at seq 263.
-  Iteration 27's terminal numbers came from polling `/snapshot` and `/events` after the fact. The
-  replay client must wait for `finalization_status` to leave `running` before it snapshots —
-  candidate 8c-5, and 8d is blocked on it.
+- **M4 step 3e SHIPPED (iteration 28): the measuring client waits, and 8d is unblocked.**
+  `run_service_replay` polls the snapshot after the stop response until `finalization_status`
+  leaves `running`, draining events on every poll, then reports the POLLED snapshot;
+  `not_started` / `final` / `failed` / `unavailable` are already answers and cost a wait of
+  zero. A pass that outlives `finalization_deadline` (default 300 s, `--finalization-deadline`)
+  raises `ServiceReplayFinalizationTimeout` (exit 8) rather than writing a rolling surface under
+  a run that looks complete. Artifacts gained one trace record (`terminal_finalization_wait`,
+  which names its own deadline) and two summary fields (`finalization_status`,
+  `finalization_waited`). NO DRIVER WAS EDITED - all three share the client, which is why the
+  fix belongs there (gate G-W9, and `remeasure_one_case.py --selftest` still passes its
+  checked-in-shape comparison). Measured on the UNCHANGED deployment (client-side change, no
+  restart), one warm-decoder pass of `lex_javier_milei`: the driver's own live arm moved from
+  the rolling surface (WER `.096000`, 14 segments) to the terminal one (**`.088000`, 20
+  segments, authority `terminal`, `text_revision_version 7`**) - the file arm's numbers exactly,
+  reproducing iteration 27's hand-polled reading from the driver's own artifact. The wait cost
+  `2.055 s` over 4 polls. Nine gates + nine reactions (`verify_replay_terminal_wait.py`).
+  Evidence: `evidence/live-convergence-0824/M4-replay-wait/`.
+- **What that pass also shows, and 8d must dispose of.** Terminal IS file on every axis, so on
+  `lex_javier_milei` convergence costs the speaker surface: DER `.117333 -> .151833`, speaker
+  accuracy `.882667 -> .848167`. That is D-M4-2's known collision (the reason candidate 8's row
+  refuses a no-regression gate on this case), now visible in a driver artifact rather than a
+  hand poll.
 
 - **M0a CLOSED (iteration 1).** `verify_replay_roundtrip.py` now exits 0. The replay client
   dropped three fields, not two: `CanonicalCommit.revised_transcript`,
@@ -994,6 +1013,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/probe_decode_determinism.py --repeats 12
 # does incremental event draining change a trace that never overflowed? (exit 0 = no)
+# SUPERSEDED by verify_replay_terminal_wait.py G-W5: this probe compares traces POSITIONALLY
+# and cannot express an insertion, so since iteration 28 it stops at "trace lengths differ:
+# 41 vs 42" -- the one `terminal_finalization_wait` record the client now writes.
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/probe_replay_trace_shape_identity.py
 # M1a salvage-gate comparison, plan §9.1 (exit 0 = all seven gates pass; zero MOSS requests)
@@ -1104,6 +1126,13 @@ prototypes/streaming-diarization/live-convergence/mutate_terminal_lifecycle.sh /
 #  bounds_config.max_tape_bytes and therefore differs from its checked-in M2 artifact by
 #  exactly that one field -- see M4-deployed-terminal/inertness.txt)
 .venv/bin/python evidence/live-convergence-0824/M4-terminal-lifecycle/inertness.py
+# M4 step 3e: does the measuring CLIENT see the terminal surface? (no GPU, no service,
+# zero MOSS requests; runs the real client against the in-memory E4 runtime)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py
+# nine defective clients, each caught by its own gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py --selftest
 # M4 step 3d: did the E4 build reach the DEPLOYED service? (no GPU, no service, from the bundle)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
@@ -1324,24 +1353,33 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    existed to prevent. Do NOT read `combined_config_hash` as evidence the deployment is unchanged -
    it is `f(decoder, endpoint, identity)` and cannot see retention; `bounds_config_hash` /
    `component_config_hash` / `provider_manifest_hash` are what moved.
-8c-5. **The replay client has to wait for the terminal surface.** MEASURED iteration 27 and it
-   blocks 8d: `run_service_replay` returns when `POST /stop` answers, which is now - by design -
-   BEFORE the terminal pass runs, so `live-hypothesis.jsonl` carries the ROLLING surface and the
-   trace ends at the `terminal_finalization_started` event. Iteration 27's terminal numbers had to
-   be recovered by polling `/snapshot` and `/events` afterwards (both files are in the M4-deployed-terminal
-   bundle for exactly that reason). The fix is in the replay client, not the service: after the stop
-   response, poll until `finalization_status` leaves `running` (`not_started` / `unavailable` /
-   `final` / `failed` are all already-terminal answers), bounded by a deadline that names itself,
-   then take the terminal snapshot and drain the events. Every paired driver
-   (`remeasure_live_vs_file.py`, `remeasure_5m_case.py`, `remeasure_one_case.py`) inherits it,
-   because all three call the same client. Do NOT "fix" this by making `stop` synchronous: plan
-   §12.3 M2 and iteration 26's mutation M2 both refuse that, and the 5-minute case is minutes of
-   decode on a request a client holds open.
+8c-5. ~~**M4 step 3e: the replay client waits for the terminal surface**~~ - SHIPPED
+   iteration 28, nine gates pass and on the deployed service the paired driver's own live arm
+   became the terminal surface (WER `.096000 -> .088000` == the file arm's), with no driver
+   edited. `_await_terminal_finalization` + `ServiceReplayFinalizationTimeout` (exit 8) +
+   `--finalization-deadline` + the `terminal_finalization_wait` trace record and two summary
+   fields, all in `live_service_replay.py`. Verdict in
+   `evidence/live-convergence-0824/M4-replay-wait/`.
+   Do NOT make `stop` synchronous instead: plan §12.3 M2 and iteration 26's mutation M2 both
+   refuse it, and the 5-minute case is minutes of decode on a request a client holds open. Do
+   NOT let a timed-out pass write its artifacts with a note - that is F1 with extra steps, a
+   rolling surface under a run that calls itself complete (mutation 5). Do NOT teach a driver
+   the deadline keyword: the default applies everywhere, which is what keeps
+   `remeasure_one_case.py --selftest`'s checked-in-shape comparison meaningful. Do NOT wait on
+   `not_started` / `unavailable` / `failed` - each is already an answer and waiting on one
+   spends the whole deadline on every ordinary run (mutations 7 and 8).
 8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
    `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
-   directions, every bound quoted verbatim from its own row. BLOCKED on 8c-5: until the replay
-   client waits, every live arm it writes is the rolling surface and G-M4-1 / G-M4-2 would be
-   scored against the wrong transcript.
+   directions, every bound quoted verbatim from its own row. UNBLOCKED by iteration 28: the live
+   arm a driver writes is now the terminal surface, and its `summary.json` says so
+   (`finalization_status: final`), so the scorer can refuse a pass that is not one instead of
+   assuming. NEXT, and the lowest open item. Two things it must dispose of, both already
+   measured, neither new: `lex_javier_milei` loses speaker quality when it converges to file
+   (DER `.117333 -> .151833`), and `lex_adam_frank`'s rolling text BEATS file (`.122411` vs
+   `.126177`), so `terminal == file` misses G-M4-3/G-M4-4 there by `.003766` / `.001883`. Both
+   are the D-M4-2 pattern: the convergence bound and a no-regression bound cannot both hold where
+   file mode is the worse arm. The disposition is an owner decision recorded in the exit bundle,
+   not a moved bound.
 9. **M5 evidence + records** per PRD.
 
 ## Non-candidates

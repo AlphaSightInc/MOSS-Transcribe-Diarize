@@ -2707,3 +2707,108 @@ appended at the iteration 4->5 boundary]
   snapshot and drain the events, so all three paired drivers inherit it. Then 8d, the M4 exit.
   Do NOT make `stop` synchronous instead; plan §12.3 M2 and iteration 26's mutation M2 both refuse
   it. Do not restate the gates; they are fixed in PREREGISTRATION-M4.md.
+
+## iteration 28 - M4 step 3e, the instrument waits for the meeting's last word
+- Focus: candidate 8c-5, the blocker iteration 27's deploy uncovered (F1). The paired drivers
+  could not see the terminal surface, so every M4 exit number would silently have been a
+  ROLLING number. SHIPPED: nine gates pass, nine defective clients each caught by their own
+  gate, and on the DEPLOYED service the driver's own live arm became the terminal surface -
+  WER .096000 -> .088000, which IS the paired file arm's .088000. No driver was edited.
+- Target: context.md candidate 8c-5, the lowest open item. Plan §12.3 (terminal pass behind
+  the stop response), §7.3 (`finalization_status`), PRD M4.
+- NO service restart: this change is client-side only. The running deployment is still
+  iteration 27's (pid 65689, source_revision 29681e04…, combined_config_hash 431efb3f…).
+  Real MOSS traffic this iteration: one warm-up decode + one 60 s live replay + one file job
+  (the paired pass); nothing else. 4070 Ti untouched.
+- Files touched:
+  moss_transcribe_diarize/live_service_replay.py   (`_await_terminal_finalization`;
+      `ServiceReplayFinalizationTimeout` exit 8; `TERMINAL_FINALIZATION_DEADLINE_SECONDS` 300.0
+      / `_POLL_SECONDS` 0.5 / `_SETTLED`; `finalization_deadline` parameter +
+      `--finalization-deadline`; `terminal_finalization_wait` trace record; summary
+      `finalization_status` + `finalization_waited`; manifest `cli.finalization_deadline`)
+  tests/test_live_service_replay.py                (`ReplayTerminalFinalizationWaitTest`, six T2
+      tests + `TerminalScriptedClock` / `_run_terminal_replay` / `_one_trace_record` helpers;
+      the E4 runtime fixture is imported from tests/test_live_terminal_lifecycle.py, not restated)
+  prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py  (new; nine
+      gates + `--selftest` with nine mutant clients, in-process, no file mutation)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                        (index + section)
+  evidence/live-convergence-0824/M4-replay-wait/{NOTES.md,gates.json,console.txt,selftest.txt,
+      pass/,pass-console.log,warmup.log,inertness.txt,file-mode-{hash.txt,worktree.json},
+      pytest-{targeted,full}.txt,sha256.txt}                                        (new bundle, 264K)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - verify_replay_terminal_wait.py -> exit 0, nine gates PASS (G-W1 the stop response already
+    names the meeting; G-W2 F1 REPRODUCED - the pre-wait client publishes the rolling surface
+    and stops reading at terminal_finalization_started; G-W3 the shipped client publishes the
+    terminal surface; G-W4 the four §7.4 events reach the trace after session_closed in order;
+    G-W5 a no-terminal deployment is not waited on and its run is otherwise the pre-wait
+    client's; G-W6 `unavailable` is an answer, not a wait; G-W7 a pass that never answers fails
+    by name; G-W8 the deadline is the caller's and every artifact names it; G-W9 all three
+    paired drivers inherit it unedited). Stable across three consecutive runs.
+  - verify_replay_terminal_wait.py --selftest -> exit 0; nine mutant clients (no wait at all /
+    `running` counts as settled / reports the stop snapshot / never re-reads the stream /
+    swallows the timeout / spends its own deadline / `not_started` unsettled / `unavailable`
+    unsettled / always claims it waited), each caught by its own gate.
+  - DEPLOYED pass, lex_javier_milei, warm decoder, unchanged service:
+      arm                        WER       TBSA      DER       spk_acc   segments
+      file                       .088000   .881244   .151833   .848167   20
+      live BEFORE (iteration 27) .096000   .906296   .117333   .882667   14
+      live AFTER  (this pass)    .088000   .881244   .151833   .848167   20
+    wait record: stop_finalization_status `running` -> `final`, 4 polls, 2.055 s, deadline
+    300.0 s; summary `finalization_status: final`, `finalization_waited: true`; events after
+    session_closed exactly [terminal_finalization_started, text_revision_applied,
+    terminal_finalization_completed, session_tape_released]; terminal snapshot 20 segments,
+    every authority `terminal`, text_revision_version 7. The file arm reproduces iteration 27's
+    numbers exactly.
+  - .venv/bin/python -m pytest tests/ -q -> 1147 passed, 2 skipped, 396 subtests (1141 before).
+    Targeted (replay + terminal lifecycle + terminal finalizer): 58 passed.
+  - remeasure_one_case.py --selftest -> 0 failures; the three drivers are still the checked-in
+    shape and none of them learned a keyword.
+  - six shared instruments: five reproduce their checked-in artifacts field for field;
+    verify_runtime_rolling.py still differs at exactly `deployed_configuration` (iteration 27's
+    max_tape_bytes). No new drift.
+  - file-mode decoder A/B: ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -
+    unmoved across thirteen production changes now.
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-replay-wait/sha256.txt -> all OK.
+- WHAT THIS MEASUREMENT IS, AND WHAT IT IS NOT. It is the instrument being repaired, not a
+  milestone being scored: one case, one pass, and its only claim is that a paired driver now
+  reports the surface the meeting ended on. G-M4-1 / G-M4-2's per-case bounds are scored over
+  five cases at 8d.
+- THREE FINDINGS.
+  F1 THE FIX HAD TO GO WHERE THE DRIVERS ALREADY MEET. Three paired drivers, one client. Putting
+     the wait in the client meant none of them changed, which is what keeps
+     `remeasure_one_case.py --selftest`'s checked-in-shape comparison a real check rather than a
+     record of what we last edited. G-W9 is that claim as a gate: the drivers call the client and
+     none declares a deadline of its own.
+  F2 A TIMEOUT MUST BE FATAL, OR IT IS F1 AGAIN. The tempting version writes the artifacts and
+     notes the timeout in them - and then the rolling surface sits in `live-hypothesis.jsonl`
+     under a run whose filenames all say it completed, and every future scorer has to know to
+     look. `ServiceReplayFinalizationTimeout` (exit 8) makes "this run has no terminal
+     measurement" unmissable. Mutation 5 is exactly the tempting version, and G-W7 kills it.
+  F3 THE POSITIONAL TRACE DIFFER COULD NOT ANSWER "DID ANYTHING ELSE MOVE?". Iteration 5's
+     `probe_replay_trace_shape_identity.py` compares two traces record by record and stops at
+     "trace lengths differ: 41 vs 42" the moment a record is inserted. G-W5 answers the same
+     question in the terms that survive an insertion - record kinds, event kinds, published
+     surface, and the summary fields a scorer reads - and it also demands those be identical
+     between two shipped runs, so the comparison cannot pass by being too coarse. Event ORDER in
+     this fixture is genuine run-to-run noise (the canonical pump batches whatever is ready),
+     which is why the comparison is multiset-based and says so.
+- Learned:
+  - Deploying found the defect (iteration 27); using the instrument the way a milestone will use
+    it is what proved the repair. The in-memory gates say the client waits; only the pass against
+    the real service says the driver's own `results.json` now carries `.088000`.
+  - When mutants are installed by patching a module attribute, bind the original at import.
+    The first `--selftest` run had five mutants calling `R._await_terminal_finalization`, which
+    the patch had already replaced by them - infinite recursion, and every gate "reacted" to
+    every mutation. The tell was the reaction table: overlap that broad is a broken harness, not
+    a well-connected system.
+  - The same pass that proves convergence also prices it: terminal IS file, so on
+    `lex_javier_milei` DER goes .117333 -> .151833. Converging is not the same as improving, and
+    the M4 exit has to say which one it is gating.
+- Next: candidate 8d, the M4 exit - score the 14 preregistered gates on a fresh paired pass of
+  all five cases, gate ids parsed out of `PREREGISTRATION-M4.md` in both directions. The scorer
+  should refuse a live arm whose `summary.json` does not say `finalization_status: final` rather
+  than assume one. Two dispositions are waiting for it, both already measured: `lex_javier_milei`
+  loses speaker quality on convergence, and `lex_adam_frank`'s rolling text beats file. Do NOT
+  move a bound to fix either; both are the D-M4-2 pattern and belong in the exit bundle as an
+  owner decision.

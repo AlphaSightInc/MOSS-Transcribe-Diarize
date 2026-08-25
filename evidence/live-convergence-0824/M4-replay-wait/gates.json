@@ -1,0 +1,167 @@
+{
+  "gates": [
+    {
+      "id": "G-W1",
+      "claim": "the stop response already names which meeting this is, and the run records it",
+      "passed": true,
+      "detail": {
+        "landed": "running",
+        "none": "not_started",
+        "unavailable": "unavailable"
+      }
+    },
+    {
+      "id": "G-W2",
+      "claim": "F1 reproduced: the pre-wait client publishes the rolling surface and stops reading at terminal_finalization_started",
+      "passed": true,
+      "detail": {
+        "finalization_status": "running",
+        "authorities": [
+          "rolling"
+        ],
+        "last_event": [
+          "terminal_finalization_started"
+        ]
+      }
+    },
+    {
+      "id": "G-W3",
+      "claim": "the shipped client publishes the terminal surface instead",
+      "passed": true,
+      "detail": {
+        "finalization_status": "final",
+        "authorities": [
+          "terminal"
+        ],
+        "words_before": [
+          "rolling",
+          "0"
+        ],
+        "words_after": [
+          "the",
+          "whole",
+          "meeting"
+        ],
+        "summary_status": "final"
+      }
+    },
+    {
+      "id": "G-W4",
+      "claim": "the four events that made that surface reach the trace, after session_closed, in order",
+      "passed": true,
+      "detail": {
+        "after_session_closed": [
+          "terminal_finalization_started",
+          "text_revision_applied",
+          "terminal_finalization_completed",
+          "session_tape_released"
+        ],
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "G-W5",
+      "claim": "a deployment that runs no terminal pass is not waited on, and its run is otherwise the pre-wait client's",
+      "passed": true,
+      "detail": {
+        "waited": false,
+        "polls": 0,
+        "differs_from_pre_wait_client": [],
+        "differs_between_two_shipped_runs": []
+      }
+    },
+    {
+      "id": "G-W6",
+      "claim": "a pass that ends without a surface is an answer, not a wait",
+      "passed": true,
+      "detail": {
+        "waited": false,
+        "summary": {
+          "status": "succeeded",
+          "finalization_status": "unavailable"
+        },
+        "failure": null
+      }
+    },
+    {
+      "id": "G-W7",
+      "claim": "a pass that never answers fails the run by name rather than publishing the rolling surface as complete",
+      "passed": true,
+      "detail": {
+        "failure": {
+          "type": "ServiceReplayFinalizationTimeout",
+          "message": "terminal finalization was still 'running' after 12.500s (deadline 12.500s); the run observed the rolling surface only and has no terminal measurement to report.",
+          "exit_code": 8,
+          "failure_kind": "finalization_timeout"
+        },
+        "summary": {
+          "status": "failed",
+          "failure_kind": "finalization_timeout"
+        },
+        "wait_record": false
+      }
+    },
+    {
+      "id": "G-W8",
+      "claim": "the deadline is the caller's, and every artifact names the one that was spent",
+      "passed": true,
+      "detail": {
+        "manifest": 12.5,
+        "wait_record": 12.5,
+        "timeout_message": "terminal finalization was still 'running' after 12.500s (deadline 12.500s); the run observed the rolling surface only and has no terminal measurement to report."
+      }
+    },
+    {
+      "id": "G-W9",
+      "claim": "all three paired drivers inherit the wait unedited: each calls the shared client and none of them declares a deadline of its own",
+      "passed": true,
+      "detail": {
+        "prototypes/live-file-gap-baseline-20260824/remeasure_live_vs_file.py": {
+          "calls": 1,
+          "keywords": [
+            "audio_path",
+            "expect_config_hash",
+            "expect_provider_hash",
+            "expect_revision",
+            "max_pacing_lag",
+            "out_dir",
+            "pace",
+            "runs",
+            "service"
+          ]
+        },
+        "prototypes/live-file-gap-baseline-20260824/remeasure_5m_case.py": {
+          "calls": 1,
+          "keywords": [
+            "audio_path",
+            "expect_config_hash",
+            "expect_provider_hash",
+            "expect_revision",
+            "max_pacing_lag",
+            "out_dir",
+            "pace",
+            "runs",
+            "service"
+          ]
+        },
+        "prototypes/streaming-diarization/live-convergence/remeasure_one_case.py": {
+          "calls": 1,
+          "keywords": [
+            "audio_path",
+            "expect_config_hash",
+            "expect_provider_hash",
+            "expect_revision",
+            "out_dir",
+            "service"
+          ]
+        }
+      }
+    }
+  ],
+  "passed": true
+}
