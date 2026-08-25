@@ -1,0 +1,24 @@
+The refused terminal proposal, read off the file arm it reproduces.
+Case lex_adam_frank, 180 s, terminal window plan [0,150) + [120,180).
+
+run A: 38 segments, 0.00-179.52 s
+  OVERLAP at segment 26: [131.19,136.29] then [133.95,136.62] -- the later segment starts 2.34 s before the earlier one ends
+run B: 38 segments, 0.00-179.52 s
+  OVERLAP at segment 26: [131.19,136.29] then [133.95,136.62] -- the later segment starts 2.34 s before the earlier one ends
+
+The live session refuses a text revision whose segments overlap (`segments_out_of_order`, live_session.py `segment.start_sample < previous_end`), so the terminal pass decoded the whole meeting, reproduced the file arm's 38 segments and 1507 generated tokens, and could not publish them.
+
+How common is it? Every file arm in this batch, scanned for the same defect.
+
+  acquired_jamie_dimon/A      60 s  ~1 window(s)   17 segments  0 overlapping pair(s)
+  acquired_jamie_dimon/B      60 s  ~1 window(s)   17 segments  0 overlapping pair(s)
+  keyu-5m/A                  300 s  ~3 window(s)   67 segments  0 overlapping pair(s)
+  keyu-5m/B                  300 s  ~3 window(s)   67 segments  0 overlapping pair(s)
+  lex_adam_frank/A           180 s  ~2 window(s)   38 segments  1 overlapping pair(s)  first at [131.19,136.29]/[133.95,136.62]
+  lex_adam_frank/B           180 s  ~2 window(s)   38 segments  1 overlapping pair(s)  first at [131.19,136.29]/[133.95,136.62]
+  lex_bill_ackman/A           60 s  ~1 window(s)   18 segments  0 overlapping pair(s)
+  lex_bill_ackman/B           60 s  ~1 window(s)   18 segments  0 overlapping pair(s)
+  lex_javier_milei/A          60 s  ~1 window(s)   20 segments  0 overlapping pair(s)
+  lex_javier_milei/B          60 s  ~1 window(s)   20 segments  0 overlapping pair(s)
+  lex_keyu_jin/A              60 s  ~1 window(s)   10 segments  0 overlapping pair(s)
+  lex_keyu_jin/B              60 s  ~1 window(s)   10 segments  0 overlapping pair(s)

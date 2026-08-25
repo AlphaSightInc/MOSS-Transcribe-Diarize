@@ -33,7 +33,9 @@
     the four §7.3 snapshot fields, and the label projection
     (`_project_canonical_speaker` / `_base_segments` / `_build_effective_transcript`). Anything
     that changes what a reader is shown must bump `_surface_version`, or the effective-surface
-    cache goes stale.
+    cache goes stale. **`_text_revision_refusal` is now load-bearing for E4** (iteration 29): its
+    `segment.start_sample < previous_end -> segments_out_of_order` rule is what refuses a terminal
+    proposal that reproduces file mode's own overlapping seam, and candidate 8e is that collision.
   - `app/live_transcript_convergence.py` — the two longer listeners. **M2, shipped iteration 11**:
     the rolling converger — four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the
     selected 10/10 geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
@@ -82,10 +84,14 @@
 
 ## Current state
 
-(2026-08-25, after iteration 23)
+(2026-08-25, after iteration 29)
 
-- Deployed dev stack up: `web_cli` **pid 65689, restarted 2026-08-25 09:37:10 onto the E4
-  build** (repo HEAD `29681e0` + iteration 27's working tree) at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 86813, restarted 2026-08-25 10:14:58 local /
+  14:15:08Z** onto the SAME E4 build and manifest (repo HEAD `29681e0` + iteration 27's working
+  tree; iteration 27's process was pid 65689). That restart is iteration 29's and it changed
+  NOTHING - the descriptor is identical field for field either side
+  (`evidence/.../M4-e4-exit/passes/restart-{pre,post}.json`); its only purpose was G-M4-8's clock,
+  which defines cold as the first terminal pass in a fresh process at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
   4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after every
   restart (`evidence/.../M0d-paired-reacquisition/`, `.../M1-e1-exit/`, `.../M2-e2-exit/`
@@ -974,11 +980,37 @@
   documented rolling-ring high-water readings, the portal's documented poll-observation sequence,
   and Python set-repr ordering inside a rejected arm's message - whose gate ids are compared
   anyway).
-- Rest of the ladder (M4 step 3d deploy, the M4 exit, M5) unimplemented; working tree carries the
-  plan, evidence prototypes, and this scaffold. The deployed `web_cli` is still pid 44278 on the M2
-  build, which is NO LONGER the current production tree (iterations 24-26 shipped code), so every
-  deployed meeting still reads `not_started`; 8c-4 owes the wiring, the manifest declaration and the
-  restart together.
+- **M4 IS SCORED (iteration 29): 11 of 14 gates pass, and the three misses are ONE refusal on ONE
+  case.** `verify_m4_exit.py` over a fresh batch of all five gated cases (10 scored sessions, two
+  runs each, `14:15:20Z -> 14:41:57Z`), evidence `evidence/live-convergence-0824/M4-e4-exit/`.
+  - **Terminal IS the paired file arm on four of five cases, both runs, delta `0.000000` on WER,
+    DER, speaker accuracy and coverage** - P1 held rather than a bound being cleared. Trio mean WER
+    `.131357 -> .103946`, five-minute `.082079 -> .050616` (P2). Trio mean DER `.111278 -> .102111`,
+    trio mean speaker accuracy `.888722 -> .897889` (P4), with `lex_javier_milei` paying D-M4-2's
+    price exactly as predicted (`.117333 -> .151833`).
+  - **`lex_adam_frank` (180 s, the only two-window meeting) decoded the whole tape, reproduced the
+    file arm's 38 segments and 1507 tokens, and was REFUSED publication `segments_out_of_order`.**
+    File mode's own windows `[0,150)` + `[120,180)` publish `[131.19,136.29]` then `[133.95,136.62]`
+    - a 2.34 s overlap at the seam - and `LiveSession._text_revision_refusal` forbids overlapping
+    segments. G-M4-2 / G-M4-6 / G-M4-9 fail on that case and nowhere else. One overlapping pair in
+    all 12 file arms of the batch (`M4-e4-exit/three-minute-seam.txt`).
+  - **The failure path behaved as E4 promised**, so the batch is also the first DEPLOYED instance of
+    G-M4-7: `finalization_status=failed`, the rolling surface survived and exported (`.122411`), the
+    tape was released after the evidence, the refusal is on the stream by name, accounting exact.
+  - **That case's gate set is unsatisfiable either way** - rolling misses G-M4-2 by `.026667`,
+    terminal-==-file would miss G-M4-3 by `.003766` (TWO words of 526) and G-M4-4 by `.001883`
+    (one word) while buying `.026667` DER, `+.026667` speaker accuracy and `+.024238` coverage.
+    D-M4-2's arithmetic on a second case; an owner ruling, not a bound.
+  - Green on all 10 sessions: tape fidelity (digest == corpus PCM, zero gaps), accepted ==
+    accounted == terminal accounted, retention (peak `accepted x 2`, max `9 600 000`, released after
+    the evidence, zero survive), combined RTF max `.167161` with depth <= 1 and the terminal pass
+    starting one seq after `session_closed`, file mode byte-identical both readings (`ad381d8b...`
+    unmoved across fourteen production changes), and no meeting word on any terminal event.
+  - **Cold vs warm readiness (G-M4-8)**: cold terminal decode `2.182 s` (RTF `.036372`), warm RTF
+    p50 `.035081` / p95 `.038011` over 9 sessions. P8 is FALSIFIED in its premise - there is no
+    local model to load, so cold sits inside the warm distribution.
+- Rest of the ladder: M5 (evidence + records) unimplemented, and the seam refusal above is an open
+  defect with no fix attempted yet.
 
 ## Validation
 
@@ -1175,6 +1207,23 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # 21 reactions: each gate pushed past its own bound, plus the disposition and gate-set contracts
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --selftest
+# M4 EXIT: score the 14 preregistered gates on a fresh batch of all five cases
+# (the batch needs the RUNNING service, ~27 min; restart the service FIRST if a cold
+#  readiness reading is wanted -- G-M4-8's clock is "the first terminal pass in a fresh process")
+prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m4-exit-<stamp>
+prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-exit-<stamp> \
+  adam3m lex_adam_frank \
+  prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank
+mkdir /tmp/m4-exit-<stamp>/three-minute && \
+  mv /tmp/m4-exit-<stamp>/adam3m-{A,B} /tmp/m4-exit-<stamp>/three-minute/
+# the gates themselves (no GPU, no service, no MOSS request; works on the checked-in copy too)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --output /tmp/m4-gates.json
+# 14 reactions, each from a fixture in which the refused pass published
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --selftest
 # M4 step 1: what must a terminal pass land on, and what does converging to file cost?
 # (no GPU, no service; prints ALREADY INSIDE for gates today's surface already satisfies,
 #  and MISSING COMPARATOR for lex_adam_frank)
@@ -1368,19 +1417,34 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    `remeasure_one_case.py --selftest`'s checked-in-shape comparison meaningful. Do NOT wait on
    `not_started` / `unavailable` / `failed` - each is already an answer and waiting on one
    spends the whole deadline on every ordinary run (mutations 7 and 8).
-8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
-   `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
-   directions, every bound quoted verbatim from its own row. UNBLOCKED by iteration 28: the live
-   arm a driver writes is now the terminal surface, and its `summary.json` says so
-   (`finalization_status: final`), so the scorer can refuse a pass that is not one instead of
-   assuming. NEXT, and the lowest open item. Two things it must dispose of, both already
-   measured, neither new: `lex_javier_milei` loses speaker quality when it converges to file
-   (DER `.117333 -> .151833`), and `lex_adam_frank`'s rolling text BEATS file (`.122411` vs
-   `.126177`), so `terminal == file` misses G-M4-3/G-M4-4 there by `.003766` / `.001883`. Both
-   are the D-M4-2 pattern: the convergence bound and a no-regression bound cannot both hold where
-   file mode is the worse arm. The disposition is an owner decision recorded in the exit bundle,
-   not a moved bound.
-9. **M5 evidence + records** per PRD.
+8d. ~~**M4 exit: score the 14 gates**~~ - MEASURED iteration 29, **11 of 14 pass**.
+   `verify_m4_exit.py` (+ `--selftest`, 14 reactions from a converged fixture), verdict in
+   `evidence/live-convergence-0824/M4-e4-exit/`. Terminal IS the paired file arm on four of five
+   cases at `0.000000`; the three failures are ONE refused publication on `lex_adam_frank`
+   (candidate 8e). Do NOT re-run the batch hoping the refusal goes away: both runs refuse at the
+   same seam, on the same pair, and the file arm that causes it is byte-identical to iteration
+   23's. Do NOT move G-M4-2/3/4 for that case - it is unsatisfiable in both directions and the
+   disposition is an owner ruling recorded in the bundle. Do NOT read G-M4-1's pass on that case
+   as convergence: it is R2's "already inside", a ROLLING arm sitting `.003766` from file. Do NOT
+   re-derive the readiness clock: the batch's own `console/runner.log` is the one UTC clock every
+   pass script writes, and the driver stamps disagree (the 5-minute driver writes none).
+8e. **The seam refusal**: a terminal pass can reproduce the paired file arm exactly and be refused
+   `segments_out_of_order`, because file mode's own multi-window output may overlap at a seam
+   (`lex_adam_frank`: `[131.19,136.29]` then `[133.95,136.62]`, 2.34 s) and
+   `LiveSession._text_revision_refusal` forbids overlapping segments. **NEXT, and the lowest open
+   item**, because three M4 gates and one case's whole terminal surface hang on it. Prototype first
+   and MEASURE, per AGENTS.md: (O1) make the proposal admissible by resolving the overlap in the
+   finalizer - the campaign has never authorized inventing timestamps (plan §3.4's extent trap), so
+   any resolution must be measured on WER/DER/coverage/v2 against the file arm it claims to
+   reproduce; (O2) let the surface hold overlapping segments, which changes what every reader and
+   the DER scorer sees; (O3) leave it refused, which is today's behaviour and costs that meeting its
+   terminal surface. Re-score the M4 gates on a fresh batch only after a fix lands, and expect that
+   case to then fail G-M4-3/G-M4-4 instead - that is 8d's owner ruling, not a reason to choose O3.
+   The 5-minute case has THREE windows and no overlap, so this is data-dependent, not structural:
+   a fix cannot be validated on a corpus of one.
+9. **M5 evidence + records** per PRD - the campaign report, the §18 annotations and the
+   `docs/design-streaming-diarization.md` §7 verdict entry. Writable for M0-M4 as they stand;
+   the M4 row is UNSIGNED and must carry 8e's disposition beside its 11 passing gates.
 
 ## Non-candidates
 

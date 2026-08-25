@@ -27,6 +27,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` | does the RUNTIME give a meeting its last listener without taking the meeting away first (plan §12.3, D-M4-3)? | **yes** — the stop request returns `running` with zero terminal decodes issued, the surface a reader polls stays the rolling one for the whole interval, the pass then publishes the file arm's surface to `1e-12`, and the tape is released *after* the terminal evidence; a failed pass says `failed` and keeps the rolling surface, a deployment with no tape says `unavailable` with a reason; `evidence/live-convergence-0824/M4-terminal-lifecycle/` |
 | `verify_deployed_terminal.py` | did the E4 build reach the DEPLOYED service, and does a real meeting get a terminal pass there? | **yes** — `bounds.max_tape_bytes=9600000` on the wire, the pass starts after `POST /stop` has already answered, decodes 960 000 samples in `1.918 s` through file mode's own runner, and publishes the file arm's transcript word for word (WER `.096000 → .088000` = file's `.088000`); nine gates, nine reactions; `evidence/live-convergence-0824/M4-deployed-terminal/` |
 | `verify_replay_terminal_wait.py` | does the MEASURING CLIENT see the surface the meeting ended on, or the one it left (F1 of the deploy)? | **it does now** — after the stop response the client polls until `finalization_status` leaves `running` (`2.055 s`, 4 polls, 300 s deadline on the deployed 60 s case) and reports the terminal snapshot: the paired driver's own live arm moved WER `.096000 → .088000` = the file arm's, with no driver edited; nine gates, nine reactions; `evidence/live-convergence-0824/M4-replay-wait/` |
+| `verify_m4_exit.py` | do the 14 preregistered M4 gates hold on a fresh paired batch of all five cases? | **11 of 14** — terminal *is* the paired file arm to `0.000000` on four cases (trio mean WER `.131357 → .103946`, five-minute `.082079 → .050616`), and on `lex_adam_frank` the pass reproduced the file arm's 38 segments and was refused publication `segments_out_of_order`, because file mode's own two windows overlap at their seam; the three failures are that one refusal; `evidence/live-convergence-0824/M4-e4-exit/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -776,4 +777,49 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # nine defective clients, each caught by its own gate
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_replay_terminal_wait.py --selftest
+```
+
+## `verify_m4_exit.py` — iteration 29, the M4 exit: score the gates on five cases
+
+**Question.** `PREREGISTRATION-M4.md` fixed 14 gates before any terminal finalizer existed.
+Iterations 24–28 built and deployed one. Does a fresh paired batch of all five gated cases meet
+them?
+
+**Answer: 11 of 14, and the three misses are one defect on one case.** On the trio and the
+five-minute case the terminal surface is the paired file arm exactly — `0.000000` on WER, DER,
+speaker accuracy and coverage, both runs — which is prediction P1 holding rather than a bound
+being cleared. On `lex_adam_frank` (180 s, the only two-window meeting) the pass decoded the
+whole tape, produced the file arm's own 38 segments and 1507 tokens, and the session refused the
+revision `segments_out_of_order`: file mode's windows `[0, 150)` and `[120, 180)` publish
+`[131.19, 136.29]` followed by `[133.95, 136.62]`, and a live surface may not hold overlapping
+segments. So that meeting kept its rolling surface — correctly, and with the failure named on
+the event stream — and G-M4-2 / G-M4-6 / G-M4-9 fail on it.
+
+The gate set is unsatisfiable on that case either way, which is the disposition the bundle
+records rather than a bound it moves:
+
+| surface published | G-M4-1 `.010` | G-M4-2 `.020` | G-M4-3 WER ≤ rolling | G-M4-4 v2 ≥ rolling |
+|---|---|---|---|---|
+| rolling (what happened) | pass `.003766` | **fail `.026667`** | pass | pass |
+| terminal `==` file (had it published) | pass `0.000000` | pass `0.000000` | **fail `.003766`** | **fail `.001883`** |
+
+Two words of 526 against `.026667` DER — D-M4-2's arithmetic on a second case.
+
+The driver reuses the bench rather than rebuilding it: `measure_m4_baseline.measure` supplies
+every quality axis, `verify_m2_exit.read_session` every queue and accounting quantity, and
+`verify_terminal_lifecycle.py` is run fresh for the failure arm no healthy pass can show. Its
+`--selftest` first repairs the refused pass into a converged fixture, requires that fixture to
+pass all 14, and only then pushes each gate past its own bound — a gate that was already failing
+cannot demonstrate that it reacts.
+
+```bash
+# the gates, against the checked-in batch (no GPU, no service, no MOSS request)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --output /tmp/m4-gates.json
+
+# 14 reactions from the converged fixture
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m4_exit.py \
+  --fresh-root evidence/live-convergence-0824/M4-e4-exit/passes --selftest
 ```
