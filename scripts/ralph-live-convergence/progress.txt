@@ -102,3 +102,26 @@ the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).
   still blocks on restarting web_cli onto the campaign branch; do that before M0d, not before M0c.
 
 [loop 20260825-030106-23237] stopped before iteration 3
+
+2026-08-25 pre-relaunch - OWNER-DIRECTED PRE-M1 SETUP AMENDMENT (not an iteration; loop
+stopped; M0a+M0b closed, no affected milestone started, so gates were still amendable).
+Six audited gaps between prd.md/plan-Appendix-B and the plan body were closed so the loop
+cannot hit a false PRD-vs-plan conflict STOP or under-gate a milestone:
+- Plan Appendix B B.3 gains the G4 rescope row (the deleted 1 s preview had orphaned G4's
+  comparator): M3 speaker gates = trio mean DER <= .1393, no per-case DER regression vs
+  baseline live (bill .2235 / milei .1945 / keyu .1112), trio mean speaker_accuracy >= .8437,
+  5-min-case DER <= .0947; derivation half-gap + identity ceiling
+  (prototypes/live-file-gap-identity/NOTES.md); evaluator-v2 + score_live_speaker_accuracy
+  both still reported.
+- prd.md M1 += §9.1 O1-vs-O2 gating comparison; parse->render->parse fixed point per salvaged
+  span; identity prep receives only salvager-emitted intervals.
+- prd.md M2 += §10.5 step-7 export-switch discipline; 5-minute soak (Appendix B rescope of
+  30-min); headless portal render/serialization test named as the in-loop substitute for the
+  attended browser E2E (morning item).
+- prd.md M3 += §11.2 WeSpeaker real-time budget (base + rolling + WeSpeaker RTF < 1 under
+  rescoped single-session G7, G6 green, queue bounds intact).
+- prd.md M4 += terminal DER within .020 absolute of paired file arm per case (G8's spirit for
+  the speaker surface; §12.3 step 5) and §12.2 cold/warm model-readiness reporting.
+- context.md candidates 5/8 annotated to carry the new work items; no other steering change.
+Recorded per docs/handoffs/handoff-8YIE4C.md step 1; adversarial review + commit follow
+before relaunch.

@@ -1422,6 +1422,7 @@ file mode. Latency/browser/scale certification beyond what quality work needs is
 | Plan clause | Override |
 |---|---|
 | All corpora | **No test audio may exceed 5 minutes.** Allowed: the 1-minute trio, `calibration_diarization_3min/lex_adam_frank`, `benchmark_5m/lex_keyu_jin` (plus other fully-referenced ≤5-min cases if needed). The 30/60-minute matrix (§12.2 rows 3–5) is deferred to a later campaign |
+| G4 | **Rescoped** (recorded 2026-08-25 pre-M1: deleting the one-second preview orphaned G4's comparator, "corrected 1 s within 2 points of corrected 2.5 s"). Replacement M3 speaker gates: trio mean DER `<= .1393` with no per-case DER regression vs baseline live (bill `.2235` / milei `.1945` / keyu `.1112`); trio mean `speaker_accuracy >= .8437`; 5-minute-case DER `<= .0947`. Derivation: half-gap recovery toward the paired file arm (trio live `.1764` → file `.1021`; 5-min live `.1315` → file `.0579`) plus the measured identity ceiling (`prototypes/live-file-gap-identity/NOTES.md`). §1.3's G4 reporting requirement carries over: evaluator v2's matched-word speaker accuracy and `score_live_speaker_accuracy` both reported |
 | G5 | Not applicable (no one-second candidate) |
 | G7 | Rescoped: **one** live session must sustain real time with rolling enabled (combined RTF < 1, bounded queues, no dropped canonical commits). Two-session stress deferred |
 | §10.6 / E2 soak | 30-minute soak → **5-minute soak** (the longest allowed corpus) |

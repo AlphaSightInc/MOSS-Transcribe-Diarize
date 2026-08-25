@@ -1,56 +1,68 @@
-# Cross-review brief — live-mode convergence implementation plan
+# Brief — adversarial review of the ralph-live-convergence campaign setup (pre-relaunch)
 
-## User request (their words, condensed)
+## The user's request (binding, from docs/handoffs/handoff-8YIE4C.md)
 
-"Review codex's analysis and his assessment on your findings … independently verify and
-validate his findings and hypothesis using /diagnose and /prototype — thoroughly scrutinize
-and adversarial review his proposed plan docs/plans/live-mode-convergence-implementation-20260824.md.
-Please make necessary changes and updates to the plan so that it's fully implementation ready
-to a junior developer." This xreview session continues that: converge the plan document itself.
+> 1. Thoroughly update the ralph loop afk.
+> 2. Then use adversarial review to review and finalize the ralph loop afk.
 
-## Goal
+The named skill `/codex:adversarial-review` is not installed; the handoff explicitly
+sanctions this xreview session as the equivalent. After this session converges, the
+amendment is committed and the loop relaunches in tmux MOSS:2.1 with a 40-iteration
+budget. So this review is the last gate before an unattended overnight campaign —
+severity should be judged on "what would make the loop stall, STOP falsely, or pass a
+milestone it should not".
 
-`docs/plans/live-mode-convergence-implementation-20260824.md` is the deliverable. It must be
-implementation-ready for a junior developer: every claim true and sourced, every phase
-executable from the document alone (exact seams, commands, corpora, gates, baselines), and the
-review-gate/authorization structure intact (§18 — the plan authorizes review and throwaway
-prototypes only until signed).
+## What just changed (the amendment set under review)
 
-## Document history both reviewers must respect
+State: the loop is STOPPED (clean, run 20260825-030106-23237). M0a and M0b are CLOSED
+and committed; the ladder resumes at M0c. No affected milestone (M1–M4) has started, so
+amending their gates now is legitimate; M0 gates were NOT touched.
 
-- Authored by Codex 2026-08-24 19:19 (sections 0–19, D1–D10, G1–G10, E0–E4, T1–T6, R1–R10,
-  Q1–Q10).
-- Second pass by Claude ~20:30 same day, after independent verification with /diagnose and
-  /prototype. Changes: header verification note; §3.3 expanded (confirmed replay-adapter root
-  cause, server `asdict` field-completeness, blast radius incl. the 5-minute cadence-sweep
-  correction); new §3.5 verification record (V1–V5); §13 premise rewritten; §16 sweep-cadence
-  bullet rescoped; exact seam anchors added to M1/M3/M5/M7, A0.1/A0.2, E1; gate operational
-  definitions under §1.3; lexical stitcher pinned as E2 reference arm (§10.2); Q4 extended;
-  Appendix A (runbook, code map, corpora, bench commands, definition of done).
+Six owner-directed pre-M1 amendments were just applied (full rationale in the new
+progress.txt entry dated 2026-08-25 pre-relaunch):
 
-## Settled by evidence — do not re-litigate without NEW on-disk evidence
+1. Plan Appendix B §B.3 gained a **G4 rescope row** (file:
+   `docs/plans/live-mode-convergence-implementation-20260824.md`, NOT in your edit
+   targets — verify by reading; flag corrections in your round file for me to apply).
+   Reason: Appendix B deleted the 1 s preview, which orphaned G4's comparator
+   ("corrected 1 s within 2 points of corrected 2.5 s"); without the row, PRD M3 vs
+   plan G4 is a false conflict and the PRD's own constraint ("if PRD and plan conflict
+   anywhere else, STOP") would stop the campaign at M3.
+2. prd.md M1 += §9.1 O1-vs-O2 gating comparison; §9.2 parse→render→parse fixed point;
+   §9.2 "identity prep receives only salvager-emitted intervals".
+3. prd.md M2 += §10.5 step-7 export-switch discipline; 5-minute soak (Appendix B's
+   rescope of the 30-min soak); headless portal render/serialization test named as the
+   in-loop substitute for the attended browser E2E (a morning-review item).
+4. prd.md M3 += §11.2 WeSpeaker real-time budget (combined base + rolling + WeSpeaker
+   RTF < 1 under rescoped single-session G7, G6 green, queue bounds intact).
+5. prd.md M4 += terminal DER within .020 absolute of the paired file arm per case
+   (mirrors G8's spirit; §12.3 step 5 resolves terminal identities but M4 gated only
+   WER) and §12.2 cold/warm model-readiness reporting.
+6. progress.txt: append-only amendment entry; context.md candidates 5/8 annotated
+   (light touch only).
 
-1. **F7 / replay adapter (Codex was right, Claude's first read corrected):**
-   `_live_snapshot_from_dict`/`_commit_from_dict` drop revision fields; server side is
-   `asdict`-complete; the 5-minute run's cadence sweep applied 2 label revisions
-   (`identity_finalized` event). Reproducer exits 1: `prototypes/live-file-roadmap-verification/verify_replay_roundtrip.py`.
-2. **LiveTranscribe "five-phase / 20-view Jamie" (Claude's greps refute, twice):** no such
-   experiment exists in /Users/gao/Desktop/AI_Projects/LiveTranscribe on HEAD or
-   origin/prod-hardening-0531. §13's corrected premise stands unless a reviewer cites a real
-   file path proving otherwise; the phase's conclusion (uncertainty-routed only) is unaffected.
-3. Measured numbers in §3.1 (F1–F12) are triple-corroborated where shared (deployed baseline,
-   live-file-gap-context bench, live-multiview-prototype); the `.129–.146` rolling range is a
-   real stitcher difference, both truth-blind.
+## Review scope
 
-## Hard constraints
+- **Fidelity axis**: the campaign setup files (your edit targets: prd.md, context.md)
+  against `docs/plans/live-mode-convergence-implementation-20260824.md` **with Appendix
+  B overriding the body** — is every Appendix B decision and every plan gate the loop
+  must satisfy encoded, correctly numbered, and free of contradictions that would
+  trigger the PRD's conflict-STOP rule? Are the amendment numbers right (derivations:
+  half-gap recovery from `prototypes/live-file-gap-baseline-20260824/` numbers; identity
+  ceiling from `prototypes/live-file-gap-identity/NOTES.md`)?
+- **Craft axis**: against the ralph template's anti-drift rules
+  (`~/Desktop/AI_Projects/AAgent/0.templates/ralph-loop-afk`, esp. its README/prompt.md):
+  prd.md stays an acceptance bar (not a procedure dump), context.md readable in one
+  sitting with a ranked candidate list, journal append-only, no gate weakening, no
+  instance-specific hardcoding beyond the domain contract.
 
-- Plan mode: edit ONLY the target document. Experiments go to scratch space.
-- Keep the review-gate structure: nothing may convert this document into an implementation
-  authorization; §17/§18 stay.
-- Repo norms (AGENTS.md): numbers over adjectives; no defensive scaffolding, feature-flag
-  frameworks, or corner-case obsession; pyramid style; expand jargon; keep reference codes
-  (D/G/E/T/R/Q/V) stable.
-- Junior-developer bar: a reader with repo access but no conversation context must be able to
-  execute E0 end-to-end tomorrow. If a section fails that test, fix the section.
-- Convergence: rank findings by impact, verify before asserting, CONFIRMED is a legitimate
-  outcome.
+## Hard constraints on edits
+
+- Edit targets only: `scripts/ralph-live-convergence/prd.md`,
+  `scripts/ralph-live-convergence/context.md`. Anything wrong elsewhere (plan Appendix
+  B row, progress.txt entry) → record in the round file; I apply it on my turn.
+- progress.txt is append-only history; never rewrite it.
+- Do NOT weaken or tune any gate number; closed milestones (M0a, M0b) are immutable.
+- Appendix B overrides the plan body everywhere they differ.
+- The loop relaunches immediately after convergence — prefer the smallest edit set
+  that makes the setup safe to run unattended.

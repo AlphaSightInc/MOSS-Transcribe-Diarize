@@ -118,11 +118,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    Validate: byte-identical file arms; hash-identical fresh live pairs; 5-min revisions visible.
 5. **M1 salvage**: port `prototypes/live-file-gap-emptyspan/` P1v policy into
    `classify_live_transcript` per plan M1 seams; table-driven tests from `out/d3.json`.
-6. **M2 grid** (`compare_rolling_grid.py` per plan §10.3, starting from
-   `proto_context_arms.py`'s lexical stitcher) → then production per plan §10.5 order.
+   Amended PRD adds: run the §9.1 O1-vs-O2 comparison first (prefer O1 on a full-corpus
+   match); fixed-point + salvager-emitted-intervals-only checks are part of the gate.
+6. **M2 ADR then grid**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
+   (Appendix B Q8); then run `compare_rolling_grid.py` per plan §10.3, starting from
+   `proto_context_arms.py`'s lexical stitcher; then production per plan §10.5 order.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
-8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min.
+8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed
+   prerelease amendment also gates terminal DER within .020 of the paired file arm per case and
+   requires §12.2 cold/warm model-readiness reporting).
 9. **M5 evidence + records** per PRD.
 
 ## Non-candidates

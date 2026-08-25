@@ -1,32 +1,27 @@
 # XReview Session Summary
 
-- Session: xr-20260824-201035
+- Session: xr-20260825-001533
 - Mode: plan
-- Targets: docs/plans/live-mode-convergence-implementation-20260824.md
+- Targets: scripts/ralph-live-convergence/prd.md scripts/ralph-live-convergence/context.md
 - Verify: none
 - Status: completed
-- Rounds: 4/6
-- Started: 2026-08-24 20:10:35 EDT
-- Updated: 2026-08-24 20:31:34 EDT
+- Rounds: 3/6
+- Started: 2026-08-25 00:15:33 EDT
+- Updated: 2026-08-25 00:25:43 EDT
 
 ## Rounds
 
 ### Round 1 — Codex (CHANGES_MADE)
-- 2026-08-24 20:18:53 EDT · rounds/round-01-codex.md
+- 2026-08-25 00:21:53 EDT · rounds/round-01-codex.md
 
-Corrected a material cross-host verification error: LiveTranscribe's dual-ASR and five-phase evidence exists on m4mbp, but its own 20-view result argues against blanket phase VAD. Also fixed G5/G6 latency clocks and denominators, stale gate references, per-phase authorization, and undefined baseline run noise; Claude has been triggered to re-review.
+Closed four execution-contract gaps: ADR-first M2 ordering, explicit hard-gate versus transient-blocker semantics with phase preauthorization, the executable nine-clip test path, and honest gate provenance. Numeric gates were checked against committed baseline and identity JSON; target Markdown passes diff-check. Claude is triggered for independent review.
 
 ### Round 2 — Claude Code (CHANGES_MADE)
-- 2026-08-24 20:21:47 EDT · rounds/round-02-claude.md
+- 2026-08-25 00:24:54 EDT · rounds/round-02-claude.md
 
-Re-verified all Codex round-1 corrections first-hand: every m4mbp LiveTranscribe citation confirmed over SSH (five-phase OSF and 20-view Jamie evidence is real; my earlier refutation was true only of a stale local clone), G5/G6 clock functions confirmed in lane code, D10/section-18 ledger and baseline determinism contract confirmed sound. Fixed one factual error Codex introduced: the local LiveTranscribe path exists (stale clone ending 2026-06-12), not nonexistent - V4 row and header now say so, so local greppers are not misled. No blocking items remain from my side.
+Corrected round-1's finding-3 premise (tests/live_identity_accuracy.py EXISTS - it is the harness module the pytest floor imports; the plan is not stale) while keeping the edit, and added one M3 parenthetical so the two names cannot read as a PRD-vs-plan conflict. Independently verified all 24 referenced paths resolve, ran the 9-clip floor green (3 passed, 2.57s), and traced .1885/.190, ADR-first, hard-gate semantics, M4 DER authority, and the G4-rescope numbers to their sources. No other changes needed.
 
-### Round 3 — Codex (CHANGES_MADE)
-- 2026-08-24 20:29:58 EDT · rounds/round-03-codex.md
+### Round 3 — Codex (CONFIRMED)
+- 2026-08-25 00:25:43 EDT · rounds/round-03-codex.md
 
-Corrected Claude's stale-clone cutoff and a G5 denominator/implementation mismatch. Added missing executable prototype contracts for E3/E4/optional multi-view, bounded compute/memory/concurrency semantics, and a no-majority-vote rule grounded in the 4-of-5 failure evidence; Claude has been triggered to re-review.
-
-### Round 4 — Claude Code (CONFIRMED)
-- 2026-08-24 20:31:34 EDT · rounds/round-04-claude.md
-
-All five Codex round-3 findings verified first-hand and confirmed: exact local-clone state, G5 denominator matched to the real lane code, executable E3/E4/multi-view contracts over existing corpora, a coherent and enforceable 2xW rolling-PCM bound with the G7 orchestration contract, and the voting guard the m4mbp evidence demands. No new defects found; no edits this round. The plan is implementation-ready for a junior developer and properly review-gated - session complete.
+Confirmed Claude's correction: the plan-named identity file is the production-path replay harness, while the PRD now correctly names its runnable pytest floor; all three tests pass. No further target changes are needed, and the campaign PRD/context are implementation-ready for relaunch.

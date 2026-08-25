@@ -43,13 +43,13 @@ The owner's grand plan below is binding — follow it exactly and in order.
 - Campaign ran 1 full iteration (run `20260825-030106-23237`, opus agents): **M0a CLOSED** —
   replay reconstructors fixed (3 dropped fields, incl. `live_protocol` the analysis missed),
   tripwire test added, evidence in `evidence/live-convergence-0824/M0a-replay-roundtrip/`.
-- **`.stop` was touched mid-iteration-2** (M0b, typed disposition). The engine exits at the
-  iteration boundary. FIRST ACTION: confirm the loop is stopped — `.lock` dir absent in
-  `scripts/ralph-live-convergence/`, a `[loop 20260825-030106-23237] stop` (or similar) marker
-  at the end of `progress.txt`, and no `ralph-afk.sh` in `ps`. If iteration 2 committed work,
-  read its journal entry + telemetry log before amending; if it was killed uncommitted, the
-  tree may carry its partial work — inspect `git status` and either keep coherent work or
-  revert, and say which in your commit message.
+- **The loop is STOPPED — confirmed clean** (2026-08-25 ~00:55 EDT): engine exited 0
+  "stopped before iteration 3", lock released, journal marker written, worktree clean.
+  Iteration 2 completed and committed **M0b** (typed decode disposition reaches the trace —
+  commits `1842782` + checkpoint `bac8e7c`; log:
+  `scripts/ralph-live-convergence/telemetry/run-20260825-030106-23237/iter-002.log`).
+  So **M0a and M0b are CLOSED**; the ladder resumes at M0c (evaluator v2), and the loop's own
+  journal notes: restart `web_cli` onto the campaign branch before M0d (not before M0c).
 - Remove `.stop` only right before relaunching (step 4).
 
 ## Step 1 — the amendment set (audited gaps; this list exists ONLY here)

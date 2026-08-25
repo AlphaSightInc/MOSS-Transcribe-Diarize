@@ -1,83 +1,48 @@
 # Round 1 — Codex
 
-## Scope reviewed
+Reviewed the two campaign targets for fidelity to
+`docs/plans/live-mode-convergence-implementation-20260824.md`, especially Appendix B, and for
+craft against the Ralph AFK template. I also checked the baseline result JSON, identity-lever
+result JSON, empty-span verdict, current prompt/template, corpus paths, and executable test names.
 
-Plan-mode review of the sole target,
-`docs/plans/live-mode-convergence-implementation-20260824.md`, on fidelity to the brief and on
-technical craft. I edited no production code, tests, prototype code, or non-target project
-document. There was no configured `VERIFY_CMD`.
+## Findings and changes
 
-## Findings and evidence
-
-### F1 — The brief and target's LiveTranscribe refutation searched the wrong machine
-
-**Material; corrected.** `/Users/gao/Desktop/AI_Projects/LiveTranscribe` does not exist on
-MacStudio because the sibling project lives on `ga0@m4mbp` at
-`/Users/ga0/Desktop/AI_Projects/LiveTranscribe`. Read-only SSH verification at HEAD
-`6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70` found:
-
-- `RefinedLiveOverlayProductionWorkProvider.swift:320-360`: chunked-ASR candidate plus
-  whole-file-ASR witness;
-- `RefinedLiveOSFPartitionSelection.swift:166`: required view count 5;
-- `RefinedLiveOSFProductionRequestBuilder.swift:197-213`: five phase offsets;
-- `docs/adr/0029-refined-live-overlay-display-authority.md:316-323`: five matched A/B pairs,
-  measured WER/TBSA/latency results;
-- `docs/evidence/overlap-stability-perturbation-0806/REPORT.md:31-32`: all 20 live Jamie views
-  merged the handoff and phase-VAD alone was insufficient.
-
-The evidence exists, but its correct implication still supports the plan: dual-ASR overlay is a
-different, display-only stack, while the five-phase result is negative for blanket VAD views.
-Use overlapping MOSS witnesses as uncertainty evidence and prototype any extra work only on
-disagreement regions.
-
-### F2 — G5/G6 used the wrong clock and no denominator
-
-**Material; corrected.** The target said both gates started when the request's last sample became
-eligible. The actual prototype uses:
-
-- first-word age: publication minus the first spoken-word audio start
-  (`lane_current.py::_first_publication`,
-  `lane_rolling_terminal.py::_first_publication_latency`);
-- correction age: changed witness publication minus the provisional publication it replaces
-  (`lane_rolling_terminal.py::_provisional_to_correction_latencies`).
-
-The plan now makes G5 p95 over every non-empty provisional span in the primary trio and G6 p95
-over every changed rolling-owned region. Eligibility-to-decode and browser-to-paint remain
-separate diagnostics.
-
-### F3 — Review gates had stale section references and no per-phase signoff surface
-
-**Moderate; corrected.** D10 pointed to §§15/16 instead of §§17/18. Appendix A required each
-phase's §18 row to be signed, but §18 had no phase rows. The references now resolve, and §18 has
-an E0–E4 plus optional-multiview ledger. Initial authorization permits only its named phase.
-
-### F4 — Baseline reacquisition allowed undefined “run noise”
-
-**Moderate; corrected.** The plan now requires two same-provenance fresh runs, exact transcript
-hash and metric agreement, and an explicit stop/provenance diagnosis if live differs from the
-checked-in baseline. It no longer hides an unbounded difference behind “noise.” Partial
-`acquired_*` references are explicitly diagnostic-only and cannot enter promotion aggregates.
-
-## Changes made
-
-- Corrected the header, V4 verification record, and §13 LiveTranscribe premise and transfer
-  limits.
-- Defined G5/G6 clocks and denominators from the implementation used by the measured prototype.
-- Fixed D10 references; added the per-phase review/owner ledger required by Appendix A.
-- Made baseline repeatability deterministic and promotion denominators explicit.
+1. **High — M2 could close without the accepted ADR.** Appendix B Q8 requires the first E2 step
+   to write the text-finalization ADR from D1-D7 verbatim, but neither M2 acceptance nor the M2
+   candidate required it. Added ADR-first ordering to `prd.md` and `context.md`.
+2. **High — hard-gate stopping was ambiguous.** The PRD said both that a hard gate creates
+   `.stop` and that a blocker never stops the loop and may be routed around. Distinguished an
+   ordinary external/transient blocker from an exhausted HARD gate, and encoded Appendix B §18's
+   phase preauthorization so the loop neither waits for intermediate signatures nor routes around
+   a failed gate.
+3. **Medium — M3 named a nonexistent test.** Replaced `tests/live_identity_accuracy.py` with
+   `tests/test_live_identity_real_corpus.py`. Collection confirms its three tests include the
+   exact-nine-hash-pinned-clips acceptance check.
+4. **Medium — gate provenance could itself trigger a false conflict.** The PRD claimed every
+   number came from the plan, but M1 `.190` comes from the measured P1v `.1885` projection and
+   M4 DER `.020` is an owner-directed prerelease amendment. Corrected the provenance statement,
+   named both sources, and annotated M4 the same way in context.
+5. **Low — “184 saved spans” was operationally misleading.** Only part of the corpus is stored as
+   WAVs; plan §9.2 defines the total as saved WAVs plus simulator-reproduced spans. Reworded M1 to
+   preserve the 184-span gate while identifying how to reproduce it.
 
 ## Verification
 
-- Plan structure: 1,314 lines, 21 unique H2 headings, balanced Markdown fences — PASS.
-- Stale false-premise/noise/reference strings absent — PASS.
-- Live deployed runbook endpoints during review: `127.0.0.1:18000/v1/models` and
-  `https://127.0.0.1:7861/api/runtime` both answered — PASS.
-- Remote LiveTranscribe source/evidence paths listed in F1 — PASS via read-only SSH.
-- No full benchmark was rerun; V1–V3/V5 and measured quality values remain accepted from the
-  prior pass and checked-in evidence, not newly measured in this round.
+No controller `VERIFY_CMD` was configured. Targeted read-only verification:
 
-## Open review work
+- `git diff --check -- scripts/ralph-live-convergence/prd.md scripts/ralph-live-convergence/context.md`
+  — PASS.
+- `.venv/bin/python -m pytest tests/test_live_identity_real_corpus.py --collect-only -q`
+  — PASS, 3 tests collected.
+- Checked exact baselines in the committed JSON: trio live WER `.261364/.144/.194245`, DER
+  `.2235/.1945/.111167`; 5-minute live/file WER `.146375/.050616`, DER `.131533/.057933`.
+  The PRD's rounded baselines and half-gap gates are correct.
+- Checked `C1adopt+C2b` mean speaker accuracy from the identity result: `.843666...`, correctly
+  rounded to the `.8437` gate.
+- Current campaign `prompt.md` is byte-identical to the Ralph template prompt.
 
-Claude should adversarially check this correction, especially the transfer boundary between RLO,
-OSF, and joint-MOSS rolling witnesses. Owner decisions Q1–Q10 and all authorization rows remain
-open; the plan still authorizes prototypes/review only.
+## Open review question
+
+None. Claude should independently verify that the added ADR-first and hard-gate language is the
+smallest faithful encoding of Appendix B, and that naming the owner-directed M4 DER gate resolves
+rather than expands the PRD/plan authority boundary.
