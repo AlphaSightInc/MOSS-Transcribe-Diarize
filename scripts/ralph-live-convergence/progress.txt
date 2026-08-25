@@ -2030,3 +2030,110 @@ appended at the iteration 4->5 boundary]
   has never been run through the live path in this campaign, so its comparator has to be acquired
   before it can gate anything; finalization_status has producers only for `final`; complete-tape
   retention is Appendix B Q10 and refines ADR-0003, so its record belongs there, not in a new ADR.
+
+2026-08-25 iteration 22 (run 20260825-042645-70858) - M4 (plan E4) STEP 1: the terminal comparator
+  is preregistered. 14 gates, 3 preconditions, 3 decisions, 8 predictions, 4 risks - all fixed
+  before any terminal finalizer exists. No production file was touched.
+- Target: context.md candidate 8 (M4, the lowest unmet milestone), step 1 on the M2/M3 pattern:
+  AGENTS.md wants a preregistration + a measured comparator BEFORE production code.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M4.md   (new)
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py  (new; GPU-free
+      comparator table from the checked-in M2-exit passes, --selftest)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                (index + section)
+  evidence/live-convergence-0824/M4-preregistration/{NOTES.md,m4-baseline.json,console.txt,
+      selftest.txt,pytest-full.txt,sha256.txt}                              (new bundle, 48K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart (none needed - no production change). ZERO MOSS requests. 4070 Ti untouched.
+- Validation:
+  - measure_m4_baseline.py --output <bundle>/m4-baseline.json -> exit 0
+      case              arm    WER       DER       spk_acc   cov       v2_recall  v2_word_spk
+      lex_bill_ackman   file   .159091   .075500   .924500   .952215   .931818    .931818
+      lex_bill_ackman   live   .204545   .127333   .872667   .916587   .926136    .920455
+      lex_javier_milei  file   .088000   .151833   .848167   .870992   .920000    .920000
+      lex_javier_milei  live   .096000   .117333   .882667   .907061   .920000    .920000
+      lex_keyu_jin      file   .064748   .079000   .921000   .936387  1.000000   1.000000
+      lex_keyu_jin      live   .093525   .089167   .910833   .925500   .985612    .985612
+      keyu-5m           file   .050616   .057933   .942067   .952109   .972640    .972640
+      keyu-5m           live   .082079   .088600   .911400   .918924   .957592    .954856
+      lex_adam_frank    -- NO LIVE PASS IN THIS CAMPAIGN
+      trio mean file .103946 / .102111 / .897889   trio mean live .131357 / .111278 / .888722
+      runs_agree True on all four cases; file_arm_stable_since_precampaign True on all four;
+      accepted == accounted True on all four.
+  - measure_m4_baseline.py --selftest -> 0 failures (distance inside / outside / exactly at a
+    tolerance; a satisfiable vs an unsatisfiable no-regression gate on both directions of
+    "better"; the 150/120 window plan at 60 / 180 / 300 s read from production constants; the
+    tape budget; a missing summary returning None rather than zero; the v2 direction table).
+  - .venv/bin/python -m pytest tests/ -q -> 1091 passed, 2 skipped, 392 subtests (unchanged).
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-preregistration/sha256.txt -> 7/7 OK.
+- THE PRIZE, AND IT IS THE LARGEST TEXT MOVE LEFT ON THE LADDER. M4 is the only milestone gated
+  against a TARGET rather than a no-regression bound: plan G8 (terminal WER within .010 of the
+  paired file arm) plus the owner prerelease DER companion (.020). The comparator is the file arm
+  of the SAME pass and it is stable - identical to the pre-campaign file arm on all four scored
+  axes x all four cases with a pass, across eight production changes. Landing on it takes trio
+  mean WER .131357 -> .103946 and the five-minute case .082079 -> .050616.
+- THREE FINDINGS THAT HAD TO BE WRITTEN DOWN BEFORE ANY TERMINAL NUMBER EXISTED.
+  F1 Two of the ten convergence readings are ALREADY INSIDE their tolerance with the surface
+     shipped today: lex_javier_milei WER +.008000 (tol .010) and lex_keyu_jin DER +.010167 (tol
+     .020). A build that ships nothing passes those two gates. The instrument prints ALREADY
+     INSIDE on exactly those rows so the M4 verdict cannot quote them as achievements - M3's
+     honesty clause reached from the opposite direction.
+  F2 Converging to file REGRESSES lex_javier_milei, and a no-regression gate there is
+     arithmetically IMPOSSIBLE. The file arm is worse than the rolling surface by +.034500 DER,
+     -.034500 speaker accuracy and -.036069 coverage; each exceeds the convergence tolerance, so
+     every value the PRD bound admits (>= .131833 DER) is worse than what the deployment already
+     publishes (.117333). A campaign gate may only STRENGTHEN a PRD bound (PREREGISTRATION-M3 §1),
+     so these three are decision D-M4-2, not gates.
+  F3 The extent-free axes say four fifths of that regression is the metric, not the surface.
+     Evaluator v2 over VAD speech regions: terminal == file costs milei 0.000000 content recall,
+     0.000000 matched-word speaker accuracy and +.007255 speech-region DER, while GAINING .008
+     WER. Every other case improves on every v2 axis. D-M4-2 therefore accepts the deployed-metric
+     regression and requires all seven numbers published together, never the trio mean alone.
+- STRUCTURAL FACTS READ FROM PRODUCTION, NOT ASSERTED (plan_windows, WindowedRunner 150/120,
+  LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE): terminal plans 1 / 2 / 3 windows at 60 / 180 / 300 s,
+  so on the trio terminal is the SAME call file mode makes and "terminal == file" is an IDENTITY
+  there - which is why P1 predicts a delta of exactly 0.000000 on every case, not merely one
+  inside .010. Largest complete tape in scope: 9.155 MiB (9 600 000 B), against Appendix B Q10's
+  asserted <= ~10 MB.
+- DECISIONS, MADE BEFORE THE NUMBERS. D-M4-1 the tape lives in MEMORY: Q10 permits "memory or
+  disk", live_tape.py's disk store is opt-in behind a declared root with ADR-0003 D4's refusals,
+  the deployed service declares none, and turning it on would change the deployment posture every
+  gate in this campaign was measured against (ADR-0003 D2 is explicit about exactly that). Its
+  record refines ADR-0003 rather than opening a new ADR. D-M4-2 as above. D-M4-3 asynchronous
+  finalization with snapshot polling - plan §12.3's own recommendation, no new endpoint.
+- PRECONDITIONS, and the instrument names the first rather than hiding it. P-M4-A lex_adam_frank
+  (3 min) has NO live pass in this campaign, so M4 gates 3 of 5 cases until a paired pass is
+  acquired. P-M4-B no session retains a complete tape today (disk store off; the rolling ring is
+  bounded at 2 x window and released at RollingTranscriptConverger.stop). P-M4-C the three §7.4
+  terminal_finalization_* events and the running/failed/unavailable statuses have no producers.
+- RISKS RECORDED WITH THEIR HEADROOM. R1 G-M4-4 has ZERO slack on lex_javier_milei (v2 content
+  recall and matched-word speaker accuracy are .920000 on both arms, gate is >=) - deliberate, the
+  bound is the measurement, and a hairline miss is an owner decision rather than a re-run. R2 the
+  two ALREADY-INSIDE gates. R3 the deployed decoder is not a function (M0d): a nonzero G-M4-1
+  delta with a clean G-M4-0 is a decoder reading and must be reported as one. R4 any verdict
+  written before P-M4-A covers 3 cases and must say so in the same sentence.
+- Learned:
+  - A convergence gate can be satisfied by the status quo, and only arithmetic finds that out.
+    M0-M3 all gated "do not regress", where a no-op passes trivially and everyone knows it. M4
+    gates "reach the file arm", which SOUNDS like it cannot be passed by doing nothing - and two
+    of its ten readings already are. The check costs one subtraction per case per axis and it has
+    to happen before the pass exists, or the report banks two free passes.
+  - Preregistration is where you discover a gate you may not write. The obvious campaign
+    strengthening - "terminal must not regress any case's DER" - is provably incompatible with the
+    PRD's own convergence bound on lex_javier_milei. Finding that after a terminal number existed
+    would have looked like gate-shopping whichever way it was resolved; finding it first turns it
+    into a decision with the arithmetic attached.
+  - When two metrics disagree about the same surface, the one that cannot be moved by segment
+    extent is the tiebreaker, and it should be gated rather than reported. The deployed DER says
+    terminal==file costs milei .034500; evaluator v2 on speech regions says it costs .007255 and
+    that content recall and matched-word speaker accuracy do not move at all. G-M4-4 gates the v2
+    axes for that reason - D-M4-2 rests on them, and a number nobody may fail is not evidence.
+  - Read the geometry out of production and the milestone shrinks. plan_windows says the trio's
+    terminal pass is ONE window, i.e. literally the call file mode makes, so the trio's G8 is an
+    identity check rather than a quality question; the whole quality risk lives in the two multi-
+    window cases, one of which does not exist yet.
+- Next: candidate 8b, acquire the three-minute comparator (P-M4-A). lex_adam_frank needs a paired
+  driver of remeasure_5m_case.py's shape (180 s, 2 reference speakers, 8 reference segments,
+  16 kHz mono PCM16) run twice under run_paired_passes.sh's warm-decoder protocol against the
+  deployed service - real MOSS requests, ~7 min wall clock, no restart needed (the deployed build
+  is the current production tree). Then candidate 8c builds plan §12.3 to the preregistered gates.

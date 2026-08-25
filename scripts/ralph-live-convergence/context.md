@@ -728,9 +728,54 @@
   the tree (no speaker-encoder import in `live_transcript_convergence.py`, `moss_transcribe_diarize/`
   unchanged since the commit the deployed passes were taken from); the S1 bundle is hashed against
   its own `sha256.txt` before a number is read from it.
-- Rest of the ladder (M4-M5) unimplemented; working tree carries the plan, evidence prototypes, and
-  this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build (= the current production
-  tree), so M4's first deployed measurement needs no restart until M4 ships code.
+- **M4 STEP 1 DONE (iteration 22): the terminal comparator is preregistered.**
+  `PREREGISTRATION-M4.md` (3 preconditions, 3 decisions, **14 gates**, 8 predictions, 4 risks) +
+  `measure_m4_baseline.py` (GPU-free, reads the M2-exit passes), verdict in
+  `evidence/live-convergence-0824/M4-preregistration/`. No production file touched; suite unchanged
+  at 1091 / 2 / 392.
+- **M4 is the only milestone gated against a TARGET, and the target is stable.** Plan G8
+  (`terminal WER within .010 of the paired file arm`) + the owner prerelease DER companion (`.020`).
+  The comparator is the file arm of the SAME pass, and it is identical to the pre-campaign file arm
+  on all four scored axes x all four cases with a pass, across eight production changes. The prize:
+  trio mean WER `.131357 -> .103946`, five-minute `.082079 -> .050616`.
+- **Two of the ten convergence readings are ALREADY INSIDE their tolerance with today's surface**:
+  `lex_javier_milei` WER `+.008000` (tol `.010`) and `lex_keyu_jin` DER `+.010167` (tol `.020`).
+  A build that ships nothing passes those two. The instrument prints `ALREADY INSIDE` on exactly
+  those rows and the M4 verdict must repeat it - M3's honesty clause, reached from the other side.
+- **Converging to file REGRESSES `lex_javier_milei`, and a no-regression gate there is arithmetically
+  impossible**: file is worse than rolling by `+.034500` DER / `-.034500` speaker accuracy /
+  `-.036069` coverage, each beyond the convergence tolerance, so every value the PRD bound admits is
+  worse than what the deployment already publishes. A campaign gate may only strengthen a PRD bound,
+  so these are decision **D-M4-2**, not gates.
+- **The extent-free axes say four fifths of that regression is the metric.** Evaluator v2 over VAD
+  speech regions: terminal == file costs milei `0.000000` content recall, `0.000000` matched-word
+  speaker accuracy, `+.007255` speech-region DER, and *gains* `.008` WER. Every other case improves
+  on every v2 axis. D-M4-2 accepts the deployed-metric regression and requires all seven numbers
+  published together - never the trio mean alone.
+- **Structural facts read from production, not asserted** (`plan_windows`, `WindowedRunner` 150/120,
+  `LIVE_SAMPLE_RATE`, `PCM16_BYTES_PER_SAMPLE`): terminal plans **1 / 2 / 3** windows at 60 / 180 /
+  300 s, so on the trio terminal is the SAME call file mode makes (`terminal == file` is an identity
+  there, which is why P1 predicts a delta of exactly `0.000000`, not merely inside `.010`); the
+  largest complete tape in scope is **9.155 MiB** (Appendix B Q10 asserted `<= ~10 MB`).
+- **D-M4-1: the tape lives in memory.** Q10 permits "memory or disk". `live_tape.py`'s disk store is
+  opt-in behind a declared root with ADR-0003 D4's refusals, the deployed service declares none, and
+  turning it on would change the deployment posture every gate in this campaign was measured against
+  (ADR-0003 D2 is explicit). Its record is a refinement of ADR-0003, not a new ADR.
+  **D-M4-3: async finalization with snapshot polling** - plan §12.3's own recommendation; no new
+  endpoint.
+- **Three preconditions block M4 and the instrument names the first rather than hiding it.**
+  P-M4-A `lex_adam_frank` (3 min) has **no live pass in this campaign** -> M4 gates 3 of 5 cases
+  until acquired. P-M4-B no session retains a complete tape (disk store off; the rolling ring is
+  bounded at `2 x window` and released at `RollingTranscriptConverger.stop`). P-M4-C the three §7.4
+  `terminal_finalization_*` events and the `running`/`failed`/`unavailable` statuses have no
+  producers.
+- **R1, recorded before the numbers: G-M4-4 has ZERO headroom on `lex_javier_milei`** - its v2
+  content recall and matched-word speaker accuracy are `.920000` on both arms and the gate is `>=`.
+  Deliberate (the bound is the measurement); if it fires, the disposition is an owner decision with
+  the decoder-noise evidence, not a re-run.
+- Rest of the ladder (M4 build, M5) unimplemented; working tree carries the plan, evidence prototypes,
+  and this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build (= the current
+  production tree), so M4's first deployed measurement needs no restart until M4 ships code.
 
 ## Validation
 
@@ -884,6 +929,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # 21 reactions: each gate pushed past its own bound, plus the disposition and gate-set contracts
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_m3_disposition.py --selftest
+# M4 step 1: what must a terminal pass land on, and what does converging to file cost?
+# (no GPU, no service; prints ALREADY INSIDE for gates today's surface already satisfies,
+#  and MISSING COMPARATOR for lex_adam_frank)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --output /tmp/m4-baseline.json
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --selftest
 ```
 
 ## Candidates
@@ -981,19 +1033,30 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    and 27 % is plan §11.4's sub-floor microfragments. Neither is in this campaign's scope; both
    should be written into the §18 record so the next campaign starts from the decomposition
    rather than from the confusion total.
-8. **M4 terminal finalizer - NEXT, and it is the lowest unmet milestone.** Plan §12.3 + M4 gates on
-   trio / 3-min (`lex_adam_frank`) / 5-min (the owner-directed prerelease amendment also gates
-   terminal DER within .020 of the paired file arm per case and requires §12.2 cold/warm
-   model-readiness reporting). Same shape as M2: AGENTS.md wants a preregistration + a measured
-   prototype BEFORE production code, so step 1 is `PREREGISTRATION-M4.md` with the gates stated
-   against both the PRD bound and the paired file arm, and the comparators re-read from
-   `M2-e2-exit/passes/` rather than from the pre-campaign baseline (the same staleness §1 of
-   PREREGISTRATION-M3.md caught). Known inputs already measured and not to be re-derived:
-   terminal == file exactly on the trio (`live-file-gap-context`); `finalization_status` reaches
-   only `final` today and `running`/`failed`/`unavailable` have no producer (iteration 12);
-   complete-tape retention is Appendix B Q10 and refines ADR-0003, so its record belongs there;
-   the 3-minute case has never been run through the live path in this campaign, so its baseline
-   has to be acquired before it can be a comparator.
+8. ~~**M4 step 1: preregister the terminal comparator**~~ - DONE iteration 22.
+   `PREREGISTRATION-M4.md` + `measure_m4_baseline.py`, verdict in
+   `evidence/live-convergence-0824/M4-preregistration/`. Do NOT re-derive the bounds when a terminal
+   number arrives: G8 and the `.020` DER companion are the PRD's, the campaign gates are measured
+   values from `m4-baseline.json`, and the PRD forbids moving one after a number is seen. Do NOT add
+   a no-regression gate on `lex_javier_milei`'s DER / speaker accuracy / coverage - it is provably
+   unsatisfiable beside the convergence bound, which is why D-M4-2 exists.
+8b. **M4 step 2: acquire the three-minute comparator (P-M4-A) - NEXT, and it is the lowest open
+   item.** `lex_adam_frank` has never run through the live path in this campaign, so 2 of M4's 5
+   gated cases have no comparator and no gate can be scored on it. It needs a paired driver of
+   `remeasure_5m_case.py`'s shape pointed at
+   `calibration_diarization_3min/samples/lex_adam_frank` (180 s, 2 reference speakers, 8 reference
+   segments, 16 kHz mono PCM16), run twice under `run_paired_passes.sh`'s warm-decoder protocol
+   against the deployed service. Costs real MOSS requests and ~7 min of wall clock; needs no
+   restart (the deployed build is the current production tree). Fold the result into
+   `measure_m4_baseline.py` (the case is already in `m4_cases()`, reported as `MISSING`) and into
+   `cases.json` once it has checked-in hypotheses.
+8c. **M4 step 3: build plan §12.3.** Complete in-memory tape (D-M4-1) + async lifecycle (D-M4-3) +
+   terminal pass through the existing 150/120 `WindowedRunner` + the three §7.4 events + the
+   `already_finalized` single-replacement rule that `live_session.py:777` already names. Gates and
+   predictions are fixed in `PREREGISTRATION-M4.md`; do not restate them.
+8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
+   `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
+   directions, every bound quoted verbatim from its own row.
 9. **M5 evidence + records** per PRD.
 
 ## Non-candidates

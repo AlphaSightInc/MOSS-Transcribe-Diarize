@@ -20,6 +20,7 @@ imported by `moss_transcribe_diarize/`.
 | `measure_m3_baseline.py` + `PREREGISTRATION-M3.md` | how much of the deployed DER can a speaker authority even reach, and what must M3 not regress? | at most `.016445` trio DER (`.005900` on the five-minute case); comparators restated against the M2 exit — `evidence/live-convergence-0824/M3-preregistration/` |
 | `compare_speaker_authority.py` + `mutate_speaker_authority.sh` | plan §11.1: does a witness-owned speaker authority (S1) beat the deployed projection (S0)? | **no — a tie to 6 dp on every gated axis**, Δ DER `0.000000`; the remaining confusion is segment extents, not voice identity; `evidence/live-convergence-0824/M3-s1-prototype/` |
 | `verify_m3_disposition.py` | do the 14 preregistered M3 gates pass, and does the "ship nothing" decision hold against the tree? | **14/14 pass and nothing ships** — every gate is a no-regression gate, so read them with the delta; `evidence/live-convergence-0824/M3-disposition/` |
+| `measure_m4_baseline.py` + `PREREGISTRATION-M4.md` | what must a terminal pass land on, and what does converging to the file arm cost? | trio mean WER `.131357 → .103946` is the prize; **two convergence gates are already satisfied by a build that ships nothing**, and on `lex_javier_milei` a no-regression gate is arithmetically impossible beside the PRD bound; `evidence/live-convergence-0824/M4-preregistration/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -423,3 +424,56 @@ Two gates pass for reasons worth stating, both in the bundle NOTES §4: G-M3-8 (
 increase") passes on `lex_bill_ackman` because S1 trades an honest abstention for a confident
 wrong name, which the gate cannot see; G-M3-11 passes only because nothing shipped — the number
 *is* the M2 exit's own already-unsigned p95.
+
+
+## `measure_m4_baseline.py` + `PREREGISTRATION-M4.md` — iteration 22, M4 step 1: the terminal comparator
+
+```bash
+# the comparator table M4's gates are written against (no GPU, no service, ~20 s)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py \
+  --output /tmp/m4-baseline.json
+
+# every derived quantity pushed until it reacts
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --selftest
+```
+
+M4 is the only milestone in this campaign gated against a **target** rather than a no-regression
+bound: plan G8 (`terminal WER within .010 of the paired file arm`) plus the owner-directed
+prerelease DER companion (`.020`). The comparator is the file arm of the *same pass*, and it is
+stable — identical to the pre-campaign file arm on all four scored axes and all four cases with a
+pass, across eight production changes. If terminal lands on it, trio mean WER goes
+`.131357 → .103946` and the five-minute case `.082079 → .050616`.
+
+Three things had to be written down before any terminal number existed:
+
+**Two of the ten convergence readings are already satisfied by the surface shipped today.**
+`lex_javier_milei` WER sits `+.008000` from its file arm against a `.010` tolerance;
+`lex_keyu_jin` DER sits `+.010167` against `.020`. Those two gates cannot demonstrate that a
+terminal pass did anything, and the instrument prints `ALREADY INSIDE` on exactly those rows.
+
+**Converging to file is a regression on one case, and a no-regression gate there is
+arithmetically impossible.** On `lex_javier_milei` the file arm is worse than the rolling surface
+by `+.034500` DER, `-.034500` speaker accuracy and `-.036069` coverage — each beyond the
+convergence tolerance, so every value the PRD bound admits is worse than what the deployment
+already publishes. A campaign gate may only *strengthen* a PRD bound, so these are recorded as
+decision D-M4-2, not as gates.
+
+**The extent-free axes say four fifths of that regression is the metric, not the surface.**
+Evaluator v2 over VAD speech regions: terminal == file costs that case `0.000000` content recall,
+`0.000000` matched-word speaker accuracy and `+.007255` speech-region DER, while gaining `.008`
+WER. Every other case improves on every v2 axis. That is why D-M4-2 accepts the deployed-metric
+regression and requires all seven numbers published together — never the trio mean alone.
+
+Structural facts read from production (`plan_windows`, `WindowedRunner` 150/120,
+`LIVE_SAMPLE_RATE`, `PCM16_BYTES_PER_SAMPLE`): the terminal pass plans **1 / 2 / 3** windows at
+60 / 180 / 300 s, so on the trio it is the *same call* file mode makes and `terminal == file` is
+an identity there; and the largest complete tape in scope is **9.155 MiB**, which is what makes
+D-M4-1 (the tape lives in memory, not on `live_tape.py`'s opt-in disk store) safe — enabling the
+disk store would change the deployment posture every gate in this campaign was measured against.
+
+Three preconditions block the milestone, and the instrument names rather than hides the first:
+`lex_adam_frank` (3 min) has **no live pass in this campaign**, so M4 gates 3 of 5 cases until it
+is acquired; no session retains a complete tape today; and the three §7.4 terminal events plus the
+`running`/`failed`/`unavailable` finalization statuses have no producers.
