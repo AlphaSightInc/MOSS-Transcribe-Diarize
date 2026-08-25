@@ -1,0 +1,50 @@
+== post-restart service ==
+  PID STARTED                      COMMAND
+82706 Tue Aug 25 00:43:48 2026     .venv/bin/python -m moss_transcribe_diarize.app.web_cli --backend vllm --model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-base-url http://127.0.0.1:18000/v1 --vllm
+
+== post-restart descriptor ==
+{
+ "live_descriptor": {
+  "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b",
+  "provider_name": "moss-rtx-webrtc-wespeaker",
+  "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+  "provider_manifest_hash": "4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f",
+  "config_hashes": {
+   "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+   "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+   "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+   "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+  },
+  "bounds": {
+   "max_frame_samples": 16000,
+   "max_queue_depth": 16,
+   "max_retained_samples": 960000,
+   "max_identity_speakers": 16,
+   "max_events": 1000,
+   "hard_cap_samples": 40000,
+   "stop_drain_deadline_seconds": 5.0
+  },
+  "schema_version": 1,
+  "live_protocol_version": "moss-live-service.v1",
+  "live_protocol": {
+   "protocol": "moss-live-service.v2",
+   "min_protocol_version": 2,
+   "max_protocol_version": 2,
+   "capabilities": {
+    "lanes": true,
+    "binary": false,
+    "idempotent_frames": true,
+    "resumable": true
+   }
+  },
+  "sample_rate": 16000,
+  "frame_samples": 8000,
+  "feature_enabled": true
+ },
+ "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+ "windowing": {
+  "window_seconds": 150,
+  "stride_seconds": 120
+ },
+ "decoding": "greedy"
+}
