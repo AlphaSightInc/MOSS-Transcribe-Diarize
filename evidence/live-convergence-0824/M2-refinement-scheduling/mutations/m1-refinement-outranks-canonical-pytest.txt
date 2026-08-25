@@ -1,0 +1,52 @@
+FF........................                                               [100%]
+=================================== FAILURES ===================================
+_________ test_refinement_runs_after_canonical_and_before_provisional __________
+
+    def test_refinement_runs_after_canonical_and_before_provisional():
+        arbiter = _arbiter()
+    
+        arbiter.submit_live_provisional(coalesce_key="session-a", payload="provisional")
+        arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="refinement")
+        arbiter.submit_live_canonical(key="session-a:span-1", payload="canonical")
+        arbiter.submit_batch(key="job-a", payload="batch")
+    
+        order = [
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+        ]
+    
+>       assert order == ["batch", "canonical", "refinement", "provisional"]
+E       AssertionError: assert ['batch', 're...'provisional'] == ['batch', 'ca...'provisional']
+E         
+E         At index 1 diff: 'refinement' != 'canonical'
+E         Use -v to get more diff
+
+tests/test_live_arbiter_refinement.py:34: AssertionError
+_________ test_refinement_never_delays_canonical_work_queued_after_it __________
+
+    def test_refinement_never_delays_canonical_work_queued_after_it():
+        # Plan §10.6: rolling must not delay unresolved short canonical work. The witness is
+        # already queued when a 2.5 s span arrives; the span still goes first.
+        arbiter = _arbiter()
+    
+        arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="refinement")
+        arbiter.submit_live_canonical(key="session-a:span-1", payload="canonical-1")
+        arbiter.submit_live_canonical(key="session-a:span-2", payload="canonical-2")
+    
+>       assert [arbiter.next_work().payload for _ in range(3)] == [
+            "canonical-1",
+            "canonical-2",
+            "refinement",
+        ]
+E       AssertionError: assert ['refinement'...'canonical-2'] == ['canonical-1... 'refinement']
+E         
+E         At index 0 diff: 'refinement' != 'canonical-1'
+E         Use -v to get more diff
+
+tests/test_live_arbiter_refinement.py:47: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_arbiter_refinement.py::test_refinement_runs_after_canonical_and_before_provisional
+FAILED tests/test_live_arbiter_refinement.py::test_refinement_never_delays_canonical_work_queued_after_it
+2 failed, 24 passed in 2.17s

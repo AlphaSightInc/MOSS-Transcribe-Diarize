@@ -1,0 +1,29 @@
+F.........................                                               [100%]
+=================================== FAILURES ===================================
+_________ test_refinement_runs_after_canonical_and_before_provisional __________
+
+    def test_refinement_runs_after_canonical_and_before_provisional():
+        arbiter = _arbiter()
+    
+        arbiter.submit_live_provisional(coalesce_key="session-a", payload="provisional")
+        arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="refinement")
+        arbiter.submit_live_canonical(key="session-a:span-1", payload="canonical")
+        arbiter.submit_batch(key="job-a", payload="batch")
+    
+        order = [
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+            arbiter.next_work().payload,
+        ]
+    
+>       assert order == ["batch", "canonical", "refinement", "provisional"]
+E       AssertionError: assert ['batch', 'ca... 'refinement'] == ['batch', 'ca...'provisional']
+E         
+E         At index 2 diff: 'provisional' != 'refinement'
+E         Use -v to get more diff
+
+tests/test_live_arbiter_refinement.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_arbiter_refinement.py::test_refinement_runs_after_canonical_and_before_provisional
+1 failed, 25 passed in 2.17s

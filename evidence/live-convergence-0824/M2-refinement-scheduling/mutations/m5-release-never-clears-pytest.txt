@@ -1,0 +1,40 @@
+....F.F...................                                               [100%]
+=================================== FAILURES ===================================
+____________ test_releasing_the_running_witness_admits_the_next_one ____________
+
+    def test_releasing_the_running_witness_admits_the_next_one():
+        arbiter = _arbiter()
+    
+        admitted = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        arbiter.next_work()
+    
+        assert arbiter.release_live_refinement(item_id=admitted.item_id) is True
+>       assert arbiter.snapshot().live_refinement_running == 0
+E       assert 1 == 0
+E        +  where 1 = ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=1).live_refinement_running
+E        +    where ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=1) = snapshot()
+E        +      where snapshot = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x10b92e510>.snapshot
+
+tests/test_live_arbiter_refinement.py:91: AssertionError
+___ test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra ___
+
+    def test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra():
+        arbiter = _arbiter()
+    
+        first = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        arbiter.next_work()
+        arbiter.release_live_refinement(item_id=first.item_id)
+        second = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-4")
+        arbiter.next_work()
+    
+>       assert arbiter.release_live_refinement(item_id=first.item_id) is False
+E       assert True is False
+E        +  where True = release_live_refinement(item_id=0)
+E        +    where release_live_refinement = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x119d8dee0>.release_live_refinement
+E        +    and   0 = ArbiterAdmission(accepted=True, item_id=0, reason=None, replaced_item_id=None).item_id
+
+tests/test_live_arbiter_refinement.py:120: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_arbiter_refinement.py::test_releasing_the_running_witness_admits_the_next_one
+FAILED tests/test_live_arbiter_refinement.py::test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra
+2 failed, 24 passed in 2.21s

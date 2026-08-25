@@ -1,0 +1,20 @@
+lex_bill_ackman    wer=0.215909 (grid 0.198864) recall=0.909091 windows=[0] status=pcm_evicted
+lex_javier_milei   wer=0.136000 (grid 0.096000) recall=0.920000 windows=[0] status=pcm_evicted
+lex_keyu_jin       wer=0.179856 (grid 0.100719) recall=0.956835 windows=[0] status=pcm_evicted
+TRIO               wer=0.177255 (grid 0.131861) recall=0.928642 (grid 0.943916)
+schedule: 83 dispatches over 32 rounds; canonical ahead of a waiting witness 3x; witness ahead of waiting canonical 0x; max depths canonical=3 refinement=2; coalesced=0 suppressed=3 unreleased=0
+decode cost: {'requests': 3, 'fresh_requests': 0, 'decode_audio_seconds': 30.0, 'wall_seconds_contended': 0.9415810841601342, 'p50_request_seconds_contended': 0.2997220840770751, 'max_request_seconds_contended': 0.43464350001886487}
+FAIL G1 lex_bill_ackman wer 0.215909 != grid 0.198864
+FAIL G4 lex_bill_ackman dispatched windows [0] != [0, 1, 2, 3, 4, 5]
+FAIL G5 lex_bill_ackman applied 1 of 6 windows, refusals []
+FAIL G1 lex_javier_milei wer 0.136000 != grid 0.096000
+FAIL G4 lex_javier_milei dispatched windows [0] != [0, 1, 2, 3, 4, 5]
+FAIL G5 lex_javier_milei applied 1 of 6 windows, refusals []
+FAIL G1 lex_keyu_jin wer 0.179856 != grid 0.100719
+FAIL G4 lex_keyu_jin dispatched windows [0] != [0, 1, 2, 3, 4, 5]
+FAIL G5 lex_keyu_jin applied 1 of 6 windows, refusals []
+FAIL G3 session ended with 3 running and 0 queued witnesses
+FAIL G5 0 witnesses coalesced and 3 suppressed, so a planned window was dropped
+FAIL G1 trio wer 0.177255 != grid 0.131861
+FAIL G1 trio recall 0.928642 != grid 0.943916
+FAILED 13 gate(s)

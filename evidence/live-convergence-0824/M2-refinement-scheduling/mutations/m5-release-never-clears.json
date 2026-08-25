@@ -1,0 +1,567 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "applied": 1,
+      "canonical_through_sample": 160000,
+      "coalesce_keys": [
+        "rolling:0"
+      ],
+      "dispatched_windows": [
+        0
+      ],
+      "refusals": [],
+      "rolling_status": "pcm_evicted",
+      "scores": {
+        "content_recall": 0.9090909090909091,
+        "coverage": 0.888736,
+        "der": 0.186333,
+        "der_confusion": 0.060833,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.1255,
+        "hypothesis_seconds": 52.469999999999985,
+        "hypothesis_words": 189,
+        "mean_segment_seconds": 1.7489999999999994,
+        "recovered_words": 160,
+        "reference_words": 176,
+        "segments": 30,
+        "tbsa": 0.846159,
+        "text_speaker_accuracy": 0.847695,
+        "wer": 0.215909
+      },
+      "spans": 24,
+      "text_revision_version": 1
+    },
+    "lex_javier_milei": {
+      "applied": 1,
+      "canonical_through_sample": 160000,
+      "coalesce_keys": [
+        "rolling:0"
+      ],
+      "dispatched_windows": [
+        0
+      ],
+      "refusals": [],
+      "rolling_status": "pcm_evicted",
+      "scores": {
+        "content_recall": 0.92,
+        "coverage": 0.851555,
+        "der": 0.1845,
+        "der_confusion": 0.016,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.1685,
+        "hypothesis_seconds": 49.89000000000002,
+        "hypothesis_words": 126,
+        "mean_segment_seconds": 1.9188461538461548,
+        "recovered_words": 115,
+        "reference_words": 125,
+        "segments": 26,
+        "tbsa": 0.847724,
+        "text_speaker_accuracy": 0.834198,
+        "wer": 0.136
+      },
+      "spans": 32,
+      "text_revision_version": 1
+    },
+    "lex_keyu_jin": {
+      "applied": 1,
+      "canonical_through_sample": 160000,
+      "coalesce_keys": [
+        "rolling:0"
+      ],
+      "dispatched_windows": [
+        0
+      ],
+      "refusals": [],
+      "rolling_status": "pcm_evicted",
+      "scores": {
+        "content_recall": 0.9568345323741008,
+        "coverage": 0.911813,
+        "der": 0.100833,
+        "der_confusion": 0.013,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.087833,
+        "hypothesis_seconds": 54.73,
+        "hypothesis_words": 155,
+        "mean_segment_seconds": 2.2804166666666665,
+        "recovered_words": 133,
+        "reference_words": 139,
+        "segments": 24,
+        "tbsa": 0.883624,
+        "text_speaker_accuracy": 0.898633,
+        "wer": 0.179856
+      },
+      "spans": 24,
+      "text_revision_version": 1
+    }
+  },
+  "decode_cost": {
+    "decode_audio_seconds": 30.0,
+    "fresh_requests": 0,
+    "max_request_seconds_contended": 0.43464350001886487,
+    "p50_request_seconds_contended": 0.2997220840770751,
+    "requests": 3,
+    "wall_seconds_contended": 0.9415810841601342
+  },
+  "dispatch_kinds": [
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 1
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 1
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 1
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 2
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 2
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 2
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 3
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 3
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 3
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 4
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 4
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 4
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_refinement",
+      "round": 4
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_refinement",
+      "round": 4
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 5
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 5
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 5
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 6
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 6
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 6
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 7
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 7
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 7
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_refinement",
+      "round": 7
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 8
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 8
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 8
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 9
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 9
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 9
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 10
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 10
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 10
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 11
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 11
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 11
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 12
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 12
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 12
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 13
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 13
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 13
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 14
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 14
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 14
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 15
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 15
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 15
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 16
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 16
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 16
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 17
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 17
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 17
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 18
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 18
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 18
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 19
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 19
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 19
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 20
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 20
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 20
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 21
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 21
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 21
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 22
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 22
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 22
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 23
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 23
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 23
+    },
+    {
+      "case": "lex_bill_ackman",
+      "kind": "live_canonical",
+      "round": 24
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 24
+    },
+    {
+      "case": "lex_keyu_jin",
+      "kind": "live_canonical",
+      "round": 24
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 25
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 26
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 27
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 28
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 29
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 30
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 31
+    },
+    {
+      "case": "lex_javier_milei",
+      "kind": "live_canonical",
+      "round": 32
+    }
+  ],
+  "failures": [
+    "G1 lex_bill_ackman wer 0.215909 != grid 0.198864",
+    "G4 lex_bill_ackman dispatched windows [0] != [0, 1, 2, 3, 4, 5]",
+    "G5 lex_bill_ackman applied 1 of 6 windows, refusals []",
+    "G1 lex_javier_milei wer 0.136000 != grid 0.096000",
+    "G4 lex_javier_milei dispatched windows [0] != [0, 1, 2, 3, 4, 5]",
+    "G5 lex_javier_milei applied 1 of 6 windows, refusals []",
+    "G1 lex_keyu_jin wer 0.179856 != grid 0.100719",
+    "G4 lex_keyu_jin dispatched windows [0] != [0, 1, 2, 3, 4, 5]",
+    "G5 lex_keyu_jin applied 1 of 6 windows, refusals []",
+    "G3 session ended with 3 running and 0 queued witnesses",
+    "G5 0 witnesses coalesced and 3 suppressed, so a planned window was dropped",
+    "G1 trio wer 0.177255 != grid 0.131861",
+    "G1 trio recall 0.928642 != grid 0.943916"
+  ],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json",
+    "sha256": "7e0cbc041c909f549f1ec2f22e613d3a1639d740fde33432f75aeb9e175aecc9"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_arbiter.py"
+  ],
+  "passed": false,
+  "recorded_at": "2026-08-25T08:00:47.166653+00:00",
+  "scheduling": {
+    "canonical_ahead_of_waiting_witness": 3,
+    "coalesced": 0,
+    "final_canonical_queued": 0,
+    "final_refinement_queued": 0,
+    "final_refinement_running": 3,
+    "max_canonical_depth": 3,
+    "max_refinement_depth": 2,
+    "refinement_dispatched_with_canonical_waiting": 0,
+    "rounds": 32,
+    "running_over_sessions": 0,
+    "suppressed": 3,
+    "unreleased": 0
+  },
+  "schema": "moss-live-convergence-refinement-scheduling.v1",
+  "sessions": 3,
+  "trio": {
+    "content_recall_mean": 0.92864181382167,
+    "wer_mean": 0.17725500000000002
+  }
+}

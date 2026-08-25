@@ -1,0 +1,98 @@
+...FFFFF..................                                               [100%]
+=================================== FAILURES ===================================
+____________ test_a_running_witness_is_not_cancelled_by_a_newer_one ____________
+
+    def test_a_running_witness_is_not_cancelled_by_a_newer_one():
+        arbiter = _arbiter()
+    
+        admitted = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        running = arbiter.next_work()
+        refused = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-4")
+    
+        assert running.id == admitted.item_id
+        assert running.kind == InferenceArbiter.LIVE_REFINEMENT
+>       assert not refused.accepted
+E       assert not True
+E        +  where True = ArbiterAdmission(accepted=True, item_id=1, reason=None, replaced_item_id=None).accepted
+
+tests/test_live_arbiter_refinement.py:76: AssertionError
+____________ test_releasing_the_running_witness_admits_the_next_one ____________
+
+    def test_releasing_the_running_witness_admits_the_next_one():
+        arbiter = _arbiter()
+    
+        admitted = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        arbiter.next_work()
+    
+>       assert arbiter.release_live_refinement(item_id=admitted.item_id) is True
+E       assert False is True
+E        +  where False = release_live_refinement(item_id=0)
+E        +    where release_live_refinement = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x1192da930>.release_live_refinement
+E        +    and   0 = ArbiterAdmission(accepted=True, item_id=0, reason=None, replaced_item_id=None).item_id
+
+tests/test_live_arbiter_refinement.py:90: AssertionError
+______________ test_releasing_an_unknown_item_id_changes_nothing _______________
+
+    def test_releasing_an_unknown_item_id_changes_nothing():
+        arbiter = _arbiter()
+    
+        admitted = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        arbiter.next_work()
+    
+        assert arbiter.release_live_refinement(item_id=admitted.item_id + 99) is False
+>       assert arbiter.snapshot().live_refinement_running == 1
+E       assert 0 == 1
+E        +  where 0 = ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=0).live_refinement_running
+E        +    where ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=0) = snapshot()
+E        +      where snapshot = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x10afcd670>.snapshot
+
+tests/test_live_arbiter_refinement.py:107: AssertionError
+___ test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra ___
+
+    def test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra():
+        arbiter = _arbiter()
+    
+        first = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-3")
+        arbiter.next_work()
+        arbiter.release_live_refinement(item_id=first.item_id)
+        second = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="window-4")
+        arbiter.next_work()
+    
+        assert arbiter.release_live_refinement(item_id=first.item_id) is False
+>       assert arbiter.snapshot().live_refinement_running == 1
+E       assert 0 == 1
+E        +  where 0 = ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=0).live_refinement_running
+E        +    where ArbiterSnapshot(batch=0, live_canonical=0, live_provisional=0, live_refinement=0, live_refinement_running=0) = snapshot()
+E        +      where snapshot = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x11930cb00>.snapshot
+
+tests/test_live_arbiter_refinement.py:121: AssertionError
+___________ test_one_session_running_does_not_block_another_session ____________
+
+    def test_one_session_running_does_not_block_another_session():
+        # The rule is per session, and the coalesce key is what carries the session. Two
+        # sessions sharing one arbiter each get a witness; neither suppresses the other.
+        arbiter = _arbiter()
+    
+        a = arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="a-window-1")
+        b = arbiter.submit_live_refinement(coalesce_key="rolling:1", payload="b-window-1")
+    
+        assert a.accepted and b.accepted
+        assert arbiter.snapshot().live_refinement == 2
+    
+        dispatched_a = arbiter.next_work()
+    
+        assert dispatched_a.payload == "a-window-1"
+>       assert not arbiter.submit_live_refinement(coalesce_key="rolling:0", payload="a-window-2").accepted
+E       AssertionError: assert not True
+E        +  where True = ArbiterAdmission(accepted=True, item_id=2, reason=None, replaced_item_id=None).accepted
+E        +    where ArbiterAdmission(accepted=True, item_id=2, reason=None, replaced_item_id=None) = submit_live_refinement(coalesce_key='rolling:0', payload='a-window-2')
+E        +      where submit_live_refinement = <moss_transcribe_diarize.app.live_arbiter.InferenceArbiter object at 0x11930d250>.submit_live_refinement
+
+tests/test_live_arbiter_refinement.py:140: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_arbiter_refinement.py::test_a_running_witness_is_not_cancelled_by_a_newer_one
+FAILED tests/test_live_arbiter_refinement.py::test_releasing_the_running_witness_admits_the_next_one
+FAILED tests/test_live_arbiter_refinement.py::test_releasing_an_unknown_item_id_changes_nothing
+FAILED tests/test_live_arbiter_refinement.py::test_releasing_twice_is_reported_the_second_time_and_frees_nothing_extra
+FAILED tests/test_live_arbiter_refinement.py::test_one_session_running_does_not_block_another_session
+5 failed, 21 passed in 2.21s

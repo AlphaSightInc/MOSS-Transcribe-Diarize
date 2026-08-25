@@ -1059,3 +1059,110 @@ appended at the iteration 4->5 boundary]
 - Next: M2 step 3 item 3 = submit_live_refinement in the arbiter (context.md candidate 6e), then
   wire base commits into the converger, then §7.3/§7.4 serialization, then the portal, then the
   export switch LAST. Plan §10.5's order is not negotiable.
+
+2026-08-25 iteration 13 (run 20260825-042645-70858) - M2 step 3, item 3 of plan §10.5: the rolling
+  witness is now schedulable, and it cannot delay the base path.
+- Target: context.md candidate 6e, the lowest open item. M0's G2, M1's G-M1-1 and M2's
+  D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code. Plan §10.5's order is
+  fixed: this iteration is its THIRD item only -- "add live_refinement scheduling in M5". The
+  runtime wiring, the §7.4 events, the portal and the export switch are each their own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_arbiter.py                                        (+~90, §6 M5)
+  tests/test_live_arbiter_refinement.py                                              (new, 11 T1 tests)
+  prototypes/streaming-diarization/live-convergence/verify_refinement_scheduling.py   (new)
+  prototypes/streaming-diarization/live-convergence/mutate_refinement_scheduling.sh   (new, 5 mutations)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                          (index + commands)
+  evidence/live-convergence-0824/M2-refinement-scheduling/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                                     (new, 232K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  No service restart was needed and none was performed: `submit_live_refinement` has no runtime
+  caller yet (§10.5 steps 4-7), so nothing the running web_cli executes changed.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_refinement_scheduling.py
+    exit 0. THREE SESSIONS ON ONE ARBITER, interleaved span by span, with every unit of work --
+    the 2.5 s canonical spans AND the 10 s rolling windows -- going through the real
+    InferenceArbiter:
+      lex_bill_ackman    wer=0.198864 (grid 0.198864) recall=0.926136 windows=[0,1,2,3,4,5]
+      lex_javier_milei   wer=0.096000 (grid 0.096000) recall=0.920000 windows=[0,1,2,3,4,5]
+      lex_keyu_jin       wer=0.100719 (grid 0.100719) recall=0.985612 windows=[0,1,2,3,4,5]
+      TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      98 dispatches over 32 rounds; canonical ahead of a waiting witness 14x; witness ahead of
+      waiting canonical 0x; max depths canonical=3 refinement=3; coalesced=0 suppressed=0
+      unreleased=0; 18 requests, 0 fresh (no GPU)
+    Seven gates: G1 the arm is unchanged at 6 dp (scheduling moved no number); G2 no witness ever
+    ran while canonical work waited AND canonical went first 14 times, so the gate is not vacuous;
+    G3 never more running witnesses than sessions, 18 dispatched / 18 released / 0 releases matched
+    nothing, ended 0 queued 0 running; G4 every planned window dispatched exactly once in order;
+    G5 nothing coalesced, suppressed or refused; G6 zero fresh MOSS requests; G7 one coalesce key
+    per session.
+  - .venv/bin/python -m pytest tests/ -q  ->  1061 passed, 2 skipped, 386 subtests (1050 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the same digest
+    iterations 7, 11 and 12 recorded, so file mode has not moved across four production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_refinement_scheduling.sh <out>
+    five mutations in live_arbiter.py itself; all five caught; control clean before and after.
+- WHAT SHIPPED. A fourth queue and its lifecycle: `submit_live_refinement(*, coalesce_key,
+  payload)`, `release_live_refinement(*, item_id)`, `ArbiterSnapshot.live_refinement` and
+  `.live_refinement_running`, and one reordering of `next_work` into plan §6 M5's order verbatim --
+  batch > live_canonical > live_refinement > live_provisional. A queued witness is REPLACED by a
+  newer one (nothing was spent on it, and the newer window covers audio the older does not); a
+  RUNNING one is not (that would cancel a MOSS request already burning GPU, which §6 M5 forbids),
+  so the newer submission is refused by name. Dispatching a witness marks it running inside
+  `next_work`, because the moment it leaves the queue is the moment it stops being replaceable.
+- TWO DESIGN DECISIONS, each recorded with what it cost:
+  D1 NO capacity knob for the refinement queue. The other two queues have one because they grow
+     with frames; this one cannot, because the per-key rule IS the bound. One arbiter serves one
+     session in the runtime, so its depth is one; a shared arbiter's depth is exactly the number
+     of sessions with a pending witness, which is the number that should be scheduled rather than
+     a number to refuse. Cost: a future shared-arbiter deployment has no global cap -- but the
+     depths are in the snapshot, so a soak sees it before a knob could help.
+  D2 The snapshot carries DEPTHS, never lifetime counters. §10.6 asks for a "stale/coalesced
+     refinement count" and the obvious move is a counter on the arbiter; it is the wrong move,
+     because every drop is already reported to the caller that caused it (a coalesced witness as
+     `replaced_item_id`, a suppressed one as `accepted=False` + reason). A second tally is a
+     second bookkeeping of the same fact and the two eventually disagree. Cost: step 5's §7.4
+     event serialization must record those counts at the submission site.
+- MUTATIONS, five, in live_arbiter.py (backed up, restored by trap on exit):
+    M1 refinement outranks canonical      -> G2 (10 witnesses ran while canonical waited, and the
+       non-vacuity check flipped too) + 2 T1 tests
+    M2 refinement ranks below provisional -> T1 ONLY (see the finding)
+    M3 dispatch does not mark running     -> G3 (18 releases matched no running witness) + 5 T1
+    M4 a newer witness cancels a running one -> T1 ONLY (see the finding)
+    M5 release never clears the mark      -> G1/G4/G5 (bill decoded 1 of 6 windows, WER .198864 ->
+       .215909) + 2 T1 tests
+- FINDING: two branches the corpus cannot reach, for two different reasons, both properties of the
+  PRODUCER rather than gaps in the sweep. M2's starvation branch needs provisional work to coexist
+  with rolling windows, and the verifier's base path submits canonical spans -- that arrives with
+  the §10.5 step 4 wiring. M4's cancel branch needs a second witness submitted while one is in
+  flight, and `RollingTranscriptConverger` plans one window at a time by construction -- the
+  producer that will break it is the terminal finalizer (§12.3). Recorded rather than papered over,
+  same shape as iteration 11's M5 and iteration 12's M3.
+- CARRY-FORWARD FOR STEP 4, and it is the one thing that could silently go wrong: the converger
+  emits coalesce key `rolling:<epoch>` and every session starts at epoch 0, so that key identifies
+  a SESSION only because the runtime happens to build one InferenceArbiter per session
+  (`live_service_runtime.py:482`). Latent, not active. The verifier does not pretend otherwise --
+  it namespaces the key (`<case>:rolling:0`) and gates the property that actually matters (one key
+  per session, not one per window). Step 4 must either submit a session-qualified key or give
+  `RollingTranscriptConverger` the session key `LiveCoordinator` already holds.
+- Learned:
+  - The first draft of the cross-session ordering test asserted FIFO by first arrival and failed:
+    the code re-queues a replaced key at the BACK (pop-then-set on an OrderedDict, the same rule
+    `submit_live_provisional` already had). The code was right and the test was wrong, and the
+    reason is worth keeping: first-arrival order lets one session hold the front of the line while
+    swapping in a newer window every time, so the other session never decodes. Losing your place
+    by choosing to replace your own witness is the rule that cannot starve anyone.
+  - A priority gate needs a NON-VACUITY check or it is theatre. "No witness ran while canonical
+    waited" is trivially true if the two never contend; the run only means something because
+    canonical went ahead of a waiting witness 14 times. Mutation M1 flips both halves at once,
+    which is what proves the pair is load-bearing.
+  - Putting three sessions on one arbiter cost nothing (no GPU, ~6 s wall) and is what surfaced the
+    coalesce-key collision. Appendix B deferred the two-session real-time STRESS; the two-session
+    scheduling-CORRECTNESS check is a different, free thing, and worth doing wherever a rule says
+    "per session".
+- Next: M2 step 3 item 4 = wire base commits into the converger (context.md candidate 6f). The
+  runtime must call `observe_base` again after every applied revision or the frontier stops one
+  window short, must submit a session-qualified coalesce key, and owes `release_live_refinement`
+  for every witness it pops. Then §7.3/§7.4 serialization, then the portal, then the export switch
+  LAST. Plan §10.5's order is not negotiable.

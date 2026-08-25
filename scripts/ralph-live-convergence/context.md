@@ -30,7 +30,11 @@
     Four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the selected 10/10
     geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
     `BaseTranscriptSurface` protocol since iteration 12. Still no runtime caller — §10.5 steps 3-7.
-  - `app/live_arbiter.py:62,68,81` — the three submit methods; M2 adds `submit_live_refinement`.
+  - `app/live_arbiter.py` — **four queues since iteration 13** (plan §6 M5): batch >
+    live_canonical > live_refinement > live_provisional. `submit_live_refinement` /
+    `release_live_refinement` / the two `ArbiterSnapshot` refinement depths. Dispatching a witness
+    *marks it running* inside `next_work`, so a caller that pops one owes a release. Still no
+    runtime caller — §10.5 step 4.
   - `app/live_endpoint.py` — 2.5 s hard cap (`hard_cap_samples=40000` via bounds config; stays 2.5 s).
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
     witness-owned evidence through the existing album, never context audio.
@@ -39,7 +43,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 12)
+(2026-08-25, after iteration 13)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -403,7 +407,20 @@
 - **Terminal is exempt from the frontier rule, not from validation**: it replaces the surface, so
   it must own it from sample 0, once (`already_finalized`). `finalization_status` can only reach
   `final` today; `running`/`failed`/`unavailable` are E4's (§12.3) and have no producer yet.
-- Rest of the ladder (M2 step 3 items 3-7, M3-M5) unimplemented; working tree carries the plan,
+- **Refinement scheduling shipped (iteration 13, §10.5 step 3)**: the rolling witness is
+  schedulable below the 2.5 s canonical span and above provisional work, one queued-or-running
+  witness per coalesce key, and a running MOSS request is never cancelled by a newer witness
+  (the newer one is refused, `reason="live refinement already running"`). Measured with three
+  sessions on ONE arbiter: 98 dispatches, canonical ahead of a waiting witness 14x, witness ahead
+  of waiting canonical 0x, arm unchanged (trio WER `.131861`). Evidence:
+  `evidence/live-convergence-0824/M2-refinement-scheduling/`.
+- **Carry-forward for §10.5 step 4**: the converger emits coalesce key `rolling:<epoch>` and every
+  session starts at epoch 0, so that key identifies a session ONLY because the runtime builds one
+  `InferenceArbiter` per session (`live_service_runtime.py:482`). Latent, not active. Step 4 must
+  either submit a session-qualified key or give `RollingTranscriptConverger` the session key the
+  coordinator already has. The verifier namespaces it (`<case>:rolling:0`) and gates the property
+  that matters (one key per session, not one per window).
+- Rest of the ladder (M2 step 3 items 4-7, M3-M5) unimplemented; working tree carries the plan,
   evidence prototypes, and this scaffold.
 
 ## Validation
@@ -483,6 +500,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh /tmp/authority-mutations
 # text-revision authority tests (seven validations, projection, terminal)
 .venv/bin/python -m pytest tests/test_live_text_revision.py -q
+# E2 step 3c: does the refinement queue schedule the witness without delaying the base? (exit 0, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_refinement_scheduling.py
+# its five mutations, in live_arbiter.py itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_refinement_scheduling.sh /tmp/scheduling-mutations
+# refinement scheduling tests (priority, one-per-session, release lifecycle)
+.venv/bin/python -m pytest tests/test_live_arbiter_refinement.py tests/test_live_vad.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -527,10 +551,14 @@ prototypes/streaming-diarization/live-convergence/mutate_session_authority.sh /t
    extended replay tripwire all landed together, and the arm reproduces end to end through the
    real session. Do NOT re-open the projection rule: it agrees with the timeline the arm was
    selected through on 51 of 51 segments, and changing it means re-running the §10.2 grid.
-6e. **M2 step 3 items 3-7 - NEXT**, in this fixed order: `submit_live_refinement` in the arbiter
-   (M5, coalesce key `rolling:<epoch>` is already emitted) -> wire base commits into the converger
+6e. ~~**M2 step 3 item 3: `submit_live_refinement`**~~ - SHIPPED iteration 13 (see Current
+   state). Do NOT re-open the priority order or add a capacity knob: the order is plan §6 M5's
+   verbatim and the per-key rule is the bound (bundle NOTES D1/D2 record what each decision cost).
+6f. **M2 step 3 items 4-7 - NEXT**, in this fixed order: wire base commits into the converger
    (the runtime must call `observe_base` again after every applied revision, or the frontier the
-   converger sees stops one window short - the verifier does exactly this) -> snapshot/event
+   converger sees stops one window short - the verifier does exactly this; and it must submit a
+   coalesce key that identifies the SESSION, not just the epoch - see the carry-forward in Current
+   state; and it owes `release_live_refinement` for every witness it pops) -> snapshot/event
    serialization (§7.3/§7.4; `dataclasses.asdict` already carries the four new fields, so this
    step is the seven events) -> portal `effective_transcript` -> export switch **last**, only
    after terminal/effective export tests pass, in the same reviewed change. Then the headless

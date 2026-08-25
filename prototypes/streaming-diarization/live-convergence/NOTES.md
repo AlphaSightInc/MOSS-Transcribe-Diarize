@@ -134,3 +134,24 @@ agrees with the measured timeline on 51 of 51 rolling segments. It also samples 
 every commit — 98 surfaces, 66 with a rolling prefix beside a provisional suffix — because plan
 §5.1's ownership boundary is invisible at the end of a case, where six 10-second windows have
 tiled the whole minute. Verdict: `evidence/live-convergence-0824/M2-session-authority/`.
+
+```bash
+# E2 step 3c: does the SHIPPED refinement queue schedule the witness without delaying the base? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_refinement_scheduling.py
+# five mutations, in `live_arbiter.py` itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_refinement_scheduling.sh /tmp/scheduling-mutations
+```
+
+`verify_refinement_scheduling.py` is the one driver here that puts **three sessions on one
+arbiter**. Scheduling is a claim about ordering under contention, so it makes every unit of work
+go through the real `InferenceArbiter` — the 2.5-second canonical spans as well as the 10-second
+rolling windows — and then reads back what left the queue in what order: 98 dispatches, canonical
+ahead of a waiting witness 14 times, a witness ahead of waiting canonical 0 times, with the arm
+unchanged (trio WER `.131861`). It reuses `verify_session_text_authority.py` as a library
+(`commit_span`, `label_of_canonical`) rather than restating the replay path. Appendix B deferred
+the *two-session real-time stress*; this is the scheduling-correctness half, which costs no GPU.
+One finding worth carrying: the converger's coalesce key is `rolling:<epoch>` and every session
+starts at epoch 0, so the key identifies a session only because the runtime builds one arbiter per
+session — the driver namespaces it and says so. Verdict:
+`evidence/live-convergence-0824/M2-refinement-scheduling/`.
