@@ -1,0 +1,166 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.16666666666666666,
+        "decoded_audio_seconds": 10.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 1,
+        "windows_failed": 0,
+        "windows_planned": 1
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 160000,
+      "scores": {
+        "content_recall": 0.19886363636363635,
+        "coverage": 0.180059,
+        "der": 0.8555,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.8555,
+        "hypothesis_seconds": 8.670000000000002,
+        "hypothesis_words": 35,
+        "mean_segment_seconds": 2.1675000000000004,
+        "recovered_words": 35,
+        "reference_words": 176,
+        "segments": 4,
+        "tbsa": 0.18476,
+        "text_speaker_accuracy": 0.180059,
+        "wer": 0.801136
+      },
+      "tiles": true
+    },
+    "lex_javier_milei": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.16666666666666666,
+        "decoded_audio_seconds": 10.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 1,
+        "windows_failed": 0,
+        "windows_planned": 1
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 160000,
+      "scores": {
+        "content_recall": 0.096,
+        "coverage": 0.05712,
+        "der": 0.900833,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.900833,
+        "hypothesis_seconds": 5.95,
+        "hypothesis_words": 12,
+        "mean_segment_seconds": 2.975,
+        "recovered_words": 12,
+        "reference_words": 125,
+        "segments": 2,
+        "tbsa": 0.06684,
+        "text_speaker_accuracy": 0.05712,
+        "wer": 0.904
+      },
+      "tiles": true
+    },
+    "lex_keyu_jin": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.16666666666666666,
+        "decoded_audio_seconds": 10.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 1,
+        "windows_failed": 0,
+        "windows_planned": 1
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 160000,
+      "scores": {
+        "content_recall": 0.1223021582733813,
+        "coverage": 0.132881,
+        "der": 0.839667,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.839667,
+        "hypothesis_seconds": 9.620000000000001,
+        "hypothesis_words": 24,
+        "mean_segment_seconds": 4.8100000000000005,
+        "recovered_words": 17,
+        "reference_words": 139,
+        "segments": 2,
+        "tbsa": 0.117646,
+        "text_speaker_accuracy": 0.132881,
+        "wer": 0.928058
+      },
+      "tiles": true
+    }
+  },
+  "decode_cost": {
+    "decode_audio_seconds": 30.0,
+    "fresh_requests": 0,
+    "max_request_seconds_contended": 0.43464350001886487,
+    "p50_request_seconds_contended": 0.2997220840770751,
+    "requests": 3,
+    "wall_seconds_contended": 0.9415810841601342
+  },
+  "failures": [
+    "G1 lex_bill_ackman wer 0.801136 != grid 0.198864",
+    "G4 lex_bill_ackman planned 1 windows, grid decoded 6",
+    "G4 lex_bill_ackman added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_bill_ackman rolling status pcm_evicted",
+    "G3 lex_bill_ackman frontier 160000",
+    "G1 lex_javier_milei wer 0.904000 != grid 0.096000",
+    "G4 lex_javier_milei planned 1 windows, grid decoded 6",
+    "G4 lex_javier_milei added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_javier_milei rolling status pcm_evicted",
+    "G3 lex_javier_milei frontier 160000",
+    "G1 lex_keyu_jin wer 0.928058 != grid 0.100719",
+    "G4 lex_keyu_jin planned 1 windows, grid decoded 6",
+    "G4 lex_keyu_jin added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_keyu_jin rolling status pcm_evicted",
+    "G3 lex_keyu_jin frontier 160000",
+    "G2 trio wer 0.877731 != grid 0.131861",
+    "G2 trio recall 0.139055 != grid 0.943916"
+  ],
+  "geometry": {
+    "max_retained_samples": 320000,
+    "stride_samples": 80000,
+    "window_samples": 160000
+  },
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json",
+    "sha256": "7e0cbc041c909f549f1ec2f22e613d3a1639d740fde33432f75aeb9e175aecc9"
+  },
+  "module": "moss_transcribe_diarize/app/live_transcript_convergence.py",
+  "passed": false,
+  "recorded_at": "2026-08-25T07:27:16.349172+00:00",
+  "schema": "moss-live-convergence-production-converger.v1",
+  "trio": {
+    "content_recall": 0.13905526487900588,
+    "wer": 0.8777313333333333
+  }
+}

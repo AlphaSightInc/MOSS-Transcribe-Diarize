@@ -1,0 +1,23 @@
+lex_bill_ackman    wer=0.801136 (grid 0.198864) recall=0.198864 windows=1 added=0.167x pcm_high_water=320000/320000 tiles=True
+lex_javier_milei   wer=0.904000 (grid 0.096000) recall=0.096000 windows=1 added=0.167x pcm_high_water=320000/320000 tiles=True
+lex_keyu_jin       wer=0.928058 (grid 0.100719) recall=0.122302 windows=1 added=0.167x pcm_high_water=320000/320000 tiles=True
+TRIO               wer=0.877731 (grid 0.131861) recall=0.139055 (grid 0.943916)
+decode cost: 3 requests, 0 fresh (0 = no GPU)
+wrote evidence/live-convergence-0824/M2-converger-production/mutations/m1-overlap-no-stitcher.json
+FAIL G1 lex_bill_ackman wer 0.801136 != grid 0.198864
+FAIL G4 lex_bill_ackman planned 1 windows, grid decoded 6
+FAIL G4 lex_bill_ackman added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}
+FAIL G4 lex_bill_ackman rolling status pcm_evicted
+FAIL G3 lex_bill_ackman frontier 160000
+FAIL G1 lex_javier_milei wer 0.904000 != grid 0.096000
+FAIL G4 lex_javier_milei planned 1 windows, grid decoded 6
+FAIL G4 lex_javier_milei added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}
+FAIL G4 lex_javier_milei rolling status pcm_evicted
+FAIL G3 lex_javier_milei frontier 160000
+FAIL G1 lex_keyu_jin wer 0.928058 != grid 0.100719
+FAIL G4 lex_keyu_jin planned 1 windows, grid decoded 6
+FAIL G4 lex_keyu_jin added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}
+FAIL G4 lex_keyu_jin rolling status pcm_evicted
+FAIL G3 lex_keyu_jin frontier 160000
+FAIL G2 trio wer 0.877731 != grid 0.131861
+FAIL G2 trio recall 0.139055 != grid 0.943916

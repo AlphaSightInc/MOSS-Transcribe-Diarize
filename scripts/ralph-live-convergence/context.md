@@ -21,7 +21,12 @@
     span publish?" is answered there, not at a caller.
   - `app/live_session.py` — `FrozenSpan:75`, `CanonicalCommit` (~:163, `revised_transcript`
     invariant "same words, revised labels"), `revise_labels:539-563`, published-text rule `:581`,
-    snapshot ctor `:630-646`. M2 adds `apply_text_revision` + §7.3 fields here.
+    snapshot ctor `:630-646`. The plan §7.1/§7.2 contracts (`EffectiveTranscriptSegment`,
+    `TextRevisionProposal`) now live here too, inert, because ADR-0005 puts all seven validations
+    in the session. M3 adds `apply_text_revision` + the §7.3 snapshot fields here.
+  - `app/live_transcript_convergence.py` — **M2, shipped iteration 11**: the rolling converger.
+    Four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the selected 10/10
+    geometry, bounded PCM ring, one witness in flight. No caller yet — §10.5 steps 2-7 wire it.
   - `app/live_arbiter.py:62,68,81` — the three submit methods; M2 adds `submit_live_refinement`.
   - `app/live_endpoint.py` — 2.5 s hard cap (`hard_cap_samples=40000` via bounds config; stays 2.5 s).
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
@@ -31,7 +36,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 10)
+(2026-08-25, after iteration 11)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -335,8 +340,40 @@
   §10.6 soak and leave M2's row unsigned on it if it misses, as M0d's G2 and M1's G-M1-1 already are.
 - The grid is replayable **with no GPU**: `--cache-dir evidence/live-convergence-0824/M2-rolling-grid/decode-cache`.
   The five-mutation sweep uses the same cache and issues zero MOSS requests.
-- Rest of the ladder (M2 step 3, M3-M5) unimplemented; working tree carries the plan, evidence
-  prototypes, and this scaffold.
+- **M2 STEP 3a SHIPPED (iteration 11): the rolling converger is production code and it reproduces
+  the selected arm exactly.** `app/live_transcript_convergence.py` (new) + the §7.1/§7.2 contracts
+  on `live_session.py` (inert data, +54 lines) + 21 T1 tests. `verify_production_converger.py`
+  drives the production class over the trio through the grid's own decode cache and lands on
+  **trio WER .131861 / recall .943916**, per case .198864 / .096000 / .100719, six windows,
+  **1.000x** added decode audio, proposals tiling `[0, 60 s)` exactly, PCM high-water 160000 of the
+  320000 bound, **zero fresh MOSS requests**. Full suite 1033 passed / 2 skipped / 386 subtests
+  (1012 before). File mode byte-identical to HEAD (`sha ad381d8b...`, the same digest iteration 7
+  recorded). Five mutations in the production file, each caught, control clean before and after.
+  Evidence: `evidence/live-convergence-0824/M2-converger-production/`.
+- **F1 paid off: the module has no stitcher and no word-time interpolation.** At stride == window
+  a window's words replace exactly `[lo, hi)` and the frontier advances to `hi`.
+  `RollingGeometry` **refuses** stride < window (`UnmeasuredRollingGeometry`) — an overlapping
+  geometry needs a stitcher, a stitcher needs a measured selection, and neither exists. Mutation M1
+  removes that guard and WER goes .198864 -> .801136 on bill, so the refusal is load-bearing.
+- **A refused proposal needed no state.** A window is planned only once the session's own
+  `canonical_through_sample` reaches its first sample, so a proposal the session declines simply
+  stops the grid instead of producing revisions it must keep refusing. That deleted a status
+  instead of adding one.
+- **A failed window stalls rolling for the session, by decision.** Plan §5.2 allows later windows
+  "only from the existing monotonic frontier", and at zero overlap none begins there — continuing
+  would mean inventing words for the gap or owning an interval with nothing in it, which D4
+  forbids. So: keep the surface, record the window, plan no more; the base suffix stays provisional
+  and complete. Measured occurrences at this geometry: **0 of 54 window decodes**. The
+  carry-forward alternative (reprint the base's words over the failed region so the frontier can
+  advance) is recorded as the thing to build **if the §10.6 soak ever observes a failed window**,
+  not before. Mutation M5 shows only the T1 test can hold this — the corpus is blind to it.
+- **M3 MUST SHIP A LABEL PROJECTION or the E2 gates cannot be met as measured.** Every proposed
+  segment carries `canonical_speaker=None`: a decoder's local `S01` is not a meeting identity, and
+  witness-owned speaker evidence is E3's (plan D5). But the grid scored every arm through the
+  frozen baseline speaker timeline, i.e. it presumed such a projection exists. Without it rolling
+  words publish as `S00` and every speaker-surface number the E2 arm was selected on disappears.
+- Rest of the ladder (M2 step 3 items 2-7, M3-M5) unimplemented; working tree carries the plan,
+  evidence prototypes, and this scaffold.
 
 ## Validation
 
@@ -401,6 +438,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # its five mutations, each caught by its own guard (zero MOSS requests)
 prototypes/streaming-diarization/live-convergence/mutate_rolling_grid.sh \
   evidence/live-convergence-0824/M2-rolling-grid/decode-cache /tmp/grid-mutations
+# E2 step 3a: does the SHIPPED converger reproduce the grid's selected arm? (exit 0 = yes, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_production_converger.py
+# its five mutations, in the production module, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh /tmp/converger-mutations
+# converger interface tests
+.venv/bin/python -m pytest tests/test_live_transcript_convergence.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -437,19 +481,27 @@ prototypes/streaming-diarization/live-convergence/mutate_rolling_grid.sh \
    Selected arm: **`10/10`** (10 s window, 10 s stride, no stitcher). Two owner decisions recorded
    (D-M2-1 cost-vs-quality, D-M2-2 the unreachable G6), neither blocking. Do NOT re-run the grid
    hoping for a different arm; N=3 spread is exactly zero and the selection rule was preregistered.
-6c. **M2 step 3: production per plan §10.5 order - NEXT.** (plan M2 converger -> plan M3
-   word-revision authority -> plan M5 `submit_live_refinement` -> wire base commits ->
-   snapshot/event serialization per §7.3/§7.4 -> portal `effective_transcript` -> export switch
-   **last**, only after terminal/effective export tests pass, in the same reviewed change.)
-   `docs/adr/0005-live-text-finalization-authority.md` is the governing record: two producers, one
-   seam (`LiveSession.apply_text_revision`), seven validations, four snapshot fields, seven events.
-   Build the **selected 10/10 geometry**, and let F1 keep it small - at zero overlap there is no
-   ownership rule and no word-time interpolation to implement, just "the window's words replace
-   `[lo, hi)`, frontier advances to `hi`". F2 says the duplicate-phrase-at-a-seam behaviour ships
-   with that geometry; do not add a de-duplicator without measuring one (the corpus for it already
-   exists in the bundle's `grid.json`). F3 says G6 will be missed; measure it honestly in the §10.6
-   soak rather than designing around an unpreregistered geometry. Restart `web_cli` onto the build
-   and record it before any paired rerun; file mode must stay byte-identical.
+6c. ~~**M2 step 3 item 1: the M2 converger**~~ - SHIPPED iteration 11, reproduces the selected
+   arm at 6 dp (see Current state). Do NOT re-open the geometry: `RollingGeometry` refuses an
+   overlapping stride on purpose, and changing it means re-running the §10.2 grid.
+6d. **M2 step 3 item 2: M3 word-revision authority - NEXT.** `LiveSession.apply_text_revision`
+   (ADR-0005: seven validations, all in the session) + the four §7.3 snapshot fields
+   (`text_revision_version`, `canonical_through_sample`, `effective_transcript[]`,
+   `finalization_status`). Two things that are easy to miss and both are load-bearing:
+   (a) **the label projection** - rolling segments arrive with `canonical_speaker=None`, and the
+   grid's numbers presume the session attributes them from the base's own labels; without it the
+   speaker surface collapses to `S00`; (b) **extend `ReplayReconstructorRoundTripTest`** in the
+   same change for every field added - the hand-written reconstructors are the one place a new
+   field is silently lost (ADR-0005 consequence, M0a's defect).
+6e. **M2 step 3 items 3-7**, in this fixed order: `submit_live_refinement` in the arbiter (M5,
+   coalesce key `rolling:<epoch>` is already emitted) -> wire base commits into the converger ->
+   snapshot/event serialization (§7.3/§7.4) -> portal `effective_transcript` -> export switch
+   **last**, only after terminal/effective export tests pass, in the same reviewed change. Then the
+   headless portal render/serialization test and the 5-minute soak (§10.6). F2 says the
+   duplicate-phrase-at-a-join behaviour ships with this geometry; do not add a de-duplicator
+   without measuring one (the corpus for it is in `M2-rolling-grid/grid.json`). F3 says G6 will be
+   missed; measure it honestly in the soak. Restart `web_cli` onto the build and record it before
+   any paired rerun; file mode must stay byte-identical.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

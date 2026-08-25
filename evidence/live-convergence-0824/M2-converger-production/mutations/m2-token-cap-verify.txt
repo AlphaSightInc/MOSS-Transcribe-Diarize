@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 303, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 216, in main
+    document["cases"][case] = run_case(
+                              ^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 122, in run_case
+    decoded = decoder.decode(
+              ^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/live-file-gap-context/proto_context_arms.py", line 229, in decode
+    response = self.runner.transcribe(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 64, in transcribe
+    raise CacheMiss("the shipped converger asked for a window the grid did not decode.")
+CacheMiss: the shipped converger asked for a window the grid did not decode.

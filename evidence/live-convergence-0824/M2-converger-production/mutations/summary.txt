@@ -1,0 +1,28 @@
+== control: unmutated module ==
+control: verify exit=0  pytest exit=0  21 passed in 2.20s
+    PASS the shipped converger reproduces the grid's selected arm.
+== M1: overlapping stride, guard removed ==
+m1-overlap-no-stitcher: verify exit=1  pytest exit=1  5 failed, 16 passed in 2.17s
+    FAIL G1 lex_bill_ackman wer 0.801136 != grid 0.198864
+    FAIL G4 lex_bill_ackman planned 1 windows, grid decoded 6
+    FAIL G4 lex_bill_ackman added decode audio {'windows_planned': 1, 'windows_completed': 1, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 10.0, 'added_decode_audio_seconds_per_audio_second': 0.16666666666666666, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}
+    FAIL G4 lex_bill_ackman rolling status pcm_evicted
+== M2: token cap not derived from the window ==
+m2-token-cap: verify exit=1  pytest exit=1  1 failed, 20 passed in 2.19s
+    Traceback (most recent call last):
+        raise CacheMiss("the shipped converger asked for a window the grid did not decode.")
+    CacheMiss: the shipped converger asked for a window the grid did not decode.
+== M3: window index never advances ==
+m3-frozen-window-index: verify exit=1  pytest exit=1  3 failed, 18 passed in 2.18s
+    Traceback (most recent call last):
+    AssertionError: proposal starts at 0, frontier is 160000
+== M4: retention never released ==
+m4-retention-never-released: verify exit=1  pytest exit=1  2 failed, 19 passed in 2.17s
+    FAIL G1 lex_bill_ackman wer 0.670455 != grid 0.198864
+    FAIL G4 lex_bill_ackman planned 2 windows, grid decoded 6
+    FAIL G4 lex_bill_ackman added decode audio {'windows_planned': 2, 'windows_completed': 2, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 20.0, 'added_decode_audio_seconds_per_audio_second': 0.3333333333333333, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}
+    FAIL G4 lex_bill_ackman rolling status pcm_evicted
+== M5: an empty window proposes anyway ==
+m5-empty-window-proposes: verify exit=0  pytest exit=1  2 failed, 19 passed in 2.28s
+    PASS the shipped converger reproduces the grid's selected arm.
+== restored; control run ==

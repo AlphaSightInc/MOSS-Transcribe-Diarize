@@ -1,0 +1,57 @@
+......FF.....F.......                                                    [100%]
+=================================== FAILURES ===================================
+__ test_the_next_window_waits_for_the_session_to_accept_the_previous_revision __
+
+    def test_the_next_window_waits_for_the_session_to_accept_the_previous_revision():
+        converger = RollingTranscriptConverger(epoch=0)
+        feed(converger, 2 * WINDOW)
+        request = converger.observe_base(Surface(committed_samples=2 * WINDOW))[0]
+        assert converger.complete(request.id, decoded(window_transcript(*TURNS))) is not None
+    
+        # The session has not applied it yet: the frontier is still 0, so window 1 would not start
+        # at the frontier and is not asked for.
+>       assert converger.observe_base(Surface(committed_samples=2 * WINDOW)) == ()
+E       AssertionError: assert (RollingDecod...'rolling:0'),) == ()
+E         
+E         Left contains one more item: RollingDecodeRequest(id=1, epoch=0, window_index=0, start_sample=0, end_sample=160000, pcm=b'\x00\x00\x00\x00\x00\x00\...\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', token_cap=938, coalesce_key='rolling:0')
+E         Use -v to get more diff
+
+tests/test_live_transcript_convergence.py:127: AssertionError
+______ test_accepted_windows_tile_the_owned_prefix_without_overlap_or_gap ______
+
+    def test_accepted_windows_tile_the_owned_prefix_without_overlap_or_gap():
+        """D4's whole mechanism, checked as a partition rather than inferred from a metric."""
+    
+        converger = RollingTranscriptConverger(epoch=0)
+        frontier = 0
+        intervals: list[tuple[int, int]] = []
+        for _ in range(6):
+            feed(converger, WINDOW)  # audio and base commits arrive together, as in a session
+            committed = converger.accounting().accepted_samples
+            requests = converger.observe_base(
+                Surface(committed_samples=committed, canonical_through_sample=frontier)
+            )
+>           assert len(requests) == 1
+E           assert 0 == 1
+E            +  where 0 = len(())
+
+tests/test_live_transcript_convergence.py:147: AssertionError
+___ test_a_healthy_session_never_evicts_and_holds_one_window_of_newer_audio ____
+
+    def test_a_healthy_session_never_evicts_and_holds_one_window_of_newer_audio():
+        converger = RollingTranscriptConverger(epoch=0)
+        feed(converger, WINDOW)
+        request = converger.observe_base(Surface(committed_samples=WINDOW))[0]
+        feed(converger, WINDOW)
+        accounting = converger.accounting()
+        assert accounting.status is RollingStatus.ROLLING
+>       assert accounting.retained_samples == WINDOW
+E       AssertionError: assert 320000 == 160000
+E        +  where 320000 = RollingConvergerAccounting(status=<RollingStatus.ROLLING: 'rolling'>, windows_planned=1, windows_completed=0, windows_...le=0, retained_samples=320000, retained_high_water_samples=320000, max_retained_samples=320000, in_flight_request_id=0).retained_samples
+
+tests/test_live_transcript_convergence.py:248: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_transcript_convergence.py::test_the_next_window_waits_for_the_session_to_accept_the_previous_revision
+FAILED tests/test_live_transcript_convergence.py::test_accepted_windows_tile_the_owned_prefix_without_overlap_or_gap
+FAILED tests/test_live_transcript_convergence.py::test_a_healthy_session_never_evicts_and_holds_one_window_of_newer_audio
+3 failed, 18 passed in 2.18s

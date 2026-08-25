@@ -1,0 +1,36 @@
+...........F.......F.                                                    [100%]
+=================================== FAILURES ===================================
+_ test_a_window_that_publishes_nothing_stalls_instead_of_emptying_its_interval _
+
+    def test_a_window_that_publishes_nothing_stalls_instead_of_emptying_its_interval():
+        """Plan §5.2 rolling failure: keep the surface, record the window, plan no more."""
+    
+        converger = RollingTranscriptConverger(epoch=0)
+        feed(converger, 2 * WINDOW)
+        request = converger.observe_base(Surface(committed_samples=2 * WINDOW))[0]
+>       assert converger.complete(request.id, decoded("")) is None
+E       AssertionError: assert TextRevisionProposal(epoch=0, base_text_revision_version=0, source='rolling', start_sample=0, end_sample=160000, segments=(), decode_elapsed_sec=1.2) is None
+E        +  where TextRevisionProposal(epoch=0, base_text_revision_version=0, source='rolling', start_sample=0, end_sample=160000, segments=(), decode_elapsed_sec=1.2) = complete(0, InferenceTranscript(transcript='', prompt_len=0, generated_tokens=1, elapsed_sec=1.2, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None))
+E        +    where complete = <moss_transcribe_diarize.app.live_transcript_convergence.RollingTranscriptConverger object at 0x119d3fb90>.complete
+E        +    and   0 = RollingDecodeRequest(id=0, epoch=0, window_index=0, start_sample=0, end_sample=160000, pcm=b'\x00\x00\x00\x00\x00\x00\...\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', token_cap=938, coalesce_key='rolling:0').id
+E        +    and   InferenceTranscript(transcript='', prompt_len=0, generated_tokens=1, elapsed_sec=1.2, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None) = decoded('')
+
+tests/test_live_transcript_convergence.py:222: AssertionError
+__________ test_stop_reports_the_stall_that_ended_rolling_convergence __________
+
+    def test_stop_reports_the_stall_that_ended_rolling_convergence():
+        converger = RollingTranscriptConverger(epoch=0)
+        feed(converger, 2 * WINDOW)
+        request = converger.observe_base(Surface(committed_samples=2 * WINDOW))[0]
+        converger.complete(request.id, decoded(""))
+        plan = converger.stop(2 * WINDOW)
+>       assert plan.rolling_status is RollingStatus.WINDOW_FAILED
+E       AssertionError: assert <RollingStatus.ROLLING: 'rolling'> is <RollingStatus.WINDOW_FAILED: 'window_failed'>
+E        +  where <RollingStatus.ROLLING: 'rolling'> = TerminalDecodePlan(epoch=0, end_sample=320000, rolling_through_sample=0, rolling_status=<RollingStatus.ROLLING: 'rolling'>, windows_completed=1, windows_failed=1).rolling_status
+E        +  and   <RollingStatus.WINDOW_FAILED: 'window_failed'> = RollingStatus.WINDOW_FAILED
+
+tests/test_live_transcript_convergence.py:318: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_transcript_convergence.py::test_a_window_that_publishes_nothing_stalls_instead_of_emptying_its_interval
+FAILED tests/test_live_transcript_convergence.py::test_stop_reports_the_stall_that_ended_rolling_convergence
+2 failed, 19 passed in 2.28s

@@ -206,6 +206,60 @@ class ProvisionalSuffix:
     transcript: str
 
 
+# ------------------------------------------------------------------------------------------
+# The text-finalization contracts of plan §7.1/§7.2, governed by ADR-0005.
+#
+# They live here, beside `CanonicalCommit` and `LabelRevision`, because the session is the
+# authority that validates them: ADR-0005 states the seven checks are "all in the session,
+# none optional", so the types stay inert data and every rule about them has exactly one
+# reader. The rolling converger (`live_transcript_convergence`) and the terminal finalizer
+# produce these; nothing else may change transcript text.
+# ------------------------------------------------------------------------------------------
+
+#: Which authority produced a segment of the surface a reader is shown. `provisional` is the
+#: short-span base path, `rolling` the converger over `[0, canonical_through_sample)`, `final`
+#: the terminal pass. The field is on the segment rather than the surface because the two
+#: coexist at every instant: rolling prefix, provisional suffix (plan §5.1).
+EFFECTIVE_TRANSCRIPT_AUTHORITIES = ("provisional", "rolling", "final")
+
+#: Which producer a text revision came from. Two, and only two (ADR-0005).
+TEXT_REVISION_SOURCES = ("rolling", "terminal")
+
+
+@dataclass(frozen=True, slots=True)
+class EffectiveTranscriptSegment:
+    """One segment of the surface the portal and export display (plan §7.1).
+
+    Sample integers are authoritative; seconds are presentation values. `canonical_speaker`
+    is `None` when no identity has been established for these words, which renders as
+    `S00` -- the same honest "nobody attributed" the base path publishes, not a guess.
+    """
+
+    start_sample: int
+    end_sample: int
+    text: str
+    canonical_speaker: str | None
+    authority: str
+
+
+@dataclass(frozen=True, slots=True)
+class TextRevisionProposal:
+    """What a producer asks the session to publish over one owned interval (plan §7.2).
+
+    Inert data on purpose. No hash is added: monotonic version, epoch, and the exact owned
+    sample interval determine whether the proposal changes state, and the session -- not the
+    producer, and not this type -- decides whether it may.
+    """
+
+    epoch: int
+    base_text_revision_version: int
+    source: str
+    start_sample: int
+    end_sample: int
+    segments: tuple[EffectiveTranscriptSegment, ...]
+    decode_elapsed_sec: float | None = None
+
+
 @dataclass(frozen=True, slots=True)
 class LiveSnapshot:
     status: str

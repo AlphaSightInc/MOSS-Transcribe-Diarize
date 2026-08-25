@@ -1,0 +1,20 @@
+....F................                                                    [100%]
+=================================== FAILURES ===================================
+__________ test_a_committed_window_is_planned_once_with_its_own_audio __________
+
+    def test_a_committed_window_is_planned_once_with_its_own_audio():
+        converger = RollingTranscriptConverger(epoch=7)
+        feed(converger, WINDOW)
+        requests = converger.observe_base(Surface(epoch=7, committed_samples=WINDOW))
+        assert len(requests) == 1
+        request = requests[0]
+        assert (request.start_sample, request.end_sample) == (0, WINDOW)
+        assert len(request.pcm) == WINDOW * 2
+>       assert request.token_cap == 938
+E       AssertionError: assert 2048 == 938
+E        +  where 2048 = RollingDecodeRequest(id=0, epoch=7, window_index=0, start_sample=0, end_sample=160000, pcm=b'\x00\x00\x00\x00\x00\x00\...x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', token_cap=2048, coalesce_key='rolling:7').token_cap
+
+tests/test_live_transcript_convergence.py:106: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_transcript_convergence.py::test_a_committed_window_is_planned_once_with_its_own_audio
+1 failed, 20 passed in 2.19s

@@ -1,0 +1,178 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.3333333333333333,
+        "decoded_audio_seconds": 20.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 2,
+        "windows_failed": 0,
+        "windows_planned": 2
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ],
+        [
+          160000,
+          320000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 320000,
+      "scores": {
+        "content_recall": 0.35795454545454547,
+        "coverage": 0.381301,
+        "der": 0.694,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.694,
+        "hypothesis_seconds": 18.360000000000003,
+        "hypothesis_words": 68,
+        "mean_segment_seconds": 2.622857142857143,
+        "recovered_words": 63,
+        "reference_words": 176,
+        "segments": 7,
+        "tbsa": 0.368362,
+        "text_speaker_accuracy": 0.381301,
+        "wer": 0.670455
+      },
+      "tiles": true
+    },
+    "lex_javier_milei": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.3333333333333333,
+        "decoded_audio_seconds": 20.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 2,
+        "windows_failed": 0,
+        "windows_planned": 2
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ],
+        [
+          160000,
+          320000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 320000,
+      "scores": {
+        "content_recall": 0.232,
+        "coverage": 0.220925,
+        "der": 0.749833,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.749833,
+        "hypothesis_seconds": 15.009999999999998,
+        "hypothesis_words": 32,
+        "mean_segment_seconds": 3.002,
+        "recovered_words": 29,
+        "reference_words": 125,
+        "segments": 5,
+        "tbsa": 0.223694,
+        "text_speaker_accuracy": 0.220925,
+        "wer": 0.768
+      },
+      "tiles": true
+    },
+    "lex_keyu_jin": {
+      "accounting": {
+        "added_decode_audio_seconds_per_audio_second": 0.3333333333333333,
+        "decoded_audio_seconds": 20.0,
+        "max_retained_samples": 320000,
+        "retained_high_water_samples": 320000,
+        "stale_completions": 0,
+        "windows_completed": 2,
+        "windows_failed": 0,
+        "windows_planned": 2
+      },
+      "duration_seconds": 60.0,
+      "intervals": [
+        [
+          0,
+          160000
+        ],
+        [
+          160000,
+          320000
+        ]
+      ],
+      "rolling_status": "pcm_evicted",
+      "rolling_through_sample": 320000,
+      "scores": {
+        "content_recall": 0.2733812949640288,
+        "coverage": 0.258578,
+        "der": 0.688,
+        "der_confusion": 0.0,
+        "der_false_alarm": 0.0,
+        "der_miss": 0.688,
+        "hypothesis_seconds": 18.72,
+        "hypothesis_words": 45,
+        "mean_segment_seconds": 4.68,
+        "recovered_words": 38,
+        "reference_words": 139,
+        "segments": 4,
+        "tbsa": 0.249689,
+        "text_speaker_accuracy": 0.258578,
+        "wer": 0.776978
+      },
+      "tiles": true
+    }
+  },
+  "decode_cost": {
+    "decode_audio_seconds": 60.0,
+    "fresh_requests": 0,
+    "max_request_seconds_contended": 0.43464350001886487,
+    "p50_request_seconds_contended": 0.2994653339846991,
+    "requests": 6,
+    "wall_seconds_contended": 1.8863406259333715
+  },
+  "failures": [
+    "G1 lex_bill_ackman wer 0.670455 != grid 0.198864",
+    "G4 lex_bill_ackman planned 2 windows, grid decoded 6",
+    "G4 lex_bill_ackman added decode audio {'windows_planned': 2, 'windows_completed': 2, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 20.0, 'added_decode_audio_seconds_per_audio_second': 0.3333333333333333, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_bill_ackman rolling status pcm_evicted",
+    "G3 lex_bill_ackman frontier 320000",
+    "G1 lex_javier_milei wer 0.768000 != grid 0.096000",
+    "G4 lex_javier_milei planned 2 windows, grid decoded 6",
+    "G4 lex_javier_milei added decode audio {'windows_planned': 2, 'windows_completed': 2, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 20.0, 'added_decode_audio_seconds_per_audio_second': 0.3333333333333333, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_javier_milei rolling status pcm_evicted",
+    "G3 lex_javier_milei frontier 320000",
+    "G1 lex_keyu_jin wer 0.776978 != grid 0.100719",
+    "G4 lex_keyu_jin planned 2 windows, grid decoded 6",
+    "G4 lex_keyu_jin added decode audio {'windows_planned': 2, 'windows_completed': 2, 'windows_failed': 0, 'stale_completions': 0, 'decoded_audio_seconds': 20.0, 'added_decode_audio_seconds_per_audio_second': 0.3333333333333333, 'retained_high_water_samples': 320000, 'max_retained_samples': 320000}",
+    "G4 lex_keyu_jin rolling status pcm_evicted",
+    "G3 lex_keyu_jin frontier 320000",
+    "G2 trio wer 0.738478 != grid 0.131861",
+    "G2 trio recall 0.287779 != grid 0.943916"
+  ],
+  "geometry": {
+    "max_retained_samples": 320000,
+    "stride_samples": 160000,
+    "window_samples": 160000
+  },
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json",
+    "sha256": "7e0cbc041c909f549f1ec2f22e613d3a1639d740fde33432f75aeb9e175aecc9"
+  },
+  "module": "moss_transcribe_diarize/app/live_transcript_convergence.py",
+  "passed": false,
+  "recorded_at": "2026-08-25T07:27:31.481481+00:00",
+  "schema": "moss-live-convergence-production-converger.v1",
+  "trio": {
+    "content_recall": 0.2877786134728581,
+    "wer": 0.7384776666666667
+  }
+}

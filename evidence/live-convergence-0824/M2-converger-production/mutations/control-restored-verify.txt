@@ -1,0 +1,6 @@
+lex_bill_ackman    wer=0.198864 (grid 0.198864) recall=0.926136 windows=6 added=1.000x pcm_high_water=160000/320000 tiles=True
+lex_javier_milei   wer=0.096000 (grid 0.096000) recall=0.920000 windows=6 added=1.000x pcm_high_water=160000/320000 tiles=True
+lex_keyu_jin       wer=0.100719 (grid 0.100719) recall=0.985612 windows=6 added=1.000x pcm_high_water=160000/320000 tiles=True
+TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+decode cost: 18 requests, 0 fresh (0 = no GPU)
+PASS the shipped converger reproduces the grid's selected arm.

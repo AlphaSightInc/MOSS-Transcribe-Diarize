@@ -98,3 +98,20 @@ formula does not, once the final window is clamped, and the resulting double-pub
 invisible to a tail-vs-head duplicate screen); and `_TruthBlind` makes reading the reference raise
 while an arm is being produced, so "the reconciler sees no reference" is enforced rather than
 asserted. Verdict, gates and the three findings: `evidence/live-convergence-0824/M2-rolling-grid/`.
+
+```bash
+# E2 step 3a: does the SHIPPED converger reproduce the arm the grid selected? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_production_converger.py
+# five mutations, in the production module itself, restored from a backup on exit
+prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh /tmp/converger-mutations
+```
+
+`verify_production_converger.py` is to M2 what `verify_production_salvage.py` is to M1: it drives
+the production class — `RollingTranscriptConverger`'s own window planning, retention and parsing —
+over the trio, decoding through `M2-rolling-grid/decode-cache`, and requires the result to equal
+the grid's `10/10` column at 6 dp (trio WER `.131861`, recall `.943916`, `1.000×` added decode
+audio, proposals tiling `[0, 60 s)` exactly). The decoder is handed a runner that raises, so a
+cache miss is a failure rather than a fresh GPU call: a module that asks for a different decode
+than the one that was measured cannot quietly pass. Verdict:
+`evidence/live-convergence-0824/M2-converger-production/`.

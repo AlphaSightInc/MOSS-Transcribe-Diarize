@@ -844,3 +844,107 @@ appended at the iteration 4->5 boundary]
   (LiveSession.apply_text_revision), seven validations, four snapshot fields, seven events, zero
   silent rewrites. Restart web_cli onto the build and record it before any paired rerun; file mode
   must stay byte-identical.
+
+2026-08-25 iteration 11 (run 20260825-042645-70858) - M2 step 3, item 1 of plan §10.5: the rolling
+  transcript converger is production code, and it reproduces the arm the grid selected to 6 dp.
+- Target: context.md candidate 6c, the lowest open item. M0's G2, M1's G-M1-1 and M2's D-M2-1/D-M2-2
+  are unsigned pending owner rulings and need no more code. Plan §10.5's order is fixed and not
+  negotiable, so this iteration is its FIRST item only: "implement M2 with bounded PCM history and
+  cached test adapter". M3, M5, the wiring, the serialization, the portal and the export switch are
+  each their own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_transcript_convergence.py                       (new, M2)
+  moss_transcribe_diarize/app/live_session.py                                      (+54, §7.1/§7.2)
+  tests/test_live_transcript_convergence.py                                        (new, 21 T1 tests)
+  prototypes/streaming-diarization/live-convergence/verify_production_converger.py  (new)
+  prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh  (new, 5 mutations)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                        (index + commands)
+  evidence/live-convergence-0824/M2-converger-production/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                                   (new, 152K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  No service restart was needed and none was performed: the converger has no caller yet, so nothing
+  the running web_cli executes changed.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_production_converger.py
+    exit 0. The PRODUCTION class -- its own window planning, its own retention, its own parsing --
+    driven over the trio through the grid's checked-in decode cache:
+      lex_bill_ackman    wer=0.198864 (grid 0.198864) recall=0.926136 windows=6 added=1.000x
+      lex_javier_milei   wer=0.096000 (grid 0.096000) recall=0.920000 windows=6 added=1.000x
+      lex_keyu_jin       wer=0.100719 (grid 0.100719) recall=0.985612 windows=6 added=1.000x
+      TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      18 requests, 0 fresh (no GPU)
+    Six gates: G1 per-case WER == grid at 6 dp (3/3); G2 trio means == .131861/.943916; G3 the
+    proposals tile [0, 60 s) exactly (each starts at the previous end, frontier reaches 960000);
+    G4 6 planned / 6 completed / 0 failed / 0 stale, 1.000x added decode audio, status still
+    `rolling` at stop; G5 PCM high-water 160000 of the 320000 bound; G6 zero fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1033 passed, 2 skipped, 386 subtests (1012 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical,
+    sha256 ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the SAME digest
+    iteration 7 recorded, so file mode has not moved across two production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_production_converger.sh <out>
+    five mutations in the production file itself, each caught, control clean before and after.
+- WHAT SHIPPED, and why it is small. Four methods (plan §6 M2): accept_pcm / observe_base /
+  complete / stop. They hide bounded PCM retention, window planning, one-witness-at-a-time
+  admission, stale-work recognition, monotonic frontier advancement and work accounting. They do
+  NOT hide a stitcher, because grid finding F1 measured that the selected 10/10 geometry has no
+  overlap and therefore no stitcher: a window's words replace exactly [lo, hi) and the frontier
+  advances to hi. No ownership arithmetic, no lexical alignment, no word-time interpolation --
+  materially less code than plan §6's M2 sketch, for a measured reason.
+- THREE DESIGN DECISIONS, each recorded with what it cost:
+  D1 `RollingGeometry` REFUSES stride < window (`UnmeasuredRollingGeometry`). An overlapping
+     geometry needs a stitcher, a stitcher needs a measured selection, and neither exists.
+     Mutation M1 removes the guard and sets 10/5: bill WER .198864 -> .801136. Load-bearing.
+  D2 A refused proposal needed NO new state. A window is planned only once the session's own
+     `canonical_through_sample` reaches its first sample, so a proposal the session declines simply
+     stops the grid instead of burning GPU on revisions it must keep refusing. That deleted a
+     status rather than adding one, and it is race-free: the converger waits, it does not detect.
+  D3 A failed window STALLS rolling for the session. Plan §5.2 permits later windows "only from the
+     existing monotonic frontier" and at zero overlap none begins there -- continuing would mean
+     inventing words for the gap or owning an interval with nothing in it, which D4 forbids. So:
+     keep the surface, record the window, plan no more; the base suffix stays provisional and
+     complete, and nothing is erased. Measured occurrences at this geometry: 0 of 54 window decodes
+     (grid.json decode_health, 3 runs x 3 cases x 6 windows). The carry-forward alternative --
+     reprint the base's words over the failed region so the frontier can advance -- is real, is
+     recorded, and is to be built IF the §10.6 soak observes a failed window, not before.
+- MUTATIONS, five, in the production module (backed up, restored by trap on exit):
+    M1 overlapping stride, guard removed   -> G1 (.801136 vs .198864), G4, and the T1 refusal test
+    M2 token cap not derived from the window -> CacheMiss: the module stopped asking for the decode
+       the grid measured, and the runner that would have answered raises instead of calling the GPU
+    M3 window index never advances          -> the frontier check ("proposal starts at 0, frontier
+       is 160000") plus 3 T1 tests
+    M4 retained audio never released        -> G1, G4 status `pcm_evicted`, T1 retention test
+    M5 an empty window proposes anyway      -> T1 ONLY. That is the finding, not a gap: 0 of 54
+       window decodes published nothing, so the corpus is blind to §5.2's failure branch and only a
+       test can hold it. Recorded rather than papered over.
+- THE CARRY-FORWARD THAT MATTERS MOST FOR THE NEXT ITERATION: every proposed segment carries
+  `canonical_speaker=None`, because a decoder's local `S01` is not a meeting identity and
+  witness-owned speaker evidence is E3's (plan D5). But the §10.2 grid scored every arm through the
+  frozen baseline speaker timeline -- it PRESUMED a label projection exists. So M3 must ship that
+  projection (attribute rolling words from the base's own labels) or rolling text publishes as S00
+  and every speaker-surface number the arm was selected on disappears. This is stated in the bundle
+  NOTES.md and in context.md candidate 6d.
+- Learned:
+  - Reproducing the adjudicated column with the SHIPPED class -- not a re-implementation that agrees
+    -- is what makes "M2 is the measured arm" a fact. Handing the replay decoder a runner that
+    raises is what makes it airtight: a module that asks for a different decode than the one that
+    was measured cannot quietly pass, it gets a CacheMiss (mutation M2 is exactly that).
+  - The first draft of the T1 tests fed 3-6 windows of audio before any base commit and "failed".
+    The module was right and the tests were wrong: a converger whose base has committed nothing has
+    to hold every accepted sample, so the 2 x window bound evicts. Sessions commit as they go.
+    Worth remembering the shape -- the bound is a statement about the base path's lag, not about
+    the ring.
+  - The §7.1/§7.2 contracts went into `live_session.py`, not into the converger, because
+    `live_adapters` already imports `live_session`: putting them in the converger would have made
+    the session import a module that imports the session. Layering decided the file, and it also
+    matches ADR-0005 ("seven validations, all in the session").
+  - The evidence sweep exceeds the harness's 2-minute command timeout when it runs the full suite
+    and the five-mutation sweep in one command. Split them, or the last step is killed mid-write
+    (the trap still restored the module; the final control was re-run on its own and mutations.txt
+    says so).
+- Next: M2 step 3 item 2 = M3 word-revision authority (context.md candidate 6d).
+  `LiveSession.apply_text_revision` with ADR-0005's seven validations, the four §7.3 snapshot
+  fields, the label projection above, and -- in the same change -- an extension of
+  `ReplayReconstructorRoundTripTest` for every field added, because the hand-written reconstructors
+  are the one place a new field is silently lost (that was M0a's defect).

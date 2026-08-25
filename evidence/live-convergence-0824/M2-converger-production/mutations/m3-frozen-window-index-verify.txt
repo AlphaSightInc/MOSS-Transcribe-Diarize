@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 303, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 216, in main
+    document["cases"][case] = run_case(
+                              ^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 139, in run_case
+    session.apply(proposal)
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-convergence/verify_production_converger.py", line 84, in apply
+    raise AssertionError(
+AssertionError: proposal starts at 0, frontier is 160000
