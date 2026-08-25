@@ -188,6 +188,38 @@ class AppApiTest(unittest.TestCase):
             self.assertFalse(model["speaker_identity"]["config"]["tier_b"]["enabled"])
             self.assertEqual(model["speaker_identity"]["availability"]["reason"], "disabled")
 
+    def test_injected_file_mode_runner_is_the_one_file_mode_transcribes_through(self):
+        from moss_transcribe_diarize.app.server import build_file_mode_runner, create_app
+        from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runner = build_file_mode_runner(
+                model_path="unused-local-model",
+                device="auto",
+                dtype="bf16",
+                backend="vllm",
+                vllm_base_url="http://vllm.test:8000/v1",
+                vllm_model="moss-served",
+                vllm_api_key="EMPTY",
+                vllm_timeout=600.0,
+                speaker_identity_tier_b=False,
+                speaker_identity_state=None,
+                speaker_identity_fixture=None,
+            )
+            self.assertIsInstance(runner, WindowedRunner)
+            app = create_app(
+                model_path="unused-local-model",
+                runs_dir=tmpdir,
+                backend="vllm",
+                vllm_base_url="http://vllm.test:8000/v1",
+                vllm_model="moss-served",
+                file_mode_runner=runner,
+            )
+            # The app does not build a second runner beside the one it was handed: the
+            # live service's terminal pass decodes through this very object, so a copy
+            # here would make "terminal == file" an agreement instead of an identity.
+            self.assertIs(app.state.manager.model_runner, runner)
+
     def test_vllm_speaker_identity_enablement_requires_state_path(self):
         from moss_transcribe_diarize.app.server import create_app
 

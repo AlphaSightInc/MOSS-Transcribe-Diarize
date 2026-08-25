@@ -26,6 +26,51 @@ from .vllm_runner import VllmRunner
 from .windowed_transcription import WindowedRunner
 
 
+def build_file_mode_runner(
+    *,
+    model_path: str | Path,
+    device: str,
+    dtype: str,
+    backend: str,
+    vllm_base_url: str | None,
+    vllm_model: str | None,
+    vllm_api_key: str | None,
+    vllm_timeout: float,
+    speaker_identity_tier_b: bool,
+    speaker_identity_state: str | Path | None,
+    speaker_identity_fixture: str | Path | None,
+):
+    """Build file mode's transcription runner: the 150/120 windowed pipeline, or the local one.
+
+    Named and callable on its own because the live service's terminal pass decodes the whole
+    meeting through *this* object (plan §12.3). A deployment that wants terminal convergence
+    builds the runner once and hands the same instance to file mode and to the terminal
+    finalizer, so "terminal == file on identical bytes" is a fact about one object rather
+    than an agreement two configurations have to keep.
+    """
+
+    if backend == "vllm":
+        if not vllm_base_url:
+            raise ValueError("--vllm-base-url is required when backend='vllm'.")
+        identity_resolver = _build_file_identity_resolver(
+            tier_b_enabled=speaker_identity_tier_b,
+            state_path=speaker_identity_state,
+            fixture_path=speaker_identity_fixture,
+        )
+        return WindowedRunner(
+            VllmRunner(
+                base_url=vllm_base_url,
+                model=vllm_model or str(model_path),
+                api_key=vllm_api_key,
+                timeout=vllm_timeout,
+            ),
+            identity_resolver=identity_resolver,
+        )
+    if speaker_identity_tier_b:
+        raise ValueError("Speaker identity Tier B is only supported by the vLLM windowed file-mode backend.")
+    return ModelRunner(model_path, device=device, dtype=dtype)
+
+
 def create_app(
     *,
     model_path: str | Path,
@@ -45,6 +90,10 @@ def create_app(
     speaker_identity_tier_b: bool = False,
     speaker_identity_state: str | Path | None = None,
     speaker_identity_fixture: str | Path | None = None,
+    # File mode's own runner, when the deployment built it before the app. It does that
+    # only to hand the same instance to the live service's terminal pass; left None, the
+    # app builds exactly the runner it always built, from the arguments above.
+    file_mode_runner: Any | None = None,
     live_enabled: bool = False,
     live_max_retained_samples: int | None = None,
     live_hard_cap_samples: int | None = None,
@@ -78,27 +127,21 @@ def create_app(
     frontend_available = (frontend_dir / "index.html").is_file()
     if frontend_available:
         app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
-    if backend == "vllm":
-        if not vllm_base_url:
-            raise ValueError("--vllm-base-url is required when backend='vllm'.")
-        identity_resolver = _build_file_identity_resolver(
-            tier_b_enabled=speaker_identity_tier_b,
-            state_path=speaker_identity_state,
-            fixture_path=speaker_identity_fixture,
+    runner = file_mode_runner
+    if runner is None:
+        runner = build_file_mode_runner(
+            model_path=model_path,
+            device=device,
+            dtype=dtype,
+            backend=backend,
+            vllm_base_url=vllm_base_url,
+            vllm_model=vllm_model,
+            vllm_api_key=vllm_api_key,
+            vllm_timeout=vllm_timeout,
+            speaker_identity_tier_b=speaker_identity_tier_b,
+            speaker_identity_state=speaker_identity_state,
+            speaker_identity_fixture=speaker_identity_fixture,
         )
-        runner = WindowedRunner(
-            VllmRunner(
-                base_url=vllm_base_url,
-                model=vllm_model or str(model_path),
-                api_key=vllm_api_key,
-                timeout=vllm_timeout,
-            ),
-            identity_resolver=identity_resolver,
-        )
-    else:
-        if speaker_identity_tier_b:
-            raise ValueError("Speaker identity Tier B is only supported by the vLLM windowed file-mode backend.")
-        runner = ModelRunner(model_path, device=device, dtype=dtype)
     manager = JobManager(
         runs_dir,
         runner,

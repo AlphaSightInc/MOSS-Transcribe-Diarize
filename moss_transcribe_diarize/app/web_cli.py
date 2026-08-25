@@ -8,7 +8,7 @@ from pathlib import Path
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 
 from .cli import DEFAULT_MODEL
-from .server import create_app
+from .server import build_file_mode_runner, create_app
 
 
 def parse_args() -> argparse.Namespace:
@@ -138,7 +138,7 @@ class _LiveCliRunnerProxy:
         )
 
 
-def _live_runtime_factory(args: argparse.Namespace):
+def _live_runtime_factory(args: argparse.Namespace, *, file_runner: object | None):
     if not args.live:
         return None
     if not args.live_provider_manifest:
@@ -150,6 +150,41 @@ def _live_runtime_factory(args: argparse.Namespace):
         config,
         _LiveCliRunnerProxy(args),
         vector_journal=_live_vector_journal(args),
+        terminal_finalizer=_live_terminal_finalizer(args, file_runner=file_runner),
+    )
+
+
+def _live_terminal_finalizer(args: argparse.Namespace, *, file_runner: object | None):
+    """The meeting's last listener: file mode's own runner, file mode's own arguments.
+
+    Both halves are read from the deployment rather than restated here. `file_runner` is the
+    very object the batch `JobManager` transcribes with -- built once in `main`, handed to
+    both -- and the arguments come from `resolve_inference_options`, the same rule a file
+    job resolves through, called with no per-request overrides because a meeting is not a
+    request. `max_length_cap` mirrors what `create_app` gives the `JobManager`, so a
+    deployment whose `--max-len` file mode would refuse is refused here too, at startup.
+    """
+
+    if file_runner is None:
+        return None
+    from .jobs import resolve_inference_options
+    from .live_transcript_convergence import TerminalTranscriptFinalizer
+
+    return TerminalTranscriptFinalizer(
+        runner=file_runner,
+        transcribe_kwargs=resolve_inference_options(
+            prompt=None,
+            max_length=None,
+            max_new_tokens=None,
+            decoding=None,
+            temperature=None,
+            default_prompt=args.prompt,
+            default_max_length=args.max_len,
+            default_max_new_tokens=args.max_new_tokens,
+            default_decoding=args.decoding,
+            default_temperature=args.temperature,
+            max_length_cap=args.max_len if args.backend == "vllm" else None,
+        ),
     )
 
 
@@ -317,12 +352,28 @@ def main() -> None:
         raise SystemExit("Install uvicorn to run mtd-subtitle-web.") from exc
 
     args = parse_args()
-    live_runtime_factory = _live_runtime_factory(args)
+    # File mode's runner is built here, before the app, for one reason: the live service's
+    # terminal pass decodes the whole meeting through the same instance (plan §12.3).
+    file_mode_runner = build_file_mode_runner(
+        model_path=Path(args.model).expanduser(),
+        device=args.device,
+        dtype=args.dtype,
+        backend=args.backend,
+        vllm_base_url=args.vllm_base_url,
+        vllm_model=args.vllm_model,
+        vllm_api_key=args.vllm_api_key,
+        vllm_timeout=args.vllm_timeout,
+        speaker_identity_tier_b=args.speaker_identity_tier_b,
+        speaker_identity_state=args.speaker_identity_state,
+        speaker_identity_fixture=args.speaker_identity_fixture,
+    )
+    live_runtime_factory = _live_runtime_factory(args, file_runner=file_mode_runner)
     live_startup = _live_startup_config(args)
     live_shared_token = _live_shared_token(args)
     live_tape_store = _live_tape_store(args)
     app = create_app(
         model_path=Path(args.model).expanduser(),
+        file_mode_runner=file_mode_runner,
         runs_dir=Path(args.runs_dir).expanduser(),
         device=args.device,
         dtype=args.dtype,

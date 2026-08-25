@@ -668,7 +668,7 @@ def test_the_declared_store_reaches_the_application(monkeypatch, tmp_path: Path)
     from moss_transcribe_diarize.app import web_cli
 
     recorded: dict[str, object] = {}
-    monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args: None)
+    monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args, *, file_runner: None)
     monkeypatch.setattr(
         web_cli,
         "_live_startup_config",

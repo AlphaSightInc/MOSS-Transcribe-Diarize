@@ -28,6 +28,62 @@ from .model_runner import ModelRunner
 
 
 TERMINAL_STATES = {"waiting_review", "done", "failed", "cancelled"}
+
+
+def resolve_inference_options(
+    *,
+    prompt: str | None,
+    max_length: int | None,
+    max_new_tokens: int | None,
+    decoding: str | None,
+    temperature: float | None,
+    default_prompt: str,
+    default_max_length: int,
+    default_max_new_tokens: int,
+    default_decoding: str,
+    default_temperature: float | None,
+    max_length_cap: int | None,
+) -> dict[str, Any]:
+    """The inference arguments a file-mode decode runs with: per-request over deployment.
+
+    A module function rather than a `JobManager` method because file mode is no longer its
+    only caller. The live service's terminal pass decodes the whole meeting through file
+    mode's own runner (plan §12.3), and it is measured against the file arm of the same
+    audio -- so a terminal pass that resolved its arguments by a second rule would turn
+    every convergence number into a comparison of two configurations. One rule, two callers.
+    """
+
+    prompt_value = default_prompt if prompt is None or not prompt.strip() else prompt
+    max_length_value = default_max_length if max_length is None else int(max_length)
+    max_new_tokens_value = default_max_new_tokens if max_new_tokens is None else int(max_new_tokens)
+    decoding_value = decoding or default_decoding
+    if decoding_value not in {"greedy", "sample"}:
+        raise ValueError("decoding must be greedy or sample.")
+    if max_length_value <= 0:
+        raise ValueError("max_length must be greater than 0.")
+    if max_length_cap is not None and max_length_value > max_length_cap:
+        raise ValueError(f"max_len must be less than or equal to {max_length_cap}.")
+    if max_new_tokens_value <= 0:
+        raise ValueError("max_new_tokens must be greater than 0.")
+
+    temperature_value = default_temperature if temperature is None else float(temperature)
+    if decoding_value == "greedy":
+        temperature_value = None
+    else:
+        if temperature_value is None:
+            temperature_value = 1.0
+        if temperature_value <= 0:
+            raise ValueError("temperature must be greater than 0.")
+
+    return {
+        "prompt": prompt_value,
+        "max_length": max_length_value,
+        "max_new_tokens": max_new_tokens_value,
+        "decoding": decoding_value,
+        "temperature": temperature_value,
+    }
+
+
 STARTUP_RESUMABLE_STATES = {"queued", "loading_model", "transcribing", "postprocessing"}
 ACTIVE_STATES = STARTUP_RESUMABLE_STATES | {"rendering"}
 
@@ -640,35 +696,19 @@ class JobManager:
         decoding: str | None,
         temperature: float | None,
     ) -> dict[str, Any]:
-        prompt_value = self.prompt if prompt is None or not prompt.strip() else prompt
-        max_length_value = self.max_length if max_length is None else int(max_length)
-        max_new_tokens_value = self.max_new_tokens if max_new_tokens is None else int(max_new_tokens)
-        decoding_value = decoding or self.decoding
-        if decoding_value not in {"greedy", "sample"}:
-            raise ValueError("decoding must be greedy or sample.")
-        if max_length_value <= 0:
-            raise ValueError("max_length must be greater than 0.")
-        if self.max_length_cap is not None and max_length_value > self.max_length_cap:
-            raise ValueError(f"max_len must be less than or equal to {self.max_length_cap}.")
-        if max_new_tokens_value <= 0:
-            raise ValueError("max_new_tokens must be greater than 0.")
-
-        temperature_value = self.temperature if temperature is None else float(temperature)
-        if decoding_value == "greedy":
-            temperature_value = None
-        else:
-            if temperature_value is None:
-                temperature_value = 1.0
-            if temperature_value <= 0:
-                raise ValueError("temperature must be greater than 0.")
-
-        return {
-            "prompt": prompt_value,
-            "max_length": max_length_value,
-            "max_new_tokens": max_new_tokens_value,
-            "decoding": decoding_value,
-            "temperature": temperature_value,
-        }
+        return resolve_inference_options(
+            prompt=prompt,
+            max_length=max_length,
+            max_new_tokens=max_new_tokens,
+            decoding=decoding,
+            temperature=temperature,
+            default_prompt=self.prompt,
+            default_max_length=self.max_length,
+            default_max_new_tokens=self.max_new_tokens,
+            default_decoding=self.decoding,
+            default_temperature=self.temperature,
+            max_length_cap=self.max_length_cap,
+        )
 
     def _touch(self, job: JobRecord, *, error: str | None = None, save: bool = True) -> None:
         job.error = error

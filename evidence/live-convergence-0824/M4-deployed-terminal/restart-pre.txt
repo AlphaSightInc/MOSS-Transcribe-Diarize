@@ -1,0 +1,46 @@
+== pre-restart service ==
+  PID STARTED                      COMMAND
+44276 Tue Aug 25 05:52:14 2026     zsh -c .venv/bin/python -m moss_transcribe_diarize.app.web_cli --backend vllm --model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-base-url http://127.0.0.1:18000/v1 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-timeout 1800 --runs-dir /Users/gao/.local/share/moss-transcribe-diarize/dev-runs --host 0.0.0.0 --port 7861 --max-len 16384 --max-new-tokens 12000 --live --live-provider-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json --live-auth-state /Users/gao/.local/share/moss-transcribe-diarize/g3/live-auth.json --live-shared-token-file /Users/gao/.local/share/moss-transcribe-diarize/g3/shared-token --live-tls-certfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-cert.pem --live-tls-keyfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-key.pem --live-helper-lease-seconds 30 --live-vector-journal-path /Users/gao/.local/share/moss-transcribe-diarize/g3/vector-journal.jsonl 2>&1 | tee /Users/gao/.local/share/moss-transcribe-diarize/g3/web_cli-campaign-20260825-055214.log
+44278 Tue Aug 25 05:52:14 2026     .venv/bin/python -m moss_transcribe_diarize.app.web_cli --backend vllm --model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-base-url http://127.0.0.1:18000/v1 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-timeout 1800 --runs-dir /Users/gao/.local/share/moss-transcribe-diarize/dev-runs --host 0.0.0.0 --port 7861 --max-len 16384 --max-new-tokens 12000 --live --live-provider-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json --live-auth-state /Users/gao/.local/share/moss-transcribe-diarize/g3/live-auth.json --live-shared-token-file /Users/gao/.local/share/moss-transcribe-diarize/g3/shared-token --live-tls-certfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-cert.pem --live-tls-keyfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-key.pem --live-helper-lease-seconds 30 --live-vector-journal-path /Users/gao/.local/share/moss-transcribe-diarize/g3/vector-journal.jsonl
+
+== pre-restart repo HEAD ==
+29681e0 ralph: iteration 26 - M4 step 3c, the meeting keeps its reader
+ M moss_transcribe_diarize/app/jobs.py
+ M moss_transcribe_diarize/app/live_manifest_finalizer.py
+ M moss_transcribe_diarize/app/live_provider_bundle.py
+ M moss_transcribe_diarize/app/server.py
+ M moss_transcribe_diarize/app/web_cli.py
+ M tests/test_app_api.py
+ M tests/test_live_manifest_finalizer.py
+ M tests/test_live_provider_bundle.py
+ M tests/test_live_service_deployment.py
+ M tests/test_speaker_identity_provider.py
+?? evidence/live-convergence-0824/M4-deployed-terminal/
+
+== pre-restart deployed manifest bounds/hashes ==
+{
+  "bounds_config": {
+    "frame_samples": 8000,
+    "hard_cap_samples": 40000,
+    "max_events": 1000,
+    "max_frame_samples": 16000,
+    "max_identity_speakers": 16,
+    "max_queue_depth": 16,
+    "max_retained_samples": 960000,
+    "stop_drain_deadline_seconds": 5.0
+  },
+  "config_hashes": {
+    "bounds_config_hash": "bb7e098d370e94a25fca10a7c56d3bca8a38e9b768a89633acedf54ff40d1c11",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "component_config_hash": "96c6440ec8175ef42f5ff18436bf047a7b181240392bd951ebfce2983fdf8733",
+    "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+    "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+    "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+  },
+  "source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b"
+}
+
+== pre-restart /api/runtime (descriptor) ==
+{"ffmpeg":{"available":true,"ffmpeg":"/opt/homebrew/bin/ffmpeg","ffprobe":"/opt/homebrew/bin/ffprobe"},"model":{"backend":"vllm","path":"OpenMOSS-Team/MOSS-Transcribe-Diarize","device":"vllm-api","dtype":"remote","base_url":"http://127.0.0.1:18000/v1","windowing":{"window_seconds":150,"stride_seconds":120},"speaker_identity":{"schema_version":2,"config":{"tier_a":{"min_overlap_support_seconds":2.0,"min_overlap_dice":0.75,"mutual_margin_seconds":1.0},"tier_b":{"enabled":false,"min_segment_seconds":2.0,"max_segments_per_node":3,"similarity":0.7,"margin":0.2}},"provider":{"provider":"wespeaker_resnet152_lm","revision":"4adba1525a6c9d5fff74b6df43a6ec97a86c4112","state_sha256":"5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8","embedding_dimension":256,"frontend_version":"wespeaker-onnx-fbank-v1","device":"cpu"},"availability":{"available":false,"reason":"disabled"}},"processor":{}},"inference":{"prompt":"请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。","max_length":16384,"max_new_tokens":12000,"decoding":"greedy","temperature":1.0},"live":{"enabled":true,"sample_rate":16000,"descriptor":{"source_revision":"cc8f778a89326ee18a3c362d886bb9abdd63646b","provider_name":"moss-rtx-webrtc-wespeaker","provider_revision":"webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112","provider_manifest_hash":"4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f","config_hashes":{"endpoint_config_hash":"9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222","identity_config_hash":"4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89","decoder_config_hash":"20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c","combined_config_hash":"431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"},"bounds":{"max_frame_samples":16000,"max_queue_depth":16,"max_retained_samples":960000,"max_identity_speakers":16,"max_events":1000,"hard_cap_samples":40000,"stop_drain_deadline_seconds":5.0},"schema_version":1,"live_protocol_version":"moss-live-service.v1","live_protocol":{"protocol":"moss-live-service.v2","min_protocol_version":2,"max_protocol_version":2,"capabilities":{"lanes":true,"binary":false,"idempotent_frames":true,"resumable":true}},"sample_rate":16000,"frame_samples":8000,"feature_enabled":true}}}
+== pre-restart /api/live/descriptor ==
+{"descriptor":{"source_revision":"cc8f778a89326ee18a3c362d886bb9abdd63646b","provider_name":"moss-rtx-webrtc-wespeaker","provider_revision":"webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112","provider_manifest_hash":"4689583269c8146be33d17f4fc8ae5878a7c26ed5bd6a889b8c1314436484a7f","config_hashes":{"endpoint_config_hash":"9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222","identity_config_hash":"4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89","decoder_config_hash":"20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c","combined_config_hash":"431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"},"bounds":{"max_frame_samples":16000,"max_queue_depth":16,"max_retained_samples":960000,"max_identity_speakers":16,"max_events":1000,"hard_cap_samples":40000,"stop_drain_deadline_seconds":5.0},"schema_version":1,"live_protocol_version":"moss-live-service.v1","live_protocol":{"protocol":"moss-live-service.v2","min_protocol_version":2,"max_protocol_version":2,"capabilities":{"lanes":true,"binary":false,"idempotent_frames":true,"resumable":true}},"sample_rate":16000,"frame_samples":8000,"feature_enabled":true},"preflight_status_lines":{"browser_microphone_silent":"No microphone sound was detected. In Chrome, open Settings > Privacy and security > Site settings > Microphone and select the correct default input."}}

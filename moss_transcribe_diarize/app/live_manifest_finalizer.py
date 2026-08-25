@@ -45,7 +45,7 @@ from .live_provider_bundle import _endpoint_config as read_endpoint_policy_confi
 from .live_provider_bundle import _fingerprint_album as read_fingerprint_album
 from .live_provider_bundle import _identity_config as read_identity_config
 from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
-from .live_session import LIVE_SAMPLE_RATE
+from .live_session import LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
 
 
 class LiveManifestFinalizeError(ValueError):
@@ -76,17 +76,31 @@ LIVE_RECONNECT_BURST_FRAMES = LIVE_RECONNECT_BURST_SAMPLES // LIVE_WIRE_FRAME_SA
 
 @dataclass(frozen=True, slots=True)
 class LiveManifestRetune:
-    """The three bounds a deployment states explicitly, checked against the contract."""
+    """The bounds a deployment states explicitly, checked against the contract.
+
+    Three are always stated. `max_tape_bytes` is the fourth and is optional, because
+    ADR-0003 D2/D8 make the complete session tape opt-in: a deployment that states none
+    keeps exactly the retention every gate in the live-convergence campaign was measured
+    against, and its terminal convergence reports itself unavailable rather than running
+    over a partial meeting.
+    """
 
     hard_cap_samples: int
     max_retained_samples: int
     frame_samples: int
+    max_tape_bytes: int | None = None
 
     def __post_init__(self) -> None:
         for name in ("hard_cap_samples", "max_retained_samples", "frame_samples"):
             value = getattr(self, name)
             if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
                 raise LiveManifestFinalizeError(f"{name} must be a positive integer.")
+        if self.max_tape_bytes is not None and (
+            not isinstance(self.max_tape_bytes, int)
+            or isinstance(self.max_tape_bytes, bool)
+            or self.max_tape_bytes <= 0
+        ):
+            raise LiveManifestFinalizeError("max_tape_bytes must be a positive integer.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,6 +166,10 @@ def finalize_payload(
     final["bounds_config"]["hard_cap_samples"] = retune.hard_cap_samples
     final["bounds_config"]["max_retained_samples"] = retune.max_retained_samples
     final["bounds_config"]["frame_samples"] = retune.frame_samples
+    if retune.max_tape_bytes is None:
+        final["bounds_config"].pop("max_tape_bytes", None)
+    else:
+        final["bounds_config"]["max_tape_bytes"] = retune.max_tape_bytes
 
     evidence = validate_contract(final)
 
@@ -232,9 +250,13 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
             f"{replay_frames} frames, beyond the {LIVE_V2_REPLAY_ACK_WINDOW}-ack replay window."
         )
 
+    tape_bytes = _tape_bytes(bounds, frame_samples=frame_samples, max_retained=max_retained)
+
     identity = _identity_evidence(payload)
 
     return {
+        "max_tape_bytes": tape_bytes,
+        "max_tape_seconds": None if tape_bytes is None else tape_bytes / (LIVE_SAMPLE_RATE * PCM16_BYTES_PER_SAMPLE),
         "frame_samples": frame_samples,
         "frame_seconds": frame_samples / LIVE_SAMPLE_RATE,
         "hard_cap_samples": hard_cap,
@@ -247,6 +269,43 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         "replay_ack_headroom_frames": LIVE_V2_REPLAY_ACK_WINDOW - replay_frames,
         **identity,
     }
+
+
+def _tape_bytes(
+    bounds: Mapping[str, Any],
+    *,
+    frame_samples: int,
+    max_retained: int,
+) -> int | None:
+    """The declared complete-tape capacity, or None, checked against the bounds beside it.
+
+    Unlike the matcher thresholds this is not a free parameter: the tape exists so that the
+    terminal pass has `[0, meeting_end)` of the meeting's mixed audio (plan §12.3), and two
+    relations follow from that. It must be a whole number of the wire frames the tape is fed
+    -- a capacity that cuts a frame in half stops taping mid-frame and degrades every meeting
+    that reaches it at a byte nobody chose. And it must hold at least what the session's
+    rolling ring already retains, because a "complete" tape shorter than the ring is strictly
+    worse than the ring the service has had all along.
+    """
+
+    value = bounds.get("max_tape_bytes")
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise LiveManifestFinalizeError("bounds_config.max_tape_bytes must be a positive integer.")
+    frame_bytes = frame_samples * PCM16_BYTES_PER_SAMPLE
+    if value % frame_bytes:
+        raise LiveManifestFinalizeError(
+            f"max_tape_bytes must be a whole number of {frame_bytes}-byte wire frames; got {value}."
+        )
+    retained_bytes = max_retained * PCM16_BYTES_PER_SAMPLE
+    if value < retained_bytes:
+        raise LiveManifestFinalizeError(
+            f"max_tape_bytes {value} is below the {retained_bytes} bytes the session already "
+            "retains in its rolling ring; a complete tape shorter than the ring keeps less "
+            "of the meeting than retaining nothing extra."
+        )
+    return value
 
 
 def _identity_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -323,6 +382,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--max-retained-samples", required=True, type=int)
     parser.add_argument("--frame-samples", required=True, type=int)
     parser.add_argument(
+        "--max-tape-bytes",
+        type=int,
+        default=None,
+        help=(
+            "bounds_config.max_tape_bytes: how much of the meeting's mixed audio a session "
+            "may retain so the terminal convergence pass has a whole meeting to run over "
+            "(ADR-0003 D8). Omitted means no tape, which is the default posture."
+        ),
+    )
+    parser.add_argument(
         "--min-match-score",
         required=True,
         type=float,
@@ -377,6 +446,7 @@ def _run(args: argparse.Namespace) -> int:
         hard_cap_samples=args.hard_cap_samples,
         max_retained_samples=args.max_retained_samples,
         frame_samples=args.frame_samples,
+        max_tape_bytes=args.max_tape_bytes,
     )
     identity = LiveIdentityRecalibration(
         min_match_score=args.min_match_score,
@@ -409,6 +479,11 @@ def _run(args: argparse.Namespace) -> int:
         f"set bounds_config.hard_cap_samples={retune.hard_cap_samples}",
         f"set bounds_config.max_retained_samples={retune.max_retained_samples}",
         f"set bounds_config.frame_samples={retune.frame_samples}",
+        (
+            "clear bounds_config.max_tape_bytes"
+            if retune.max_tape_bytes is None
+            else f"set bounds_config.max_tape_bytes={retune.max_tape_bytes}"
+        ),
         "regenerate config_hashes",
         f"write {output_path}",
     ):

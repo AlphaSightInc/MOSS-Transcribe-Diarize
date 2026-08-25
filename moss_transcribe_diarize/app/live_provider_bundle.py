@@ -271,6 +271,7 @@ def build_live_runtime_factory(
     runner: Any,
     *,
     vector_journal: LiveVectorJournal | None = None,
+    terminal_finalizer: Any | None = None,
 ) -> Callable[[], LiveServiceRuntime]:
     preflight = config.preflight()
     if not preflight.available:
@@ -321,6 +322,11 @@ def build_live_runtime_factory(
                 max_samples=DEFAULT_ROLLING_GEOMETRY.window_samples,
             ),
             identity_preparer_factory=lambda: _identity_preparer(config, encoder=identity_encoder),
+            # The meeting's last listener, or nothing. Deployment-scoped like the journal
+            # rather than manifest-scoped, because the object it holds is file mode's own
+            # runner -- the manifest describes the live provider, not the file pipeline.
+            # No finalizer, no terminal pass, and every meeting reads `not_started`.
+            terminal_finalizer=terminal_finalizer,
             vector_journal=vector_journal,
         )
 

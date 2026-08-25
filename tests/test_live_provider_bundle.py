@@ -338,6 +338,22 @@ def test_bundle_runtime_factory_builds_audio_dependent_vad_and_live_identity_evi
     assert ("assignments", "S01->speaker-0001") in second.proposed_snapshot.diagnostics
 
 
+def test_bundle_runtime_factory_carries_the_deployments_terminal_finalizer(tmp_path):
+    config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
+    finalizer = object()
+
+    named = build_live_runtime_factory(config, FakeRunner(), terminal_finalizer=finalizer)()
+    unnamed = build_live_runtime_factory(config, FakeRunner())()
+
+    # Every session of a deployment shares the one finalizer: it holds no meeting state.
+    assert named._terminal_finalizer is finalizer
+    assert build_live_runtime_factory(
+        config, FakeRunner(), terminal_finalizer=finalizer
+    )()._terminal_finalizer is finalizer
+    # A deployment that names none is the pre-E4 service, which is still the default.
+    assert unnamed._terminal_finalizer is None
+
+
 def test_bundle_runtime_factory_journals_completed_provider_observations(tmp_path):
     config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
     journal_path = tmp_path / "speaker-vectors.jsonl"
@@ -561,7 +577,12 @@ def test_web_cli_disabled_live_does_not_import_provider_bundle_or_optional_provi
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
 
-    assert _live_runtime_factory(SimpleNamespace(live=False, live_provider_manifest=None)) is None
+    assert (
+        _live_runtime_factory(
+            SimpleNamespace(live=False, live_provider_manifest=None), file_runner=None
+        )
+        is None
+    )
 
 
 def test_web_cli_enabled_live_rejects_bad_manifest_before_app_construction(tmp_path):
@@ -582,7 +603,7 @@ def test_web_cli_enabled_live_rejects_bad_manifest_before_app_construction(tmp_p
     )
 
     with pytest.raises(LiveProviderBundleAdmissionError) as exc:
-        _live_runtime_factory(args)
+        _live_runtime_factory(args, file_runner=None)
 
     assert exc.value.failure.code == "bundle_preflight_failed"
     assert "runtime.device must be cpu" in exc.value.failure.detail["failures"]

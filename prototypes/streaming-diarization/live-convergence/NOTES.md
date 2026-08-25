@@ -25,6 +25,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_terminal_tape.py` + `mutate_terminal_tape.sh` | does a session now retain the complete mixed audio a terminal pass needs — all of it, only it, and no longer (P-M4-B)? | **yes** — tape digest equals the corpus digest and a read-back differs in `0` samples on all three trio cases, peak `accepted x 2` bytes, released to `0` bytes with the meeting, and declaring it changes nothing the meeting publishes; `evidence/live-convergence-0824/M4-terminal-tape/` |
 | `verify_terminal_finalizer.py` + `mutate_terminal_finalizer.sh` | handed the paired file arm's own decode, does the terminal adapter publish the paired file arm's own surface — and how should a terminal pass name its speakers? | **yes, delta `0.000000` on WER, DER, coverage, text-speaker accuracy and content recall, 3/3 cases**; and the naming policy is decided by measurement — the per-segment projection costs `+.38…+.57` DER, so terminal names speakers **per speaker** (ADR-0005 D8); `evidence/live-convergence-0824/M4-terminal-finalizer/` |
 | `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` | does the RUNTIME give a meeting its last listener without taking the meeting away first (plan §12.3, D-M4-3)? | **yes** — the stop request returns `running` with zero terminal decodes issued, the surface a reader polls stays the rolling one for the whole interval, the pass then publishes the file arm's surface to `1e-12`, and the tape is released *after* the terminal evidence; a failed pass says `failed` and keeps the rolling surface, a deployment with no tape says `unavailable` with a reason; `evidence/live-convergence-0824/M4-terminal-lifecycle/` |
+| `verify_deployed_terminal.py` | did the E4 build reach the DEPLOYED service, and does a real meeting get a terminal pass there? | **yes** — `bounds.max_tape_bytes=9600000` on the wire, the pass starts after `POST /stop` has already answered, decodes 960 000 samples in `1.918 s` through file mode's own runner, and publishes the file arm's transcript word for word (WER `.096000 → .088000` = file's `.088000`); nine gates, nine reactions; `evidence/live-convergence-0824/M4-deployed-terminal/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -688,4 +689,52 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 
 # every mutation, with all three production files restored on exit
 prototypes/streaming-diarization/live-convergence/mutate_terminal_lifecycle.sh /tmp/lifecycle-mut
+```
+
+## `verify_deployed_terminal.py` — iteration 27, M4 step 3d: the deploy
+
+**Question.** Every M4 number so far was measured with the decoder held fixed, which is what
+made them facts about the code. Does the **deployed** service — real MOSS decoder, deployed
+manifest, a client that stops a meeting over HTTP — actually keep a whole meeting, run a
+terminal pass on it, and publish the result?
+
+**Answer: yes, and the published surface is the file arm itself.** One warm-decoder pass of
+`lex_javier_milei` against the restarted service:
+
+| arm | WER | TBSA | DER | speaker accuracy |
+|---|---|---|---|---|
+| file | `.088000` | `.881244` | `.151833` | `.848167` |
+| rolling (at stop) | `.096000` | `.906296` | `.117333` | `.882667` |
+| **terminal (published)** | **`.088000`** | `.881244` | `.151833` | `.848167` |
+
+Not "within a bound" — the *same 120 words on the same 20 segment boundaries*, which is what
+handing the terminal pass file mode's own `WindowedRunner` was for. `terminal_finalization_*`
+arrive at seq 263–265, after `session_closed` at 262 and before `session_tape_released` at 266.
+
+**What shipped with it.** `web_cli.main` builds the file-mode runner once
+(`server.build_file_mode_runner`, extracted unchanged out of `create_app`) and hands the same
+instance to `create_app` and to `TerminalTranscriptFinalizer`; the finalizer's arguments come
+from `jobs.resolve_inference_options`, the one rule a file job resolves through. The deployed
+manifest declares `bounds_config.max_tape_bytes = 9 600 000` through
+`live_manifest_finalizer`'s new `--max-tape-bytes`, checked against two relations — a whole
+number of wire frames, and not below the rolling ring — because a tape capacity, unlike a
+matcher threshold, is not a free parameter.
+
+**The finding that blocks the M4 exit.** The campaign's paired driver stops reading when
+`POST /stop` answers, which is now *before* the terminal pass runs. This pass's
+`live-hypothesis.jsonl` is therefore the **rolling** surface and its trace ends at seq 263;
+the terminal events were recovered by polling the service afterwards. The replay client has to
+wait for `finalization_status` to leave `running` before it snapshots, or every M4 exit number
+would silently be a rolling number.
+
+```bash
+# the nine gates, from the checked-in bundle (no GPU, no service, zero MOSS requests)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
+  --bundle evidence/live-convergence-0824/M4-deployed-terminal
+
+# one reaction per gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
+  --bundle evidence/live-convergence-0824/M4-deployed-terminal --selftest
 ```

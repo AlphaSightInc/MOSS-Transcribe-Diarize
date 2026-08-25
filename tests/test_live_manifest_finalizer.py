@@ -172,6 +172,7 @@ def _finalize(
     min_match_margin: float = ALBUM_MIN_MATCH_MARGIN,
     album_admission_seconds: float = ALBUM_ADMISSION_SECONDS,
     birth_min_seconds: float = ALBUM_BIRTH_MIN_SECONDS,
+    max_tape_bytes: int | None = None,
     input_path: Path | None = None,
     output_path: Path | None = None,
     dry_run: bool = False,
@@ -200,6 +201,8 @@ def _finalize(
         "--birth-min-seconds",
         str(birth_min_seconds),
     ]
+    if max_tape_bytes is not None:
+        argv += ["--max-tape-bytes", str(max_tape_bytes)]
     if dry_run:
         argv.append("--dry-run")
     return main(argv)
@@ -248,6 +251,67 @@ def test_finalize_writes_the_retuned_bounds_and_regenerated_hashes(tmp_path, cap
     assert f"wrote: {output}" in printed
     assert "evidence: hard_cap_seconds=2.5" in printed
     assert "evidence: max_retained_seconds=60.0" in printed
+
+
+def test_a_stated_tape_capacity_reaches_the_deployed_bounds_and_its_hashes(tmp_path, capsys):
+    """ADR-0003 D8: the complete session tape is a capacity the deployment declares."""
+
+    output = tmp_path / "live-provider-manifest.json"
+    # 300 s of 16 kHz mono PCM16 -- Appendix B Q10's own premise, and the campaign's cap.
+    assert _finalize(tmp_path, output_path=output, max_tape_bytes=9_600_000) == 0
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["bounds_config"]["max_tape_bytes"] == 9_600_000
+    assert _bounds(payload["bounds_config"]).max_tape_bytes == 9_600_000
+
+    config = LiveProviderBundleConfig.from_mapping(payload, base_dir=output.parent)
+    computed = compute_live_provider_bundle_hashes(config)
+    assert payload["config_hashes"] == computed
+
+    printed = capsys.readouterr().out
+    assert "plan: set bounds_config.max_tape_bytes=9600000" in printed
+    assert "evidence: max_tape_seconds=300.0" in printed
+
+
+def test_declaring_a_tape_moves_the_bounds_hash_and_leaves_the_decode_hashes_alone(tmp_path):
+    """The signature of the change: what a redeploy should expect to differ, and what not."""
+
+    without = tmp_path / "without.json"
+    with_tape = tmp_path / "with.json"
+    assert _finalize(tmp_path, output_path=without) == 0
+    assert _finalize(tmp_path, output_path=with_tape, max_tape_bytes=9_600_000) == 0
+
+    before = json.loads(without.read_text(encoding="utf-8"))
+    after = json.loads(with_tape.read_text(encoding="utf-8"))
+
+    assert "max_tape_bytes" not in before["bounds_config"]
+    assert before["config_hashes"]["bounds_config_hash"] != after["config_hashes"]["bounds_config_hash"]
+    assert before["config_hashes"]["component_config_hash"] != after["config_hashes"]["component_config_hash"]
+    # `combined_config_hash` is f(decoder, endpoint, identity): retention is none of them,
+    # so a paired arm measured against the previous manifest is still the same decode.
+    for key in ("combined_config_hash", "decoder_config_hash", "endpoint_config_hash", "identity_config_hash"):
+        assert before["config_hashes"][key] == after["config_hashes"][key]
+    assert compute_live_provider_manifest_hash(
+        LiveProviderBundleConfig.from_mapping(before, base_dir=without.parent)
+    ) != compute_live_provider_manifest_hash(
+        LiveProviderBundleConfig.from_mapping(after, base_dir=with_tape.parent)
+    )
+
+
+def test_a_finalize_that_states_no_tape_clears_one_a_previous_run_declared(tmp_path, capsys):
+    """Retention stays opt-in: withdrawing the flag withdraws the tape, it does not linger."""
+
+    output = tmp_path / "live-provider-manifest.json"
+    assert _finalize(tmp_path, output_path=output, max_tape_bytes=9_600_000) == 0
+    capsys.readouterr()
+
+    source = _write_provisional(tmp_path, **{"bounds_config.max_tape_bytes": 9_600_000})
+    assert _finalize(tmp_path, input_path=source, output_path=output) == 0
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert "max_tape_bytes" not in payload["bounds_config"]
+    assert _bounds(payload["bounds_config"]).max_tape_bytes is None
+    assert "plan: clear bounds_config.max_tape_bytes" in capsys.readouterr().out
 
 
 def test_finalized_manifest_admits_as_a_live_service_descriptor(tmp_path):
@@ -454,6 +518,9 @@ def test_retention_holds_a_reconnect_burst_on_both_lanes_and_keeps_acks_replayab
         ({"hard_cap_samples": 8000}, "min_silence_samples"),
         ({"hard_cap_samples": 160000}, "decoder_config.max_samples"),
         ({"max_retained_samples": 240000}, "reconnect burst"),
+        ({"max_tape_bytes": 9_600_001}, "wire frames"),
+        ({"max_tape_bytes": 1_904_000}, "rolling ring"),
+        ({"max_tape_bytes": 0}, "max_tape_bytes"),
     ],
 )
 def test_refuses_bounds_the_wire_contract_cannot_carry(tmp_path, capsys, kwargs, reason):

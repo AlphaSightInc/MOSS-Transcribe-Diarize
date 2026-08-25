@@ -633,13 +633,22 @@ def test_web_cli_live_main_supplies_auth_tls_and_disables_proxy_headers(tmp_path
             "30",
         ],
     )
-    monkeypatch.setattr(web_cli, "_live_runtime_factory", lambda args: "runtime-factory")
+    def live_runtime_factory(args, *, file_runner):
+        calls["live_file_runner"] = file_runner
+        return "runtime-factory"
+
+    monkeypatch.setattr(web_cli, "_live_runtime_factory", live_runtime_factory)
     monkeypatch.setattr(web_cli, "create_app", create_app)
     monkeypatch.setitem(sys.modules, "uvicorn", SimpleNamespace(run=run))
 
     web_cli.main()
 
     assert calls["create_app"]["live_runtime_factory"] == "runtime-factory"
+    # File mode and the live service's terminal pass transcribe through ONE object: the
+    # deployment builds it here and hands the same instance to both.
+    assert calls["create_app"]["file_mode_runner"] is calls["live_file_runner"]
+    assert calls["live_file_runner"] is not None
+    assert hasattr(calls["live_file_runner"], "transcribe")
     assert calls["create_app"]["live_auth_state_path"] == state
     assert calls["create_app"]["live_shared_token"] == "process-only-secret"
     assert calls["create_app"]["live_server_cert_sha256"] == hashlib.sha256(b"configured leaf cert").hexdigest()
@@ -740,10 +749,17 @@ def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch, tm
     from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
     from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 
-    assert _live_runtime_factory(SimpleNamespace(live=False, live_provider_manifest=None)) is None
+    assert (
+        _live_runtime_factory(
+            SimpleNamespace(live=False, live_provider_manifest=None), file_runner=None
+        )
+        is None
+    )
 
     with pytest.raises(SystemExit, match="--live-provider-manifest"):
-        _live_runtime_factory(SimpleNamespace(live=True, live_provider_manifest=None))
+        _live_runtime_factory(
+            SimpleNamespace(live=True, live_provider_manifest=None), file_runner=None
+        )
 
     calls = []
 
@@ -753,8 +769,8 @@ def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch, tm
             calls.append(("manifest", path))
             return "config"
 
-    def build_factory(config, runner, *, vector_journal):
-        calls.append(("build", config, runner, vector_journal))
+    def build_factory(config, runner, *, vector_journal, terminal_finalizer):
+        calls.append(("build", config, runner, vector_journal, terminal_finalizer))
         return "factory"
 
     monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", Config)
@@ -770,15 +786,41 @@ def test_web_cli_live_factory_is_manifest_backed_and_default_off(monkeypatch, tm
         vllm_timeout=600.0,
         device="cpu",
         dtype="float32",
+        prompt="file mode prompt",
+        max_len=16384,
+        max_new_tokens=12000,
+        decoding="greedy",
+        temperature=1.0,
         live_vector_journal_path=str(tmp_path / "speaker-vectors.jsonl"),
     )
 
-    assert _live_runtime_factory(args) == "factory"
+    file_runner = object()
+    assert _live_runtime_factory(args, file_runner=file_runner) == "factory"
     assert calls[0] == ("manifest", "/provider/live-provider.json")
     assert calls[1][0:2] == ("build", "config")
+    # The live BASE decoder is still the live proxy, not file mode's runner.
     assert hasattr(calls[1][2], "transcribe")
+    assert calls[1][2] is not file_runner
     assert isinstance(calls[1][3], LiveVectorJournal)
     assert calls[1][3].path == (tmp_path / "speaker-vectors.jsonl").resolve()
+    # The TERMINAL pass is file mode's own object and file mode's own resolved arguments:
+    # greedy leaves no temperature, and the deployment's token bounds are carried, not
+    # the finalizer's or the runner's defaults.
+    finalizer = calls[1][4]
+    assert finalizer.runner is file_runner
+    assert finalizer.transcribe_kwargs == {
+        "prompt": "file mode prompt",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "decoding": "greedy",
+        "temperature": None,
+    }
+
+    # A deployment that built no file-mode runner names no finalizer, and the service is
+    # the pre-E4 one: every meeting reads `not_started`.
+    calls.clear()
+    assert _live_runtime_factory(args, file_runner=None) == "factory"
+    assert calls[1][4] is None
 
 
 def test_start_web_is_the_single_environment_adapter(tmp_path):

@@ -1,0 +1,26 @@
+== the six instruments that share verify_runtime_rolling's driver, re-run after the deploy ==
+
+Every instrument's own exit code is reported beside the comparison: an instrument that
+reproduced its artifact but stopped passing its gates would be the same defect.
+
+verify_runtime_rolling.py        vs evidence/live-convergence-0824/M2-runtime-wiring/verify.json
+                                    identical: False   instrument exit: 0   gate ids: ==
+                                    differs at 'deployed_configuration'
+verify_rolling_events.py         vs evidence/live-convergence-0824/M2-event-serialization/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_portal_surface.py         vs evidence/live-convergence-0824/M2-portal-surface/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_export_surface.py         vs evidence/live-convergence-0824/M2-export-switch/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_terminal_tape.py          vs evidence/live-convergence-0824/M4-terminal-tape/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+verify_terminal_finalizer.py     vs evidence/live-convergence-0824/M4-terminal-finalizer/verify.json
+                                    identical: True   instrument exit: 0   gate ids: ==
+FAIL
+
+== the one difference, named ==
+verify_runtime_rolling.py reports the DEPLOYED manifest, and the deployment changed.
+Its checked-in M2 artifact records the pre-tape deployment. The whole difference is:
+    deployed_configuration.bounds_config.max_tape_bytes: (absent) -> 9600000
+Every other field is byte-identical, the instrument still exits 0, and its gate id set
+is unchanged. This is the deploy being visible, not the driver drifting.

@@ -2584,3 +2584,126 @@ appended at the iteration 4->5 boundary]
   `bounds_config_hash` / `component_config_hash`, restart `web_cli`, and record the restart with the
   pre/post descriptor. Then 8d, the M4 exit. Do not restate the gates; they are fixed in
   PREREGISTRATION-M4.md.
+
+2026-08-25 iteration 27 (run 20260825-042645-70858) - M4 (plan E4) STEP 3d: the DEPLOY. The E4
+  build runs on the service, and on the running service a real meeting's published surface
+  IS the paired file arm - 120 words, 20 segments, WER .096000 -> .088000 against the file
+  arm's .088000. Nine gates pass, nine reactions catch them. Service restarted and recorded.
+- Target: context.md candidate 8c-4, the lowest open item. Plan §12.3, ADR-0003 D8, ADR-0005 D8.
+- Service restart (recorded per PRD): stopped pid 44278 (M2 build, up since 05:52:14), launched
+  pid 65689 at 2026-08-25 09:37:10 local on repo HEAD 29681e0 + iteration 27's working tree, same
+  argv, log ~/.local/share/moss-transcribe-diarize/g3/web_cli-campaign-20260825-093710.log.
+  This is the FIRST campaign restart whose descriptor moved, and it moved in exactly three
+  declared ways: bounds.max_tape_bytes absent -> 9600000, source_revision cc8f778a… -> 29681e04…,
+  provider_manifest_hash 46895832… -> 07e32598…. config_hashes IDENTICAL, combined_config_hash
+  included. 4070 Ti untouched. Real MOSS traffic: one warm-up decode + one 60 s live replay +
+  one file job (the paired pass); nothing else.
+- Files touched:
+  moss_transcribe_diarize/app/jobs.py                   (`resolve_inference_options` extracted to
+      module scope verbatim; `JobManager._resolve_inference_options` delegates - one rule, two
+      callers, because the terminal pass is now the second)
+  moss_transcribe_diarize/app/server.py                 (`build_file_mode_runner` extracted from
+      `create_app` unchanged; `create_app(file_mode_runner=)` uses an injected runner when given)
+  moss_transcribe_diarize/app/live_provider_bundle.py   (`build_live_runtime_factory(terminal_finalizer=)`)
+  moss_transcribe_diarize/app/web_cli.py                (builds the file-mode runner ONCE in
+      `main` and hands the same instance to `create_app` and to `_live_terminal_finalizer`;
+      `_live_runtime_factory(args, *, file_runner)`)
+  moss_transcribe_diarize/app/live_manifest_finalizer.py (`--max-tape-bytes`, optional;
+      `LiveManifestRetune.max_tape_bytes`; `_tape_bytes` and its two relations; plan/evidence lines)
+  tests/test_app_api.py                                 (injected runner IS the one file mode uses)
+  tests/test_live_provider_bundle.py                    (factory carries the deployment's finalizer)
+  tests/test_speaker_identity_provider.py               (main hands ONE object to both; the
+      finalizer holds file mode's runner and file mode's resolved arguments)
+  tests/test_live_manifest_finalizer.py                 (3 new tests + 3 refusal rows)
+  tests/test_live_service_deployment.py                 (fake factory learns the new keyword)
+  prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py  (new; nine gates
+      + `--selftest`, nine reactions; scores from bundle artifacts, zero MOSS requests)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                     (index + section)
+  evidence/live-convergence-0824/M4-deployed-terminal/{NOTES.md,gates.json,console.txt,selftest.txt,
+      pass/,final-snapshot.json,events-after-stop.json,restart-{pre,post}.txt,
+      manifest-preview-{no-tape,with-tape}.json,inertness.txt,file-mode-{head,worktree}.json,
+      pytest-{targeted,full}.txt,sha256.txt}                                     (new bundle, 304K)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - verify_deployed_terminal.py --bundle <bundle> -> exit 0, nine gates PASS
+      arm                 WER       TBSA      DER       spk_acc
+      file                .088000   .881244   .151833   .848167
+      rolling (at stop)   .096000   .906296   .117333   .882667
+      terminal (published).088000   .881244   .151833   .848167
+      D-M4-1 deployed manifest declares max_tape_bytes=9600000
+      D-M4-2 started -> text_revision_applied -> completed -> session_tape_released
+      D-M4-3 session_closed(262) precedes terminal_finalization_started(263), status `running`
+      D-M4-4 outcome finalized, tape_samples 960000 == accepted == accounted, decode 1.918 s
+      D-M4-5 every segment authority `terminal`, status `final`, v7 == the terminal revision
+      D-M4-6 terminal IS the file arm: 120 == 120 words, 20 == 20 segments, bounds identical
+      D-M4-7 terminal <= rolling and terminal == file exactly
+      D-M4-8 released (266) after completed (265), retained_samples 0
+      D-M4-9 no three-word run of the meeting appears in any terminal event payload
+  - verify_deployed_terminal.py --selftest -> exit 0, all nine gates react to their own defect
+      (no tape declared / release before completion / pass inside the stop request / short tape /
+       a segment keeps rolling authority / a moved boundary / a worse surface / release mid-read /
+       an event that quotes the meeting).
+  - .venv/bin/python -m pytest tests/ -q -> 1141 passed, 2 skipped, 396 subtests (1133 before).
+    Targeted (manifest + bundle + identity-provider + app_api + deployment): 217 passed.
+  - manifest tool run WITHOUT --max-tape-bytes reproduces the previously deployed manifest byte
+    for byte except source_revision -> the tape declaration is the only thing this deploy changed
+    (manifest-preview-no-tape.json).
+  - file-mode decoder A/B vs a HEAD worktree: both
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 - unmoved across twelve
+    production changes now.
+  - inertness of the shared driver: five of six instruments reproduce their checked-in artifacts
+    field for field; verify_runtime_rolling.py differs at exactly one field,
+    `deployed_configuration.bounds_config.max_tape_bytes` (absent -> 9600000), still exits 0 with
+    an unchanged gate-id set. That is the deploy being visible, not the driver drifting; named in
+    inertness.txt.
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-deployed-terminal/sha256.txt -> all OK.
+- WHAT THIS MEASUREMENT IS, AND WHAT IT IS NOT. It is the first M4 reading taken with a REAL
+  decoder on the DEPLOYED service, and it answers exactly one question: does the deployed service
+  keep a whole meeting, run a terminal pass on it after the stop request has answered, and publish
+  the result. It is NOT the M4 exit. One case, one pass; G-M4-1 / G-M4-2's per-case convergence
+  bounds are scored over five cases at 8d, and 8d is now blocked (below).
+- THREE FINDINGS.
+  F1 THE PAIRED DRIVER CANNOT SEE THE TERMINAL SURFACE, AND THAT BLOCKS THE M4 EXIT.
+     `run_service_replay` returns when `POST /stop` answers, which since iteration 26 is BEFORE
+     the terminal pass runs. The pass's `live-hypothesis.jsonl` therefore carries the ROLLING
+     surface (.096000, 14 segments) and its trace ends at seq 263 with the terminal events
+     264-266 arriving afterwards. Iteration 27's terminal numbers exist only because the session
+     was polled directly after the fact, which is why `final-snapshot.json` and
+     `events-after-stop.json` are separate files in the bundle. Nothing is wrong with the service:
+     the instrument has to learn to wait. New candidate 8c-5; 8d is blocked on it. Had this gone
+     unnoticed, the M4 exit would have scored five rolling transcripts and reported that terminal
+     convergence does not work.
+  F2 THE COMPOSITION ROOT WAS THE ONLY HONEST PLACE TO PUT THE SEAM. `create_app` builds file
+     mode's runner and `web_cli` builds the live runtime factory, in that order, so neither one
+     could hand the other an object. Three shapes were possible: pass the finalizer through the
+     factory call in `create_app` (breaks ~35 zero-argument `live_runtime_factory=lambda:` test
+     call sites and changes a contract for a reason none of them share), attach it to the runtime
+     after construction (a second author for one field - iteration 26's F2 warned about exactly
+     that), or hoist the runner to `main` and inject it. The third is the only one where "terminal
+     == file" is a property of ONE object; it cost one extracted function, one optional
+     `create_app` parameter, and four fake factories that had to learn one keyword.
+  F3 A TAPE CAPACITY IS NOT A FREE PARAMETER, UNLIKE THE MATCHER THRESHOLDS BESIDE IT. Two
+     relations fall straight out of what the tape is for: it must be a whole number of the wire
+     frames it is fed (a capacity that cuts a frame in half stops taping mid-frame at a byte
+     nobody chose), and it must be at least the rolling ring the session already keeps (a
+     "complete" tape shorter than the ring is strictly worse than keeping nothing extra). Both are
+     refusals in the tool, both are rows in the parametrised refusal table, and both would have
+     been comments if the value had been treated like `min_match_score`.
+- Learned:
+  - Deploying is a measurement, not a formality. Every M4 number before this one was taken with
+    the decoder pinned, deliberately - and pinning the decoder is exactly what hid F1, because a
+    replayed terminal decode always lands before the harness looks. The first pass with a real
+    service found the gap in one run.
+  - Run the deployment tool twice: once with the new flag and once without. The "without" run
+    reproducing the previously deployed manifest byte for byte is what turns "this deploy changed
+    only the tape" from a claim into an artifact, and it cost one extra invocation into /tmp.
+  - A no-leak gate should be derived from the meeting, not from a vocabulary. The first version of
+    D-M4-9 listed the status words it would tolerate and failed on `rolling` and a PCM digest; the
+    version that ships asks whether any three-word run of THIS meeting's published text appears in
+    a terminal payload, which no status vocabulary can trip and no leaked phrase can hide behind.
+- Next: candidate 8c-5, the replay client's wait - after the stop response, poll until
+  `finalization_status` leaves `running` (`not_started` / `unavailable` / `final` / `failed` are
+  already-terminal answers), bounded by a deadline that names itself, then take the terminal
+  snapshot and drain the events, so all three paired drivers inherit it. Then 8d, the M4 exit.
+  Do NOT make `stop` synchronous instead; plan §12.3 M2 and iteration 26's mutation M2 both refuse
+  it. Do not restate the gates; they are fixed in PREREGISTRATION-M4.md.

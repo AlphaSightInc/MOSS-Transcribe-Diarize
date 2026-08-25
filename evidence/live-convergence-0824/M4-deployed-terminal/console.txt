@@ -1,0 +1,14 @@
+  file      wer=0.088000 tbsa=0.881244 der=0.151833 spk=0.848167
+  rolling   wer=0.096000 tbsa=0.906296 der=0.117333 spk=0.882667
+  terminal  wer=0.088000 tbsa=0.881244 der=0.151833 spk=0.848167
+[PASS] D-M4-1 the deployed manifest declares a complete-tape capacity, so a meeting can keep its audio
+[PASS] D-M4-2 the pass announces itself, lands its revision, reports completion, and only then releases the audio
+[PASS] D-M4-3 the stop request had already answered when the pass began: the meeting closes first
+[PASS] D-M4-4 the pass decoded the whole meeting: its tape is every accepted sample, with no gap
+[PASS] D-M4-5 the published surface is the terminal one: every segment, exactly one replacement
+[PASS] D-M4-6 terminal IS the file arm on the same audio -- same words, same segment bounds
+[PASS] D-M4-7 the deployed terminal pass costs the meeting nothing it had already earned
+[PASS] D-M4-8 the audio is released once the meeting's last listener is done with it
+[PASS] D-M4-9 no terminal event carries a word of the meeting: not one three-word run of it
+wrote: evidence/live-convergence-0824/M4-deployed-terminal/gates.json
+PASS

@@ -1,0 +1,10 @@
+[PASS] D-M4-1 reacts to: the deployment declared no tape capacity
+[PASS] D-M4-2 reacts to: the audio is released before the pass reports completion
+[PASS] D-M4-3 reacts to: the pass ran inside the stop request, before the meeting closed
+[PASS] D-M4-4 reacts to: the pass decoded a tape shorter than the meeting
+[PASS] D-M4-5 reacts to: one segment kept the rolling authority
+[PASS] D-M4-6 reacts to: the terminal pass decoded with different arguments and moved a boundary
+[PASS] D-M4-7 reacts to: the terminal surface is worse than the rolling one it replaced  also: ['D-M4-6']
+[PASS] D-M4-8 reacts to: the audio was released while the pass was still reading it
+[PASS] D-M4-9 reacts to: a terminal event quoted the meeting
+PASS

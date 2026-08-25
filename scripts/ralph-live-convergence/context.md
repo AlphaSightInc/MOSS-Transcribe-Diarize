@@ -81,15 +81,19 @@
 
 (2026-08-25, after iteration 23)
 
-- Deployed dev stack up: `web_cli` **pid 44278, restarted 2026-08-25 05:52:14 onto the M2
-  build** (repo working tree @ `4d6cb29`) at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 65689, restarted 2026-08-25 09:37:10 onto the E4
+  build** (repo HEAD `29681e0` + iteration 27's working tree) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
   4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after every
   restart (`evidence/.../M0d-paired-reacquisition/`, `.../M1-e1-exit/`, `.../M2-e2-exit/`
   `restart-{pre,post}.txt`) — the build changed and nothing else. **The rolling witness is ON in
   the deployed service**: the bundle wires `rolling_decoder_factory` unconditionally, so any live
-  session now plans, decodes and applies windows. Restart again after any production change, and
-  record it.
+  session now plans, decodes and applies windows. **Since iteration 27 the TERMINAL pass is on too**,
+  and that restart is the first one whose descriptor moved: `bounds.max_tape_bytes` absent →
+  `9600000`, `source_revision` `cc8f778a…` → `29681e04…`, `provider_manifest_hash` `46895832…` →
+  `07e32598…`, and `config_hashes` identical (`combined_config_hash` is `f(decoder, endpoint,
+  identity)` and cannot see retention) — `evidence/.../M4-deployed-terminal/restart-{pre,post}.txt`.
+  Restart again after any production change, and record it.
 - Paired baseline (deployed stack, 2026-08-24): trio FILE WER .1039 / TBSA .9106 / DER .1021 /
   spk_acc .8979 vs LIVE .1999 / .8384 / .1764 / .8236; 5-min keyu FILE .0506/.0579(DER) vs
   LIVE .1464/.1315. Artifacts + drivers: `prototypes/live-file-gap-baseline-20260824/`.
@@ -113,6 +117,28 @@
   (`prototypes/streaming-diarization/live-multiview-prototype/`); seam5 refuted (worse than
   nothing); terminal = file exactly. **The §10.2 grid has now decided the production policy
   (iteration 10): `10/10`, trio WER .131861, 1.000× added decode audio.**
+- **M4 step 3d SHIPPED AND DEPLOYED (iteration 27).** The E4 build runs on the service and a real
+  meeting gets a terminal pass there. `server.build_file_mode_runner` is `create_app`'s runner
+  construction extracted unchanged; `web_cli.main` calls it ONCE and hands the same instance to
+  `create_app(file_mode_runner=)` and to `TerminalTranscriptFinalizer`, whose `transcribe_kwargs`
+  come from `jobs.resolve_inference_options` — the same rule a file job resolves through — so
+  "terminal == file" is one object with one configuration, not two that must agree. The deployed
+  manifest declares `bounds_config.max_tape_bytes = 9600000` (300 s of 16 kHz PCM16, Appendix B
+  Q10's own premise) via `live_manifest_finalizer --max-tape-bytes`, checked against two relations
+  (a whole number of wire frames; not below the rolling ring). One warm-decoder pass of
+  `lex_javier_milei` on the restarted service: file WER `.088000`, rolling-at-stop `.096000`,
+  **published terminal `.088000` — the file arm's 120 words on its 20 segment boundaries, exactly**.
+  960 000 tape samples decoded in `1.918 s`; events `session_closed(262) →
+  terminal_finalization_started(263) → text_revision_applied(source=terminal, 264) →
+  terminal_finalization_completed(265) → session_tape_released(266)`. Nine gates + nine reactions.
+  Evidence: `evidence/live-convergence-0824/M4-deployed-terminal/`.
+- **The paired driver cannot see that surface, and that blocks the M4 exit (iteration 27).**
+  `run_service_replay` returns when `POST /stop` answers, which is now BEFORE the terminal pass
+  runs, so the pass's `live-hypothesis.jsonl` is the ROLLING surface and its trace ends at seq 263.
+  Iteration 27's terminal numbers came from polling `/snapshot` and `/events` after the fact. The
+  replay client must wait for `finalization_status` to leave `running` before it snapshots —
+  candidate 8c-5, and 8d is blocked on it.
+
 - **M0a CLOSED (iteration 1).** `verify_replay_roundtrip.py` now exits 0. The replay client
   dropped three fields, not two: `CanonicalCommit.revised_transcript`,
   `LiveSnapshot.label_revision_version`, and `LiveServiceDescriptor.live_protocol` (v2
@@ -1074,7 +1100,26 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 prototypes/streaming-diarization/live-convergence/mutate_terminal_lifecycle.sh /tmp/lifecycle-mut
 .venv/bin/python -m pytest tests/test_live_terminal_lifecycle.py -q
 # do the SIX instruments that share verify_runtime_rolling still reproduce their artifacts?
+# (since iteration 27 verify_runtime_rolling reports the DEPLOYED manifest's new
+#  bounds_config.max_tape_bytes and therefore differs from its checked-in M2 artifact by
+#  exactly that one field -- see M4-deployed-terminal/inertness.txt)
 .venv/bin/python evidence/live-convergence-0824/M4-terminal-lifecycle/inertness.py
+# M4 step 3d: did the E4 build reach the DEPLOYED service? (no GPU, no service, from the bundle)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
+  --bundle evidence/live-convergence-0824/M4-deployed-terminal
+# nine reactions, one per gate
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_deployed_terminal.py \
+  --bundle evidence/live-convergence-0824/M4-deployed-terminal --selftest
+# the deployed manifest tool, previewing rather than writing
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python ops/finalize-live-provider-manifest.py \
+  --input  "$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.provisional.json" \
+  --output /tmp/preview.json --source-revision "$(git rev-parse HEAD)" \
+  --hard-cap-samples 40000 --max-retained-samples 960000 --frame-samples 8000 \
+  --min-match-score 0.35 --min-match-margin 0.1 \
+  --album-admission-seconds 2.0 --birth-min-seconds 1.0 \
+  --max-tape-bytes 9600000 --dry-run
 ```
 
 
@@ -1264,19 +1309,39 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    holds open (plan §12.3 last paragraph, M2). Do NOT re-couple the terminal plan to rolling
    being alive at stop: a witness defect ends rolling mid-meeting and those are the meetings that
    most need a terminal pass (mutation M6, tests only).
-8c-4. **M4 step 3d: DEPLOY the E4 build.** Wire `TerminalTranscriptFinalizer` into
-   `build_live_runtime_factory` (it must hold FILE MODE's own `WindowedRunner` and file mode's own
-   inference arguments - `web_cli` has the prompt / max_length / max_new_tokens / decoding /
-   temperature the `JobManager` uses, `build_live_runtime_factory` today gets only the raw runner
-   proxy, so the arguments have to be plumbed rather than guessed), declare
-   `bounds_config.max_tape_bytes` in the DEPLOYED manifest (recompute `bounds_config_hash` /
-   `component_config_hash` with `live_manifest_finalizer`; `combined_config_hash` is
-   `f(decoder, endpoint, identity)` and does not move), restart `web_cli`, and record the restart
-   plus the pre/post descriptor here. Without this the deployed service still reads `not_started`
-   on every meeting and 8d cannot be scored.
+8c-4. ~~**M4 step 3d: DEPLOY the E4 build**~~ - DONE iteration 27, nine gates pass on the RUNNING
+   service and the published terminal surface is the paired file arm word for word (120 words, 20
+   segments, WER `.096000 -> .088000` == file's `.088000`). `server.build_file_mode_runner` +
+   `jobs.resolve_inference_options` + `web_cli` handing ONE runner to both + `build_live_runtime_factory
+   (terminal_finalizer=)` + `live_manifest_finalizer --max-tape-bytes`; deployed manifest declares
+   `bounds_config.max_tape_bytes = 9600000`. `verify_deployed_terminal.py` (+ `--selftest`, nine
+   reactions), verdict in `evidence/live-convergence-0824/M4-deployed-terminal/`.
+   Do NOT give `max_tape_bytes` a tool default or a manifest default: ADR-0003 D2/D8 make retention
+   the deployment's, and the finalizer clears a declared capacity when the flag is withdrawn on
+   purpose. Do NOT build a second `WindowedRunner` for the terminal pass "to avoid sharing state":
+   `IdentityResolver` assigns nothing outside `__init__` and the terminal pass reads only
+   `result.text`, while a second runner is exactly the two-configurations-that-must-agree this step
+   existed to prevent. Do NOT read `combined_config_hash` as evidence the deployment is unchanged -
+   it is `f(decoder, endpoint, identity)` and cannot see retention; `bounds_config_hash` /
+   `component_config_hash` / `provider_manifest_hash` are what moved.
+8c-5. **The replay client has to wait for the terminal surface.** MEASURED iteration 27 and it
+   blocks 8d: `run_service_replay` returns when `POST /stop` answers, which is now - by design -
+   BEFORE the terminal pass runs, so `live-hypothesis.jsonl` carries the ROLLING surface and the
+   trace ends at the `terminal_finalization_started` event. Iteration 27's terminal numbers had to
+   be recovered by polling `/snapshot` and `/events` afterwards (both files are in the M4-deployed-terminal
+   bundle for exactly that reason). The fix is in the replay client, not the service: after the stop
+   response, poll until `finalization_status` leaves `running` (`not_started` / `unavailable` /
+   `final` / `failed` are all already-terminal answers), bounded by a deadline that names itself,
+   then take the terminal snapshot and drain the events. Every paired driver
+   (`remeasure_live_vs_file.py`, `remeasure_5m_case.py`, `remeasure_one_case.py`) inherits it,
+   because all three call the same client. Do NOT "fix" this by making `stop` synchronous: plan
+   §12.3 M2 and iteration 26's mutation M2 both refuse that, and the 5-minute case is minutes of
+   decode on a request a client holds open.
 8d. **M4 exit: score the 14 gates** on a fresh paired pass of all five cases, the way
    `verify_m3_disposition.py` scored M3's - gate ids parsed out of `PREREGISTRATION-M4.md` in both
-   directions, every bound quoted verbatim from its own row.
+   directions, every bound quoted verbatim from its own row. BLOCKED on 8c-5: until the replay
+   client waits, every live arm it writes is the rolling surface and G-M4-1 / G-M4-2 would be
+   scored against the wrong transcript.
 9. **M5 evidence + records** per PRD.
 
 ## Non-candidates
