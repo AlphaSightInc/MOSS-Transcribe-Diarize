@@ -1,0 +1,85 @@
+{
+  "comment": "Corpus contract for evaluator v2's reproduction check. Paths are repo-relative. Only 'primary' cases (fully-referenced, <= 5 minutes, PRD-allowed) enter any mean; 'diagnostic' cases have partial references and are reported, never promoted.",
+  "cases": [
+    {
+      "case_id": "lex_bill_ackman",
+      "tier": "primary",
+      "manifest": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/manifest.json",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/reference.jsonl",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
+      "hypotheses": {
+        "file": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_bill_ackman/file-hypothesis.jsonl",
+        "live": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_bill_ackman/live-hypothesis.jsonl"
+      },
+      "baseline_scores": "prototypes/live-file-gap-baseline-20260824/trio-60s/results.json",
+      "group": "trio"
+    },
+    {
+      "case_id": "lex_javier_milei",
+      "tier": "primary",
+      "manifest": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/manifest.json",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/reference.jsonl",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei/audio.wav",
+      "hypotheses": {
+        "file": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_javier_milei/file-hypothesis.jsonl",
+        "live": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_javier_milei/live-hypothesis.jsonl"
+      },
+      "baseline_scores": "prototypes/live-file-gap-baseline-20260824/trio-60s/results.json",
+      "group": "trio"
+    },
+    {
+      "case_id": "lex_keyu_jin",
+      "tier": "primary",
+      "manifest": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/manifest.json",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav",
+      "hypotheses": {
+        "file": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_keyu_jin/file-hypothesis.jsonl",
+        "live": "prototypes/live-file-gap-baseline-20260824/trio-60s/lex_keyu_jin/live-hypothesis.jsonl"
+      },
+      "baseline_scores": "prototypes/live-file-gap-baseline-20260824/trio-60s/results.json",
+      "group": "trio"
+    },
+    {
+      "case_id": "acquired_jamie_dimon",
+      "tier": "diagnostic",
+      "manifest": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/manifest.json",
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/reference.jsonl",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/acquired_jamie_dimon/audio.wav",
+      "hypotheses": {
+        "file": "prototypes/live-file-gap-baseline-20260824/trio-60s/acquired_jamie_dimon/file-hypothesis.jsonl",
+        "live": "prototypes/live-file-gap-baseline-20260824/trio-60s/acquired_jamie_dimon/live-hypothesis.jsonl"
+      },
+      "baseline_scores": "prototypes/live-file-gap-baseline-20260824/trio-60s/results.json",
+      "group": "secondary"
+    },
+    {
+      "case_id": "5m-lex-keyu-jin",
+      "tier": "primary",
+      "manifest": null,
+      "reference": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/reference.jsonl",
+      "audio": "prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/audio.wav",
+      "hypotheses": {
+        "file": "prototypes/live-file-gap-baseline-20260824/keyu-5m/file-hypothesis.jsonl",
+        "live": "prototypes/live-file-gap-baseline-20260824/keyu-5m/live-hypothesis.jsonl"
+      },
+      "baseline_scores": "prototypes/live-file-gap-baseline-20260824/keyu-5m/results.json",
+      "group": "five-minute"
+    }
+  ],
+  "published_group_means": {
+    "comment": "Numbers this campaign's plan already published for these saved hypotheses. Evaluator v2 must reproduce them, or the evaluator changed the conclusion rather than the lens.",
+    "trio": {
+      "source": "docs/plans/live-mode-convergence-implementation-20260824.md 1.3 'Baselines for G1-G3'",
+      "decimals": 4,
+      "file": {
+        "wer": 0.1039,
+        "content_recall": 0.9506
+      },
+      "live": {
+        "wer": 0.1999,
+        "content_recall": 0.9135
+      }
+    }
+  }
+}

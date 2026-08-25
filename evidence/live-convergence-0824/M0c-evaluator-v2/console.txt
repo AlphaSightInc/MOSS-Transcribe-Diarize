@@ -1,0 +1,34 @@
+cases: lex_bill_ackman, lex_javier_milei, lex_keyu_jin, acquired_jamie_dimon, 5m-lex-keyu-jin
+
+case                  arm        WER   recall   mwSPK  DERspx  seamWER  intWER
+------------------------------------------------------------------------------
+lex_bill_ackman       file    0.1591   0.9318  0.9318  0.0759   0.0385  0.2097
+lex_bill_ackman       live    0.2614   0.8636  0.8409  0.2154   0.3492  0.2124
+lex_javier_milei      file    0.0880   0.9200  0.9200  0.0595   0.1000  0.0824
+lex_javier_milei      live    0.1440   0.9200  0.9200  0.1116   0.2222  0.1000
+lex_keyu_jin          file    0.0647   1.0000  1.0000  0.0684   0.0526  0.0667
+lex_keyu_jin          live    0.1942   0.9568  0.9568  0.0910   0.4043  0.0870
+acquired_jamie_dimon  file    0.8475   0.9322  0.8644  3.8266   0.6970  0.9059
+acquired_jamie_dimon  live    0.9661   0.8644  0.7119  3.4629   0.9833  0.9483
+5m-lex-keyu-jin       file    0.0506   0.9726  0.9726  0.0449   0.0321  0.0557
+5m-lex-keyu-jin       live    0.1464   0.9302  0.8796  0.1113   0.2520  0.0901
+
+ five-minute mean file  {'wer': 0.050616, 'content_recall': 0.97264, 'matched_word_speaker_accuracy': 0.97264, 'der_reference_speech': 0.044897}
+ five-minute mean live  {'wer': 0.146375, 'content_recall': 0.930233, 'matched_word_speaker_accuracy': 0.879617, 'der_reference_speech': 0.111326}
+   secondary mean file  {'wer': 0.847458, 'content_recall': 0.932203, 'matched_word_speaker_accuracy': 0.864407, 'der_reference_speech': 3.826597}
+   secondary mean live  {'wer': 0.966102, 'content_recall': 0.864407, 'matched_word_speaker_accuracy': 0.711864, 'der_reference_speech': 3.462898}
+        trio mean file  {'wer': 0.103946, 'content_recall': 0.950606, 'matched_word_speaker_accuracy': 0.950606, 'der_reference_speech': 0.067916}
+        trio mean live  {'wer': 0.19987, 'content_recall': 0.91349, 'matched_word_speaker_accuracy': 0.905915, 'der_reference_speech': 0.139341}
+
+Q2 lex_bill_ackman        v2 recall 0.0000 v2 mwSPK 0.0000 | legacy coverage 1.0000 legacy TBSA 0.7159 legacy DER 0.1000
+Q2 lex_javier_milei       v2 recall 0.0000 v2 mwSPK 0.0000 | legacy coverage 1.0000 legacy TBSA 0.7116 legacy DER 0.1667
+Q2 lex_keyu_jin           v2 recall 0.0000 v2 mwSPK 0.0000 | legacy coverage 1.0000 legacy TBSA 0.6176 legacy DER 0.2500
+Q2 acquired_jamie_dimon   v2 recall 0.0000 v2 mwSPK 0.0000 | legacy coverage 1.0000 legacy TBSA 0.6144 legacy DER 4.1425
+Q2 5m-lex-keyu-jin        v2 recall 0.0000 v2 mwSPK 0.0000 | legacy coverage 1.0000 legacy TBSA 0.6307 legacy DER 0.2933
+
+Q1_self_score: 5/5 pass
+Q3_split_invariance: 10/10 pass
+Q4_reproduction: 10/10 legacy recomputations exact; 4/4 v2 conclusions hold; 4/4 published means reproduced
+  note lex_javier_milei: tied axes ['content_recall', 'matched_word_speaker_accuracy']
+
+ALL GATES PASS

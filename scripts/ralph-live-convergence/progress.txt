@@ -127,3 +127,75 @@ Recorded per docs/handoffs/handoff-8YIE4C.md step 1; adversarial review + commit
 before relaunch.
 
 [loop 20260825-042645-70858] start budget=40 agent=claude branch=ralph/live-convergence-0824
+
+2026-08-25 iteration 3 (run 20260825-042645-70858) - M0c: evaluator v2 prototype (plan A0.3).
+- Target: context.md candidate 3 / PRD M0c. Build the lexical-first evaluator as a prototype on
+  the standing bench and prove its four A0.3 gates. No production module touched (git status
+  shows only new prototype + evidence files), so file mode is unchanged by construction.
+- Files added:
+  prototypes/streaming-diarization/live-convergence/evaluator_v2.py       (scoring only)
+  prototypes/streaming-diarization/live-convergence/compare_evaluators.py (driver, exit 0 = gates pass)
+  prototypes/streaming-diarization/live-convergence/cases.json            (corpus contract)
+  prototypes/streaming-diarization/live-convergence/NOTES.md              (dir verdict table)
+  evidence/live-convergence-0824/M0c-evaluator-v2/{NOTES.md,console.txt,mutation-check.txt,
+    evaluator-v2.json,evaluator-v2-manifest-scoped.json,evaluator-v2-no-vad.json}
+- Validation (all from saved hypotheses; no service, no GPU):
+  - plan's proposed command verbatim (--manifest benchmark_diarization_1min/manifest.json
+    --output /tmp/moss-live-evaluator-v2.json) -> ALL GATES PASS, exit 0
+  - full corpus incl. the 5-minute case -> ALL GATES PASS, exit 0
+  - Q1 self-score exactly 1.0 on every axis: 5/5 cases (WER .0, recall 1.0, matched-word speaker
+    1.0, DER .0, legacy TBSA 1.0)
+  - Q2 degenerate control (one clip-length segment, only word "xx"): v2 recall .0000, matched-word
+    speaker .0000, credited words 0 on 5/5 cases -- while the DEPLOYED scorer gives that same
+    segment coverage 1.0000, trio-mean TBSA .6817, trio-mean DER .1722, reproducing plan §3.4's
+    numbers to 4 dp from an independent implementation
+  - Q3 same-speaker split invariance: 10/10 arms, all four axes bit-identical after every span is
+    cut in two adjacent same-label halves
+  - Q4 reproduction: 10/10 legacy recomputations exact to 1e-6 against the checked-in baseline
+    results.json (both file shapes); 4/4 plan §1.3 published means reproduced (file WER .1039 /
+    recall .9506, live WER .1999 / recall .9135); 4/4 per-case file-beats-live conclusions hold
+  - mutation check x5, control passing before and after each: speaker credit counting subs -> Q2
+    x5; content_recall taken from legacy time coverage -> Q2 x5 + published means; seam boundary
+    WER treated as a score axis -> Q3 x6; DER mapping forced to first hyp label -> Q1 x5;
+    hypothesis loader dropping the last segment -> Q4 legacy recomputation x6
+- Numbers produced (trio means, saved hypotheses): file WER .1039 / recall .9506 / matched-word
+  speaker .9506 / DER(speech regions) .0679 vs live .1999 / .9135 / .9059 / .1393. 5-min case
+  file .0506/.9726/.9726/.0449 vs live .1464/.9302/.8796/.1113. Pooled trio seam profile at the
+  0.40 s band: live boundary WER .3290 vs interior .1404 (density 2.34), file .0631 vs .1246
+  (density 0.51) -- live-file-gap-context/diagnosis.json got 2.72/0.75 from a different
+  implementation over a different seam set, so seam severance now has two independent witnesses.
+- Learned:
+  - The plan's §3.4 artifact claim was a quote until now; it is measured. The same degenerate
+    hypothesis scores coverage 1.0 / TBSA .6817 under the deployed scorer and 0 on every v2
+    lexical axis. That contrast is the whole justification for lexical gates and it is now a
+    number in an artifact, not a sentence in a document.
+  - Matched-word speaker accuracy must divide by ALL reference words, not by the recovered ones.
+    Dividing by recovered words rewards an arm for transcribing less; the recovered-word variant
+    is still emitted as speaker_precision_on_matched, for diagnosis only.
+  - v2's DER is the deployed DER plus a scored-region choice: computed over reference intervals
+    it equals the deployed number exactly on every fully-referenced case, and the only difference
+    at the VAD speech regions is the silence charge inside gapless turns (milei live .1945 ->
+    .1116). Speech regions use the deployed live VAD instrument (webrtcvad mode 1, 10 ms frames)
+    with no smoothing and no padding -- an added knob would be an added way to move the number.
+  - The seam profile is a PARTITION of the same WER, not an axis. Splitting a span moves the
+    partition by design, so Q3 compares score axes only; the scorer asserts the partition stays
+    exact, and mutation M3 proves that exclusion is a decision rather than an oversight.
+  - My first Q4 formalization ("file strictly better on WER AND recall per case") was my own
+    over-specification and failed on Milei, where both arms recover exactly the same 115 of 125
+    reference words and live's 7 extra errors are all insertions. A tie is the same conclusion,
+    not a reversed one; the gate now reads "never worse on any axis, strictly better on at least
+    one" and additionally anchors on the plan's published means. Preregistered gates were not
+    touched -- this was a gate I had written minutes earlier, and the fix made Q4 stricter (the
+    published-means anchor is new), not looser.
+  - acquired_jamie_dimon shows why partial-reference cases stay diagnostic-only: its reference
+    covers 12.3 s of a 60 s clip, so scoring DER over full-clip speech regions charges the other
+    47 s as false alarm (3.46). The evaluator surfaces that rather than hiding it.
+- NOT done, deliberately: evaluator v2 is a prototype. Nothing in moss_transcribe_diarize/ reads
+  it, and M1-M4 gates still name the deployed metrics. Promotion into production evaluation is a
+  later, separately reviewed change; A0.3 asks for the prototype and its gates, nothing more.
+- Next: M0d paired re-acquisition (context.md candidate 4), the last open M0 item. It needs the
+  deployed web_cli restarted onto the campaign branch first (record the restart in progress.txt),
+  then remeasure_live_vs_file.py and remeasure_5m_case.py twice each under the same quiet-GPU
+  provenance; gates are byte-identical file arms vs the checked-in baseline, hash-identical
+  fresh-vs-fresh live transcripts, and the 5-minute terminal snapshot showing the 2 revisions its
+  identity_finalized event reports.

@@ -26,7 +26,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 2)
+(2026-08-25, after iteration 3)
 
 - Deployed dev stack up: `web_cli` (pid ~32906) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
@@ -77,9 +77,31 @@
   `identity_finalized` events never went through these reconstructors and stay trustworthy.
   The 5-minute run's cadence sweep applied 2 label revisions — M0d re-acquisition must show
   them in the terminal snapshot now.
-- Rest of the ladder (M0c-M5) unimplemented; working tree carries the plan, evidence
-  prototypes, and this scaffold. `prototypes/streaming-diarization/live-convergence/` now
-  exists (the campaign's throwaway-experiment home per the PRD) and holds the two M0b probes.
+- **M0c CLOSED (iteration 3).** Evaluator v2 exists as a prototype and passes all four A0.3
+  gates. `prototypes/streaming-diarization/live-convergence/evaluator_v2.py` (scoring only) +
+  `compare_evaluators.py` (driver, exit 0 iff gates pass) + `cases.json` (corpus contract:
+  which saved hypotheses, which corpus, which group mean, plus the means the plan published).
+  Q1 self-score 1.0 on every axis 5/5; Q2 the `"xx"` control earns recall .0000 / matched-word
+  speaker .0000 while the deployed scorer gives it coverage 1.0000 / TBSA .6817 / DER .1722
+  (independently reproducing plan §3.4 to 4 dp); Q3 same-speaker split invariance 10/10;
+  Q4 legacy recomputation exact 10/10 and the plan §1.3 published means (.1039/.9506/.1999/.9135)
+  reproduced 4/4. Five mutations caught. Evidence:
+  `evidence/live-convergence-0824/M0c-evaluator-v2/`.
+- v2 trio means from saved hypotheses: file WER .1039 / recall .9506 / matched-word spk .9506 /
+  DER(speech regions) .0679 vs live .1999 / .9135 / .9059 / .1393. 5-min case file
+  .0506/.9726/.9726/.0449 vs live .1464/.9302/.8796/.1113.
+- Seam severance reproduced by a second implementation over a different seam set: pooled trio at
+  the 0.40 s band, live boundary WER .3290 vs interior .1404 (density 2.34); file .0631 vs .1246
+  (density 0.51). `live-file-gap-context/diagnosis.json` got 2.72 / 0.75. Same conclusion.
+- v2's DER over *reference intervals* equals the deployed DER exactly on every fully-referenced
+  case; restricting to VAD speech regions is the only difference and it removes the silence
+  charge inside gapless turns (milei live .1945 -> .1116). Time-based DER stays extent-sensitive
+  by nature -- `matched_word_speaker_accuracy` is the non-gameable speaker axis, and M3 must
+  report both (plan §1.3 G4).
+- Evaluator v2 is a **prototype**: no production module reads it, and M1-M4 gates still name the
+  deployed metrics. Promotion is a later, separately reviewed change.
+- Rest of the ladder (M0d, M1-M5) unimplemented; working tree carries the plan, evidence
+  prototypes, and this scaffold.
 
 ## Validation
 
@@ -100,6 +122,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # paired re-acquisition (trio + 5-min), against the RUNNING service
 .venv/bin/python prototypes/live-file-gap-baseline-20260824/remeasure_live_vs_file.py /tmp/rlc-trio-$(date +%H%M%S)
 .venv/bin/python prototypes/live-file-gap-baseline-20260824/remeasure_5m_case.py /tmp/rlc-5m-$(date +%H%M%S)
+# M0c evaluator v2 gates (exit 0 = all four A0.3 gates pass)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_evaluators.py --output /tmp/v2.json
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -112,10 +137,11 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    work is 0b/0c/0d below.
 2. ~~**M0b typed disposition**~~ — DONE iteration 2 (see Current state). Refusal is M1's,
    by design.
-3. **M0c evaluator v2 prototype** under `prototypes/streaming-diarization/live-convergence/`
-   per plan A0.3 gates. Validate: self-tests listed in PRD M0c.
+3. ~~**M0c evaluator v2 prototype**~~ — DONE iteration 3 (see Current state). Promotion into
+   `moss_transcribe_diarize/` is deliberately NOT done and is not an M0 item.
 4. **M0d paired re-acquisition** (needs service restart onto campaign branch first — record it).
    Validate: byte-identical file arms; hash-identical fresh live pairs; 5-min revisions visible.
+   This is the last open M0 item; M0 closes with it.
 5. **M1 salvage**: port `prototypes/live-file-gap-emptyspan/` P1v policy into
    `classify_live_transcript` per plan M1 seams; table-driven tests from `out/d3.json`.
    Amended PRD adds: run the §9.1 O1-vs-O2 comparison first (prefer O1 on a full-corpus

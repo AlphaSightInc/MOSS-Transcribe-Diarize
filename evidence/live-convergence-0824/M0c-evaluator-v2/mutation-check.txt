@@ -1,0 +1,43 @@
+== control ==
+ALL GATES PASS
+
+== M1: speaker credit also counts substitutions ==
+FAIL Q2 lex_bill_ackman: degenerate control earned credit
+FAIL Q2 lex_javier_milei: degenerate control earned credit
+FAIL Q2 lex_keyu_jin: degenerate control earned credit
+FAIL Q2 acquired_jamie_dimon: degenerate control earned credit
+FAIL Q2 5m-lex-keyu-jin: degenerate control earned credit
+
+== M2: content_recall taken from the legacy time-overlap coverage ==
+FAIL Q2 lex_bill_ackman: degenerate control earned credit
+FAIL Q2 lex_javier_milei: degenerate control earned credit
+FAIL Q2 lex_keyu_jin: degenerate control earned credit
+FAIL Q2 acquired_jamie_dimon: degenerate control earned credit
+FAIL Q2 5m-lex-keyu-jin: degenerate control earned credit
+FAIL Q4 published trio/file/content_recall: 0.9199 != 0.9506 (docs/plans/live-mode-convergence-implementation-20260824.md 1.3 'Baselines for G1-G3')
+
+== M3: seam boundary WER treated as a score axis (grid-dependent) ==
+FAIL Q3 lex_bill_ackman/file: split moved the score {'wer': 0.159091, 'content_recall': 0.931818, 'matched_word_speaker_accuracy': 0.931818, 'der_reference_speech': 0.075863, 'seam_boundary_wer': 0.038462} {'wer': 0.159091, 'content_recall': 0.931818, 'matched_word_speaker_accuracy': 0.931818, 'der_reference_speech': 0.075863, 'seam_boundary_wer': 0.093023}
+FAIL Q3 lex_bill_ackman/live: split moved the score {'wer': 0.261364, 'content_recall': 0.863636, 'matched_word_speaker_accuracy': 0.840909, 'der_reference_speech': 0.215382, 'seam_boundary_wer': 0.349206} {'wer': 0.261364, 'content_recall': 0.863636, 'matched_word_speaker_accuracy': 0.840909, 'der_reference_speech': 0.215382, 'seam_boundary_wer': 0.241379}
+FAIL Q3 lex_javier_milei/file: split moved the score {'wer': 0.088, 'content_recall': 0.92, 'matched_word_speaker_accuracy': 0.92, 'der_reference_speech': 0.059524, 'seam_boundary_wer': 0.1} {'wer': 0.088, 'content_recall': 0.92, 'matched_word_speaker_accuracy': 0.92, 'der_reference_speech': 0.059524, 'seam_boundary_wer': 0.069444}
+FAIL Q3 lex_javier_milei/live: split moved the score {'wer': 0.144, 'content_recall': 0.92, 'matched_word_speaker_accuracy': 0.92, 'der_reference_speech': 0.111607, 'seam_boundary_wer': 0.222222} {'wer': 0.144, 'content_recall': 0.92, 'matched_word_speaker_accuracy': 0.92, 'der_reference_speech': 0.111607, 'seam_boundary_wer': 0.120879}
+FAIL Q3 lex_keyu_jin/file: split moved the score {'wer': 0.064748, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.068361, 'seam_boundary_wer': 0.052632} {'wer': 0.064748, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.068361, 'seam_boundary_wer': 0.022727}
+FAIL Q3 lex_keyu_jin/live: split moved the score {'wer': 0.194245, 'content_recall': 0.956835, 'matched_word_speaker_accuracy': 0.956835, 'der_reference_speech': 0.091034, 'seam_boundary_wer': 0.404255} {'wer': 0.194245, 'content_recall': 0.956835, 'matched_word_speaker_accuracy': 0.956835, 'der_reference_speech': 0.091034, 'seam_boundary_wer': 0.213592}
+
+== M4: DER speaker mapping forced to the first hypothesis label ==
+FAIL Q1 lex_bill_ackman: self-score not perfect {'wer': 0.0, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.104639}
+FAIL Q1 lex_javier_milei: self-score not perfect {'wer': 0.0, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.882254}
+FAIL Q1 lex_keyu_jin: self-score not perfect {'wer': 0.0, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.244246}
+FAIL Q1 acquired_jamie_dimon: self-score not perfect {'wer': 0.0, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.597087}
+FAIL Q1 5m-lex-keyu-jin: self-score not perfect {'wer': 0.0, 'content_recall': 1.0, 'matched_word_speaker_accuracy': 1.0, 'der_reference_speech': 0.277123}
+
+== M5: hypothesis loader drops the last segment ==
+FAIL Q4 lex_bill_ackman/file: legacy recomputation drifted {'tbsa': -0.08245999999999998, 'wer': 0.287879, 'der': 0.435929}
+FAIL Q4 lex_bill_ackman/live: legacy recomputation drifted {'tbsa': -0.06313599999999997, 'wer': 0.23863600000000001, 'der': 0.323881}
+FAIL Q4 lex_javier_milei/file: legacy recomputation drifted {'tbsa': -0.037017999999999995, 'wer': 0.032, 'der': 0.035667000000000004}
+FAIL Q4 lex_javier_milei/live: legacy recomputation drifted {'tbsa': -0.03457700000000008, 'wer': 0.032, 'der': 0.032667}
+FAIL Q4 lex_keyu_jin/file: legacy recomputation drifted {'tbsa': -0.003454999999999986, 'wer': -0.0012559999999999932, 'der': 0.0050000000000000044}
+FAIL Q4 lex_keyu_jin/live: legacy recomputation drifted {'tbsa': -0.0070910000000000695, 'wer': 0.051787, 'der': 0.028287999999999994}
+
+== restored control ==
+ALL GATES PASS
