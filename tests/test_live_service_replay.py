@@ -657,6 +657,88 @@ class LiveServiceReplayContractTest(unittest.TestCase):
         self.assertEqual(evaluator[0]["failure_kind"], "rtf")
         self.assertEqual(evaluator[-1]["invalid_count"], 2)
 
+    def test_event_stream_outliving_the_retention_bound_is_recorded_in_full(self):
+        # The runtime keeps events in a deque(maxlen=bounds.max_events).  A client that
+        # reads once, after the session ends, gets only the tail -- which is how every
+        # 5-minute trace in this repo lost its first ~30 s while still looking well
+        # formed.  Thirty events past a twenty-event bound is the same shape in miniature.
+        descriptor = _descriptor(frame_samples=400, max_events=20)
+        service = RecordingService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, True, False, True, True, False, True, True),
+                session_ids=("session-1",),
+            )
+        )
+        clock = ScriptedClock()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=3200)
+            outputs = live_service_replay.run_service_replay(
+                service=service,
+                audio_path=audio,
+                out_dir=root / "out",
+                pace=1.0,
+                max_pacing_lag=0.5,
+                runs=1,
+                expect_revision=descriptor.source_revision,
+                expect_provider_hash=descriptor.provider_manifest_hash,
+                expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                monotonic=clock.monotonic,
+                sleep=clock.sleep,
+            )
+            trace = _jsonl(outputs.trace_path)
+            summary = json.loads(outputs.summary_path.read_text(encoding="utf-8"))
+
+        recorded = [item["event"] for item in trace if item["kind"] == "service_event"]
+        seqs = [item["seq"] for item in recorded]
+        self.assertEqual(summary["status"], "succeeded")
+        self.assertGreater(len(recorded), descriptor.bounds.max_events)
+        self.assertEqual(seqs, list(range(len(recorded))))
+        self.assertEqual(recorded[0]["kind"], "session_created")
+        self.assertEqual(recorded[-1]["kind"], "session_closed")
+        self.assertEqual(
+            [item["payload"]["sequence"] for item in recorded if item["kind"] == "frame_accepted"],
+            list(range(8)),
+        )
+
+    def test_evicted_service_events_fail_the_replay_instead_of_truncating_the_trace(self):
+        descriptor = _descriptor(frame_samples=400)
+        service = EvictingEventsService(
+            _runtime(
+                descriptor=descriptor,
+                speech=(True, False, True),
+                session_ids=("session-1",),
+            ),
+            retain=1,
+        )
+        clock = ScriptedClock()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "audio.wav"
+            _write_wav(audio, samples=1200)
+            with self.assertRaises(live_service_replay.ServiceReplayEventLossFailure):
+                live_service_replay.run_service_replay(
+                    service=service,
+                    audio_path=audio,
+                    out_dir=root / "out",
+                    pace=1.0,
+                    max_pacing_lag=0.5,
+                    runs=1,
+                    expect_revision=descriptor.source_revision,
+                    expect_provider_hash=descriptor.provider_manifest_hash,
+                    expect_config_hash=descriptor.config_hashes.combined_config_hash,
+                    monotonic=clock.monotonic,
+                    sleep=clock.sleep,
+                )
+            summary = json.loads((root / "out" / "run-001" / "summary.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["failure_kind"], "event_loss")
+
     def test_pacing_lag_fails_before_late_frame_admission(self):
         descriptor = _descriptor(frame_samples=400)
         service = RecordingService(_runtime(descriptor=descriptor, speech=(False,), session_ids=("session-1",)))
@@ -954,7 +1036,7 @@ def _digest(label: str) -> str:
     return hash_config({"label": label})
 
 
-def _descriptor(*, frame_samples: int = 400) -> LiveServiceDescriptor:
+def _descriptor(*, frame_samples: int = 400, max_events: int = 128) -> LiveServiceDescriptor:
     return LiveServiceDescriptor(
         source_revision="eda5e69faf0e0251383029295f7e8875a2a1a4f6",
         provider_name="deterministic-fake",
@@ -970,7 +1052,7 @@ def _descriptor(*, frame_samples: int = 400) -> LiveServiceDescriptor:
             max_queue_depth=8,
             max_retained_samples=4000,
             max_identity_speakers=2,
-            max_events=128,
+            max_events=max_events,
         ),
         frame_samples=frame_samples,
     )
@@ -1093,6 +1175,24 @@ class CorruptingEventsService(live_service_replay.InMemoryLiveReplayService):
                 event = _event_with_payload(event, payload)
             events.append(event)
         return tuple(events)
+
+
+class EvictingEventsService(live_service_replay.InMemoryLiveReplayService):
+    """A service whose retention window is narrower than the client's read cadence.
+
+    The runtime bound cannot be pushed below one event, so this double stands in for the
+    condition the bound produces at scale: by the time the client reads, the sequence it
+    asked for is gone.  It exists to prove the replay client refuses that trace instead of
+    writing a hole into it.
+    """
+
+    def __init__(self, runtime: LiveServiceRuntime, retain: int):
+        super().__init__(runtime)
+        self.retain = int(retain)
+
+    def events(self, session_id: str, since_seq: int = 0):
+        retained = super().events(session_id, since_seq=-1)[-self.retain :]
+        return tuple(event for event in retained if event.seq >= since_seq)
 
 
 class StopFailureService(RecordingService):

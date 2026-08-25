@@ -1,0 +1,48 @@
+{
+  "case": "5m-lex-keyu-jin",
+  "question": "does the fixed replay client record the whole event stream of a session that outlives bounds.max_events?",
+  "service": {
+    "max_events": 1000,
+    "frame_samples": 8000,
+    "restarted_this_iteration": false,
+    "note": "the fix is client-side only; the deployed service was not restarted and its descriptor is unchanged"
+  },
+  "before_checked_in_baseline_20260824": {
+    "service_events": 1000,
+    "first_event_seq": 113,
+    "contiguous_from_zero": false,
+    "first_event_kind": "span_frozen",
+    "frame_accepted_events": 540,
+    "first_frame_sequence_in_event_stream": 60,
+    "span_frozen_events": 114,
+    "first_span_id": 13,
+    "last_span_id": 126,
+    "canonical_decode_rtf_p95": 0.23195986677892505,
+    "canonical_decode_rtf_count": 115,
+    "canonical_decode_rtf_passed": true,
+    "canonical_decode_rtf_over_bound": 1
+  },
+  "after_working_tree_20260825": {
+    "service_events": 1113,
+    "first_event_seq": 0,
+    "contiguous_from_zero": true,
+    "first_event_kind": "session_created",
+    "frame_accepted_events": 600,
+    "first_frame_sequence_in_event_stream": 0,
+    "span_frozen_events": 127,
+    "first_span_id": 0,
+    "last_span_id": 126,
+    "canonical_decode_rtf_p95": 0.2624124163761735,
+    "canonical_decode_rtf_count": 128,
+    "canonical_decode_rtf_passed": true,
+    "canonical_decode_rtf_over_bound": 3
+  },
+  "gates": {
+    "G-F3a_trace_starts_at_frame_zero": true,
+    "G-F3b_trace_starts_at_span_zero": true,
+    "G-F3c_all_127_spans_present": true,
+    "G-F3d_event_sequence_contiguous_from_zero": true,
+    "G-F3e_event_count_exceeds_retention_bound": true
+  },
+  "passed": true
+}

@@ -282,3 +282,89 @@ before relaunch.
   bound, which only moves the cliff. Gate: a fresh 5-minute trace starts at frame 0 / span 0 and
   holds all 127 spans, 60-second traces unchanged, no production module touched. Then M1 salvage
   (candidate 5), whose span corpus depends on complete 5-minute event streams.
+
+[steering note - monitoring agent (handoff-8YIE4C executor), 2026-08-25 ~01:25 EDT,
+appended at the iteration 4->5 boundary]
+- The G2 OWNER RULING (O1/O2/O3) is DEFERRED TO MORNING REVIEW - the owner is offline; the
+  monitoring agent does not have authority to reword a gate for an in-progress milestone.
+  M0(d) row stays UNSIGNED per its own mechanism; everything else in M0d stands. Your call to
+  continue WITHOUT .stop is endorsed: integrity of the instrument is intact and measured, and
+  "do not re-roll hoping for green" is exactly right.
+- Standing direction for EVERY later paired rerun (M1/M2/M3/M4 - none started, so this is
+  instrument preregistration, not a gate change): BEFORE the first measurement pass of a
+  milestone, preregister in that milestone's evidence dir how external decoder-flip noise is
+  handled - fixed number of passes chosen up front, all passes reported, per-case pass/fail
+  decided by the preregistered aggregation - and attribute any per-case delta with
+  diff_live_runs.py + probe_decode_determinism.py (span-bound identity vs decode flip) before
+  calling it a regression or an improvement. Never choose or change the protocol after seeing
+  a red or green result. A preregistered decoder warm-up request before measurement passes
+  (cold-start flips are the measured cause) is an acceptable instrument-hygiene option, same
+  spirit as the quiet-GPU rule; adopting or not adopting it must also be decided before
+  measuring, then held fixed for the campaign.
+- The 1-in-115 cold-start flip rate and the bill "You know." flip example are now the
+  documented noise floor; cite them when a delta is within it rather than re-measuring.
+
+2026-08-25 iteration 5 (run 20260825-042645-70858) - F3: replay traces are complete again.
+- Target: context.md candidate 4b (F3), the highest-leverage open item after M0d. Every
+  5-minute replay trace this repo had ever written was missing its first ~30 s and looked well
+  formed while missing it; M1's salvage corpus, M4's G10 accounting and the strict RTF gate all
+  read that stream, so it had to be fixed before M1 builds a corpus on top of it.
+- Root cause: the replay client read the service event stream ONCE, with since_seq=0, AFTER the
+  session ended (live_service_replay.py:446), while the service holds events in
+  deque(maxlen=bounds.max_events) (1000 deployed, app/live_service_runtime.py:499). A 5-minute
+  session emits 1113 events, so 113 were evicted before anyone asked. Raising the bound only
+  moves the cliff, so the fix went on the reader. The live portal never had this defect: it
+  already polls with a moving cursor. Only the offline measurement path read once at the end.
+- Files touched:
+  moss_transcribe_diarize/live_service_replay.py   (+_drain_service_events, +ServiceReplayEventLossFailure)
+  tests/test_live_service_replay.py                (+2 tests, +EvictingEventsService, _descriptor max_events knob)
+  prototypes/streaming-diarization/live-convergence/probe_replay_trace_shape_identity.py  (new)
+  prototypes/live-file-gap-baseline-20260824/README.md   (flag the truncated baseline trace)
+  evidence/live-convergence-0824/M0e-trace-completeness/{NOTES.md,gates.json,trace-shape-identity.txt,pytest-replay.txt,run-5m/**}
+  (edited: scripts/ralph-live-convergence/context.md)
+- The change: the client drains the stream once per accepted frame, carrying the since_seq
+  cursor it already had, and appends what it collected to the trace in the same place and the
+  same order as before. What must fit inside max_events is now one FRAME PERIOD of events (1-3
+  in production, max burst 13 at the stop flush in the scripted test), not a whole session. A
+  gap is no longer writable: if the next sequence asked for is already gone,
+  ServiceReplayEventLossFailure ends the run instead of writing a hole into the artifact.
+- No service restart. The fix is entirely client-side; the deployed web_cli (pid 82706) was not
+  touched and its descriptor is unchanged (rev cc8f778a8932, cfg 431efb3f5c0c).
+- Validation:
+  - Fresh 5-minute paired pass on the deployed service, 01:29:22-01:34:37 local
+    (remeasure_5m_case.py /tmp/f3-5m-20260825-012922), then gates.json 5/5 PASS:
+    1113 service events contiguous from seq 0 (baseline 1000 from seq 113); first event
+    session_created (was span_frozen); 600 frame_accepted events from sequence 0 (was 540 from
+    60); 127 span_frozen, spans 0-126 (was 114, spans 13-126); first span start_sample 0 (was
+    438560); event count exceeds the 1000 bound, which is what makes the run a real test.
+  - Scores on that pass: live WER .1477 / DER .1100 / spk .8900, file WER .0506 / DER .0579 --
+    the live numbers reproduce M0d run B exactly and the file numbers reproduce the baseline.
+    Recording more of the stream changed no metric, which is the point.
+  - probe_replay_trace_shape_identity.py: HEAD, HEAD, working tree over one scripted 8-frame
+    session. HEAD-vs-working-tree differs in exactly the four fields two HEAD runs also differ
+    in (runtime_monotonic_ns, queue_wait_ms, queued_to_processed_ms,
+    canonical_processing_elapsed_ms). Non-overflowing traces are unchanged by the fix. PASS.
+  - Mutations: (1) drop the per-frame drain -> completeness test fails; (2) replace the gap
+    tripwire with a cursor jump -> eviction test fails. Both caught.
+  - pytest tests/test_live_service_replay.py -q: 23 passed. verify_replay_roundtrip.py exit 0.
+    Full suite pytest tests/ -q: 981 passed, 2 skipped, 386 subtests, 90 s.
+- Learned:
+  - The truncation was censoring a gate, not just an analysis. _canonical_decode_rtf_evaluation
+    reads this stream: on the complete trace p95 goes .2320 -> .2624 and measurements above the
+    1.0 bound go 1 -> 3. Still passes, but the strict RTF gate had been scored on a censored
+    sample on the only case long enough to censor.
+  - Every over-bound RTF measurement is a SHORT span: span 0 is 0.08 s of audio decoded in
+    0.244 s (RTF 3.04), while the 2.5 s hard-cap spans sit at .085-.13. Fixed per-request
+    overhead, not slow decoding. M2/M3 must keep that shape in view for the G7 budget -- an arm
+    that decodes more short spans pays the overhead, not the audio.
+  - Per-frame draining is a bound, not a proof: completeness holds while one frame period of
+    events fits inside max_events (production margin ~500x). The tripwire covers the rest, so
+    the failure mode is now loud rather than silent. That is the honest statement of the fix.
+  - The checked-in baseline's keyu-5m trace stays truncated on purpose -- it is the frozen
+    comparator and its scores come from the terminal snapshot, which was always complete. Its
+    README now says so and points at the complete trace in the evidence bundle.
+- Next: M1 salvage (context.md candidate 5). Run the plan §9.1 O1-vs-O2 gating comparison first
+  on the §9.2 corpus, prefer O1 on a full-corpus match, then port the P1v policy into
+  classify_live_transcript with table-driven tests. The 5-minute span corpus it needs can now be
+  read from a complete event stream. Candidate 4c (noise floor, N>=4 repeats of the 5-minute
+  pair) stays queued for before the M2/M3 gate readings, not before M1.

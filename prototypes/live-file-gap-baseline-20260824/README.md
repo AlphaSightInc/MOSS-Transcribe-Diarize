@@ -15,6 +15,14 @@ alternated per case.
   `<case>/{file,live}-hypothesis.jsonl` are the scored segments.
 - `keyu-5m/` — one paired 5-minute case (benchmark_5m/lex_keyu_jin): the gap does NOT
   grow with duration (TBSA −7.1pp at 300 s vs −7.2pp at 60 s).
+  **Its `live/run-001/trace.jsonl` is span-truncated and must not be used for span-level
+  analysis.** The replay client of 2026-08-24 read the service event stream once after the
+  session ended, so the service's 1000-event retention bound had already evicted the first
+  113 events: the trace starts at frame 60 / span 13 and holds 114 of 127 spans. The scores
+  above are unaffected — they come from the `terminal` snapshot, which is complete. The
+  client was fixed on 2026-08-25 (drains once per frame); a complete trace for this case is
+  `evidence/live-convergence-0824/M0e-trace-completeness/run-5m/trace.jsonl.gz`, and any
+  fresh run of `remeasure_5m_case.py` now writes one.
 - `remeasure_live_vs_file.py`, `remeasure_5m_case.py` — the drivers (paths inside
   point at the session scratchpad; pass a fresh out-dir to rerun).
 

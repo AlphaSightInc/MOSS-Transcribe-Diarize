@@ -7,8 +7,10 @@
   (the spec; **Appendix B overrides the body; Appendix A is the runbook + code map**),
   `AGENTS.md`, `docs/design-streaming-diarization.md` §2/§7.
 - Key code paths and why they matter:
-  - `moss_transcribe_diarize/live_service_replay.py:~842-935` — the payload reconstructors
-    (field-complete since iteration 1; keep them so); terminal-trace write at `:488`.
+  - `moss_transcribe_diarize/live_service_replay.py:~880-975` — the payload reconstructors
+    (field-complete since iteration 1; keep them so). `_drain_service_events` (~`:290`) is the
+    event-stream cursor added in iteration 5; the trace is written from what it collected, so
+    any new read of the stream must go through it rather than calling `service.events` again.
   - `moss_transcribe_diarize/app/vllm_runner.py:_validate_transcription_response` +
     `app/live_adapters.py:307` — the decode seam. The disposition collapse is fixed (iteration 2);
     what remains here is M1: read `exc.text` at the adapter catch and route it through
@@ -26,7 +28,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 4)
+(2026-08-25, after iteration 5)
 
 - Deployed dev stack up: `web_cli` **pid 82706, restarted 2026-08-25 00:43:48 onto campaign
   code** (repo working tree @ `e291624`) at `https://127.0.0.1:7861` (bearer token
@@ -134,14 +136,28 @@
   tokens). The other 51 differing spans are pure identity cascade (49× `identity_revision_version`,
   2× `identity_status` abstain→prepared) — one decode flip changed the parsed speaker turns,
   hence the embedding evidence, hence the album, producing 3 speakers/2 revisions vs 4/1.
-- **F3 (new defect, top candidate): every 5-minute replay trace is truncated, the checked-in
-  baseline included.** `bounds.max_events = 1000` is a `deque(maxlen=…)` at
-  `app/live_service_runtime.py:499`, and `live_service_replay.py:446` drains once with
-  `since_seq=0` *after* the session ends. A 5-minute session emits ~1600 events, so the first
-  ~30 s is evicted before anyone reads it: traces start at frame 60 / span 13 and hold 114 of
-  127 spans. Metrics are unaffected (the hypothesis comes from the terminal snapshot), but every
-  span-level analysis of the 5-minute case reads a truncated window — M1's salvage corpus, M4's
-  sample accounting (G10), and `_canonical_decode_rtf_evaluation`.
+- **F3 CLOSED (iteration 5): replay traces are complete again.** The replay client read the
+  service event stream once, with `since_seq=0`, *after* the session ended, while the service
+  holds events in `deque(maxlen=bounds.max_events)` (1000 deployed,
+  `app/live_service_runtime.py:499`). A 5-minute session emits 1113 events, so 113 were evicted
+  first: every 5-minute trace ever written, the checked-in baseline included, started at frame 60
+  / span 13 and held 114 of 127 spans while looking well formed. `_drain_service_events` now
+  drains once per accepted frame with the cursor the client already had, and a gap raises
+  `ServiceReplayEventLossFailure` instead of being written into the artifact. Fresh 5-minute
+  pass: 1113 events contiguous from seq 0, frame 0, spans 0-126, all 127 (`gates.json` 5/5).
+  What must fit inside `max_events` is now one frame period of events (1-3 in production), not
+  a whole session. Client-side only: no service restart, descriptor unchanged, file mode
+  untouched, and the live portal never had the defect (it always polled with a moving cursor).
+  Non-overflowing traces are unchanged — `probe_replay_trace_shape_identity.py` shows HEAD vs
+  working tree differ only in the four clock-stamped fields two HEAD runs also differ in.
+  Evidence: `evidence/live-convergence-0824/M0e-trace-completeness/`.
+- **The truncation was censoring the RTF gate.** `_canonical_decode_rtf_evaluation` reads that
+  stream: on the complete 5-minute trace p95 goes .2320 -> .2624 and measurements above the 1.0
+  bound go 1 -> 3 (still passes). Every over-bound measurement is a SHORT span — span 0 is 0.08 s
+  of audio decoded in 0.244 s (RTF 3.04) while 2.5 s hard-cap spans sit at .085-.13. Fixed
+  per-request overhead, not slow decoding; M2/M3 must keep that shape in view for the G7 budget.
+  The checked-in baseline's `keyu-5m/live/run-001/trace.jsonl` stays truncated (it is the frozen
+  comparator); its README now says so and points at the complete trace.
 - **F4: extent jitter is provider-side and survives identical decodes.** On the trio, where every
   span and every decode matched, published boundaries still moved ±10-20 ms (one webrtcvad
   frame) on 3/26 keyu and 6/32 jamie segments, and one jamie segment changed speaker label. WER
@@ -182,6 +198,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # is the deployed decoder bit-reproducible for an identical greedy request?
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/probe_decode_determinism.py --repeats 12
+# does incremental event draining change a trace that never overflowed? (exit 0 = no)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/probe_replay_trace_shape_identity.py
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -200,14 +219,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    open item and it needs an owner ruling, not more code (see Current state). Do NOT re-run the
    four passes to try for a green G2; the cause is an external decoder and re-rolling until it
    passes would be tuning the instrument to the answer.
-4b. **F3 trace truncation** (NEW, highest-leverage open item). `bounds.max_events = 1000`
-   (`app/live_service_runtime.py:499`) silently drops the first ~30 s of every 5-minute session's
-   event stream because `live_service_replay.py:446` drains once with `since_seq=0` after the
-   session ends. Fix belongs on the replay client — drain incrementally during the session using
-   the `since_seq` it already has — not by raising the bound, which only moves the cliff. Gate:
-   a fresh 5-minute trace starts at frame 0 / span 0 and holds all 127 spans; 60-second traces
-   byte-unchanged; file mode untouched (no production module changes). M1's salvage corpus and
-   M4's G10 accounting both read this stream, so it comes first.
+4b. ~~**F3 trace truncation**~~ — DONE iteration 5, all five gates pass (see Current state).
+   M1's salvage corpus and M4's G10 accounting can now read a complete 5-minute event stream.
 4c. **Noise floor for per-case gates** (do before M2/M3 gate readings, not before M1). N>=4
    repeats of the 5-minute pair to turn "the 5-minute case can flip" into a spread. Needed
    because M1 gates "no per-case WER regression" and M3 gates per-case DER, and F4 shows

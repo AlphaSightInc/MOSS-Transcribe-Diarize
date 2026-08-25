@@ -71,6 +71,11 @@ class ServiceReplayTransportFailure(ServiceReplayFailure):
     failure_kind = "transport_pacing"
 
 
+class ServiceReplayEventLossFailure(ServiceReplayFailure):
+    exit_code = 7
+    failure_kind = "event_loss"
+
+
 @dataclass(frozen=True, slots=True)
 class ServiceReplayOutputs:
     manifest_path: Path
@@ -282,6 +287,36 @@ def _read_bearer_token_file(path: Path) -> str:
     return token
 
 
+def _drain_service_events(
+    service: LiveReplayService,
+    session_id: str,
+    next_seq: int,
+    sink: list[LiveServiceEvent],
+) -> int:
+    """Append every event published since `next_seq` and return the new cursor.
+
+    The runtime holds events in a `deque(maxlen=bounds.max_events)`, so a client that
+    waits until the session ends and then reads `since_seq=0` loses the oldest events of
+    any session that emits more than the bound -- silently, because a truncated stream is
+    still a well-formed one.  Every 5-minute trace this repo had was missing its first
+    ~30 s for exactly that reason.  Draining once per accepted frame keeps the cursor
+    inside the retention window regardless of how long the session runs, and a first
+    returned sequence past the cursor is the one observable proof that it did not: the
+    gap is raised rather than written into the artifact.
+    """
+
+    for event in service.events(session_id, since_seq=next_seq):
+        if event.seq != next_seq:
+            raise ServiceReplayEventLossFailure(
+                f"service event sequence {next_seq} is unreadable (next available is "
+                f"{event.seq}); the event stream was evicted before the replay client "
+                f"read it and the trace would be incomplete."
+            )
+        sink.append(event)
+        next_seq += 1
+    return next_seq
+
+
 def run_service_replay(
     *,
     service: LiveReplayService,
@@ -398,6 +433,8 @@ def run_service_replay(
                     "snapshot_version": created.snapshot.session.version,
                 }
             )
+            service_event_log: list[LiveServiceEvent] = []
+            next_event_seq = _drain_service_events(service, session_id, 0, service_event_log)
             start_time = float(monotonic())
             offset = 0
             sequence = 0
@@ -441,9 +478,13 @@ def run_service_replay(
                 )
                 offset += sample_count
                 sequence += 1
+                next_event_seq = _drain_service_events(
+                    service, session_id, next_event_seq, service_event_log
+                )
 
             snapshot = asyncio.run(service.stop(session_id, deadline=5.0))
-            service_events = service.events(session_id, since_seq=0)
+            _drain_service_events(service, session_id, next_event_seq, service_event_log)
+            service_events = tuple(service_event_log)
             for event in service_events:
                 trace.append(
                     {
