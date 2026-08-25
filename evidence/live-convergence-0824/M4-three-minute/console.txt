@@ -1,0 +1,49 @@
+passes root : /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M2-e2-exit/passes
+3-min root  : /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M4-three-minute/passes
+tolerances  : WER 0.010 (plan G8), DER 0.020 (owner prerelease companion)
+
+case              arm          WER       DER   spk_acc       cov    v2_WER  v2_recall  v2_word_spk
+--------------------------------------------------------------------------------------------------
+lex_bill_ackman   file    0.159091  0.075500  0.924500  0.952215  0.159091   0.931818     0.931818
+lex_bill_ackman   live    0.204545  0.127333  0.872667  0.916587  0.204545   0.926136     0.920455
+                        terminal WER target 0.159091, rolling 0.204545, distance +0.045454 (tol 0.010) -> must move
+                        terminal DER target 0.075500, rolling 0.127333, distance +0.051833 (tol 0.020) -> must move
+lex_javier_milei  file    0.088000  0.151833  0.848167  0.870992  0.088000   0.920000     0.920000
+lex_javier_milei  live    0.096000  0.117333  0.882667  0.907061  0.096000   0.920000     0.920000
+                        terminal WER target 0.088000, rolling 0.096000, distance +0.008000 (tol 0.010) -> ALREADY INSIDE
+                        terminal DER target 0.151833, rolling 0.117333, distance -0.034500 (tol 0.020) -> must move
+lex_keyu_jin      file    0.064748  0.079000  0.921000  0.936387  0.064748   1.000000     1.000000
+lex_keyu_jin      live    0.093525  0.089167  0.910833  0.925500  0.093525   0.985612     0.985612
+                        terminal WER target 0.064748, rolling 0.093525, distance +0.028777 (tol 0.010) -> must move
+                        terminal DER target 0.079000, rolling 0.089167, distance +0.010167 (tol 0.020) -> ALREADY INSIDE
+lex_adam_frank    file    0.126177  0.053222  0.946778  0.952260  0.126177   0.949153     0.949153
+lex_adam_frank    live    0.122411  0.079889  0.920111  0.928022  0.122411   0.951036     0.951036
+                        terminal WER target 0.126177, rolling 0.122411, distance -0.003766 (tol 0.010) -> ALREADY INSIDE
+                        terminal DER target 0.053222, rolling 0.079889, distance +0.026667 (tol 0.020) -> must move
+keyu-5m           file    0.050616  0.057933  0.942067  0.952109  0.050616   0.972640     0.972640
+keyu-5m           live    0.082079  0.088600  0.911400  0.918924  0.082079   0.957592     0.954856
+                        terminal WER target 0.050616, rolling 0.082079, distance +0.031463 (tol 0.010) -> must move
+                        terminal DER target 0.057933, rolling 0.088600, distance +0.030667 (tol 0.020) -> must move
+
+TRIO mean   file  WER 0.103946  DER 0.102111  spk 0.897889  cov 0.919865
+TRIO mean   live  WER 0.131357  DER 0.111278  spk 0.888722  cov 0.916383
+
+REGRESSION  lex_javier_milei der: terminal==file costs 0.034500 -> a no-regression gate on this axis is UNSATISFIABLE beside the convergence bound
+REGRESSION  lex_javier_milei speaker_accuracy: terminal==file costs 0.034500 -> a no-regression gate on this axis is UNSATISFIABLE beside the convergence bound
+REGRESSION  lex_javier_milei text_coverage: terminal==file costs 0.036069 -> a no-regression gate on this axis is UNSATISFIABLE beside the convergence bound
+REGRESSION  lex_adam_frank wer: terminal==file costs 0.003766 -> a no-regression gate is still satisfiable
+
+v2 shift    lex_bill_ackman: content_recall +0.005682  der_reference_speech -0.035926  matched_word_speaker_accuracy +0.011363  wer -0.045454   worse on nothing
+v2 shift    lex_javier_milei: content_recall +0.000000  der_reference_speech +0.007255  matched_word_speaker_accuracy +0.000000  wer -0.008000   WORSE ON: der_reference_speech
+v2 shift    lex_keyu_jin: content_recall +0.014388  der_reference_speech -0.010134  matched_word_speaker_accuracy +0.014388  wer -0.028777   worse on nothing
+v2 shift    lex_adam_frank: content_recall -0.001883  der_reference_speech -0.012130  matched_word_speaker_accuracy -0.001883  wer +0.003766   WORSE ON: content_recall, matched_word_speaker_accuracy, wer
+v2 shift    keyu-5m: content_recall +0.015048  der_reference_speech -0.022016  matched_word_speaker_accuracy +0.017784  wer -0.031463   worse on nothing
+
+terminal windows (150/120): lex_bill_ackman 1, lex_javier_milei 1, lex_keyu_jin 1, lex_adam_frank 2, keyu-5m 3
+complete-tape budget, largest case: 9.155 MiB (Appendix B Q10 asserts <= ~10 MB)
+file arm stable since pre-campaign: lex_bill_ackman=True, lex_javier_milei=True, lex_keyu_jin=True, lex_adam_frank=no-precampaign-baseline, keyu-5m=True
+two fresh passes agree: lex_bill_ackman=True, lex_javier_milei=True, lex_keyu_jin=True, lex_adam_frank=False, keyu-5m=True
+accepted == accounted: lex_bill_ackman=True, lex_javier_milei=True, lex_keyu_jin=True, lex_adam_frank=True, keyu-5m=True
+MISSING COMPARATOR: none (gated by plan §12.2 as rescoped by Appendix B; must be acquired before it can gate)
+
+wrote evidence/live-convergence-0824/M4-three-minute/m4-baseline.json

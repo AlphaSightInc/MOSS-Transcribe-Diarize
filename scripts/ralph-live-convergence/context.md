@@ -71,7 +71,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 21)
+(2026-08-25, after iteration 23)
 
 - Deployed dev stack up: `web_cli` **pid 44278, restarted 2026-08-25 05:52:14 onto the M2
   build** (repo working tree @ `4d6cb29`) at `https://127.0.0.1:7861` (bearer token
@@ -763,12 +763,34 @@
   (ADR-0003 D2 is explicit). Its record is a refinement of ADR-0003, not a new ADR.
   **D-M4-3: async finalization with snapshot polling** - plan §12.3's own recommendation; no new
   endpoint.
-- **Three preconditions block M4 and the instrument names the first rather than hiding it.**
-  P-M4-A `lex_adam_frank` (3 min) has **no live pass in this campaign** -> M4 gates 3 of 5 cases
-  until acquired. P-M4-B no session retains a complete tape (disk store off; the rolling ring is
-  bounded at `2 x window` and released at `RollingTranscriptConverger.stop`). P-M4-C the three §7.4
-  `terminal_finalization_*` events and the `running`/`failed`/`unavailable` statuses have no
-  producers.
+- **P-M4-A CLOSED (iteration 23): the three-minute comparator is acquired.** Two warm-decoder
+  paired passes of `lex_adam_frank` (180 s) against the deployed service;
+  `measure_m4_baseline.py` now prints `MISSING COMPARATOR: none` and M4 gates 5 of 5 cases.
+  Bundle `evidence/live-convergence-0824/M4-three-minute/` (passes + table + selftests + digests).
+  **P-M4-B and P-M4-C still block M4**: no session retains a complete tape (disk store off; the
+  rolling ring is bounded at `2 x window` and released at `RollingTranscriptConverger.stop`), and
+  the three §7.4 `terminal_finalization_*` events plus the `running`/`failed`/`unavailable`
+  statuses have no producers.
+- **THE THREE-MINUTE CASE IS THE CORPUS'S COUNTEREXAMPLE, and it was measured before the terminal
+  build exists.** It is the only case where the ROLLING surface beats the paired file arm on text:
+  WER `.122411` vs file `.126177`. Three preregistered consequences, none of them movable now:
+  (1) G-M4-1 is **ALREADY INSIDE** there (`.003766` <= `.010`), so the count of convergence
+  readings a build that ships nothing passes goes 2 of 8 -> **3 of 10**;
+  (2) **G-M4-3 and prediction P1 cannot both hold** - G-M4-3 binds terminal WER at that pass's own
+  rolling arm `.122411` and P1 says terminal == file `.126177`, so a faithful terminal pass fails
+  G-M4-3 by `.003766`. It is NOT arithmetically unsatisfiable (any terminal WER in
+  `[.116177, .122411]` clears both), so it stays a gate and its bound stays fixed;
+  (3) **G-M4-4 fails the same way**, `-.001883` on both v2 content axes (`.951036` rolling vs
+  `.949153` file). Everything else the case contributes is a gain for converging: DER `-.026667`,
+  speaker accuracy `+.026667`, coverage `+.024238`, v2 speech-region DER `-.012130`.
+  The disposition of (2) and (3) is an owner decision at the M4 exit on D-M4-2's pattern.
+- **The three-minute pass's own reproducibility**: both live transcripts word-identical (546 words,
+  same text digest), both file arms byte-identical, WER spread `0.000000`; only segment EXTENT
+  spreads (`DER 3.3e-4`, spk `3.3e-4`, cov `3.4e-4`) - the trio's signature, not a decode flip.
+  `runs_agree` reports `False` because that flag compares every axis exactly; read it with the
+  spread. `file_arm_stable_since_precampaign` is `no-precampaign-baseline` for this case: it was
+  never run pre-campaign, so its stability evidence is the two identical file arms plus the shared
+  provenance (`live_source_revision cc8f778a...`, `combined_config_hash 431efb3f...`, greedy).
 - **R1, recorded before the numbers: G-M4-4 has ZERO headroom on `lex_javier_milei`** - its v2
   content recall and matched-word speaker accuracy are `.920000` on both arms and the gate is `>=`.
   Deliberate (the bound is the measurement); if it fires, the disposition is an owner decision with
@@ -936,6 +958,14 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --output /tmp/m4-baseline.json
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --selftest
+# M4 step 2 (P-M4-A): acquire a paired comparator for one allowed case, warm-decoder protocol
+# (needs the RUNNING service; ~7 min; two 180 s live replays of real MOSS traffic)
+prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-3min-<stamp> \
+  adam3m lex_adam_frank \
+  prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank
+# is that driver still the checked-in paired driver's shape? (no GPU, no service, exit 0 = yes)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/remeasure_one_case.py --selftest
 ```
 
 ## Candidates
@@ -1040,16 +1070,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    values from `m4-baseline.json`, and the PRD forbids moving one after a number is seen. Do NOT add
    a no-regression gate on `lex_javier_milei`'s DER / speaker accuracy / coverage - it is provably
    unsatisfiable beside the convergence bound, which is why D-M4-2 exists.
-8b. **M4 step 2: acquire the three-minute comparator (P-M4-A) - NEXT, and it is the lowest open
-   item.** `lex_adam_frank` has never run through the live path in this campaign, so 2 of M4's 5
-   gated cases have no comparator and no gate can be scored on it. It needs a paired driver of
-   `remeasure_5m_case.py`'s shape pointed at
-   `calibration_diarization_3min/samples/lex_adam_frank` (180 s, 2 reference speakers, 8 reference
-   segments, 16 kHz mono PCM16), run twice under `run_paired_passes.sh`'s warm-decoder protocol
-   against the deployed service. Costs real MOSS requests and ~7 min of wall clock; needs no
-   restart (the deployed build is the current production tree). Fold the result into
-   `measure_m4_baseline.py` (the case is already in `m4_cases()`, reported as `MISSING`) and into
-   `cases.json` once it has checked-in hypotheses.
+8b. ~~**M4 step 2: acquire the three-minute comparator (P-M4-A)**~~ - DONE iteration 23.
+   `remeasure_one_case.py` + `run_paired_case.sh`, two warm-decoder paired passes, verdict in
+   `evidence/live-convergence-0824/M4-three-minute/`. Do NOT re-run the passes: both live
+   transcripts are word-identical and both file arms byte-identical, so a third pass buys extent
+   noise at `3.3e-4` and 7 minutes of real MOSS traffic. Do NOT move G-M4-3's or G-M4-4's bound
+   now that this case makes them collide with P1 - that collision IS the finding, and its
+   disposition belongs to the M4 exit (8d) as an owner decision on D-M4-2's pattern. Do NOT add
+   the case to `cases.json`: every entry there points at a PRE-CAMPAIGN baseline hypothesis with a
+   published mean for evaluator v2 to reproduce, and this case has neither; its hypotheses live in
+   the M4 bundle and `measure_m4_baseline.py` reads them from `--three-minute-root`.
 8c. **M4 step 3: build plan §12.3.** Complete in-memory tape (D-M4-1) + async lifecycle (D-M4-3) +
    terminal pass through the existing 150/120 `WindowedRunner` + the three §7.4 events + the
    `already_finalized` single-replacement rule that `live_session.py:777` already names. Gates and

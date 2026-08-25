@@ -2137,3 +2137,106 @@ appended at the iteration 4->5 boundary]
   16 kHz mono PCM16) run twice under run_paired_passes.sh's warm-decoder protocol against the
   deployed service - real MOSS requests, ~7 min wall clock, no restart needed (the deployed build
   is the current production tree). Then candidate 8c builds plan §12.3 to the preregistered gates.
+
+2026-08-25 iteration 23 (run 20260825-042645-70858) - M4 (plan E4) STEP 2: precondition P-M4-A is
+  CLOSED. The three-minute comparator exists, and it is the corpus's counterexample - the only case
+  where the ROLLING surface beats the paired file arm on text. No production file was touched.
+- Target: context.md candidate 8b (acquire the `lex_adam_frank` paired comparator), the lowest open
+  item. Without it M4 could gate only 3 of its 5 cases (PREREGISTRATION-M4 §3, R4).
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/remeasure_one_case.py  (new; the checked-in
+      five-minute paired driver's shape with the case lifted out of the constants, --selftest)
+  prototypes/streaming-diarization/live-convergence/run_paired_case.sh     (new; the
+      run_paired_passes.sh warm-decoder protocol over one case)
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py (the three-minute
+      comparator is now READ FROM DISK via --three-minute-root, pass dir found by run suffix)
+  prototypes/streaming-diarization/live-convergence/NOTES.md               (index + section)
+  evidence/live-convergence-0824/M4-three-minute/{NOTES.md,m4-baseline.json,console.txt,
+      selftest.txt,pytest-full.txt,sha256.txt,passes/adam3m-{A,B}/,passes/runner.txt} (new, 268K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart (the deployed build is the current production tree: git diff of
+  moss_transcribe_diarize/ from the M2-exit commit 0a40ac3 to HEAD is empty, and the live
+  descriptor still reports cc8f778a...). 4070 Ti untouched. Real MOSS traffic: 2 x 180 s live
+  replay + 2 file jobs + 2 discarded warm-up decodes.
+- Validation:
+  - run_paired_case.sh /tmp/m4-3min-074759 adam3m lex_adam_frank <3min-sample-dir>
+      adam3m-A EXIT 0, adam3m-B EXIT 0, both warm-ups EXIT 0 (runner.txt in the bundle)
+      case          arm      WER       DER       spk_acc   cov       v2_recall  v2_word_spk
+      lex_adam_frank file  .126177   .053222   .946778   .952260   .949153    .949153
+      lex_adam_frank live  .122411   .079889   .920111   .928022   .951036    .951036
+      live arm both passes: succeeded, 360 frames, 2 880 000 accepted samples,
+      accepted == accounted, decode RTF p95 .396 / .339, 76 spans frozen (71 hard_cap,
+      4 leading_silence, 1 end_silence), 3 empty, 18 text revisions, NO S00 segment at all.
+  - measure_m4_baseline.py --output <bundle>/m4-baseline.json -> exit 0,
+    "MISSING COMPARATOR: none" - five measured cases for the first time in this campaign.
+    The four cases that already had a comparator are BYTE-IDENTICAL to
+    M4-preregistration/m4-baseline.json, and so is the trio mean (checked case by case in JSON).
+  - remeasure_one_case.py --selftest -> 0 failures (9 checks); measure_m4_baseline.py --selftest
+    -> 0 failures (now including both directions of the disk-read comparator).
+  - .venv/bin/python -m pytest tests/ -q -> 1091 passed, 2 skipped, 392 subtests (unchanged).
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-three-minute/sha256.txt -> 25/25 OK.
+- THE FINDING, AND IT LANDS ON TWO PREREGISTERED GATES. On every other case the paired file arm is
+  ahead on text by .008 to .045. On `lex_adam_frank` the ROLLING surface is ahead by .003766
+  (WER .122411 vs .126177). Three consequences, all forced by bounds fixed in iteration 22 before
+  this pass existed:
+  C1 G-M4-1 is ALREADY INSIDE here (.003766 <= .010). The count of convergence readings that a
+     build shipping NOTHING passes goes 2 of 8 -> 3 of 10. F1's honesty clause now covers three
+     rows, and the M4 verdict must say so beside them.
+  C2 G-M4-3 ("terminal WER no worse than the rolling surface it replaces") binds at that pass's own
+     rolling arm, .122411. Prediction P1 says terminal == file exactly, .126177. THEY CANNOT BOTH
+     HOLD: a faithful terminal pass fails G-M4-3 on this case by .003766. Unlike milei's DER the
+     gate is not arithmetically unsatisfiable - any terminal WER in [.116177, .122411] clears both -
+     so it STAYS A GATE and its bound is NOT moved here.
+  C3 G-M4-4 fails the same way on the extent-free axes: v2 content recall and matched-word speaker
+     accuracy are .951036 rolling vs .949153 file, -.001883. This is the only case where evaluator
+     v2 AGREES with the deployed metric that converging costs content; on milei v2 said the
+     regression was four fifths metric artifact.
+  Everything else this case contributes is a gain for converging: DER -.026667, speaker accuracy
+  +.026667, coverage +.024238, v2 speech-region DER -.012130. Terminal plans 2 windows
+  ([0,150), [120,180)) - the same plan file mode runs, so terminal == file is an identity here as
+  on the trio. Complete tape 5.493 MiB.
+- DISPOSITION: C2 and C3 are for the M4 EXIT (candidate 8d) as an owner decision on D-M4-2's
+  pattern - recorded now, with the arithmetic, so that resolving them after a terminal number
+  exists cannot look like gate-shopping. Nothing was tuned this iteration.
+- REPRODUCIBILITY OF THE PASS ITSELF: both live transcripts are WORD-IDENTICAL (546 words, same
+  SHA-256 over concatenated text) and both file arms byte-identical; WER spread 0.000000. Only
+  segment EXTENT spreads: DER 3.3e-4, speaker accuracy 3.3e-4, coverage 3.4e-4. That is the trio's
+  signature (iteration 8), not a decode flip. `runs_agree` reports False because the flag compares
+  every scored axis exactly - read it with the spread, which is two orders of magnitude below the
+  .020 tolerance G-M4-2 applies. `file_arm_stable_since_precampaign` reports
+  `no-precampaign-baseline` for this case rather than True: it was never run pre-campaign, so its
+  stability evidence is the two identical file arms plus the shared provenance line.
+- HOW THE NEW DRIVER IS KEPT FROM BEING A NEW INSTRUMENT (P-M4-A's own words): --selftest parses
+  `remeasure_5m_case.py`'s SOURCE with ast and requires the replay keywords (pace 1.0,
+  max_pacing_lag 3.0, runs 1) and the base URL to match; re-scores the checked-in
+  M2-e2-exit/passes/keyu5m-A hypotheses through the new driver's scoring path and requires it to
+  reproduce that pass's own recorded WER/DER/spk/cov to 1e-12 (it reproduces them at 0.000e+00);
+  requires the five relative paths it writes to EQUAL the five `verify_m2_exit.case_paths` reads;
+  and refuses audio the live transport would have to resample. `measure_m4_baseline.py` now reads
+  the comparator's existence off the disk in both directions (empty root -> MISSING, two runs ->
+  gateable whatever the operator labelled them) and REFUSES two candidate directories for one run
+  rather than picking one.
+- Learned:
+  - A missing comparator is not neutral: acquiring it can falsify a prediction and break a gate at
+    the same time. P7 (rolling WER between the trio mean and the five-minute case) is CONFIRMED at
+    .122411, and the same number puts G-M4-3 and P1 in contradiction. Both readings come from one
+    7-minute measurement that had to happen before any terminal code existed - the prototype-first
+    rule paying for itself again.
+  - "Converge to the file arm" is a mission, not a universal improvement. Two of five cases now
+    lose something real by converging: milei on the deployed speaker axes (mostly extent artifact)
+    and adam-frank on text and on BOTH extent-free content axes. The campaign still has to converge
+    - G8 is the PRD's - but the M4 report has to publish the per-case losses beside the trio mean,
+    which is exactly what D-M4-2 already requires.
+  - Parameterizing a checked-in instrument is safe only if the equivalence is CHECKED. Parsing the
+    reference driver's own source for its measurement constants, and re-scoring a checked-in pass
+    through the new scoring path, cost about 40 lines and turns "same shape" from a claim into a
+    command that fails when either driver moves.
+  - Fold-in changes must be proved inert. The four previously-measured cases and the trio mean are
+    byte-identical before and after the instrument learned a fifth case - checked by diffing the
+    two JSON tables, not by reading the console.
+- Next: candidate 8c, build plan §12.3 (steps 1-7) to the preregistered gates - complete in-memory
+  tape (D-M4-1, closes P-M4-B), async `finalization_status` lifecycle (D-M4-3, closes P-M4-C), the
+  terminal pass through the existing 150/120 `WindowedRunner`, the three §7.4 events, and the
+  `already_finalized` single-replacement rule `live_session.py:777` already names. That change
+  ships production code, so it needs a service restart before the M4 exit passes and the restart
+  must be recorded here. Do not restate the gates; they are fixed in PREREGISTRATION-M4.md.

@@ -1,0 +1,6 @@
+[07:51:20] case=lex_adam_frank duration=180.0s refs=8 speech_s=180.0 speakers=['Adam Frank', 'Lex Fridman']
+[07:51:20] provenance: {"base_url": "https://127.0.0.1:7861", "vllm_base_url": "http://127.0.0.1:18000/v1", "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize", "windowing": {"window_seconds": 150, "stride_seconds": 120}, "live_source_revision": "cc8f778a89326ee18a3c362d886bb9abdd63646b", "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265", "decoding": "greedy", "max_new_tokens": 12000, "timestamp": "2026-08-25T07:51:20-0400"}
+[07:51:28]   file tbsa=0.9306 wer=0.1262 cov=0.9523 der=0.0532 spk=0.9468
+[07:54:29]   live tbsa=0.9131 wer=0.1224 cov=0.9277 der=0.0802 spk=0.9198
+[07:54:29] live meta: {"failure": null, "wall_s": 180.5, "status": "succeeded", "frame_count": 360, "accepted_samples": 2880000, "decode_rtf_p95": 0.3392739308018906, "span_reasons": {"hard_cap": 71, "end_silence": 1, "leading_silence": 4}, "spans_empty": 3, "segments": 56, "speakers": ["S01", "S02"], "label_revision_version": 1, "text_revision_version": 18}
+[07:54:29] RESULTS /private/tmp/m4-3min-074759/adam3m-B/results.json

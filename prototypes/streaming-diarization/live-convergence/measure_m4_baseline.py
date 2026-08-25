@@ -26,22 +26,27 @@ the same run -- so this driver re-reads it and reports, for every M4 case:
   * **file-arm stability**: the same file arm measured pre-campaign and at the M2 exit, so
     the comparator's own provenance is checked instead of assumed.
 
-The three-minute case (`lex_adam_frank`) has **no live pass in this campaign**. It is
-reported as `MISSING` with everything that can be derived without a service, because a
-comparator table that quietly omits a gated case is how a milestone gates two thirds of its
-corpus and reports a pass.
+The three-minute case (`lex_adam_frank`) is not in the M2 exit passes -- it is gated by plan
+§12.2 but had never been run through the live path when this instrument was written
+(precondition P-M4-A). Its pass therefore lives in its own root, given by `--three-minute-root`,
+and whether it has a comparator is **read from that disk** rather than declared: an absent or
+empty root reports `MISSING`, because a comparator table that quietly omits a gated case is
+how a milestone gates two thirds of its corpus and reports a pass.
 
 Usage:
-  python measure_m4_baseline.py [--passes-root <dir>] [--output out.json]
+  python measure_m4_baseline.py [--passes-root <dir>] [--three-minute-root <dir>]
+                                [--output out.json]
   python measure_m4_baseline.py --selftest
 
-No GPU, no service, no MOSS request: it reads the checked-in M2 exit passes.
+No GPU, no service, no MOSS request: it reads checked-in passes.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
+import tempfile
 import wave
 from pathlib import Path
 
@@ -77,6 +82,10 @@ ARMS = ("file", "live")
 #: carry checked-in baseline hypotheses and this case has none to point at yet.
 THREE_MINUTE_CASE = "lex_adam_frank"
 THREE_MINUTE_ROOT = REPO / "prototypes/streaming-diarization/data/real/calibration_diarization_3min"
+#: Where that case's paired passes live once acquired (iteration 23, P-M4-A). It is a separate
+#: root because the M2 exit predates the case; the layout inside is the single-case one
+#: `verify_m2_exit.case_paths` reads for the five-minute case.
+DEFAULT_THREE_MINUTE_PASSES = REPO / "evidence/live-convergence-0824/M4-three-minute/passes"
 
 #: Plan G8 and the owner-directed prerelease companion, verbatim. Nothing here may move:
 #: they are the milestone's bounds, and this driver only ever reports distances to them.
@@ -84,7 +93,39 @@ G8_WER_TOLERANCE = 0.010
 TERMINAL_DER_TOLERANCE = 0.020
 
 
-def m4_cases() -> dict[str, dict]:
+def single_case_pass_dir(root: Path, run: str) -> Path | None:
+    """The pass directory for one run under a single-case pass root, found rather than named.
+
+    `run_paired_case.sh` labels its output `<label>-A` / `<label>-B`; the label is the
+    operator's, not this instrument's, so the run suffix is the contract and the label is
+    read off the disk. Ambiguity is refused rather than resolved by picking one.
+    """
+
+    if not root.is_dir():
+        return None
+    matches = sorted(child for child in root.iterdir() if child.is_dir() and child.name.endswith(f"-{run}"))
+    if len(matches) > 1:
+        raise SystemExit(
+            f"REFUSED: {root} holds {len(matches)} candidate pass directories for run {run}: "
+            f"{[m.name for m in matches]}"
+        )
+    return matches[0] if matches else None
+
+
+def three_minute_paths(root: Path, run: str) -> dict[str, Path]:
+    """The five-file contract for the three-minute case, in the single-case layout."""
+
+    pass_dir = single_case_pass_dir(root, run) or (root / f"missing-{run}")
+    return {
+        "results": pass_dir / "results.json",
+        "file_hypothesis": pass_dir / "file-hypothesis.jsonl",
+        "live_hypothesis": pass_dir / "live-hypothesis.jsonl",
+        "trace": pass_dir / "live/run-001/trace.jsonl",
+        "summary": pass_dir / "live/run-001/summary.json",
+    }
+
+
+def m4_cases(three_minute_root: Path = DEFAULT_THREE_MINUTE_PASSES) -> dict[str, dict]:
     """Every case plan §12.2 gates, as rescoped by Appendix B: trio + 3 min + 5 min."""
 
     contract = corpus_contract()
@@ -100,7 +141,12 @@ def m4_cases() -> dict[str, dict]:
         "duration_sec": 180.0,
         "audio": THREE_MINUTE_ROOT / "samples" / THREE_MINUTE_CASE / "audio.wav",
         "reference": THREE_MINUTE_ROOT / "samples" / THREE_MINUTE_CASE / "reference.jsonl",
-        "has_pass": False,
+        # Read from disk: the case gates M4 whether or not it has a comparator, and P-M4-A is
+        # satisfied only when every run named by RUNS is on disk under its own root.
+        "has_pass": all(
+            three_minute_paths(three_minute_root, run)["results"].exists() for run in RUNS
+        ),
+        "passes_root": three_minute_root,
     }
     cases[FIVE_MINUTE_CASE] = {
         "duration_sec": CASE_DURATION_SEC.get(FIVE_MINUTE_CASE, 300.0),
@@ -314,10 +360,11 @@ def baseline_file_arm(case: str) -> dict | None:
 # ------------------------------------------------------------------ the table
 
 
-def measure(passes_root: Path) -> dict:
-    cases = m4_cases()
+def measure(passes_root: Path, three_minute_root: Path = DEFAULT_THREE_MINUTE_PASSES) -> dict:
+    cases = m4_cases(three_minute_root)
     report: dict = {
         "passes_root": str(passes_root),
+        "three_minute_passes_root": str(three_minute_root),
         "g8_wer_tolerance": G8_WER_TOLERANCE,
         "terminal_der_tolerance": TERMINAL_DER_TOLERANCE,
         "cases": {},
@@ -337,7 +384,11 @@ def measure(passes_root: Path) -> dict:
         }
         if spec["has_pass"]:
             for run in RUNS:
-                paths = case_paths(passes_root, case, run)
+                paths = (
+                    three_minute_paths(spec["passes_root"], run)
+                    if case == THREE_MINUTE_CASE
+                    else case_paths(passes_root, case, run)
+                )
                 arms = arm_scores(paths["results"], case)
                 run_node: dict = {}
                 for arm in ARMS:
@@ -538,6 +589,7 @@ def render(report: dict) -> str:
     lines: list[str] = []
     summary = report["summary"]
     lines.append(f"passes root : {report['passes_root']}")
+    lines.append(f"3-min root  : {report['three_minute_passes_root']}")
     lines.append(
         f"tolerances  : WER {report['g8_wer_tolerance']:.3f} (plan G8), "
         f"DER {report['terminal_der_tolerance']:.3f} (owner prerelease companion)"
@@ -625,7 +677,17 @@ def render(report: dict) -> str:
     )
     lines.append(
         "file arm stable since pre-campaign: "
-        + ", ".join(f"{c}={v}" for c, v in summary["file_arm_stable_since_precampaign"].items())
+        + ", ".join(
+            f"{c}={'no-precampaign-baseline' if v is None else v}"
+            for c, v in summary["file_arm_stable_since_precampaign"].items()
+        )
+    )
+    lines.append(
+        "two fresh passes agree: "
+        + ", ".join(
+            f"{c}={report['cases'][c].get('runs_agree')}"
+            for c in summary["cases_with_comparator"]
+        )
     )
     lines.append(
         "accepted == accounted: "
@@ -713,6 +775,48 @@ def selftest() -> int:
         None,
     )
 
+    # The three-minute comparator is read off the disk, in both directions (P-M4-A).
+    check(
+        "an absent pass root has no pass directory",
+        single_case_pass_dir(Path("/nonexistent/three-minute"), "A"),
+        None,
+    )
+    scratch = Path(tempfile.mkdtemp(prefix="m4-baseline-selftest-"))
+    try:
+        check(
+            "an empty pass root leaves the case MISSING",
+            m4_cases(scratch)[THREE_MINUTE_CASE]["has_pass"],
+            False,
+        )
+        for run in RUNS:
+            target = scratch / f"anylabel-{run}"
+            target.mkdir()
+            (target / "results.json").write_text("{}")
+        check(
+            "both runs on disk make the case gateable, whatever the label",
+            m4_cases(scratch)[THREE_MINUTE_CASE]["has_pass"],
+            True,
+        )
+        check(
+            "and its five-file contract points inside that directory",
+            three_minute_paths(scratch, RUNS[0])["summary"].parents[2].name,
+            f"anylabel-{RUNS[0]}",
+        )
+        (scratch / f"otherlabel-{RUNS[0]}").mkdir()
+        ambiguous = False
+        try:
+            single_case_pass_dir(scratch, RUNS[0])
+        except SystemExit:
+            ambiguous = True
+        check("two candidate pass directories are refused, not picked from", ambiguous, True)
+        check(
+            "one missing run is not a comparator",
+            m4_cases(scratch / "nothing-here")[THREE_MINUTE_CASE]["has_pass"],
+            False,
+        )
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
     for line in failures:
         print(f"FAIL {line}")
     print(f"selftest: {'PASS' if not failures else 'FAIL'} ({len(failures)} failures)")
@@ -722,6 +826,7 @@ def selftest() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--passes-root", type=Path, default=DEFAULT_PASSES)
+    parser.add_argument("--three-minute-root", type=Path, default=DEFAULT_THREE_MINUTE_PASSES)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--selftest", action="store_true", help="prove the derived quantities react")
     args = parser.parse_args()
@@ -729,7 +834,7 @@ def main() -> int:
     if args.selftest:
         return selftest()
 
-    report = measure(args.passes_root.resolve())
+    report = measure(args.passes_root.resolve(), args.three_minute_root.resolve())
     print(render(report))
     if args.output:
         args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")

@@ -21,6 +21,7 @@ imported by `moss_transcribe_diarize/`.
 | `compare_speaker_authority.py` + `mutate_speaker_authority.sh` | plan §11.1: does a witness-owned speaker authority (S1) beat the deployed projection (S0)? | **no — a tie to 6 dp on every gated axis**, Δ DER `0.000000`; the remaining confusion is segment extents, not voice identity; `evidence/live-convergence-0824/M3-s1-prototype/` |
 | `verify_m3_disposition.py` | do the 14 preregistered M3 gates pass, and does the "ship nothing" decision hold against the tree? | **14/14 pass and nothing ships** — every gate is a no-regression gate, so read them with the delta; `evidence/live-convergence-0824/M3-disposition/` |
 | `measure_m4_baseline.py` + `PREREGISTRATION-M4.md` | what must a terminal pass land on, and what does converging to the file arm cost? | trio mean WER `.131357 → .103946` is the prize; **two convergence gates are already satisfied by a build that ships nothing**, and on `lex_javier_milei` a no-regression gate is arithmetically impossible beside the PRD bound; `evidence/live-convergence-0824/M4-preregistration/` |
+| `remeasure_one_case.py` + `run_paired_case.sh` | can the three-minute case M4 gates (P-M4-A) be measured with the checked-in paired driver's shape rather than a new instrument? | **yes, and it is the one case where the rolling surface beats file mode on text** — rolling WER `.122411` vs file `.126177`, so `terminal == file` fails the preregistered G-M4-3/G-M4-4 there by `.003766` / `.001883`; `evidence/live-convergence-0824/M4-three-minute/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -477,3 +478,47 @@ Three preconditions block the milestone, and the instrument names rather than hi
 `lex_adam_frank` (3 min) has **no live pass in this campaign**, so M4 gates 3 of 5 cases until it
 is acquired; no session retains a complete tape today; and the three §7.4 terminal events plus the
 `running`/`failed`/`unavailable` finalization statuses have no producers.
+
+## The three-minute comparator (P-M4-A, iteration 23)
+
+`lex_adam_frank` (180 s) had never been through the live path in this campaign, so two of M4's
+five gated cases had no comparator. Two warm-decoder paired passes against the deployed service
+close that precondition — `measure_m4_baseline.py` now prints `MISSING COMPARATOR: none`.
+
+The case is the corpus's counterexample. On every other case the paired file arm is ahead on
+text by `.008` to `.045`; here the **rolling surface is ahead by `.003766`** (WER `.122411` vs
+`.126177`). Three preregistered consequences, all fixed before the pass existed:
+
+- G-M4-1 is **already inside** on this case (`.003766` ≤ `.010`) — the third of ten convergence
+  readings a build that ships nothing passes, where the preregistration predicted two.
+- G-M4-3 binds terminal WER at the pass's own rolling arm, `.122411`, and P1 predicts terminal
+  equals the file arm, `.126177`. **They cannot both hold.** The gate is still satisfiable in
+  principle (any terminal WER in `[.116177, .122411]` clears both), so it stays a gate, and its
+  bound is not moved.
+- G-M4-4 fails the same way on the extent-free axes: v2 content recall and matched-word speaker
+  accuracy are `.951036` rolling against `.949153` file, `-.001883`.
+
+Everything else the case contributes is a gain for converging: DER `-.026667`, speaker accuracy
+`+.026667`, coverage `+.024238`, v2 speech-region DER `-.012130`. Terminal plans **2 windows**
+(`[0, 150)`, `[120, 180)`) — the same plan file mode runs, so `terminal == file` is an identity
+here too.
+
+Both live passes are **word-identical** (546 words) and both file arms byte-identical; the only
+spread is segment extent, `3.3e-4` on DER — the trio's signature, not a decode flip. `runs_agree`
+is `False` only because that flag compares every axis exactly.
+
+`remeasure_one_case.py` is the checked-in five-minute driver's shape with the case lifted out of
+the constants, and its `--selftest` checks that instead of asserting it: the replay keywords and
+base URL are parsed out of `remeasure_5m_case.py` with `ast`, and its scoring path must reproduce
+a checked-in campaign pass's own numbers to `1e-12` (it reproduces them exactly).
+
+```bash
+# acquire a paired comparator for any allowed case (needs the running service)
+prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-3min-<stamp> \
+  adam3m lex_adam_frank \
+  prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank
+
+# the comparator table, now five measured cases (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_m4_baseline.py --output /tmp/m4.json
+```

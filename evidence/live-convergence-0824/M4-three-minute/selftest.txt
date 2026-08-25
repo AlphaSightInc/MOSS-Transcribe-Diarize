@@ -1,0 +1,17 @@
+=== remeasure_one_case.py --selftest ===
+  PASS  replay-kwargs-match-checked-in-driver: reference {'pace': 1.0, 'max_pacing_lag': 3.0, 'runs': 1} vs ours {'pace': 1.0, 'max_pacing_lag': 3.0, 'runs': 1}
+  PASS  endpoint-matches-checked-in-driver: reference https://127.0.0.1:7861 vs ours https://127.0.0.1:7861
+  PASS  endpoints-are-a-subset-of-the-checked-in-driver's: ours ['/api/jobs', '/api/runtime'] against reference ['/api/jobs', '/api/jobs/', '/api/jobs//segments', '/api/runtime']
+  PASS  scoring-reproduces-checked-in-pass-file: max delta 0.000e+00 over ['cov', 'der', 'spk', 'wer']
+  PASS  scoring-reproduces-checked-in-pass-live: max delta 0.000e+00 over ['cov', 'der', 'spk', 'wer']
+  PASS  duration-read-from-the-wav: 300.000000s
+  PASS  refuses-audio-the-live-path-would-resample: 8 kHz WAV -> SystemExit
+  PASS  layout-matches-case_paths: 5/5 paths under keyu5m-A: all present
+  PASS  driver-writes-that-layout: writes ['file-hypothesis.jsonl', 'live-hypothesis.jsonl', 'live/run-001/summary.json', 'live/run-001/trace.jsonl', 'results.json']; contract wants ['file-hypothesis.jsonl', 'live-hypothesis.jsonl', 'live/run-001/summary.json', 'live/run-001/trace.jsonl', 'results.json']
+
+selftest: 0 failures
+exit=0
+
+=== measure_m4_baseline.py --selftest ===
+selftest: PASS (0 failures)
+exit=0
