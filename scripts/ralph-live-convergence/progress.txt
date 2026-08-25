@@ -540,3 +540,102 @@ appended at the iteration 4->5 boundary]
   Predictions on record: trio live WER .1885 (gate <= .190), moving on exactly one span
   (lex_bill_ackman#02, 8 words, .2614 -> .2273), milei .1440 and keyu .1942 unchanged, 5-minute
   case reported but ungated.
+
+2026-08-25 iteration 8 (run 20260825-042645-70858) - M1 E1 exit measured, 5 of 6 gates pass.
+- Target: context.md candidate 5b, the lowest open item. Restart the deployed service onto the
+  M1 build and run the paired rerun the plan E1 exit needs. No production code touched.
+- Service restart (recorded per PRD): stopped pid 82706 (M0d build), launched pid 22561 at
+  2026-08-25 02:11:11 local on repo working tree b15503a, same argv, log
+  ~/.local/share/moss-transcribe-diarize/g3/web_cli-campaign-20260825-021111.log. Descriptors
+  before/after identical (evidence/.../M1-e1-exit/restart-{pre,post}.txt). 4070 Ti untouched.
+- Files touched:
+  prototypes/streaming-diarization/live-convergence/run_paired_passes.sh   (new; four sequential
+      passes, each preceded by ONE discarded warm-up decode -- the campaign protocol fixed in
+      M1-salvage-production/PREREGISTRATION.md. Supersedes run_paired_reacquisition.sh from M1
+      onward; that script is left unchanged because it is M0d's reproducer.)
+  prototypes/streaming-diarization/live-convergence/verify_m1_exit.py      (new; the six gates)
+  prototypes/streaming-diarization/live-convergence/attribute_wer_delta.py (new; re-scores a real
+      hypothesis with a named segment withheld, so a delta is attributed instead of asserted)
+  prototypes/streaming-diarization/live-convergence/NOTES.md               (index rows + commands)
+  evidence/live-convergence-0824/M1-e1-exit/{NOTES.md,gates.json,attribution.txt,mutations.txt,
+      restart-{pre,post}.txt,passes/...}                                   (new bundle, 520K)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m1-exit-20260825-021153
+    Four sequential passes, one in-flight vLLM request, 06:11:57-06:31:09Z. trio-A/B exit 1 on
+    acquired_nfl (pre-existing empty reference, after every scored case is written); keyu5m-A/B exit 0.
+  - verify_m1_exit.py --fresh-root /tmp/m1-exit-20260825-021153 -> exit 1, five of six gates PASS:
+      G-M1-1 trio live WER <= .190              FAIL  .192294
+      G-M1-2 no per-case live WER regression    PASS  bill -.022728, milei 0, keyu 0
+      G-M1-3 file mode byte-identical           PASS  5 cases x 2 passes, sha256 vs 2026-08-24
+      G-M1-4 zero extra MOSS requests           PASS  24/32/24/27/128 decodes, both passes
+      G-M1-5 no refused/silence words published PASS  0 rows inside 22 refused spans; 4/4 salvaged
+                                                      spans found (positive control)
+      G-M1-6 identity sees only salvaged intervals PASS 4 salvaged spans, corpus-reproduced, equal
+  - Six artifact mutations, each caught by its own gate and no other (mutations.txt): refused span
+    publishes a row -> G5; salvaged row withheld -> G5+G6; extra canonical_processed -> G4; one
+    character in a file arm -> G3; salvaged interval moved 0.2 s -> G6; salvage field dropped from
+    the trace -> G5.
+- Per case (mean of two passes; both trio passes are text-identical, only extents move):
+    case              baseline live   M0d (pre-M1)   M1        salvages
+    lex_bill_ackman   .261364         .272727        .238636   1
+    lex_javier_milei  .144            .144           .144      0 (4 refused)
+    lex_keyu_jin      .194245         .194245        .194245   0
+    trio mean         .199870         .203657        .192294
+    keyu-5m (ungated) .1464           .1464/.1477    .146375/.147743   0 (6 refused)
+- WHY G-M1-1 FAILS, ATTRIBUTED (attribute_wer_delta.py, the drivers' own scorer):
+    withheld [5.00,7.50] S01 "The difference between, you said the stock market."
+      -> bill .272727, i.e. the salvaged span is worth -.034091. Plan §9.1 projected -.0341.
+    withheld [49.75,50.00] S00 "You know."
+      -> bill .227273, i.e. that fragment costs +.011363.
+  A per-segment diff of the three bill hypotheses shows M0d added the S00 fragment (BEFORE M1
+  existed) and M1 added nothing but the salvaged span. It sits in bill span 19, samples
+  760000-800000 -- the exact span probe_decode_determinism.py caught giving 20 vs 37 tokens in
+  M0d; this run decodes it at 37, and warming the decoder before each pass did not change it.
+  Bill without it is .227273 and the trio mean is .188506 = the §9.1 projection to 6 dp.
+- DISPOSITION: M1's row is signed on G-M1-2..6 and UNSIGNED ON G-M1-1, the same disposition
+  M0d's G2 has. No .stop file. The preregistration makes the stop rule conditional -- "a failure
+  that survives attribution" -- and the same document fixes attribution as the step that comes
+  first and says a delta whose whole cause is a single decode flip is reported as noise with its
+  span id. This is that delta, with its span id. Nothing in the convergence approach is refuted
+  by a 0.25-second S00 fragment that arrived with the instrument, and M2's gate (<= .150 on the
+  same trio) is strictly stronger and is measured on the current instrument.
+  OWNER QUESTION for morning review, one decision: score G-M1-1 on the frozen 2026-08-24
+  instrument (M1 passes, .188506) or as deployed (M1 fails, .192294)? Recommendation in
+  evidence/.../M1-e1-exit/NOTES.md: record the deployed number, leave the row unsigned, proceed
+  to M2 and let its stronger bound settle it. Either ruling leaves the ladder unblocked.
+- Learned:
+  - Salvage's whole live surface is two spans in two cases (lex_bill_ackman#02,
+    acquired_jamie_dimon#22), exactly what §9.1 predicted. The 5-minute case salvages NOTHING --
+    all six of its zero-parse spans are non-hard_cap freezes, the gate refuses all six, and its
+    WER is unmoved (.147059 mean, .147059 on the M0d build). The gate is doing the refusing.
+  - Noise floor, first N=2 reading (candidate 4c, partly answered): two trio passes produced
+    IDENTICAL published text on all four cases; only extents moved (+-10-20 ms on 1 bill, 1
+    milei, 4 keyu segments -- F4). The 5-minute case still spreads: WER .146375/.147743 (.0014),
+    DER .113033/.110 (.0030). The trio needs no repeat budget for M2/M3 gate readings; the
+    5-minute case does, and it is cheaper folded into M2's soak than run on its own.
+  - M0d's 5-minute decode count of 115 was the TRUNCATED TRACE, not a decode count. The M0e
+    complete trace and both M1 passes all read 128 canonical_processed. Any future comparator
+    taken from M0d-paired-reacquisition/gates.json for the 5-minute case must use M0e instead.
+    Caught only because G-M1-4 failed at 128 vs 115 and the difference was chased rather than
+    accepted.
+  - The last span of a meeting emits no span_frozen event (it is flushed on stop), but
+    canonical_processed carries committed_samples + frozen_span_sample_count, which place it.
+    lex_javier_milei#31 -- the 0.24 s stop_flush tail M1a adjudicated -- is refused and publishes
+    nothing, confirmed from those two fields rather than left unverifiable.
+  - A gate over PUBLISHED WORDS has to be anchored to the span that produced them. G-M1-5's first
+    draft searched the whole transcript for a refused span's words, and the corpus holds the
+    one-word decode "[0.00][S01]And." -- "and" appears in any minute of English speech, so the
+    gate fired on a false positive. It now asks whether a refused span published any row inside
+    its own bounds (0 of 22 did) and uses the salvaged spans as a positive control (4/4 found),
+    so it can neither false-positive nor pass vacuously.
+  - Two verifier bugs were found and fixed BEFORE any verdict, both of which would have read as
+    campaign failures: comparing full-precision .194245 against the PRD's 4-dp .1942 made an
+    unchanged case look like a regression (the comparator is now read from the baseline artifact
+    the digits were rounded from, with a round-trip assert against the PRD's stated values), and
+    counting "spans seen in the trace" instead of canonical_processed events.
+- Next: M2 (context.md candidate 6). First write the accepted text-finalization ADR under
+  docs/adr/ from plan D1-D7 verbatim (Appendix B Q8) -- that is the preregistered first step of
+  E2 and it needs no measurement. Then the §10.2-§10.3 grid. Do NOT re-run the M1 passes hoping
+  the pre-M1 decode flip goes away; the preregistration forbids re-rolling and the cause is the
+  read-only 4070 Ti host.

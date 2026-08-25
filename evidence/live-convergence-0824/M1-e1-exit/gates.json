@@ -1,0 +1,286 @@
+{
+  "fresh_root": "/private/tmp/m1-exit-20260825-021153",
+  "gates": {
+    "G_M1_1_trio_live_wer_bound": {
+      "pass": false,
+      "trio_live_wer_mean": 0.192294,
+      "bound": 0.19,
+      "projection": 0.1885,
+      "per_case": {
+        "lex_bill_ackman": {
+          "live_wer_mean": 0.238636,
+          "live_wer_per_pass": [
+            0.238636,
+            0.238636
+          ],
+          "live_der_mean": 0.181916,
+          "live_der_per_pass": [
+            0.181833,
+            0.182
+          ]
+        },
+        "lex_javier_milei": {
+          "live_wer_mean": 0.144,
+          "live_wer_per_pass": [
+            0.144,
+            0.144
+          ],
+          "live_der_mean": 0.1945,
+          "live_der_per_pass": [
+            0.1945,
+            0.1945
+          ]
+        },
+        "lex_keyu_jin": {
+          "live_wer_mean": 0.194245,
+          "live_wer_per_pass": [
+            0.194245,
+            0.194245
+          ],
+          "live_der_mean": 0.111584,
+          "live_der_per_pass": [
+            0.111167,
+            0.112
+          ]
+        }
+      }
+    },
+    "G_M1_2_no_per_case_regression": {
+      "pass": true,
+      "per_case": {
+        "lex_bill_ackman": {
+          "baseline_live_wer": 0.261364,
+          "prd_states": 0.2614,
+          "measured_mean": 0.238636,
+          "delta": -0.022728,
+          "no_regression": true
+        },
+        "lex_javier_milei": {
+          "baseline_live_wer": 0.144,
+          "prd_states": 0.144,
+          "measured_mean": 0.144,
+          "delta": 0.0,
+          "no_regression": true
+        },
+        "lex_keyu_jin": {
+          "baseline_live_wer": 0.194245,
+          "prd_states": 0.1942,
+          "measured_mean": 0.194245,
+          "delta": 0.0,
+          "no_regression": true
+        }
+      }
+    },
+    "G_M1_3_file_mode_byte_identical": {
+      "pass": true,
+      "per_case": {
+        "lex_bill_ackman": {
+          "baseline_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "A": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "B": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+          "identical": true
+        },
+        "lex_javier_milei": {
+          "baseline_sha256": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "A": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "B": "f8c75b8d1f6970b8f9f3d459e3cab44c3a958d02fde6212029cd12a40da510a6",
+          "identical": true
+        },
+        "lex_keyu_jin": {
+          "baseline_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "A": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "B": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+          "identical": true
+        },
+        "acquired_jamie_dimon": {
+          "baseline_sha256": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "A": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "B": "e567148dd1d1d82fd7f2cf06377efe50f3001e0b29bf18c499c8d8172d646dc6",
+          "identical": true
+        },
+        "keyu-5m": {
+          "baseline_sha256": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "A": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "B": "574020bf7ea2a744dc13422b95c405c3b6cd56de7b55de38a8d6064b399d1db4",
+          "identical": true
+        }
+      }
+    },
+    "G_M1_4_zero_extra_moss_requests": {
+      "pass": true,
+      "note": "one decode request per span; the count is the trace's canonical_processed events",
+      "comparator": "M0d passes; keyu-5m from the M0e complete trace",
+      "m0d_five_minute_count_from_truncated_trace": 115,
+      "per_case": {
+        "lex_bill_ackman": {
+          "comparator_decodes": 24,
+          "A": 24,
+          "B": 24,
+          "equal": true
+        },
+        "lex_javier_milei": {
+          "comparator_decodes": 32,
+          "A": 32,
+          "B": 32,
+          "equal": true
+        },
+        "lex_keyu_jin": {
+          "comparator_decodes": 24,
+          "A": 24,
+          "B": 24,
+          "equal": true
+        },
+        "acquired_jamie_dimon": {
+          "comparator_decodes": 27,
+          "A": 27,
+          "B": 27,
+          "equal": true
+        },
+        "keyu-5m": {
+          "comparator_decodes": 128,
+          "A": 128,
+          "B": 128,
+          "equal": true
+        }
+      }
+    },
+    "G_M1_5_no_refused_words_published": {
+      "pass": true,
+      "refused_span_published_rows": [],
+      "salvaged_spans_whose_corpus_words_are_missing": [],
+      "salvage_on_non_hard_cap_freeze": [],
+      "spans_missing_salvage_field": [],
+      "spans_without_bounds": [],
+      "positive_control_salvaged_spans_found": 4,
+      "disposition_histogram": {
+        "none": 444,
+        "salvaged": 4,
+        "refused_gate": 22
+      }
+    },
+    "G_M1_6_identity_sees_only_salvaged_intervals": {
+      "pass": true,
+      "salvaged_spans": 4,
+      "reproducible_from_corpus": 4,
+      "note": "identity_preparer.prepare() is handed the published transcript text, so the intervals it parses are exactly the ones published for the span; a salvaged span whose raw decode is in the corpus is additionally re-derived here",
+      "checks": [
+        {
+          "case": "lex_bill_ackman",
+          "run": "A",
+          "span_id": 2,
+          "freeze_reason": "hard_cap",
+          "identity_status": "prepared",
+          "classifier_intervals": [
+            [
+              5.0,
+              7.5,
+              "S01"
+            ]
+          ],
+          "published_intervals": [
+            [
+              5.0,
+              7.5,
+              "S01"
+            ]
+          ],
+          "reproducible": true,
+          "intervals_match": true,
+          "within_span_bounds": true,
+          "identity_prepared": true
+        },
+        {
+          "case": "lex_bill_ackman",
+          "run": "B",
+          "span_id": 2,
+          "freeze_reason": "hard_cap",
+          "identity_status": "prepared",
+          "classifier_intervals": [
+            [
+              5.0,
+              7.5,
+              "S01"
+            ]
+          ],
+          "published_intervals": [
+            [
+              5.0,
+              7.5,
+              "S01"
+            ]
+          ],
+          "reproducible": true,
+          "intervals_match": true,
+          "within_span_bounds": true,
+          "identity_prepared": true
+        },
+        {
+          "case": "acquired_jamie_dimon",
+          "run": "A",
+          "span_id": 22,
+          "freeze_reason": "hard_cap",
+          "identity_status": "prepared",
+          "classifier_intervals": [
+            [
+              51.66,
+              54.01,
+              "S01"
+            ]
+          ],
+          "published_intervals": [
+            [
+              51.66,
+              54.01,
+              "S01"
+            ]
+          ],
+          "reproducible": true,
+          "intervals_match": true,
+          "within_span_bounds": true,
+          "identity_prepared": true
+        },
+        {
+          "case": "acquired_jamie_dimon",
+          "run": "B",
+          "span_id": 22,
+          "freeze_reason": "hard_cap",
+          "identity_status": "prepared",
+          "classifier_intervals": [
+            [
+              51.66,
+              54.01,
+              "S01"
+            ]
+          ],
+          "published_intervals": [
+            [
+              51.66,
+              54.01,
+              "S01"
+            ]
+          ],
+          "reproducible": true,
+          "intervals_match": true,
+          "within_span_bounds": true,
+          "identity_prepared": true
+        }
+      ]
+    },
+    "_five_minute_report_only": {
+      "pass": true,
+      "note": "reported, not gated (PREREGISTRATION: no prediction for the 5-minute case)",
+      "keyu-5m": {
+        "live_wer_mean": 0.147059,
+        "live_wer_per_pass": [
+          0.146375,
+          0.147743
+        ],
+        "live_der_mean": 0.111516,
+        "live_der_per_pass": [
+          0.113033,
+          0.11
+        ]
+      }
+    }
+  }
+}

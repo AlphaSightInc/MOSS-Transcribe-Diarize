@@ -1,0 +1,7 @@
+case            lex_bill_ackman
+hypothesis      /tmp/m1-exit-20260825-021153/trio-A/lex_bill_ackman/live-hypothesis.jsonl  (32 segments)
+full WER        0.238636
+  withheld [49.75,50.00] S00 'You know.'
+  WER without it  0.227273   (this segment is worth +0.011363)
+  withheld [5.00,7.50] S01 'The difference between, you said the stock market.'
+  WER without it  0.272727   (this segment is worth -0.034091)

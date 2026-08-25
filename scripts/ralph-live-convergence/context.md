@@ -31,14 +31,15 @@
 
 ## Current state
 
-(2026-08-25, after iteration 7)
+(2026-08-25, after iteration 8)
 
-- Deployed dev stack up: `web_cli` **pid 82706, restarted 2026-08-25 00:43:48 onto campaign
-  code** (repo working tree @ `e291624`) at `https://127.0.0.1:7861` (bearer token
+- Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
+  build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
   `~/.local/share/moss-transcribe-diarize/g3/shared-token`), SSH tunnel `127.0.0.1:18000` →
-  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after
-  the restart (`evidence/.../M0d-paired-reacquisition/restart-{pre,post}.txt`) — the build
-  changed and nothing else. Restart again after any production change, and record it.
+  4070 Ti vLLM `OpenMOSS-Team/MOSS-Transcribe-Diarize`. Descriptor identical before and after both
+  restarts (`evidence/.../M0d-paired-reacquisition/restart-{pre,post}.txt` for the M0d build,
+  `evidence/.../M1-e1-exit/restart-{pre,post}.txt` for this one) — the build changed and
+  nothing else. Restart again after any production change, and record it.
 - Paired baseline (deployed stack, 2026-08-24): trio FILE WER .1039 / TBSA .9106 / DER .1021 /
   spk_acc .8979 vs LIVE .1999 / .8384 / .1764 / .8236; 5-min keyu FILE .0506/.0579(DER) vs
   LIVE .1464/.1315. Artifacts + drivers: `prototypes/live-file-gap-baseline-20260824/`.
@@ -226,6 +227,46 @@
   text. Salvage is offered only `UNPARSEABLE_TEXT` for exactly that reason.
 - `HARD_CAP_REASON` now exists in `app/live_endpoint.py` and is the one spelling of the freeze
   reason the salvage gate reads. A second spelling would silently open or close the gate.
+- **M1 E1 EXIT MEASURED (iteration 8): 5 of 6 gates pass; M1 does NOT close.** Service restarted
+  onto the M1 build, four warm-decoder passes (`run_paired_passes.sh`), gates by
+  `verify_m1_exit.py`. PASS: G-M1-2 no per-case regression (bill −.02273, milei 0, keyu 0),
+  G-M1-3 file byte-identical (5 cases × 2 passes), G-M1-4 zero extra MOSS requests
+  (24/32/24/27/128), G-M1-5 nothing a refused span said was published (0 rows inside 22 refused
+  spans; 4/4 salvaged spans found as the positive control), G-M1-6 identity saw only salvager
+  intervals (4 salvaged spans, all reproduced from the corpus, intervals equal). **FAIL:
+  G-M1-1 trio live WER .192294 > .190.** Evidence: `evidence/live-convergence-0824/M1-e1-exit/`;
+  six artifact mutations each caught by their own gate.
+- **The G-M1-1 miss is .0023 and is not M1's.** `attribute_wer_delta.py` re-scores the real bill
+  hypothesis without one segment at a time: the salvaged span `[5.00,7.50]` is worth
+  **−.034091** — plan §9.1 projected −.0341 — and a `[49.75,50.00] S00 "You know."` fragment is
+  worth **+.011363**. A per-segment diff of baseline → M0d → M1 shows M0d added that fragment
+  (before M1 was written) and M1 added nothing but the salvaged span. It sits in bill span 19,
+  samples 760000-800000, the exact span `probe_decode_determinism.py` caught giving 20 vs 37
+  tokens; this run decodes it at 37. Bill without it is .227273 and the trio mean is **.188506**
+  = the §9.1 projection to 6 dp. **Owner ruling needed: score G-M1-1 on the frozen 2026-08-24
+  instrument (passes, .188506) or as deployed (fails, .192294).** Row unsigned, same disposition
+  as M0d's G2; no `.stop` — M2's gate is `<= .150` on the same trio, strictly stronger, and the
+  campaign is not blocked either way.
+- Salvage fires on exactly the two spans §9.1 predicted (`lex_bill_ackman#02`,
+  `acquired_jamie_dimon#22`) and nowhere else. The **5-minute case salvages nothing**: its six
+  zero-parse spans are all non-`hard_cap`, the gate refuses all six, and its WER is unmoved
+  (.147059 mean, .147059 on the M0d build). M1's whole live surface is two spans in two cases.
+- **Noise floor, first N=2 reading (candidate 4c, partly answered).** Two trio passes produced
+  **identical published text** on all four cases; only extents moved (±10-20 ms on 1 bill, 1
+  milei, 4 keyu segments — F4). The 5-minute case still spreads: WER .146375/.147743 (.0014),
+  DER .113033/.110 (.0030). So the trio needs no repeat budget for M2/M3 gate readings; the
+  5-minute case does.
+- **M0d's 5-minute decode count of 115 was the truncated trace, not a decode count.** The M0e
+  complete trace and both M1 passes all read 128 `canonical_processed`. Any future comparator
+  drawn from `M0d-paired-reacquisition/gates.json` for the 5-minute case must use M0e instead.
+- The **last span of a meeting emits no `span_frozen` event** (flushed on stop), but
+  `canonical_processed` carries `committed_samples` + `frozen_span_sample_count`, which place
+  it. `lex_javier_milei#31` — the 0.24 s `stop_flush` tail M1a adjudicated — is refused and
+  publishes nothing, confirmed from those two fields.
+- A gate over *published words* must be anchored to the span that produced them: the corpus
+  holds the one-word decode `[0.00][S01]And.`, and "and" appears in any minute of English
+  speech. G-M1-5 asks whether a refused span published a row inside its own bounds, with the
+  salvaged spans as a positive control so it cannot pass vacuously.
 - Rest of the ladder (M2-M5) unimplemented; working tree carries the plan, evidence prototypes,
   and this scaffold.
 
@@ -270,6 +311,14 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # does the SHIPPED salvage classifier still decide what plan §9.1 measured? (exit 0 = yes)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_production_salvage.py
+# M1 (plan E1) exit: four warm-decoder passes against the running service, then the six gates
+prototypes/streaming-diarization/live-convergence/run_paired_passes.sh /tmp/m1-exit-<stamp>
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_m1_exit.py --fresh-root /tmp/m1-exit-<stamp>
+# what is a per-case WER delta actually made of? (re-scores without a named segment)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/attribute_wer_delta.py \
+  <live-hypothesis.jsonl> --case lex_bill_ackman --drop 49.75:50.0
 # salvage tests (table over the 10 zero-parse decodes + 5 constructed spans, and the seam)
 .venv/bin/python -m pytest tests/test_live_transcript_salvage.py tests/test_live_pipeline_seams.py -q
 # 9-clip identity floor (M3)
@@ -292,21 +341,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    passes would be tuning the instrument to the answer.
 4b. ~~**F3 trace truncation**~~ — DONE iteration 5, all five gates pass (see Current state).
    M1's salvage corpus and M4's G10 accounting can now read a complete 5-minute event stream.
-4c. **Noise floor for per-case gates** (do before M2/M3 gate readings, not before M1). N>=4
-   repeats of the 5-minute pair to turn "the 5-minute case can flip" into a spread. Needed
-   because M1 gates "no per-case WER regression" and M3 gates per-case DER, and F4 shows
-   extents move +-10-20 ms even when every span and decode match.
+4c. **Noise floor for per-case gates** — PARTLY ANSWERED iteration 8 at N=2: the trio is
+   text-identical across passes (extents only), the 5-minute case spreads WER .0014 / DER .0030.
+   What is still open is only the 5-minute spread at N>=4, and it is cheap to fold into M2's own
+   soak rather than run on its own. Do it when M2 needs a per-case 5-minute verdict.
 5. ~~**M1 production salvage (§9.3)**~~ — SHIPPED iteration 7 (see Current state). What remains
    of M1 is only the E1 exit gate, which is candidate 5b.
-5b. **M1 E1 exit: paired rerun on the deployed service - NEXT.** The service (pid 82706) still
-   runs pre-M1 code. Restart `web_cli` onto the M1 build and record it, then run two trio passes
-   and two 5-minute passes. The protocol, the aggregation, the warm-up decision and the gates are
-   ALREADY FIXED in `evidence/live-convergence-0824/M1-salvage-production/PREREGISTRATION.md`
-   (written before any measurement) — read it and follow it; do not re-decide any of it after
-   seeing a number. Prediction on record: trio live WER .1885, moving on exactly one span
-   (`lex_bill_ackman#02`, 8 words, .2614 -> .2273), milei and keyu unchanged, 5-minute case
-   ungated new evidence. Attribute any per-case delta with `diff_live_runs.py` before calling it.
-6. **M2 ADR then grid**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
+5b. ~~**M1 E1 exit: paired rerun**~~ — MEASURED iteration 8, 5 of 6 gates pass. G-M1-1 is the
+   one open item and it needs an owner ruling, not more code (see Current state). Do NOT re-run
+   the passes hoping the pre-M1 decode flip goes away; that is tuning the instrument to the
+   answer, and the preregistration forbids it.
+6. **M2 ADR then grid - NEXT**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
    (Appendix B Q8); then run `compare_rolling_grid.py` per plan §10.3, starting from
    `proto_context_arms.py`'s lexical stitcher; then production per plan §10.5 order.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,

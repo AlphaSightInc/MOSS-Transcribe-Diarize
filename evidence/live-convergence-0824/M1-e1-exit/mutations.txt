@@ -1,0 +1,42 @@
+== M1: a refused span publishes a row (milei span 3 window) ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[PASS] G_M1_3_file_mode_byte_identical
+[PASS] G_M1_4_zero_extra_moss_requests
+[FAIL] G_M1_5_no_refused_words_published
+[PASS] G_M1_6_identity_sees_only_salvaged_intervals
+== M2: the salvaged row is withheld (positive control + interval match) ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[PASS] G_M1_3_file_mode_byte_identical
+[PASS] G_M1_4_zero_extra_moss_requests
+[FAIL] G_M1_5_no_refused_words_published
+[FAIL] G_M1_6_identity_sees_only_salvaged_intervals
+== M3: one decode request more (extra canonical_processed) ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[PASS] G_M1_3_file_mode_byte_identical
+[FAIL] G_M1_4_zero_extra_moss_requests
+[PASS] G_M1_5_no_refused_words_published
+[PASS] G_M1_6_identity_sees_only_salvaged_intervals
+== M4: file arm perturbed by one character ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[FAIL] G_M1_3_file_mode_byte_identical
+[PASS] G_M1_4_zero_extra_moss_requests
+[PASS] G_M1_5_no_refused_words_published
+[PASS] G_M1_6_identity_sees_only_salvaged_intervals
+== M5: a salvaged span moves off its classifier interval ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[PASS] G_M1_3_file_mode_byte_identical
+[PASS] G_M1_4_zero_extra_moss_requests
+[PASS] G_M1_5_no_refused_words_published
+[FAIL] G_M1_6_identity_sees_only_salvaged_intervals
+== M6: salvage decision dropped from the trace ==
+[FAIL] G_M1_1_trio_live_wer_bound
+[PASS] G_M1_2_no_per_case_regression
+[PASS] G_M1_3_file_mode_byte_identical
+[PASS] G_M1_4_zero_extra_moss_requests
+[FAIL] G_M1_5_no_refused_words_published
+[PASS] G_M1_6_identity_sees_only_salvaged_intervals
