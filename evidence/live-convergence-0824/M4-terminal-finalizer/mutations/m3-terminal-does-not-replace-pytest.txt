@@ -1,0 +1,89 @@
+........F......FF                                                    [100%]
+=================================== FAILURES ===================================
+_ TerminalFinalizerTest.test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerTest testMethod=test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision>
+
+    def test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision(self):
+        runner = WholeMeetingStub("[0][S01]alpha[1][1][S02]beta[4]")
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=3,
+        )
+    
+        assert result.outcome is TerminalOutcome.FINALIZED
+        proposal = result.proposal
+        assert proposal is not None
+>       assert (proposal.source, proposal.start_sample, proposal.end_sample) == ("terminal", 0, MEETING)
+E       AssertionError: assert ('terminal', 64000, 64000) == ('terminal', 0, 64000)
+E         
+E         At index 1 diff: 64000 != 0
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:113: AssertionError
+_ TerminalFinalizerSessionTest.test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerSessionTest testMethod=test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero>
+
+    def test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero(self):
+        """Terminal is exempt from the frontier rule because it owns all of the audio."""
+    
+        session = session_with_base("[0][S01]one[1]", "[0][S01]two[1]", "[0][S01]three[1]")
+        snapshot = session.snapshot()
+        from tests.test_live_text_revision import proposal, segment
+    
+        session.apply_text_revision(
+            proposal(session, 0, SECOND, (segment(0, SECOND, "ONE"),))
+        )
+        rolled = session.snapshot()
+        assert rolled.canonical_through_sample == SECOND
+    
+        result = TerminalTranscriptFinalizer(
+            runner=WholeMeetingStub("[0][S01]one two three[3]")
+        ).finalize(
+            plan=plan_for(3 * SECOND),
+            tape=tape_of(3 * SECOND),
+            base_text_revision_version=rolled.text_revision_version,
+            base_surface=rolled.effective_transcript,
+            canonical_speakers=rolled.identity_snapshot.canonical_speakers,
+        )
+        outcome = session.apply_text_revision(result.proposal)
+    
+        final = session.snapshot()
+>       assert outcome.applied is True
+E       AssertionError: assert False is True
+E        +  where False = TextRevisionOutcome(applied=False, version=1, canonical_through_sample=16000, finalization_status='not_started', revised_segments=0, refusal='terminal_must_replace_full_surface', refusals=(('terminal_must_replace_full_surface', 1),)).applied
+
+tests/test_live_terminal_finalizer.py:383: AssertionError
+_ TerminalFinalizerSessionTest.test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerSessionTest testMethod=test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused>
+
+    def test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused(self):
+        session = session_with_base("[0][S01]alpha bet[1]", "[0][S01]gamma delt[1]")
+        snapshot = session.snapshot()
+        runner = WholeMeetingStub("[0][S01]alpha beta[1][1][S01]gamma delta[2]")
+        finalizer = TerminalTranscriptFinalizer(runner=runner)
+    
+        result = finalizer.finalize(
+            plan=plan_for(2 * SECOND),
+            tape=tape_of(2 * SECOND),
+            base_text_revision_version=snapshot.text_revision_version,
+            base_surface=snapshot.effective_transcript,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+        outcome = session.apply_text_revision(result.proposal)
+    
+        after = session.snapshot()
+>       assert (outcome.applied, outcome.finalization_status) == (True, "final")
+E       AssertionError: assert (False, 'not_started') == (True, 'final')
+E         
+E         At index 0 diff: False != True
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:338: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused
+3 failed, 14 passed, 4 subtests passed in 2.22s

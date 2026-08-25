@@ -31,11 +31,14 @@
     (`_project_canonical_speaker` / `_base_segments` / `_build_effective_transcript`). Anything
     that changes what a reader is shown must bump `_surface_version`, or the effective-surface
     cache goes stale.
-  - `app/live_transcript_convergence.py` — **M2, shipped iteration 11**: the rolling converger.
-    Four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the selected 10/10
-    geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
+  - `app/live_transcript_convergence.py` — the two longer listeners. **M2, shipped iteration 11**:
+    the rolling converger — four methods (`accept_pcm` / `observe_base` / `complete` / `stop`), the
+    selected 10/10 geometry, bounded PCM ring, one witness in flight. `LiveSnapshot` satisfies its
     `BaseTranscriptSurface` protocol since iteration 12; `LiveCoordinator` is its runtime caller
-    since iteration 14.
+    since iteration 14. **M6, shipped iteration 25**: `TerminalTranscriptFinalizer` — one
+    `finalize(plan, tape, …)` over `[0, meeting_end)` through file mode's own injected
+    `WindowedRunner`, plus `terminal_speaker_mapping` (ADR-0005 D8). Both return a
+    `TextRevisionProposal` and neither publishes; what separates them is what each may own.
   - `app/live_arbiter.py` — **four queues since iteration 13** (plan §6 M5): batch >
     live_canonical > live_refinement > live_provisional. `submit_live_refinement` /
     `release_live_refinement` / the two `ArbiterSnapshot` refinement depths. Dispatching a witness
@@ -846,10 +849,54 @@
   `f(decoder, endpoint, identity)` and does NOT move - plus a service restart is a step candidate
   8c-3 owes before the M4 exit measurement. Until then a deployed terminal pass would correctly
   report itself `unavailable`.
-- Rest of the ladder (M4 steps 3b/3c, the M4 exit, M5) unimplemented; working tree carries the plan,
+- **M4 STEP 3b SHIPPED (iteration 25): the terminal finalizer exists and costs the surface
+  nothing.** `TerminalTranscriptFinalizer` (`app/live_transcript_convergence.py`, beside the rolling
+  converger - plan §6 M6's "small adapter") reads `[0, meeting_end)` through the tape seam, hands it
+  to **file mode's own `WindowedRunner`** (injected, never constructed here, so terminal == file on
+  identical bytes is an identity rather than two configurations agreeing), places the words on the
+  session clock with `span_segments`' clamp, names the decoder's local speakers on the meeting's
+  album, and returns ONE `TextRevisionProposal` over `[0, meeting_end)`. It publishes nothing.
+  Three named failures, none raising (plan §5.2): `tape_unavailable` -> `finalization_status
+  unavailable`, `decode_failed` / `no_transcript` -> `failed`, all keeping the rolling surface.
+  `verify_terminal_finalizer.py` exit 0 on nine gates. Evidence:
+  `evidence/live-convergence-0824/M4-terminal-finalizer/`.
+- **The adapter contributes ZERO loss, measured with the decoder held fixed.** Handed the paired
+  file arm's own decode (the M2-exit pass's `file-hypothesis.jsonl`, re-rendered by production's own
+  `render_segments`), the published surface equals the file arm's segments bound for bound, and
+  scores `0.000000` delta on WER, DER, coverage, text-speaker accuracy AND content recall on 3/3
+  cases: bill `.159091`/`.075500`, milei `.088000`/`.151833`, keyu `.064748`/`.079000` (rolling was
+  `.198864` / `.096000` / `.100719`). This is NOT G-M4-1/G-M4-2 - those are scored on a fresh
+  deployed pass with a real decoder at the M4 exit - it is the same arithmetic with the decoder held
+  fixed, which is the ONLY way to tell an adapter defect from R3's decoder non-determinism later.
+- **D-M4-4, the speaker-naming policy, is DECIDED BY MEASUREMENT and recorded as the 2026-08-25
+  addendum to ADR-0005 (D8).** Plan §12.3 step 5 does not say how to name a terminal pass's
+  speakers, so both candidates ran over the same meetings with the rule fixed in the verifier's
+  docstring before the run and biased toward needing no new rule (`if both qualify, ship
+  projected`): the session's existing per-segment projection costs `+.383834 … +.572000` DER and
+  `-.409090 … -.628868` text-speaker accuracy and publishes 21 of 48 segments `S00`; the shipped
+  per-speaker one-to-one assignment costs `0.000000` on both and publishes zero `S00`. Both arms
+  publish byte-identical words - the entire difference is naming. Reason the projection is wrong
+  HERE and right for rolling: a terminal pass heard the whole meeting, so its local labels are a
+  PARTITION of it, and deciding them segment by segment splits one speaker across several people.
+  Nothing is embedded, so ADR-0005 D5's prohibition holds vacuously.
+- **Incidental, and it belongs to candidate 7d's decomposition**: on these 60-second two-speaker
+  clips the live album had birthed up to **16** canonical speakers. That microfragment population
+  (plan §11.4) is why the projected arm scatters as far as it does.
+- **P6's trio row is confirmed**: each terminal pass planned exactly 1 window over 60 s at 150/120
+  (`plan_windows` gives 1 / 2 / 3 at 60 / 180 / 300 s). The 5-minute and 3-minute rows are the M4
+  exit's.
+- **The shared driver gained an inert parameter, and the inertness is checked both ways.**
+  `verify_runtime_rolling.run_case` takes `terminal=` / `terminal_canonical=`; with it unset, the
+  artifacts of `verify_runtime_rolling.py` AND `verify_terminal_tape.py` are field-identical to the
+  checked-in ones (`inertness.txt` in the new bundle). Production's `TerminalDecodePlan` and the
+  tape's bytes are OBSERVED on their way past (`stop_rolling`'s return is dropped at
+  `live_service_runtime.py:758`; the tape is released inside `stop`) and the captured bytes are
+  re-taped through the same production class with digest equality as the gate (G1).
+- Rest of the ladder (M4 step 3c, the M4 exit, M5) unimplemented; working tree carries the plan,
   evidence prototypes, and this scaffold. The deployed `web_cli` is still pid 44278 on the M2 build,
-  which is NO LONGER the current production tree (iteration 24 shipped code), so the next deployed
-  measurement needs a restart - and the manifest declaration above should land in the same one.
+  which is NO LONGER the current production tree (iterations 24-25 shipped code), so the next
+  deployed measurement needs a restart - and the manifest declaration above should land in the same
+  one.
 
 ## Validation
 
@@ -978,7 +1025,13 @@ prototypes/streaming-diarization/live-convergence/mutate_m2_exit.sh \
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
 .venv/bin/python -m pytest tests/ -q
+# M4 step 3b: the terminal finalizer against the paired file arm's own decode (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_terminal_finalizer.py \
+  --output /tmp/m4-terminal-finalizer.json
+prototypes/streaming-diarization/live-convergence/mutate_terminal_finalizer.sh /tmp/mut-terminal
 ```
+
 
 ```bash
 # M3 comparator table + instrument self-test (no GPU, no service; the bounds M3 is gated against)
@@ -1142,11 +1195,18 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    default - ADR-0003 D2/D5 make it the deployment's, and a default-on tape would change the
    posture every gate in this campaign was measured against. Do NOT compare the rolling ring's
    `retained_high_water_samples` between runs; two identical no-tape runs already disagree.
-8c-2. **M4 step 3b: the terminal finalizer.** Plan §6 M6 - the 150/120 `WindowedRunner` over the
-   tape through a small adapter inside `live_transcript_convergence.py`, returning ONE terminal
-   `TextRevisionProposal` over `[0, meeting_end)`; the `already_finalized` single-replacement rule
-   `live_session.py:777` already names; terminal speaker identities from owned speech evidence
-   (§12.3 step 5). Gates and predictions are fixed in `PREREGISTRATION-M4.md`; do not restate them.
+8c-2. ~~**M4 step 3b: the terminal finalizer**~~ - SHIPPED iteration 25, nine gates pass and the
+   adapter costs `0.000000` on five axes against the paired file arm. `TerminalTranscriptFinalizer`
+   + `terminal_speaker_mapping` in `app/live_transcript_convergence.py`; `write_pcm16_wav` made
+   public in `live_adapters.py` so one writer serves both decode paths; decision recorded as the
+   **2026-08-25 addendum to ADR-0005 (D8)**. Verdict in
+   `evidence/live-convergence-0824/M4-terminal-finalizer/`.
+   Do NOT re-open the naming policy by "simplifying" it to the session's per-segment projection:
+   that arm was run, and it costs `+.38…+.57` DER because it splits the terminal partition. Do NOT
+   construct the `WindowedRunner` inside the finalizer - injecting file mode's own object is what
+   makes `terminal == file` an identity instead of two configurations that must agree. Do NOT let a
+   refused tape fall back to "whatever you hold": a healthy short tape would then publish words over
+   a clock its audio never covered (mutation M5).
 8c-3. **M4 step 3c: the async lifecycle and its events.** D-M4-3's `finalization_status`
    `not_started -> running -> final` (plus `failed` / `unavailable`, which the tape's own refusal
    now has a producer for), the stop request returning before terminal completes, the three §7.4

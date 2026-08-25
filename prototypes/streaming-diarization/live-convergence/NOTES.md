@@ -23,6 +23,7 @@ imported by `moss_transcribe_diarize/`.
 | `measure_m4_baseline.py` + `PREREGISTRATION-M4.md` | what must a terminal pass land on, and what does converging to the file arm cost? | trio mean WER `.131357 → .103946` is the prize; **two convergence gates are already satisfied by a build that ships nothing**, and on `lex_javier_milei` a no-regression gate is arithmetically impossible beside the PRD bound; `evidence/live-convergence-0824/M4-preregistration/` |
 | `remeasure_one_case.py` + `run_paired_case.sh` | can the three-minute case M4 gates (P-M4-A) be measured with the checked-in paired driver's shape rather than a new instrument? | **yes, and it is the one case where the rolling surface beats file mode on text** — rolling WER `.122411` vs file `.126177`, so `terminal == file` fails the preregistered G-M4-3/G-M4-4 there by `.003766` / `.001883`; `evidence/live-convergence-0824/M4-three-minute/` |
 | `verify_terminal_tape.py` + `mutate_terminal_tape.sh` | does a session now retain the complete mixed audio a terminal pass needs — all of it, only it, and no longer (P-M4-B)? | **yes** — tape digest equals the corpus digest and a read-back differs in `0` samples on all three trio cases, peak `accepted x 2` bytes, released to `0` bytes with the meeting, and declaring it changes nothing the meeting publishes; `evidence/live-convergence-0824/M4-terminal-tape/` |
+| `verify_terminal_finalizer.py` + `mutate_terminal_finalizer.sh` | handed the paired file arm's own decode, does the terminal adapter publish the paired file arm's own surface — and how should a terminal pass name its speakers? | **yes, delta `0.000000` on WER, DER, coverage, text-speaker accuracy and content recall, 3/3 cases**; and the naming policy is decided by measurement — the per-segment projection costs `+.38…+.57` DER, so terminal names speakers **per speaker** (ADR-0005 D8); `evidence/live-convergence-0824/M4-terminal-finalizer/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -561,4 +562,71 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 
 # every property is load-bearing (production files restored on exit, including on failure)
 prototypes/streaming-diarization/live-convergence/mutate_terminal_tape.sh /tmp/tape-mutations
+```
+
+## `verify_terminal_finalizer.py` + `mutate_terminal_finalizer.sh` — iteration 25, M4 step 3b: the terminal finalizer
+
+**Question.** Plan E4's whole prize is that terminal replaces the rolling surface with the same
+150/120 pass file mode runs, so on the trio it is the *same call* and trio mean WER should go
+`.131357 → .103946`. Two very different things can stop that landing: the decoder (measured
+non-deterministic — M0d, PREREGISTRATION-M4 R3) or the adapter between the tape and the session.
+This verifier isolates the second and answers it exactly — *handed the paired file arm's own
+decode, does the adapter publish the paired file arm's own surface?* If yes, then any terminal
+delta measured later is a statement about the decoder and never about this code.
+
+**How.** The meeting runs frame by frame through the real runtime (`verify_runtime_rolling.run_case`,
+now with a `terminal=` parameter). Production's own `TerminalDecodePlan` and the complete tape are
+observed on their way past — `stop_rolling`'s return value is dropped at
+`live_service_runtime.py:758` and the tape is released inside `stop`, because step 3c has not
+wired a reader yet — and the captured bytes go back into the same production `CompleteMixedTape`
+class, with digest equality against the accounting the released tape published as the gate that
+the substitution is honest (G1). The terminal decode is the paired pass's own
+`file-hypothesis.jsonl`, re-rendered by production's own `render_segments` and replayed through a
+real `WindowedRunner`. Zero MOSS requests; no GPU.
+
+**Verdict — the adapter costs nothing.** All nine gates pass.
+
+| case | terminal WER | file | rolling | terminal DER | file | S00 segments |
+|---|---|---|---|---|---|---|
+| lex_bill_ackman | `.159091` | `.159091` | `.198864` | `.075500` | `.075500` | 0 |
+| lex_javier_milei | `.088000` | `.088000` | `.096000` | `.151833` | `.151833` | 0 |
+| lex_keyu_jin | `.064748` | `.064748` | `.100719` | `.079000` | `.079000` | 0 |
+
+Delta against the paired file arm is `0.000000` on WER, DER, coverage, text-speaker accuracy and
+content recall, on 3/3 cases — and the published segments are the file arm's segments, bound for
+bound, with the file arm's speaker partition renamed one-to-one.
+
+**Verdict — the speaker-naming policy, selected by measurement (ADR-0005 D8).** Plan §12.3 step 5
+says "resolve terminal speaker identities using owned speech evidence" and does not say how. Two
+arms were run over the same meetings, with the selection rule fixed in the verifier's docstring
+*before* the run and biased toward needing no new rule at all:
+
+| arm | who names a segment | Δ DER vs file | Δ text-speaker accuracy | surface `S00` |
+|---|---|---|---|---|
+| `projected` | the session's existing per-segment projection | `+.383834` … `+.572000` | `-.409090` … `-.628868` | 21 of 48 |
+| `mapped` | one-to-one **per speaker**, by overlap with the published surface | `0.000000` × 3 | `0.000000` × 3 | 0 |
+
+Both arms publish byte-identical words, so the entire difference is naming. The projection is
+right for a rolling window — ten seconds of one decode's local `S01` means nothing across
+windows — and structurally wrong here: a terminal pass heard the whole meeting, so its local
+labels are a *partition of the meeting*, and deciding them one segment at a time splits one
+speaker across several people and merges several into one. Worth knowing: on these 60-second
+two-speaker clips the live album had birthed up to **16** canonical speakers, which is why the
+projected arm scatters as far as it does.
+
+**Mutations.** `mutate_terminal_finalizer.sh` — control PASS, six mutations each caught,
+control-restored PASS. M1 (naming falls back to the projection) and M3 (terminal extends instead
+of replacing) are caught by the corpus verifier *and* the tests; M2 (many-to-one mapping), M4
+(unclamped timestamps), M5 (a refused tape retried for whatever it holds) and M6 (a failure
+reporting the words it rejected) are caught by tests alone — sixty seconds of clean two-speaker
+audio cannot produce a short tape, a failed decode, or an argmax that collides.
+
+```bash
+# the adapter, end to end, with no GPU and no service
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_terminal_finalizer.py \
+  --output /tmp/m4-terminal-finalizer.json
+
+# every mutation, with the production file restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_terminal_finalizer.sh /tmp/mut-terminal
 ```

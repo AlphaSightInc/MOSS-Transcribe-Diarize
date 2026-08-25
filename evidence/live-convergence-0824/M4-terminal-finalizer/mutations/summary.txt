@@ -1,0 +1,28 @@
+== control: unmutated module ==
+control: verify exit=0  pytest exit=0  17 passed, 4 subtests passed in 2.19s
+    PASS
+== M1: naming falls back to the per-segment projection ==
+m1-per-segment-naming: verify exit=1  pytest exit=1  4 failed, 13 passed, 4 subtests passed in 2.18s
+    FAIL G4/G5 no speaker-naming policy preserves the terminal partition
+    FAIL
+== M2: the mapping allows two speakers to become one ==
+m2-many-to-one-mapping: verify exit=0  pytest exit=1  1 failed, 16 passed, 4 subtests passed in 2.17s
+    PASS
+== M3: terminal extends the surface instead of replacing it ==
+m3-terminal-does-not-replace: verify exit=1  pytest exit=1  3 failed, 14 passed, 4 subtests passed in 2.22s
+    FAIL G2 mapped/lex_bill_ackman the terminal revision did not apply: None
+    FAIL G2 mapped/lex_bill_ackman finalization_status is not_started
+    FAIL G2 mapped/lex_bill_ackman the surface is not all terminal: ['rolling']
+    FAIL G2 mapped/lex_bill_ackman a second terminal pass was not refused already_finalized
+== M4: timestamps are not clamped into the meeting ==
+m4-unclamped-timestamps: verify exit=0  pytest exit=1  1 failed, 16 passed, 4 subtests passed in 2.22s
+    PASS
+== M5: a refused tape is retried for whatever it holds ==
+m5-refused-tape-retried: verify exit=0  pytest exit=1  1 failed, 16 passed, 4 subtests passed in 2.22s
+    PASS
+== M6: a failure reports the words it rejected ==
+m6-failure-carries-words: verify exit=0  pytest exit=1  1 failed, 16 passed, 4 subtests passed in 2.22s
+    PASS
+== control: restored modules ==
+control-restored: verify exit=0  pytest exit=0  17 passed, 4 subtests passed in 2.19s
+    PASS

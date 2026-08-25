@@ -1,0 +1,25 @@
+.F...............                                                    [100%]
+=================================== FAILURES ===================================
+_ TerminalFinalizerTest.test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerTest testMethod=test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected>
+
+    def test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected(self):
+        runner = WholeMeetingStub(raises=RuntimeError("window 0 failed: [0][S01]secret meeting words[4]"))
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+        )
+    
+        assert result.outcome is TerminalOutcome.DECODE_FAILED
+        assert result.accounting.outcome.finalization_status == "failed"
+>       assert result.accounting.reason == "RuntimeError"
+E       AssertionError: assert 'window 0 fai...ting words[4]' == 'RuntimeError'
+E         
+E         - RuntimeError
+E         + window 0 failed: [0][S01]secret meeting words[4]
+
+tests/test_live_terminal_finalizer.py:195: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected
+1 failed, 16 passed, 4 subtests passed in 2.22s

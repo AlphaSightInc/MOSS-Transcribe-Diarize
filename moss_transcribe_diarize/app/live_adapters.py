@@ -313,7 +313,7 @@ class RunnerBoundedWavInference:
         token_cap = self._token_cap(span)
         with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
-            _write_pcm16_wav(wav_path, pcm)
+            write_pcm16_wav(wav_path, pcm)
             started = time.monotonic()
             try:
                 result = self.runner.transcribe(
@@ -549,7 +549,15 @@ def _validate_pcm_length(pcm: bytes, sample_count: int) -> None:
         raise LiveProviderError("pcm length must match 16-bit mono sample_count.")
 
 
-def _write_pcm16_wav(path: Path, pcm: bytes) -> None:
+def write_pcm16_wav(path: Path, pcm: bytes) -> None:
+    """Write live PCM as the 16 kHz mono WAV a runner is handed. One writer, two readers.
+
+    The span decoder has always written its payload this way; the terminal finalizer writes
+    the whole meeting the same way. A second implementation of "how live audio reaches a
+    runner" is exactly the kind of drift that would make a terminal pass and a span decode
+    disagree about bytes they both took from the same tape.
+    """
+
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(PCM16_BYTES_PER_SAMPLE)

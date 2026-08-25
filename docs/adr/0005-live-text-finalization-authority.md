@@ -268,3 +268,51 @@ decisions, that command fails until this record is amended too — which is the 
 not drift apart silently.
 
 Evidence bundle: `evidence/live-convergence-0824/M2-text-finalization-adr/`.
+
+---
+
+## 2026-08-25 addendum — how the terminal pass names its speakers (E4 step 3b)
+
+**Numbering note.** D1–D7 above are the plan's §4 decisions, quoted verbatim. This addendum's
+**D8** is *this record's own* eighth decision and is not the plan's D8, which is about evaluator
+v2 and is cited unchanged in "What this record does not authorize".
+
+### D8 — A terminal pass names its speakers per speaker, and embeds nothing
+
+The terminal finalizer publishes the decoder's own whole-meeting diarization and decides only
+what to *call* each of its speakers. Local speaker to canonical speaker is a **one-to-one
+assignment over the whole meeting**, maximising overlap in samples with the surface the meeting
+published; a local speaker with no overlap at all is published unattributed (`S00`). No new
+speaker embedding is computed and no audio is sent to an encoder.
+
+**Reason, measured before the code shipped.** Two ways of naming those speakers were run over the
+same three meetings, through the same runtime, with the paired file arm's own decode replayed as
+the terminal decode (`prototypes/streaming-diarization/live-convergence/verify_terminal_finalizer.py`,
+evidence `evidence/live-convergence-0824/M4-terminal-finalizer/`). The selection rule was fixed in
+that file before the run, and it preferred the arm that needs *no* adapter rule:
+
+| arm | how a segment is named | trio DER vs the paired file arm | text-speaker accuracy | segments published `S00` |
+|---|---|---|---|---|
+| `projected` | the session's existing per-segment projection | `+.383` … `+.572` | `-.409` … `-.629` | 21 of 48 |
+| `mapped` | this decision — one-to-one per speaker | `0.000000` on 3/3 cases | `0.000000` on 3/3 | 0 |
+
+Both arms publish byte-identical words, so the whole difference is naming. The per-segment
+projection is right for a rolling window, whose local `S01` means nothing across windows, and
+wrong here for a structural reason: a terminal pass heard the entire meeting at once, so its
+local labels are a **partition of the meeting**. Deciding them one segment at a time splits a
+single terminal speaker across several people and merges several into one, which destroys the
+diarization the terminal pass just produced — the measured cost above.
+
+**What this does not change.** D5 stands as written and is satisfied vacuously: nothing here
+embeds anything, so no encoder can receive prefix, context or mixed-window audio. If a future
+meeting shows the album and the terminal partition genuinely disagreeing about *who* — as
+opposed to *what to call them* — D5's route (embed the terminal pass's own owned intervals and
+reconcile against the album) is the upgrade, and it replaces exactly one function
+(`terminal_speaker_mapping`) behind the same seam. It buys nothing measurable today: the naming
+rule already reproduces the paired file arm's speaker scores exactly, at zero encoder cost.
+
+**Consequence for readers.** A terminal surface may still publish `S00`, and it means what it has
+always meant — nobody was attributed — but for a new reason: the meeting's album has no speaker
+this terminal voice overlaps. The terminal accounting reports `local_speakers`,
+`mapped_speakers` and `unattributed_segments` so that condition is visible per meeting rather
+than inferred from the transcript.

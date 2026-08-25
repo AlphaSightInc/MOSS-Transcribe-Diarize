@@ -1,0 +1,8 @@
+Is the shared driver's new `terminal=` parameter inert on the instruments that already use it?
+Compared field by field after removing `recorded_at` and the two rolling-ring high-water
+readings the driver itself documents as run-to-run noise (verify_terminal_tape.py G6).
+
+verify_runtime_rolling.py    vs evidence/live-convergence-0824/M2-runtime-wiring/verify.json
+                                identical: True
+verify_terminal_tape.py      vs evidence/live-convergence-0824/M4-terminal-tape/verify.json
+                                identical: True

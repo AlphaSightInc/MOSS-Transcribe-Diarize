@@ -1,0 +1,7 @@
+lex_bill_ackman    base_wer=0.261364 (grid 0.261364) rolling_wer=0.198864 (grid 0.198864) windows=6 revisions=6 status=stopped pcm_high_water=208000
+lex_javier_milei   base_wer=0.144000 (grid 0.144000) rolling_wer=0.096000 (grid 0.096000) windows=6 revisions=6 status=stopped pcm_high_water=240000
+lex_keyu_jin       base_wer=0.194245 (grid 0.194245) rolling_wer=0.100719 (grid 0.100719) windows=6 revisions=6 status=stopped pcm_high_water=208000
+TRIO base          wer=0.199870 (grid 0.199870) recall=0.913490 (grid 0.913490)
+TRIO rolling       wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+decode cost: {'requests': 178, 'fresh_requests': 0}
+PASS

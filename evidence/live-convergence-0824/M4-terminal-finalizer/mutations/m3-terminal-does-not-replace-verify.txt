@@ -1,0 +1,43 @@
+mapped     lex_bill_ackman    wer=0.198864 (file 0.159091, rolling 0.198864)  der=0.666667 (file 0.075500)  tsa=0.290715 (file 0.938134)  recall=0.926136 (file 0.931818)  S00=8
+mapped     lex_javier_milei   wer=0.096000 (file 0.088000, rolling 0.096000)  der=0.527333 (file 0.151833)  tsa=0.470264 (file 0.870992)  recall=0.920000 (file 0.920000)  S00=5
+mapped     lex_keyu_jin       wer=0.100719 (file 0.064748, rolling 0.100719)  der=0.644167 (file 0.079000)  tsa=0.378680 (file 0.925380)  recall=0.985612 (file 1.000000)  S00=7
+projected  lex_bill_ackman    wer=0.198864 (file 0.159091, rolling 0.198864)  der=0.666667 (file 0.075500)  tsa=0.290715 (file 0.938134)  recall=0.926136 (file 0.931818)  S00=8
+projected  lex_javier_milei   wer=0.096000 (file 0.088000, rolling 0.096000)  der=0.527333 (file 0.151833)  tsa=0.470264 (file 0.870992)  recall=0.920000 (file 0.920000)  S00=5
+projected  lex_keyu_jin       wer=0.100719 (file 0.064748, rolling 0.100719)  der=0.644167 (file 0.079000)  tsa=0.378680 (file 0.925380)  recall=0.985612 (file 1.000000)  S00=7
+speaker policy selected: None (qualified: none)
+  mapped     preserves_partition=True  reproduces_file_scores=False findings=14
+  projected  preserves_partition=True  reproduces_file_scores=False findings=14
+decode cost: {"base_fresh_requests": 0, "base_requests": 196, "terminal_fresh_requests": 0, "terminal_requests": 12}
+terminal kwargs: {"decoding": "greedy", "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002"}
+FAIL G2 mapped/lex_bill_ackman the terminal revision did not apply: None
+FAIL G2 mapped/lex_bill_ackman finalization_status is not_started
+FAIL G2 mapped/lex_bill_ackman the surface is not all terminal: ['rolling']
+FAIL G2 mapped/lex_bill_ackman a second terminal pass was not refused already_finalized
+FAIL G3 mapped/lex_bill_ackman surface differs from the file arm at segment 0 (21 vs 18 segments)
+FAIL G2 projected/lex_bill_ackman the terminal revision did not apply: None
+FAIL G2 projected/lex_bill_ackman finalization_status is not_started
+FAIL G2 projected/lex_bill_ackman the surface is not all terminal: ['rolling']
+FAIL G2 projected/lex_bill_ackman a second terminal pass was not refused already_finalized
+FAIL G3 projected/lex_bill_ackman surface differs from the file arm at segment 0 (21 vs 18 segments)
+FAIL G2 mapped/lex_javier_milei the terminal revision did not apply: None
+FAIL G2 mapped/lex_javier_milei finalization_status is not_started
+FAIL G2 mapped/lex_javier_milei the surface is not all terminal: ['rolling']
+FAIL G2 mapped/lex_javier_milei a second terminal pass was not refused already_finalized
+FAIL G3 mapped/lex_javier_milei surface differs from the file arm at segment 0 (14 vs 20 segments)
+FAIL G2 projected/lex_javier_milei the terminal revision did not apply: None
+FAIL G2 projected/lex_javier_milei finalization_status is not_started
+FAIL G2 projected/lex_javier_milei the surface is not all terminal: ['rolling']
+FAIL G2 projected/lex_javier_milei a second terminal pass was not refused already_finalized
+FAIL G3 projected/lex_javier_milei surface differs from the file arm at segment 0 (14 vs 20 segments)
+FAIL G2 mapped/lex_keyu_jin the terminal revision did not apply: None
+FAIL G2 mapped/lex_keyu_jin finalization_status is not_started
+FAIL G2 mapped/lex_keyu_jin the surface is not all terminal: ['rolling']
+FAIL G2 mapped/lex_keyu_jin a second terminal pass was not refused already_finalized
+FAIL G3 mapped/lex_keyu_jin surface differs from the file arm at segment 1 (16 vs 10 segments)
+FAIL G2 projected/lex_keyu_jin the terminal revision did not apply: None
+FAIL G2 projected/lex_keyu_jin finalization_status is not_started
+FAIL G2 projected/lex_keyu_jin the surface is not all terminal: ['rolling']
+FAIL G2 projected/lex_keyu_jin a second terminal pass was not refused already_finalized
+FAIL G3 projected/lex_keyu_jin surface differs from the file arm at segment 1 (16 vs 10 segments)
+FAIL G4/G5 no speaker-naming policy preserves the terminal partition
+FAIL

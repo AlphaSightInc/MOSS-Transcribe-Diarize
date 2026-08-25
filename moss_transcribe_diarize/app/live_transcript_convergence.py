@@ -1,4 +1,4 @@
-"""M2 -- the rolling transcript converger: a second, longer listener over the same audio.
+"""The two longer listeners over a live meeting's audio: rolling (M2) and terminal (M6).
 
 Live mode hands MOSS one VAD-frozen span at a time -- at most 2.5 seconds -- and publishes
 what comes back. File mode hands it 150 seconds. Same audio, same model, same greedy
@@ -46,15 +46,32 @@ Failure behaviour is plan §5.2's, verbatim in effect:
 A refused proposal needs no separate state: the next window is planned only once the
 session's own `canonical_through_sample` has reached that window's start, so a proposal the
 session declines simply stops the grid instead of burning GPU on revisions that cannot apply.
+
+**The second listener is at the bottom of this file.** `TerminalTranscriptFinalizer` (plan §6
+M6) hears the whole meeting once, after capture stops, through file mode's own 150/120
+pipeline. The two share this module because they are the same idea at two deadlines -- more
+context buys back the words a cut lost -- and because they share one seam: both return a
+`TextRevisionProposal` and neither publishes anything. What separates them is what each may
+own. A rolling window owns `[lo, hi)` and extends a monotonic prefix; the terminal pass owns
+`[0, meeting_end)` and replaces the whole surface, exactly once (ADR-0005, D4).
 """
 
 from __future__ import annotations
 
+import tempfile
+import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Protocol
+from pathlib import Path
+from typing import Any, Mapping, Protocol, Sequence
 
-from .live_adapters import InferenceTranscript, canonical_decode_token_cap
+from scipy.optimize import linear_sum_assignment
+
+from .live_adapters import (
+    InferenceTranscript,
+    canonical_decode_token_cap,
+    write_pcm16_wav,
+)
 from .live_session import (
     EffectiveTranscriptSegment,
     LIVE_SAMPLE_RATE,
@@ -62,6 +79,7 @@ from .live_session import (
     TextRevisionProposal,
 )
 from .live_span_bounds import span_segments
+from .live_tape import CompleteMixedTapeUnavailable
 
 #: The arm plan §10.4 selected from the plan §10.2 grid. Named parameters, not magic numbers:
 #: a different geometry is a new measured grid run (see the module docstring).
@@ -466,3 +484,442 @@ class RollingTranscriptConverger:
                 )
             )
         return tuple(segments)
+
+
+# ======================================================================================
+# M6 -- the terminal finalizer: the meeting's last listener, and the longest one.
+#
+# The rolling witness above hears ten seconds at a time because it has to answer while the
+# meeting is still running. Once capture stops that constraint is gone: the whole meeting is
+# on the tape, and the pipeline that decodes a whole meeting already exists and is the one
+# every file-mode job runs -- `WindowedRunner`, 150-second windows on a 120-second stride.
+# Plan §6 M6's instruction is therefore not "write a terminal decoder" but "reuse that one
+# through a small live adapter", and small is the point: the adapter owns four things the
+# file pipeline has no reason to know about -- where the audio comes from (the tape seam),
+# what clock the words land on (session samples), who the decoder's local speakers are on
+# this meeting's album, and what to publish when any of that fails.
+#
+# Everything else is deliberately NOT here. The windowing is `WindowedRunner`'s and is not
+# restated; the runner is injected so the deployment hands over the very object file mode
+# uses, which makes "terminal == file on identical bytes" an identity rather than a claim
+# two configurations have to keep agreeing on. The publication rules are `LiveSession`'s
+# seven validations (ADR-0005), including the one this producer exists for: a terminal
+# revision replaces the whole surface from sample 0, exactly once, and a second is refused
+# `already_finalized`. This module returns a proposal and never touches the session.
+# ======================================================================================
+
+
+class TerminalOutcome(str, Enum):
+    """What one terminal pass did, and -- when it published nothing -- which failure it was.
+
+    Plan §5.2 draws the line that matters: a tape that cannot serve the meeting and a model
+    that could not decode it are different meetings. The first says the audio to converge on
+    was never retained (`unavailable`); the second says it was, and the pass failed
+    (`failed`). Both keep the rolling surface, and neither ends the meeting -- capture
+    already succeeded.
+    """
+
+    #: One proposal covering `[0, meeting_end)` is ready for the session to accept.
+    FINALIZED = "finalized"
+    #: The tape does not hold `[0, meeting_end)`: short, holed, degraded, or already released.
+    TAPE_UNAVAILABLE = "tape_unavailable"
+    #: The runner did not answer for this meeting.
+    DECODE_FAILED = "decode_failed"
+    #: The runner answered, and nothing in the answer parses to words on this clock.
+    NO_TRANSCRIPT = "no_transcript"
+
+    @property
+    def finalization_status(self) -> str:
+        """The plan §7.3 word a caller publishes for this outcome.
+
+        Here rather than at the caller because `finalization_status` is a contract with
+        readers and the mapping from "what happened" to "what a reader is told" must have
+        exactly one author -- the HTTP surface, the replay trace and the portal all read it.
+        `FINALIZED` maps to `running` on purpose: producing a proposal is not publishing it,
+        and only `LiveSession.apply_text_revision` may say `final`.
+        """
+
+        if self is TerminalOutcome.FINALIZED:
+            return "running"
+        if self is TerminalOutcome.TAPE_UNAVAILABLE:
+            return "unavailable"
+        return "failed"
+
+
+@dataclass(frozen=True, slots=True)
+class TerminalFinalizationAccounting:
+    """Counts, samples and timing for the plan §7.4 terminal events. No transcript text.
+
+    The speaker fields are here because plan §12.3 step 5 is a step this adapter performs
+    and a step that can partly fail: a local speaker the meeting's album has no counterpart
+    for is published unattributed, and a reader who is told only "terminal finalized" cannot
+    see that. `mapped_speakers` against `local_speakers` is that difference, per meeting.
+    """
+
+    outcome: TerminalOutcome
+    epoch: int
+    end_sample: int
+    reason: str | None
+    tape_samples: int
+    tape_gaps: int
+    window_count: int
+    completed_windows: int
+    decoded_audio_samples: int
+    generated_tokens: int
+    prompt_tokens: int
+    decode_elapsed_sec: float | None
+    possibly_truncated: bool
+    segments: int
+    local_speakers: int
+    mapped_speakers: int
+    unattributed_segments: int
+    rolling_through_sample: int
+    rolling_status: str
+    window_seconds: float | None
+    stride_seconds: float | None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "outcome": self.outcome.value,
+            "finalization_status": self.outcome.finalization_status,
+            "epoch": self.epoch,
+            "end_sample": self.end_sample,
+            "reason": self.reason,
+            "tape_samples": self.tape_samples,
+            "tape_gaps": self.tape_gaps,
+            "window_count": self.window_count,
+            "completed_windows": self.completed_windows,
+            "decoded_audio_samples": self.decoded_audio_samples,
+            "generated_tokens": self.generated_tokens,
+            "prompt_tokens": self.prompt_tokens,
+            "decode_elapsed_sec": self.decode_elapsed_sec,
+            "possibly_truncated": self.possibly_truncated,
+            "segments": self.segments,
+            "local_speakers": self.local_speakers,
+            "mapped_speakers": self.mapped_speakers,
+            "unattributed_segments": self.unattributed_segments,
+            "rolling_through_sample": self.rolling_through_sample,
+            "rolling_status": self.rolling_status,
+            "window_seconds": self.window_seconds,
+            "stride_seconds": self.stride_seconds,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class TerminalFinalization:
+    """One terminal pass: the proposal it produced, or the named reason it produced none."""
+
+    proposal: TextRevisionProposal | None
+    accounting: TerminalFinalizationAccounting
+
+    @property
+    def outcome(self) -> TerminalOutcome:
+        return self.accounting.outcome
+
+
+class CompleteAudioTape(Protocol):
+    """The whole seam between a meeting's retained audio and its last listener.
+
+    Two methods, and the finalizer knows nothing else about where the audio lives -- memory
+    (ADR-0003 D8) or a declared disk root (ADR-0003 D2) are the same tape from here. `read`
+    refuses rather than returning short, which is why the adapter has no completeness check
+    of its own; `gaps` is what turns that refusal into evidence a reader can act on.
+    """
+
+    def gaps(self, through_sample: int) -> tuple[Any, ...]:
+        ...
+
+    def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
+        ...
+
+
+class WholeMeetingRunner(Protocol):
+    """What the finalizer needs from the file-mode pipeline: one call, on a path.
+
+    Stated as a protocol rather than imported as `WindowedRunner` for two reasons. The live
+    service must not pull the file pipeline's own dependencies (ffmpeg detection, the
+    identity resolver's encoder) into its import graph merely to describe a seam. And the
+    object the deployment passes IS file mode's runner, so the type that matters is the one
+    contract both sides already meet -- `transcribe(path, **kwargs) -> TranscriptionResult`.
+    """
+
+    def transcribe(self, audio_path: Any, **kwargs: Any) -> Any:
+        ...
+
+
+class TerminalTranscriptFinalizer:
+    """The meeting's terminal pass (plan §6 M6, §12.3 steps 4-6). Governed by ADR-0005.
+
+    Constructed once per deployment, not per session: it holds no meeting state, and
+    `finalize` is a function of the plan, the tape and the surface it is handed.
+
+    `runner` is file mode's own `WindowedRunner`; `transcribe_kwargs` are file mode's own
+    inference arguments (prompt, decoding, token bounds). Nothing here overrides either --
+    a terminal pass that decoded with different arguments than the file arm it is measured
+    against would make every convergence number a comparison of two configurations.
+    """
+
+    def __init__(
+        self,
+        *,
+        runner: WholeMeetingRunner,
+        transcribe_kwargs: Mapping[str, Any] | None = None,
+        scratch_dir: str | Path | None = None,
+    ):
+        self.runner = runner
+        self.transcribe_kwargs = dict(transcribe_kwargs or {})
+        self.scratch_dir = None if scratch_dir is None else Path(scratch_dir)
+
+    def finalize(
+        self,
+        *,
+        plan: TerminalDecodePlan,
+        tape: CompleteAudioTape,
+        base_text_revision_version: int,
+        base_surface: Sequence[EffectiveTranscriptSegment] = (),
+        canonical_speakers: Sequence[str] = (),
+    ) -> TerminalFinalization:
+        """Decode the whole meeting once and propose it as the surface, or refuse by name.
+
+        The three failures are the ones plan §5.2 names and they are ordered by what they
+        cost to discover: audio that was never kept is free to detect, a decode that did not
+        answer costs the pass, and an answer with no words in it costs the pass and a parse.
+        None of them raises. A meeting that was captured is a meeting that succeeded, and the
+        rolling surface it already published stays exactly where it is.
+        """
+
+        gaps = tuple(tape.gaps(plan.end_sample))
+        try:
+            pcm = tape.read(start_sample=0, end_sample=plan.end_sample)
+        except CompleteMixedTapeUnavailable as exc:
+            return self._refused(plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps)
+
+        tape_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+        started = time.monotonic()
+        with tempfile.TemporaryDirectory(prefix="mtd-terminal-", dir=self.scratch_dir) as scratch:
+            wav_path = Path(scratch) / f"terminal-{plan.epoch:04d}.wav"
+            write_pcm16_wav(wav_path, pcm)
+            del pcm
+            try:
+                result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
+            except Exception as exc:
+                # Only the exception's *type* is recorded. A runner's message may quote the
+                # answer it rejected, and plan §7.4 says terminal events carry counts and
+                # names -- never a word of the meeting.
+                return self._refused(
+                    plan,
+                    TerminalOutcome.DECODE_FAILED,
+                    exc.__class__.__name__,
+                    gaps=gaps,
+                    tape_samples=tape_samples,
+                    decode_elapsed_sec=time.monotonic() - started,
+                )
+            elapsed_sec = time.monotonic() - started
+
+        segments, local_speakers, mapping = self._segments_of(
+            result, end_sample=plan.end_sample, base_surface=base_surface,
+            canonical_speakers=canonical_speakers,
+        )
+        accounting = self._accounting(
+            plan,
+            TerminalOutcome.FINALIZED if segments else TerminalOutcome.NO_TRANSCRIPT,
+            None,
+            gaps=gaps,
+            tape_samples=tape_samples,
+            result=result,
+            decode_elapsed_sec=elapsed_sec,
+            segments=segments,
+            local_speakers=local_speakers,
+            mapping=mapping,
+        )
+        if not segments:
+            return TerminalFinalization(proposal=None, accounting=accounting)
+        return TerminalFinalization(
+            proposal=TextRevisionProposal(
+                epoch=plan.epoch,
+                base_text_revision_version=int(base_text_revision_version),
+                source="terminal",
+                start_sample=0,
+                end_sample=plan.end_sample,
+                segments=segments,
+                decode_elapsed_sec=elapsed_sec,
+            ),
+            accounting=accounting,
+        )
+
+    # ---------------------------------------------------------------- internals
+
+    def _segments_of(
+        self,
+        result: Any,
+        *,
+        end_sample: int,
+        base_surface: Sequence[EffectiveTranscriptSegment],
+        canonical_speakers: Sequence[str],
+    ) -> tuple[tuple[EffectiveTranscriptSegment, ...], tuple[str, ...], dict[str, str]]:
+        """The whole meeting's words on the session clock, attributed to the meeting's people.
+
+        `span_segments` is this codebase's one reader of the transcript grammar and clamps
+        every timestamp into the audio it was given, so a terminal segment cannot reach past
+        `[0, meeting_end)` however the decoder rounded its last marker.
+        """
+
+        parsed = [
+            item
+            for item in span_segments(str(getattr(result, "text", "") or ""), sample_count=end_sample)
+            if item.text.strip()
+        ]
+        placed: list[tuple[str, int, int, str]] = []
+        for item in parsed:
+            start = int(round(item.start * LIVE_SAMPLE_RATE))
+            end = int(round(item.end * LIVE_SAMPLE_RATE))
+            if end <= start:
+                continue
+            placed.append((item.speaker, start, end, item.text))
+        local_speakers = tuple(sorted({speaker for speaker, _, _, _ in placed}))
+        mapping = terminal_speaker_mapping(
+            placed, base_surface=base_surface, canonical_speakers=canonical_speakers
+        )
+        return (
+            tuple(
+                EffectiveTranscriptSegment(
+                    start_sample=start,
+                    end_sample=end,
+                    text=text,
+                    canonical_speaker=mapping.get(speaker),
+                    authority="terminal",
+                )
+                for speaker, start, end, text in placed
+            ),
+            local_speakers,
+            mapping,
+        )
+
+    def _refused(
+        self,
+        plan: TerminalDecodePlan,
+        outcome: TerminalOutcome,
+        reason: str,
+        *,
+        gaps: tuple[Any, ...],
+        tape_samples: int = 0,
+        decode_elapsed_sec: float | None = None,
+    ) -> TerminalFinalization:
+        return TerminalFinalization(
+            proposal=None,
+            accounting=self._accounting(
+                plan,
+                outcome,
+                reason,
+                gaps=gaps,
+                tape_samples=tape_samples,
+                result=None,
+                decode_elapsed_sec=decode_elapsed_sec,
+                segments=(),
+                local_speakers=(),
+                mapping={},
+            ),
+        )
+
+    def _accounting(
+        self,
+        plan: TerminalDecodePlan,
+        outcome: TerminalOutcome,
+        reason: str | None,
+        *,
+        gaps: tuple[Any, ...],
+        tape_samples: int,
+        result: Any,
+        decode_elapsed_sec: float | None,
+        segments: tuple[EffectiveTranscriptSegment, ...],
+        local_speakers: tuple[str, ...],
+        mapping: Mapping[str, str],
+    ) -> TerminalFinalizationAccounting:
+        window_count = int(getattr(result, "window_count", 0) or 0)
+        return TerminalFinalizationAccounting(
+            outcome=outcome,
+            epoch=plan.epoch,
+            end_sample=plan.end_sample,
+            reason=reason,
+            tape_samples=tape_samples,
+            tape_gaps=len(gaps),
+            window_count=window_count,
+            completed_windows=int(getattr(result, "completed_windows", 0) or 0),
+            decoded_audio_samples=tape_samples if window_count else 0,
+            generated_tokens=int(getattr(result, "generated_tokens", 0) or 0),
+            prompt_tokens=int(getattr(result, "prompt_len", 0) or 0),
+            decode_elapsed_sec=decode_elapsed_sec,
+            possibly_truncated=bool(getattr(result, "possibly_truncated", False)),
+            segments=len(segments),
+            local_speakers=len(local_speakers),
+            mapped_speakers=len(mapping),
+            unattributed_segments=sum(
+                1 for segment in segments if segment.canonical_speaker is None
+            ),
+            rolling_through_sample=plan.rolling_through_sample,
+            rolling_status=plan.rolling_status.value,
+            window_seconds=_optional_float(getattr(self.runner, "window_seconds", None)),
+            stride_seconds=_optional_float(getattr(self.runner, "stride_seconds", None)),
+        )
+
+
+def terminal_speaker_mapping(
+    placed: Sequence[tuple[str, int, int, str]],
+    *,
+    base_surface: Sequence[EffectiveTranscriptSegment],
+    canonical_speakers: Sequence[str],
+) -> dict[str, str]:
+    """Plan §12.3 step 5: who the terminal decoder's local speakers are on this album.
+
+    The rule is one-to-one **per speaker**, not per segment, and that distinction is the
+    whole reason this function exists. The session's own projection
+    (`live_session._project_canonical_speaker`) attributes a revised stretch of audio segment
+    by segment, which is right for a rolling window -- ten seconds of one decode's local `S01`
+    means nothing across windows, so each stretch is best answered on its own. A terminal pass
+    is the opposite case: it heard the entire meeting in one pass, so its local labels are a
+    *partition of the whole meeting*, and answering segment by segment would let two segments
+    of one terminal speaker land on two different people. That does not merely mislabel
+    words; it destroys the diarization the terminal pass just produced, which is the surface
+    the campaign is trying to converge on.
+
+    So the terminal partition is preserved and only its names are decided. Evidence is
+    overlap in samples with the surface the meeting published, and the assignment maximises
+    total overlap under a one-to-one constraint -- `linear_sum_assignment`, which is already
+    this codebase's answer to "match local speakers onto canonical ones"
+    (`live_identity.assign_speakers`). Its thresholds do not travel here: those are cosine
+    margins between voice embeddings, and this evidence is seconds of agreement on a clock.
+
+    A local speaker with no overlap at all is left out, and its words publish unattributed --
+    the same honest `S00` the base path publishes wherever identity abstained. Inventing a
+    name for a voice the meeting never established is the one thing this may not do.
+    """
+
+    speakers = tuple(canonical_speakers)
+    locals_ = tuple(sorted({speaker for speaker, _, _, _ in placed}))
+    if not speakers or not locals_ or not base_surface:
+        return {}
+    overlap = {(local, canonical): 0 for local in locals_ for canonical in speakers}
+    for local, start, end, _text in placed:
+        for segment in base_surface:
+            if segment.canonical_speaker is None:
+                continue
+            key = (local, segment.canonical_speaker)
+            if key not in overlap:
+                continue
+            shared = min(end, segment.end_sample) - max(start, segment.start_sample)
+            if shared > 0:
+                overlap[key] += shared
+    matrix = [[-overlap[(local, canonical)] for canonical in speakers] for local in locals_]
+    rows, columns = linear_sum_assignment(matrix)
+    return {
+        locals_[row]: speakers[column]
+        for row, column in zip(rows, columns, strict=True)
+        if overlap[(locals_[row], speakers[column])] > 0
+    }
+
+
+def _optional_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None

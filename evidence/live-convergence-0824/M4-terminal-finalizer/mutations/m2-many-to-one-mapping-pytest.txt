@@ -1,0 +1,32 @@
+............F....                                                    [100%]
+=================================== FAILURES ===================================
+_ TerminalSpeakerMappingTest.test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed _
+
+self = <test_live_terminal_finalizer.TerminalSpeakerMappingTest testMethod=test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed>
+
+    def test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed(self):
+        placed = [
+            ("S01", 0, SECOND, "one"),
+            ("S02", SECOND, 2 * SECOND, "two"),
+            ("S03", 2 * SECOND, 3 * SECOND, "three"),
+        ]
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 3 * SECOND, "speaker-b"),
+        )
+    
+        mapping = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
+    
+        assert set(mapping) <= {"S01", "S02", "S03"}
+>       assert len(set(mapping.values())) == len(mapping) <= len(SPEAKERS)
+E       AssertionError: assert 2 == 3
+E        +  where 2 = len({'speaker-a', 'speaker-b'})
+E        +    where {'speaker-a', 'speaker-b'} = set(dict_values(['speaker-a', 'speaker-b', 'speaker-b']))
+E        +      where dict_values(['speaker-a', 'speaker-b', 'speaker-b']) = <built-in method values of dict object at 0x119a2a580>()
+E        +        where <built-in method values of dict object at 0x119a2a580> = {'S01': 'speaker-a', 'S02': 'speaker-b', 'S03': 'speaker-b'}.values
+E        +  and   3 = len({'S01': 'speaker-a', 'S02': 'speaker-b', 'S03': 'speaker-b'})
+
+tests/test_live_terminal_finalizer.py:288: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed
+1 failed, 16 passed, 4 subtests passed in 2.17s

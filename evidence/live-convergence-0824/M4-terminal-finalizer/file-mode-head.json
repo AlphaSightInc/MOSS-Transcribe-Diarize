@@ -1,0 +1,74 @@
+[
+  {
+    "answer": "[0.00][S01]hello there[1.10]",
+    "result": {
+      "text": "[0.00][S01]hello there[1.10]",
+      "prompt_len": 11,
+      "generated_tokens": 7,
+      "model": "moss-vllm",
+      "audio": "<tmp>/sample.wav",
+      "decoding": "greedy",
+      "temperature": null,
+      "top_p": null,
+      "top_k": null,
+      "window_count": null,
+      "completed_windows": null,
+      "possibly_truncated": null,
+      "identity_summary": null,
+      "identity_resolution": null
+    }
+  },
+  {
+    "answer": "[0.00][S01]one[0.50][0.50][S02]two[1.00]",
+    "result": {
+      "text": "[0.00][S01]one[0.50][0.50][S02]two[1.00]",
+      "prompt_len": 13,
+      "generated_tokens": 19,
+      "model": "moss-vllm",
+      "audio": "<tmp>/sample.wav",
+      "decoding": "greedy",
+      "temperature": null,
+      "top_p": null,
+      "top_k": null,
+      "window_count": null,
+      "completed_windows": null,
+      "possibly_truncated": null,
+      "identity_summary": null,
+      "identity_resolution": null
+    }
+  },
+  {
+    "answer": "  [0.00][S01]padded[2.50]  ",
+    "result": {
+      "text": "[0.00][S01]padded[2.50]",
+      "prompt_len": 9,
+      "generated_tokens": 5,
+      "model": "moss-vllm",
+      "audio": "<tmp>/sample.wav",
+      "decoding": "greedy",
+      "temperature": null,
+      "top_p": null,
+      "top_k": null,
+      "window_count": null,
+      "completed_windows": null,
+      "possibly_truncated": null,
+      "identity_summary": null,
+      "identity_resolution": null
+    }
+  },
+  {
+    "answer": "[0][S01]hello[1]",
+    "raised": "EmptyTranscriptionError",
+    "message": "vLLM transcription returned zero generated tokens for <tmp>/sample.wav."
+  },
+  {
+    "answer": "   ",
+    "raised": "EmptyTranscriptionError",
+    "message": "vLLM transcription returned empty transcript text for <tmp>/sample.wav."
+  },
+  {
+    "answer": "silence",
+    "raised": "EmptyTranscriptionError",
+    "message": "vLLM transcription returned zero parsed segments for <tmp>/sample.wav."
+  }
+]

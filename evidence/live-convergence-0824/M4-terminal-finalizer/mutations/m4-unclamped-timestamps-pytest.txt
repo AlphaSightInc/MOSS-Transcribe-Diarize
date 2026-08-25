@@ -1,0 +1,25 @@
+....F............                                                    [100%]
+=================================== FAILURES ===================================
+_ TerminalFinalizerTest.test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerTest testMethod=test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it>
+
+    def test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it(self):
+        """The decoder marks the end of what it heard; the session owns what the meeting was."""
+    
+        runner = WholeMeetingStub("[0][S01]inside[3][3][S01]over the end[9]")
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+        )
+    
+>       assert [item.end_sample for item in result.proposal.segments] == [3 * SECOND, MEETING]
+E       assert [48000, 144000] == [48000, 64000]
+E         
+E         At index 1 diff: 144000 != 64000
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:220: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it
+1 failed, 16 passed, 4 subtests passed in 2.22s

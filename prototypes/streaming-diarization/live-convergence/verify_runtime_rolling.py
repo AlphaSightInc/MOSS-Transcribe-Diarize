@@ -61,7 +61,10 @@ sys.path.insert(0, str(REPO / "prototypes/live-file-gap-context"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import proto_context_arms as bench  # noqa: E402
-from moss_transcribe_diarize.app.live_tape import CompleteMixedTapeUnavailable  # noqa: E402
+from moss_transcribe_diarize.app.live_tape import (  # noqa: E402
+    CompleteMixedTape,
+    CompleteMixedTapeUnavailable,
+)
 import verify_session_text_authority as authority  # noqa: E402
 import webrtcvad  # noqa: E402
 from moss_transcribe_diarize.app.live_adapters import RunnerBoundedWavInference  # noqa: E402
@@ -299,6 +302,130 @@ def _tape_read_evidence(runtime, session_id: str, pcm: bytes) -> dict[str, Any]:
     }
 
 
+def _terminal_capture(coordinator) -> dict[str, Any]:
+    """Watch production end the meeting, and keep the two things a terminal pass needs.
+
+    Both are produced by the runtime today and dropped by it, because E4 step 3c has not
+    wired a reader yet: `stop_rolling` returns the `TerminalDecodePlan` at
+    `live_service_runtime.py:758` and nothing catches it, and the complete tape is released
+    inside `stop` before anything reads it. These wrappers OBSERVE those two calls -- each
+    delegates to the production method and changes neither its behaviour nor its ordering --
+    so the plan is the plan production built, and the audio is the audio production held at
+    the instant production dropped it.
+    """
+
+    captured: dict[str, Any] = {"plan": None, "pcm": None, "accounting": None, "refused": None}
+    stop_rolling = coordinator.stop_rolling
+    release_tape = coordinator.release_tape
+
+    def watched_stop_rolling():
+        plan = stop_rolling()
+        if plan is not None:
+            captured["plan"] = plan
+        return plan
+
+    def watched_release_tape():
+        tape = coordinator.tape
+        if tape is not None:
+            try:
+                captured["pcm"] = tape.read()
+            except CompleteMixedTapeUnavailable as exc:
+                captured["refused"] = str(exc)
+        accounting = release_tape()
+        # The accounting production itself publishes, taken from the release's own return --
+        # so what is recorded is the post-release reading (`retained_bytes: 0`), not a
+        # snapshot the wrapper took a moment earlier and mislabelled.
+        if accounting is not None:
+            captured["accounting"] = accounting.to_dict()
+        return accounting
+
+    coordinator.stop_rolling = watched_stop_rolling
+    coordinator.release_tape = watched_release_tape
+    return captured
+
+
+def _terminal_arm(
+    runtime,
+    session_id: str,
+    case: str,
+    total: int,
+    captured: dict[str, Any],
+    finalizer,
+    *,
+    canonical: bool,
+) -> dict[str, Any]:
+    """Run the terminal pass over the tape production kept, and publish it through the session.
+
+    The tape is re-taped rather than borrowed: production releases it inside `stop` because
+    no reader exists yet (3c moves that release to after terminal evidence). So the bytes
+    captured at the instant of release go back into the *same production class*, and the
+    gate that this substitution is honest is digest equality against the accounting the
+    production tape wrote on its way out -- reported here, checked by the verifier.
+    """
+
+    plan = captured["plan"]
+    pcm = captured["pcm"]
+    if plan is None or pcm is None:
+        return {"refused": captured["refused"] or "no terminal plan or no tape"}
+    tape = CompleteMixedTape(epoch=plan.epoch, capacity_bytes=max(1, len(pcm)))
+    tape.append(start_sample=0, pcm=pcm)
+    session = runtime._sessions[session_id].session
+    before = session.snapshot()
+    speakers = tuple(before.identity_snapshot.canonical_speakers)
+    result = finalizer.finalize(
+        plan=plan,
+        tape=tape,
+        base_text_revision_version=before.text_revision_version,
+        base_surface=before.effective_transcript,
+        canonical_speakers=speakers if canonical else (),
+    )
+    applied = None if result.proposal is None else session.apply_text_revision(result.proposal)
+    after = session.snapshot()
+    # The single-replacement rule, exercised rather than asserted: a second terminal pass over
+    # the same tape is a real proposal, and the session is the only thing that stops it.
+    again = finalizer.finalize(
+        plan=plan,
+        tape=tape,
+        base_text_revision_version=after.text_revision_version,
+        base_surface=after.effective_transcript,
+        canonical_speakers=tuple(after.identity_snapshot.canonical_speakers) if canonical else (),
+    )
+    second = None if again.proposal is None else session.apply_text_revision(again.proposal)
+    surface = [
+        [item.start_sample, item.end_sample, _label(item.canonical_speaker, speakers), item.text]
+        for item in after.effective_transcript
+    ]
+    hypothesis = bench.normalise(
+        [
+            Segment(item[0] / SAMPLE_RATE, item[1] / SAMPLE_RATE, item[2], item[3])
+            for item in surface
+        ],
+        total / SAMPLE_RATE,
+    )
+    return {
+        "accounting": result.accounting.to_dict(),
+        "applied": None if applied is None else applied.applied,
+        "refusal": None if applied is None else applied.refusal,
+        "second_applied": None if second is None else second.applied,
+        "second_refusal": None if second is None else second.refusal,
+        "authorities": sorted({item.authority for item in after.effective_transcript}),
+        "finalization_status": after.finalization_status,
+        "text_revision_version": after.text_revision_version,
+        "canonical_through_sample": after.canonical_through_sample,
+        "accepted_samples": after.accepted_samples,
+        "accounted_samples": after.accounted_samples,
+        "committed_prefix_hash": after.committed_prefix_hash,
+        "surface": surface,
+        "scores": bench.score(bench.load_reference(case), hypothesis),
+        "tape": {
+            "released_accounting": captured["accounting"],
+            "captured_bytes": len(pcm),
+            "captured_sha256": hashlib.sha256(pcm).hexdigest(),
+            "retaped_sha256": tape.accounting(through_sample=plan.end_sample).pcm_sha256,
+        },
+    }
+
+
 def _label(canonical_speaker: str | None, speakers: tuple[str, ...]) -> str:
     """The `Sxx` a reader is shown, from the album this run actually established.
 
@@ -320,6 +447,8 @@ def run_case(
     collect_events: bool = False,
     collect_surfaces: bool = False,
     tape_bytes: int | None = None,
+    terminal: Any = None,
+    terminal_canonical: bool = True,
 ) -> dict[str, Any]:
     """One meeting, frame by frame, through the real runtime; then stop it and read the surface.
 
@@ -342,6 +471,14 @@ def run_case(
     runtime = build_runtime(config, runner, rolling=rolling, tape_bytes=tape_bytes)
     created = runtime.create()
     session_id = created.session_id
+    # E4's terminal pass, off by default so this driver's own artifact keeps its shape. When
+    # a finalizer is given, the two things production builds and drops at the end of a
+    # meeting are observed on their way past (`_terminal_capture`).
+    captured = (
+        None
+        if terminal is None
+        else _terminal_capture(runtime._sessions[session_id].coordinator)
+    )
     # How far the base may fall behind the audio the driver has handed over. A real client
     # sends one 0.5 s frame every 0.5 s and the base decodes a span at RTF ~0.1, so the
     # committed prefix tracks the accepted one within a span or two; this driver has no GPU
@@ -429,6 +566,10 @@ def run_case(
             "audio_sha256": hashlib.sha256(pcm).hexdigest(),
             "audio_samples": total,
         }
+    if terminal is not None:
+        collected["terminal"] = _terminal_arm(
+            runtime, session_id, case, total, captured, terminal, canonical=terminal_canonical
+        )
     if collect_events:
         collected["events"] = [event.to_dict() for event in runtime.events(session_id)]
         collected["service_snapshot"] = service.to_dict()

@@ -1,0 +1,32 @@
+...F.............                                                    [100%]
+=================================== FAILURES ===================================
+_ TerminalFinalizerTest.test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerTest testMethod=test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix>
+
+    def test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix(self):
+        """The dangerous tape is the healthy one that stopped early, not the broken one.
+    
+        A degraded or released tape refuses every read, so any fallback still refuses. A tape
+        that simply never received the last frames is intact, and asking it for "whatever you
+        have" would hand the pass three seconds of a four-second meeting -- which then
+        publishes words over a clock the audio never covered. So the extent is always named.
+        """
+    
+        tape = tape_of(3 * SECOND, capacity=MEETING * PCM16_BYTES_PER_SAMPLE)
+        assert len(tape.read()) == 3 * SECOND * PCM16_BYTES_PER_SAMPLE
+        runner = WholeMeetingStub("[0][S01]three seconds of a four second meeting[3]")
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(MEETING), tape=tape, base_text_revision_version=0,
+        )
+    
+>       assert result.outcome is TerminalOutcome.TAPE_UNAVAILABLE
+E       AssertionError: assert <TerminalOutcome.FINALIZED: 'finalized'> is <TerminalOutcome.TAPE_UNAVAILABLE: 'tape_unavailable'>
+E        +  where <TerminalOutcome.FINALIZED: 'finalized'> = TerminalFinalization(proposal=TextRevisionProposal(epoch=0, base_text_revision_version=0, source='terminal', start_sam...ibuted_segments=1, rolling_through_sample=64000, rolling_status='stopped', window_seconds=150.0, stride_seconds=120.0)).outcome
+E        +  and   <TerminalOutcome.TAPE_UNAVAILABLE: 'tape_unavailable'> = TerminalOutcome.TAPE_UNAVAILABLE
+
+tests/test_live_terminal_finalizer.py:171: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix
+1 failed, 16 passed, 4 subtests passed in 2.22s

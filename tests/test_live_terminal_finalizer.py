@@ -1,0 +1,408 @@
+"""Plan E4 steps 4-6 -- the terminal finalizer (test tiers T1/T2).
+
+The meeting is over, the whole of it is on the tape, and the pipeline that decodes a whole
+meeting already exists: file mode's 150/120 `WindowedRunner`. Plan §6 M6 asks for a *small
+adapter*, so what these tests hold in place is exactly what the adapter is allowed to own,
+and nothing the file pipeline or the session already owns:
+
+- where the audio comes from -- one read of `[0, meeting_end)` through the tape seam, and a
+  refusal there is `unavailable`, not a crash and not a shorter meeting;
+- what clock the words land on -- session samples, clamped inside the meeting;
+- who the decoder's local speakers are on this meeting's album -- one-to-one **per speaker**,
+  because a terminal pass heard the whole meeting and its labels are a partition of it;
+- what is published when any of that fails -- a name, never a word of the meeting.
+
+Publication itself belongs to `LiveSession` (ADR-0005) and is not re-implemented here; the
+T2 class drives the real seam to show the adapter's output satisfies all seven validations
+and that a second terminal pass is refused `already_finalized`.
+
+The corpus reading -- does this adapter, handed the paired file arm's own decode, publish the
+paired file arm's own surface? -- is
+`prototypes/streaming-diarization/live-convergence/verify_terminal_finalizer.py`.
+"""
+
+from __future__ import annotations
+
+import unittest
+import wave
+
+from moss_transcribe_diarize.app.live_session import (
+    EffectiveTranscriptSegment,
+    LIVE_SAMPLE_RATE,
+    PCM16_BYTES_PER_SAMPLE,
+    LiveSession,
+)
+from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
+from moss_transcribe_diarize.app.live_transcript_convergence import (
+    RollingStatus,
+    TerminalDecodePlan,
+    TerminalOutcome,
+    TerminalTranscriptFinalizer,
+    terminal_speaker_mapping,
+)
+
+from tests.test_live_text_revision import SPEAKERS, session_with_base
+
+SECOND = LIVE_SAMPLE_RATE
+MEETING = 4 * SECOND
+
+
+class WholeMeetingStub:
+    """A `WindowedRunner` stand-in: it answers with one transcript and records what it was given."""
+
+    window_seconds = 150
+    stride_seconds = 120
+
+    def __init__(self, text: str = "", *, raises: Exception | None = None, **fields):
+        self.text = text
+        self.raises = raises
+        self.fields = {"generated_tokens": 120, "prompt_len": 340, "window_count": 1,
+                       "completed_windows": 1, "possibly_truncated": False, **fields}
+        self.calls: list[tuple[bytes, int, int, dict]] = []
+
+    def transcribe(self, audio_path, **kwargs):
+        with wave.open(str(audio_path), "rb") as handle:
+            pcm = handle.readframes(handle.getnframes())
+            rate, channels = handle.getframerate(), handle.getnchannels()
+        self.calls.append((pcm, rate, channels, dict(kwargs)))
+        if self.raises is not None:
+            raise self.raises
+        return type("Result", (), {"text": self.text, **self.fields})()
+
+
+def tape_of(samples: int, *, fill: bytes = b"\x11\x22", capacity: int | None = None) -> CompleteMixedTape:
+    tape = CompleteMixedTape(
+        epoch=0,
+        capacity_bytes=capacity or samples * PCM16_BYTES_PER_SAMPLE,
+    )
+    tape.append(start_sample=0, pcm=fill * samples)
+    return tape
+
+
+def plan_for(samples: int = MEETING, **kwargs) -> TerminalDecodePlan:
+    return TerminalDecodePlan(
+        epoch=kwargs.pop("epoch", 0),
+        end_sample=samples,
+        rolling_through_sample=kwargs.pop("rolling_through_sample", samples),
+        rolling_status=kwargs.pop("rolling_status", RollingStatus.STOPPED),
+        windows_completed=kwargs.pop("windows_completed", 0),
+        windows_failed=kwargs.pop("windows_failed", 0),
+    )
+
+
+def base_segment(start: int, end: int, speaker: str | None) -> EffectiveTranscriptSegment:
+    return EffectiveTranscriptSegment(
+        start_sample=start, end_sample=end, text="base", canonical_speaker=speaker,
+        authority="provisional",
+    )
+
+
+class TerminalFinalizerTest(unittest.TestCase):
+    """T1 -- the adapter alone: a tape, a runner stub, and no session."""
+
+    def test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision(self):
+        runner = WholeMeetingStub("[0][S01]alpha[1][1][S02]beta[4]")
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=3,
+        )
+
+        assert result.outcome is TerminalOutcome.FINALIZED
+        proposal = result.proposal
+        assert proposal is not None
+        assert (proposal.source, proposal.start_sample, proposal.end_sample) == ("terminal", 0, MEETING)
+        assert proposal.base_text_revision_version == 3
+        assert [(item.start_sample, item.end_sample, item.text) for item in proposal.segments] == [
+            (0, SECOND, "alpha"),
+            (SECOND, MEETING, "beta"),
+        ]
+        assert {item.authority for item in proposal.segments} == {"terminal"}
+        assert len(runner.calls) == 1
+
+    def test_the_runner_is_handed_the_tape_itself_as_the_meeting_s_own_wav(self):
+        """One read of `[0, meeting_end)`, at the live sample rate, in mono. Nothing resampled."""
+
+        runner = WholeMeetingStub("[0][S01]words[4]")
+        tape = tape_of(MEETING, fill=b"\x07\x08")
+
+        TerminalTranscriptFinalizer(
+            runner=runner, transcribe_kwargs={"decoding": "greedy", "max_new_tokens": 2048},
+        ).finalize(plan=plan_for(), tape=tape, base_text_revision_version=0)
+
+        pcm, rate, channels, kwargs = runner.calls[0]
+        assert pcm == b"\x07\x08" * MEETING
+        assert (rate, channels) == (LIVE_SAMPLE_RATE, 1)
+        # File mode's own inference arguments reach the runner unchanged: a terminal pass that
+        # decoded with different arguments is not the file arm's comparator.
+        assert kwargs == {"decoding": "greedy", "max_new_tokens": 2048}
+
+    def test_a_tape_that_cannot_serve_the_meeting_reports_unavailable_and_names_its_gaps(self):
+        tape = tape_of(MEETING)
+        tape.append(start_sample=MEETING + SECOND, pcm=b"\x00\x00" * SECOND)  # a hole
+        runner = WholeMeetingStub("[0][S01]never decoded[6]")
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(MEETING + 2 * SECOND), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.TAPE_UNAVAILABLE
+        assert result.accounting.outcome.finalization_status == "unavailable"
+        assert result.proposal is None
+        assert result.accounting.tape_gaps == 1
+        assert runner.calls == []
+
+    def test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix(self):
+        """The dangerous tape is the healthy one that stopped early, not the broken one.
+
+        A degraded or released tape refuses every read, so any fallback still refuses. A tape
+        that simply never received the last frames is intact, and asking it for "whatever you
+        have" would hand the pass three seconds of a four-second meeting -- which then
+        publishes words over a clock the audio never covered. So the extent is always named.
+        """
+
+        tape = tape_of(3 * SECOND, capacity=MEETING * PCM16_BYTES_PER_SAMPLE)
+        assert len(tape.read()) == 3 * SECOND * PCM16_BYTES_PER_SAMPLE
+        runner = WholeMeetingStub("[0][S01]three seconds of a four second meeting[3]")
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(MEETING), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.TAPE_UNAVAILABLE
+        assert result.accounting.tape_gaps == 1
+        assert runner.calls == []
+
+    def test_a_released_tape_is_unavailable_rather_than_a_shorter_meeting(self):
+        tape = tape_of(MEETING)
+        tape.release()
+
+        result = TerminalTranscriptFinalizer(runner=WholeMeetingStub("[0][S01]x[4]")).finalize(
+            plan=plan_for(), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.TAPE_UNAVAILABLE
+        assert result.accounting.tape_samples == 0
+
+    def test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected(self):
+        runner = WholeMeetingStub(raises=RuntimeError("window 0 failed: [0][S01]secret meeting words[4]"))
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.DECODE_FAILED
+        assert result.accounting.outcome.finalization_status == "failed"
+        assert result.accounting.reason == "RuntimeError"
+        assert "secret" not in repr(result.accounting.to_dict())
+        assert result.accounting.decode_elapsed_sec is not None
+
+    def test_an_answer_with_no_words_in_it_is_a_failed_pass_not_an_empty_meeting(self):
+        """`no_transcript` keeps the rolling surface: erasing it would lose real words."""
+
+        for text in ("", "   ", "not a transcript at all", "[0][S01]   [4]"):
+            with self.subTest(text=text):
+                result = TerminalTranscriptFinalizer(runner=WholeMeetingStub(text)).finalize(
+                    plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+                )
+                assert result.outcome is TerminalOutcome.NO_TRANSCRIPT
+                assert result.accounting.outcome.finalization_status == "failed"
+                assert result.proposal is None
+
+    def test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it(self):
+        """The decoder marks the end of what it heard; the session owns what the meeting was."""
+
+        runner = WholeMeetingStub("[0][S01]inside[3][3][S01]over the end[9]")
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+        )
+
+        assert [item.end_sample for item in result.proposal.segments] == [3 * SECOND, MEETING]
+
+    def test_the_accounting_reports_the_windowing_the_pass_actually_ran(self):
+        runner = WholeMeetingStub("[0][S01]x[4]", window_count=3, completed_windows=3)
+
+        accounting = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+        ).accounting
+
+        assert (accounting.window_seconds, accounting.stride_seconds) == (150.0, 120.0)
+        assert (accounting.window_count, accounting.completed_windows) == (3, 3)
+        assert accounting.decoded_audio_samples == MEETING
+        assert accounting.tape_samples == MEETING
+        assert accounting.rolling_status == "stopped"
+
+
+class TerminalSpeakerMappingTest(unittest.TestCase):
+    """T1 -- plan §12.3 step 5: the terminal partition is preserved, only its names decided."""
+
+    def test_a_speaker_whose_segments_straddle_base_turns_stays_one_speaker(self):
+        """The case a per-segment projection gets wrong, and the reason this rule is per speaker.
+
+        `S01` speaks twice; between them the base surface says the other person spoke, and its
+        second turn overlaps that other person more than its own. Voting segment by segment
+        would split one terminal speaker across two people and destroy the diarization the
+        terminal pass just produced.
+        """
+
+        placed = [
+            ("S01", 0, SECOND, "one"),
+            ("S02", SECOND, 2 * SECOND, "two"),
+            ("S01", 2 * SECOND, 3 * SECOND, "three"),
+        ]
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 2 * SECOND, "speaker-b"),
+            base_segment(2 * SECOND, 3 * SECOND, "speaker-b"),
+        )
+
+        mapping = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
+
+        assert mapping == {"S01": "speaker-a", "S02": "speaker-b"}
+        assert len(set(mapping.values())) == len(mapping)
+
+    def test_a_local_speaker_the_meeting_never_established_publishes_unattributed(self):
+        """No overlap is no evidence, and no evidence may not become a name."""
+
+        placed = [("S01", 0, SECOND, "one"), ("S02", 3 * SECOND, MEETING, "two")]
+        base = (base_segment(0, SECOND, "speaker-a"),)
+
+        mapping = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
+
+        assert mapping == {"S01": "speaker-a"}
+
+    def test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed(self):
+        placed = [
+            ("S01", 0, SECOND, "one"),
+            ("S02", SECOND, 2 * SECOND, "two"),
+            ("S03", 2 * SECOND, 3 * SECOND, "three"),
+        ]
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 3 * SECOND, "speaker-b"),
+        )
+
+        mapping = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
+
+        assert set(mapping) <= {"S01", "S02", "S03"}
+        assert len(set(mapping.values())) == len(mapping) <= len(SPEAKERS)
+        assert mapping["S01"] == "speaker-a"
+
+    def test_a_meeting_with_no_established_identity_publishes_every_word_unattributed(self):
+        placed = [("S01", 0, SECOND, "one")]
+
+        assert terminal_speaker_mapping(placed, base_surface=(), canonical_speakers=SPEAKERS) == {}
+        assert terminal_speaker_mapping(
+            placed, base_surface=(base_segment(0, SECOND, "speaker-a"),), canonical_speakers=()
+        ) == {}
+
+    def test_the_finalizer_attributes_its_segments_through_that_mapping(self):
+        runner = WholeMeetingStub("[0][S01]one[1][1][S02]two[2][2][S01]three[4]")
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 2 * SECOND, "speaker-b"),
+            base_segment(2 * SECOND, MEETING, "speaker-a"),
+        )
+
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape_of(MEETING), base_text_revision_version=0,
+            base_surface=base, canonical_speakers=SPEAKERS,
+        )
+
+        assert [item.canonical_speaker for item in result.proposal.segments] == [
+            "speaker-a", "speaker-b", "speaker-a",
+        ]
+        assert (result.accounting.local_speakers, result.accounting.mapped_speakers) == (2, 2)
+        assert result.accounting.unattributed_segments == 0
+
+
+class TerminalFinalizerSessionTest(unittest.TestCase):
+    """T2 -- the adapter's output against the real publication seam (ADR-0005)."""
+
+    def test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused(self):
+        session = session_with_base("[0][S01]alpha bet[1]", "[0][S01]gamma delt[1]")
+        snapshot = session.snapshot()
+        runner = WholeMeetingStub("[0][S01]alpha beta[1][1][S01]gamma delta[2]")
+        finalizer = TerminalTranscriptFinalizer(runner=runner)
+
+        result = finalizer.finalize(
+            plan=plan_for(2 * SECOND),
+            tape=tape_of(2 * SECOND),
+            base_text_revision_version=snapshot.text_revision_version,
+            base_surface=snapshot.effective_transcript,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+        outcome = session.apply_text_revision(result.proposal)
+
+        after = session.snapshot()
+        assert (outcome.applied, outcome.finalization_status) == (True, "final")
+        assert [item.text for item in after.effective_transcript] == ["alpha beta", "gamma delta"]
+        assert {item.authority for item in after.effective_transcript} == {"terminal"}
+        assert after.canonical_through_sample == 2 * SECOND
+        # D2: what the short path published is still exactly what it published.
+        assert after.committed == snapshot.committed
+        assert after.committed_prefix_hash == snapshot.committed_prefix_hash
+
+        second = finalizer.finalize(
+            plan=plan_for(2 * SECOND),
+            tape=tape_of(2 * SECOND),
+            base_text_revision_version=after.text_revision_version,
+            base_surface=after.effective_transcript,
+            canonical_speakers=after.identity_snapshot.canonical_speakers,
+        )
+        refused = session.apply_text_revision(second.proposal)
+
+        assert (refused.applied, refused.refusal) == (False, "already_finalized")
+        assert session.snapshot().effective_transcript == after.effective_transcript
+
+    def test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero(self):
+        """Terminal is exempt from the frontier rule because it owns all of the audio."""
+
+        session = session_with_base("[0][S01]one[1]", "[0][S01]two[1]", "[0][S01]three[1]")
+        snapshot = session.snapshot()
+        from tests.test_live_text_revision import proposal, segment
+
+        session.apply_text_revision(
+            proposal(session, 0, SECOND, (segment(0, SECOND, "ONE"),))
+        )
+        rolled = session.snapshot()
+        assert rolled.canonical_through_sample == SECOND
+
+        result = TerminalTranscriptFinalizer(
+            runner=WholeMeetingStub("[0][S01]one two three[3]")
+        ).finalize(
+            plan=plan_for(3 * SECOND),
+            tape=tape_of(3 * SECOND),
+            base_text_revision_version=rolled.text_revision_version,
+            base_surface=rolled.effective_transcript,
+            canonical_speakers=rolled.identity_snapshot.canonical_speakers,
+        )
+        outcome = session.apply_text_revision(result.proposal)
+
+        final = session.snapshot()
+        assert outcome.applied is True
+        assert [item.text for item in final.effective_transcript] == ["one two three"]
+        assert final.canonical_through_sample == 3 * SECOND
+        assert final.finalization_status == "final"
+        assert snapshot.finalization_status == "not_started"
+
+    def test_a_failed_terminal_pass_leaves_the_rolling_surface_exactly_where_it_was(self):
+        session = session_with_base("[0][S01]one[1]", "[0][S01]two[1]")
+        before = session.snapshot()
+
+        result = TerminalTranscriptFinalizer(
+            runner=WholeMeetingStub(raises=RuntimeError("boom"))
+        ).finalize(
+            plan=plan_for(2 * SECOND), tape=tape_of(2 * SECOND),
+            base_text_revision_version=before.text_revision_version,
+        )
+
+        assert result.proposal is None
+        after = session.snapshot()
+        assert after.effective_transcript == before.effective_transcript
+        assert after.finalization_status == "not_started"
+        assert after.text_revision_version == before.text_revision_version
+
+
+if __name__ == "__main__":
+    unittest.main()
