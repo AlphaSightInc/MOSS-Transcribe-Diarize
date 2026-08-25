@@ -3373,3 +3373,5 @@ appended at the iteration 4->5 boundary]
   questions, runs the attended browser E2E, and merges. If a ruling moves a gate, re-score that
   milestone's bundle and re-run the four record instruments - the report, the §18 rows and the §7
   entry all recompute from the bundles, so they will move with it or fail loudly.
+
+[loop 20260825-042645-70858] complete at iteration 35
