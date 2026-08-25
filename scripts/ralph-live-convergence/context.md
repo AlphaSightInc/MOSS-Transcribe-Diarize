@@ -28,7 +28,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 5)
+(2026-08-25, after iteration 6)
 
 - Deployed dev stack up: `web_cli` **pid 82706, restarted 2026-08-25 00:43:48 onto campaign
   code** (repo working tree @ `e291624`) at `https://127.0.0.1:7861` (bearer token
@@ -163,7 +163,44 @@
   frame) on 3/26 keyu and 6/32 jamie segments, and one jamie segment changed speaker label. WER
   is blind to it; DER/TSA/coverage are not. A ±.002 per-case DER difference is inside this noise
   until the floor is quantified.
-- Rest of the ladder (M1-M5) unimplemented; working tree carries the plan, evidence
+- **M1a ANSWERED (iteration 6): the salvage gate is O1 (hard-cap freeze), not O2 (recomputed
+  VAD >= 0.5).** Plan §9.1 run over the full §9.2 corpus -- 184 saved spans (trio 80 + jamie 27
+  + adam-3min 77) plus 5 constructed two-speaker hard-cap spans, **zero MOSS requests**. Only 10
+  spans parse to zero segments, so only 10 carry a gate decision; O1 and O2 agree on 9 and
+  disagree on exactly one: `lex_javier_milei#31`, `[0.00][S01]And.` on a 0.24 s `stop_flush`
+  tail (speech ratio 1.000). Both gates project to trio WER **.188506** and v2 content recall
+  **.926748**; O2's entire margin is `text_coverage` +.0014 / composite +.0011, bought by
+  publishing one word that earns **no** LCS credit -- the plan §3.4 extent artifact, not
+  recovered speech. It is WER-neutral only by alignment accident (the reference reads
+  "...brought inflation down **to** its lowest...", so `and` turns a deletion into a
+  substitution). O1 also needs no new state: it reads `FrozenSpan.reason`, where O2 must re-run
+  WebRTC VAD over retained span PCM on the decode-completion path. Evidence:
+  `evidence/live-convergence-0824/M1a-salvage-gate-comparison/`; preregistration
+  `prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M1a.md`.
+- The prototyped completion rule needs **no interpolation**: merge adjacent same-speaker chunks
+  (lossless), supply absent *outer* bounds from the span, fill an interior boundary only from a
+  timestamp the decoder actually emitted, and **refuse** when two different speaker labels have
+  no timestamp between them. It reproduces the older P1v projection to 4 dp
+  (composite .8553 / coverage .8828 / TSA .8587 / WER .1885 under O2 == P1v), so the strictness
+  costs nothing here and removes the invented cross-speaker interval plan D5 forbids feeding to
+  identity. Salvage output on the corpus is exactly two spans:
+  `[0][S01]The difference between, you said the stock market.[2.5]` (bill 02) and
+  `[0.15][S01]Last year, we had you on the video board at Chase.[2.5]` (jamie 22).
+- The gate is load-bearing, measured: ungating salvage moves milei WER .1440 -> .1520 with
+  content recall flat at .9267 (mutation M3). The **refusal phrase list is not**: its marginal
+  load is 0 under both gates, because every hallucination sits on a `leading_silence` freeze at
+  speech ratio 0.000, and 0 of 163 hard-cap spans produced one. §9.3 should ship the gate, not a
+  locale-specific string table (AGENTS.md); if review keeps it, keep it as corpus data, not
+  literals in the module.
+- Freeze reason and speech ratio are different predicates, not proxies: over 184 spans
+  `hard_cap` 163 (ratio .416-1.000, 1 below the O2 floor), `leading_silence` 12 (.000-1.000, 11
+  below), `end_silence` 6 (.409-.917, 2 below), `stop_flush` 3 (.938-1.000, 0 below). They agree
+  on the salvage decision because the zero-parse spans sit where the predicates coincide.
+- F5 (recorded, not chased): a *partially* parseable span silently drops its trailing turn --
+  `[0.10][S01] I think so[1.20][1.25][S02] and I agree` publishes turn 1 and loses turn 2 with no
+  empty-span signal. **Not observed** in the 77 raw decodes available; invisible in the trio/jamie
+  corpus because those texts are post-parse renders. Constructible is not reachable (AGENTS.md).
+- Rest of the ladder (M1 production, M2-M5) unimplemented; working tree carries the plan, evidence
   prototypes, and this scaffold.
 
 ## Validation
@@ -201,6 +238,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # does incremental event draining change a trace that never overflowed? (exit 0 = no)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/probe_replay_trace_shape_identity.py
+# M1a salvage-gate comparison, plan §9.1 (exit 0 = all seven gates pass; zero MOSS requests)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/compare_salvage_gates.py --output /tmp/m1a.json
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -225,10 +265,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    repeats of the 5-minute pair to turn "the 5-minute case can flip" into a spread. Needed
    because M1 gates "no per-case WER regression" and M3 gates per-case DER, and F4 shows
    extents move +-10-20 ms even when every span and decode match.
-5. **M1 salvage**: port `prototypes/live-file-gap-emptyspan/` P1v policy into
-   `classify_live_transcript` per plan M1 seams; table-driven tests from `out/d3.json`.
-   Amended PRD adds: run the §9.1 O1-vs-O2 comparison first (prefer O1 on a full-corpus
-   match); fixed-point + salvager-emitted-intervals-only checks are part of the gate.
+5. **M1 production salvage (§9.3) - NEXT.** The §9.1 gate question is answered (iteration 6:
+   **O1**). Remaining: ship `classify_live_transcript` in
+   `moss_transcribe_diarize/app/live_span_bounds.py` with the O1 gate and the completion rule
+   prototyped in `salvage_gates.py`; route the adapter catch at `live_adapters.py:307` through it
+   (`exc.text` stops there today by design); table-driven tests from the 10 zero-parse decodes in
+   `live-file-gap-emptyspan/out/d3.json` plus the 5 constructed spans in `compare_salvage_gates.py`;
+   keep the typed disposition of M0b. Then the paired rerun: expect trio live WER .1885 (PRD gate
+   <= .190), no per-case regression, file mode byte-identical. Preregister the decoder-flip
+   protocol in the milestone's evidence dir BEFORE the first measurement pass (standing steering
+   note at the iteration 4->5 boundary in progress.txt).
 6. **M2 ADR then grid**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
    (Appendix B Q8); then run `compare_rolling_grid.py` per plan §10.3, starting from
    `proto_context_arms.py`'s lexical stitcher; then production per plan §10.5 order.

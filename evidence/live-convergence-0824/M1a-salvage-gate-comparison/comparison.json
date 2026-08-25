@@ -1,0 +1,5155 @@
+{
+  "corpus_spans": 184,
+  "disagreements": [
+    {
+      "O1_hard_cap": "refused_gate",
+      "O2_speech_ratio": "salvaged",
+      "case": "lex_javier_milei",
+      "duration_s": 0.24,
+      "freeze_reason": "stop_flush(untraced)",
+      "span_id": 31,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]And."
+    }
+  ],
+  "freeze_reason_speech_profile": {
+    "end_silence": {
+      "below_o2_floor": 2,
+      "max_speech_ratio": 0.916667,
+      "min_speech_ratio": 0.409091,
+      "spans": 6
+    },
+    "hard_cap": {
+      "below_o2_floor": 1,
+      "max_speech_ratio": 1.0,
+      "min_speech_ratio": 0.416,
+      "spans": 163
+    },
+    "leading_silence": {
+      "below_o2_floor": 11,
+      "max_speech_ratio": 1.0,
+      "min_speech_ratio": 0.0,
+      "spans": 12
+    },
+    "stop_flush": {
+      "below_o2_floor": 0,
+      "max_speech_ratio": 0.9375,
+      "min_speech_ratio": 0.9375,
+      "spans": 1
+    },
+    "stop_flush(untraced)": {
+      "below_o2_floor": 0,
+      "max_speech_ratio": 1.0,
+      "min_speech_ratio": 1.0,
+      "spans": 2
+    }
+  },
+  "gates": {
+    "G1_corpus_fidelity": {
+      "expected_spans": 184,
+      "pass": true,
+      "spans": 184,
+      "speech_ratio_mismatches": []
+    },
+    "G2_no_boilerplate_published": {
+      "boilerplate_corpus": [
+        "i'm sorry, i can't assist with that request."
+      ],
+      "marginal_load": {
+        "O1_hard_cap": [],
+        "O2_speech_ratio": []
+      },
+      "pass": true,
+      "per_gate": {
+        "O1_hard_cap": [],
+        "O2_speech_ratio": []
+      }
+    },
+    "G3_no_words_on_digital_silence": {
+      "pass": true,
+      "per_gate": {
+        "O1_hard_cap": [],
+        "O2_speech_ratio": []
+      }
+    },
+    "G4_fixed_point": {
+      "checked": 5,
+      "failures": [],
+      "pass": true
+    },
+    "G5_witness_owned_intervals": {
+      "constructed": [
+        {
+          "cross_speaker_overlap": false,
+          "disposition": "salvaged",
+          "expect": "salvaged",
+          "expect_speakers": 1,
+          "intervals": [
+            [
+              0.0,
+              2.5,
+              "S01"
+            ]
+          ],
+          "name": "same_speaker_two_chunks_no_timestamps",
+          "ok": true,
+          "reason": "absent bounds completed from the span",
+          "speakers": 1,
+          "text": "[S01] The difference between,[S01] you said the stock market."
+        },
+        {
+          "cross_speaker_overlap": false,
+          "disposition": "salvaged",
+          "expect": "salvaged",
+          "expect_speakers": 2,
+          "intervals": [
+            [
+              0.0,
+              1.2,
+              "S01"
+            ],
+            [
+              1.2,
+              2.5,
+              "S02"
+            ]
+          ],
+          "name": "two_speakers_interior_timestamp_present",
+          "ok": true,
+          "reason": "absent bounds completed from the span",
+          "speakers": 2,
+          "text": "[S01] I think so[1.20][S02] and I agree"
+        },
+        {
+          "cross_speaker_overlap": false,
+          "disposition": "refused_interior_boundary",
+          "expect": "refused_interior_boundary",
+          "expect_speakers": 0,
+          "intervals": [],
+          "name": "two_speakers_no_interior_timestamp",
+          "ok": true,
+          "reason": "chunk 1 boundary absent between speakers S01/S02",
+          "speakers": 0,
+          "text": "[0.10][S01] I think so[S02] and I agree"
+        },
+        {
+          "cross_speaker_overlap": false,
+          "disposition": "refused_interior_boundary",
+          "expect": "refused_interior_boundary",
+          "expect_speakers": 0,
+          "intervals": [],
+          "name": "two_speakers_no_timestamps_at_all",
+          "ok": true,
+          "reason": "chunk 1 boundary absent between speakers S01/S02",
+          "speakers": 0,
+          "text": "[S01] I think so[S02] and I agree"
+        },
+        {
+          "cross_speaker_overlap": false,
+          "disposition": "refused_interior_boundary",
+          "expect": "refused_interior_boundary",
+          "expect_speakers": 0,
+          "intervals": [],
+          "name": "three_speakers_one_interior_timestamp_missing",
+          "ok": true,
+          "reason": "chunk 2 boundary absent between speakers S02/S03",
+          "speakers": 0,
+          "text": "[S01] first[1.00][S02] second[S03] third"
+        }
+      ],
+      "pass": true
+    },
+    "G6_zero_extra_moss_requests": {
+      "pass": true,
+      "requests_issued": 0
+    },
+    "G7_no_case_wer_regression": {
+      "O1_hard_cap": [],
+      "O2_speech_ratio": [],
+      "pass": true
+    }
+  },
+  "partial_parse_spans": [],
+  "projection": {
+    "O1_hard_cap": {
+      "per_case": {
+        "lex_bill_ackman": {
+          "composite": 0.847523,
+          "text_coverage": 0.894344,
+          "text_speaker_accuracy": 0.853303,
+          "v2_content_recall": 0.903409,
+          "v2_matched_word_speaker": 0.880682,
+          "v2_wer": 0.227273,
+          "wer": 0.227273
+        },
+        "lex_javier_milei": {
+          "composite": 0.841605,
+          "text_coverage": 0.846371,
+          "text_speaker_accuracy": 0.828438,
+          "v2_content_recall": 0.92,
+          "v2_matched_word_speaker": 0.92,
+          "v2_wer": 0.144,
+          "wer": 0.144
+        },
+        "lex_keyu_jin": {
+          "composite": 0.873604,
+          "text_coverage": 0.903249,
+          "text_speaker_accuracy": 0.890069,
+          "v2_content_recall": 0.956835,
+          "v2_matched_word_speaker": 0.956835,
+          "v2_wer": 0.194245,
+          "wer": 0.194245
+        }
+      },
+      "regressions": [],
+      "trio_mean": {
+        "composite": 0.854244,
+        "text_coverage": 0.881321,
+        "text_speaker_accuracy": 0.85727,
+        "v2_content_recall": 0.926748,
+        "v2_matched_word_speaker": 0.919172,
+        "v2_wer": 0.188506,
+        "wer": 0.188506
+      }
+    },
+    "O2_speech_ratio": {
+      "per_case": {
+        "lex_bill_ackman": {
+          "composite": 0.847523,
+          "text_coverage": 0.894344,
+          "text_speaker_accuracy": 0.853303,
+          "v2_content_recall": 0.903409,
+          "v2_matched_word_speaker": 0.880682,
+          "v2_wer": 0.227273,
+          "wer": 0.227273
+        },
+        "lex_javier_milei": {
+          "composite": 0.84486,
+          "text_coverage": 0.85071,
+          "text_speaker_accuracy": 0.832778,
+          "v2_content_recall": 0.92,
+          "v2_matched_word_speaker": 0.92,
+          "v2_wer": 0.144,
+          "wer": 0.144
+        },
+        "lex_keyu_jin": {
+          "composite": 0.873604,
+          "text_coverage": 0.903249,
+          "text_speaker_accuracy": 0.890069,
+          "v2_content_recall": 0.956835,
+          "v2_matched_word_speaker": 0.956835,
+          "v2_wer": 0.194245,
+          "wer": 0.194245
+        }
+      },
+      "regressions": [],
+      "trio_mean": {
+        "composite": 0.855329,
+        "text_coverage": 0.882768,
+        "text_speaker_accuracy": 0.858717,
+        "v2_content_recall": 0.926748,
+        "v2_matched_word_speaker": 0.919172,
+        "v2_wer": 0.188506,
+        "wer": 0.188506
+      }
+    },
+    "baseline_live": {
+      "lex_bill_ackman": {
+        "composite": 0.80006,
+        "text_coverage": 0.842424,
+        "text_speaker_accuracy": 0.801383,
+        "v2_content_recall": 0.863636,
+        "v2_matched_word_speaker": 0.840909,
+        "v2_wer": 0.261364,
+        "wer": 0.261364
+      },
+      "lex_javier_milei": {
+        "composite": 0.841605,
+        "text_coverage": 0.846371,
+        "text_speaker_accuracy": 0.828438,
+        "v2_content_recall": 0.92,
+        "v2_matched_word_speaker": 0.92,
+        "v2_wer": 0.144,
+        "wer": 0.144
+      },
+      "lex_keyu_jin": {
+        "composite": 0.873604,
+        "text_coverage": 0.903249,
+        "text_speaker_accuracy": 0.890069,
+        "v2_content_recall": 0.956835,
+        "v2_matched_word_speaker": 0.956835,
+        "v2_wer": 0.194245,
+        "wer": 0.194245
+      }
+    },
+    "baseline_trio_mean": {
+      "composite": 0.838423,
+      "text_coverage": 0.864015,
+      "text_speaker_accuracy": 0.839963,
+      "v2_content_recall": 0.91349,
+      "v2_matched_word_speaker": 0.905915,
+      "v2_wer": 0.19987,
+      "wer": 0.19987
+    },
+    "file": {
+      "lex_bill_ackman": {
+        "composite": 0.918756,
+        "text_coverage": 0.952215,
+        "text_speaker_accuracy": 0.938134,
+        "v2_content_recall": 0.931818,
+        "v2_matched_word_speaker": 0.931818,
+        "v2_wer": 0.159091,
+        "wer": 0.159091
+      },
+      "lex_javier_milei": {
+        "composite": 0.881244,
+        "text_coverage": 0.870992,
+        "text_speaker_accuracy": 0.870992,
+        "v2_content_recall": 0.92,
+        "v2_matched_word_speaker": 0.92,
+        "v2_wer": 0.088,
+        "wer": 0.088
+      },
+      "lex_keyu_jin": {
+        "composite": 0.9317,
+        "text_coverage": 0.936387,
+        "text_speaker_accuracy": 0.92538,
+        "v2_content_recall": 1.0,
+        "v2_matched_word_speaker": 1.0,
+        "v2_wer": 0.064748,
+        "wer": 0.064748
+      }
+    },
+    "file_trio_mean": {
+      "composite": 0.910567,
+      "text_coverage": 0.919865,
+      "text_speaker_accuracy": 0.911502,
+      "v2_content_recall": 0.950606,
+      "v2_matched_word_speaker": 0.950606,
+      "v2_wer": 0.103946,
+      "wer": 0.103946
+    }
+  },
+  "rows": [
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.864,
+      "span_id": 0,
+      "speech_ratio": 0.864,
+      "text": "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.932,
+      "span_id": 1,
+      "speech_ratio": 0.932,
+      "text": "[0][S01]to kind of weigh it. He talked about[2.42]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "salvaged",
+        "publishes": true,
+        "reason": "absent bounds completed from the span",
+        "rendered": "[0][S01]The difference between, you said the stock market.[2.5]",
+        "segments": [
+          [
+            0.0,
+            2.5,
+            "S01",
+            "The difference between, you said the stock market."
+          ]
+        ]
+      },
+      "O2_speech_ratio": {
+        "disposition": "salvaged",
+        "publishes": true,
+        "reason": "absent bounds completed from the span",
+        "rendered": "[0][S01]The difference between, you said the stock market.[2.5]",
+        "segments": [
+          [
+            0.0,
+            2.5,
+            "S01",
+            "The difference between, you said the stock market."
+          ]
+        ]
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.904,
+      "span_id": 2,
+      "speech_ratio": 0.904,
+      "text": "[S01] The difference between,[S01] you said the stock market.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.976,
+      "span_id": 3,
+      "speech_ratio": 0.976,
+      "text": "[0][S01]It in the short term is a voting machine. It represents[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 4,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Sense speculative interests.[2.42]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.832,
+      "span_id": 5,
+      "speech_ratio": 0.832,
+      "text": "[0][S01]Supply and demand of people in the short term.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.968,
+      "span_id": 6,
+      "speech_ratio": 0.968,
+      "text": "[0.31][S01]But in the long term, it's the stock market's a weighing machine.[2.49]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.924,
+      "span_id": 7,
+      "speech_ratio": 0.924,
+      "text": "[0][S01]mean, you know, much more accurate. It's going[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.92,
+      "span_id": 8,
+      "speech_ratio": 0.92,
+      "text": "[0][S01]Tell you what something is worth. And so if you can.[2.16]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.916,
+      "span_id": 9,
+      "speech_ratio": 0.916,
+      "text": "[0.12][S01]Divine what something's worth, then you can really take[2.49]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.944,
+      "span_id": 10,
+      "speech_ratio": 0.944,
+      "text": "[0][S01]advantage of the market because it's really here to to help[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 11,
+      "speech_ratio": 0.996,
+      "text": "[0][S01]You and that's kind of the message of the book.[1.74][2.13][S00]And that's.[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 12,
+      "speech_ratio": 1.0,
+      "text": "[0][S02]Same way, there's a kind of difference between speculation.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.976,
+      "span_id": 13,
+      "speech_ratio": 0.976,
+      "text": "[0][S00]In a investing.[1.28][1.38][S00]Yeah.[1.68][1.71][S00]Speculation.[2.45]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 14,
+      "speech_ratio": 0.984,
+      "text": "[0][S01]It's just, it's a bit like buying.[2.12]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.796,
+      "span_id": 15,
+      "speech_ratio": 0.796,
+      "text": "[0][S01]Trading crypto.[1.74][2.28][S00]Right.[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.992,
+      "span_id": 16,
+      "speech_ratio": 0.992,
+      "text": "[0][S01]That you're.[0.54][0.68][S02]Strong words.[1.44][2.18][S01]Well.[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.908,
+      "span_id": 17,
+      "speech_ratio": 0.908,
+      "text": "[0.54][S01]Uh, short term trading crypto.[2.28]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 18,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Maybe in the long run, there's intrinsic value, but.[1.94]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.728,
+      "span_id": 19,
+      "speech_ratio": 0.728,
+      "text": "[0.06][S01]Uh, the.[1.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.972,
+      "span_id": 20,
+      "speech_ratio": 0.972,
+      "text": "[0.08][S01]You know, it's many investors, you know.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 21,
+      "speech_ratio": 0.996,
+      "text": "[0][S01]In a bubble going into the, you know.[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 22,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S01]The crash, we're really.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_bill_ackman",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 23,
+      "speech_ratio": 0.996,
+      "text": "[0][S01]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.976,
+      "span_id": 0,
+      "speech_ratio": 0.976,
+      "text": "[0.11][S01]So, what is the difference?[2.41]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.932,
+      "span_id": 1,
+      "speech_ratio": 0.932,
+      "text": "[0.25][S01]Between a madman and a genius.[2.49]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.28,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.5714,
+      "span_id": 2,
+      "speech_ratio": 0.571429,
+      "text": "[0][S00]S[0.06]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": true,
+      "case": "lex_javier_milei",
+      "duration_s": 1.49,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 3,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 1.17,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.8034,
+      "span_id": 4,
+      "speech_ratio": 0.803419,
+      "text": "[0.11][S01]Success.[0.92]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_gate",
+        "publishes": false,
+        "reason": "freeze reason 'leading_silence' is not hard_cap",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_gate",
+        "publishes": false,
+        "reason": "speech ratio 0.063 < 0.5",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 1.58,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0633,
+      "span_id": 5,
+      "speech_ratio": 0.063291,
+      "text": "[0.00][S01]Okay.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.896,
+      "span_id": 6,
+      "speech_ratio": 0.896,
+      "text": "[1.29][S02]The following is a conversation.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 7,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S02]...with Javier Malley, the president.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 1.41,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.9149,
+      "span_id": 8,
+      "speech_ratio": 0.914894,
+      "text": "[0.24][S02]of Argentina.[1.12]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.3,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.2,
+      "span_id": 9,
+      "speech_ratio": 0.2,
+      "text": "[0][S00]Yeah.[0.24]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 10,
+      "speech_ratio": 0.96,
+      "text": "[0.12][S02]He is a libertarian, a narco-[2.42]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 11,
+      "speech_ratio": 1.0,
+      "text": "[0][S02]Capitalist and economist.[2.12]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 12,
+      "speech_ratio": 0.984,
+      "text": "[0][S02]who campaigned with a chainsaw.[2]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": true,
+      "case": "lex_javier_milei",
+      "duration_s": 0.06,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 13,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.964,
+      "span_id": 14,
+      "speech_ratio": 0.964,
+      "text": "[0][S02]That symbolized his promise to slash[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.816,
+      "span_id": 15,
+      "speech_ratio": 0.816,
+      "text": "[0][S02]The corrupt bureaucracy of the state.[1.88]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.35,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0571,
+      "span_id": 16,
+      "speech_ratio": 0.057143,
+      "text": "[0][S00]\u55ef\u3002[0.24]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.968,
+      "span_id": 17,
+      "speech_ratio": 0.968,
+      "text": "[0.13][S02]He stepped into the presidency one year.[2.47]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.988,
+      "span_id": 18,
+      "speech_ratio": 0.988,
+      "text": "[0.07][S02]ago, with a country on the brink of hyperinflation.[2.45]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 19,
+      "speech_ratio": 1.0,
+      "text": "[0][S02]Inflation, deepened debt, and suffering.[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 20,
+      "speech_ratio": 1.0,
+      "text": "[0.29][S02]For mass unemployment and poverty.[2.31]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.22,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.4091,
+      "span_id": 21,
+      "speech_ratio": 0.409091,
+      "text": "[0][S00]Mm.[0.12]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.4,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.225,
+      "span_id": 22,
+      "speech_ratio": 0.225,
+      "text": "[0][S00]Yeah.[0.36]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.976,
+      "span_id": 23,
+      "speech_ratio": 0.976,
+      "text": "[0.22][S02]He took this crisis head on.[2.29]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.992,
+      "span_id": 24,
+      "speech_ratio": 0.992,
+      "text": "[0][S02]transforming one of Latin America's largest[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 25,
+      "speech_ratio": 1.0,
+      "text": "[0][S02]Economies through pure free market.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.784,
+      "span_id": 26,
+      "speech_ratio": 0.784,
+      "text": "[0][S02]Principles. In just a few months,[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 27,
+      "speech_ratio": 0.996,
+      "text": "[0][S02]In office, he already achieved RGT.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.972,
+      "span_id": 28,
+      "speech_ratio": 0.972,
+      "text": "[0.08][S02]First fiscal surplus in 16 years.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.98,
+      "span_id": 29,
+      "speech_ratio": 0.98,
+      "text": "[0.08][S02]Years and not just avoided the hyperinflation.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 30,
+      "speech_ratio": 0.96,
+      "text": "[0.53][S02]But brought inflation down.[2.49]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_gate",
+        "publishes": false,
+        "reason": "freeze reason 'stop_flush(untraced)' is not hard_cap",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "salvaged",
+        "publishes": true,
+        "reason": "absent bounds completed from the span",
+        "rendered": "[0][S01]And.[0.24]",
+        "segments": [
+          [
+            0.0,
+            0.24,
+            "S01",
+            "And."
+          ]
+        ]
+      },
+      "all_zero_pcm": false,
+      "case": "lex_javier_milei",
+      "duration_s": 0.24,
+      "freeze_reason": "stop_flush(untraced)",
+      "prior_speech_ratio": 1.0,
+      "span_id": 31,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]And.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 0,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Kind of the same thing. There's paternalism.[2.24]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.98,
+      "span_id": 1,
+      "speech_ratio": 0.98,
+      "text": "[0.15][S01]Uh, they think that they're responsible for you.[2.47]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 2,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Um but uh.[1.98]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 3,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]deference, a certain amount of deference to authority.[2.46]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 4,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]is not blind submission. It's[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 5,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Been written implicitly in our contract.[2.22]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 6,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S01]Uh, for thousands of years that in exchange[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 7,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]change for some deference uh[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 8,
+      "speech_ratio": 1.0,
+      "text": "[0.11][S01]We are given stability.[2.47]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.92,
+      "span_id": 9,
+      "speech_ratio": 0.92,
+      "text": "[0][S01]Security and peace and hopefully prosperity.[2.16]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.964,
+      "span_id": 10,
+      "speech_ratio": 0.964,
+      "text": "[0][S02]So there is some element that we have in the West.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 11,
+      "speech_ratio": 0.984,
+      "text": "[0][S02]Of freedom of the individual. So[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.98,
+      "span_id": 12,
+      "speech_ratio": 0.98,
+      "text": "[0][S02]A little bit of the rebel is allowed.[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.872,
+      "span_id": 13,
+      "speech_ratio": 0.872,
+      "text": "[0.35][S02]Uh, in balance with the difference.[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.92,
+      "span_id": 14,
+      "speech_ratio": 0.92,
+      "text": "[0.07][S02]Authority.[0.63][0.92][S01]Yeah, absolutely. Without that.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 15,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]How can you have this radical, dynamic entrepreneur?[2.44]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.828,
+      "span_id": 16,
+      "speech_ratio": 0.828,
+      "text": "[0.08][S01]Normalism you see in China.[1.74]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.992,
+      "span_id": 17,
+      "speech_ratio": 0.992,
+      "text": "[0][S01]You don't have a sense of self, a sense of.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.928,
+      "span_id": 18,
+      "speech_ratio": 0.928,
+      "text": "[0][S01]Of the fact that you can find.[2.48]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 19,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Find opportunities, you look for opportunities, you.[2.24]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.988,
+      "span_id": 20,
+      "speech_ratio": 0.988,
+      "text": "[0.15][S01]You you drive opportunities.[2.39]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.788,
+      "span_id": 21,
+      "speech_ratio": 0.788,
+      "text": "[0.28][S01]Um, it's all self motivated.[1.96]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.808,
+      "span_id": 22,
+      "speech_ratio": 0.808,
+      "text": "[0][S02]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_keyu_jin",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.952,
+      "span_id": 23,
+      "speech_ratio": 0.952,
+      "text": "[0.21][S02]In China, it's able to dream to be[2.43]",
+      "text_source": "committed",
+      "tier": "trio"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.936,
+      "span_id": 0,
+      "speech_ratio": 0.936,
+      "text": "[0.57][S01]Yes, the same, JP Moore.[2.47]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 1,
+      "speech_ratio": 1.0,
+      "text": "[0][S01]Morgan, which is funny because when we started planning this[2.46]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.932,
+      "span_id": 2,
+      "speech_ratio": 0.932,
+      "text": "[0][S01]show together, gosh, almost a year ago.[2.38]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.916,
+      "span_id": 3,
+      "speech_ratio": 0.916,
+      "text": "[0][S01]was immediately clear to Ben and me that[2.22]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.976,
+      "span_id": 4,
+      "speech_ratio": 0.976,
+      "text": "[0][S01]The very best person who acquired could inter-[2.46]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 1.2,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.9167,
+      "span_id": 5,
+      "speech_ratio": 0.916667,
+      "text": "[0][S01]review in New York.[0.96]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 0.31,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 6,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.868,
+      "span_id": 7,
+      "speech_ratio": 0.868,
+      "text": "[0.11][S01]Also happened to be their CEO.[1.33][1.75][S00]And as you all know,[2.45]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 8,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S02]From the episodes over the last couple of years, JP Morgan has been a[2.44]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 9,
+      "speech_ratio": 0.996,
+      "text": "[0][S02]fantastic partner of ours and their payments team[2.42]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 10,
+      "speech_ratio": 0.948,
+      "text": "[0][S02]mode all kinds of cool technology at the event.[1.92][2.25][S02]Our[2.43]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 11,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S02]Huge thanks to the J P Morgan team for putting on the show with us.[2.48]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.944,
+      "span_id": 12,
+      "speech_ratio": 0.944,
+      "text": "[0.24][S02]And if you ever want to learn more, just click the link in the[2.43]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 13,
+      "speech_ratio": 0.948,
+      "text": "[0.06][S02]show notes and tell them that Ben and David sent you.[2.22]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.964,
+      "span_id": 14,
+      "speech_ratio": 0.964,
+      "text": "[0.28][S02]So with that, this show is not investment advice. David and I[2.45]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.94,
+      "span_id": 15,
+      "speech_ratio": 0.94,
+      "text": "[0][S02]may have investments in the companies we discuss and this[2.43]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 16,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S02]show is for informational and entertainment purposes.[2.5]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.872,
+      "span_id": 17,
+      "speech_ratio": 0.872,
+      "text": "[0][S02]is only on to our conversation with[2.44]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 18,
+      "speech_ratio": 0.984,
+      "text": "[0.06][S02]Jamie Dimon.[0.66][2.01][S00]Well, this feels[2.43]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 19,
+      "speech_ratio": 1.0,
+      "text": "[0.06][S00]Appropriate.[0.54][1.66][S00]You guys dressed up.[2.44]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.812,
+      "span_id": 20,
+      "speech_ratio": 0.812,
+      "text": "[0.07][S00]For me.[0.45][0.55][S03](laughing)[2.43]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.74,
+      "span_id": 21,
+      "speech_ratio": 0.74,
+      "text": "[0.45][S04]You dressed up for us too, thank you.[1.65]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "salvaged",
+        "publishes": true,
+        "reason": "absent bounds completed from the span",
+        "rendered": "[0.15][S01]Last year, we had you on the video board at Chase.[2.5]",
+        "segments": [
+          [
+            0.15,
+            2.5,
+            "S01",
+            "Last year, we had you on the video board at Chase."
+          ]
+        ]
+      },
+      "O2_speech_ratio": {
+        "disposition": "salvaged",
+        "publishes": true,
+        "reason": "absent bounds completed from the span",
+        "rendered": "[0.15][S01]Last year, we had you on the video board at Chase.[2.5]",
+        "segments": [
+          [
+            0.15,
+            2.5,
+            "S01",
+            "Last year, we had you on the video board at Chase."
+          ]
+        ]
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 22,
+      "speech_ratio": 0.984,
+      "text": "[0.15][S01] Last year, we had you on the video board at Chase.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.98,
+      "span_id": 23,
+      "speech_ratio": 0.98,
+      "text": "[0.08][S01]And you were looking very summery there.[2.42]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 0.5,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.18,
+      "span_id": 24,
+      "speech_ratio": 0.18,
+      "text": "[0][S00]Hi.[0.42]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.904,
+      "span_id": 25,
+      "speech_ratio": 0.904,
+      "text": "[0.11][S01]You look great tonight.[0.85][0.95][S00]Thank you.[1.21][1.11][S02]Yes. Well, we know you're[2.47]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "acquired_jamie_dimon",
+      "duration_s": 0.49,
+      "freeze_reason": "stop_flush(untraced)",
+      "prior_speech_ratio": 1.0,
+      "span_id": 26,
+      "speech_ratio": 1.0,
+      "text": "[0][S00]or big history[0.48]",
+      "text_source": "committed",
+      "tier": "secondary"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 0,
+      "speech_ratio": 0.96,
+      "text": "[0.00][S01] We're not the first. It's happened somewhere else. And to me, that was[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 1,
+      "speech_ratio": 1.0,
+      "text": "[0.31][S01] That was mind blowing. Doesn't tell me there's[2.47]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 2,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Anybody nearby, the galaxy could be sterile.[2.38]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 3,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] It just told me that like, you know.[2.02]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 4,
+      "speech_ratio": 0.96,
+      "text": "[0.63][S01] Unless nature's really against.[2.49]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.988,
+      "span_id": 5,
+      "speech_ratio": 0.988,
+      "text": "[0.21][S01] He has some bias against civilizations.[2.15]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.908,
+      "span_id": 6,
+      "speech_ratio": 0.908,
+      "text": "[0.15][S01] We're not the first time this has happened. This has happened.[2.21]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 7,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Elsewhere over the course of cosmic history.[2.02]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.416,
+      "span_id": 8,
+      "speech_ratio": 0.416,
+      "text": "[1.92][S01] The following[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 9,
+      "speech_ratio": 1.0,
+      "text": "[0.08][S01] is a conversation with Adam Frank, an[2.44]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 10,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Astrophysicist interested in the[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 11,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]The evolution of star systems and the search[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 12,
+      "speech_ratio": 1.0,
+      "text": "[0.48][S01] For alien civilizations in our[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.884,
+      "span_id": 13,
+      "speech_ratio": 0.884,
+      "text": "[0.07][S01] This is the last[2.43]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 14,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Podcast to support it, please check out our[2.34][2.34][S01] sponsor.[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 15,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Answers in the description.[1.32][1.74][S01] And now.[2.34]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 16,
+      "speech_ratio": 0.96,
+      "text": "[0.11][S01] Dear friends, here's Adam Frank.[2.45]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 0.39,
+      "freeze_reason": "end_silence",
+      "prior_speech_ratio": 0.4615,
+      "span_id": 17,
+      "speech_ratio": 0.461538,
+      "text": "[0.00][S01]Okay.[0.18]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": true,
+      "case": "lex_adam_frank",
+      "duration_s": 0.87,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 18,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 19,
+      "speech_ratio": 0.948,
+      "text": "[0.00][S01] You wrote a book about aliens.[2.30]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 0.1,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 1.0,
+      "span_id": 20,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Uh.[0.08]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 21,
+      "speech_ratio": 0.996,
+      "text": "[0.11][S01] So the big question, how many alien civilizations are[2.43]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.892,
+      "span_id": 22,
+      "speech_ratio": 0.892,
+      "text": "[0.00][S01] out there.[0.42][0.72][S02] Yeah, that's the question, right?[2.02][2.15][S01] The amazing.[2.51]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 23,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Amazing thing is that after two and a[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.988,
+      "span_id": 24,
+      "speech_ratio": 0.988,
+      "text": "[0.08][S01] half millennia of, you know, people yelling at[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 25,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]each other or setting each other on fire occasionally over[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 26,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] The answer. We now actually have the capacity.[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.984,
+      "span_id": 27,
+      "speech_ratio": 0.984,
+      "text": "[0.00][S01] to answer that question. So in the next[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 28,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Ten, twenty, thirty years, we're gonna have[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 29,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Data relevant to the answer to that.[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.952,
+      "span_id": 30,
+      "speech_ratio": 0.952,
+      "text": "[0.00][S01] Question.[0.48][0.56][S01] We're gonna have hard data finally.[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 31,
+      "speech_ratio": 1.0,
+      "text": "[0.53][S01] That will, one way or the other, you know.[2.45]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 32,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Even if we don't find anything immediately, we will have[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 33,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]gone through a number of planets.[2.24]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 34,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]be able to start putting limits on how common[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.964,
+      "span_id": 35,
+      "speech_ratio": 0.964,
+      "text": "[0.53][S01] Life is.[1.53][2.04][S01] The one[2.43]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 36,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]or I can tell you, uh, which is was an important part of the[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 37,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Problem is, how many planets are there?[2.34]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 38,
+      "speech_ratio": 0.996,
+      "text": "[0.00][S01] Right? And just like people have been arguing.[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 39,
+      "speech_ratio": 1.0,
+      "text": "[0.12][S01] About the existence of life else.[1.98]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 40,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Where for two thousand five hundred years.[2.12]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.992,
+      "span_id": 41,
+      "speech_ratio": 0.992,
+      "text": "[0.08][S01] People have been arguing about planets for the exact same[2.44]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 42,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]amount of time, right? You can see Aristotle yelling.[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 43,
+      "speech_ratio": 0.948,
+      "text": "[0.21][S01] Uh, democratis about this, you know, you can see the head.[2.43]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 44,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]very wildly different opinions about how common[2.34]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 45,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]We're going to be and how unique Earth was.[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.804,
+      "span_id": 46,
+      "speech_ratio": 0.804,
+      "text": "[0.21][S01] And that question got answered, right?[2.11]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": true,
+      "case": "lex_adam_frank",
+      "duration_s": 0.04,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 47,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 48,
+      "speech_ratio": 0.96,
+      "text": "[0.12][S01] Which is pretty remarkable that in a lifetime you can[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 49,
+      "speech_ratio": 1.0,
+      "text": "[0.11][S01] A 2,500 year old question.[2.15]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.96,
+      "span_id": 50,
+      "speech_ratio": 0.96,
+      "text": "[0.00][S01] The answer is they're everywhere. There are planets.[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 51,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Everywhere. And it was possible that, uh,[2.34][2.34][S01] Plan[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 52,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Planets were really rare. We didn't really understand how planets formed.[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 53,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] And so if you go back to say the turn of the[2.44]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.996,
+      "span_id": 54,
+      "speech_ratio": 0.996,
+      "text": "[0.11][S01] 20th century, uh, there was[2.47]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 55,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]A theory that said planets formed when[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.932,
+      "span_id": 56,
+      "speech_ratio": 0.932,
+      "text": "[0.00][S01] Two stars passed by each other closely.[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 57,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]And then material was gravitationally squeezed out.[2.50]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.952,
+      "span_id": 58,
+      "speech_ratio": 0.952,
+      "text": "[0.57][S01] In which case those kinds of.[2.13]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 59,
+      "speech_ratio": 1.0,
+      "text": "[0.31][S01] Collisions are so rare that you would expect.[2.47]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 60,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] One in a trillion stars to have planets. Instead.[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.924,
+      "span_id": 61,
+      "speech_ratio": 0.924,
+      "text": "[0.33][S01] Every star in the night sky has planets.[2.35]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "refused_boilerplate",
+        "publishes": false,
+        "reason": "text matches known non-speech boilerplate",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": true,
+      "case": "lex_adam_frank",
+      "duration_s": 0.3,
+      "freeze_reason": "leading_silence",
+      "prior_speech_ratio": 0.0,
+      "span_id": 62,
+      "speech_ratio": 0.0,
+      "text": "[0.00][S01]I'm sorry, I can't assist with that request.",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 63,
+      "speech_ratio": 0.948,
+      "text": "[0.35][S01] So one of the things you've done is[2.49]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 64,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] has simulated the formation of stars.[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 65,
+      "speech_ratio": 1.0,
+      "text": "[0.45][S01] How difficult do you think it is to simulate?[2.45]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.948,
+      "span_id": 66,
+      "speech_ratio": 0.948,
+      "text": "[0.48][S01] The formation of planets, like simulator solar[2.51]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.964,
+      "span_id": 67,
+      "speech_ratio": 0.964,
+      "text": "[0.00][S01] System, the, through the entire evolution of the solar[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.956,
+      "span_id": 68,
+      "speech_ratio": 0.956,
+      "text": "[0.00][S01] System. This is kind of a a new miracle.[2.44]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 69,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Physical simulation sneaking up.[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 0.972,
+      "span_id": 70,
+      "speech_ratio": 0.972,
+      "text": "[0.12][S01] To the question of how many planets are there?[2.34]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 71,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] That actually we're able to do now. There is, you can run.[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 72,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Simulations of the formation[2.46]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 73,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01] Of planetary system. So if you run[2.42]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 74,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Simulation, really where you want to start is a cloud.[2.48]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 2.5,
+      "freeze_reason": "hard_cap",
+      "prior_speech_ratio": 1.0,
+      "span_id": 75,
+      "speech_ratio": 1.0,
+      "text": "[0.00][S01]Out of gas, these giant interstellar clouds of gas.[2.52]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    },
+    {
+      "O1_hard_cap": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "O2_speech_ratio": {
+        "disposition": "parsed",
+        "publishes": true,
+        "reason": "parses under the production grammar",
+        "rendered": "",
+        "segments": []
+      },
+      "all_zero_pcm": false,
+      "case": "lex_adam_frank",
+      "duration_s": 0.8,
+      "freeze_reason": "stop_flush",
+      "prior_speech_ratio": 0.9375,
+      "span_id": 76,
+      "speech_ratio": 0.9375,
+      "text": "[0.08][S01] That[0.76]",
+      "text_source": "raw_decode_validation_bypassed",
+      "tier": "three_minute"
+    }
+  ],
+  "zero_parse_spans": 10
+}

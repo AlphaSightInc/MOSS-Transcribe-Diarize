@@ -1,0 +1,46 @@
+corpus: 184 spans, 10 parse to zero segments
+
+case                   span             freeze    vad   dur  O1                     O2                    
+lex_bill_ackman           2           hard_cap  0.904  2.50  salvaged               salvaged              
+lex_javier_milei          3    leading_silence  0.000  1.49  refused_boilerplate    refused_boilerplate   
+lex_javier_milei          5    leading_silence  0.063  1.58  refused_gate           refused_gate          
+lex_javier_milei         13    leading_silence  0.000  0.06  refused_boilerplate    refused_boilerplate   
+lex_javier_milei         31 stop_flush(untraced)  1.000  0.24  refused_gate           salvaged              
+acquired_jamie_dimon      6    leading_silence  0.000  0.31  refused_boilerplate    refused_boilerplate   
+acquired_jamie_dimon     22           hard_cap  0.984  2.50  salvaged               salvaged              
+lex_adam_frank           18    leading_silence  0.000  0.87  refused_boilerplate    refused_boilerplate   
+lex_adam_frank           47    leading_silence  0.000  0.04  refused_boilerplate    refused_boilerplate   
+lex_adam_frank           62    leading_silence  0.000  0.30  refused_boilerplate    refused_boilerplate   
+
+freeze reason vs speech ratio (does O1's state stand in for O2's?):
+  end_silence            spans    6  speech ratio 0.409-0.917  below O2 floor 2
+  hard_cap               spans  163  speech ratio 0.416-1.000  below O2 floor 1
+  leading_silence        spans   12  speech ratio 0.000-1.000  below O2 floor 11
+  stop_flush             spans    1  speech ratio 0.938-0.938  below O2 floor 0
+  stop_flush(untraced)   spans    2  speech ratio 1.000-1.000  below O2 floor 0
+
+disagreements: 1
+  lex_javier_milei#31  refused_gate vs salvaged   '[0.00][S01]And.'
+
+constructed two-speaker spans:
+  ok  same_speaker_two_chunks_no_timestamps        salvaged                   [[0.0, 2.5, 'S01']]
+  ok  two_speakers_interior_timestamp_present      salvaged                   [[0.0, 1.2, 'S01'], [1.2, 2.5, 'S02']]
+  ok  two_speakers_no_interior_timestamp           refused_interior_boundary  []
+  ok  two_speakers_no_timestamps_at_all            refused_interior_boundary  []
+  ok  three_speakers_one_interior_timestamp_missing refused_interior_boundary  []
+
+projection (deployed evaluator, trio):
+arm                         wer  coverage      tsa  composite  v2_recall
+file_trio_mean           0.1039    0.9199   0.9115     0.9106     0.9506
+baseline_trio_mean       0.1999    0.8640   0.8400     0.8384     0.9135
+O1_hard_cap              0.1885    0.8813   0.8573     0.8542     0.9267
+O2_speech_ratio          0.1885    0.8828   0.8587     0.8553     0.9267
+
+per-case WER (deployed evaluator):
+  lex_bill_ackman        baseline 0.2614   O1 0.2273   O2 0.2273
+  lex_javier_milei       baseline 0.1440   O1 0.1440   O2 0.1440
+  lex_keyu_jin           baseline 0.1942   O1 0.1942   O2 0.1942
+
+wrote evidence/live-convergence-0824/M1a-salvage-gate-comparison/comparison.json
+
+GATES: all pass

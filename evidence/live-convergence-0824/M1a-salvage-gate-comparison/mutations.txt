@@ -1,0 +1,30 @@
+Mutation checks — do the M1a gates actually bite?
+Each edit was applied to prototypes/streaming-diarization/live-convergence/salvage_gates.py,
+the driver re-run, then the file restored byte-identically (verified with diff -q).
+
+M1  refuse-on-absent-interior-boundary replaced by "interpolate the boundary over the span"
+      _complete_bounds: return "chunk ... boundary absent ..."  ->  previous.end = current.start = duration * index / len(chunks)
+    => GATES: FAILED G5_witness_owned_intervals
+       (the three constructed cross-speaker spans are salvaged with an invented boundary)
+
+M2  same-speaker merge disabled
+      classify: removed the `chunks = _merge_same_speaker(chunks)` line
+    => GATES: FAILED G5_witness_owned_intervals
+       (bill span 02's two [S01] chunks become an absent interior boundary and are refused,
+        so the 8 recovered words are lost; the constructed same-speaker case fails first)
+
+M3  O1 gate accepts every freeze reason (i.e. ungated salvage)
+      classify: `if freeze_reason != "hard_cap":`  ->  `if freeze_reason == "never":`
+    => GATES: FAILED G7_no_case_wer_regression
+       lex_javier_milei WER .1440 -> .1520 (deployed and v2 alike) while v2 content recall
+       stays .9267: the extra publications are false words, not recovered ones.
+       Ungated trio: WER .1912, coverage .8878 — coverage up, WER worse. Independently
+       reproduces the earlier prototype's P1-ungated verdict.
+
+M4  fixed-point check bypassed
+      classify: `held, rendered = _fixed_point(segments, sample_count)`  ->  `held, rendered = True, ''`
+    => GATES: all pass — NOT caught.
+       Honest reading: no span in this corpus fails parse -> render -> parse, so G4 is an
+       invariant assertion with zero measured load, not a discriminator. It is still required
+       (plan §9.2, and `live_session.revise_labels` refuses to relabel a transcript that does
+       not re-render to itself), but it earns its place as an invariant, not as a filter.

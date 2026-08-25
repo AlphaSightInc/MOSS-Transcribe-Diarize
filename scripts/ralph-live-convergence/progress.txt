@@ -368,3 +368,95 @@ appended at the iteration 4->5 boundary]
   classify_live_transcript with table-driven tests. The 5-minute span corpus it needs can now be
   read from a complete event stream. Candidate 4c (noise floor, N>=4 repeats of the 5-minute
   pair) stays queued for before the M2/M3 gate readings, not before M1.
+
+2026-08-25 iteration 6 (run 20260825-042645-70858) - M1a: plan §9.1 salvage gate is O1, measured.
+- Target: context.md candidate 5's first step. Plan §9.1 leaves one implementation choice open
+  before any production salvage may ship: gate the salvage on the freeze reason (O1, hard_cap) or
+  on a recomputed WebRTC VAD speech ratio >= 0.5 (O2). The plan's shortcut - "prefer O1 if it
+  matches O2 on the full corpus" - had never been run.
+- Files touched (no production code; moss_transcribe_diarize/ is untouched, so file mode is
+  byte-identical by construction):
+  prototypes/streaming-diarization/live-convergence/PREREGISTRATION-M1a.md   (new, written first)
+  prototypes/streaming-diarization/live-convergence/salvage_gates.py         (new, throwaway classifier)
+  prototypes/streaming-diarization/live-convergence/compare_salvage_gates.py (new, driver)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                 (index row + repro)
+  evidence/live-convergence-0824/M1a-salvage-gate-comparison/{NOTES.md,comparison.json,console.txt,mutations.txt}
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+    PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/compare_salvage_gates.py \
+      --output evidence/live-convergence-0824/M1a-salvage-gate-comparison/comparison.json
+  exit 0, all seven preregistered gates pass, ZERO MOSS requests issued (every decode read was
+  already saved). Corpus is the full plan §9.2 set: 184 spans = trio 80 (bill 24 / milei 32 /
+  keyu 24) + acquired_jamie_dimon 27 + lex_adam_frank 77 simulated, plus 5 constructed
+  two-speaker hard-cap spans the saved corpus does not contain. Span bounds and freeze reasons
+  come from the CHECKED-IN baseline (prototypes/live-file-gap-baseline-20260824/trio-60s/),
+  verified span-for-span identical to the older prototype's out/d1.json corpus, so the
+  measurement no longer depends on a /private/tmp scratchpad.
+- ANSWER: O1. The gates disagree on exactly ONE span, so the plan's shortcut does not apply and
+  the preregistered tie-break decides it.
+    lex_javier_milei#31  '[0.00][S01]And.'  0.24 s stop_flush tail, speech ratio 1.000
+    O1 refuses (not a hard cap); O2 salvages.
+  Both gates project to trio WER .188506 and evaluator-v2 content recall .926748 - identical on
+  every honest text axis. O2's whole margin is trio text_coverage +.0014 / composite +.0011
+  (milei alone: coverage +.0043, composite +.0033), bought by publishing one word that enters no
+  LCS match. It is WER-neutral only by alignment accident: the reference reads "...brought
+  inflation down TO its lowest...", so "and" converts one deletion into one substitution. Under
+  the preregistered rule (same recovery, fewer false words, tie to the cheaper option) O1 wins
+  outright, and it wins on the metric the campaign trusts rather than the one plan §3.4 warns is
+  reachable by widening timestamps. O1 also needs no new state: it reads FrozenSpan.reason, where
+  O2 must re-run WebRTC VAD over retained span PCM on the decode-completion path.
+- Projection (deployed evaluator on real modified live hypothesis JSONL; v2 on the same):
+    arm                 WER     coverage  TSA     composite  v2 recall
+    file (target)       .1039   .9199     .9115   .9106      .9506
+    live baseline       .1999   .8640     .8400   .8384      .9135
+    O1 hard_cap         .1885   .8813     .8573   .8542      .9267
+    O2 speech ratio     .1885   .8828     .8587   .8553      .9267
+  Per case WER: bill .2614 -> .2273 (both gates), milei .1440 -> .1440, keyu .1942 -> .1942.
+  No case regresses under either gate. O2 == the older P1v projection to 4 dp, which
+  cross-validates the new completion rule against the published prototype.
+- The completion rule that was prototyped needs NO interpolation (the older P1v filled absent
+  interior boundaries by character count): merge adjacent same-speaker chunks (lossless), supply
+  absent OUTER bounds from the span's own bounds, fill an interior boundary only from a timestamp
+  the decoder actually emitted, and REFUSE when two different speaker labels have no timestamp
+  between them. Constructed spans confirm the shape: same-speaker two-chunk -> one merged
+  interval; two-speaker with an emitted interior timestamp -> two disjoint intervals
+  ([0,1.2] S01, [1.2,2.5] S02); two-speaker and three-speaker without one -> refused. No invented
+  cross-speaker interval is ever emitted, which is what plan D5 and the PRD require of anything
+  the identity path will see.
+- Mutations (evidence/.../mutations.txt): interior-boundary refusal -> interpolation FAILS G5;
+  same-speaker merge disabled FAILS G5 (bill 02's 8 recovered words are lost); O1 gate accepting
+  every freeze reason FAILS G7 - milei WER .1440 -> .1520 with content recall flat at .9267, i.e.
+  the extra publications are false words, independently reproducing the older P1-ungated verdict.
+  The fixed-point bypass was NOT caught, recorded honestly: no span in this corpus fails
+  parse -> render -> parse, so G4 is an invariant assertion with zero measured load, not a filter.
+- Learned:
+  - The refusal-boilerplate phrase list has ZERO marginal load under both gates. Every observed
+    hallucination sits on a leading_silence freeze at speech ratio 0.000, and 0 of 163 hard-cap
+    spans produced one - expected, since a hard cap is 2.5 s of unbroken speech by construction.
+    Recommendation for §9.3: ship the gate, not a locale-specific string table (AGENTS.md rules
+    that shape out, and it guards nothing the gate does not). If review wants it as defence in
+    depth, keep it the way this prototype does - corpus read from measurement data, never
+    literals in the module.
+  - Freeze reason and speech ratio are DIFFERENT predicates, not proxies. Over 184 spans:
+    hard_cap 163 (ratio .416-1.000, 1 below the O2 floor), leading_silence 12 (.000-1.000, 11
+    below), end_silence 6 (.409-.917, 2 below), stop_flush 3 (.938-1.000, 0 below). They agree on
+    the salvage decision only because the ten zero-parse spans sit where the predicates coincide.
+    The production WebRtcSpeechProvider (mode 1, 160-sample frames) reproduced the older
+    prototype's per-span ratio on every one of the 184 spans (0 deltas > 0.01).
+  - Only 10 of 184 spans carry a gate decision at all; the other 174 parse, and the gate is
+    consulted only after a parse returns nothing. The salvage surface is genuinely tiny, which is
+    also why M1's whole projected movement is one span in one case (bill 02, 8 words).
+  - F5, recorded and deliberately not chased: a PARTIALLY parseable span silently drops its
+    trailing turn - '[0.10][S01] I think so[1.20][1.25][S02] and I agree' publishes turn 1 and
+    loses turn 2 with no empty-span signal anywhere. Not observed in the 77 raw decodes available,
+    and invisible in the trio/jamie corpus because those texts are post-parse renders.
+    Constructible is not reachable (AGENTS.md scope limit 4).
+- Next: M1 production (§9.3, context.md candidate 5). Ship classify_live_transcript in
+  app/live_span_bounds.py with the O1 gate and this completion rule; route the adapter catch at
+  live_adapters.py:307 through it (exc.text stops there today by design); table-driven tests from
+  the 10 zero-parse decodes in live-file-gap-emptyspan/out/d3.json plus the 5 constructed spans.
+  Then restart web_cli onto the new build (record it) and run the paired rerun: expect trio live
+  WER .1885 (PRD gate <= .190), no per-case regression, file mode byte-identical. PREREGISTER the
+  decoder-flip protocol in the milestone's evidence dir BEFORE the first measurement pass, per
+  the standing steering note at the iteration 4->5 boundary.
