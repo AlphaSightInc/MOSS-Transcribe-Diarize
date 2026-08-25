@@ -125,3 +125,5 @@ cannot hit a false PRD-vs-plan conflict STOP or under-gate a milestone:
 - context.md candidates 5/8 annotated to carry the new work items; no other steering change.
 Recorded per docs/handoffs/handoff-8YIE4C.md step 1; adversarial review + commit follow
 before relaunch.
+
+[loop 20260825-042645-70858] start budget=40 agent=claude branch=ralph/live-convergence-0824
