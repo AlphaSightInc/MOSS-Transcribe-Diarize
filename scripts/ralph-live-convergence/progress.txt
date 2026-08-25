@@ -3163,3 +3163,64 @@ appended at the iteration 4->5 boundary]
   prototypes/live-file-gap-baseline-20260824/), 9b the plan §18 row annotations, 9c the dated
   verdict entry in docs/design-streaming-diarization.md §7. The report must state which gates the
   campaign ADDED beyond the PRD's rows rather than blur the two sets.
+
+## iteration 33 - the campaign report, and its numbers are a command
+- Focus: candidate 9a, the lowest open item and the first of M5's three sub-steps. Write the
+  campaign report the PRD's M5 row names, and make its numbers checkable instead of transcribed.
+  No production code changed; no service touched; no MOSS request issued.
+- Target: PRD M5 (the CAMPAIGN_REPORT.md row), context.md candidate 9a.
+- Files touched:
+  evidence/live-convergence-0824/CAMPAIGN_REPORT.md                       (new, the report)
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py  (new, 7 gates)
+  prototypes/streaming-diarization/live-convergence/NOTES.md              (index row + section;
+      also corrected the stale verify_m4_exit.py row: 11 of 14 -> 12 of 14, iteration 32's re-score)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - verify_campaign_report.py -> **PASS on all seven gates**. Every number in the report is
+    re-derived from the checked-in evidence at scoring time: the BEFORE column from
+    prototypes/live-file-gap-baseline-20260824/*/results.json, the AFTER column from
+    M4-e4-exit-2/gates.json quality.cases, the per-milestone tallies from each milestone-exit
+    bundle's own gate table, the PRD-vs-campaign gate split from the [C] / [PRD...] markers in the
+    preregistrations, the milestone list from prd.md. Nothing about the campaign is restated in
+    the verifier.
+  - verify_campaign_report.py --selftest -> control PASS, **6 of 6 mutations CAUGHT**, each by the
+    gate that names its defect: digit flip in a per-case row (G-R5), a failing gate's name deleted
+    (G-R3), a tally inflated (G-R2), a ledger row's evidence path removed (G-R1), a campaign-added
+    gate dropped from its section (G-R6), a milestone section renamed (G-R7).
+  - .venv/bin/python -m pytest tests/ -q -> **1157 passed, 2 skipped, 411 subtests** in 91.48 s, unchanged (no test or production file changed).
+- THE REPORT, in one line: on the trio, live mode is no longer converging toward file mode - it IS
+  file mode, to 6 dp on WER, DER and speaker accuracy. Trio live WER .199870 -> .103946 (== the
+  paired file arm), DER .176389 -> .102111, speaker accuracy .823611 -> .897889; five-minute live
+  WER .146375 -> .050616, DER .131533 -> .057933. The ladder, trio mean WER: baseline .199870 ->
+  M1 salvage .192294 -> M2 rolling .131357 -> M4 terminal .103946. Rolling did most of the work
+  (-.0609); the terminal pass closed the distance to zero (-.0274).
+- TWO RECORD DEFECTS THE VERIFIER SURFACED, both fixed in the report, neither in a bundle:
+  D1 **The M2 exit is 7 of 8, not 8 of 8.** context.md's candidate 9 has said "M2 8/8" since
+     iteration 18; M2-e2-exit/gates.json has G_M2_4_correction_p95 pass=false. The report's ledger
+     is generated from the gate tables, so it could not inherit the error, and context.md is
+     corrected with the reason (do not quote a tally from memory).
+  D2 **D-M4-3 names two different decisions.** PREREGISTRATION-M4.md §4 (iteration 22) fixed
+     D-M4-3 = "asynchronous finalization with snapshot polling"; iteration 30's seam-trade ruling
+     reused the same ID and it is now quoted that way in three checked-in bundles
+     (M4-seam-overlap/, M4-seam-ship/, M4-e4-exit-2/). The report calls the seam trade **D-M4-4**
+     and states the mapping. The bundles were NOT rewritten: their sha256.txt manifests are
+     checked in and six instruments compare against them.
+- Learned:
+  - A report is a measurement instrument's last output, and the same rule applies: it should be a
+    command, not a claim. G-R5 is the gate that earns that - every six-decimal number on a case row
+    must be an evidence value or a difference of two of them, so a flipped last digit fails
+    immediately and the tables are safe to read at face value. G-R3 is its complement: a report
+    cannot quietly drop a failing gate, because every pass=false name in every milestone's
+    gates.json must appear on that milestone's ledger row.
+  - Generating the tables (--emit) rather than typing them is what makes the gates cheap to keep
+    green; the report body was pasted from the verifier's own output.
+  - Two claims in the first draft were wrong against the evidence and the check caught them before
+    they shipped: 10/10 was described as winning "on cost as well as quality" (the grid's best arm
+    is 15/10:lexical at .1075 for 1.5x - 10/10 won the CHEAPEST-PASSING rule), and the G-M2-4
+    ruling was framed as "pay for a shorter stride" when no grid geometry passes 6.0 s at all
+    (floors 6.46 / 8.51 / 11.64 / 12.81 s; the bound needs L + S <= 12).
+- BLOCKER: none.
+- Next: candidate 9b - annotate the plan's §18 rows "gates passed <UTC timestamp>, awaiting morning
+  sign-off" with the per-row tally from candidate 9 and the unsigned gate named on the rows that
+  have one; then 9c, the dated verdict entry in docs/design-streaming-diarization.md §7. After 9c
+  the PRD's acceptance bar is met, with every milestone row unsigned by design.

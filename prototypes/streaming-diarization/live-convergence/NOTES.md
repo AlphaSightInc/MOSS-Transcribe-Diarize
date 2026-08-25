@@ -27,9 +27,10 @@ imported by `moss_transcribe_diarize/`.
 | `verify_terminal_lifecycle.py` + `mutate_terminal_lifecycle.sh` | does the RUNTIME give a meeting its last listener without taking the meeting away first (plan §12.3, D-M4-3)? | **yes** — the stop request returns `running` with zero terminal decodes issued, the surface a reader polls stays the rolling one for the whole interval, the pass then publishes the file arm's surface to `1e-12`, and the tape is released *after* the terminal evidence; a failed pass says `failed` and keeps the rolling surface, a deployment with no tape says `unavailable` with a reason; `evidence/live-convergence-0824/M4-terminal-lifecycle/` |
 | `verify_deployed_terminal.py` | did the E4 build reach the DEPLOYED service, and does a real meeting get a terminal pass there? | **yes** — `bounds.max_tape_bytes=9600000` on the wire, the pass starts after `POST /stop` has already answered, decodes 960 000 samples in `1.918 s` through file mode's own runner, and publishes the file arm's transcript word for word (WER `.096000 → .088000` = file's `.088000`); nine gates, nine reactions; `evidence/live-convergence-0824/M4-deployed-terminal/` |
 | `verify_replay_terminal_wait.py` | does the MEASURING CLIENT see the surface the meeting ended on, or the one it left (F1 of the deploy)? | **it does now** — after the stop response the client polls until `finalization_status` leaves `running` (`2.055 s`, 4 polls, 300 s deadline on the deployed 60 s case) and reports the terminal snapshot: the paired driver's own live arm moved WER `.096000 → .088000` = the file arm's, with no driver edited; nine gates, nine reactions; `evidence/live-convergence-0824/M4-replay-wait/` |
-| `verify_m4_exit.py` | do the 14 preregistered M4 gates hold on a fresh paired batch of all five cases? | **11 of 14** — terminal *is* the paired file arm to `0.000000` on four cases (trio mean WER `.131357 → .103946`, five-minute `.082079 → .050616`), and on `lex_adam_frank` the pass reproduced the file arm's 38 segments and was refused publication `segments_out_of_order`, because file mode's own two windows overlap at their seam; the three failures are that one refusal; `evidence/live-convergence-0824/M4-e4-exit/` |
+| `verify_m4_exit.py` | do the 14 preregistered M4 gates hold on a fresh paired batch of all five cases? | **12 of 14** on the seam-resolved build (was 11 of 14 before it shipped) — terminal *is* the paired file arm to `0.000000` on WER for all five cases (trio mean WER `.131357 → .103946`, five-minute `.082079 → .050616`) and on DER for four of them; the two failures are `lex_adam_frank` measured against its own rolling arm, the recorded seam trade; `evidence/live-convergence-0824/M4-e4-exit-2/` (superseded batch: `M4-e4-exit/`) |
 | `measure_seam_overlap.py` + `PREREGISTRATION-M4-seam.md` | when a terminal proposal reproduces the paired file arm and that arm overlaps at a window seam, what should the finalizer send instead? | **`merge_overlapping`** — of five arms it is the only one that drops no word and displaces no second of extent; the whole `.053222 → .066222` DER cost is the deployed scorer's **double count** disappearing (evaluator v2, which unions, does not move: `.054079` either way); 6 of 6 gates, 4 isolated reactions; `evidence/live-convergence-0824/M4-seam-overlap/` |
 | `mutate_terminal_seam.sh` + `measure_seam_overlap.py --verify-production` | does the SHIPPED seam rule do what the selected arm was measured doing, and do its tests bite? | **yes and yes** — production `resolve_terminal_overlaps` is IDENTICAL to the measured arm on all 24 inputs (12 file arms + 12 shapes), the trio terminal surface is still the paired file arm at `0.000000`, and five mutants are each caught by the test that names the defect; `evidence/live-convergence-0824/M4-seam-ship/` |
+| `verify_campaign_report.py` | does the M5 campaign report say what the thirty-two checked-in bundles say? | **yes, seven gates** — every ledger tally, every failing gate name, every per-case before/after number and the `[C]`-vs-`[PRD]` split are re-derived from the evidence and compared against the report text; six mutations of the report are each caught; `evidence/live-convergence-0824/CAMPAIGN_REPORT.md` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -910,4 +911,45 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 
 # five mutations, each caught by the test that names its defect
 prototypes/streaming-diarization/live-convergence/mutate_terminal_seam.sh /tmp/seam-mut
+```
+
+## `verify_campaign_report.py` — iteration 33, candidate 9a: the campaign report
+
+The M5 report is the one document a reviewer reads instead of thirty-two bundles, so its
+numbers are the campaign's public claim — and a hand-transcribed table is a claim nobody
+checked. This makes it a command instead. Nothing about the campaign is restated in the
+verifier: the BEFORE numbers come from `prototypes/live-file-gap-baseline-20260824/`, the
+AFTER numbers from the M4 exit bundle's `gates.json`, the per-milestone tallies from each
+milestone-exit bundle's own gate table, the PRD-vs-campaign split from the `[C]` / `[PRD…]`
+markers in the preregistrations here, and the milestone list from the PRD.
+
+Two gates carry most of the weight:
+
+- **G-R3 — a report cannot quietly drop a failing gate.** Every gate whose `pass` is false in
+  a milestone's `gates.json` must be named on that milestone's ledger row.
+- **G-R5 — a digit-flip has nowhere to hide.** Every six-decimal number on a case row must be
+  a value the evidence holds, or a difference of two of them. Flipping the last digit of one
+  cell fails immediately, which is what makes the tables safe to read at face value.
+
+`--emit` prints the four tables so the report body is generated rather than typed; `--selftest`
+mutates a copy six ways (digit flip, deleted failing gate, inflated tally, removed evidence
+path, dropped campaign-added gate, renamed milestone section) and requires each to be caught.
+
+Two record defects it surfaced, both fixed in the report rather than in the bundles (whose
+digests are checked in): the M2 exit is **7 of 8**, not 8 of 8 — `G_M2_4_correction_p95` is
+unsigned — and **`D-M4-3` names two different decisions**, the preregistered async-finalization
+choice and iteration 30's seam trade. The report calls the seam trade **D-M4-4** and says so.
+
+```bash
+# does the report match the evidence? (no GPU, no service, < 1 s)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py
+
+# the tables, generated for the report body
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --emit
+
+# six mutations of the report, each caught by the gate that names its defect
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --selftest
 ```

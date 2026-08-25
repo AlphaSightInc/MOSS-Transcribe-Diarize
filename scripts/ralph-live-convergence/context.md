@@ -1086,6 +1086,23 @@
     seam no name moves - checked, not assumed.
 - Rest of the ladder: **only M5 (evidence + records) is open**; M0-M4 are all measured, and M4's
   PRD rows are all met (candidate 9).
+- **M5 step 9a DONE (iteration 33): `evidence/live-convergence-0824/CAMPAIGN_REPORT.md` exists and
+  its numbers are a COMMAND, not a transcription.** `verify_campaign_report.py` re-derives every
+  ledger tally, every failing gate name, every per-case before/after value and the `[C]`-vs-`[PRD]`
+  split from the checked-in bundles and compares them against the report text; seven gates PASS,
+  six report mutations each CAUGHT. `--emit` generates the four tables, so the body is generated
+  rather than typed. Two RECORD DEFECTS it surfaced, both fixed in the report (bundle digests left
+  alone):
+  1. **the M2 exit is 7 of 8, not 8 of 8** - `G_M2_4_correction_p95` is unsigned, and this file's
+     own candidate 9 said 8/8 until this iteration;
+  2. **`D-M4-3` names two different decisions** - the preregistered "async finalization with
+     snapshot polling" (`PREREGISTRATION-M4.md` §4, iteration 22) and iteration 30's seam trade
+     (`M4-seam-overlap/NOTES.md`, quoted again in `M4-seam-ship/` and `M4-e4-exit-2/`). The report
+     calls the seam trade **D-M4-4** and says so; three checked-in bundles still say `D-M4-3`.
+  Campaign headline, as the report states it: trio live WER `.199870 -> .103946` == the paired file
+  arm to 6 dp, trio DER `.176389 -> .102111`, trio speaker accuracy `.823611 -> .897889`,
+  five-minute live WER `.146375 -> .050616`. Ladder: salvage `-.0076`, rolling `-.0609`, terminal
+  `-.0274` and distance to zero.
 
 ## Validation
 
@@ -1319,6 +1336,15 @@ prototypes/streaming-diarization/live-convergence/run_paired_case.sh /tmp/m4-3mi
 # is that driver still the checked-in paired driver's shape? (no GPU, no service, exit 0 = yes)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/remeasure_one_case.py --selftest
+# M5 step 9a: does the campaign report say what the checked-in bundles say? (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py
+# the four tables, generated so the report body is not typed
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --emit
+# six mutations of the report, each caught by the gate that names its defect
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_campaign_report.py --selftest
 ```
 
 ## Candidates
@@ -1549,15 +1575,27 @@ NEW EVIDENCE, from iteration 30, that outlives this candidate:
    `2.34 / 180`. Evaluator v2 unions hypothesis intervals first and does not move (`.054079`
    either way). This is the plan §3.4 extent artifact in a new shape (duplication, not padding)
    and it belongs in the §18 record beside candidate 7d's decomposition.
-9. **M5 evidence + records** per PRD - NEXT, and the only open item on the ladder: the campaign
-   report (`evidence/live-convergence-0824/CAMPAIGN_REPORT.md`, per-milestone before/after against
-   `prototypes/live-file-gap-baseline-20260824/`), the plan's §18 row annotations, and the dated
-   verdict entry in `docs/design-streaming-diarization.md` §7. What each milestone's row must
-   carry, from the measured record: M0 4/5 with G2 disposed by owner ruling; M1 5/6 with G-M1-1
-   disposed; M2 8/8; M3 14/14 + D-M3-2; M4 **12 of 14** with D-M4-3 beside G-M4-3 / G-M4-4 and
-   every PRD-named M4 row met. The M4 row is UNSIGNED (morning review signs it), and the report
-   must say which gates the campaign ADDED beyond the PRD rather than blur the two sets.
-   Sub-steps, in order: 9a the campaign report, 9b the §18 annotations, 9c the §7 verdict entry.
+9. **M5 evidence + records** per PRD - the only open item on the ladder. Tallies, recomputed from
+   the bundles by `verify_campaign_report.py` (do NOT quote them from memory - this row said
+   "M2 8/8" for four iterations and the gate table says 7 of 8): M0 **4 of 5** (G2 disposed by
+   owner ruling); M1 **5 of 6** (G-M1-1 disposed); M2 **7 of 8** (`G_M2_4_correction_p95`
+   unsigned, D-M2-3); M3 **14 of 14** + D-M3-2; M4 **12 of 14** (G-M4-3 / G-M4-4, the seam trade
+   = D-M4-4 in the report, `D-M4-3` in three bundles). Every milestone row is UNSIGNED; morning
+   review signs.
+9a. ~~**The campaign report**~~ - DONE iteration 33 (see Current state).
+   `evidence/live-convergence-0824/CAMPAIGN_REPORT.md` + `verify_campaign_report.py`, seven gates
+   PASS, six mutations caught. Do NOT hand-edit a number in the report: the tables come from
+   `--emit` and G-R5 fails on any six-decimal number that is not an evidence value or a difference
+   of two of them. Do NOT rewrite the three bundles that say `D-M4-3` for the seam trade - their
+   `sha256.txt` manifests are checked in and six instruments compare against them; the collision is
+   recorded in the report and here instead.
+9b. **The plan §18 row annotations** - NEXT. Annotate `docs/plans/live-mode-convergence-
+   implementation-20260824.md` §18's rows "gates passed <UTC timestamp>, awaiting morning
+   sign-off", with the per-row tally from candidate 9 and the unsigned gate named on the rows that
+   have one. Candidate 7d's speaker decomposition (63 % straddled turns / 27 % microfragments) and
+   the deployed-DER double count belong in that record too - both are already in the report.
+9c. **The dated verdict entry in `docs/design-streaming-diarization.md` §7** - after 9b. One dated
+   campaign entry; the report is the long form, §7 is the index.
 
 ## Non-candidates
 
