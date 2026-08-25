@@ -100,3 +100,5 @@ the M0-M5 ladder implemented yet. First target: M0a (candidate 1 in context.md).
   are self-score exactly 1.0, "xx"x60s scoring zero lexical coverage and zero matched-word
   speaker credit, and invariance to same-speaker segment splits. M0d (paired re-acquisition)
   still blocks on restarting web_cli onto the campaign branch; do that before M0d, not before M0c.
+
+[loop 20260825-030106-23237] stopped before iteration 3
