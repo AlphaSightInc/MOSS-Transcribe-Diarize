@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+#: The freeze reason a span carries when the hard cap closed it rather than an endpoint.
+#:
+#: Named here, beside the only code that emits it, because it is read as a *predicate* one
+#: layer away: a span frozen for this reason is unbroken speech the endpointer never found an
+#: end for, which is a different object from a span that ended because the talking stopped.
+#: `live_span_bounds.classify_live_transcript` gates bounded salvage on exactly that
+#: distinction, and a second spelling of the word would silently open or close that gate.
+HARD_CAP_REASON = "hard_cap"
+
 
 class EndpointPolicyError(RuntimeError):
     pass
@@ -76,7 +85,7 @@ class EndpointPolicy:
 
             spans.extend(self._process_piece(start, end, observation.speech_present))
             if hit_hard_cap:
-                spans.append(self._emit_until(end, "hard_cap"))
+                spans.append(self._emit_until(end, HARD_CAP_REASON))
                 self._reset_speech_state()
             start = end
 
@@ -158,7 +167,7 @@ class EndpointPolicy:
             hard_boundary = self._next_hard_boundary()
             if hard_boundary is None or hard_boundary >= self._accepted_until:
                 break
-            spans.append(self._emit_until(hard_boundary, "hard_cap"))
+            spans.append(self._emit_until(hard_boundary, HARD_CAP_REASON))
             self._reset_speech_state()
         if self._accepted_until > self._open_start:
             spans.append(self._emit_until(self._accepted_until, reason))

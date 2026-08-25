@@ -13,6 +13,7 @@ imported by `moss_transcribe_diarize/`.
 | `probe_decode_determinism.py` | is the deployed vLLM decoder bit-reproducible for an identical greedy request? | no when cold, yes when warm — 12 requests gave 2 outputs after an idle gap, 1 output immediately after |
 | `diff_live_runs.py` | where do two live runs of the same audio *first* disagree? | 5-minute case: one span (a decode flip); the other 51 are identity cascade |
 | `salvage_gates.py` + `compare_salvage_gates.py` + `PREREGISTRATION-M1a.md` | plan §9.1: O1 (hard-cap freeze) or O2 (recomputed VAD ≥ 0.5) as the salvage gate? | **O1** — same words recovered, one fewer false word, no new state; `evidence/live-convergence-0824/M1a-salvage-gate-comparison/` |
+| `verify_production_salvage.py` | does the shipped `classify_live_transcript` decide what §9.1 measured? | **yes** — 184 corpus spans + 5 constructed spans agree with the adjudicated O1 column; `evidence/live-convergence-0824/M1-salvage-production/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -37,4 +38,8 @@ started it, and three earlier attempts died mid-run when their caller exited.
 # plan §9.1 O1-vs-O2 salvage-gate comparison over the saved 184-span corpus (zero MOSS requests)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/compare_salvage_gates.py --output /tmp/m1a.json
+
+# does the SHIPPED classifier still decide what §9.1 measured? (exit 0 = yes; zero MOSS requests)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_production_salvage.py
 ```

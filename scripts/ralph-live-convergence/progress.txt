@@ -460,3 +460,83 @@ appended at the iteration 4->5 boundary]
   WER .1885 (PRD gate <= .190), no per-case regression, file mode byte-identical. PREREGISTER the
   decoder-flip protocol in the milestone's evidence dir BEFORE the first measurement pass, per
   the standing steering note at the iteration 4->5 boundary.
+
+2026-08-25 iteration 7 (run 20260825-042645-70858) - M1 production salvage shipped (plan §9.3).
+- Target: context.md candidate 5, the highest-leverage open item. Iteration 6 answered the §9.1
+  gate question (O1). This ships the module and wires the live decode seam through it. The E1
+  exit gate (paired rerun on the deployed service) is deliberately NOT part of this iteration --
+  the standing steering note requires the measurement protocol to be preregistered before the
+  first pass, and that preregistration is what this iteration hands the next one.
+- Files touched:
+  moss_transcribe_diarize/app/live_endpoint.py         (+HARD_CAP_REASON, 2 literals replaced)
+  moss_transcribe_diarize/app/live_span_bounds.py      (+classify_live_transcript, +LiveTranscriptOutcome/Disposition)
+  moss_transcribe_diarize/app/live_adapters.py         (salvage call at the EmptyTranscriptionError catch, +InferenceTranscript.salvage_disposition)
+  moss_transcribe_diarize/app/live_coordinator.py      (+CoordinatorPreparedWork.decode_salvage, +CoordinatorWorkResult.canonical_decode_salvage, +_decode_salvage)
+  moss_transcribe_diarize/app/live_service_runtime.py  (+canonical_decode_salvage on canonical_processed)
+  tests/test_live_transcript_salvage.py                (new; the 10 zero-parse decodes + 5 constructed spans as a table)
+  tests/test_live_pipeline_seams.py                    (+4 salvage seam/runtime tests)
+  prototypes/streaming-diarization/live-convergence/verify_production_salvage.py  (new reproducer)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                      (index row + repro command)
+  evidence/live-convergence-0824/M1-salvage-production/{NOTES.md,PREREGISTRATION.md,corpus-reproduction.txt,mutations.txt,pytest-targeted.txt,file-mode-{head,worktree}.json}
+  (edited: scripts/ralph-live-convergence/context.md)
+- The policy, one paragraph: a span whose decode parses to nothing is offered to
+  classify_live_transcript, but ONLY when the decoder reported it produced an answer the grammar
+  rejected (EmptyTranscriptCause.UNPARSEABLE_TEXT). Absent OUTER bounds come from the span's own
+  bounds. Adjacent chunks sharing a speaker with no timestamp between them are merged, losslessly.
+  An absent INTERIOR boundary is filled only from a timestamp the decoder actually emitted, and two
+  DIFFERENT speaker labels with nothing between them are refused whole (plan D5: a guessed
+  cross-speaker boundary hands identity another voice's audio). The completed transcript must
+  survive parse -> render -> parse. Then the gate: only a hard_cap span may be salvaged.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_production_salvage.py
+    exit 0. The SHIPPED module reproduces iteration 6's adjudicated O1 column over all 184 corpus
+    spans and all 5 constructed spans: 174 parsed / 2 salvaged / 8 refused_gate. Six of those eight
+    were `refused_boilerplate` in the prototype; production refuses them for a fact about the span
+    instead of a fact about the sentence -- same decision, no phrase list.
+  - pytest tests/ -q: 1012 passed, 2 skipped, 386 subtests, 88 s (was 981 before this change).
+  - File mode byte-identical: probe_file_mode_decode_identity.py against a HEAD worktree, both
+    documents sha256 ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2. Expected by
+    construction (nothing on the file path touched) and checked anyway per the PRD.
+  - Mutations, five, all caught (evidence/.../mutations.txt): (1) gate accepts every freeze reason
+    -> 11 tests fail; (2) interior boundary interpolated instead of refused -> the three
+    two/three-speaker rows fail; (3) same-speaker merge disabled -> bill 02 loses its 8 words;
+    (4) decode_salvage dropped on the publishing branch -> the runtime trace test fails;
+    (5) every empty cause offered to salvage -> the no-speech disposition tests fail.
+- Two deliberate deviations from the plan §6 M1 interface sketch, both measured, both recorded in
+  the milestone NOTES.md. Neither is a PRD/plan conflict: the plan itself conditions both on
+  choices that have since been measured.
+  (1) No `speech_ratio` parameter. Plan §9.1 says it "must be recomputed ... if O2 is chosen".
+      O2 was not chosen. A parameter with no reader is scaffolding (AGENTS.md).
+  (2) No refusal-boilerplate phrase list. Zero marginal load over the 184-span corpus: all six
+      observed hallucinations sit on `leading_silence` freezes, which the gate refuses, and 0 of
+      163 hard-cap spans produced one. A table of English apologies is a fact about one decoder in
+      one language, which AGENTS.md rules out of general logic. The residual it accepts --
+      boilerplate ON a hard-cap span would publish -- is stated in the module docstring and pinned
+      by test_the_gate_is_what_refuses_the_hallucinations_not_the_words, which asserts BOTH
+      directions so the day it stops being true is visible.
+- Learned:
+  - A trap the wiring found: `_validate_transcription_response` raises NO_GENERATED_TOKENS BEFORE
+    it looks at the text, so a response carrying a perfectly parseable transcript alongside
+    `completion_tokens: 0` arrives at the catch with usable text. Offering that to salvage would
+    publish a string the model never generated for this span. Caught by an existing seam test on
+    the first run, now pinned by its own regression test and mutation 5.
+  - The salvage decision has to be carried on BOTH CoordinatorPreparedWork branches. Setting it
+    only on the empty branch produced a span that published salvaged words while the trace said
+    `canonical_decode_salvage: null` -- i.e. exactly the invisible repair this telemetry exists to
+    prevent. Found by the end-to-end runtime test, not by the unit tests.
+  - Freeze reason is now spelled once (`HARD_CAP_REASON` in app/live_endpoint.py). It had been a
+    bare literal in two places; a third spelling would have silently opened or closed the gate.
+  - Corpus tests are written out as a literal table in tests/test_live_transcript_salvage.py with
+    a single guard test cross-checking them against prototypes/live-file-gap-emptyspan/out/. The
+    reader of the test sees the decoder's actual ten answers; the guard stops the table drifting
+    from the measurement it claims to encode.
+- Next: M1 E1 exit (context.md candidate 5b). Restart web_cli onto the M1 build (record it), then
+  run two trio passes and two 5-minute passes and score the gates. THE PROTOCOL IS ALREADY FIXED
+  in evidence/live-convergence-0824/M1-salvage-production/PREREGISTRATION.md, written before any
+  measurement: two passes per corpus, mean of the two, one discarded warm-up decode per pass
+  (adopted for the campaign on the M0d cold-start finding), attribution with diff_live_runs.py
+  before any delta is called a regression. Do not re-decide any of it after seeing a number.
+  Predictions on record: trio live WER .1885 (gate <= .190), moving on exactly one span
+  (lex_bill_ackman#02, 8 words, .2614 -> .2273), milei .1440 and keyu .1942 unchanged, 5-minute
+  case reported but ungated.

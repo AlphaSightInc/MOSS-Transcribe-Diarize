@@ -92,7 +92,7 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentitySnapshot,
     LiveSession,
 )
-from moss_transcribe_diarize.app.live_span_bounds import span_segments
+from moss_transcribe_diarize.app.live_span_bounds import LiveTranscriptDisposition, span_segments
 from moss_transcribe_diarize.app.live_lane_contract import LiveLane, LiveV2Frame
 from moss_transcribe_diarize.app.live_v2_session import LiveV2SessionRegistry
 from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptCause
@@ -650,6 +650,106 @@ def test_every_cause_a_decode_can_report_has_a_name_in_the_trace():
     """A new ending must be named before it can be observed, not after it is seen once."""
 
     assert set(_EMPTY_REASON_BY_CAUSE) == set(EmptyTranscriptCause)
+
+
+# --------------------------------------------------------------------------------------
+# The salvage seam (plan §9.3 / M1): what an unparseable answer is allowed to become.
+#
+# Measured surface, over the 184-span corpus of plan §9.2: 5 of 80 trio spans were correct
+# words the parser discarded for one reason -- the decoder stopped without writing its
+# closing timestamp. `evidence/live-convergence-0824/M1a-salvage-gate-comparison/`.
+# --------------------------------------------------------------------------------------
+
+#: bill_ackman span 02, exactly as the deployed decoder answered it (19 of 286 permitted
+#: tokens, so not a truncation). The words are correct and the closing bound is absent.
+SALVAGEABLE_ANSWER = {
+    "text": "[S01] The difference between,[S01] you said the stock market.",
+    "usage": {"prompt_tokens": 150, "completion_tokens": 19},
+}
+
+
+def test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it():
+    """Words the parser threw away come back, and a reader can tell they were repaired."""
+
+    runner = StubbedTransportVllmRunner([SALVAGEABLE_ANSWER])
+    decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+
+    assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
+    assert inferred.empty_cause is None
+    assert inferred.salvage_disposition is LiveTranscriptDisposition.SALVAGED
+    assert inferred.generated_tokens == 19
+
+
+def test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence():
+    """The gate is enforced where the raw answer is read, not asserted somewhere downstream."""
+
+    runner = StubbedTransportVllmRunner([SALVAGEABLE_ANSWER])
+    decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="leading_silence")
+
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+
+    assert inferred.transcript == ""
+    assert inferred.empty_cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+    assert inferred.salvage_disposition is LiveTranscriptDisposition.REFUSED_GATE
+    assert _decode_empty_reason(inferred) == "decoder_returned_unparseable_transcript"
+
+
+def test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it():
+    """Zero completion tokens means the model did not answer, whatever the payload held.
+
+    The response body can still carry a perfectly parseable string -- it is not this span's
+    answer, and salvage is only ever offered an answer the decoder actually produced.
+    """
+
+    runner = StubbedTransportVllmRunner([NO_SPEECH_RESPONSES["zero generated tokens"]])
+    decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+
+    assert inferred.transcript == ""
+    assert inferred.empty_cause is EmptyTranscriptCause.NO_GENERATED_TOKENS
+    assert inferred.salvage_disposition is None
+
+
+def test_a_salvaged_span_publishes_through_the_runtime_and_names_the_repair_in_the_trace():
+    """End to end: the span commits its recovered words and the event says how they got there.
+
+    Identity sees only what the salvager emitted -- the transcript the span publishes is the
+    completed one -- so this is also where plan D5 is checked against the real pipeline
+    rather than against the classifier alone.
+    """
+
+    runtime, _ = _decode_seam_runtime(responses=[SALVAGEABLE_ANSWER], speech=(True,) * 6)
+    created = runtime.create()
+    for sequence in range(6):
+        runtime.accept_frame(created.session_id, _frame(sequence, DEPLOYED_MIXED_FRAME_SAMPLES))
+
+    snapshot = asyncio.run(runtime.stop(created.session_id, deadline=5.0))
+    processed = [
+        event.payload
+        for event in runtime.events(created.session_id)
+        if event.kind == "canonical_processed" and event.payload["canonical_decode_salvage"] is not None
+    ]
+
+    # Both decisions in one meeting: the hard-cap span publishes its recovered words, and the
+    # stop-flush tail -- handed the identical answer -- is refused and commits empty. The
+    # accounting is unchanged either way, which is the property salvage must not break.
+    assert snapshot.terminal_failure is None
+    assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 48000
+    assert [item.transcript for item in snapshot.session.committed] == [
+        "[0][S01]The difference between, you said the stock market.[2.5]",
+        "",
+    ]
+    assert [payload["canonical_decode_salvage"] for payload in processed] == ["salvaged", "refused_gate"]
+    assert [payload["empty_reason"] for payload in processed] == [
+        None,
+        "decoder_returned_unparseable_transcript",
+    ]
 
 
 def test_a_decoder_that_returns_unparseable_text_without_raising_is_also_an_empty_span():

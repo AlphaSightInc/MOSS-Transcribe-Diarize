@@ -155,6 +155,13 @@ class CoordinatorWorkResult:
     # `empty_reason` alone cannot express: both of the silent endings share one reason name.
     canonical_decode_generated_tokens: int | None = None
     empty_reason: str | None = None
+    # What the salvage policy decided for a span whose decode the grammar rejected, `None`
+    # on every span that never reached it. Reported beside `empty_reason` because the two
+    # together are the whole story of an unparseable decode: what came back, and what this
+    # build chose to publish for it. Without it a salvaged span is indistinguishable from
+    # one the decoder wrote correctly, and a refused one from a span that was never
+    # repairable at all.
+    canonical_decode_salvage: str | None = None
     # The two words a reader needs when a span did not publish the way it was meant to.
     # `identity_reason` is the preparer's own answer -- it is the only thing that tells an
     # abstention on ambiguous evidence apart from an evidence provider that was not there
@@ -211,6 +218,7 @@ class CoordinatorPreparedWork:
     decode_capped: bool = False
     decode_generated_tokens: int | None = None
     empty_reason: str | None = None
+    decode_salvage: str | None = None
 
 
 class LiveCoordinator:
@@ -350,6 +358,7 @@ class LiveCoordinator:
                 decode_capped=inferred.capped,
                 decode_generated_tokens=_decode_generated_tokens(inferred),
                 empty_reason=empty_reason,
+                decode_salvage=_decode_salvage(inferred),
             )
         preparation = self.identity_preparer.prepare(
             span=span,
@@ -365,6 +374,7 @@ class LiveCoordinator:
             decode_token_cap=inferred.token_cap,
             decode_capped=inferred.capped,
             decode_generated_tokens=_decode_generated_tokens(inferred),
+            decode_salvage=_decode_salvage(inferred),
         )
 
     def submit_prepared_work(self, work: CoordinatorPreparedWork) -> CoordinatorWorkResult:
@@ -428,6 +438,7 @@ class LiveCoordinator:
             canonical_decode_capped=work.decode_capped,
             canonical_decode_generated_tokens=work.decode_generated_tokens,
             empty_reason=empty_reason,
+            canonical_decode_salvage=work.decode_salvage,
             identity_reason=None if preparation is None else preparation.reason,
             submission_refusal=submission.refusal,
             identity_revision_version=revision.outcome.version,
@@ -748,6 +759,18 @@ def _decode_empty_reason(inferred: InferenceTranscript) -> str | None:
     if cause is not None:
         return _EMPTY_REASON_BY_CAUSE[cause]
     return _empty_transcript_reason(inferred.transcript)
+
+
+def _decode_salvage(inferred: InferenceTranscript) -> str | None:
+    """The salvage policy's decision for this decode, or `None` from a decoder that had none.
+
+    Read as an optional fact for the same reason `empty_cause` is: `RunnerBoundedWavInference`
+    is not the only `BoundedWavInference`, and a scripted or replayed decoder that returns its
+    transcript directly never consults the policy at all.
+    """
+
+    disposition = getattr(inferred, "salvage_disposition", None)
+    return None if disposition is None else disposition.value
 
 
 def _decode_generated_tokens(inferred: InferenceTranscript) -> int | None:

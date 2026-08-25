@@ -14,7 +14,7 @@ from typing import Any, Mapping, Protocol
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
-from .live_span_bounds import span_segments
+from .live_span_bounds import LiveTranscriptDisposition, classify_live_transcript, span_segments
 from .transcription_outcome import (
     EmptyTranscriptCause,
     EmptyTranscriptionError,
@@ -151,6 +151,13 @@ class InferenceTranscript:
     # answers this; a decoder that simply returns text it cannot parse leaves it `None` and
     # the coordinator reads the transcript instead, so the vocabulary holds for both.
     empty_cause: EmptyTranscriptCause | None = None
+    # What the salvage policy decided about an answer the grammar rejected -- `None` on every
+    # decode that never reached it. It is reported separately from `empty_cause` because they
+    # answer different questions: the cause is what the decoder did, this is what was done
+    # about it. A span published *because* its absent bounds were completed must be visible as
+    # such, and so must a repairable span that the gate refused: both look like ordinary spans
+    # from the transcript alone.
+    salvage_disposition: LiveTranscriptDisposition | None = None
 
     def __post_init__(self) -> None:
         # Timing metadata that cannot be trusted is recorded as *unknown*, never raised. See
@@ -319,15 +326,40 @@ class RunnerBoundedWavInference:
                 # accounted for. What the decoder actually did -- said nothing, emitted no
                 # tokens, or answered in a grammar that does not parse -- travels with it,
                 # because those are three different meetings and only one of them is silence.
-                # The raw words stay on the exception and are not carried forward here; a
-                # policy that wants them (salvage) reads them at this seam, telemetry never
-                # sees them.
+                # The raw words stay on the exception and are not carried forward here; the
+                # one policy entitled to read them is `classify_live_transcript`, which is
+                # called right here and hands back either a publishable transcript or a
+                # refusal. Telemetry sees the decision, never the words.
+                #
+                # Only an answer the decoder actually produced is offered to that policy. The
+                # other two endings are the decoder reporting that it produced nothing, and a
+                # `text` arriving beside a zero token count is not this span's answer -- it is
+                # whatever the response payload happened to hold -- so there is nothing there
+                # to repair and it must not become a transcript.
+                outcome = (
+                    classify_live_transcript(
+                        exc.text,
+                        sample_count=span.sample_count,
+                        freeze_reason=span.reason,
+                    )
+                    if exc.cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+                    else None
+                )
+                if outcome is not None and outcome.publishes:
+                    return InferenceTranscript(
+                        transcript=outcome.transcript,
+                        generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started,
+                        token_cap=token_cap,
+                        salvage_disposition=outcome.disposition,
+                    )
                 return InferenceTranscript(
                     transcript="",
                     generated_tokens=exc.generated_tokens,
                     elapsed_sec=time.monotonic() - started,
                     token_cap=token_cap,
                     empty_cause=exc.cause,
+                    salvage_disposition=None if outcome is None else outcome.disposition,
                 )
             except LiveProviderError:
                 raise

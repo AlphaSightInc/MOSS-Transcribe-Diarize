@@ -12,10 +12,13 @@
     event-stream cursor added in iteration 5; the trace is written from what it collected, so
     any new read of the stream must go through it rather than calling `service.events` again.
   - `moss_transcribe_diarize/app/vllm_runner.py:_validate_transcription_response` +
-    `app/live_adapters.py:307` — the decode seam. The disposition collapse is fixed (iteration 2);
-    what remains here is M1: read `exc.text` at the adapter catch and route it through
-    `classify_live_transcript`.
-  - `app/live_span_bounds.py` — clamp-never-refuse precedent; M1 `classify_live_transcript` home.
+    `app/live_adapters.py:~330` — the decode seam. The disposition collapse is fixed (iteration 2)
+    and the salvage call is wired (iteration 7): the catch reads `exc.text` and asks
+    `classify_live_transcript`, but only for `UNPARSEABLE_TEXT` — a zero-token decode has no
+    answer to repair even when its payload carries parseable text (regression test exists).
+  - `app/live_span_bounds.py` — clamp-never-refuse precedent; now also home to
+    `classify_live_transcript` (iteration 7). Any future question of the form "what may this
+    span publish?" is answered there, not at a caller.
   - `app/live_session.py` — `FrozenSpan:75`, `CanonicalCommit` (~:163, `revised_transcript`
     invariant "same words, revised labels"), `revise_labels:539-563`, published-text rule `:581`,
     snapshot ctor `:630-646`. M2 adds `apply_text_revision` + §7.3 fields here.
@@ -28,7 +31,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 6)
+(2026-08-25, after iteration 7)
 
 - Deployed dev stack up: `web_cli` **pid 82706, restarted 2026-08-25 00:43:48 onto campaign
   code** (repo working tree @ `e291624`) at `https://127.0.0.1:7861` (bearer token
@@ -78,12 +81,13 @@
   counts (13-24) and still publish `""` -- observation changed, policy did not. Five mutations
   caught; file-mode decoder output byte-identical to HEAD (worktree A/B, elapsed excluded).
   Evidence: `evidence/live-convergence-0824/M0b-decode-disposition/`.
-- **The raw unparseable text now stops at the adapter seam** (`exc.text`), deliberately not carried
-  onto `InferenceTranscript`: telemetry must never see meeting words, and M1's
-  `classify_live_transcript` is the one caller entitled to read it. That is the M1 wiring point.
-- Refusal boilerplate is *not* distinguished yet -- it classifies as `unparseable_text`, correctly,
-  because refusal detection belongs to `classify_live_transcript` (plan §6 M1). M1 adds a verdict
-  on top of this vocabulary, not beside it.
+- **The raw unparseable text still stops at the adapter seam** (`exc.text`), never carried onto
+  `InferenceTranscript`: telemetry must never see meeting words. Since iteration 7 the one caller
+  entitled to read it -- `classify_live_transcript` -- is called right there, and what leaves the
+  seam is either a completed transcript or a named refusal.
+- Refusal boilerplate is still classified as `unparseable_text` at the decoder, correctly: that is
+  the observation. The *decision* about it is the salvage gate, which refuses every observed
+  hallucination because they all sit on silence-frozen spans -- no phrase list ships (see M1).
 - Replay traces written **before** this fix still read as "zero revisions / never corrected";
   `identity_finalized` events never went through these reconstructors and stay trustworthy.
   The 5-minute run's cadence sweep applied 2 label revisions — M0d re-acquisition must show
@@ -200,8 +204,30 @@
   `[0.10][S01] I think so[1.20][1.25][S02] and I agree` publishes turn 1 and loses turn 2 with no
   empty-span signal. **Not observed** in the 77 raw decodes available; invisible in the trio/jamie
   corpus because those texts are post-parse renders. Constructible is not reachable (AGENTS.md).
-- Rest of the ladder (M1 production, M2-M5) unimplemented; working tree carries the plan, evidence
-  prototypes, and this scaffold.
+- **M1 PRODUCTION SHIPPED (iteration 7); the E1 exit gate has NOT run.**
+  `classify_live_transcript` + `LiveTranscriptOutcome`/`LiveTranscriptDisposition` live in
+  `app/live_span_bounds.py`; the adapter catch routes `exc.text` through it; `salvage_disposition`
+  rides on `InferenceTranscript` -> `CoordinatorPreparedWork.decode_salvage` ->
+  `CoordinatorWorkResult.canonical_decode_salvage` -> the `canonical_processed` event.
+  `verify_production_salvage.py` exit 0: the SHIPPED module reproduces the adjudicated O1 column
+  over all 184 corpus spans + 5 constructed spans (174 parsed / 2 salvaged / 8 refused_gate).
+  Full suite 1012 passed, 2 skipped, 386 subtests. File-mode decoder A/B vs a HEAD worktree
+  byte-identical (sha ad381d8b...). Five mutations caught. Evidence:
+  `evidence/live-convergence-0824/M1-salvage-production/`.
+- Two deliberate deviations from the plan §6 M1 sketch, both measured, both recorded in that
+  NOTES.md: (1) no `speech_ratio` parameter -- plan §9.1 conditions it on O2 and O2 lost, so it
+  would have no reader; (2) no refusal-boilerplate phrase list -- zero marginal load over the
+  corpus (all six hallucinations sit on `leading_silence`, which the gate refuses; 0 of 163
+  hard-cap spans produced one) and AGENTS.md rules locale-specific string tables out of general
+  logic. Residual accepted and pinned by a test: boilerplate on a hard-cap span would publish.
+- One behaviour trap found while wiring, worth remembering: `_validate_transcription_response`
+  raises `NO_GENERATED_TOKENS` **before** it looks at the text, so a response whose payload holds
+  a perfectly parseable transcript alongside `completion_tokens: 0` reaches the catch with usable
+  text. Salvage is offered only `UNPARSEABLE_TEXT` for exactly that reason.
+- `HARD_CAP_REASON` now exists in `app/live_endpoint.py` and is the one spelling of the freeze
+  reason the salvage gate reads. A second spelling would silently open or close the gate.
+- Rest of the ladder (M2-M5) unimplemented; working tree carries the plan, evidence prototypes,
+  and this scaffold.
 
 ## Validation
 
@@ -241,6 +267,11 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # M1a salvage-gate comparison, plan §9.1 (exit 0 = all seven gates pass; zero MOSS requests)
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/compare_salvage_gates.py --output /tmp/m1a.json
+# does the SHIPPED salvage classifier still decide what plan §9.1 measured? (exit 0 = yes)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_production_salvage.py
+# salvage tests (table over the 10 zero-parse decodes + 5 constructed spans, and the seam)
+.venv/bin/python -m pytest tests/test_live_transcript_salvage.py tests/test_live_pipeline_seams.py -q
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -265,16 +296,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    repeats of the 5-minute pair to turn "the 5-minute case can flip" into a spread. Needed
    because M1 gates "no per-case WER regression" and M3 gates per-case DER, and F4 shows
    extents move +-10-20 ms even when every span and decode match.
-5. **M1 production salvage (§9.3) - NEXT.** The §9.1 gate question is answered (iteration 6:
-   **O1**). Remaining: ship `classify_live_transcript` in
-   `moss_transcribe_diarize/app/live_span_bounds.py` with the O1 gate and the completion rule
-   prototyped in `salvage_gates.py`; route the adapter catch at `live_adapters.py:307` through it
-   (`exc.text` stops there today by design); table-driven tests from the 10 zero-parse decodes in
-   `live-file-gap-emptyspan/out/d3.json` plus the 5 constructed spans in `compare_salvage_gates.py`;
-   keep the typed disposition of M0b. Then the paired rerun: expect trio live WER .1885 (PRD gate
-   <= .190), no per-case regression, file mode byte-identical. Preregister the decoder-flip
-   protocol in the milestone's evidence dir BEFORE the first measurement pass (standing steering
-   note at the iteration 4->5 boundary in progress.txt).
+5. ~~**M1 production salvage (§9.3)**~~ — SHIPPED iteration 7 (see Current state). What remains
+   of M1 is only the E1 exit gate, which is candidate 5b.
+5b. **M1 E1 exit: paired rerun on the deployed service - NEXT.** The service (pid 82706) still
+   runs pre-M1 code. Restart `web_cli` onto the M1 build and record it, then run two trio passes
+   and two 5-minute passes. The protocol, the aggregation, the warm-up decision and the gates are
+   ALREADY FIXED in `evidence/live-convergence-0824/M1-salvage-production/PREREGISTRATION.md`
+   (written before any measurement) — read it and follow it; do not re-decide any of it after
+   seeing a number. Prediction on record: trio live WER .1885, moving on exactly one span
+   (`lex_bill_ackman#02`, 8 words, .2614 -> .2273), milei and keyu unchanged, 5-minute case
+   ungated new evidence. Attribute any per-case delta with `diff_live_runs.py` before calling it.
 6. **M2 ADR then grid**: first write the accepted text-finalization ADR from plan D1-D7 verbatim
    (Appendix B Q8); then run `compare_rolling_grid.py` per plan §10.3, starting from
    `proto_context_arms.py`'s lexical stitcher; then production per plan §10.5 order.

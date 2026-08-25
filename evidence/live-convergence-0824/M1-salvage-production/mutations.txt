@@ -1,0 +1,42 @@
+M1: gate accepts every freeze reason
+=== M1 ===
+FAILED tests/test_live_transcript_salvage.py::test_the_gate_is_what_refuses_the_hallucinations_not_the_words
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence
+FAILED tests/test_live_pipeline_seams.py::test_a_salvaged_span_publishes_through_the_runtime_and_names_the_repair_in_the_trace
+11 failed, 83 passed, 3 warnings in 3.16s
+M2: interior boundary interpolated instead of refused
+=== M2 ===
+FAILED tests/test_live_transcript_salvage.py::test_a_boundary_between_two_speakers_is_never_invented[two speakers, no boundary between them-[0.10][S01] I think so[S02] and I agree-refused_interior_boundary-0]
+FAILED tests/test_live_transcript_salvage.py::test_a_boundary_between_two_speakers_is_never_invented[two speakers, no timestamps at all-[S01] I think so[S02] and I agree-refused_interior_boundary-0]
+FAILED tests/test_live_transcript_salvage.py::test_a_boundary_between_two_speakers_is_never_invented[three speakers, one boundary missing-[S01] first[1.00][S02] second[S03] third-refused_interior_boundary-0]
+3 failed, 91 passed, 3 warnings in 2.89s
+M3: adjacent same-speaker chunks not merged
+=== M3 ===
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence
+FAILED tests/test_live_pipeline_seams.py::test_a_salvaged_span_publishes_through_the_runtime_and_names_the_repair_in_the_trace
+6 failed, 88 passed, 3 warnings in 3.09s
+M4: salvage decision dropped on the publishing branch
+=== M4 ===
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_pipeline_seams.py::test_a_salvaged_span_publishes_through_the_runtime_and_names_the_repair_in_the_trace
+1 failed, 93 passed, 3 warnings in 3.14s
+M5: zero-token decodes offered to salvage
+=== M5 ===
+ERROR tests/test_live_transcript_salvage.py
+ERROR tests/test_live_pipeline_seams.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 2.47s
+=== restored; control run ===
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+94 passed, 3 warnings in 3.10s
+M5 (rerun): zero-token decodes offered to salvage
+=========================== short test summary info ============================
+FAILED tests/test_live_pipeline_seams.py::test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was
+FAILED tests/test_live_pipeline_seams.py::test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it
+2 failed, 92 passed, 3 warnings in 3.08s
+=== restored; control run ===
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+94 passed, 3 warnings in 2.87s

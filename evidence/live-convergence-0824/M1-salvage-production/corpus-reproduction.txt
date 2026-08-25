@@ -1,0 +1,3 @@
+corpus spans: 184   constructed: 5
+production dispositions: {"parsed": 174, "refused_gate": 8, "salvaged": 2}
+PASS
