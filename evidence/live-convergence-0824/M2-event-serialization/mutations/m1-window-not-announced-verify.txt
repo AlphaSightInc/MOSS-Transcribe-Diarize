@@ -1,0 +1,13 @@
+lex_bill_ackman    queued=0 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=21 wer=0.198864
+lex_javier_milei   queued=0 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=14 wer=0.096000
+lex_keyu_jin       queued=0 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=16 wer=0.100719
+TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+payload vocabulary: 36 names
+decode cost: {'requests': 98, 'fresh_requests': 0}
+FAIL G1 lex_bill_ackman announced 0 windows, converger planned 6
+FAIL G2 lex_bill_ackman closed [4, 10, 15, 20, 25, 29] but admitted []
+FAIL G1 lex_javier_milei announced 0 windows, converger planned 6
+FAIL G2 lex_javier_milei closed [7, 12, 18, 25, 29, 34] but admitted []
+FAIL G1 lex_keyu_jin announced 0 windows, converger planned 6
+FAIL G2 lex_keyu_jin closed [4, 9, 14, 20, 24, 29] but admitted []
+FAILED 6 gate(s)

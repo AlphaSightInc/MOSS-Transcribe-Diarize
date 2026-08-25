@@ -1,0 +1,34 @@
+................F.                                                       [100%]
+=================================== FAILURES ===================================
+_ RollingEventSerializationTest.test_every_planned_window_is_announced_and_closed_with_its_whole_record _
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_every_planned_window_is_announced_and_closed_with_its_whole_record>
+
+    def test_every_planned_window_is_announced_and_closed_with_its_whole_record(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+        queued = self._events(runtime, session_id, "rolling_decode_queued")
+        completed = self._events(runtime, session_id, "rolling_decode_completed")
+        applied = self._events(runtime, session_id, "text_revision_applied")
+        self.assertEqual([item["window_index"] for item in queued], [0, 1])
+        self.assertTrue(all(item["admitted"] for item in queued))
+        self.assertEqual([item["window_samples"] for item in queued], [WINDOW_SAMPLES] * 2)
+        self.assertEqual(
+            [item["item_id"] for item in completed], [item["item_id"] for item in queued]
+        )
+        self.assertEqual([item["outcome"] for item in completed], ["applied", "applied"])
+        for item in completed:
+            # Plan §7.4's completion record, field for field.
+            self.assertEqual(item["window_samples"], WINDOW_SAMPLES)
+            self.assertEqual(item["owned_samples"], WINDOW_SAMPLES)
+            self.assertGreaterEqual(item["queue_wait_ms"], 0)
+            self.assertIsNotNone(item["rolling_decode_elapsed_sec"])
+>           self.assertIsNotNone(item["rolling_decode_rtf"])
+E           AssertionError: unexpectedly None
+
+tests/test_live_rolling_wiring.py:509: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_every_planned_window_is_announced_and_closed_with_its_whole_record
+1 failed, 17 passed in 2.26s

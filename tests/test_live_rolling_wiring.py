@@ -9,17 +9,26 @@ the meeting the base path is already publishing.
 
 These are the seams that only exist once the wiring does. The arm itself is measured
 elsewhere, on real audio, against the grid: `verify_runtime_rolling.py`.
+
+`RollingEventSerializationTest` is plan §10.5 step 5 -- the §7.4 events the runtime writes for
+that wiring. It lives here because the events are the wiring's own report: what a window did is
+knowable only where the window is dispatched. The corpus reading of the same events is
+`verify_rolling_events.py`, and three of the branches below are branches sixty seconds of real
+speech never takes -- a refused revision, a refused admission, a defect -- for the reasons
+iteration 14 recorded about producer pacing.
 """
 
 from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from moss_transcribe_diarize.app.live_adapters import (
+    canonical_decode_token_cap,
     InferenceTranscript,
     LiveProviderError,
     LiveProviderTransientError,
@@ -32,6 +41,7 @@ from moss_transcribe_diarize.app.live_coordinator import (
     ROLLING_DECODE_FAILED,
     ROLLING_WINDOW_REASON,
     RefinementWork,
+    RollingWindowPlan,
 )
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -122,9 +132,15 @@ class ScriptedDecoder:
         if self.failure is not None:
             raise self.failure
         seconds = span.sample_count / LIVE_SAMPLE_RATE
+        # The cap is reported the way the real adapter reports it, because plan §7.4 asks
+        # every completion event for it and a double that omits it would let a production
+        # omission pass.
+        cap = canonical_decode_token_cap(sample_count=span.sample_count)
         return InferenceTranscript(
             transcript=f"[0.00][S01] {self.label} {span.start_sample}[{seconds:g}]",
             elapsed_sec=0.01,
+            token_cap=cap,
+            capped=False,
         )
 
 
@@ -457,6 +473,214 @@ class RollingRuntimeWiringTest(unittest.TestCase):
         self.assertEqual(result.windows_failed, 1)
         # The submission already released it; a second release is a no-op, not a fault.
         self.assertFalse(coordinator.release_refinement(item))
+
+
+class RollingEventSerializationTest(unittest.TestCase):
+    """Plan §7.4: what a window did reaches a reader outside the process, in counts and names."""
+
+    def _events(self, runtime: LiveServiceRuntime, session_id: str, kind: str) -> list[dict[str, Any]]:
+        return [
+            event.to_dict()["payload"]
+            for event in runtime.events(session_id)
+            if event.kind == kind
+        ]
+
+    def test_every_planned_window_is_announced_and_closed_with_its_whole_record(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+
+        queued = self._events(runtime, session_id, "rolling_decode_queued")
+        completed = self._events(runtime, session_id, "rolling_decode_completed")
+        applied = self._events(runtime, session_id, "text_revision_applied")
+        self.assertEqual([item["window_index"] for item in queued], [0, 1])
+        self.assertTrue(all(item["admitted"] for item in queued))
+        self.assertEqual([item["window_samples"] for item in queued], [WINDOW_SAMPLES] * 2)
+        self.assertEqual(
+            [item["item_id"] for item in completed], [item["item_id"] for item in queued]
+        )
+        self.assertEqual([item["outcome"] for item in completed], ["applied", "applied"])
+        for item in completed:
+            # Plan §7.4's completion record, field for field.
+            self.assertEqual(item["window_samples"], WINDOW_SAMPLES)
+            self.assertEqual(item["owned_samples"], WINDOW_SAMPLES)
+            self.assertGreaterEqual(item["queue_wait_ms"], 0)
+            self.assertIsNotNone(item["rolling_decode_elapsed_sec"])
+            self.assertIsNotNone(item["rolling_decode_rtf"])
+            self.assertIsNotNone(item["rolling_decode_token_cap"])
+            self.assertIsNotNone(item["rolling_decode_generated_tokens"])
+            self.assertIs(item["rolling_decode_capped"], False)
+            self.assertEqual(item["rolling_status"], RollingStatus.ROLLING.value)
+        self.assertEqual([item["text_revision_version"] for item in applied], [1, 2])
+        self.assertEqual(
+            applied[-1]["canonical_through_sample"],
+            runtime.snapshot(session_id).session.canonical_through_sample,
+        )
+        # A base commit says what the second listener is doing, so a converger that stopped
+        # while planning nothing is still visible on the stream it stopped appearing in.
+        statuses = {
+            item["rolling_status"] for item in self._events(runtime, session_id, "canonical_processed")
+        }
+        self.assertEqual(statuses, {RollingStatus.ROLLING.value})
+
+    def test_a_failed_window_closes_its_account_and_names_why(self):
+        base, witness = _decoders(
+            rolling=True, rolling_failure=LiveProviderTransientError("witness timed out")
+        )
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+
+        completed = self._events(runtime, session_id, "rolling_decode_completed")
+        self.assertEqual([item["outcome"] for item in completed], ["no_proposal"])
+        self.assertEqual(completed[0]["decode_failure"], ROLLING_DECODE_DID_NOT_ANSWER)
+        self.assertEqual(completed[0]["rolling_status"], RollingStatus.WINDOW_FAILED.value)
+        self.assertIsNone(completed[0]["owned_samples"])
+        self.assertEqual(self._events(runtime, session_id, "text_revision_applied"), [])
+        self.assertEqual(self._events(runtime, session_id, "text_revision_refused"), [])
+
+    def test_a_defect_closes_the_window_as_a_defect_rather_than_losing_it(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        coordinator = runtime._sessions[created.session_id].coordinator
+
+        def exploding_submit(decode, item):
+            raise RuntimeError("a defect in the second listener")
+
+        coordinator.submit_refinement = exploding_submit
+        for sequence in range(TWO_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+
+        completed = self._events(runtime, created.session_id, "rolling_decode_completed")
+        self.assertEqual([item["outcome"] for item in completed], ["defect"])
+        self.assertEqual(completed[0]["rolling_status"], RollingStatus.STOPPED.value)
+        self.assertIsNone(runtime.snapshot(created.session_id).terminal_failure)
+
+    def test_a_refused_revision_is_a_refusal_event_and_not_a_silent_no_change(self):
+        """`applied=False` means two opposite things until the refusal is named."""
+
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        session = runtime._sessions[created.session_id].session
+        accepted = session.apply_text_revision
+
+        def stale(proposal):
+            # A real refusal from the real validation: the producer's base version is behind.
+            return accepted(
+                replace(proposal, base_text_revision_version=proposal.base_text_revision_version + 7)
+            )
+
+        session.apply_text_revision = stale
+        for sequence in range(ONE_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+
+        completed = self._events(runtime, created.session_id, "rolling_decode_completed")
+        refused = self._events(runtime, created.session_id, "text_revision_refused")
+        self.assertEqual([item["outcome"] for item in completed], ["refused"])
+        self.assertEqual([item["refusal"] for item in refused], ["stale_text_revision_version"])
+        self.assertEqual(refused[0]["source"], "rolling")
+        self.assertEqual(self._events(runtime, created.session_id, "text_revision_applied"), [])
+        self.assertEqual(runtime.snapshot(created.session_id).session.text_revision_version, 0)
+
+    def test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted(self):
+        """Two halves of one property: the coordinator reports the refusal, the runtime shows it."""
+
+        arbiter = InferenceArbiter()
+        base, witness = _decoders(rolling=True)
+        session = LiveSession(max_retained_samples=960000)
+        coordinator = LiveCoordinator(
+            session_key="refused",
+            session=session,
+            endpoint_policy=EndpointPolicy(_endpoint_config()),
+            speech_provider=ScriptedSpeech(),
+            decoder=base,
+            identity_preparer=ScriptedIdentity(),
+            arbiter=arbiter,
+            rolling_decoder=witness,
+        )
+        item = _refinement_item(coordinator, arbiter)  # dispatched, so its key is RUNNING
+        request = item.payload.request
+        plans = coordinator._queue_refinement((request,))
+        self.assertEqual(
+            plans,
+            (
+                RollingWindowPlan(
+                    item_id=None,
+                    window_index=request.window_index,
+                    start_sample=request.start_sample,
+                    end_sample=request.end_sample,
+                ),
+            ),
+        )
+        self.assertEqual(coordinator._rolling_admission_refusals, 1)
+
+        base2, witness2 = _decoders(rolling=True)
+        runtime = _runtime(base=base2, rolling=witness2)
+        created = runtime.create()
+        state = runtime._sessions[created.session_id]
+        runtime._record_rolling_queued(
+            state,
+            (RollingWindowPlan(item_id=None, window_index=3, start_sample=0, end_sample=WINDOW_SAMPLES),),
+        )
+        announced = self._events(runtime, created.session_id, "rolling_decode_queued")
+        self.assertEqual([item["admitted"] for item in announced], [False])
+        self.assertIsNone(announced[0]["item_id"])
+        self.assertEqual(state.rolling_timing, {})
+
+    def test_a_salvaged_span_is_named_on_the_stream(self):
+        """The positive control for `decode_salvaged`; the trio corpus never reaches it."""
+
+        raw = "[0.00][S01] the difference between, you said the stock market."
+
+        class UnparseableRunner:
+            def transcribe(self, audio_path, **kwargs):
+                raise EmptyTranscriptionError(
+                    "zero parsed segments",
+                    cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+                    text=raw,
+                    generated_tokens=17,
+                )
+
+        adapter = RunnerBoundedWavInference(UnparseableRunner(), max_samples=DECODER_MAX_SAMPLES)
+        runtime = _runtime(base=adapter, rolling=None)
+        session_id = _run_meeting(runtime, frames=HARD_CAP_SAMPLES // FRAME_SAMPLES)
+
+        salvaged = self._events(runtime, session_id, "decode_salvaged")
+        processed = self._events(runtime, session_id, "canonical_processed")
+        self.assertEqual(len(salvaged), 1)
+        self.assertEqual(salvaged[0]["disposition"], "salvaged")
+        self.assertEqual(salvaged[0]["span_id"], processed[0]["span_id"])
+        self.assertEqual(salvaged[0]["canonical_decode_generated_tokens"], 17)
+        self.assertEqual(processed[0]["canonical_decode_salvage"], "salvaged")
+
+    def test_no_event_payload_carries_a_word_anybody_said(self):
+        """§7.4's rule, checked against what this meeting actually published."""
+
+        base = ScriptedDecoder(max_samples=DECODER_MAX_SAMPLES, label="zarquon", calls=[])
+        witness = ScriptedDecoder(max_samples=WINDOW_SAMPLES, label="beeblebrox", calls=[])
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=ONE_WINDOW_FRAMES)
+
+        surface = " ".join(
+            segment.text for segment in runtime.snapshot(session_id).session.effective_transcript
+        )
+        self.assertIn("beeblebrox", surface)
+        stream = json.dumps([event.to_dict() for event in runtime.events(session_id)])
+        self.assertNotIn("beeblebrox", stream)
+        self.assertNotIn("zarquon", stream)
 
 
 def _refinement_item(coordinator: LiveCoordinator, arbiter: InferenceArbiter, *, dispatch: bool = True):

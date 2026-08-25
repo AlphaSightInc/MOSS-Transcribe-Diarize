@@ -1,0 +1,48 @@
+.............F....                                                       [100%]
+=================================== FAILURES ===================================
+_ RollingEventSerializationTest.test_a_refused_revision_is_a_refusal_event_and_not_a_silent_no_change _
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_a_refused_revision_is_a_refusal_event_and_not_a_silent_no_change>
+
+    def test_a_refused_revision_is_a_refusal_event_and_not_a_silent_no_change(self):
+        """`applied=False` means two opposite things until the refusal is named."""
+    
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        session = runtime._sessions[created.session_id].session
+        accepted = session.apply_text_revision
+    
+        def stale(proposal):
+            # A real refusal from the real validation: the producer's base version is behind.
+            return accepted(
+                replace(proposal, base_text_revision_version=proposal.base_text_revision_version + 7)
+            )
+    
+        session.apply_text_revision = stale
+        for sequence in range(ONE_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+    
+        completed = self._events(runtime, created.session_id, "rolling_decode_completed")
+        refused = self._events(runtime, created.session_id, "text_revision_refused")
+        self.assertEqual([item["outcome"] for item in completed], ["refused"])
+>       self.assertEqual([item["refusal"] for item in refused], ["stale_text_revision_version"])
+E       AssertionError: Lists differ: [] != ['stale_text_revision_version']
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       'stale_text_revision_version'
+E       
+E       - []
+E       + ['stale_text_revision_version']
+
+tests/test_live_rolling_wiring.py:593: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_a_refused_revision_is_a_refusal_event_and_not_a_silent_no_change
+1 failed, 17 passed in 2.22s

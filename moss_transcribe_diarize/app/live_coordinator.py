@@ -159,6 +159,27 @@ class RefinementWork:
 
 
 @dataclass(frozen=True, slots=True)
+class RollingWindowPlan:
+    """One window the converger planned, and what the arbiter did with it.
+
+    `item_id=None` is an admission the arbiter refused. It is reported rather than dropped
+    because a refusal from this producer is a defect (the converger plans one window at a
+    time and the arbiter allows one per key), and a defect that only increments a private
+    counter is a defect nobody can see from a trace -- which is what plan §7.4's
+    `rolling_decode_queued` exists to fix.
+    """
+
+    item_id: int | None
+    window_index: int
+    start_sample: int
+    end_sample: int
+
+    @property
+    def sample_count(self) -> int:
+        return self.end_sample - self.start_sample
+
+
+@dataclass(frozen=True, slots=True)
 class RefinementDecode:
     """What came back for one window, and -- if nothing did -- the name for that.
 
@@ -200,6 +221,24 @@ class CoordinatorRefinementResult:
     retained_samples: int
     retained_high_water_samples: int
     admission_refusals: int
+    # Whether the window produced a proposal at all. Without it an applied=False result
+    # cannot say whether the session refused a revision or there was never one to refuse --
+    # two facts that plan §7.4 gives two different events.
+    proposed: bool = False
+    # The interval the proposal claimed, which is the "owned samples" §7.4 asks a completion
+    # event to record. `None` when nothing was proposed; at the selected geometry it equals
+    # the window, and a geometry with overlap would not.
+    owned_start_sample: int | None = None
+    owned_end_sample: int | None = None
+    # The rest of §7.4's completion record: what the decoder was allowed to emit, what it
+    # emitted, whether it ran out, and the witness's own real-time factor when the elapsed
+    # time is trustworthy. The base path reports the same four for a span.
+    decode_token_cap: int | None = None
+    decode_capped: bool = False
+    decode_generated_tokens: int | None = None
+    decode_rtf: float | None = None
+    # The windows this completion made plannable, if any.
+    rolling_windows: tuple[RollingWindowPlan, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +248,9 @@ class CoordinatorFrameResult:
     endpoint_spans: tuple[EndpointSpan, ...]
     frozen_spans: tuple[FrozenSpan, ...]
     queued_item_ids: tuple[int, ...]
+    # Kept apart from `queued_item_ids` on purpose: that field is the canonical batch the
+    # frame admitted, and a reader that conflates the two would count a witness as base work.
+    rolling_windows: tuple[RollingWindowPlan, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -261,6 +303,13 @@ class CoordinatorWorkResult:
     identity_revision_units: int = 0
     identity_revision_merges: int = 0
     identity_revision_refusals: tuple[tuple[str, int], ...] = ()
+    # What this commit did for the second listener. A base commit is the event that makes a
+    # window ownable, so it is where a newly planned window is announced; and `rolling_status`
+    # rides here because a converger that stops while planning nothing -- an evicted ring, a
+    # failed window -- emits no rolling event of its own, and would otherwise be visible only
+    # in the process log.
+    rolling_windows: tuple[RollingWindowPlan, ...] = ()
+    rolling_status: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -397,13 +446,14 @@ class LiveCoordinator:
         # keeps a span until it commits, the witness keeps a bounded ring of the newest
         # window. Planning is gated on committed audio, so this rarely emits a window on its
         # own -- but it can, when a frame arrives after the commit that completed one.
-        self._accept_rolling_pcm(ack.start_sample, frame.pcm)
+        rolling_windows = self._accept_rolling_pcm(ack.start_sample, frame.pcm)
         return CoordinatorFrameResult(
             accepted_start_sample=ack.start_sample,
             accepted_end_sample=ack.end_sample,
             endpoint_spans=endpoint_spans,
             frozen_spans=frozen_spans,
             queued_item_ids=queued,
+            rolling_windows=rolling_windows,
         )
 
     def flush_endpoint(self) -> tuple[int, ...]:
@@ -531,7 +581,7 @@ class LiveCoordinator:
         # audio the session has already committed. This is one of the two `observe_base`
         # calls the converger needs; the other is after an applied revision, which is what
         # moves the frontier the next window must start at.
-        self._observe_base_and_queue()
+        rolling_windows = self._observe_base_and_queue()
         measurement = _canonical_decode_measurement(span, work.decode_elapsed_sec)
         return CoordinatorWorkResult(
             span_id=span.id,
@@ -554,6 +604,8 @@ class LiveCoordinator:
             identity_revision_units=revision.outcome.revised_units,
             identity_revision_merges=revision.merges,
             identity_revision_refusals=revision.outcome.refusals,
+            rolling_windows=rolling_windows,
+            rolling_status=self._rolling_status(),
         )
 
     def _local_speakers(self, span: FrozenSpan, transcript: str) -> tuple[str, ...]:
@@ -791,18 +843,28 @@ class LiveCoordinator:
             revised_segments = outcome.revised_segments
         # The second `observe_base`: an applied revision is what advances the frontier the
         # next window must begin at, so without this call the converger never plans again.
-        self._observe_base_and_queue()
+        rolling_windows = self._observe_base_and_queue()
         snapshot = self.session.snapshot()
         accounting = converger.accounting()
+        elapsed_sec = trustworthy_duration_sec(decode.outcome.elapsed_sec)
+        duration_sec = decode.request.sample_count / float(LIVE_SAMPLE_RATE)
         return CoordinatorRefinementResult(
             window_index=decode.request.window_index,
             start_sample=decode.request.start_sample,
             end_sample=decode.request.end_sample,
-            decode_elapsed_sec=trustworthy_duration_sec(decode.outcome.elapsed_sec),
+            decode_elapsed_sec=elapsed_sec,
             decode_failure=decode.failure,
             applied=applied,
             refusal=refusal,
             revised_segments=revised_segments,
+            proposed=proposal is not None,
+            owned_start_sample=None if proposal is None else proposal.start_sample,
+            owned_end_sample=None if proposal is None else proposal.end_sample,
+            decode_token_cap=decode.outcome.token_cap,
+            decode_capped=decode.outcome.capped,
+            decode_generated_tokens=_decode_generated_tokens(decode.outcome),
+            decode_rtf=None if elapsed_sec is None or duration_sec <= 0 else elapsed_sec / duration_sec,
+            rolling_windows=rolling_windows,
             text_revision_version=snapshot.text_revision_version,
             canonical_through_sample=snapshot.canonical_through_sample,
             rolling_status=accounting.status.value,
@@ -848,19 +910,25 @@ class LiveCoordinator:
 
         return None if self.converger is None else self.converger.accounting()
 
-    def _accept_rolling_pcm(self, start_sample: int, pcm: bytes) -> tuple[int, ...]:
+    def _rolling_status(self) -> str | None:
+        converger = self.converger
+        return None if converger is None else converger.accounting().status.value
+
+    def _accept_rolling_pcm(self, start_sample: int, pcm: bytes) -> tuple[RollingWindowPlan, ...]:
         converger = self.converger
         if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
             return ()
         return self._queue_refinement(converger.accept_pcm(start_sample, pcm))
 
-    def _observe_base_and_queue(self) -> tuple[int, ...]:
+    def _observe_base_and_queue(self) -> tuple[RollingWindowPlan, ...]:
         converger = self.converger
         if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
             return ()
         return self._queue_refinement(converger.observe_base(self.session.snapshot()))
 
-    def _queue_refinement(self, requests: tuple[RollingDecodeRequest, ...]) -> tuple[int, ...]:
+    def _queue_refinement(
+        self, requests: tuple[RollingDecodeRequest, ...]
+    ) -> tuple[RollingWindowPlan, ...]:
         """Admit each planned window under a key that names this session, not just its epoch.
 
         The converger emits `rolling:<epoch>` and every session starts at epoch 0, so the key
@@ -874,7 +942,7 @@ class LiveCoordinator:
         because the converger keeps holding the in-flight slot of the window that was lost.
         """
 
-        item_ids: list[int] = []
+        plans: list[RollingWindowPlan] = []
         for request in requests:
             admission = self.arbiter.submit_live_refinement(
                 coalesce_key=f"{self.session_key}:{request.coalesce_key}",
@@ -882,9 +950,15 @@ class LiveCoordinator:
             )
             if admission.item_id is None:
                 self._rolling_admission_refusals += 1
-                continue
-            item_ids.append(admission.item_id)
-        return tuple(item_ids)
+            plans.append(
+                RollingWindowPlan(
+                    item_id=admission.item_id,
+                    window_index=request.window_index,
+                    start_sample=request.start_sample,
+                    end_sample=request.end_sample,
+                )
+            )
+        return tuple(plans)
 
     def _observe_endpoint(
         self,

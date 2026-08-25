@@ -1,0 +1,33 @@
+..............F...                                                       [100%]
+=================================== FAILURES ===================================
+__ RollingEventSerializationTest.test_a_salvaged_span_is_named_on_the_stream ___
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_a_salvaged_span_is_named_on_the_stream>
+
+    def test_a_salvaged_span_is_named_on_the_stream(self):
+        """The positive control for `decode_salvaged`; the trio corpus never reaches it."""
+    
+        raw = "[0.00][S01] the difference between, you said the stock market."
+    
+        class UnparseableRunner:
+            def transcribe(self, audio_path, **kwargs):
+                raise EmptyTranscriptionError(
+                    "zero parsed segments",
+                    cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+                    text=raw,
+                    generated_tokens=17,
+                )
+    
+        adapter = RunnerBoundedWavInference(UnparseableRunner(), max_samples=DECODER_MAX_SAMPLES)
+        runtime = _runtime(base=adapter, rolling=None)
+        session_id = _run_meeting(runtime, frames=HARD_CAP_SAMPLES // FRAME_SAMPLES)
+    
+        salvaged = self._events(runtime, session_id, "decode_salvaged")
+        processed = self._events(runtime, session_id, "canonical_processed")
+>       self.assertEqual(len(salvaged), 1)
+E       AssertionError: 0 != 1
+
+tests/test_live_rolling_wiring.py:663: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_a_salvaged_span_is_named_on_the_stream
+1 failed, 17 passed in 2.37s

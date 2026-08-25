@@ -11,18 +11,21 @@ import uuid
 from collections import deque
 from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
-from typing import Any, Awaitable, Callable, Mapping, Protocol
+from typing import Any, Awaitable, Callable, Mapping, Protocol, Sequence
 
 from .live_adapters import LiveProviderError
 from .live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
 from .live_coordinator import (
+    CoordinatorRefinementResult,
     LiveCoordinator,
     LiveCoordinatorError,
     LiveIdentityPreparer,
+    RollingWindowPlan,
     SpeechSignalProvider,
 )
 from .live_endpoint import EndpointPolicy, EndpointPolicyError
 from .live_lane_contract import LiveV2Descriptor
+from .live_span_bounds import LiveTranscriptDisposition
 from .live_session import (
     AudioFrame,
     FrameAck,
@@ -40,6 +43,11 @@ LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
 _VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
 _ROLLING_LOG = logging.getLogger("moss_transcribe_diarize.live.rolling")
+
+# The one disposition that means words the grammar rejected were published anyway. Read from
+# the enum rather than spelled again here: a second spelling of a policy name is how a gate
+# silently stops matching what the policy decides (`HARD_CAP_REASON` learned this in M1).
+SALVAGED_DISPOSITION = LiveTranscriptDisposition.SALVAGED.value
 
 # THE TERMINAL CONTRACT, in one place so it can be tested rather than remembered.
 #
@@ -415,11 +423,30 @@ class _RuntimeSession:
     work_changed: threading.Event = field(default_factory=threading.Event)
     drain_waiters: set[_DrainWaiter] = field(default_factory=set)
     canonical_timing: dict[int, "_CanonicalTiming"] = field(default_factory=dict)
+    rolling_timing: dict[int, "_RollingTiming"] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
 class _CanonicalTiming:
     queued_ns: int
+    started_ns: int | None = None
+
+
+@dataclass(slots=True)
+class _RollingTiming:
+    """What the runtime knows about one admitted window between queue and completion.
+
+    The window's own extent is kept here rather than read back off the work item because the
+    completion event must describe the window even on the paths where the coordinator never
+    hands the request back -- a witness dispatched after the meeting stopped, or one whose
+    pump raised. Plan §7.4 asks every window for a completion record; a record that exists
+    only when the happy path ran is an accounting that cannot be reconciled.
+    """
+
+    queued_ns: int
+    window_index: int
+    start_sample: int
+    end_sample: int
     started_ns: int | None = None
 
 
@@ -621,6 +648,7 @@ class LiveServiceRuntime:
                 )
             for item_id in result.queued_item_ids:
                 self._record_canonical_queued(state, item_id)
+            self._record_rolling_queued(state, result.rolling_windows)
             # Unconditional: this frame may have queued a rolling window rather than a
             # canonical span, and `_mark_ready_locked` reads the arbiter itself rather than
             # trusting a caller's list of what it thinks it admitted.
@@ -1005,6 +1033,9 @@ class LiveServiceRuntime:
                     # one in-flight MOSS request per harness is the deployment contract, so
                     # the rolling cost is a serial cost and plan §10.6 must measure it as one.
                     self._in_flight_session_ids.add(state.session_id)
+                    timing = state.rolling_timing.get(item.id)
+                    if timing is not None:
+                        timing.started_ns = self._monotonic_ns()
                     span_count = 0
                     break
                 try:
@@ -1055,18 +1086,30 @@ class LiveServiceRuntime:
         -- and a defect ends *rolling*, with the surface and the base path untouched.
         """
 
+        outcome = "defect"
+        result: CoordinatorRefinementResult | None = None
         try:
             with self._lock:
                 if state.terminal_failure is not None:
+                    outcome = "session_terminal"
                     return
                 request = state.coordinator.capture_refinement_item(item)
             if request is None:
+                outcome = "not_awaited"
                 return
             decode = state.coordinator.decode_refinement(request)
             with self._lock:
                 if state.terminal_failure is not None:
+                    outcome = "session_terminal"
                     return
-                state.coordinator.submit_refinement(decode, item)
+                result = state.coordinator.submit_refinement(decode, item)
+                outcome = (
+                    "applied"
+                    if result.applied
+                    else "refused"
+                    if result.proposed
+                    else "no_proposal"
+                )
         except Exception:
             # Counts and names only, never the words: the same rule the identity finalizer
             # follows. Rolling stops for this session so the defect cannot repeat every
@@ -1080,6 +1123,12 @@ class LiveServiceRuntime:
         finally:
             with self._lock:
                 state.coordinator.release_refinement(item)
+                # The completion event comes before the windows this completion planned, so
+                # the stream reads in the order the work actually happened: this window
+                # answered, its revision landed, and *that* made the next window ownable.
+                self._record_rolling_completed(state, item.id, outcome, result)
+                if result is not None:
+                    self._record_rolling_queued(state, result.rolling_windows)
                 self._in_flight_session_ids.discard(state.session_id)
                 state.work_changed.set()
                 self._notify_drain_waiters_locked(state)
@@ -1147,8 +1196,26 @@ class LiveServiceRuntime:
                             "identity_revision_units": result.identity_revision_units,
                             "identity_revision_merges": result.identity_revision_merges,
                             "identity_revision_refusals": dict(result.identity_revision_refusals),
+                            "rolling_status": result.rolling_status,
                         },
                     )
+                    if result.canonical_decode_salvage == SALVAGED_DISPOSITION:
+                        # Plan §7.4 names the repair as its own event rather than leaving it
+                        # a field on a span record: salvage publishes words the grammar had
+                        # rejected, and how often that happens is a policy measurement, not
+                        # a detail of one span.
+                        self._record_event(
+                            state,
+                            "decode_salvaged",
+                            {
+                                "span_id": result.span_id,
+                                "disposition": result.canonical_decode_salvage,
+                                "committed_samples": result.committed_samples,
+                                "frozen_span_sample_count": result.frozen_span_sample_count,
+                                "canonical_decode_generated_tokens": result.canonical_decode_generated_tokens,
+                            },
+                        )
+                    self._record_rolling_queued(state, result.rolling_windows)
                     if not result.submitted:
                         failure = LiveServiceIdentityCommitFailure(
                             f"canonical work did not atomically publish: {result.submission_refusal}.",
@@ -1214,6 +1281,124 @@ class LiveServiceRuntime:
         if reason is not None:
             payload["reason"] = reason
         self._record_event(state, "canonical_queued", payload)
+
+    def _record_rolling_queued(
+        self, state: _RuntimeSession, plans: Sequence[RollingWindowPlan]
+    ) -> None:
+        """Announce every window the converger planned, admitted or not (plan §7.4).
+
+        A refused admission gets an event with `item_id` null and no timing entry: nothing
+        will ever complete it, so pairing it with a completion would make the accounting lie.
+        The counterpart property -- one completion per admitted window -- is what lets a soak
+        read queue depth and stale/coalesced counts straight off the stream.
+        """
+
+        for plan in plans:
+            queued_ns = self._monotonic_ns()
+            if plan.item_id is not None:
+                state.rolling_timing[plan.item_id] = _RollingTiming(
+                    queued_ns=queued_ns,
+                    window_index=plan.window_index,
+                    start_sample=plan.start_sample,
+                    end_sample=plan.end_sample,
+                )
+            self._record_event(
+                state,
+                "rolling_decode_queued",
+                {
+                    "item_id": plan.item_id,
+                    "admitted": plan.item_id is not None,
+                    "window_index": plan.window_index,
+                    "start_sample": plan.start_sample,
+                    "end_sample": plan.end_sample,
+                    "window_samples": plan.sample_count,
+                    "runtime_monotonic_ns": queued_ns,
+                },
+            )
+
+    def _record_rolling_completed(
+        self,
+        state: _RuntimeSession,
+        item_id: int,
+        outcome: str,
+        result: CoordinatorRefinementResult | None,
+    ) -> None:
+        """Close one window's account, on every path a dispatched window can end on.
+
+        `outcome` names which path that was; the decode measurements are `None` on the paths
+        where no decode happened, rather than zero, because a window nobody was waiting for
+        did not decode ten seconds of audio in no time.
+        """
+
+        completed_ns = self._monotonic_ns()
+        timing = state.rolling_timing.pop(item_id, None)
+        window_index = timing.window_index if timing is not None else None
+        start_sample = timing.start_sample if timing is not None else None
+        end_sample = timing.end_sample if timing is not None else None
+        if result is not None:
+            window_index = result.window_index
+            start_sample = result.start_sample
+            end_sample = result.end_sample
+        started_ns = timing.started_ns if timing is not None and timing.started_ns is not None else completed_ns
+        queued_ns = timing.queued_ns if timing is not None else started_ns
+        owned_start = None if result is None else result.owned_start_sample
+        owned_end = None if result is None else result.owned_end_sample
+        payload: dict[str, Any] = {
+            "item_id": item_id,
+            "outcome": outcome,
+            "window_index": window_index,
+            "start_sample": start_sample,
+            "end_sample": end_sample,
+            "window_samples": None if start_sample is None or end_sample is None else end_sample - start_sample,
+            "owned_start_sample": owned_start,
+            "owned_end_sample": owned_end,
+            "owned_samples": None if owned_start is None or owned_end is None else owned_end - owned_start,
+            "queue_wait_ms": _elapsed_ms(queued_ns, started_ns),
+            "queued_to_completed_ms": _elapsed_ms(queued_ns, completed_ns),
+            "runtime_monotonic_ns": completed_ns,
+            "rolling_decode_elapsed_sec": None if result is None else result.decode_elapsed_sec,
+            "rolling_decode_rtf": None if result is None else result.decode_rtf,
+            "rolling_decode_token_cap": None if result is None else result.decode_token_cap,
+            "rolling_decode_capped": None if result is None else result.decode_capped,
+            "rolling_decode_generated_tokens": None if result is None else result.decode_generated_tokens,
+            "decode_failure": None if result is None else result.decode_failure,
+            "proposed": False if result is None else result.proposed,
+            "applied": False if result is None else result.applied,
+            "refusal": None if result is None else result.refusal,
+            "revised_segments": 0 if result is None else result.revised_segments,
+            "rolling_status": self._rolling_status(state) if result is None else result.rolling_status,
+            "windows_planned": None if result is None else result.windows_planned,
+            "windows_completed": None if result is None else result.windows_completed,
+            "windows_failed": None if result is None else result.windows_failed,
+            "stale_completions": None if result is None else result.stale_completions,
+            "decoded_audio_samples": None if result is None else result.decoded_audio_samples,
+            "retained_samples": None if result is None else result.retained_samples,
+            "retained_high_water_samples": None if result is None else result.retained_high_water_samples,
+            "admission_refusals": None if result is None else result.admission_refusals,
+        }
+        self._record_event(state, "rolling_decode_completed", payload)
+        if result is None or not result.proposed:
+            return
+        self._record_event(
+            state,
+            "text_revision_applied" if result.applied else "text_revision_refused",
+            {
+                "source": "rolling",
+                "item_id": item_id,
+                "window_index": result.window_index,
+                "start_sample": result.owned_start_sample,
+                "end_sample": result.owned_end_sample,
+                "revised_segments": result.revised_segments,
+                "refusal": result.refusal,
+                "text_revision_version": result.text_revision_version,
+                "canonical_through_sample": result.canonical_through_sample,
+                "finalization_status": state.session.snapshot().finalization_status,
+            },
+        )
+
+    def _rolling_status(self, state: _RuntimeSession) -> str | None:
+        accounting = state.coordinator.rolling_accounting()
+        return None if accounting is None else accounting.status.value
 
     def _notify_drain_waiters_locked(self, state: _RuntimeSession) -> None:
         for waiter in tuple(state.drain_waiters):

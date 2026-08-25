@@ -1,0 +1,49 @@
+...........F......                                                       [100%]
+=================================== FAILURES ===================================
+_ RollingEventSerializationTest.test_a_defect_closes_the_window_as_a_defect_rather_than_losing_it _
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_a_defect_closes_the_window_as_a_defect_rather_than_losing_it>
+
+    def test_a_defect_closes_the_window_as_a_defect_rather_than_losing_it(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        created = runtime.create()
+        coordinator = runtime._sessions[created.session_id].coordinator
+    
+        def exploding_submit(decode, item):
+            raise RuntimeError("a defect in the second listener")
+    
+        coordinator.submit_refinement = exploding_submit
+        for sequence in range(TWO_WINDOW_FRAMES):
+            runtime.accept_frame(
+                created.session_id,
+                AudioFrame(
+                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                ),
+            )
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+    
+        completed = self._events(runtime, created.session_id, "rolling_decode_completed")
+>       self.assertEqual([item["outcome"] for item in completed], ["defect"])
+E       AssertionError: Lists differ: [] != ['defect']
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       'defect'
+E       
+E       - []
+E       + ['defect']
+
+tests/test_live_rolling_wiring.py:561: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.rolling:live_service_runtime.py:1117 live rolling refinement failed
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/moss_transcribe_diarize/app/live_service_runtime.py", line 1105, in _process_refinement_item
+    result = state.coordinator.submit_refinement(decode, item)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/tests/test_live_rolling_wiring.py", line 548, in exploding_submit
+    raise RuntimeError("a defect in the second listener")
+RuntimeError: a defect in the second listener
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_a_defect_closes_the_window_as_a_defect_rather_than_losing_it
+1 failed, 17 passed in 2.26s

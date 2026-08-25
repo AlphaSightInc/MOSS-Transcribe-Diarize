@@ -1,0 +1,32 @@
+................F.                                                       [100%]
+=================================== FAILURES ===================================
+_ RollingEventSerializationTest.test_every_planned_window_is_announced_and_closed_with_its_whole_record _
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_every_planned_window_is_announced_and_closed_with_its_whole_record>
+
+    def test_every_planned_window_is_announced_and_closed_with_its_whole_record(self):
+        base, witness = _decoders(rolling=True)
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=TWO_WINDOW_FRAMES)
+    
+        queued = self._events(runtime, session_id, "rolling_decode_queued")
+        completed = self._events(runtime, session_id, "rolling_decode_completed")
+        applied = self._events(runtime, session_id, "text_revision_applied")
+>       self.assertEqual([item["window_index"] for item in queued], [0, 1])
+E       AssertionError: Lists differ: [1] != [0, 1]
+E       
+E       First differing element 0:
+E       1
+E       0
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 1:
+E       1
+E       
+E       - [1]
+E       + [0, 1]
+
+tests/test_live_rolling_wiring.py:496: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_every_planned_window_is_announced_and_closed_with_its_whole_record
+1 failed, 17 passed in 2.23s

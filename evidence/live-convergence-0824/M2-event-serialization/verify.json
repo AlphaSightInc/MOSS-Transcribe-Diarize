@@ -1,0 +1,221 @@
+{
+  "cases": {
+    "lex_bill_ackman": {
+      "canonical_through_sample": 960000,
+      "completion_generated_tokens": [
+        101,
+        88,
+        110,
+        77,
+        92,
+        90
+      ],
+      "completion_queue_wait_ms": [
+        0.015541,
+        0.013333,
+        0.732625,
+        2.860375,
+        0.877708,
+        0.017667
+      ],
+      "completion_rtf": [
+        3.571669803932309e-05,
+        2.9387499671429397e-05,
+        2.989999484270811e-05,
+        2.4933402892202138e-05,
+        2.661669859662652e-05,
+        2.7270801365375518e-05
+      ],
+      "content_recall": 0.9261363636363636,
+      "decode_salvaged": 0,
+      "effective_segments": 21,
+      "event_kinds": {
+        "canonical_processed": 24,
+        "canonical_queued": 24,
+        "canonical_started": 24,
+        "frame_accepted": 120,
+        "identity_finalized": 1,
+        "rolling_decode_completed": 6,
+        "rolling_decode_queued": 6,
+        "session_closed": 1,
+        "session_created": 1,
+        "span_frozen": 24,
+        "text_revision_applied": 6
+      },
+      "finalization_status": "not_started",
+      "rolling_status_on_last_commit": "rolling",
+      "salvaged_spans": [],
+      "text_revision_version": 6,
+      "text_revisions_applied": 6,
+      "text_revisions_refused": 0,
+      "wer": 0.198864,
+      "windows_admitted": 6,
+      "windows_announced": 6,
+      "windows_closed": 6
+    },
+    "lex_javier_milei": {
+      "canonical_through_sample": 960000,
+      "completion_generated_tokens": [
+        46,
+        72,
+        69,
+        60,
+        59,
+        60
+      ],
+      "completion_queue_wait_ms": [
+        0.00925,
+        0.00975,
+        0.010208,
+        0.68175,
+        0.709917,
+        0.016459
+      ],
+      "completion_rtf": [
+        2.2312498185783624e-05,
+        0.00015495000407099723,
+        0.00011150420177727938,
+        0.00014437920181080698,
+        2.3408303968608378e-05,
+        2.115829847753048e-05
+      ],
+      "content_recall": 0.92,
+      "decode_salvaged": 0,
+      "effective_segments": 14,
+      "event_kinds": {
+        "canonical_processed": 32,
+        "canonical_queued": 29,
+        "canonical_started": 29,
+        "frame_accepted": 120,
+        "identity_finalized": 1,
+        "rolling_decode_completed": 6,
+        "rolling_decode_queued": 6,
+        "session_closed": 1,
+        "session_created": 1,
+        "span_frozen": 31,
+        "text_revision_applied": 6
+      },
+      "finalization_status": "not_started",
+      "rolling_status_on_last_commit": "rolling",
+      "salvaged_spans": [],
+      "text_revision_version": 6,
+      "text_revisions_applied": 6,
+      "text_revisions_refused": 0,
+      "wer": 0.096,
+      "windows_admitted": 6,
+      "windows_announced": 6,
+      "windows_closed": 6
+    },
+    "lex_keyu_jin": {
+      "canonical_through_sample": 960000,
+      "completion_generated_tokens": [
+        65,
+        55,
+        77,
+        80,
+        77,
+        73
+      ],
+      "completion_queue_wait_ms": [
+        0.008458,
+        0.008584,
+        0.008334,
+        0.008125,
+        0.00775,
+        0.019291
+      ],
+      "completion_rtf": [
+        2.0941707771271467e-05,
+        2.1954195108264685e-05,
+        2.1745904814451932e-05,
+        0.0001345583936199546,
+        0.00014241249300539494,
+        2.0858296193182468e-05
+      ],
+      "content_recall": 0.9856115107913669,
+      "decode_salvaged": 0,
+      "effective_segments": 16,
+      "event_kinds": {
+        "canonical_processed": 24,
+        "canonical_queued": 24,
+        "canonical_started": 24,
+        "frame_accepted": 120,
+        "identity_finalized": 1,
+        "rolling_decode_completed": 6,
+        "rolling_decode_queued": 6,
+        "session_closed": 1,
+        "session_created": 1,
+        "span_frozen": 24,
+        "text_revision_applied": 6
+      },
+      "finalization_status": "not_started",
+      "rolling_status_on_last_commit": "rolling",
+      "salvaged_spans": [],
+      "text_revision_version": 6,
+      "text_revisions_applied": 6,
+      "text_revisions_refused": 0,
+      "wer": 0.100719,
+      "windows_admitted": 6,
+      "windows_announced": 6,
+      "windows_closed": 6
+    }
+  },
+  "decode_cost": {
+    "fresh_requests": 0,
+    "requests": 98
+  },
+  "failures": [],
+  "grid": {
+    "arm": "10/10:char",
+    "path": "evidence/live-convergence-0824/M2-rolling-grid/grid.json"
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_coordinator.py",
+    "moss_transcribe_diarize/app/live_service_runtime.py"
+  ],
+  "passed": true,
+  "payload_vocabulary": [
+    "already_finalized",
+    "applied",
+    "beyond_committed_audio",
+    "defect",
+    "empty_text",
+    "failed",
+    "final",
+    "interval_does_not_advance",
+    "no_proposal",
+    "not_at_frontier",
+    "not_awaited",
+    "not_started",
+    "parsed",
+    "pcm_evicted",
+    "refused",
+    "refused_fixed_point",
+    "refused_gate",
+    "refused_grammar",
+    "refused_interior_boundary",
+    "rolling",
+    "rolling_decode_did_not_answer",
+    "rolling_decode_failed",
+    "running",
+    "salvaged",
+    "segment_does_not_advance",
+    "segment_outside_owned_interval",
+    "segments_out_of_order",
+    "session_terminal",
+    "stale_epoch",
+    "stale_text_revision_version",
+    "stopped",
+    "terminal",
+    "terminal_must_replace_full_surface",
+    "unavailable",
+    "unknown_revision_source",
+    "window_failed"
+  ],
+  "recorded_at": "2026-08-25T08:55:53.219783+00:00",
+  "schema": "moss-live-convergence-rolling-events.v1",
+  "trio": {
+    "content_recall_mean": 0.9439159581425769,
+    "wer_mean": 0.131861
+  }
+}

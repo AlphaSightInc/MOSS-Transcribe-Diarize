@@ -267,8 +267,20 @@ def _label(canonical_speaker: str | None, speakers: tuple[str, ...]) -> str:
     return display_speaker_label(canonical_speaker, speakers)
 
 
-def run_case(config: dict[str, Any], runner: ReplayRunner, case: str, *, rolling: bool) -> dict[str, Any]:
-    """One meeting, frame by frame, through the real runtime; then stop it and read the surface."""
+def run_case(
+    config: dict[str, Any],
+    runner: ReplayRunner,
+    case: str,
+    *,
+    rolling: bool,
+    collect_events: bool = False,
+) -> dict[str, Any]:
+    """One meeting, frame by frame, through the real runtime; then stop it and read the surface.
+
+    `collect_events` adds the serialized event stream and the serialized service snapshot to
+    the answer. Off by default so this verifier's own artifact keeps its shape; step 5's
+    event verifier turns it on rather than rebuilding this driver.
+    """
 
     pcm = bench.read_pcm(bench.CORPUS / case / "audio.wav")
     total = len(pcm) // 2
@@ -330,7 +342,12 @@ def run_case(config: dict[str, Any], runner: ReplayRunner, case: str, *, rolling
         for event in runtime.events(session_id)
         if event.kind == "span_frozen"
     ]
+    collected: dict[str, Any] = {}
+    if collect_events:
+        collected["events"] = [event.to_dict() for event in runtime.events(session_id)]
+        collected["service_snapshot"] = service.to_dict()
     return {
+        **collected,
         "scores": bench.score(bench.load_reference(case), hypothesis),
         "terminal_failure": None if service.terminal_failure is None else service.terminal_failure.message,
         "accepted_samples": session.accepted_samples,

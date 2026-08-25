@@ -1,0 +1,25 @@
+lex_bill_ackman    queued=6 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=21 wer=0.198864
+lex_javier_milei   queued=6 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=14 wer=0.096000
+lex_keyu_jin       queued=6 closed=6 applied=6 refused=0 salvaged=0 frontier=960000 segments=16 wer=0.100719
+TRIO               wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+payload vocabulary: 36 names
+decode cost: {'requests': 98, 'fresh_requests': 0}
+FAIL G2 lex_bill_ackman window 0 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_bill_ackman window 1 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_bill_ackman window 2 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_bill_ackman window 3 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_bill_ackman window 4 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_bill_ackman window 5 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 0 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 1 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 2 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 3 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 4 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_javier_milei window 5 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 0 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 1 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 2 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 3 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 4 completion omits ['rolling_decode_rtf']
+FAIL G2 lex_keyu_jin window 5 completion omits ['rolling_decode_rtf']
+FAILED 18 gate(s)

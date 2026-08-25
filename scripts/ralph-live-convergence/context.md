@@ -45,6 +45,10 @@
   - `app/live_service_runtime.py` — dispatch since iteration 14: readiness and the stop drain count
     witnesses, `next_work` may return a refinement item, and `_process_refinement_item` is the
     non-terminal pump. `rolling_decoder_factory` is how a bundle supplies the window decoder.
+    **Since iteration 15 it is also where every §7.4 event is written** — `_record_rolling_queued` /
+    `_record_rolling_completed`, the `rolling_timing` table, and `decode_salvaged`. Events are
+    recorded HERE and nowhere else (plan §6 M7: adapters serialize, they do not decide), from data
+    the coordinator hands back on its result objects.
   - `app/live_endpoint.py` — 2.5 s hard cap (`hard_cap_samples=40000` via bounds config; stays 2.5 s).
   - `app/live_identity*.py` — album (score .35 / margin .10 / floor 0.5 s) + sweep; M3 wires
     witness-owned evidence through the existing album, never context audio.
@@ -53,7 +57,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 14)
+(2026-08-25, after iteration 15)
 
 - Deployed dev stack up: `web_cli` **pid 22561, restarted 2026-08-25 02:11:11 onto the M1
   build** (repo working tree @ `b15503a`) at `https://127.0.0.1:7861` (bearer token
@@ -448,8 +452,46 @@
   must measure this rather than assume it.
 - **A rolling defect ends rolling, never the meeting** (ADR-0005 D1). The refinement pump logs
   (counts and names only), calls `stop_rolling`, and leaves the base path and the surface intact.
-  Until step 5's §7.4 events, a stopped converger is visible only in the log and in
-  `LiveCoordinator.rolling_accounting()`.
+  Since iteration 15 that stop is on the event stream (`rolling_decode_completed` outcome
+  `defect`, and `rolling_status` on the next `canonical_processed`).
+- **M2 STEP 5 SHIPPED (iteration 15): the witness tells its whole story outside the process.**
+  Five §7.4 event kinds -- every one with a producer today -- are recorded by
+  `live_service_runtime.py` from data the coordinator returns: `rolling_decode_queued` (one per
+  PLANNED window, `admitted=false` and `item_id: null` when the arbiter refused),
+  `rolling_decode_completed` (one per DISPATCHED window on every path, carrying §7.4's whole record
+  -- window samples, owned samples, queue delay, decode elapsed, generated tokens, cap status, RTF
+  -- plus an `outcome` from a closed vocabulary), `text_revision_applied` / `text_revision_refused`,
+  and `decode_salvaged`. `canonical_processed` also gained `rolling_status`. The §7.3 snapshot half
+  needed no code but is now CHECKED (JSON round trip + replay reconstruction equality, per case)
+  rather than assumed. `verify_rolling_events.py` exit 0 on nine gates, trio WER **.131861** /
+  recall **.943916** unchanged, 0 fresh MOSS requests. Full suite 1079 passed / 2 skipped / 386
+  subtests (1072 before). File mode byte-identical (`sha ad381d8b...`, unmoved across six
+  production changes). Six mutations, all caught. Evidence:
+  `evidence/live-convergence-0824/M2-event-serialization/`.
+- **The accounting property is the design, not the field list**: one announcement per PLANNED
+  window, one completion per ADMITTED window. A refusal is announced and never completed (nothing
+  will complete it); a dispatch that never decoded -- `not_awaited`, `defect`, `session_terminal`
+  -- is completed with the decode fields **null rather than zero**. So queued minus completed is a
+  live queue depth and can never be a leak. The runtime keeps a `rolling_timing` table keyed by
+  item id (the shape `canonical_timing` already had) so the completion can describe a window even
+  when the coordinator never hands the request back.
+- **G4's payload vocabulary is READ from production, not listed**: `RollingStatus`,
+  `LiveTranscriptDisposition`, the finalization statuses, and the string literals inside
+  `LiveSession._text_revision_refusal` and `LiveServiceRuntime._process_refinement_item` (36 names).
+  A refusal name added to production extends the gate; a payload that starts carrying a meeting word
+  does not. Do not replace it with a hard-coded list.
+- **The completion's RTF is a real field with an unreal number in the GPU-free instrument**
+  (~3e-5, queue waits 0.01-2.9 ms). Generated tokens per window ARE real (77-110 on bill). What the
+  witness costs is §10.6's measurement, and iteration 14's D2 (a witness holds the single in-flight
+  slot) is what that soak has to price.
+- **`decode_salvaged` passed its gate on ZERO occurrences.** No span in the replay instrument
+  reaches the salvage gate -- the grid's decode cache holds different answers for bill span 02 than
+  the deployed 4070 Ti gave on 2026-08-25, which is iteration 4's "the deployed decoder is not a
+  function" from a third direction. The corpus reading is a negative control; the positive control
+  is a T2 test driving a genuinely unparseable answer through the production adapter.
+- **Four of six mutations are caught by T2 ALONE** (a window nobody was waiting for, a refused
+  admission, a refused revision, a salvaged span). Same producer-pacing shape as iterations 11-14:
+  the corpus reading of the stream is necessary and not sufficient.
 - **Defect found and fixed this iteration: plan-before-release loses a window.** `submit_refinement`
   originally planned the next window before releasing the one that had just answered; the arbiter
   refuses a newer witness while one is RUNNING for the same key (§6 M5, correctly), so the window
@@ -475,7 +517,7 @@
   Rolling would turn on in the live service before its events and portal exist, and nothing this
   iteration measured needs the running service. The restart belongs with the paired rerun after
   §10.5 step 7, and must be recorded then.
-- Rest of the ladder (M2 step 3 items 5-7, M3-M5) unimplemented; working tree carries the plan,
+- Rest of the ladder (M2 step 3 items 6-7, M3-M5) unimplemented; working tree carries the plan,
   evidence prototypes, and this scaffold.
 
 ## Validation
@@ -567,8 +609,14 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py
 # its five mutations, in live_coordinator.py / live_service_runtime.py, restored on exit
 prototypes/streaming-diarization/live-convergence/mutate_runtime_rolling.sh /tmp/rolling-mutations
-# runtime wiring tests (dispatch, release, stop-waits, non-terminal failure, salvage gate closed)
+# runtime wiring tests (dispatch, release, stop-waits, non-terminal failure, salvage gate closed,
+# and since iteration 15 the §7.4 event serialization tier)
 .venv/bin/python -m pytest tests/test_live_rolling_wiring.py -q
+# E2 step 5: does the witness tell its whole story on the event stream? (exit 0, no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_rolling_events.py
+# its six mutations, in live_coordinator.py / live_service_runtime.py, restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh /tmp/event-mutations
 # 9-clip identity floor (M3)
 .venv/bin/python -m pytest tests/test_live_identity_real_corpus.py -q
 # full suite checkpoint (before closing a milestone)
@@ -620,17 +668,22 @@ prototypes/streaming-diarization/live-convergence/mutate_runtime_rolling.sh /tmp
    Current state). Do NOT re-open the two-adapter decision or the release-before-plan ordering:
    the first is forced by the manifest's span bound, the second is a measured defect fix that the
    trio corpus cannot see.
-6g. **M2 step 3 items 5-7 - NEXT**, in this fixed order: snapshot/event serialization (§7.3/§7.4;
-   `dataclasses.asdict` already carries the four snapshot fields, so this step is the seven events
-   -- and it is what finally makes a stopped converger, a failed window and an admission refusal
-   visible to a soak, which today only the log and `rolling_accounting()` know) -> portal
-   `effective_transcript` as ONE replacement surface -> export switch **last**, only after
-   terminal/effective export tests pass, in the same reviewed change. Then the headless portal
-   render/serialization test and the 5-minute soak (§10.6). F2 says the duplicate-phrase-at-a-join
-   behaviour ships with this geometry; do not add a de-duplicator without measuring one (the corpus
-   for it is in `M2-rolling-grid/grid.json`). F3 says G6 will be missed; measure it honestly in the
-   soak, and measure D2's serial witness cost there too. Restart `web_cli` onto the build and record
-   it before any paired rerun; file mode must stay byte-identical.
+6g. ~~**M2 step 3 item 5: snapshot/event serialization**~~ - SHIPPED iteration 15 (see Current
+   state). Do NOT add the three `terminal_finalization_*` events here: they are E4's and have no
+   producer, and an event kind with no producer is a contract rather than a serialization. Do NOT
+   replace G4's read-from-production vocabulary with a literal list.
+6h. **M2 step 3 items 6-7 - NEXT**, in this fixed order: portal renders `effective_transcript` as
+   ONE replacement surface (§10.5 step 6; the four §7.3 fields and the five §7.1 segment fields are
+   now proven to reach a client, so this is a render question, not a transport one) -> export switch
+   **last**, only after terminal/effective export tests pass, in the same reviewed change (step 7).
+   Then the headless portal render/serialization test and the 5-minute soak (§10.6). The soak now
+   has a stream to read: `rolling_decode_queued`/`completed` carry queue delay and the decode
+   record, so per-kind queue delay, stale/coalesced counts and rolling correction latency come off
+   the events rather than out of the process. F2 says the duplicate-phrase-at-a-join behaviour ships
+   with this geometry; do not add a de-duplicator without measuring one (the corpus for it is in
+   `M2-rolling-grid/grid.json`). F3 says G6 will be missed; measure it honestly in the soak, and
+   measure D2's serial witness cost there too. Restart `web_cli` onto the build and record it before
+   any paired rerun; file mode must stay byte-identical.
 7. **M3 S1 speaker authority** prototype (`compare_speaker_authority.py` per plan §11.1,
    2.5 s base only) → production wiring.
 8. **M4 terminal finalizer** per plan §12.3 + M4 gates on trio/3-min/5-min (the owner-directed

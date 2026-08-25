@@ -180,3 +180,29 @@ the base runs far ahead of the witness: the converger's `2 x window` ring evicts
 `pcm_evicted`, and rolling stops — degrading to the base path statedly rather than silently. The
 driver now paces the base within two spans, which is what real-time pacing produces. Verdict:
 `evidence/live-convergence-0824/M2-runtime-wiring/`.
+
+```bash
+# E2 step 5: does the rolling witness tell its whole story on the event stream? (no GPU)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/verify_rolling_events.py
+# six mutations, in `live_coordinator.py` / `live_service_runtime.py`, restored on exit
+prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh /tmp/event-mutations
+```
+
+`verify_rolling_events.py` reads the §7.4 events and the §7.3 snapshot rather than the arm. It
+reuses step 4's driver (`verify_runtime_rolling.run_case(..., collect_events=True)`) instead of
+rebuilding one, so the runtime, the deployed configuration and the replayed decode seam are the
+same ones that verifier measured — and it re-checks the arm, because an event that changed what is
+published would not be serialization. Nine gates: one announcement per planned window, one
+completion per admitted window carrying §7.4's whole record, revision events that reconcile with
+the session's own `text_revision_version`, a **payload vocabulary read out of the production
+sources** (36 names) so no payload can carry a word anybody said, JSON round-trip plus replay
+reconstruction of both the events and the snapshot, and salvage named exactly where the disposition
+says it happened.
+
+Two findings worth carrying. The completion's RTF field is real but the *number* here is the replay
+decoder's (~3e-5) — witness cost is §10.6's measurement, not this one's. And four of the six
+mutations are caught by the T2 tests alone: a window nobody was waiting for, a refused admission, a
+refused revision and a salvaged span are all branches sixty seconds of unhurried trio speech never
+takes, so the corpus reading of the stream is necessary and not sufficient. Verdict:
+`evidence/live-convergence-0824/M2-event-serialization/`.

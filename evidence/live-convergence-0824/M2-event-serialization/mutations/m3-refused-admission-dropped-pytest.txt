@@ -1,0 +1,52 @@
+...............F..                                                       [100%]
+=================================== FAILURES ===================================
+_ RollingEventSerializationTest.test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted _
+
+self = <test_live_rolling_wiring.RollingEventSerializationTest testMethod=test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted>
+
+    def test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted(self):
+        """Two halves of one property: the coordinator reports the refusal, the runtime shows it."""
+    
+        arbiter = InferenceArbiter()
+        base, witness = _decoders(rolling=True)
+        session = LiveSession(max_retained_samples=960000)
+        coordinator = LiveCoordinator(
+            session_key="refused",
+            session=session,
+            endpoint_policy=EndpointPolicy(_endpoint_config()),
+            speech_provider=ScriptedSpeech(),
+            decoder=base,
+            identity_preparer=ScriptedIdentity(),
+            arbiter=arbiter,
+            rolling_decoder=witness,
+        )
+        item = _refinement_item(coordinator, arbiter)  # dispatched, so its key is RUNNING
+        request = item.payload.request
+        plans = coordinator._queue_refinement((request,))
+>       self.assertEqual(
+            plans,
+            (
+                RollingWindowPlan(
+                    item_id=None,
+                    window_index=request.window_index,
+                    start_sample=request.start_sample,
+                    end_sample=request.end_sample,
+                ),
+            ),
+        )
+E       AssertionError: Tuples differ: () != (RollingWindowPlan(item_id=None, window_in[38 chars]00),)
+E       
+E       Second tuple contains 1 additional elements.
+E       First extra element 0:
+E       RollingWindowPlan(item_id=None, window_index=0, start_sample=0, end_sample=160000)
+E       
+E       - ()
+E       + (RollingWindowPlan(item_id=None,
+E       +                    window_index=0,
+E       +                    start_sample=0,
+E       +                    end_sample=160000),)
+
+tests/test_live_rolling_wiring.py:617: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_rolling_wiring.py::RollingEventSerializationTest::test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted
+1 failed, 17 passed in 2.23s

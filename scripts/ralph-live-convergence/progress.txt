@@ -1293,3 +1293,118 @@ appended at the iteration 4->5 boundary]
   events -- and it is what finally makes a stopped converger, a failed window and an admission
   refusal visible to a soak. Then the portal, then the export switch LAST. Plan §10.5's order is
   not negotiable.
+
+2026-08-25 iteration 15 (run 20260825-042645-70858) - M2 step 3, item 5 of plan §10.5: the rolling
+  witness now tells its whole story on the event stream, and the §7.3 snapshot is checked on the wire.
+- Target: context.md candidate 6g, the lowest open item. M0's G2, M1's G-M1-1 and M2's
+  D-M2-1/D-M2-2 remain unsigned pending owner rulings and need no more code. §10.5's order is
+  fixed: this is its FIFTH item -- "add snapshot/event serialization". The portal (step 6) and the
+  export switch (step 7, LAST) are each their own iteration.
+- Files touched:
+  moss_transcribe_diarize/app/live_coordinator.py                                (+~60, RollingWindowPlan + result fields)
+  moss_transcribe_diarize/app/live_service_runtime.py                            (+~140, five §7.4 event kinds)
+  tests/test_live_rolling_wiring.py                                              (+~180, 7 T2 tests)
+  prototypes/streaming-diarization/live-convergence/verify_rolling_events.py     (new, nine gates)
+  prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh     (new, 6 mutations)
+  prototypes/streaming-diarization/live-convergence/verify_runtime_rolling.py    (+collect_events, additive)
+  prototypes/streaming-diarization/live-convergence/NOTES.md                     (index + commands)
+  evidence/live-convergence-0824/M2-event-serialization/{NOTES.md,verify.json,verify-console.txt,
+      mutations.txt,mutations/,pytest-targeted.txt,pytest-full.txt,file-mode-{head,worktree}.json,
+      sha256.txt}                                                                (new, 96K)
+  (edited: scripts/ralph-live-convergence/context.md)
+  NO service restart, same decision as iteration 14: rolling still has no portal render and nothing
+  measured here needs the running service. web_cli stays pid 22561 on the M1 build. The restart
+  belongs with the paired rerun after §10.5 step 7 and must be recorded there.
+- Validation:
+  - PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+      prototypes/streaming-diarization/live-convergence/verify_rolling_events.py
+    exit 0. It reuses step 4's driver (`verify_runtime_rolling.run_case(..., collect_events=True)`)
+    so the runtime, the deployed endpoint configuration, real webrtcvad, the real arbiter and the
+    replayed decode seam are the same instrument iteration 14 measured.
+      lex_bill_ackman    queued=6 closed=6 applied=6 refused=0 salvaged=0 segments=21 wer=0.198864
+      lex_javier_milei   queued=6 closed=6 applied=6 refused=0 salvaged=0 segments=14 wer=0.096000
+      lex_keyu_jin       queued=6 closed=6 applied=6 refused=0 salvaged=0 segments=16 wer=0.100719
+      TRIO wer=0.131861 (grid 0.131861) recall=0.943916 (grid 0.943916)
+      payload vocabulary 36 names; 98 decodes, 0 fresh (no GPU)
+    Nine gates: G1 one announcement per planned window, in order, unique ids, 160000 samples;
+    G2 one completion per admitted window carrying §7.4's whole record with no missing field and
+    no impossible timing; G3 the revision events reconcile with the session's own
+    `text_revision_version` and frontier; G4 no payload carries transcript text (vocabulary READ
+    from the production sources); G5 the four §7.3 fields and five §7.1 segment fields survive JSON
+    and replay reconstruction, equal; G6 every event round-trips and reconstructs equal;
+    G7 the arm is unchanged; G8 `decode_salvaged` == the salvaged dispositions, same span ids;
+    G9 zero fresh MOSS requests.
+  - .venv/bin/python -m pytest tests/ -q  ->  1079 passed, 2 skipped, 386 subtests (1072 before).
+  - File-mode decoder A/B against a HEAD worktree: byte-identical, sha256
+    ad381d8bd247e4a8ebe56240dfbc29c0b5a86ffb35a2fcb411c07bbd5b7707f2 -- the same digest since
+    iteration 7, unmoved across six production changes.
+  - prototypes/streaming-diarization/live-convergence/mutate_rolling_events.sh <out>
+    six mutations across live_coordinator.py and live_service_runtime.py; all six caught;
+    control clean before and after.
+- WHAT SHIPPED. Five §7.4 event kinds, which is every one that has a producer today:
+  `rolling_decode_queued` (one per PLANNED window, `admitted=false` / `item_id: null` when the
+  arbiter refused), `rolling_decode_completed` (one per DISPATCHED window on every path, carrying
+  window samples, owned samples, queue delay, decode elapsed, generated tokens, cap status, RTF and
+  the converger's counters, plus an `outcome` from a closed vocabulary),
+  `text_revision_applied` / `text_revision_refused`, and `decode_salvaged`. `canonical_processed`
+  gained `rolling_status`, which is the one place a converger that stops while planning nothing can
+  be seen. The three `terminal_finalization_*` events are E4's and are deliberately absent: an
+  event kind with no producer is a contract, not a serialization. The §7.3 snapshot half needed no
+  new code -- `dataclasses.asdict` has carried the four fields since iteration 12 -- but it is now
+  CHECKED rather than assumed, per case, both through JSON and through the replay reconstructor.
+- THREE DESIGN DECISIONS, each with what it cost:
+  D1 The RUNTIME emits, the COORDINATOR reports. Every event is written in
+     live_service_runtime.py from data the coordinator returns on its results -- a new
+     `RollingWindowPlan`, `rolling_windows` on `CoordinatorFrameResult` / `CoordinatorWorkResult`
+     (with `rolling_status`), and eight new fields on `CoordinatorRefinementResult`. Plan §6 M7 says
+     adapters serialize the authority module's result and implement none of its rules; a runtime
+     reaching into `item.payload` to describe a window would have been a second place that knows
+     what a window is. Cost: three result dataclasses grew.
+  D2 One announcement per PLANNED window, one completion per ADMITTED window. A refusal is
+     announced and never completed (nothing will complete it); a dispatch that never decoded --
+     `not_awaited`, `defect`, `session_terminal` -- is completed with the decode fields NULL rather
+     than zero. So queued minus completed is a live queue depth and can never be a leak. Cost: a
+     `rolling_timing` table keyed by item id in the runtime session, the same shape
+     `canonical_timing` already had, so the completion can describe a window even on the paths
+     where the coordinator never hands the request back.
+  D3 G4's payload vocabulary is READ from production, not listed: `RollingStatus`,
+     `LiveTranscriptDisposition`, the finalization statuses, and the string literals inside
+     `LiveSession._text_revision_refusal` and `LiveServiceRuntime._process_refinement_item`
+     (36 names). A refusal name added to production extends the gate automatically; a payload that
+     starts carrying a word somebody said does not. Cost: two `inspect.getsource` regexes, and it is
+     worth more than the hard-coded list it replaces -- which would have gone stale on the first new
+     refusal name.
+- MUTATIONS, six, across two production files (backed up, restored by a trap on exit):
+    M1 a planned window is never announced        -> verifier (G1: 0 announced vs 6 planned) + T2
+    M2 only a window that decoded is closed       -> T2 ONLY
+    M3 a refused admission is dropped             -> T2 ONLY
+    M4 a refusal is announced as an application   -> T2 ONLY
+    M5 the completion omits §7.4's decode record  -> verifier (G2) + T2
+    M6 a salvaged span is not named               -> T2 ONLY
+- Learned:
+  - `decode_salvaged` passed its gate on ZERO occurrences, and that is a finding rather than a
+    vacuous pass. No span in the replay instrument reaches the salvage gate: the §10.2 grid's decode
+    cache holds different answers for bill span 02 than the deployed 4070 Ti gave on 2026-08-25.
+    That is iteration 4's "the deployed decoder is not a function" seen from a third direction. The
+    corpus reading is therefore a negative control (no spurious events) and the positive control is
+    a T2 test driving a genuinely unparseable answer through the production adapter and the runtime.
+  - The completion's RTF is a real field with an unreal number in the GPU-free instrument (~3e-5,
+    queue waits 0.01-2.9 ms). Generated tokens per window ARE real -- 77 to 110 on bill. What the
+    witness actually costs is §10.6's measurement, and iteration 14's D2 (a witness holds the
+    session's single in-flight slot while it decodes) is the thing that soak has to price.
+  - Four of six mutations are caught by the T2 tier ALONE, each for a stated reason: a window nobody
+    was waiting for needs a dispatch after stop; a refused admission needs the base a whole window
+    ahead; a refused revision needs a producer race; a salvaged span needs a decode this cache does
+    not contain. Same producer-pacing shape as iterations 11-14. The corpus reading of an event
+    stream is necessary and not sufficient, and that is now four iterations of the same lesson.
+  - A test double that omits a field lets a production omission pass: `ScriptedDecoder` returned no
+    `token_cap`, so the first run of the completion test failed on the double rather than on the
+    code. It now reports the cap the way the real adapter does
+    (`canonical_decode_token_cap(sample_count=...)`), which is what a double emulating an adapter
+    owes.
+- Next: M2 step 3 item 6 = the portal renders `effective_transcript` as ONE replacement surface
+  (context.md candidate 6h). The transport question is now answered -- the four §7.3 fields and the
+  five §7.1 segment fields provably reach a client and reconstruct equal -- so step 6 is a render
+  question. Then the export switch LAST (step 7), the headless portal render/serialization test,
+  and the §10.6 soak, which now has a stream to read its queue delay and stale/coalesced counts off.
+  Plan §10.5's order is not negotiable.
