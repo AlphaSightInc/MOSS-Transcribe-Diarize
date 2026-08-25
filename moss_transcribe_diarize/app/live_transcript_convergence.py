@@ -586,6 +586,12 @@ class TerminalFinalizationAccounting:
     and a step that can partly fail: a local speaker the meeting's album has no counterpart
     for is published unattributed, and a reader who is told only "terminal finalized" cannot
     see that. `mapped_speakers` against `local_speakers` is that difference, per meeting.
+
+    The three `seam_*` fields are the same idea for the other step this adapter performs.
+    File mode's windows may decode one stretch of audio twice (`_stitch_segments` keeps a
+    segment whose *midpoint* its window owns), and a live surface may not hold two owners
+    for one interval, so `resolve_terminal_overlaps` joins them before publication. A reader
+    told only "terminal finalized, 37 segments" cannot see that the decoder emitted 38.
     """
 
     outcome: TerminalOutcome
@@ -605,6 +611,9 @@ class TerminalFinalizationAccounting:
     local_speakers: int
     mapped_speakers: int
     unattributed_segments: int
+    seam_merged_segments: int
+    seam_dropped_segments: int
+    seam_displaced_samples: int
     rolling_through_sample: int
     rolling_status: str
     window_seconds: float | None
@@ -630,6 +639,9 @@ class TerminalFinalizationAccounting:
             "local_speakers": self.local_speakers,
             "mapped_speakers": self.mapped_speakers,
             "unattributed_segments": self.unattributed_segments,
+            "seam_merged_segments": self.seam_merged_segments,
+            "seam_dropped_segments": self.seam_dropped_segments,
+            "seam_displaced_samples": self.seam_displaced_samples,
             "rolling_through_sample": self.rolling_through_sample,
             "rolling_status": self.rolling_status,
             "window_seconds": self.window_seconds,
@@ -677,6 +689,87 @@ class WholeMeetingRunner(Protocol):
 
     def transcribe(self, audio_path: Any, **kwargs: Any) -> Any:
         ...
+
+
+@dataclass(frozen=True, slots=True)
+class TerminalSeamResolution:
+    """What resolving a terminal proposal's window seams cost the proposal.
+
+    `segments` are `(local_speaker, start_sample, end_sample, text)` in publication order:
+    sorted, strictly advancing and pairwise disjoint. The three counts are the price, so a
+    surface that was rewritten before publication says by how much.
+    """
+
+    segments: tuple[tuple[str, int, int, str], ...]
+    merged: int
+    dropped: int
+    displaced_samples: int
+
+
+#: The resolution of a pass that produced no segments to resolve.
+EMPTY_SEAM_RESOLUTION = TerminalSeamResolution(segments=(), merged=0, dropped=0, displaced_samples=0)
+
+
+def resolve_terminal_overlaps(
+    placed: Sequence[tuple[str, int, int, str]],
+) -> TerminalSeamResolution:
+    """Make a whole-meeting decode publishable on a live surface, without inventing a boundary.
+
+    File mode stitches its 150/120 windows by *midpoint ownership*: a segment survives if the
+    window that decoded it owns its midpoint. Two windows overlap by 30 seconds, so two
+    segments straddling the seam can each own their midpoint and both survive -- one stretch
+    of audio, decoded twice, published twice. A file transcript may say that. A live surface
+    may not: `LiveSession._text_revision_refusal` rejects the whole proposal
+    `segments_out_of_order`, and ADR-0005 D4 (one owner per interval) is what that enforces.
+    Measured on the campaign corpus, this is rare and real: one overlapping pair in twelve
+    file arms, on the only meeting long enough to plan two windows, and it cost that meeting
+    its entire terminal surface (`evidence/live-convergence-0824/M4-e4-exit/`).
+
+    The rule this implements was selected by measurement, not preference
+    (`evidence/live-convergence-0824/M4-seam-overlap/`, six preregistered gates over five
+    arms): **one speaker's overlapping decodings become one segment over the union of their
+    extents, with their texts joined in order**; two *different* local speakers over one
+    interval fall back to the later one yielding the audio the earlier one already owns.
+    Merging wins because it displaces no extent -- of the three arms that tie on every scored
+    axis (WER, DER, content recall, matched-word speaker accuracy) it is the only one that
+    neither shortens a segment nor asserts silence where the decoder heard speech, and the one
+    arm that shortens the transcript (`drop_later`) deletes seven of that meeting's words.
+
+    Every boundary emitted is one the decoder produced (plan §3.4: the campaign never invents
+    a timestamp). A proposal with no overlaps is returned unchanged apart from its order.
+    """
+
+    out: list[tuple[str, int, int, str]] = []
+    merged = dropped = displaced = 0
+    # Ties keep parse order: `sorted` is stable, and two segments with the same extent are
+    # two decodings of one stretch whose order is the decoder's own.
+    for speaker, start, end, text in sorted(placed, key=lambda item: (item[1], item[2])):
+        if out and start < out[-1][2]:
+            previous_speaker, previous_start, previous_end, previous_text = out[-1]
+            if previous_speaker == speaker:
+                out[-1] = (
+                    previous_speaker,
+                    previous_start,
+                    max(previous_end, end),
+                    # A single space is the join: the scorer concatenates a hypothesis with
+                    # `" ".join(...)` before it tokenizes, so the word stream is unchanged.
+                    f"{previous_text} {text}",
+                )
+                merged += 1
+                continue
+            frontier = max(start, previous_end)
+            if end <= frontier:
+                # Contained in what the other speaker owns: there is no interval left to
+                # publish it over, and inventing one is the thing this may not do.
+                dropped += 1
+                displaced += end - start
+                continue
+            displaced += frontier - start
+            start = frontier
+        out.append((speaker, start, end, text))
+    return TerminalSeamResolution(
+        segments=tuple(out), merged=merged, dropped=dropped, displaced_samples=displaced
+    )
 
 
 class TerminalTranscriptFinalizer:
@@ -748,7 +841,7 @@ class TerminalTranscriptFinalizer:
                 )
             elapsed_sec = time.monotonic() - started
 
-        segments, local_speakers, mapping = self._segments_of(
+        segments, local_speakers, mapping, resolution = self._segments_of(
             result, end_sample=plan.end_sample, base_surface=base_surface,
             canonical_speakers=canonical_speakers,
         )
@@ -763,6 +856,7 @@ class TerminalTranscriptFinalizer:
             segments=segments,
             local_speakers=local_speakers,
             mapping=mapping,
+            resolution=resolution,
         )
         if not segments:
             return TerminalFinalization(proposal=None, accounting=accounting)
@@ -788,7 +882,12 @@ class TerminalTranscriptFinalizer:
         end_sample: int,
         base_surface: Sequence[EffectiveTranscriptSegment],
         canonical_speakers: Sequence[str],
-    ) -> tuple[tuple[EffectiveTranscriptSegment, ...], tuple[str, ...], dict[str, str]]:
+    ) -> tuple[
+        tuple[EffectiveTranscriptSegment, ...],
+        tuple[str, ...],
+        dict[str, str],
+        TerminalSeamResolution,
+    ]:
         """The whole meeting's words on the session clock, attributed to the meeting's people.
 
         `span_segments` is this codebase's one reader of the transcript grammar and clamps
@@ -808,9 +907,15 @@ class TerminalTranscriptFinalizer:
             if end <= start:
                 continue
             placed.append((item.speaker, start, end, item.text))
-        local_speakers = tuple(sorted({speaker for speaker, _, _, _ in placed}))
+        # Before the names are decided, not after: the seam rule joins two decodings of one
+        # *local* speaker, and two locals that the mapping happens to send to one person are
+        # two people as far as the decoder is concerned (measured as a different rule).
+        resolution = resolve_terminal_overlaps(placed)
+        # Read off what is actually proposed, so `mapped_speakers` and
+        # `unattributed_segments` describe the surface the session is offered.
+        local_speakers = tuple(sorted({speaker for speaker, _, _, _ in resolution.segments}))
         mapping = terminal_speaker_mapping(
-            placed, base_surface=base_surface, canonical_speakers=canonical_speakers
+            resolution.segments, base_surface=base_surface, canonical_speakers=canonical_speakers
         )
         return (
             tuple(
@@ -821,10 +926,11 @@ class TerminalTranscriptFinalizer:
                     canonical_speaker=mapping.get(speaker),
                     authority="terminal",
                 )
-                for speaker, start, end, text in placed
+                for speaker, start, end, text in resolution.segments
             ),
             local_speakers,
             mapping,
+            resolution,
         )
 
     def _refused(
@@ -866,6 +972,7 @@ class TerminalTranscriptFinalizer:
         segments: tuple[EffectiveTranscriptSegment, ...],
         local_speakers: tuple[str, ...],
         mapping: Mapping[str, str],
+        resolution: TerminalSeamResolution = EMPTY_SEAM_RESOLUTION,
     ) -> TerminalFinalizationAccounting:
         window_count = int(getattr(result, "window_count", 0) or 0)
         return TerminalFinalizationAccounting(
@@ -888,6 +995,9 @@ class TerminalTranscriptFinalizer:
             unattributed_segments=sum(
                 1 for segment in segments if segment.canonical_speaker is None
             ),
+            seam_merged_segments=resolution.merged,
+            seam_dropped_segments=resolution.dropped,
+            seam_displaced_samples=resolution.displaced_samples,
             rolling_through_sample=plan.rolling_through_sample,
             rolling_status=plan.rolling_status.value,
             window_seconds=_optional_float(getattr(self.runner, "window_seconds", None)),

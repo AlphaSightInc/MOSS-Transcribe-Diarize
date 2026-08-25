@@ -1,0 +1,3497 @@
+{
+  "accounting_vocabulary": [
+    "decode_failed",
+    "failed",
+    "finalized",
+    "no_transcript",
+    "pcm_evicted",
+    "rolling",
+    "running",
+    "stopped",
+    "tape_unavailable",
+    "unavailable",
+    "window_failed"
+  ],
+  "arms": {
+    "mapped": {
+      "lex_bill_ackman": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]"
+          ],
+          [
+            40000,
+            80000,
+            "[0][S02]to kind of weigh it. He talked about[2.42]"
+          ],
+          [
+            80000,
+            120000,
+            ""
+          ],
+          [
+            120000,
+            160000,
+            "[0][S03]It in the short term is a voting machine. It represents[2.48]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S04]Sense speculative interests.[2.42]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S05]Supply and demand of people in the short term.[2.48]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.31][S06]But in the long term, it's the stock market's a weighing machine.[2.49]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S07]mean, you know, much more accurate. It's going[2.48]"
+          ],
+          [
+            320000,
+            360000,
+            "[0][S08]Tell you what something is worth. And so if you can.[2.16]"
+          ],
+          [
+            360000,
+            400000,
+            "[0.12][S09]Divine what something's worth, then you can really take[2.49]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S10]advantage of the market because it's really here to to help[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S11]You and that's kind of the message of the book.[1.74][2.13][S12]And that's.[2.46]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]Same way, there's a kind of difference between speculation.[2.48]"
+          ],
+          [
+            520000,
+            560000,
+            "[0][S14]In a investing.[1.28][1.38][S15]Yeah.[1.68][1.71][S14]Speculation.[2.45]"
+          ],
+          [
+            560000,
+            600000,
+            "[0][S16]It's just, it's a bit like buying.[2.12]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]Trading crypto.[1.74][2.28][S00]Right.[2.5]"
+          ],
+          [
+            640000,
+            680000,
+            "[0][S00]That you're.[0.54][0.68][S00]Strong words.[1.44][2.18][S00]Well.[2.46]"
+          ],
+          [
+            680000,
+            720000,
+            "[0.54][S00]Uh, short term trading crypto.[2.28]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Maybe in the long run, there's intrinsic value, but.[1.94]"
+          ],
+          [
+            760000,
+            800000,
+            "[0.06][S00]Uh, the.[1.44]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.08][S00]You know, it's many investors, you know.[2.44]"
+          ],
+          [
+            840000,
+            880000,
+            "[0][S00]In a bubble going into the, you know.[2.5]"
+          ],
+          [
+            880000,
+            920000,
+            "[0.08][S00]The crash, we're really.[2.44]"
+          ],
+          [
+            920000,
+            960000,
+            "[0][S00]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+          ]
+        ],
+        "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+        "committed_samples": 960000,
+        "effective_segments": 21,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 208000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.033879749942570925,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 340,
+            "local_speakers": 2,
+            "mapped_speakers": 2,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 18,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 0,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+          "decoded_wav_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.198864,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.0,
+            "text_speaker_accuracy": 0.0,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 0.9318181818181818,
+            "coverage": 0.952215,
+            "der": 0.0755,
+            "der_confusion": 0.0245,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.051,
+            "hypothesis_seconds": 56.94,
+            "hypothesis_words": 184,
+            "mean_segment_seconds": 3.163333333333333,
+            "recovered_words": 164,
+            "reference_words": 176,
+            "segments": 18,
+            "tbsa": 0.918756,
+            "text_speaker_accuracy": 0.938134,
+            "wer": 0.159091
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              8640,
+              52320,
+              "S03",
+              "To figure out what something's worth and you have to kind of weigh it."
+            ],
+            [
+              65280,
+              142080,
+              "S03",
+              "He talked about the difference between, you said the stock market in the short term is a voting"
+            ],
+            [
+              142080,
+              152640,
+              "S03",
+              "machine."
+            ],
+            [
+              152640,
+              244320,
+              "S03",
+              "It represents speculative interests, you know, supply and demand of people in the short term."
+            ],
+            [
+              244320,
+              314880,
+              "S03",
+              "But in the long term, the stock market is a weighing machine, you're much more accurate."
+            ],
+            [
+              314880,
+              341760,
+              "S03",
+              "It's going to tell you what something's worth."
+            ],
+            [
+              341760,
+              408000,
+              "S03",
+              "And so if you can divine what something's worth, then you can really take advantage of"
+            ],
+            [
+              408000,
+              444960,
+              "S03",
+              "the market because it's really here to to help you."
+            ],
+            [
+              448320,
+              468000,
+              "S03",
+              "And that's kind of the message of the book."
+            ],
+            [
+              473760,
+              540480,
+              "S13",
+              "And that same way, there's a kind of difference between speculation and investing."
+            ],
+            [
+              541920,
+              641760,
+              "S03",
+              "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+            ],
+            [
+              641760,
+              647040,
+              "S03",
+              "You're"
+            ],
+            [
+              650880,
+              662880,
+              "S13",
+              "Strong words."
+            ],
+            [
+              674880,
+              747360,
+              "S03",
+              "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+            ],
+            [
+              747360,
+              881280,
+              "S03",
+              "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+            ],
+            [
+              881280,
+              932640,
+              "S03",
+              "the crash were really just pure speculators."
+            ],
+            [
+              932640,
+              949920,
+              "S03",
+              "They didn't know what things were worth."
+            ],
+            [
+              949920,
+              959040,
+              "S03",
+              "They just knew they were"
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.11][S01]So, what is the difference?[2.41]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.25][S02]Between a madman and a genius.[2.49]"
+          ],
+          [
+            80000,
+            84480,
+            "[0][S03]S[0.06]"
+          ],
+          [
+            84480,
+            108320,
+            ""
+          ],
+          [
+            108320,
+            127040,
+            "[0.11][S04]Success.[0.92]"
+          ],
+          [
+            127040,
+            152320,
+            ""
+          ],
+          [
+            152320,
+            192320,
+            "[1.29][S05]The following is a conversation.[2.48]"
+          ],
+          [
+            192320,
+            232320,
+            "[0.08][S06]...with Javier Malley, the president.[2.44]"
+          ],
+          [
+            232320,
+            254880,
+            "[0.24][S07]of Argentina.[1.12]"
+          ],
+          [
+            254880,
+            259680,
+            "[0][S08]Yeah.[0.24]"
+          ],
+          [
+            259680,
+            299680,
+            "[0.12][S09]He is a libertarian, a narco-[2.42]"
+          ],
+          [
+            299680,
+            339680,
+            "[0][S10]Capitalist and economist.[2.12]"
+          ],
+          [
+            339680,
+            379680,
+            "[0][S11]who campaigned with a chainsaw.[2]"
+          ],
+          [
+            379680,
+            380640,
+            ""
+          ],
+          [
+            380640,
+            420640,
+            "[0][S12]That symbolized his promise to slash[2.44]"
+          ],
+          [
+            420640,
+            460640,
+            "[0][S13]The corrupt bureaucracy of the state.[1.88]"
+          ],
+          [
+            460640,
+            466240,
+            "[0][S14]\u55ef\u3002[0.22]"
+          ],
+          [
+            466240,
+            506240,
+            "[0.13][S15]He stepped into the presidency one year.[2.47]"
+          ],
+          [
+            506240,
+            546240,
+            "[0.07][S16]ago, with a country on the brink of hyperinflation.[2.45]"
+          ],
+          [
+            546240,
+            586240,
+            "[0][S00]Inflation, deepened debt, and suffering.[2.46]"
+          ],
+          [
+            586240,
+            626240,
+            "[0.29][S00]For mass unemployment and poverty.[2.31]"
+          ],
+          [
+            626240,
+            629760,
+            "[0][S00]Mm.[0.12]"
+          ],
+          [
+            629760,
+            636160,
+            "[0][S00]Yeah.[0.36]"
+          ],
+          [
+            636160,
+            676160,
+            "[0.22][S00]He took this crisis head on.[2.29]"
+          ],
+          [
+            676160,
+            716160,
+            "[0][S00]transforming one of Latin America's largest[2.44]"
+          ],
+          [
+            716160,
+            756160,
+            "[0][S00]Economies through pure free market.[2.44]"
+          ],
+          [
+            756160,
+            796160,
+            "[0][S00]Principles. In just a few months,[2.46]"
+          ],
+          [
+            796160,
+            836160,
+            "[0][S00]In office, he already achieved RGT.[2.44]"
+          ],
+          [
+            836160,
+            876160,
+            "[0.08][S00]First fiscal surplus in 16 years.[2.48]"
+          ],
+          [
+            876160,
+            916160,
+            "[0.08][S00]Years and not just avoided the hyperinflation.[2.48]"
+          ],
+          [
+            916160,
+            956160,
+            "[0.53][S00]But brought inflation down.[2.49]"
+          ],
+          [
+            956160,
+            960000,
+            ""
+          ]
+        ],
+        "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+        "committed_samples": 960000,
+        "effective_segments": 14,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            84480,
+            "end_silence"
+          ],
+          [
+            84480,
+            108320,
+            "leading_silence"
+          ],
+          [
+            108320,
+            127040,
+            "end_silence"
+          ],
+          [
+            127040,
+            152320,
+            "leading_silence"
+          ],
+          [
+            152320,
+            192320,
+            "hard_cap"
+          ],
+          [
+            192320,
+            232320,
+            "hard_cap"
+          ],
+          [
+            232320,
+            254880,
+            "end_silence"
+          ],
+          [
+            254880,
+            259680,
+            "leading_silence"
+          ],
+          [
+            259680,
+            299680,
+            "hard_cap"
+          ],
+          [
+            299680,
+            339680,
+            "hard_cap"
+          ],
+          [
+            339680,
+            379680,
+            "hard_cap"
+          ],
+          [
+            379680,
+            380640,
+            "leading_silence"
+          ],
+          [
+            380640,
+            420640,
+            "hard_cap"
+          ],
+          [
+            420640,
+            460640,
+            "hard_cap"
+          ],
+          [
+            460640,
+            466240,
+            "leading_silence"
+          ],
+          [
+            466240,
+            506240,
+            "hard_cap"
+          ],
+          [
+            506240,
+            546240,
+            "hard_cap"
+          ],
+          [
+            546240,
+            586240,
+            "hard_cap"
+          ],
+          [
+            586240,
+            626240,
+            "hard_cap"
+          ],
+          [
+            626240,
+            629760,
+            "end_silence"
+          ],
+          [
+            629760,
+            636160,
+            "leading_silence"
+          ],
+          [
+            636160,
+            676160,
+            "hard_cap"
+          ],
+          [
+            676160,
+            716160,
+            "hard_cap"
+          ],
+          [
+            716160,
+            756160,
+            "hard_cap"
+          ],
+          [
+            756160,
+            796160,
+            "hard_cap"
+          ],
+          [
+            796160,
+            836160,
+            "hard_cap"
+          ],
+          [
+            836160,
+            876160,
+            "hard_cap"
+          ],
+          [
+            876160,
+            916160,
+            "hard_cap"
+          ],
+          [
+            916160,
+            956160,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 240000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.029405790963210166,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 275,
+            "local_speakers": 2,
+            "mapped_speakers": 2,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 20,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 0,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+          "decoded_wav_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.096,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.0,
+            "text_speaker_accuracy": 0.0,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 0.92,
+            "coverage": 0.870992,
+            "der": 0.151833,
+            "der_confusion": 0.0,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.151833,
+            "hypothesis_seconds": 50.889999999999986,
+            "hypothesis_words": 120,
+            "mean_segment_seconds": 2.5444999999999993,
+            "recovered_words": 115,
+            "reference_words": 125,
+            "segments": 20,
+            "tbsa": 0.881244,
+            "text_speaker_accuracy": 0.870992,
+            "wer": 0.088
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              1760,
+              80640,
+              "S01",
+              "So what is the difference between a madman and a genius?"
+            ],
+            [
+              110080,
+              123840,
+              "S01",
+              "Success?"
+            ],
+            [
+              174080,
+              222080,
+              "S12",
+              "The following is a conversation with Javier Mal\u00e9,"
+            ],
+            [
+              222560,
+              251360,
+              "S12",
+              "the president of Argentina."
+            ],
+            [
+              261600,
+              340000,
+              "S12",
+              "He is a libertarian, anarcho-capitalist and economist"
+            ],
+            [
+              340480,
+              382080,
+              "S12",
+              "who campaigned with a chainsaw"
+            ],
+            [
+              382560,
+              412480,
+              "S12",
+              "that symbolized his promise"
+            ],
+            [
+              412960,
+              451360,
+              "S12",
+              "to slash the corrupt bureaucracy of the state."
+            ],
+            [
+              468480,
+              522400,
+              "S12",
+              "He stepped into the presidency one year ago"
+            ],
+            [
+              522880,
+              558560,
+              "S12",
+              "with the country on the brink of hyperinflation,"
+            ],
+            [
+              559040,
+              591040,
+              "S12",
+              "deep in debt and suffering"
+            ],
+            [
+              591520,
+              624160,
+              "S12",
+              "for mass unemployment and poverty."
+            ],
+            [
+              640160,
+              673280,
+              "S12",
+              "He took this crisis head-on,"
+            ],
+            [
+              673760,
+              727680,
+              "S12",
+              "transforming one of Latin America's largest economies"
+            ],
+            [
+              728160,
+              766080,
+              "S12",
+              "through pure free-market principles."
+            ],
+            [
+              780480,
+              812480,
+              "S12",
+              "In just a few months in office,"
+            ],
+            [
+              812960,
+              840160,
+              "S12",
+              "he already achieved Argentina's"
+            ],
+            [
+              840640,
+              890400,
+              "S12",
+              "first fiscal surplus in 16 years"
+            ],
+            [
+              890880,
+              924960,
+              "S12",
+              "and not just avoided the hyperinflation,"
+            ],
+            [
+              925440,
+              959680,
+              "S12",
+              "but brought inflation down."
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0][S01]Kind of the same thing. There's paternalism.[2.24]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.15][S02]Uh, they think that they're responsible for you.[2.47]"
+          ],
+          [
+            80000,
+            120000,
+            "[0][S03]Um but uh.[1.98]"
+          ],
+          [
+            120000,
+            160000,
+            "[0][S04]deference, a certain amount of deference to authority.[2.46]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S05]is not blind submission. It's[2.44]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S06]Been written implicitly in our contract.[2.22]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.08][S07]Uh, for thousands of years that in exchange[2.48]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S08]change for some deference uh[2.5]"
+          ],
+          [
+            320000,
+            360000,
+            "[0.11][S09]We are given stability.[2.47]"
+          ],
+          [
+            360000,
+            400000,
+            "[0][S10]Security and peace and hopefully prosperity.[2.16]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S11]So there is some element that we have in the West.[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S12]Of freedom of the individual. So[2.44]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]A little bit of the rebel is allowed.[2.44]"
+          ],
+          [
+            520000,
+            560000,
+            "[0.35][S14]Uh, in balance with the difference.[2.5]"
+          ],
+          [
+            560000,
+            600000,
+            "[0.07][S15]Authority.[0.63][0.92][S16]Yeah, absolutely. Without that.[2.48]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]How can you have this radical, dynamic entrepreneur?[2.44]"
+          ],
+          [
+            640000,
+            680000,
+            "[0.08][S00]Normalism you see in China.[1.74]"
+          ],
+          [
+            680000,
+            720000,
+            "[0][S00]You don't have a sense of self, a sense of.[2.48]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Of the fact that you can find.[2.48]"
+          ],
+          [
+            760000,
+            800000,
+            "[0][S00]Find opportunities, you look for opportunities, you.[2.24]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.15][S00]You you drive opportunities.[2.39]"
+          ],
+          [
+            840000,
+            880000,
+            "[0.28][S00]Um, it's all self motivated.[1.96]"
+          ],
+          [
+            880000,
+            920000,
+            "[0][S00]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]"
+          ],
+          [
+            920000,
+            960000,
+            "[0.21][S00]In China, it's able to dream to be[2.43]"
+          ]
+        ],
+        "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+        "committed_samples": 960000,
+        "effective_segments": 16,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 208000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.030682084034197032,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 259,
+            "local_speakers": 2,
+            "mapped_speakers": 2,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 10,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 0,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+          "decoded_wav_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.100719,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.0,
+            "text_speaker_accuracy": 0.0,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 1.0,
+            "coverage": 0.936387,
+            "der": 0.079,
+            "der_confusion": 0.011333,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.067667,
+            "hypothesis_seconds": 55.93999999999999,
+            "hypothesis_words": 148,
+            "mean_segment_seconds": 5.593999999999999,
+            "recovered_words": 139,
+            "reference_words": 139,
+            "segments": 10,
+            "tbsa": 0.9317,
+            "text_speaker_accuracy": 0.92538,
+            "wer": 0.064748
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              0,
+              84480,
+              "S07",
+              "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+            ],
+            [
+              98240,
+              191360,
+              "S07",
+              "But deference, a certain amount of deference to authority is not blind submission."
+            ],
+            [
+              192960,
+              307840,
+              "S07",
+              "It's been written implicitly in our contract for thousands of years that in exchange for some deference,"
+            ],
+            [
+              321920,
+              394880,
+              "S07",
+              "we are given stability, security, and peace, and hopefully prosperity."
+            ],
+            [
+              400640,
+              471040,
+              "S11",
+              "So there is some element that we have in the West of freedom of the individual."
+            ],
+            [
+              476160,
+              570240,
+              "S11",
+              "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+            ],
+            [
+              574080,
+              667520,
+              "S07",
+              "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?"
+            ],
+            [
+              678400,
+              791040,
+              "S07",
+              "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,"
+            ],
+            [
+              791360,
+              871680,
+              "S07",
+              "you you you drive opportunities, it's all self motivated."
+            ],
+            [
+              879360,
+              958080,
+              "S11",
+              "Is there still a young kid in China that's able to dream to be?"
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      }
+    },
+    "projected": {
+      "lex_bill_ackman": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.51][S01]To figure out what something's worth.[1.77][2.22][S01]And you have[2.5]"
+          ],
+          [
+            40000,
+            80000,
+            "[0][S02]to kind of weigh it. He talked about[2.42]"
+          ],
+          [
+            80000,
+            120000,
+            ""
+          ],
+          [
+            120000,
+            160000,
+            "[0][S03]It in the short term is a voting machine. It represents[2.48]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S04]Sense speculative interests.[2.42]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S05]Supply and demand of people in the short term.[2.48]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.31][S06]But in the long term, it's the stock market's a weighing machine.[2.49]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S07]mean, you know, much more accurate. It's going[2.48]"
+          ],
+          [
+            320000,
+            360000,
+            "[0][S08]Tell you what something is worth. And so if you can.[2.16]"
+          ],
+          [
+            360000,
+            400000,
+            "[0.12][S09]Divine what something's worth, then you can really take[2.49]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S10]advantage of the market because it's really here to to help[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S11]You and that's kind of the message of the book.[1.74][2.13][S12]And that's.[2.46]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]Same way, there's a kind of difference between speculation.[2.48]"
+          ],
+          [
+            520000,
+            560000,
+            "[0][S14]In a investing.[1.28][1.38][S15]Yeah.[1.68][1.71][S14]Speculation.[2.45]"
+          ],
+          [
+            560000,
+            600000,
+            "[0][S16]It's just, it's a bit like buying.[2.12]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]Trading crypto.[1.74][2.28][S00]Right.[2.5]"
+          ],
+          [
+            640000,
+            680000,
+            "[0][S00]That you're.[0.54][0.68][S00]Strong words.[1.44][2.18][S00]Well.[2.46]"
+          ],
+          [
+            680000,
+            720000,
+            "[0.54][S00]Uh, short term trading crypto.[2.28]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Maybe in the long run, there's intrinsic value, but.[1.94]"
+          ],
+          [
+            760000,
+            800000,
+            "[0.06][S00]Uh, the.[1.44]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.08][S00]You know, it's many investors, you know.[2.44]"
+          ],
+          [
+            840000,
+            880000,
+            "[0][S00]In a bubble going into the, you know.[2.5]"
+          ],
+          [
+            880000,
+            920000,
+            "[0.08][S00]The crash, we're really.[2.44]"
+          ],
+          [
+            920000,
+            960000,
+            "[0][S00]Just pure speculators. They didn't know what things were worth. They just knew they were[2.46]"
+          ]
+        ],
+        "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+        "committed_samples": 960000,
+        "effective_segments": 21,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 208000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9261363636363636,
+          "coverage": 0.917557,
+          "der": 0.666667,
+          "der_confusion": 0.577333,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.089333,
+          "hypothesis_seconds": 54.64,
+          "hypothesis_words": 190,
+          "mean_segment_seconds": 2.6019047619047617,
+          "recovered_words": 163,
+          "reference_words": 176,
+          "segments": 21,
+          "tbsa": 0.637715,
+          "text_speaker_accuracy": 0.290715,
+          "wer": 0.198864
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.0308527909219265,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 340,
+            "local_speakers": 2,
+            "mapped_speakers": 0,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 18,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 18,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "a847e97ebc7d44e5a04698b9e1e22ff9f7cc9394f03660e6025a18c5358a7793",
+          "decoded_wav_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.198864,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.572,
+            "text_speaker_accuracy": -0.628868,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 0.9318181818181818,
+            "coverage": 0.952215,
+            "der": 0.6475,
+            "der_confusion": 0.5965,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.051,
+            "hypothesis_seconds": 56.94,
+            "hypothesis_words": 184,
+            "mean_segment_seconds": 3.163333333333333,
+            "recovered_words": 164,
+            "reference_words": 176,
+            "segments": 18,
+            "tbsa": 0.667209,
+            "text_speaker_accuracy": 0.309266,
+            "wer": 0.159091
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              8640,
+              52320,
+              "S01",
+              "To figure out what something's worth and you have to kind of weigh it."
+            ],
+            [
+              65280,
+              142080,
+              "S03",
+              "He talked about the difference between, you said the stock market in the short term is a voting"
+            ],
+            [
+              142080,
+              152640,
+              "S03",
+              "machine."
+            ],
+            [
+              152640,
+              244320,
+              "S05",
+              "It represents speculative interests, you know, supply and demand of people in the short term."
+            ],
+            [
+              244320,
+              314880,
+              "S06",
+              "But in the long term, the stock market is a weighing machine, you're much more accurate."
+            ],
+            [
+              314880,
+              341760,
+              "S08",
+              "It's going to tell you what something's worth."
+            ],
+            [
+              341760,
+              408000,
+              "S09",
+              "And so if you can divine what something's worth, then you can really take advantage of"
+            ],
+            [
+              408000,
+              444960,
+              "S10",
+              "the market because it's really here to to help you."
+            ],
+            [
+              448320,
+              468000,
+              "S11",
+              "And that's kind of the message of the book."
+            ],
+            [
+              473760,
+              540480,
+              "S13",
+              "And that same way, there's a kind of difference between speculation and investing."
+            ],
+            [
+              541920,
+              641760,
+              "S16",
+              "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+            ],
+            [
+              641760,
+              647040,
+              "S00",
+              "You're"
+            ],
+            [
+              650880,
+              662880,
+              "S00",
+              "Strong words."
+            ],
+            [
+              674880,
+              747360,
+              "S00",
+              "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+            ],
+            [
+              747360,
+              881280,
+              "S00",
+              "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+            ],
+            [
+              881280,
+              932640,
+              "S00",
+              "the crash were really just pure speculators."
+            ],
+            [
+              932640,
+              949920,
+              "S00",
+              "They didn't know what things were worth."
+            ],
+            [
+              949920,
+              959040,
+              "S00",
+              "They just knew they were"
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_javier_milei": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0.11][S01]So, what is the difference?[2.41]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.25][S02]Between a madman and a genius.[2.49]"
+          ],
+          [
+            80000,
+            84480,
+            "[0][S03]S[0.06]"
+          ],
+          [
+            84480,
+            108320,
+            ""
+          ],
+          [
+            108320,
+            127040,
+            "[0.11][S04]Success.[0.92]"
+          ],
+          [
+            127040,
+            152320,
+            ""
+          ],
+          [
+            152320,
+            192320,
+            "[1.29][S05]The following is a conversation.[2.48]"
+          ],
+          [
+            192320,
+            232320,
+            "[0.08][S06]...with Javier Malley, the president.[2.44]"
+          ],
+          [
+            232320,
+            254880,
+            "[0.24][S07]of Argentina.[1.12]"
+          ],
+          [
+            254880,
+            259680,
+            "[0][S08]Yeah.[0.24]"
+          ],
+          [
+            259680,
+            299680,
+            "[0.12][S09]He is a libertarian, a narco-[2.42]"
+          ],
+          [
+            299680,
+            339680,
+            "[0][S10]Capitalist and economist.[2.12]"
+          ],
+          [
+            339680,
+            379680,
+            "[0][S11]who campaigned with a chainsaw.[2]"
+          ],
+          [
+            379680,
+            380640,
+            ""
+          ],
+          [
+            380640,
+            420640,
+            "[0][S12]That symbolized his promise to slash[2.44]"
+          ],
+          [
+            420640,
+            460640,
+            "[0][S13]The corrupt bureaucracy of the state.[1.88]"
+          ],
+          [
+            460640,
+            466240,
+            "[0][S14]\u55ef\u3002[0.22]"
+          ],
+          [
+            466240,
+            506240,
+            "[0.13][S15]He stepped into the presidency one year.[2.47]"
+          ],
+          [
+            506240,
+            546240,
+            "[0.07][S16]ago, with a country on the brink of hyperinflation.[2.45]"
+          ],
+          [
+            546240,
+            586240,
+            "[0][S00]Inflation, deepened debt, and suffering.[2.46]"
+          ],
+          [
+            586240,
+            626240,
+            "[0.29][S00]For mass unemployment and poverty.[2.31]"
+          ],
+          [
+            626240,
+            629760,
+            "[0][S00]Mm.[0.12]"
+          ],
+          [
+            629760,
+            636160,
+            "[0][S00]Yeah.[0.36]"
+          ],
+          [
+            636160,
+            676160,
+            "[0.22][S00]He took this crisis head on.[2.29]"
+          ],
+          [
+            676160,
+            716160,
+            "[0][S00]transforming one of Latin America's largest[2.44]"
+          ],
+          [
+            716160,
+            756160,
+            "[0][S00]Economies through pure free market.[2.44]"
+          ],
+          [
+            756160,
+            796160,
+            "[0][S00]Principles. In just a few months,[2.46]"
+          ],
+          [
+            796160,
+            836160,
+            "[0][S00]In office, he already achieved RGT.[2.44]"
+          ],
+          [
+            836160,
+            876160,
+            "[0.08][S00]First fiscal surplus in 16 years.[2.48]"
+          ],
+          [
+            876160,
+            916160,
+            "[0.08][S00]Years and not just avoided the hyperinflation.[2.48]"
+          ],
+          [
+            916160,
+            956160,
+            "[0.53][S00]But brought inflation down.[2.49]"
+          ],
+          [
+            956160,
+            960000,
+            ""
+          ]
+        ],
+        "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+        "committed_samples": 960000,
+        "effective_segments": 14,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            84480,
+            "end_silence"
+          ],
+          [
+            84480,
+            108320,
+            "leading_silence"
+          ],
+          [
+            108320,
+            127040,
+            "end_silence"
+          ],
+          [
+            127040,
+            152320,
+            "leading_silence"
+          ],
+          [
+            152320,
+            192320,
+            "hard_cap"
+          ],
+          [
+            192320,
+            232320,
+            "hard_cap"
+          ],
+          [
+            232320,
+            254880,
+            "end_silence"
+          ],
+          [
+            254880,
+            259680,
+            "leading_silence"
+          ],
+          [
+            259680,
+            299680,
+            "hard_cap"
+          ],
+          [
+            299680,
+            339680,
+            "hard_cap"
+          ],
+          [
+            339680,
+            379680,
+            "hard_cap"
+          ],
+          [
+            379680,
+            380640,
+            "leading_silence"
+          ],
+          [
+            380640,
+            420640,
+            "hard_cap"
+          ],
+          [
+            420640,
+            460640,
+            "hard_cap"
+          ],
+          [
+            460640,
+            466240,
+            "leading_silence"
+          ],
+          [
+            466240,
+            506240,
+            "hard_cap"
+          ],
+          [
+            506240,
+            546240,
+            "hard_cap"
+          ],
+          [
+            546240,
+            586240,
+            "hard_cap"
+          ],
+          [
+            586240,
+            626240,
+            "hard_cap"
+          ],
+          [
+            626240,
+            629760,
+            "end_silence"
+          ],
+          [
+            629760,
+            636160,
+            "leading_silence"
+          ],
+          [
+            636160,
+            676160,
+            "hard_cap"
+          ],
+          [
+            676160,
+            716160,
+            "hard_cap"
+          ],
+          [
+            716160,
+            756160,
+            "hard_cap"
+          ],
+          [
+            756160,
+            796160,
+            "hard_cap"
+          ],
+          [
+            796160,
+            836160,
+            "hard_cap"
+          ],
+          [
+            836160,
+            876160,
+            "hard_cap"
+          ],
+          [
+            876160,
+            916160,
+            "hard_cap"
+          ],
+          [
+            916160,
+            956160,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 240000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "coverage": 0.907061,
+          "der": 0.527333,
+          "der_confusion": 0.41,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.117333,
+          "hypothesis_seconds": 52.959999999999994,
+          "hypothesis_words": 121,
+          "mean_segment_seconds": 3.7828571428571425,
+          "recovered_words": 115,
+          "reference_words": 125,
+          "segments": 14,
+          "tbsa": 0.731577,
+          "text_speaker_accuracy": 0.470264,
+          "wer": 0.096
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.036689499975182116,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 275,
+            "local_speakers": 2,
+            "mapped_speakers": 0,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 20,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 20,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "d51ab82a05b0665095802fa5cb728a9de1d424e1305e64ff8963f2d5531b6d71",
+          "decoded_wav_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.096,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.383834,
+            "text_speaker_accuracy": -0.40909,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 0.92,
+            "coverage": 0.870992,
+            "der": 0.535667,
+            "der_confusion": 0.383833,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.151833,
+            "hypothesis_seconds": 50.889999999999986,
+            "hypothesis_words": 120,
+            "mean_segment_seconds": 2.5444999999999993,
+            "recovered_words": 115,
+            "reference_words": 125,
+            "segments": 20,
+            "tbsa": 0.717608,
+            "text_speaker_accuracy": 0.461902,
+            "wer": 0.088
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              1760,
+              80640,
+              "S01",
+              "So what is the difference between a madman and a genius?"
+            ],
+            [
+              110080,
+              123840,
+              "S04",
+              "Success?"
+            ],
+            [
+              174080,
+              222080,
+              "S06",
+              "The following is a conversation with Javier Mal\u00e9,"
+            ],
+            [
+              222560,
+              251360,
+              "S07",
+              "the president of Argentina."
+            ],
+            [
+              261600,
+              340000,
+              "S09",
+              "He is a libertarian, anarcho-capitalist and economist"
+            ],
+            [
+              340480,
+              382080,
+              "S11",
+              "who campaigned with a chainsaw"
+            ],
+            [
+              382560,
+              412480,
+              "S12",
+              "that symbolized his promise"
+            ],
+            [
+              412960,
+              451360,
+              "S13",
+              "to slash the corrupt bureaucracy of the state."
+            ],
+            [
+              468480,
+              522400,
+              "S15",
+              "He stepped into the presidency one year ago"
+            ],
+            [
+              522880,
+              558560,
+              "S16",
+              "with the country on the brink of hyperinflation,"
+            ],
+            [
+              559040,
+              591040,
+              "S00",
+              "deep in debt and suffering"
+            ],
+            [
+              591520,
+              624160,
+              "S00",
+              "for mass unemployment and poverty."
+            ],
+            [
+              640160,
+              673280,
+              "S00",
+              "He took this crisis head-on,"
+            ],
+            [
+              673760,
+              727680,
+              "S00",
+              "transforming one of Latin America's largest economies"
+            ],
+            [
+              728160,
+              766080,
+              "S00",
+              "through pure free-market principles."
+            ],
+            [
+              780480,
+              812480,
+              "S00",
+              "In just a few months in office,"
+            ],
+            [
+              812960,
+              840160,
+              "S00",
+              "he already achieved Argentina's"
+            ],
+            [
+              840640,
+              890400,
+              "S00",
+              "first fiscal surplus in 16 years"
+            ],
+            [
+              890880,
+              924960,
+              "S00",
+              "and not just avoided the hyperinflation,"
+            ],
+            [
+              925440,
+              959680,
+              "S00",
+              "but brought inflation down."
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "f68e6f3bf8579682176a617d719f38054215d6336bd305697acaa08d43e52aac"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      },
+      "lex_keyu_jin": {
+        "accepted_samples": 960000,
+        "accounted_samples": 960000,
+        "canonical_through_sample": 960000,
+        "committed": [
+          [
+            0,
+            40000,
+            "[0][S01]Kind of the same thing. There's paternalism.[2.24]"
+          ],
+          [
+            40000,
+            80000,
+            "[0.15][S02]Uh, they think that they're responsible for you.[2.47]"
+          ],
+          [
+            80000,
+            120000,
+            "[0][S03]Um but uh.[1.98]"
+          ],
+          [
+            120000,
+            160000,
+            "[0][S04]deference, a certain amount of deference to authority.[2.46]"
+          ],
+          [
+            160000,
+            200000,
+            "[0][S05]is not blind submission. It's[2.44]"
+          ],
+          [
+            200000,
+            240000,
+            "[0][S06]Been written implicitly in our contract.[2.22]"
+          ],
+          [
+            240000,
+            280000,
+            "[0.08][S07]Uh, for thousands of years that in exchange[2.48]"
+          ],
+          [
+            280000,
+            320000,
+            "[0][S08]change for some deference uh[2.5]"
+          ],
+          [
+            320000,
+            360000,
+            "[0.11][S09]We are given stability.[2.47]"
+          ],
+          [
+            360000,
+            400000,
+            "[0][S10]Security and peace and hopefully prosperity.[2.16]"
+          ],
+          [
+            400000,
+            440000,
+            "[0][S11]So there is some element that we have in the West.[2.44]"
+          ],
+          [
+            440000,
+            480000,
+            "[0][S12]Of freedom of the individual. So[2.44]"
+          ],
+          [
+            480000,
+            520000,
+            "[0][S13]A little bit of the rebel is allowed.[2.44]"
+          ],
+          [
+            520000,
+            560000,
+            "[0.35][S14]Uh, in balance with the difference.[2.5]"
+          ],
+          [
+            560000,
+            600000,
+            "[0.07][S15]Authority.[0.63][0.92][S16]Yeah, absolutely. Without that.[2.48]"
+          ],
+          [
+            600000,
+            640000,
+            "[0][S00]How can you have this radical, dynamic entrepreneur?[2.44]"
+          ],
+          [
+            640000,
+            680000,
+            "[0.08][S00]Normalism you see in China.[1.74]"
+          ],
+          [
+            680000,
+            720000,
+            "[0][S00]You don't have a sense of self, a sense of.[2.48]"
+          ],
+          [
+            720000,
+            760000,
+            "[0][S00]Of the fact that you can find.[2.48]"
+          ],
+          [
+            760000,
+            800000,
+            "[0][S00]Find opportunities, you look for opportunities, you.[2.24]"
+          ],
+          [
+            800000,
+            840000,
+            "[0.15][S00]You you drive opportunities.[2.39]"
+          ],
+          [
+            840000,
+            880000,
+            "[0.28][S00]Um, it's all self motivated.[1.96]"
+          ],
+          [
+            880000,
+            920000,
+            "[0][S00]Is there still a young kid?[1.78][2.28][S00]Yeah.[2.5]"
+          ],
+          [
+            920000,
+            960000,
+            "[0.21][S00]In China, it's able to dream to be[2.43]"
+          ]
+        ],
+        "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+        "committed_samples": 960000,
+        "effective_segments": 16,
+        "finalization_status": "not_started",
+        "frozen_spans": [
+          [
+            0,
+            40000,
+            "hard_cap"
+          ],
+          [
+            40000,
+            80000,
+            "hard_cap"
+          ],
+          [
+            80000,
+            120000,
+            "hard_cap"
+          ],
+          [
+            120000,
+            160000,
+            "hard_cap"
+          ],
+          [
+            160000,
+            200000,
+            "hard_cap"
+          ],
+          [
+            200000,
+            240000,
+            "hard_cap"
+          ],
+          [
+            240000,
+            280000,
+            "hard_cap"
+          ],
+          [
+            280000,
+            320000,
+            "hard_cap"
+          ],
+          [
+            320000,
+            360000,
+            "hard_cap"
+          ],
+          [
+            360000,
+            400000,
+            "hard_cap"
+          ],
+          [
+            400000,
+            440000,
+            "hard_cap"
+          ],
+          [
+            440000,
+            480000,
+            "hard_cap"
+          ],
+          [
+            480000,
+            520000,
+            "hard_cap"
+          ],
+          [
+            520000,
+            560000,
+            "hard_cap"
+          ],
+          [
+            560000,
+            600000,
+            "hard_cap"
+          ],
+          [
+            600000,
+            640000,
+            "hard_cap"
+          ],
+          [
+            640000,
+            680000,
+            "hard_cap"
+          ],
+          [
+            680000,
+            720000,
+            "hard_cap"
+          ],
+          [
+            720000,
+            760000,
+            "hard_cap"
+          ],
+          [
+            760000,
+            800000,
+            "hard_cap"
+          ],
+          [
+            800000,
+            840000,
+            "hard_cap"
+          ],
+          [
+            840000,
+            880000,
+            "hard_cap"
+          ],
+          [
+            880000,
+            920000,
+            "hard_cap"
+          ],
+          [
+            920000,
+            960000,
+            "hard_cap"
+          ]
+        ],
+        "rolling": {
+          "admission_refusals": 0,
+          "decoded_audio_samples": 960000,
+          "max_retained_samples": 320000,
+          "retained_high_water_samples": 168000,
+          "stale_completions": 0,
+          "status": "stopped",
+          "windows_completed": 6,
+          "windows_failed": 0,
+          "windows_planned": 6
+        },
+        "scores": {
+          "content_recall": 0.9856115107913669,
+          "coverage": 0.913867,
+          "der": 0.644167,
+          "der_confusion": 0.559,
+          "der_false_alarm": 0.0,
+          "der_miss": 0.085167,
+          "hypothesis_seconds": 54.89,
+          "hypothesis_words": 150,
+          "mean_segment_seconds": 3.430625,
+          "recovered_words": 137,
+          "reference_words": 139,
+          "segments": 16,
+          "tbsa": 0.696146,
+          "text_speaker_accuracy": 0.37868,
+          "wer": 0.100719
+        },
+        "tape": {
+          "accounting": {
+            "capacity_bytes": 9600000,
+            "complete": true,
+            "degradation": null,
+            "epoch": 0,
+            "gaps": [],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 0,
+            "released": true,
+            "retained_bytes": 0,
+            "sample_count": 960000,
+            "through_sample": 960000
+          },
+          "audio_samples": 960000,
+          "audio_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+          "declared_capacity_bytes": 9600000,
+          "read_before_release": {
+            "corpus_samples": 960000,
+            "differing_samples": 0,
+            "max_abs_delta": 0,
+            "read_bytes": 1920000,
+            "read_samples": 960000,
+            "read_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff"
+          },
+          "released_events": [
+            {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            }
+          ]
+        },
+        "terminal": {
+          "accepted_samples": 960000,
+          "accounted_samples": 960000,
+          "accounting": {
+            "completed_windows": 1,
+            "decode_elapsed_sec": 0.02970533398911357,
+            "decoded_audio_samples": 960000,
+            "end_sample": 960000,
+            "epoch": 0,
+            "finalization_status": "running",
+            "generated_tokens": 259,
+            "local_speakers": 2,
+            "mapped_speakers": 0,
+            "outcome": "finalized",
+            "possibly_truncated": false,
+            "prompt_tokens": 0,
+            "reason": null,
+            "rolling_status": "rolling",
+            "rolling_through_sample": 960000,
+            "seam_displaced_samples": 0,
+            "seam_dropped_segments": 0,
+            "seam_merged_segments": 0,
+            "segments": 10,
+            "stride_seconds": 120.0,
+            "tape_gaps": 0,
+            "tape_samples": 960000,
+            "unattributed_segments": 10,
+            "window_count": 1,
+            "window_seconds": 150.0
+          },
+          "applied": true,
+          "authorities": [
+            "terminal"
+          ],
+          "canonical_through_sample": 960000,
+          "committed_prefix_hash": "0cb0f250bd2988ea6efc1aa0fd8bffdff46b358839161cc72433c318339a8aff",
+          "decoded_wav_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+          "finalization_status": "final",
+          "refusal": null,
+          "rolling_wer": 0.100719,
+          "score_delta_vs_file": {
+            "content_recall": 0.0,
+            "coverage": 0.0,
+            "der": 0.534667,
+            "text_speaker_accuracy": -0.510581,
+            "wer": 0.0
+          },
+          "scores": {
+            "content_recall": 1.0,
+            "coverage": 0.936387,
+            "der": 0.613667,
+            "der_confusion": 0.546,
+            "der_false_alarm": 0.0,
+            "der_miss": 0.067667,
+            "hypothesis_seconds": 55.93999999999999,
+            "hypothesis_words": 148,
+            "mean_segment_seconds": 5.593999999999999,
+            "recovered_words": 139,
+            "reference_words": 139,
+            "segments": 10,
+            "tbsa": 0.727468,
+            "text_speaker_accuracy": 0.414799,
+            "wer": 0.064748
+          },
+          "second_applied": false,
+          "second_refusal": "already_finalized",
+          "surface": [
+            [
+              0,
+              84480,
+              "S02",
+              "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+            ],
+            [
+              98240,
+              191360,
+              "S04",
+              "But deference, a certain amount of deference to authority is not blind submission."
+            ],
+            [
+              192960,
+              307840,
+              "S07",
+              "It's been written implicitly in our contract for thousands of years that in exchange for some deference,"
+            ],
+            [
+              321920,
+              394880,
+              "S09",
+              "we are given stability, security, and peace, and hopefully prosperity."
+            ],
+            [
+              400640,
+              471040,
+              "S11",
+              "So there is some element that we have in the West of freedom of the individual."
+            ],
+            [
+              476160,
+              570240,
+              "S13",
+              "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+            ],
+            [
+              574080,
+              667520,
+              "S00",
+              "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?"
+            ],
+            [
+              678400,
+              791040,
+              "S00",
+              "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,"
+            ],
+            [
+              791360,
+              871680,
+              "S00",
+              "you you you drive opportunities, it's all self motivated."
+            ],
+            [
+              879360,
+              958080,
+              "S00",
+              "Is there still a young kid in China that's able to dream to be?"
+            ]
+          ],
+          "tape": {
+            "captured_bytes": 1920000,
+            "captured_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released_accounting": {
+              "capacity_bytes": 9600000,
+              "complete": true,
+              "degradation": null,
+              "epoch": 0,
+              "gaps": [],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 0,
+              "released": true,
+              "retained_bytes": 0,
+              "sample_count": 960000,
+              "through_sample": 960000
+            },
+            "retaped_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff"
+          },
+          "text_revision_version": 7
+        },
+        "terminal_failure": null,
+        "text_revision_version": 6
+      }
+    }
+  },
+  "decode_cost": {
+    "base_fresh_requests": 0,
+    "base_requests": 196,
+    "terminal_fresh_requests": 0,
+    "terminal_requests": 12
+  },
+  "failures": [],
+  "file_arm": {
+    "lex_bill_ackman": {
+      "content_recall": 0.9318181818181818,
+      "coverage": 0.952215,
+      "der": 0.0755,
+      "text_speaker_accuracy": 0.938134,
+      "wer": 0.159091
+    },
+    "lex_javier_milei": {
+      "content_recall": 0.92,
+      "coverage": 0.870992,
+      "der": 0.151833,
+      "text_speaker_accuracy": 0.870992,
+      "wer": 0.088
+    },
+    "lex_keyu_jin": {
+      "content_recall": 1.0,
+      "coverage": 0.936387,
+      "der": 0.079,
+      "text_speaker_accuracy": 0.92538,
+      "wer": 0.064748
+    }
+  },
+  "modules": [
+    "moss_transcribe_diarize/app/live_transcript_convergence.py",
+    "moss_transcribe_diarize/app/live_adapters.py"
+  ],
+  "paired_pass": "evidence/live-convergence-0824/M2-e2-exit/passes/trio-A",
+  "partition": {
+    "mapped": {
+      "lex_bill_ackman": {
+        "pairs": [
+          [
+            "S01",
+            "S03"
+          ],
+          [
+            "S02",
+            "S13"
+          ]
+        ],
+        "unattributed_segments": 0
+      },
+      "lex_javier_milei": {
+        "pairs": [
+          [
+            "S01",
+            "S01"
+          ],
+          [
+            "S02",
+            "S12"
+          ]
+        ],
+        "unattributed_segments": 0
+      },
+      "lex_keyu_jin": {
+        "pairs": [
+          [
+            "S01",
+            "S07"
+          ],
+          [
+            "S02",
+            "S11"
+          ]
+        ],
+        "unattributed_segments": 0
+      }
+    },
+    "projected": {
+      "lex_bill_ackman": {
+        "pairs": [
+          [
+            "S01",
+            "S00"
+          ],
+          [
+            "S01",
+            "S01"
+          ],
+          [
+            "S01",
+            "S03"
+          ],
+          [
+            "S01",
+            "S05"
+          ],
+          [
+            "S01",
+            "S06"
+          ],
+          [
+            "S01",
+            "S08"
+          ],
+          [
+            "S01",
+            "S09"
+          ],
+          [
+            "S01",
+            "S10"
+          ],
+          [
+            "S01",
+            "S11"
+          ],
+          [
+            "S01",
+            "S16"
+          ],
+          [
+            "S02",
+            "S00"
+          ],
+          [
+            "S02",
+            "S13"
+          ]
+        ],
+        "unattributed_segments": 7
+      },
+      "lex_javier_milei": {
+        "pairs": [
+          [
+            "S01",
+            "S01"
+          ],
+          [
+            "S01",
+            "S04"
+          ],
+          [
+            "S02",
+            "S00"
+          ],
+          [
+            "S02",
+            "S06"
+          ],
+          [
+            "S02",
+            "S07"
+          ],
+          [
+            "S02",
+            "S09"
+          ],
+          [
+            "S02",
+            "S11"
+          ],
+          [
+            "S02",
+            "S12"
+          ],
+          [
+            "S02",
+            "S13"
+          ],
+          [
+            "S02",
+            "S15"
+          ],
+          [
+            "S02",
+            "S16"
+          ]
+        ],
+        "unattributed_segments": 10
+      },
+      "lex_keyu_jin": {
+        "pairs": [
+          [
+            "S01",
+            "S00"
+          ],
+          [
+            "S01",
+            "S02"
+          ],
+          [
+            "S01",
+            "S04"
+          ],
+          [
+            "S01",
+            "S07"
+          ],
+          [
+            "S01",
+            "S09"
+          ],
+          [
+            "S02",
+            "S00"
+          ],
+          [
+            "S02",
+            "S11"
+          ],
+          [
+            "S02",
+            "S13"
+          ]
+        ],
+        "unattributed_segments": 4
+      }
+    }
+  },
+  "recorded_at": "2026-08-25T15:18:49.051706+00:00",
+  "schema": "moss-live-convergence-terminal-finalizer.v1",
+  "speaker_policy": {
+    "arms": {
+      "mapped": {
+        "findings": [],
+        "preserves_partition": true,
+        "reproduces_file_scores": true
+      },
+      "projected": {
+        "findings": [
+          "G4 projected/lex_bill_ackman a file-arm speaker was split across labels: {'S01': {'S05', 'S09', 'S06', 'S00', 'S11', 'S03', 'S01', 'S16', 'S08', 'S10'}, 'S02': {'S13', 'S00'}}",
+          "G4 projected/lex_bill_ackman two file-arm speakers were merged: {'S01': {'S05', 'S09', 'S06', 'S00', 'S11', 'S03', 'S01', 'S16', 'S08', 'S10'}, 'S02': {'S13', 'S00'}}",
+          "G4 projected/lex_bill_ackman 7 segments published S00",
+          "G5 projected/lex_bill_ackman der differs from the file arm by +0.572000000000",
+          "G5 projected/lex_bill_ackman text_speaker_accuracy differs from the file arm by -0.628868000000",
+          "G4 projected/lex_javier_milei a file-arm speaker was split across labels: {'S01': {'S04', 'S01'}, 'S02': {'S12', 'S09', 'S16', 'S13', 'S11', 'S07', 'S06', 'S00', 'S15'}}",
+          "G4 projected/lex_javier_milei two file-arm speakers were merged: {'S01': {'S04', 'S01'}, 'S02': {'S12', 'S09', 'S16', 'S13', 'S11', 'S07', 'S06', 'S00', 'S15'}}",
+          "G4 projected/lex_javier_milei 10 segments published S00",
+          "G5 projected/lex_javier_milei der differs from the file arm by +0.383834000000",
+          "G5 projected/lex_javier_milei text_speaker_accuracy differs from the file arm by -0.409090000000",
+          "G4 projected/lex_keyu_jin a file-arm speaker was split across labels: {'S01': {'S09', 'S04', 'S07', 'S00', 'S02'}, 'S02': {'S13', 'S11', 'S00'}}",
+          "G4 projected/lex_keyu_jin two file-arm speakers were merged: {'S01': {'S09', 'S04', 'S07', 'S00', 'S02'}, 'S02': {'S13', 'S11', 'S00'}}",
+          "G4 projected/lex_keyu_jin 4 segments published S00",
+          "G5 projected/lex_keyu_jin der differs from the file arm by +0.534667000000",
+          "G5 projected/lex_keyu_jin text_speaker_accuracy differs from the file arm by -0.510581000000"
+        ],
+        "preserves_partition": false,
+        "reproduces_file_scores": false
+      }
+    },
+    "qualified": [
+      "mapped"
+    ],
+    "selected": "mapped"
+  },
+  "terminal_kwargs": {
+    "decoding": "greedy",
+    "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002"
+  },
+  "verdict": "PASS"
+}

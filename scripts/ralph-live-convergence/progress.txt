@@ -3000,3 +3000,83 @@ appended at the iteration 4->5 boundary]
   votes on those weights - a named test on this case's seam. Table-driven tests from the twelve
   shapes plus a regression that a non-overlapping proposal comes back unchanged; file mode stays
   byte-identical (`_stitch_segments` untouched). Then 8f, re-score M4 on a fresh paired batch.
+
+## iteration 31 - the seam resolution ships, and the double count could swap two names
+- Focus: candidate 8e-2, SHIP the arm iteration 30 selected. Production now resolves a terminal
+  proposal's window-seam overlaps before it proposes; the milestone's blocked case can publish.
+- Target: context.md candidate 8e-2 (lowest open item), PRD M4, ADR-0005.
+- Real MOSS traffic this iteration: **none**. No service restart, no GPU, no decode - every input
+  is a decode already on disk or a stub. 4070 Ti untouched; `web_cli` pid 86813 left alone and
+  therefore still serving the PRE-8e-2 build (that restart is 8f's).
+- Files touched:
+  moss_transcribe_diarize/app/live_transcript_convergence.py   (+`resolve_terminal_overlaps`,
+      `TerminalSeamResolution`, `EMPTY_SEAM_RESOLUTION`; `_segments_of` resolves before naming;
+      three `seam_*` accounting fields on the §7.4 terminal events)
+  tests/test_live_terminal_finalizer.py                        (+10 tests / +15 subtests in
+      `TerminalSeamResolutionTest`, `TerminalSeamAndSpeakerNamesTest`, and one T2 session test)
+  docs/adr/0005-live-text-finalization-authority.md            (2026-08-25 addendum, **D9**)
+  prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py  (+`--verify-production`,
+      shapes extracted to `_synthetic_inputs()` so one definition serves both)
+  prototypes/streaming-diarization/live-convergence/mutate_terminal_seam.sh  (new; 5 mutants)
+  prototypes/streaming-diarization/live-convergence/NOTES.md   (index row + section)
+  evidence/live-convergence-0824/M4-seam-ship/{NOTES.md,production.diff,
+      production-vs-selected-arm.txt,verify-terminal-finalizer.{txt,json},
+      pytest-terminal-finalizer.txt,pytest-full.txt,mutations/,sha256.txt}  (new bundle, 312K)
+  (edited: scripts/ralph-live-convergence/context.md)
+- Validation:
+  - measure_seam_overlap.py --verify-production -> exit 0, **IDENTICAL** on 24 inputs (12 file
+    arms of the iteration-29 batch + 12 synthetic shapes): segments, texts and all three counts.
+    This is the only thing tying the shipped rule to the numbers that selected it.
+  - verify_terminal_finalizer.py -> **PASS**, nine gates. The trio terminal surface is STILL the
+    paired file arm at `0.000000` on WER/DER/speaker accuracy/coverage (one 150 s window, no seam).
+  - .venv/bin/python -m pytest tests/ -q -> **1157 passed, 2 skipped, 411 subtests** (was
+    1147/2/396). tests/test_live_terminal_finalizer.py alone: 27 passed, 19 subtests.
+  - mutate_terminal_seam.sh -> control PASS before and after; five mutants, each caught by the
+    test that NAMES its defect:
+      M1 no resolution at all        -> the T2 session test (`segments_out_of_order`) + 8 shape
+                                        subtests + 5 others   (the "does nothing" mutant)
+      M2 merge across speakers       -> the two cross-speaker tests, and nothing else
+      M3 invented boundary           -> the no-invented-boundary property (`{0,140} not in
+                                        {0,120,160,200}`) + the cross-speaker tests
+      M4 drop the later decoding     -> word conservation on 5 same-speaker shapes + the corpus
+                                        seam test + the session test
+      M5 name the speakers first     -> exactly one test, the one that names it
+  - verify_adr_text_finalization.py -> PASS (D1-D7 still verbatim; D9 is an addendum).
+  - measure_seam_overlap.py / --selftest -> 6 of 6 gates, `merge_overlapping` still selected,
+    4 of 4 mutation reactions (the `_synthetic_inputs()` refactor changed nothing).
+  - shasum -a 256 -c evidence/live-convergence-0824/M4-seam-ship/sha256.txt -> all OK.
+- WHAT SHIPPED, precisely. One local speaker's overlapping decodings become ONE segment over the
+  union of their extents with their texts joined in order; two DIFFERENT local speakers over one
+  interval leave the later one whatever the earlier one does not own; a later segment with
+  nothing left is dropped rather than given an interval. No boundary is emitted that the decoder
+  did not produce. It runs inside `_segments_of` on `placed` - the decoder's LOCAL speakers, and
+  BEFORE `terminal_speaker_mapping`.
+- TWO FINDINGS.
+  F1 THE ORDERING IS NOT BOOKKEEPING; IT CAN DECIDE WHO SPOKE. `terminal_speaker_mapping` weighs
+     a local speaker against a canonical one by shared samples SUMMED OVER SEGMENTS, and the
+     assignment is one-to-one. So a stretch decoded twice votes twice, and an inflated weight does
+     not merely exaggerate a name - it can take a name away from the speaker whose audio earned
+     it. Constructed and measured: `A` genuinely owns 100 samples of speaker-a and 45 of
+     speaker-b, `B` owns 100 and 50; counting `A`'s overlapping pair twice makes its 45 into 80
+     and BOTH names swap (`{'A': 'speaker-b', 'B': 'speaker-a'}` -> `{'A': 'speaker-a',
+     'B': 'speaker-b'}`, the latter being the true-overlap maximiser). On the corpus's own seam
+     no name moves - which is what candidate 8e-2 asked to be checked rather than assumed.
+  F2 A PROTOTYPE ARM AND A PRODUCTION RULE ARE TWO RULES UNTIL SOMEONE RUNS THEM ON THE SAME
+     INPUT. The selection lives in a prototype; the code that ships is a second implementation.
+     `--verify-production` makes that a command rather than a claim, and it belongs to the
+     instrument (it reads the same batch and the same shapes), not to a one-off script.
+- Learned:
+  - A mutant that breaks every test measures the harness. M2 and M5 each break exactly the tests
+    that state their property; getting there took stating the properties structurally (words are
+    conserved when the SHAPE has one speaker) rather than by shape name, which also turned M4
+    from "caught by two end-to-end tests" into "caught by the invariant it violates".
+  - `EMPTY_SEAM_RESOLUTION` as a default argument must be defined before the class body runs -
+    a module-level constant read at def time, not a `None` sentinel with a branch.
+  - The trio could not have caught a regression here in either direction: 60 s is one 150 s
+    window. The corpus verifier's PASS is evidence of the IDENTITY off the seam, nothing more,
+    and the seam itself is only reachable through the constructed tests until 8f runs.
+- Next: candidate 8f - restart `web_cli` onto this build (record the restart and the descriptor
+  delta), then `verify_m4_exit.py --fresh-root`, five cases, two runs. Expect **12 of 14**:
+  G-M4-2 / G-M4-6 / G-M4-9 recover on `lex_adam_frank` and G-M4-3 (`.126177` vs rolling
+  `.122411`) / G-M4-4 (`.949153` vs `.951036`) fail there instead - D-M4-3, an owner ruling
+  already recorded, not a moved bound. Then M5.

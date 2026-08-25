@@ -1,0 +1,46 @@
+== control: unmutated module ==
+control: pytest exit=0  27 passed, 19 subtests passed in 2.35s
+== control: the corpus verifier on the trio (one window, no seam) ==
+control-verify: exit=0 PASS
+== M1: no resolution at all ==
+m1-no-resolution: pytest exit=1  14 failed, 21 passed, 11 subtests passed in 2.39s
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one
+    SUBFAILED(shape='pair_same_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='pair_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='contained') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='contained_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='identical') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='chain_of_three') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='chain_mixed_speakers') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='later_ends_earlier') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke
+    FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved
+== M2: the merge ignores who spoke ==
+m2-merge-across-speakers: pytest exit=1  2 failed, 25 passed, 19 subtests passed in 2.24s
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left
+== M3: the seam is split at an invented boundary ==
+m3-invented-boundary: pytest exit=1  5 failed, 25 passed, 16 subtests passed in 2.34s
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one
+    SUBFAILED(shape='pair_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='contained_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='chain_mixed_speakers') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left
+== M4: the later decoding is dropped instead of merged ==
+m4-drop-later: pytest exit=1  8 failed, 24 passed, 14 subtests passed in 2.35s
+    SUBFAILED(shape='pair_same_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='contained') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='identical') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='chain_of_three') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    SUBFAILED(shape='later_ends_earlier') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke
+    FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved
+== M5: the names are decided before the seam is resolved ==
+m5-names-before-resolution: pytest exit=1  1 failed, 26 passed, 19 subtests passed in 2.35s
+    FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke
+== control after the sweep: the module is restored ==
+control-after: pytest exit=0  27 passed, 19 subtests passed in 2.33s

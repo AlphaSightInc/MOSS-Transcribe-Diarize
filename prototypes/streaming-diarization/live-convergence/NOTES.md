@@ -29,6 +29,7 @@ imported by `moss_transcribe_diarize/`.
 | `verify_replay_terminal_wait.py` | does the MEASURING CLIENT see the surface the meeting ended on, or the one it left (F1 of the deploy)? | **it does now** — after the stop response the client polls until `finalization_status` leaves `running` (`2.055 s`, 4 polls, 300 s deadline on the deployed 60 s case) and reports the terminal snapshot: the paired driver's own live arm moved WER `.096000 → .088000` = the file arm's, with no driver edited; nine gates, nine reactions; `evidence/live-convergence-0824/M4-replay-wait/` |
 | `verify_m4_exit.py` | do the 14 preregistered M4 gates hold on a fresh paired batch of all five cases? | **11 of 14** — terminal *is* the paired file arm to `0.000000` on four cases (trio mean WER `.131357 → .103946`, five-minute `.082079 → .050616`), and on `lex_adam_frank` the pass reproduced the file arm's 38 segments and was refused publication `segments_out_of_order`, because file mode's own two windows overlap at their seam; the three failures are that one refusal; `evidence/live-convergence-0824/M4-e4-exit/` |
 | `measure_seam_overlap.py` + `PREREGISTRATION-M4-seam.md` | when a terminal proposal reproduces the paired file arm and that arm overlaps at a window seam, what should the finalizer send instead? | **`merge_overlapping`** — of five arms it is the only one that drops no word and displaces no second of extent; the whole `.053222 → .066222` DER cost is the deployed scorer's **double count** disappearing (evaluator v2, which unions, does not move: `.054079` either way); 6 of 6 gates, 4 isolated reactions; `evidence/live-convergence-0824/M4-seam-overlap/` |
+| `mutate_terminal_seam.sh` + `measure_seam_overlap.py --verify-production` | does the SHIPPED seam rule do what the selected arm was measured doing, and do its tests bite? | **yes and yes** — production `resolve_terminal_overlaps` is IDENTICAL to the measured arm on all 24 inputs (12 file arms + 12 shapes), the trio terminal surface is still the paired file arm at `0.000000`, and five mutants are each caught by the test that names the defect; `evidence/live-convergence-0824/M4-seam-ship/` |
 
 `cases.json` is the corpus contract: which saved hypotheses are scored, which corpus each is
 scored against, which group's mean it joins, and the means the plan already published for them.
@@ -877,4 +878,36 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 # four mutations, each caught by the gate that names its defect
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
   prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py --selftest
+```
+
+## `mutate_terminal_seam.sh` — iteration 31, candidate 8e-2: the seam rule ships
+
+`resolve_terminal_overlaps` now lives in `live_transcript_convergence.py` and runs inside
+`TerminalTranscriptFinalizer._segments_of`, on the decoder's LOCAL speakers and **before**
+`terminal_speaker_mapping`. Recorded as the 2026-08-25 addendum to **ADR-0005 (D9)**.
+
+Two questions a shipped prototype rule has to answer, and both are now commands:
+
+- **Is production the arm that was measured?** `--verify-production` runs the prototype's arm
+  and the production function over the same 24 inputs and compares segments, texts and counts.
+  IDENTICAL. Without it, the numbers in `M4-seam-overlap/` describe code that never shipped.
+- **Do the tests bite?** Five mutants, each an otherwise WORKING resolution that breaks one
+  claim: no resolution, merge across speakers, invent a boundary, drop the later decoding,
+  name the speakers first. Each is caught by the test that names its defect (M2 and M5 by
+  those tests and nothing else).
+
+The ordering claim earned its own test the hard way. `terminal_speaker_mapping` weighs a local
+speaker by shared samples **summed over segments**, so a stretch decoded twice votes twice —
+and because the assignment is one-to-one, an inflated weight can take a name away from the
+speaker whose audio earned it. Constructed shape: `A` genuinely owns 100 samples of one person
+and 45 of the other, `B` owns 100 and 50; counting `A`'s overlapping pair twice makes its 45
+into 80 and swaps both names. On the corpus's own seam nothing moves — checked, not assumed.
+
+```bash
+# does production do what the selected arm was measured doing? (no GPU, no service)
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
+  prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py --verify-production
+
+# five mutations, each caught by the test that names its defect
+prototypes/streaming-diarization/live-convergence/mutate_terminal_seam.sh /tmp/seam-mut
 ```

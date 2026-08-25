@@ -1,0 +1,17 @@
+7e23ed041fda80dbc0d4dc0db682405bd13e3bf0acb956331b6e3893454a043b  ./mutations/control-after-pytest.txt
+d796ebd6bad2b4eec6550993861c72847504ded1b60d6f2b5c9b443d40159dfe  ./mutations/control-pytest.txt
+1ff590ec4a47606b98109a6a955b2c1b73cc8bd9618cc88f746fdc023e8b8938  ./mutations/control-verify.txt
+3de6df101c49fb4fb5c21caed060c644abc975907ba981ae771aef3561ba34ba  ./mutations/control.json
+3fd8d3bc166f2034cd6b01fc2c9ced6d47d132606c48b3c81c8675d754839107  ./mutations/m1-no-resolution-pytest.txt
+bb58043530aff8ae2ef4a83eb91d498364ca466224db3248f2bdefedd36b4d2b  ./mutations/m2-merge-across-speakers-pytest.txt
+df5cac94f21d54079533640f2167f1c736777afec17444831236ccc7b153db19  ./mutations/m3-invented-boundary-pytest.txt
+27747f08c29692a843fc9926b14f2fe36fed9ca9eb115322798d2fe75edad6bb  ./mutations/m4-drop-later-pytest.txt
+bacb526c6fc52bf69ff20227cc7250a36824e6f2f598c795ca64347d8cb0bbda  ./mutations/m5-names-before-resolution-pytest.txt
+47bfd1b86aacf032c14dd2de9de801fb9bfe419cee70def8c50f3dbbdb74d810  ./mutations/summary.txt
+b44bfccb73af4a7eb54f97569521077b78593c170159bfe50be1beb0b08cec42  ./NOTES.md
+d3508259a46a48c6c1cf0bb6a1fffef30dd169735419a3d063b5f0a07e2c0125  ./production-vs-selected-arm.txt
+8519d72f3f280a18d3204533f7c26f068c202ad1f5b6d0cfafaa2e78fe800d68  ./production.diff
+6b94ec914bb0b2f36f5a8682353832b619056651c4a9936162874bbdc917e6e6  ./pytest-full.txt
+73d04ce6a4f1a46033f51193c68959293c115955a2a716b83a3cfaeb35b8e51a  ./pytest-terminal-finalizer.txt
+e3e73785d98e56bdc42dfca2cb31315c1f0192958c0a90187939b1f111d0c106  ./verify-terminal-finalizer.json
+ac7bfe1c99d6ad5593198a1b6dd8fe035f5b2cfc87aef2a22d191a00666157d7  ./verify-terminal-finalizer.txt

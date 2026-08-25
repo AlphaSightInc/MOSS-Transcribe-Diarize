@@ -316,3 +316,65 @@ always meant — nobody was attributed — but for a new reason: the meeting's a
 this terminal voice overlaps. The terminal accounting reports `local_speakers`,
 `mapped_speakers` and `unattributed_segments` so that condition is visible per meeting rather
 than inferred from the transcript.
+
+
+## 2026-08-25 addendum — one owner per interval, at a window seam (E4 candidate 8e-2)
+
+**Numbering note**, as for D8: this addendum's **D9** is *this record's own* ninth decision.
+The plan's D9 is about five-phase processing and is cited unchanged in "What this record does
+not authorize".
+
+### D9 — The terminal pass resolves its own overlaps before it proposes, by merging
+
+A terminal proposal whose segments overlap is refused whole (`segments_out_of_order`, D4's
+"one owner per interval"). The terminal finalizer therefore resolves its overlaps itself,
+before proposing and before naming its speakers: **one local speaker's overlapping decodings
+become one segment over the union of their extents with their texts joined in order**, and two
+*different* local speakers over one interval leave the later one whatever audio the earlier one
+does not already own. No boundary is emitted that the decoder did not produce.
+
+**Why the terminal pass produces overlaps at all.** It decodes through file mode's own 150/120
+`WindowedRunner`, whose windows overlap by 30 s and are stitched by *midpoint ownership*: a
+segment survives if the window that decoded it owns its midpoint. Two segments straddling the
+seam can each own their midpoint, so one stretch of audio can be published twice. A file
+transcript may say that. A live surface may not.
+
+**Measured, before the code shipped**
+(`prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py`, preregistration
+and evidence in `evidence/live-convergence-0824/M4-seam-overlap/`; five arms, six gates fixed
+before any number). On the campaign corpus this is rare and expensive: **one** overlapping pair
+in twelve file arms — `lex_adam_frank`, the only meeting long enough to plan two windows — and
+it cost that meeting its entire terminal surface. Three arms tie on every scored axis (WER, DER,
+content recall, matched-word speaker accuracy) because the scorer reads the union of the extents
+and the word stream, and both are the same for all three; the tie-break is what each arm
+*claims*:
+
+| arm | words lost | segment extent displaced | what it asserts that the decoder did not |
+|---|---|---|---|
+| `merge_overlapping` — this decision | 0 | 0.00 s | nothing |
+| `clip_later_start` | 0 | 2.34 s | eight words fit in 0.33 s |
+| `clip_earlier_end` | 0 | 2.34 s | a tail is silent that the decoder heard as speech |
+| `drop_later` | 7 | 2.67 s | the meeting never said those words |
+
+**The seam is resolved before the names are decided**, not after. Merging *after*
+`terminal_speaker_mapping` would join two local speakers that happen to map to one person —
+a different rule, unmeasured. Resolving first also removes a real distortion: the mapping weighs
+a local speaker against a canonical one by shared samples **summed over segments**, so a stretch
+decoded twice votes twice, and because the assignment is one-to-one an inflated weight can take
+a name away from the speaker whose audio earned it (`tests/test_live_terminal_finalizer.py::
+TerminalSeamAndSpeakerNamesTest`). On the corpus's own seam no name moves.
+
+**What this does not change.** File mode is untouched: `_stitch_segments` still publishes what
+it always published, and file-mode outputs stay byte-identical. This is a *publication* rule for
+one producer on the live surface, not a change to `_text_revision_refusal` — admitting
+overlapping segments was priced and rejected, because it is a contract every producer is bound
+by and because the deployed DER *rewards* the duplicate: `evaluation.calculate_diarization` sums
+per-pair overlap, so reference seconds two hypothesis segments both claim are credited twice and
+that much real `miss` disappears (`.053222` → `.066222` on that case, all of it `miss`, exactly
+`2.34 / 180`). Evaluator v2 unions hypothesis intervals first and does not move. Resolving the
+seam is therefore a metric *correction*, not a quality loss.
+
+**Consequence for readers.** A terminal surface may hold fewer segments than the file arm of the
+same audio, with the same words. The terminal accounting reports `seam_merged_segments`,
+`seam_dropped_segments` and `seam_displaced_samples`, so a surface that was rewritten before
+publication says by how much.

@@ -512,17 +512,10 @@ def _shape(*rows) -> tuple[Placed, ...]:
     )
 
 
-def synthetic_shapes(arms=None) -> dict:
-    """Every overlap shape the seam rule must be total on, not only the one the corpus has.
+def _synthetic_inputs() -> dict:
+    """The overlap shapes, as inputs -- shared by the arm sweep and the production check."""
 
-    The corpus holds exactly one overlapping pair, same speaker, later-ends-later. A rule
-    validated on that alone is a rule validated on one sample, so the shapes below are the
-    ones a two-window seam can produce in general: containment, identical extents, chains,
-    a later segment that ends earlier, and the cross-speaker case the corpus never shows.
-    """
-
-    arms = arms or ARMS
-    shapes = {
+    return {
         "disjoint": _shape(("A", 0, 100, "one"), ("A", 100, 200, "two")),
         "touching": _shape(("A", 0, 100, "one"), ("A", 100, 200, "two"), ("A", 200, 300, "three")),
         "pair_same_speaker": _shape(("A", 0, 160, "one"), ("A", 120, 200, "two")),
@@ -536,6 +529,19 @@ def synthetic_shapes(arms=None) -> dict:
         "unsorted_input": _shape(("A", 200, 300, "three"), ("A", 0, 100, "one"), ("A", 100, 200, "two")),
         "single": _shape(("A", 0, 100, "one")),
     }
+
+
+def synthetic_shapes(arms=None) -> dict:
+    """Every overlap shape the seam rule must be total on, not only the one the corpus has.
+
+    The corpus holds exactly one overlapping pair, same speaker, later-ends-later. A rule
+    validated on that alone is a rule validated on one sample, so the shapes below are the
+    ones a two-window seam can produce in general: containment, identical extents, chains,
+    a later segment that ends earlier, and the cross-speaker case the corpus never shows.
+    """
+
+    arms = arms or ARMS
+    shapes = _synthetic_inputs()
     out: dict = {}
     for name, segments in shapes.items():
         end_sample = max(item.end_sample for item in segments)
@@ -963,14 +969,58 @@ def selftest() -> int:
     return 1 if failures else 0
 
 
+def verify_production(root: Path = BATCH) -> int:
+    """Does the rule that SHIPPED do what the selected arm was measured doing?
+
+    The arm was chosen here, in this file; production carries its own implementation
+    (`resolve_terminal_overlaps`, candidate 8e-2). Two implementations of one rule are two
+    rules until someone compares them, and if they disagree then every number in
+    `evidence/live-convergence-0824/M4-seam-overlap/` describes something that never shipped.
+    So: same inputs -- every file arm in the batch, plus every synthetic shape -- segment for
+    segment, text for text.
+    """
+
+    from moss_transcribe_diarize.app.live_transcript_convergence import resolve_terminal_overlaps
+
+    def as_tuples(segments):
+        return tuple((item.speaker, item.start_sample, item.end_sample, item.text) for item in segments)
+
+    inputs = [(f"{entry['case']}-{entry['run']}", placed_of(entry["hypothesis"])) for entry in batch_arms(root)]
+    inputs += [(f"synthetic:{name}", shape) for name, shape in _synthetic_inputs().items()]
+    failures = []
+    for name, segments in inputs:
+        measured = arm_merge_overlapping(segments)
+        shipped = resolve_terminal_overlaps(as_tuples(segments))
+        if as_tuples(measured.segments) != shipped.segments:
+            failures.append(f"{name}: segments differ")
+        elif (measured.merged, measured.dropped, measured.displaced_samples) != (
+            shipped.merged, shipped.dropped, shipped.displaced_samples
+        ):
+            failures.append(f"{name}: counts differ")
+    print("does production do what the selected arm was measured doing?")
+    print(f"  inputs: {len(inputs)} ({len(inputs) - len(_synthetic_inputs())} file arms, "
+          f"{len(_synthetic_inputs())} synthetic shapes)")
+    for failure in failures:
+        print(f"  FAIL {failure}")
+    print("  " + ("IDENTICAL" if not failures else f"{len(failures)} disagreements"))
+    return 1 if failures else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--batch", type=Path, default=BATCH)
     parser.add_argument("--json", type=Path, help="write the full record here")
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument(
+        "--verify-production",
+        action="store_true",
+        help="compare the shipped `resolve_terminal_overlaps` against the selected arm",
+    )
     args = parser.parse_args()
     if args.selftest:
         return selftest()
+    if args.verify_production:
+        return verify_production(args.batch)
 
     report = measure(args.batch)
     gate_report = gates(report)

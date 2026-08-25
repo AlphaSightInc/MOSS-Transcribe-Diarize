@@ -1,0 +1,42 @@
+......................F....                           [100%]
+=================================== FAILURES ===================================
+_ TerminalSeamAndSpeakerNamesTest.test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke _
+
+self = <test_live_terminal_finalizer.TerminalSeamAndSpeakerNamesTest testMethod=test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke>
+
+    def test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke(self):
+        """The order is the rule: the same shape, through the adapter that ships.
+    
+        `S01` is decoded twice over one stretch of `speaker-b`'s audio. Counted twice, that
+        stretch is worth more than `S02`'s genuine 0.5 s there, and the one-to-one assignment
+        hands `S01` the name `speaker-b` -- taking it from the speaker whose audio earned it
+        and pushing `S02` onto `speaker-a`. Resolving the seam first is what prevents it.
+        """
+    
+        runner = WholeMeetingStub(
+            "[0][S01]a one[1][1][S01]a two[1.4][1.05][S01]a three[1.45]"
+            "[1.5][S02]b one[2][2][S02]b two[3]"
+        )
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 2 * SECOND, "speaker-b"),
+            base_segment(2 * SECOND, 3 * SECOND, "speaker-a"),
+        )
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(3 * SECOND), tape=tape_of(3 * SECOND), base_text_revision_version=0,
+            base_surface=base, canonical_speakers=SPEAKERS,
+        )
+    
+>       assert [item.canonical_speaker for item in result.proposal.segments] == [
+            "speaker-a", "speaker-a", "speaker-b", "speaker-b",
+        ]
+E       AssertionError: assert ['speaker-b',..., 'speaker-a'] == ['speaker-a',..., 'speaker-b']
+E         
+E         At index 0 diff: 'speaker-b' != 'speaker-a'
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:498: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke
+1 failed, 26 passed, 19 subtests passed in 2.35s

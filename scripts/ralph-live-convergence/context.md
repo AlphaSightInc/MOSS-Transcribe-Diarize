@@ -86,7 +86,7 @@
 
 ## Current state
 
-(2026-08-25, after iteration 30)
+(2026-08-25, after iteration 31)
 
 - Deployed dev stack up: `web_cli` **pid 86813, restarted 2026-08-25 10:14:58 local /
   14:15:08Z** onto the SAME E4 build and manifest (repo HEAD `29681e0` + iteration 27's working
@@ -1011,7 +1011,7 @@
   - **Cold vs warm readiness (G-M4-8)**: cold terminal decode `2.182 s` (RTF `.036372`), warm RTF
     p50 `.035081` / p95 `.038011` over 9 sessions. P8 is FALSIFIED in its premise - there is no
     local model to load, so cold sits inside the warm distribution.
-- **THE SEAM REFUSAL IS ANSWERED, NOT YET SHIPPED (iteration 30): `merge_overlapping`, 6 of 6
+- **THE SEAM REFUSAL IS ANSWERED (iteration 30) AND SHIPPED (iteration 31): `merge_overlapping`, 6 of 6
   preregistered gates.** `measure_seam_overlap.py` over the iteration-29 batch, five arms, no MOSS
   request; evidence `evidence/live-convergence-0824/M4-seam-overlap/`, preregistration
   `PREREGISTRATION-M4-seam.md`.
@@ -1034,10 +1034,33 @@
     instead (`.126177` vs rolling `.122411`; `.949153` vs `.951036`). Recommended: take it. The
     milestone's subject is terminal convergence, G-M4-1 is honoured at `0.000000`, and a meeting
     that cannot finalize at all is the worse outcome.
-- No production code changed in iteration 30; pytest unchanged at 1147 passed / 2 skipped / 396
-  subtests.
-- Rest of the ladder: 8e-2 (ship the resolution) and 8f (re-score M4) are open, then M5 (evidence
-  + records), unimplemented.
+- **THE SEAM RESOLUTION IS IN PRODUCTION (iteration 31), NOT YET DEPLOYED.**
+  `resolve_terminal_overlaps` + `TerminalSeamResolution` in `live_transcript_convergence.py`,
+  called from `TerminalTranscriptFinalizer._segments_of` on the decoder's LOCAL speakers and
+  BEFORE `terminal_speaker_mapping`; three accounting fields (`seam_merged_segments`,
+  `seam_dropped_segments`, `seam_displaced_samples`) on the §7.4 terminal events; recorded as the
+  **2026-08-25 addendum to ADR-0005 (D9)**. Evidence
+  `evidence/live-convergence-0824/M4-seam-ship/`. One production file changed; file mode's
+  `_stitch_segments` untouched.
+  - **Production IS the arm that was measured**: `measure_seam_overlap.py --verify-production`
+    compares the shipped function against the prototype arm over 24 inputs (12 file arms + the 12
+    synthetic shapes) - segments, texts and counts IDENTICAL. Without that command the
+    `M4-seam-overlap/` numbers describe code that never shipped.
+  - **Identity off the seam, on real audio**: `verify_terminal_finalizer.py` still PASSes all nine
+    gates - the trio terminal surface is still the paired file arm at `0.000000` on WER, DER,
+    speaker accuracy and coverage. The trio is one 150 s window, so it has no seam to resolve.
+  - pytest `1157 passed / 2 skipped / 411 subtests` (was 1147/2/396): 10 new tests, 15 new
+    subtests, in `tests/test_live_terminal_finalizer.py`.
+  - `mutate_terminal_seam.sh`: five mutants (no resolution / merge across speakers / invent a
+    boundary / drop the later decoding / name the speakers first), each caught by the test that
+    NAMES its defect; M2 and M5 by those tests and nothing else. Controls green before and after.
+  - **The ordering is load-bearing and now tested.** `terminal_speaker_mapping` sums shared
+    samples per segment, so a stretch decoded twice votes twice, and because the assignment is
+    one-to-one an inflated weight can take a name away from the speaker whose audio earned it
+    (constructed shape in `TerminalSeamAndSpeakerNamesTest`: both names swap). On the corpus's own
+    seam no name moves - checked, not assumed.
+- Rest of the ladder: 8f (redeploy + re-score M4) is open, then M5 (evidence + records),
+  unimplemented.
 
 ## Validation
 
@@ -1465,16 +1488,21 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
    preregistered. Do NOT reach for `admit` (relaxing `_text_revision_refusal`): it is a change
    every producer on the surface is bound by and ADR-0005 D4 rests on it, and its `.053222` DER
    is a DOUBLE COUNT (F1 below), not a better surface.
-8e-2. **SHIP the seam resolution** - NEXT, and the lowest open item. Put the selected rule in
-   `TerminalTranscriptFinalizer._segments_of`, on `placed`, i.e. on the decoder's LOCAL speakers
-   and BEFORE `terminal_speaker_mapping` (merging after the mapping would merge two local
-   speakers that map to one person - a different rule than the one measured). CHECK, do not
-   assume, that the mapping is unaffected: the merged segment's overlap weight against the base
-   surface becomes the union rather than the sum, and the mapping votes on those weights - a
-   named test on this case's seam. Table-driven tests from the twelve synthetic shapes plus a
-   regression that a non-overlapping proposal is returned unchanged. File mode must stay
-   byte-identical (`_stitch_segments` untouched). Then re-score M4 (8f).
-8f. **Re-score the M4 exit on a fresh paired batch** after 8e-2 lands - `verify_m4_exit.py
+8e-2. ~~**SHIP the seam resolution**~~ - SHIPPED iteration 31 (see Current state). Production
+   reproduces the measured arm on 24 inputs, the trio terminal surface is unchanged at
+   `0.000000`, five mutants are each caught by the test that names them, and the decision is the
+   **ADR-0005 D9 addendum**. Verdict in `evidence/live-convergence-0824/M4-seam-ship/`.
+   Do NOT move the resolution after `terminal_speaker_mapping` "so the mapping sees what the
+   decoder said": that is mutation M5, and the double count it restores can swap two speakers'
+   names (measured, `TerminalSeamAndSpeakerNamesTest`). Do NOT relax the merge to join
+   overlapping segments of DIFFERENT local speakers (mutation M2) - it destroys the terminal
+   partition D8 exists to preserve. Do NOT "simplify" the cross-speaker branch into a drop: it
+   deletes words the audio supports, and `drop_later` was measured and rejected. Do NOT delete
+   `measure_seam_overlap.py --verify-production`; it is the only thing tying the shipped rule to
+   the numbers that selected it.
+8f. **Redeploy and re-score the M4 exit on a fresh paired batch** - NEXT, and the lowest open
+   item. 8e-2 changed production, so the running `web_cli` (pid 86813) still serves the pre-8e-2
+   build: restart it per the Validation section and record the restart, then `verify_m4_exit.py
    --fresh-root`, five cases, two runs. Expect **12 of 14**: G-M4-2 / G-M4-6 / G-M4-9 recover,
    and `lex_adam_frank` fails G-M4-3 (`.126177` vs rolling `.122411`) and G-M4-4 (`.949153` vs
    `.951036`) instead. That trade is D-M4-3, an owner ruling already recorded in the

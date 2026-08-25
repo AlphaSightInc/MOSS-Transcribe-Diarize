@@ -1,0 +1,380 @@
+...............F.F.FF.F..F.                           [100%]
+=================================== FAILURES ===================================
+_ TerminalSeamResolutionTest.test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one>
+
+    def test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one(self):
+        """The one case that loses words -- and the alternative is inventing a boundary."""
+    
+        resolution = resolve_terminal_overlaps(SEAM_SHAPES["contained_cross_speaker"])
+    
+>       assert resolution.segments == (("A", 0, 200, "one"),)
+E       AssertionError: assert (('A', 0, 200..., 100, 'two')) == (('A', 0, 200, 'one'),)
+E         
+E         Left contains one more item: ('B', 50, 100, 'two')
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:430: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='pair_same_speaker') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (120 >= 160)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='pair_cross_speaker') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (120 >= 160)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='contained') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (50 >= 200)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='contained_cross_speaker') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (50 >= 200)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='identical') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (0 >= 100)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='chain_of_three') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (100 >= 150)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='chain_mixed_speakers') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (100 >= 150)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (shape='later_ends_earlier') _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface>
+
+    def test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface(self):
+        """Totality: sorted, advancing, disjoint, and inside the boundaries it was given.
+    
+        The last clause is plan §3.4 as a property -- the campaign never invents a timestamp,
+        so every boundary emitted must be one the decoder itself produced.
+        """
+    
+        for name, shape in SEAM_SHAPES.items():
+            with self.subTest(shape=name):
+                resolution = resolve_terminal_overlaps(shape)
+                boundaries = {item[1] for item in shape} | {item[2] for item in shape}
+                frontier = min(item[1] for item in shape)
+                for _speaker, start, end, _text in resolution.segments:
+>                   assert start >= frontier and end > start
+E                   AssertionError: assert (100 >= 200)
+
+tests/test_live_terminal_finalizer.py:386: AssertionError
+_ TerminalSeamResolutionTest.test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union>
+
+    def test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union(self):
+        """The corpus's own seam, sample for sample."""
+    
+        resolution = resolve_terminal_overlaps(MEETING_SEAM)
+    
+>       assert resolution.segments == (
+            (
+                "S01",
+                2099040,
+                2185920,
+                "when two stars passed by each other closely"
+                " and then material was gravitationally squeezed out.",
+            ),
+        )
+E       AssertionError: assert (('S01', 2099...ueezed out.')) == (('S01', 2099...eezed out.'),)
+E         
+E         At index 0 diff: ('S01', 2099040, 2180640, 'when two stars passed by each other closely') != ('S01', 2099040, 2185920, 'when two stars passed by each other closely and then material was gravitationally squeezed out.')
+E         Left contains one more item: ('S01', 2143200, 2185920, 'and then material was gravitationally squeezed out.')
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:403: AssertionError
+_ TerminalSeamResolutionTest.test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left>
+
+    def test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left(self):
+        """One interval, one owner. The later speaker keeps its words over what remains."""
+    
+        resolution = resolve_terminal_overlaps(SEAM_SHAPES["pair_cross_speaker"])
+    
+>       assert resolution.segments == (("A", 0, 160, "one"), ("B", 160, 200, "two"))
+E       AssertionError: assert (('A', 0, 160..., 200, 'two')) == (('A', 0, 160..., 200, 'two'))
+E         
+E         At index 1 diff: ('B', 120, 200, 'two') != ('B', 160, 200, 'two')
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:421: AssertionError
+_ TerminalSeamAndSpeakerNamesTest.test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name _
+
+self = <test_live_terminal_finalizer.TerminalSeamAndSpeakerNamesTest testMethod=test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name>
+
+    def test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name(self):
+        base = (
+            base_segment(0, 100, "speaker-a"),
+            base_segment(100, 200, "speaker-b"),
+            base_segment(200, 300, "speaker-a"),
+        )
+        # `A` genuinely owns 100 samples of speaker-a and 45 of speaker-b; `B` owns 100 of
+        # speaker-a and 50 of speaker-b. Counting `A`'s overlapping pair twice makes its
+        # speaker-b evidence 80 instead of 45 -- enough to win the name off `B`.
+        placed = [
+            ("A", 0, 100, "a1"), ("A", 100, 140, "a2"), ("A", 105, 145, "a3"),
+            ("B", 150, 200, "b1"), ("B", 200, 300, "b2"),
+        ]
+    
+        as_decoded = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
+        resolved = terminal_speaker_mapping(
+            resolve_terminal_overlaps(placed).segments,
+            base_surface=base, canonical_speakers=SPEAKERS,
+        )
+    
+        assert as_decoded == {"A": "speaker-b", "B": "speaker-a"}
+>       assert resolved == {"A": "speaker-a", "B": "speaker-b"}
+E       AssertionError: assert {'A': 'speake...: 'speaker-a'} == {'A': 'speake...: 'speaker-b'}
+E         
+E         Differing items:
+E         {'A': 'speaker-b'} != {'A': 'speaker-a'}
+E         {'B': 'speaker-a'} != {'B': 'speaker-b'}
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:472: AssertionError
+_ TerminalSeamAndSpeakerNamesTest.test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke _
+
+self = <test_live_terminal_finalizer.TerminalSeamAndSpeakerNamesTest testMethod=test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke>
+
+    def test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke(self):
+        """The order is the rule: the same shape, through the adapter that ships.
+    
+        `S01` is decoded twice over one stretch of `speaker-b`'s audio. Counted twice, that
+        stretch is worth more than `S02`'s genuine 0.5 s there, and the one-to-one assignment
+        hands `S01` the name `speaker-b` -- taking it from the speaker whose audio earned it
+        and pushing `S02` onto `speaker-a`. Resolving the seam first is what prevents it.
+        """
+    
+        runner = WholeMeetingStub(
+            "[0][S01]a one[1][1][S01]a two[1.4][1.05][S01]a three[1.45]"
+            "[1.5][S02]b one[2][2][S02]b two[3]"
+        )
+        base = (
+            base_segment(0, SECOND, "speaker-a"),
+            base_segment(SECOND, 2 * SECOND, "speaker-b"),
+            base_segment(2 * SECOND, 3 * SECOND, "speaker-a"),
+        )
+    
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(3 * SECOND), tape=tape_of(3 * SECOND), base_text_revision_version=0,
+            base_surface=base, canonical_speakers=SPEAKERS,
+        )
+    
+>       assert [item.canonical_speaker for item in result.proposal.segments] == [
+            "speaker-a", "speaker-a", "speaker-b", "speaker-b",
+        ]
+E       AssertionError: assert ['speaker-b',..., 'speaker-a'] == ['speaker-a',..., 'speaker-b']
+E         
+E         At index 0 diff: 'speaker-b' != 'speaker-a'
+E         Left contains one more item: 'speaker-a'
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:498: AssertionError
+_ TerminalFinalizerSessionTest.test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved _
+
+self = <test_live_terminal_finalizer.TerminalFinalizerSessionTest testMethod=test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved>
+
+    def test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved(self):
+        """The defect this rule exists for, end to end on the numbers that produced it.
+    
+        `lex_adam_frank` is the only meeting in the campaign corpus long enough for file mode
+        to plan two windows, and its terminal pass reproduced the file arm exactly -- including
+        two segments that overlap by 2.34 s at the window seam. The session refused the whole
+        proposal, so the meeting finalized `failed` and kept its rolling surface. Same decode,
+        same session: refused as the decoder emitted it, published once the seam is resolved.
+        """
+    
+        meeting = 137 * SECOND
+        session = LiveSession(max_retained_samples=meeting)
+        for index in range(4):
+            publish_prepared(
+                session, meeting // 4, index,
+                text=f"[0][S01]span {index}[1]",
+                canonical_speakers=SPEAKERS, local_speakers=("S01",),
+            )
+        snapshot = session.snapshot()
+        committed = snapshot.committed_samples
+    
+        as_decoded = TextRevisionProposal(
+            epoch=session.epoch,
+            base_text_revision_version=snapshot.text_revision_version,
+            source="terminal",
+            start_sample=0,
+            end_sample=committed,
+            segments=tuple(
+                EffectiveTranscriptSegment(
+                    start_sample=start, end_sample=end, text=text,
+                    canonical_speaker=None, authority="terminal",
+                )
+                for _speaker, start, end, text in MEETING_SEAM
+            ),
+            decode_elapsed_sec=1.0,
+        )
+        refused = session.apply_text_revision(as_decoded)
+    
+        assert (refused.applied, refused.refusal) == (False, "segments_out_of_order")
+    
+        runner = WholeMeetingStub(
+            "[131.19][S01]when two stars passed by each other closely[136.29]"
+            "[133.95][S01]and then material was gravitationally squeezed out.[136.62]"
+        )
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(committed),
+            tape=tape_of(committed),
+            base_text_revision_version=snapshot.text_revision_version,
+            base_surface=snapshot.effective_transcript,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+        outcome = session.apply_text_revision(result.proposal)
+    
+        after = session.snapshot()
+>       assert (outcome.applied, outcome.finalization_status) == (True, "final")
+E       AssertionError: assert (False, 'not_started') == (True, 'final')
+E         
+E         At index 0 diff: False != True
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:642: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one
+SUBFAILED(shape='pair_same_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='pair_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='contained') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='contained_cross_speaker') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='identical') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='chain_of_three') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='chain_mixed_speakers') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+SUBFAILED(shape='later_ends_earlier') tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke
+FAILED tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved
+14 failed, 21 passed, 11 subtests passed in 2.39s

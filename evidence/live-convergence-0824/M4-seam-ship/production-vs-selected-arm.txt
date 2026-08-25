@@ -1,0 +1,4 @@
+does production do what the selected arm was measured doing?
+  inputs: 24 (12 file arms, 12 synthetic shapes)
+  IDENTICAL
+exit=0

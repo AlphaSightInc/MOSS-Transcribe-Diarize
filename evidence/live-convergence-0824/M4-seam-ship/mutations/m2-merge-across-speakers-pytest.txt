@@ -1,0 +1,39 @@
+...............F...F.......                           [100%]
+=================================== FAILURES ===================================
+_ TerminalSeamResolutionTest.test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one>
+
+    def test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one(self):
+        """The one case that loses words -- and the alternative is inventing a boundary."""
+    
+        resolution = resolve_terminal_overlaps(SEAM_SHAPES["contained_cross_speaker"])
+    
+>       assert resolution.segments == (("A", 0, 200, "one"),)
+E       AssertionError: assert (('A', 0, 200, 'one two'),) == (('A', 0, 200, 'one'),)
+E         
+E         At index 0 diff: ('A', 0, 200, 'one two') != ('A', 0, 200, 'one')
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:430: AssertionError
+_ TerminalSeamResolutionTest.test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left _
+
+self = <test_live_terminal_finalizer.TerminalSeamResolutionTest testMethod=test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left>
+
+    def test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left(self):
+        """One interval, one owner. The later speaker keeps its words over what remains."""
+    
+        resolution = resolve_terminal_overlaps(SEAM_SHAPES["pair_cross_speaker"])
+    
+>       assert resolution.segments == (("A", 0, 160, "one"), ("B", 160, 200, "two"))
+E       AssertionError: assert (('A', 0, 200, 'one two'),) == (('A', 0, 160..., 200, 'two'))
+E         
+E         At index 0 diff: ('A', 0, 200, 'one two') != ('A', 0, 160, 'one')
+E         Right contains one more item: ('B', 160, 200, 'two')
+E         Use -v to get more diff
+
+tests/test_live_terminal_finalizer.py:421: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one
+FAILED tests/test_live_terminal_finalizer.py::TerminalSeamResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left
+2 failed, 25 passed, 19 subtests passed in 2.24s
