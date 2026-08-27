@@ -610,7 +610,7 @@ def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reall
     ]
 
 
-def test_stale_workspace_cannot_create_after_account_revoke(tmp_path: Path):
+def test_reallow_does_not_resurrect_pre_revoke_workspace(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
 
     async def exercise() -> None:
@@ -619,13 +619,26 @@ def test_stale_workspace_cannot_create_after_account_revoke(tmp_path: Path):
             await store.allow_email("person@example.com")
             account, _ = (await store.admit(GoogleIdentity("sub-a", "person@example.com", "Person")))
             workspace = store.workspace(account)
+            stale_meeting = await workspace.create_meeting("live")
+            assert (await stale_meeting.snapshot()).status == "active"
             admin_store = await Phase2Store.open(database)
             try:
                 assert await admin_store.revoke_email("person@example.com") is True
+                await admin_store.allow_email("person@example.com")
             finally:
                 await admin_store.close()
+
+            fresh_account, _ = (
+                await store.admit(GoogleIdentity("sub-a", "person@example.com", "Person"))
+            )
+            assert await workspace.list_meetings() == []
+            assert await workspace.open_meeting(stale_meeting.meeting_id) is None
+            with pytest.raises(KeyError, match=stale_meeting.meeting_id):
+                await stale_meeting.snapshot()
             with pytest.raises(PermissionError, match="revoked"):
                 await workspace.create_meeting("live")
+            fresh_meeting = await store.workspace(fresh_account).create_meeting("live")
+            assert (await fresh_meeting.snapshot()).status == "active"
         finally:
             await store.close()
 
@@ -715,6 +728,7 @@ main(['--help'])
 
 
 def test_top_level_legacy_model_exports_remain_importable():
+    pytest.importorskip("torch", reason="legacy model exports require the torch-runtime extra")
     from moss_transcribe_diarize import (
         MossTranscribeDiarizeConfig,
         MossTranscribeDiarizeForConditionalGeneration,

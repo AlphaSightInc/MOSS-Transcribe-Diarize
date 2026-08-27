@@ -54,6 +54,7 @@ class Account:
     account_id: str
     email: str
     display_name: str
+    authority_generation: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +264,7 @@ class Phase2Store:
                 email TEXT NOT NULL UNIQUE,
                 display_name TEXT NOT NULL,
                 enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
+                authority_generation INTEGER NOT NULL,
                 created_at_ms INTEGER NOT NULL,
                 updated_at_ms INTEGER NOT NULL
             );
@@ -417,7 +419,13 @@ class Phase2Store:
                     (now, account_id),
                 )
                 await self._connection.execute(
-                    "UPDATE accounts SET enabled = 0, updated_at_ms = ? WHERE account_id = ?",
+                    """
+                    UPDATE accounts
+                    SET enabled = 0,
+                        authority_generation = authority_generation + 1,
+                        updated_at_ms = ?
+                    WHERE account_id = ?
+                    """,
                     (now, account_id),
                 )
                 await self._connection.execute(
@@ -476,19 +484,25 @@ class Phase2Store:
                 return None
 
             cursor = await self._connection.execute(
-                "SELECT account_id FROM accounts WHERE account_id = ?", (account_id,)
+                "SELECT account_id, authority_generation FROM accounts WHERE account_id = ?",
+                (account_id,),
             )
             account_row = await cursor.fetchone()
             await cursor.close()
             if account_row is None:
+                authority_generation = 0
                 await self._connection.execute(
                     """
-                    INSERT INTO accounts(account_id, email, display_name, enabled, created_at_ms, updated_at_ms)
-                    VALUES (?, ?, ?, 1, ?, ?)
+                    INSERT INTO accounts(
+                        account_id, email, display_name, enabled, authority_generation,
+                        created_at_ms, updated_at_ms
+                    )
+                    VALUES (?, ?, ?, 1, ?, ?, ?)
                     """,
-                    (account_id, email, identity.display_name, now, now),
+                    (account_id, email, identity.display_name, authority_generation, now, now),
                 )
             else:
+                authority_generation = int(account_row["authority_generation"])
                 await self._connection.execute(
                     """
                     UPDATE accounts SET email = ?, display_name = ?, enabled = 1, updated_at_ms = ?
@@ -506,14 +520,19 @@ class Phase2Store:
                 "INSERT INTO sign_in_sessions(session_id, account_id, created_at_ms) VALUES (?, ?, ?)",
                 (session_id, account_id, now),
             )
-            return Account(account_id=account_id, email=email, display_name=identity.display_name), session_id
+            return Account(
+                account_id=account_id,
+                email=email,
+                display_name=identity.display_name,
+                authority_generation=authority_generation,
+            ), session_id
 
     async def account_for_session(self, session_id: str | None) -> Account | None:
         if not session_id:
             return None
         cursor = await self._connection.execute(
             """
-            SELECT a.account_id, a.email, a.display_name
+            SELECT a.account_id, a.email, a.display_name, a.authority_generation
             FROM sign_in_sessions s
             JOIN accounts a ON a.account_id = s.account_id
             WHERE s.session_id = ? AND a.enabled = 1
@@ -528,6 +547,7 @@ class Phase2Store:
             account_id=row["account_id"],
             email=row["email"],
             display_name=row["display_name"],
+            authority_generation=int(row["authority_generation"]),
         )
 
     async def revoke_session(self, session_id: str | None) -> bool:
@@ -542,22 +562,28 @@ class Phase2Store:
     def workspace(self, account: Account) -> "AccountWorkspace":
         return AccountWorkspace(self, account)
 
-    async def _list_meetings(self, account_id: str) -> list[Meeting]:
+    async def _list_meetings(self, account_id: str, authority_generation: int) -> list[Meeting]:
         cursor = await self._connection.execute(
             """
             SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
             FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            JOIN accounts a ON a.account_id = m.account_id
+                AND a.enabled = 1 AND a.authority_generation = ?
             WHERE m.account_id = ?
             ORDER BY m.created_at_ms DESC, m.meeting_id DESC
             """,
-            (account_id,),
+            (authority_generation, account_id),
         )
         rows = await cursor.fetchall()
         await cursor.close()
         return [_meeting_from_row(row) for row in rows]
 
-    async def _create_meeting(self, account_id: str, mode: str) -> "MeetingHandle":
+    async def _create_meeting(
+        self,
+        account_id: str,
+        authority_generation: int,
+        mode: str,
+    ) -> "MeetingHandle":
         if mode not in {"live", "file"}:
             raise ValueError("mode must be live or file.")
         meeting_id = secrets.token_urlsafe(18)
@@ -567,36 +593,53 @@ class Phase2Store:
                 """
                 INSERT INTO meetings(account_id, meeting_id, mode, title, status, created_at_ms, updated_at_ms)
                 SELECT account_id, ?, ?, NULL, 'active', ?, ?
-                FROM accounts WHERE account_id = ? AND enabled = 1
+                FROM accounts
+                WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
                 """,
-                (meeting_id, mode, now, now, account_id),
+                (meeting_id, mode, now, now, account_id, authority_generation),
             )
             if cursor.rowcount != 1:
                 raise AccountRevoked("Account is revoked.")
-        return MeetingHandle(self, account_id, meeting_id)
+        return MeetingHandle(self, account_id, authority_generation, meeting_id)
 
-    async def _open_meeting(self, account_id: str, meeting_id: str) -> "MeetingHandle | None":
+    async def _open_meeting(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ) -> "MeetingHandle | None":
         cursor = await self._connection.execute(
             """
             SELECT 1 FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            JOIN accounts a ON a.account_id = m.account_id
+                AND a.enabled = 1 AND a.authority_generation = ?
             WHERE m.account_id = ? AND m.meeting_id = ?
             """,
-            (account_id, meeting_id),
+            (authority_generation, account_id, meeting_id),
         )
         row = await cursor.fetchone()
         await cursor.close()
-        return MeetingHandle(self, account_id, meeting_id) if row is not None else None
+        return (
+            MeetingHandle(self, account_id, authority_generation, meeting_id)
+            if row is not None
+            else None
+        )
 
-    async def _meeting_snapshot(self, account_id: str, meeting_id: str) -> Meeting:
+    async def _meeting_snapshot(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ) -> Meeting:
         cursor = await self._connection.execute(
             """
             SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
             FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            JOIN accounts a ON a.account_id = m.account_id
+                AND a.enabled = 1 AND a.authority_generation = ?
             WHERE m.account_id = ? AND m.meeting_id = ?
             """,
-            (account_id, meeting_id),
+            (authority_generation, account_id, meeting_id),
         )
         row = await cursor.fetchone()
         await cursor.close()
@@ -613,25 +656,47 @@ class AccountWorkspace:
         self._account = account
 
     async def list_meetings(self) -> list[Meeting]:
-        return await self._store._list_meetings(self._account.account_id)
+        return await self._store._list_meetings(
+            self._account.account_id,
+            self._account.authority_generation,
+        )
 
     async def create_meeting(self, mode: str) -> "MeetingHandle":
-        return await self._store._create_meeting(self._account.account_id, mode)
+        return await self._store._create_meeting(
+            self._account.account_id,
+            self._account.authority_generation,
+            mode,
+        )
 
     async def open_meeting(self, meeting_id: str) -> "MeetingHandle | None":
-        return await self._store._open_meeting(self._account.account_id, meeting_id)
+        return await self._store._open_meeting(
+            self._account.account_id,
+            self._account.authority_generation,
+            meeting_id,
+        )
 
 
 class MeetingHandle:
     """A Meeting locator that is already bound to its owner and cannot be rebound by callers."""
 
-    def __init__(self, store: Phase2Store, account_id: str, meeting_id: str):
+    def __init__(
+        self,
+        store: Phase2Store,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ):
         self._store = store
         self._account_id = account_id
+        self._authority_generation = authority_generation
         self.meeting_id = meeting_id
 
     async def snapshot(self) -> Meeting:
-        return await self._store._meeting_snapshot(self._account_id, self.meeting_id)
+        return await self._store._meeting_snapshot(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+        )
 
 
 def create_phase2_app(

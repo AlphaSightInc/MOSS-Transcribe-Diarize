@@ -20,7 +20,9 @@ One enabled SQLite allowlist row admits a successful callback. MOSS then issues 
 server-side Sign-in session in a Secure, HttpOnly, SameSite=Lax, Path=/ `__Host-moss_session`
 cookie. Sessions have no MOSS idle or absolute expiry. Sign-out revokes one session; `mtd-admin
 accounts revoke EMAIL` disables the Account, revokes all sessions, and durably interrupts its active
-Meetings before returning. Every later request resolves session plus enabled Account from SQLite.
+Meetings before returning. Revoke also increments the Account's durable authority generation;
+workspace and Meeting handles capture that generation, so re-allow plus fresh sign-in cannot revive
+pre-revoke work. Every later request resolves session plus enabled Account from SQLite.
 
 There is no password, invite token, shared bearer, refresh token, Headscale identity forwarding,
 emergency bypass, or non-Google fallback. The production origin keeps explicit port `:7861` and uses
