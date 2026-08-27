@@ -140,6 +140,24 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   burst loss; gap manifests exactly account for dropped frames; checkpoint/resume at
   40%+70% reproduced the uninterrupted mixed tape byte-identically.
 
+- **Durable named voice-profile matching — ACCEPTED (2026-08-26).** A fresh production-path
+  prototype used the pinned WeSpeaker ResNet152 ONNX encoder, production live evidence units,
+  and production `FingerprintAlbum` centroids over five speakers in two 30-minute English
+  interviews. Three non-overlapping 5-minute enrollment windows preceded every probe. Across
+  470 known probes, 470 leave-true-profile-out unknown scenarios, 1,880 different-person pairs,
+  14 terminal album probes, and 1,530 operating points, the accepted cross-session rule is
+  cosine `>= 0.46`, no runner-up margin, at least `1.0 s` eligible speech, and the
+  LiveTranscribe-style L2-normalized arithmetic mean of stored named-session samples. It named
+  441/470 causal probes correctly, abstained on 29, produced zero observed wrong names, abstained
+  on 470/470 unknowns, and named 14/14 truth-aligned terminal albums correctly. LiveTranscribe's
+  `0.51` was safe but lost four additional correct names; MOSS's within-session settings
+  (`0.35` score, `0.10` margin, `0.5 s` floor) produced three wrong known names and three false
+  names when the true profile was
+  absent. Below either gate, or without an embedding, the durable matcher keeps `Speaker N`.
+  Terminal end-to-end cluster-to-profile behavior and every population beyond the measured five
+  speakers remain **unmeasured**. Reproduction and full denominators:
+  `prototypes/streaming-diarization/voice-profile-matching/NOTES.md`.
+
 - **Short provisional / longer joint-MOSS witness (2026-08-24) — rolling text PASS,
   speaker authority OPEN.** On three fully referenced real 60-second interviews, reducing
   the live hard cap from 2.5 seconds to one second cut mean first-word age 3.04→1.00 seconds,

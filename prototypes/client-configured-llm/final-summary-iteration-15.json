@@ -1,0 +1,739 @@
+{
+  "schema": "moss-final-summary-prompt-iteration.v1",
+  "measuredAt": "2026-08-27T03:11:45.853Z",
+  "iteration": 15,
+  "prompt": "Create the sole final briefing for a thoughtful reader who will not read the transcript.\n\nGOAL\nDeliver unusually high signal: the central takeaway, the most useful insights and mental models,\nthe reasoning or mechanism behind them, their implications, and any important but\nunder-appreciated facts or metrics. Optimize for understanding and decision value, not coverage.\n\nQUALITY PRIORITIES\n1. Grounding: use only transcript-supported content. Do not infer unstated facts, identities,\n   motives, causality, or consensus.\n2. Epistemic accuracy: preserve whether something is an observation, a speaker's argument, a\n   forecast, a hypothesis, an open question, or a preview. Attribute contested or evaluative\n   claims. Never upgrade uncertainty or turn a question into an answer.\n3. Insight: explain why a supported idea matters and how its reasoning works. Do not invent a\n   deeper lesson because two facts are adjacent. If the transcript is setup-only, say that it\n   frames an open question and does not answer it.\n4. Selectivity: omit repetition, sponsor material, show logistics, and colorful anecdotes unless\n   they materially explain the central takeaway.\n\nSOURCE AND CENTRALITY TEST\n- Keep narrator/interviewer setup, a guest's claims, and reported outcomes distinct. Do not fuse\n  separate transcript sections into a causal story unless the transcript explicitly connects\n  them. Sequence alone is not causation.\n- Include a fact only if removing it would materially weaken the reader's understanding of the\n  central question, mechanism, disagreement, or implication. Novelty and color are not enough.\n- Judge importance by explanatory leverage, not by how many lines a fact occupies or how\n  surprising it sounds. Opening banter, announcements, historical curiosities, and event details\n  are not key takeaways unless later reasoning depends on them.\n- In a comparison, do not infer shared premises or goals from overlapping vocabulary; report\n  only explicit agreement and otherwise present the contrast.\n\nSILENT WORKFLOW BEFORE WRITING\n1. Build an evidence map: for each candidate takeaway, identify its speaker and classify it as\n   stated fact, speaker argument, forecast, hypothesis, open question, or preview.\n2. Rank candidates by explanatory value. Discard anything incidental or unsupported by a clear\n   transcript passage.\n3. Write from the surviving evidence using these patterns when applicable:\n   - speaker argument: \"X argues [claim] because [stated reasoning].\"\n   - comparison: \"X argues A, whereas Y argues B.\" Do not add \"both agree\" unless they say so.\n   - forecast: \"X expects/may [outcome]\" with the original uncertainty; never \"will answer/prove.\"\n   - setup-only: \"The speakers frame [question]; this transcript does not provide the answer.\"\n4. Check every causal verb (drives, causes, proves, demonstrates, leads to) against an explicit\n   transcript connection. If none exists, remove or attribute it as a speaker's interpretation.\n5. For a setup-only transcript, center the unanswered substantive question. Use [] for details\n   and data references unless a quantitative anchor materially defines that question or its\n   context; never fill them with banter, production/release logistics, or trivia.\n6. Enforce cross-field relevance: every detail and metric must directly support a specific\n   takeaway in summary or topics. Delete orphan facts that are merely mentioned, even if vivid or\n   quantitative. After drafting, remove any item whose absence would not reduce explanatory value.\n\nDATA-REFERENCE SELECTION PASS\n- A data reference is any exact quantitative anchor that provides evidence: a count, percentage,\n  ratio, multiple, money amount, rate, threshold, calendar year, duration, forecast horizon, or\n  before/after change. Do not reserve this field for percentages or financial figures.\n- Start from the completed summary and topics. For each selected claim, inspect only its supporting\n  transcript passage and identify its exact quantitative anchors. If an anchor materially makes\n  that claim more concrete, add it to data_references. In particular, preserve durations and\n  forecast horizons that define a scientific transition, ratios that establish relative scale,\n  and milestone years that locate a consequential business transition.\n- Time is evidence when it changes the mental model. If a chosen claim contrasts a long-standing\n  condition with a near-term transition, recover the transcript's exact historical duration and\n  expected horizon even when the prose paraphrases them as \"thousands of years\" or \"soon\". Related\n  values may share one entry when together they express a single trajectory or comparison.\n- Each context must use the form \"Supports '<topic title>': <explanation>\" or\n  \"Supports the summary: <explanation>\" and must copy a final topic title exactly when naming one.\n  Exclude a quantity if it cannot be mapped to an actual final topic or summary claim; general\n  relevance to the recording is insufficient.\n- One to three entries is a useful default when qualifying anchors exist, not a quota. Do not add\n  numbers from discarded banter, recording/release logistics, or anecdotes. A calendar year\n  qualifies only when it locates a substantive historical or business transition, not the\n  production history of this recording. Use [] when no selected takeaway benefits from a\n  quantitative anchor. Increase coverage by finding useful evidence, never by lowering this bar.\n\nOUTPUT\nReturn one raw, valid JSON object only. The first character must be { and the last must be }.\nUse double quotes around every property name and string. Do not use markdown fences, comments,\ntrailing commas, or introductory text. Use exactly these five keys. This valid empty skeleton\nshows the required top-level types; populate it with supported content:\n\n{\n  \"summary\": \"\",\n  \"topics\": [],\n  \"details\": [],\n  \"speaker_background\": [],\n  \"data_references\": []\n}\n\nEvery topics element must be {\"title\": \"...\", \"description\": \"...\"}.\nEvery details element must be {\"title\": \"...\", \"description\": \"...\", \"timestamp\": \"HH:MM:SS\"}.\nEvery speaker_background element must be one string: \"Name: explicitly stated role or background\".\nEvery data_references element must be {\"item\": \"...\", \"value\": \"...\", \"context\": \"...\"}.\nNever emit placeholder text, a missing value, or a colon without a complete JSON string before it.\n\nFIELD INTENT\n- summary: 1 to 2 concise sentences answering \"What should the reader remember, and why does it\n  change their understanding?\" State conclusions directly; do not say the episode or briefing\n  \"explores\" something.\n- topics: a few mutually distinct mental models or explanatory chains. Each description connects\n  claim -> mechanism or evidence -> implication. Do not repeat the summary.\n- details: selected chronological support, not a transcript recap. Every item has a valid\n  transcript timestamp and does not duplicate a complete topic. Use [] when the transcript has\n  no substantive evidence beyond framing an open question.\n- speaker_background: only explicitly stated roles/background; otherwise [].\n- data_references: selective quantitative-evidence appendix at the end. Include only metrics that substantiate a\n  major claim, reveal scale/change/trade-off, or materially improve understanding. \"Important\n  but under-appreciated\" means high explanatory leverage, not merely unusual or memorable. Copy the\n  complete value and unit when practical and explain its significance. Omit incidental metrics;\n  use [] only when the selected takeaways have no qualifying quantitative anchor. Metric inclusion\n  or coverage is never a pass/fail requirement.\n\nBefore returning, silently verify that JSON.parse would succeed, all five keys exist with the\nshown types, every important claim is traceable to the transcript with its original certainty,\ntopics are distinct, every detail/metric supports a selected takeaway, metrics are selective\nrather than exhaustive, and the prose is grammatically complete.",
+  "configuration": {
+    "endpoint": "https://openrouter.ai/api/v1",
+    "requestedModel": "google/gemini-3.5-flash-lite",
+    "token": "present-not-recorded",
+    "callsPerRecording": 1,
+    "rollingSummaries": 0,
+    "repairCalls": 0
+  },
+  "corpus": {
+    "finalizedRecordings": [
+      "5m-acquired-nfl",
+      "5m-acquired-jamie-dimon",
+      "30m-lex-bill-ackman",
+      "5m-lex-javier-milei",
+      "3m-lex-adam-frank",
+      "3m-lex-shapiro-destiny",
+      "5m-acquired-alphabet"
+    ],
+    "excludedInterimCases": [
+      "1m-acquired-nfl",
+      "1m-acquired-jamie-dimon",
+      "3m-acquired-jamie-dimon",
+      "5m-lex-bill-ackman",
+      "1m-lex-bill-ackman",
+      "1m-lex-javier-milei"
+    ],
+    "unavailableFinal": [
+      "5m-acquired-rolex"
+    ],
+    "sealedBlindHoldoutContentOpened": 0
+  },
+  "aggregate": {
+    "cases": 7,
+    "calls": 7,
+    "structurePassed": 7,
+    "strictJsonOnly": 7,
+    "casesWithMetricAppendix": 5,
+    "metricAppendixEntries": 9,
+    "metricAppendixAcceptanceCriterion": false,
+    "medianLatencyMs": 2207,
+    "maxLatencyMs": 3360,
+    "recordedCost": 0.0154912
+  },
+  "cases": [
+    {
+      "caseId": "5m-acquired-nfl",
+      "durationSec": 300,
+      "sourceRows": 28,
+      "latencyMs": 1719,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 2633,
+        "completion_tokens": 337,
+        "total_tokens": 2970,
+        "cost": 0.0016324,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0016324,
+          "upstream_inference_prompt_cost": 0.0007899,
+          "upstream_inference_completions_cost": 0.0008425
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 1,
+          "sourceDigitTokens": [
+            "2023",
+            "2026"
+          ],
+          "appendixDigitTokens": [
+            "3x"
+          ],
+          "omittedSourceDigitTokens": [
+            "2023",
+            "2026"
+          ],
+          "unsupportedAppendixDigitTokens": [
+            "3x"
+          ]
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "The hosts introduce a remastered and updated edition of their previous NFL episode, highlighting the league's immense popularity and recent developments such as audience growth, Taylor Swift's involvement, and private equity entry.",
+        "topics": [
+          {
+            "title": "NFL's Dominance and Historical Growth",
+            "description": "Ben Gilbert observes that football is America's favorite sport by far—more than three times as popular as basketball—and argues that this status as the most valuable media property in America stems from a century of incredible cooperation, belief in growing the pie, and equal revenue sharing among owners."
+          }
+        ],
+        "details": [
+          {
+            "title": "Remastered NFL Episode Release",
+            "description": "The hosts present a remastered version of their January 2023 NFL episode, updated to current production quality with a new concluding section covering recent developments like Taylor Swift and private equity.",
+            "timestamp": "00:00:42"
+          }
+        ],
+        "speaker_background": [
+          "Ben Gilbert: Host of Acquired",
+          "David Rosenthal: Host of Acquired"
+        ],
+        "data_references": [
+          {
+            "item": "Popularity multiple",
+            "value": "More than 3x",
+            "context": "Supports 'NFL's Dominance and Historical Growth': Ben Gilbert states that football is more than three times as popular as the next highest sport, basketball."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"The hosts introduce a remastered and updated edition of their previous NFL episode, highlighting the league's immense popularity and recent developments such as audience growth, Taylor Swift's involvement, and private equity entry.\",\n  \"topics\": [\n    {\n      \"title\": \"NFL's Dominance and Historical Growth\",\n      \"description\": \"Ben Gilbert observes that football is America's favorite sport by far—more than three times as popular as basketball—and argues that this status as the most valuable media property in America stems from a century of incredible cooperation, belief in growing the pie, and equal revenue sharing among owners.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Remastered NFL Episode Release\",\n      \"description\": \"The hosts present a remastered version of their January 2023 NFL episode, updated to current production quality with a new concluding section covering recent developments like Taylor Swift and private equity.\",\n      \"timestamp\": \"00:00:42\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Ben Gilbert: Host of Acquired\",\n    \"David Rosenthal: Host of Acquired\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Popularity multiple\",\n      \"value\": \"More than 3x\",\n      \"context\": \"Supports 'NFL's Dominance and Historical Growth': Ben Gilbert states that football is more than three times as popular as the next highest sport, basketball.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "5m-acquired-jamie-dimon",
+      "durationSec": 300,
+      "sourceRows": 25,
+      "latencyMs": 865,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 2402,
+        "completion_tokens": 75,
+        "total_tokens": 2477,
+        "cost": 0.0009081,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0009081,
+          "upstream_inference_prompt_cost": 0.0007206,
+          "upstream_inference_completions_cost": 0.0001875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 0,
+          "sourceDigitTokens": [
+            "2025"
+          ],
+          "appendixDigitTokens": [],
+          "omittedSourceDigitTokens": [
+            "2025"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "The transcript frames an open question about how Jamie Dimon successfully managed J.P. Morgan to avoid failures and bloat while growing the institution, but the transcript does not provide the answer.",
+        "topics": [],
+        "details": [],
+        "speaker_background": [],
+        "data_references": []
+      },
+      "rawOutput": "{\n  \"summary\": \"The transcript frames an open question about how Jamie Dimon successfully managed J.P. Morgan to avoid failures and bloat while growing the institution, but the transcript does not provide the answer.\",\n  \"topics\": [],\n  \"details\": [],\n  \"speaker_background\": [],\n  \"data_references\": []\n}"
+    },
+    {
+      "caseId": "30m-lex-bill-ackman",
+      "durationSec": 1800,
+      "sourceRows": 73,
+      "latencyMs": 3360,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 9456,
+        "completion_tokens": 738,
+        "total_tokens": 10194,
+        "cost": 0.0046818,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0046818,
+          "upstream_inference_prompt_cost": 0.0028368,
+          "upstream_inference_completions_cost": 0.001845
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 1,
+          "sourceDigitTokens": [
+            "5%",
+            "10",
+            "18",
+            "11",
+            "30%",
+            "90s",
+            "2000",
+            "1950",
+            "75",
+            "50%",
+            "$1",
+            "19",
+            "200",
+            "500",
+            "3,500",
+            "20",
+            "$1.50",
+            "$2",
+            "250",
+            "15",
+            "4%"
+          ],
+          "appendixDigitTokens": [
+            "15"
+          ],
+          "omittedSourceDigitTokens": [
+            "5%",
+            "10",
+            "18",
+            "11",
+            "30%",
+            "90s",
+            "2000",
+            "1950",
+            "75",
+            "50%",
+            "$1",
+            "19",
+            "200",
+            "500",
+            "3,500",
+            "20",
+            "$1.50",
+            "$2",
+            "250",
+            "4%"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Bill Ackman argues that successful investing requires identifying businesses with enduring value and wide moats, purchasing them at a steep discount to their intrinsic value, and understanding the difference between short-term market speculation and long-term business fundamentals.",
+        "topics": [
+          {
+            "title": "Intrinsic Value and Margin of Safety",
+            "description": "Ackman argues that the value of any business is the present value of the cash you can take out of its lifetime operations. Because predicting the future is difficult, investors must buy at a significant discount—or margin of safety—so that errors in estimation do not result in losing money."
+          },
+          {
+            "title": "Moats and Predictable Business Models",
+            "description": "Ackman argues that the best investments are non-disruptible businesses with high barriers to entry, such as dominant music content libraries or established restaurant systems. These companies possess predictable cash flows and strong competitive advantages that persist across decades despite changing consumer formats."
+          },
+          {
+            "title": "Market Overreaction to Technological Shifts",
+            "description": "Ackman argues that temporary market panics over technological disruptions—such as the initial AI scare affecting Alphabet or food safety crises affecting Chipotle—can depress stock prices below their true value. Investors can exploit these dislocations by conducting thorough research through public filings and expert networks."
+          }
+        ],
+        "details": [
+          {
+            "title": "Benjamin Graham's Investing Principles",
+            "description": "Ackman discusses how Benjamin Graham's book 'The Intelligent Investor' shaped his career by establishing that the stock market in the short term acts as a voting machine, while in the long term it acts as a weighing machine.",
+            "timestamp": "00:01:00"
+          },
+          {
+            "title": "Universal Music Group's Asset Base",
+            "description": "Ackman describes Universal Music Group as a resilient business owning a third of global recorded music and publishing rights, benefiting from the predictability of streaming subscription models.",
+            "timestamp": "00:05:20"
+          },
+          {
+            "title": "Chipotle's Recovery Mechanism",
+            "description": "Ackman explains that Chipotle dropped 50% in value due to a food safety issue, but because the underlying fresh food concept and consumer demand remained exceptionally strong, the stock presented a compelling buying opportunity.",
+            "timestamp": "00:14:16"
+          },
+          {
+            "title": "Alphabet's Valuation and AI Positioning",
+            "description": "Ackman recounts how market fears over Microsoft's ChatGPT and an early demonstration of Bard caused Alphabet's stock to drop to a low multiple of 15 times earnings, creating an attractive entry point for an asset-rich business.",
+            "timestamp": "00:24:53"
+          }
+        ],
+        "speaker_background": [
+          "Bill Ackman: Legendary activist investor"
+        ],
+        "data_references": [
+          {
+            "item": "Alphabet price-to-earnings multiple",
+            "value": "15 times earnings",
+            "context": "Supports 'Alphabet's Valuation and AI Positioning': The low valuation multiple resulted in an earnings yield of nearly 7.5%, making it attractive relative to government bonds."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Bill Ackman argues that successful investing requires identifying businesses with enduring value and wide moats, purchasing them at a steep discount to their intrinsic value, and understanding the difference between short-term market speculation and long-term business fundamentals.\",\n  \"topics\": [\n    {\n      \"title\": \"Intrinsic Value and Margin of Safety\",\n      \"description\": \"Ackman argues that the value of any business is the present value of the cash you can take out of its lifetime operations. Because predicting the future is difficult, investors must buy at a significant discount—or margin of safety—so that errors in estimation do not result in losing money.\"\n    },\n    {\n      \"title\": \"Moats and Predictable Business Models\",\n      \"description\": \"Ackman argues that the best investments are non-disruptible businesses with high barriers to entry, such as dominant music content libraries or established restaurant systems. These companies possess predictable cash flows and strong competitive advantages that persist across decades despite changing consumer formats.\"\n    },\n    {\n      \"title\": \"Market Overreaction to Technological Shifts\",\n      \"description\": \"Ackman argues that temporary market panics over technological disruptions—such as the initial AI scare affecting Alphabet or food safety crises affecting Chipotle—can depress stock prices below their true value. Investors can exploit these dislocations by conducting thorough research through public filings and expert networks.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Benjamin Graham's Investing Principles\",\n      \"description\": \"Ackman discusses how Benjamin Graham's book 'The Intelligent Investor' shaped his career by establishing that the stock market in the short term acts as a voting machine, while in the long term it acts as a weighing machine.\",\n      \"timestamp\": \"00:01:00\"\n    },\n    {\n      \"title\": \"Universal Music Group's Asset Base\",\n      \"description\": \"Ackman describes Universal Music Group as a resilient business owning a third of global recorded music and publishing rights, benefiting from the predictability of streaming subscription models.\",\n      \"timestamp\": \"00:05:20\"\n    },\n    {\n      \"title\": \"Chipotle's Recovery Mechanism\",\n      \"description\": \"Ackman explains that Chipotle dropped 50% in value due to a food safety issue, but because the underlying fresh food concept and consumer demand remained exceptionally strong, the stock presented a compelling buying opportunity.\",\n      \"timestamp\": \"00:14:16\"\n    },\n    {\n      \"title\": \"Alphabet's Valuation and AI Positioning\",\n      \"description\": \"Ackman recounts how market fears over Microsoft's ChatGPT and an early demonstration of Bard caused Alphabet's stock to drop to a low multiple of 15 times earnings, creating an attractive entry point for an asset-rich business.\",\n      \"timestamp\": \"00:24:53\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Bill Ackman: Legendary activist investor\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Alphabet price-to-earnings multiple\",\n      \"value\": \"15 times earnings\",\n      \"context\": \"Supports 'Alphabet's Valuation and AI Positioning': The low valuation multiple resulted in an earnings yield of nearly 7.5%, making it attractive relative to government bonds.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "5m-lex-javier-milei",
+      "durationSec": 300,
+      "sourceRows": 6,
+      "latencyMs": 2207,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 2665,
+        "completion_tokens": 526,
+        "total_tokens": 3191,
+        "cost": 0.0021145,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0021145,
+          "upstream_inference_prompt_cost": 0.0007995,
+          "upstream_inference_completions_cost": 0.001315
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 3,
+          "sourceDigitTokens": [
+            "16",
+            "2013",
+            "2014",
+            "2,000",
+            "1800",
+            "200",
+            "95%",
+            "10%"
+          ],
+          "appendixDigitTokens": [
+            "2,000",
+            "1800",
+            "200",
+            "95%",
+            "10%"
+          ],
+          "omittedSourceDigitTokens": [
+            "16",
+            "2013",
+            "2014"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Javier Milei argues that the historical hockey-stick growth of per capita GDP and the massive reduction of extreme poverty since 1800 reveal a fundamental flaw in traditional neoclassical economic theories that condemn monopolies and concentrated structures.",
+        "topics": [
+          {
+            "title": "The Contradiction in Neoclassical Economic Theory",
+            "description": "Javier Milei argues that while traditional neoclassical economic theory views monopolies and concentrated structures resulting from increasing returns as harmful, historical data shows that this exact period of accelerated productivity and population growth lifted humanity out of extreme poverty and raised middle-income living standards above those of Roman emperors, exposing a conflict between standard theory and historical reality."
+          }
+        ],
+        "details": [
+          {
+            "title": "Discovery of Freedom Through Economic History",
+            "description": "Javier Milei explains that he came to understand the value of freedom between 2013 and 2014 while studying per capita GDP statistics as an economic growth specialist.",
+            "timestamp": "00:03:33"
+          }
+        ],
+        "speaker_background": [
+          "Javier Milei: President of Argentina, libertarian, anarcho-capitalist, and economist",
+          "Lex Fridman: Podcast host"
+        ],
+        "data_references": [
+          {
+            "item": "Per capita GDP growth trajectory",
+            "value": "Constant for 2,000 years until around 1800, then accelerated sharply like a hockey stick",
+            "context": "Supports 'The Contradiction in Neoclassical Economic Theory': Establishes the historical timeline of economic stagnation followed by explosive productivity growth."
+          },
+          {
+            "item": "Population multiplication",
+            "value": "Multiplied sevenfold over 200 years",
+            "context": "Supports 'The Contradiction in Neoclassical Economic Theory': Demonstrates the unprecedented scale of human expansion accompanying the post-1800 surge in productivity."
+          },
+          {
+            "item": "Extreme poverty reduction",
+            "value": "Dropped from 95% to less than 10%",
+            "context": "Supports 'The Contradiction in Neoclassical Economic Theory': Quantifies the dramatic improvement in human living conditions that created the author's central economic paradox."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Javier Milei argues that the historical hockey-stick growth of per capita GDP and the massive reduction of extreme poverty since 1800 reveal a fundamental flaw in traditional neoclassical economic theories that condemn monopolies and concentrated structures.\",\n  \"topics\": [\n    {\n      \"title\": \"The Contradiction in Neoclassical Economic Theory\",\n      \"description\": \"Javier Milei argues that while traditional neoclassical economic theory views monopolies and concentrated structures resulting from increasing returns as harmful, historical data shows that this exact period of accelerated productivity and population growth lifted humanity out of extreme poverty and raised middle-income living standards above those of Roman emperors, exposing a conflict between standard theory and historical reality.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Discovery of Freedom Through Economic History\",\n      \"description\": \"Javier Milei explains that he came to understand the value of freedom between 2013 and 2014 while studying per capita GDP statistics as an economic growth specialist.\",\n      \"timestamp\": \"00:03:33\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Javier Milei: President of Argentina, libertarian, anarcho-capitalist, and economist\",\n    \"Lex Fridman: Podcast host\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Per capita GDP growth trajectory\",\n      \"value\": \"Constant for 2,000 years until around 1800, then accelerated sharply like a hockey stick\",\n      \"context\": \"Supports 'The Contradiction in Neoclassical Economic Theory': Establishes the historical timeline of economic stagnation followed by explosive productivity growth.\"\n    },\n    {\n      \"item\": \"Population multiplication\",\n      \"value\": \"Multiplied sevenfold over 200 years\",\n      \"context\": \"Supports 'The Contradiction in Neoclassical Economic Theory': Demonstrates the unprecedented scale of human expansion accompanying the post-1800 surge in productivity.\"\n    },\n    {\n      \"item\": \"Extreme poverty reduction\",\n      \"value\": \"Dropped from 95% to less than 10%\",\n      \"context\": \"Supports 'The Contradiction in Neoclassical Economic Theory': Quantifies the dramatic improvement in human living conditions that created the author's central economic paradox.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "3m-lex-adam-frank",
+      "durationSec": 180,
+      "sourceRows": 8,
+      "latencyMs": 2652,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 2485,
+        "completion_tokens": 588,
+        "total_tokens": 3073,
+        "cost": 0.0022155,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0022155,
+          "upstream_inference_prompt_cost": 0.0007455,
+          "upstream_inference_completions_cost": 0.00147
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 3,
+          "sourceDigitTokens": [
+            "10",
+            "20",
+            "30",
+            "2500",
+            "2"
+          ],
+          "appendixDigitTokens": [
+            "2500",
+            "10",
+            "20",
+            "30",
+            "1"
+          ],
+          "omittedSourceDigitTokens": [
+            "2"
+          ],
+          "unsupportedAppendixDigitTokens": [
+            "1"
+          ]
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Astrophysicist Adam Frank argues that empirical science is replacing millennia of philosophical debate regarding extraterrestrial life, driven by the definitive discovery that planets are ubiquitous rather than rare.",
+        "topics": [
+          {
+            "title": "Transition from Philosophy to Empirical Data",
+            "description": "Adam Frank argues that humanity now possesses the capability to answer how many alien civilizations exist because upcoming data collection will allow scientists to establish limits on the frequency of life, ending centuries of ungrounded debate."
+          },
+          {
+            "title": "Resolution of the Planetary Abundance Question",
+            "description": "Adam Frank contrasts outdated 20th-century theories predicting rare planetary formation via stellar collisions with modern findings showing that planets are everywhere, transforming our understanding of cosmic demographics."
+          }
+        ],
+        "details": [
+          {
+            "title": "Historical debate and upcoming data",
+            "description": "Adam Frank notes that after two and a half millennia of arguments, researchers will have hard data within decades to either find life or place limits on its commonality.",
+            "timestamp": "00:00:49"
+          },
+          {
+            "title": "Shift from rare to universal planetary formation",
+            "description": "Adam Frank contrasts an early 20th-century theory requiring rare stellar near-misses (which would make planets occur around one in a trillion stars) with the reality that every star has planets.",
+            "timestamp": "00:01:59"
+          }
+        ],
+        "speaker_background": [
+          "Adam Frank: Astrophysicist interested in the evolution of star systems and the search for alien civilizations",
+          "Lex Fridman: Podcast host"
+        ],
+        "data_references": [
+          {
+            "item": "Historical debate duration",
+            "value": "2500 years",
+            "context": "Supports 'Transition from Philosophy to Empirical Data': Highlights the long history of philosophical and argumentative dispute prior to the advent of empirical data collection."
+          },
+          {
+            "item": "Forecast horizon for data availability",
+            "value": "10, 20, 30 years",
+            "context": "Supports 'Transition from Philosophy to Empirical Data': Defines the near-term timeframe within which researchers will acquire hard data relevant to alien civilizations."
+          },
+          {
+            "item": "Obsolete planetary frequency expectation",
+            "value": "1 in a trillion stars",
+            "context": "Supports 'Resolution of the Planetary Abundance Question': Quantifies the extremely low planetary occurrence predicted by 20th-century stellar-collision theories."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Astrophysicist Adam Frank argues that empirical science is replacing millennia of philosophical debate regarding extraterrestrial life, driven by the definitive discovery that planets are ubiquitous rather than rare.\",\n  \"topics\": [\n    {\n      \"title\": \"Transition from Philosophy to Empirical Data\",\n      \"description\": \"Adam Frank argues that humanity now possesses the capability to answer how many alien civilizations exist because upcoming data collection will allow scientists to establish limits on the frequency of life, ending centuries of ungrounded debate.\"\n    },\n    {\n      \"title\": \"Resolution of the Planetary Abundance Question\",\n      \"description\": \"Adam Frank contrasts outdated 20th-century theories predicting rare planetary formation via stellar collisions with modern findings showing that planets are everywhere, transforming our understanding of cosmic demographics.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Historical debate and upcoming data\",\n      \"description\": \"Adam Frank notes that after two and a half millennia of arguments, researchers will have hard data within decades to either find life or place limits on its commonality.\",\n      \"timestamp\": \"00:00:49\"\n    },\n    {\n      \"title\": \"Shift from rare to universal planetary formation\",\n      \"description\": \"Adam Frank contrasts an early 20th-century theory requiring rare stellar near-misses (which would make planets occur around one in a trillion stars) with the reality that every star has planets.\",\n      \"timestamp\": \"00:01:59\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Adam Frank: Astrophysicist interested in the evolution of star systems and the search for alien civilizations\",\n    \"Lex Fridman: Podcast host\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Historical debate duration\",\n      \"value\": \"2500 years\",\n      \"context\": \"Supports 'Transition from Philosophy to Empirical Data': Highlights the long history of philosophical and argumentative dispute prior to the advent of empirical data collection.\"\n    },\n    {\n      \"item\": \"Forecast horizon for data availability\",\n      \"value\": \"10, 20, 30 years\",\n      \"context\": \"Supports 'Transition from Philosophy to Empirical Data': Defines the near-term timeframe within which researchers will acquire hard data relevant to alien civilizations.\"\n    },\n    {\n      \"item\": \"Obsolete planetary frequency expectation\",\n      \"value\": \"1 in a trillion stars\",\n      \"context\": \"Supports 'Resolution of the Planetary Abundance Question': Quantifies the extremely low planetary occurrence predicted by 20th-century stellar-collision theories.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "3m-lex-shapiro-destiny",
+      "durationSec": 180.9735,
+      "sourceRows": 7,
+      "latencyMs": 2458,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 2438,
+        "completion_tokens": 482,
+        "total_tokens": 2920,
+        "cost": 0.0019364,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0019364,
+          "upstream_inference_prompt_cost": 0.0007314,
+          "upstream_inference_completions_cost": 0.001205
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 0,
+          "sourceDigitTokens": [],
+          "appendixDigitTokens": [],
+          "omittedSourceDigitTokens": [],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Destiny and Ben outline their respective liberal and conservative political philosophies, agreeing on the foundational goal of maximizing individual opportunity while differing on the scope and level of government intervention required to achieve it.",
+        "topics": [
+          {
+            "title": "Liberal Philosophy on Government Support",
+            "description": "Destiny argues that the government should intervene to ensure everyone can achieve as much as possible, which includes providing boosts for necessities like education, housing, food, and clothing. However, this perspective stops short of a total command economy and supports taxation primarily to fund these necessary social programs rather than for the sake of bigness or punishing wealth."
+          },
+          {
+            "title": "Conservative Philosophy on Subsidiarity and Liberties",
+            "description": "Ben argues that government should perform the minimum amount of interference necessary, favoring a subsidiary view where local governments handle more responsibilities due to higher homogeneity and consent. In this view, the primary job of government is to preserve pre-existing key liberties such as national defense, property rights, and religious freedom as outlined in the Constitution and Bill of Rights."
+          }
+        ],
+        "details": [
+          {
+            "title": "Destiny's view on government assistance and taxation",
+            "description": "Destiny states that the goal of government is to ensure people achieve as much as possible by providing boosts for education, housing, food, and clothing, while maintaining that taxes should fund these programs rather than serve as a punishment or a demonization of wealth.",
+            "timestamp": "00:00:21"
+          },
+          {
+            "title": "Ben's view on subsidiarity and constitutional liberties",
+            "description": "Ben explains that government should interfere minimally and operate primarily at the local level where consent and homogeneity are higher, viewing the state's main job as preserving pre-existing liberties like national defense, property rights, and religious freedom.",
+            "timestamp": "00:01:37"
+          }
+        ],
+        "speaker_background": [
+          "Lex: Interviewer/Host",
+          "Destiny: Liberal",
+          "Ben: Conservative"
+        ],
+        "data_references": []
+      },
+      "rawOutput": "{\n  \"summary\": \"Destiny and Ben outline their respective liberal and conservative political philosophies, agreeing on the foundational goal of maximizing individual opportunity while differing on the scope and level of government intervention required to achieve it.\",\n  \"topics\": [\n    {\n      \"title\": \"Liberal Philosophy on Government Support\",\n      \"description\": \"Destiny argues that the government should intervene to ensure everyone can achieve as much as possible, which includes providing boosts for necessities like education, housing, food, and clothing. However, this perspective stops short of a total command economy and supports taxation primarily to fund these necessary social programs rather than for the sake of bigness or punishing wealth.\"\n    },\n    {\n      \"title\": \"Conservative Philosophy on Subsidiarity and Liberties\",\n      \"description\": \"Ben argues that government should perform the minimum amount of interference necessary, favoring a subsidiary view where local governments handle more responsibilities due to higher homogeneity and consent. In this view, the primary job of government is to preserve pre-existing key liberties such as national defense, property rights, and religious freedom as outlined in the Constitution and Bill of Rights.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Destiny's view on government assistance and taxation\",\n      \"description\": \"Destiny states that the goal of government is to ensure people achieve as much as possible by providing boosts for education, housing, food, and clothing, while maintaining that taxes should fund these programs rather than serve as a punishment or a demonization of wealth.\",\n      \"timestamp\": \"00:00:21\"\n    },\n    {\n      \"title\": \"Ben's view on subsidiarity and constitutional liberties\",\n      \"description\": \"Ben explains that government should interfere minimally and operate primarily at the local level where consent and homogeneity are higher, viewing the state's main job as preserving pre-existing liberties like national defense, property rights, and religious freedom.\",\n      \"timestamp\": \"00:01:37\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Lex: Interviewer/Host\",\n    \"Destiny: Liberal\",\n    \"Ben: Conservative\"\n  ],\n  \"data_references\": []\n}"
+    },
+    {
+      "caseId": "5m-acquired-alphabet",
+      "durationSec": 300,
+      "sourceRows": 45,
+      "latencyMs": 2139,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 3050,
+        "completion_tokens": 435,
+        "total_tokens": 3485,
+        "cost": 0.0020025,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0020025,
+          "upstream_inference_prompt_cost": 0.000915,
+          "upstream_inference_completions_cost": 0.0010875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 1,
+          "sourceDigitTokens": [
+            "2025",
+            "1990s",
+            "2004",
+            "2000s",
+            "2x",
+            "2005",
+            "2006"
+          ],
+          "appendixDigitTokens": [
+            "2004"
+          ],
+          "omittedSourceDigitTokens": [
+            "2025",
+            "1990s",
+            "2000s",
+            "2x",
+            "2005",
+            "2006"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Google transformed a breakthrough search algorithm and commodity hardware into a cash-gushing advertising business, while simultaneously generating a wide range of massive product failures and experimental initiatives.",
+        "topics": [
+          {
+            "title": "Google's Core Business Engine",
+            "description": "Ben Gilbert argues that Google built a cash-gushing business by combining a breakthrough search algorithm, low-cost commodity hardware servers, and search ads, enabling the company to go public in 2004."
+          },
+          {
+            "title": "Product Experimentation and Failures",
+            "description": "Ben Gilbert observes that Google launched numerous colossal failures and experimental projects—including Google+, Wave, Buzz, multiple messaging apps, Wi-Fi hot air balloons, and Google Glass—raising open questions about the company's underlying identity."
+          }
+        ],
+        "details": [
+          {
+            "title": "Google's Public Debut",
+            "description": "Ben Gilbert notes that Google went public in 2004 after turning its search engine into a cash-gushing business.",
+            "timestamp": "00:00:55"
+          },
+          {
+            "title": "Catalog of Experimental Failures",
+            "description": "Ben Gilbert details several historical Google initiatives and products, including Google+, Wave, Buzz, various messaging apps, hot air balloons for wireless internet, and Google Glass.",
+            "timestamp": "00:01:53"
+          }
+        ],
+        "speaker_background": [
+          "Ben Gilbert: Host of Acquired",
+          "David Rosenthal: Host of Acquired"
+        ],
+        "data_references": [
+          {
+            "item": "IPO year",
+            "value": "2004",
+            "context": "Supports 'Google's Core Business Engine': Marks the calendar year when Google took its cash-gushing search business public."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Google transformed a breakthrough search algorithm and commodity hardware into a cash-gushing advertising business, while simultaneously generating a wide range of massive product failures and experimental initiatives.\",\n  \"topics\": [\n    {\n      \"title\": \"Google's Core Business Engine\",\n      \"description\": \"Ben Gilbert argues that Google built a cash-gushing business by combining a breakthrough search algorithm, low-cost commodity hardware servers, and search ads, enabling the company to go public in 2004.\"\n    },\n    {\n      \"title\": \"Product Experimentation and Failures\",\n      \"description\": \"Ben Gilbert observes that Google launched numerous colossal failures and experimental projects—including Google+, Wave, Buzz, multiple messaging apps, Wi-Fi hot air balloons, and Google Glass—raising open questions about the company's underlying identity.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Google's Public Debut\",\n      \"description\": \"Ben Gilbert notes that Google went public in 2004 after turning its search engine into a cash-gushing business.\",\n      \"timestamp\": \"00:00:55\"\n    },\n    {\n      \"title\": \"Catalog of Experimental Failures\",\n      \"description\": \"Ben Gilbert details several historical Google initiatives and products, including Google+, Wave, Buzz, various messaging apps, hot air balloons for wireless internet, and Google Glass.\",\n      \"timestamp\": \"00:01:53\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Ben Gilbert: Host of Acquired\",\n    \"David Rosenthal: Host of Acquired\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"IPO year\",\n      \"value\": \"2004\",\n      \"context\": \"Supports 'Google's Core Business Engine': Marks the calendar year when Google took its cash-gushing search business public.\"\n    }\n  ]\n}"
+    }
+  ],
+  "semanticQuality": "requires review of unmodified outputs; no gold summaries exist"
+}

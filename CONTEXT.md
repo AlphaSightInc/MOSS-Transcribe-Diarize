@@ -1,9 +1,74 @@
 # Context Glossary
 
+## Multi-user Ownership
+
+- **Account**: Authenticated identity for one known-team member. One MOSS deployment may
+  serve many accounts.
+- **Deployment operator**: Cooperating person who owns the MOSS server and manages its
+  service and storage outside the Account content interface. Administrative authority grants
+  no Meeting ownership; when using MOSS, this person acts through an ordinary Account.
+- **Account ID**: Stable, server-derived identity of one Account. Email, display name,
+  browser, and client-supplied values cannot establish or change it.
+- **Allowlist entry**: Operator approval for one exact verified Google email to enter MOSS.
+  It is admission policy, not identity; Account ID remains the Google `sub`.
+- **Disabled Account**: Account whose operator admission has been revoked. Its sign-in
+  sessions stop proving access, but its meetings and artifacts remain owned and are not
+  transferred. Re-admission with the same Account ID restores access to that Account.
+- **Meeting owner**: The single account that starts a meeting and exclusively owns its
+  content and derived artifacts. A meeting has no co-owner, and another account cannot
+  access it.
+- **Meeting**: Durable record in an account's history that owns captured content and
+  derived artifacts. It remains after capture stops or the server restarts.
+- **Interrupted Meeting**: Terminal Meeting whose active work ended without a normal Stop,
+  such as after lost capture, Account revocation, recovery, or operator interruption. Its
+  last valid transcript and recoverable audio remain owner-private; capture never resumes.
+- **Meeting artifact**: A transcript, retained audio file, or language-model output owned
+  through exactly one Meeting. It cannot have a different owner from that Meeting.
+- **Canonical meeting audio**: The single mixed recording retained for a Meeting after
+  capture ends. Separate System and Microphone Lanes are not retained as Meeting artifacts.
+- **Voiceprint**: Durable acoustic reference stored in one Account's private Voiceprint bank
+  and reusable across that Account's Meetings. It never represents or links to a MOSS Account,
+  including when the represented voice belongs to an Account holder.
+  _Avoid_: Account profile, user profile, speaker account
+- **Voiceprint label**: Owner-chosen display text stored with one Voiceprint and copied onto a
+  matching Meeting Speaker. It is not identity and need not be unique; distinct Voiceprints may
+  share labels such as `anonymous`.
+  _Avoid_: Account name, profile identity
+- **Sign-in session**: Revocable proof that one browser is acting for one account. It
+  carries no ownership; revoking it does not change the account or its meetings.
+- **Access client**: A browser or device holding a sign-in session. It is not an owner,
+  and a client-supplied identifier cannot establish authority.
+- **Account history**: The complete set of meetings owned by one account. Every active
+  sign-in session for that account sees the same history; browsers and devices do not
+  partition it.
+- **Operational metadata**: Non-content facts the Deployment operator may read across
+  Accounts solely to judge service health and capacity. It may identify an Account or Meeting
+  and describe lifecycle, capture, queue, error, and storage state, but never contains a
+  Meeting title, artifact payload, Voiceprint label, or Voiceprint vector.
+- **Batch submission**: One request to create several independent file- or URL-sourced
+  Meetings. It has no durable identity, ownership, or lifecycle separate from those Meetings.
+  _Avoid_: Playlist, batch job
+- **Resource identifier**: A server-assigned locator for a meeting or artifact. Knowing
+  the identifier grants no authority.
+- **Event cursor**: A read position within one Meeting's event stream. It carries neither
+  identity nor authority and is meaningful only after that Meeting is authorized.
+
+## Language-model Assistance
+
+- **LLM worker**: The Access client that initiated a Live, file, URL, or batch Meeting, or
+  accepted its explicit Retry action. It alone calls that browser's configured language-model
+  endpoint after the authoritative transcript is finalized; it neither owns the Meeting nor
+  grants authority.
+- **Final summary**: The owner-visible five-field JSON artifact derived from one finalized
+  authoritative transcript. It is persisted through its Meeting and never replaces transcript
+  truth.
+- **Automatic title**: The first topic title in a current Final summary, applied only when no
+  owner-written title exists. If the summary has no topic, the existing Meeting title remains.
+
 ## Live Capture
 
-- **Live session**: Default-off, local-only session state for ordered 16 kHz
-  mono PCM16 frames. It is separate from the batch job workflow.
+- **Live session**: Transient capture state for one Meeting and its ordered 16 kHz mono
+  PCM16 frames. Ending it does not end or transfer its Meeting.
 - **Mono runtime frame**: The existing `AudioFrame` accepted by
   `LiveSession`, with `sequence`, `sample_rate`, `sample_count`, and PCM bytes.
 - **Live v2 lane contract**: Additive JSON contract named
@@ -230,3 +295,15 @@
   signing, notarization, TCC, Keychain runtime, real permission/device/tap
   behavior, real lease value, history/artifacts, deployment, 60/300 evidence,
   Windows production, canary, and live enablement remain Missing.
+
+## Cross-meeting Speaker Identity
+
+- **Private voice bank**: One Account's canonical collection of Voiceprints for
+  cross-meeting speaker recognition. Access clients neither own nor partition it; it is
+  never shared with another Account and is distinct from session-local diarization labels
+  and transcript text.
+  _Avoid_: Team voice bank, shared voice bank
+- **Voiceprint enrollment**: An Account's deliberate manual naming of a Meeting Speaker,
+  which creates or updates a Voiceprint in that Account's private Voiceprint bank. The
+  represented person may be a team member, meeting participant, or recorded-media speaker
+  such as a podcast host. Unnamed session-speaker vectors are discarded when the session ends.

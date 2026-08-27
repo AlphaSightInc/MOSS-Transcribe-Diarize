@@ -1,0 +1,816 @@
+{
+  "schema": "moss-final-summary-prompt-iteration.v1",
+  "measuredAt": "2026-08-27T02:39:31.184Z",
+  "iteration": 1,
+  "prompt": "Create a compact, decision-useful briefing that lets a thoughtful reader understand what matters without reading the transcript.\n\nYour goal is to capture the key takeaways, especially:\n- insights and mental models that improve how the reader thinks about the topic;\n- causal explanations, reasoning, trade-offs, disagreements, and implications;\n- important but easily overlooked facts or metrics that materially change understanding.\n\nPrioritize significance over exhaustiveness. Explain why an insight matters, not merely that it was mentioned. Attribute claims and opinions to their speakers. Preserve uncertainty and disagreement. Use only transcript-supported content; do not add outside facts or infer unstated roles, motives, or identities.\n\nReturn JSON only, with exactly this shape and these key names. Replace the placeholders with transcript-grounded content:\n{\n  \"summary\": \"A concise synthesis of the central ideas and why they matter.\",\n  \"topics\": [\n    {\n      \"title\": \"Specific insight-oriented heading\",\n      \"description\": \"The key takeaway, supporting reasoning or mental model, and why it matters.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Specific substantive moment\",\n      \"description\": \"The supported claim, reasoning, disagreement, or implication.\",\n      \"timestamp\": \"HH:MM:SS\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Name: explicitly stated role or background\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"What the metric measures\",\n      \"value\": \"Important value copied with its unit\",\n      \"context\": \"How the metric supports an important takeaway and why it matters\"\n    }\n  ]\n}\n\nContent guidance:\n- summary: a compact synthesis, normally 2 to 4 sentences. Lead with the central insight, then the most important implication or mental model.\n- topics: include only substantive themes. Prefer a few high-signal topics over exhaustive coverage.\n- details: preserve the most useful supporting reasoning and chronology. Use a transcript HH:MM:SS timestamp for every item.\n- speaker_background: include only roles or background explicitly stated in the transcript; otherwise use [].\n- data_references: an optional metric appendix at the end. Include only numbers, dates, money, percentages, counts, or durations that substantiate a major claim, reveal scale or change, expose a trade-off, or are important and under-appreciated. Copy the complete value and unit verbatim when practical and explain why it matters. Omit incidental numbers. Use [] when no metric materially improves understanding.\n\nMetrics are encouraged evidence, not a completeness exercise. Never add a metric merely to satisfy a quota.",
+  "configuration": {
+    "endpoint": "https://openrouter.ai/api/v1",
+    "requestedModel": "google/gemini-3.5-flash-lite",
+    "token": "present-not-recorded",
+    "callsPerRecording": 1,
+    "rollingSummaries": 0,
+    "repairCalls": 0
+  },
+  "corpus": {
+    "finalizedRecordings": [
+      "5m-acquired-nfl",
+      "5m-acquired-jamie-dimon",
+      "30m-lex-bill-ackman",
+      "5m-lex-javier-milei",
+      "3m-lex-adam-frank",
+      "3m-lex-shapiro-destiny",
+      "5m-acquired-alphabet"
+    ],
+    "excludedInterimCases": [
+      "1m-acquired-nfl",
+      "1m-acquired-jamie-dimon",
+      "3m-acquired-jamie-dimon",
+      "5m-lex-bill-ackman",
+      "1m-lex-bill-ackman",
+      "1m-lex-javier-milei"
+    ],
+    "unavailableFinal": [
+      "5m-acquired-rolex"
+    ],
+    "sealedBlindHoldoutContentOpened": 0
+  },
+  "aggregate": {
+    "cases": 7,
+    "calls": 7,
+    "structurePassed": 7,
+    "strictJsonOnly": 2,
+    "casesWithMetricAppendix": 5,
+    "metricAppendixAcceptanceCriterion": false,
+    "medianLatencyMs": 2957,
+    "maxLatencyMs": 4579,
+    "recordedCost": 0.017776
+  },
+  "cases": [
+    {
+      "caseId": "5m-acquired-nfl",
+      "durationSec": 300,
+      "sourceRows": 28,
+      "latencyMs": 2762,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1521,
+        "completion_tokens": 550,
+        "total_tokens": 2071,
+        "cost": 0.0018313,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0018313,
+          "upstream_inference_prompt_cost": 0.0004563,
+          "upstream_inference_completions_cost": 0.001375
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 1,
+          "sourceDigitTokens": [
+            "2023",
+            "2026"
+          ],
+          "appendixDigitTokens": [],
+          "omittedSourceDigitTokens": [
+            "2023",
+            "2026"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "This remastered episode of Acquired explores how the National Football League became America's dominant sports and media property through a century of cooperation and revenue sharing. Hosts Ben Gilbert and David Rosenthal also highlight recent developments, including the league's massive audience growth, the cultural crossover with Taylor Swift, and the surprising entry of private equity.",
+        "topics": [
+          {
+            "title": "The NFL's Cooperative Business Model",
+            "description": "Unlike other sports leagues, NFL owners have historically chosen to grow the overall pie by dividing revenues equally, creating a unique form of 'communist capitalism' that drives long-term stability and success."
+          },
+          {
+            "title": "Modern Juggernaut and New Crossovers",
+            "description": "Three years after the original 2023 episode, the NFL has expanded further through massive audience growth, the cultural phenomenon of Taylor Swift, and the recent arrival of private equity investment."
+          }
+        ],
+        "details": [
+          {
+            "title": "Introduction of the Remastered NFL Episode",
+            "description": "Ben Gilbert and David Rosenthal introduce a remastered version of their January 2023 NFL episode, updated with current production standards and new developments like hosting the Super Bowl's Innovation Summit in San Francisco in 2026.",
+            "timestamp": "00:00:42"
+          },
+          {
+            "title": "Private Equity Enters the League",
+            "description": "David Rosenthal notes that a wild and unexpected new development since the original episode is how private equity has entered the NFL, a topic covered in a special new update section at the end of the episode.",
+            "timestamp": "00:02:24"
+          },
+          {
+            "title": "Unprecedented Popularity and Revenue Sharing",
+            "description": "Ben Gilbert highlights that football is America's favorite sport by far—more than three times as popular as basketball—built on a foundation of bold, long-term cooperation and equal revenue sharing among owners.",
+            "timestamp": "00:02:48"
+          }
+        ],
+        "speaker_background": [],
+        "data_references": [
+          {
+            "item": "Football's relative popularity compared to the next highest sport",
+            "value": "more than three times",
+            "context": "Illustrates the massive dominance of football over basketball as America's favorite sport."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"This remastered episode of Acquired explores how the National Football League became America's dominant sports and media property through a century of cooperation and revenue sharing. Hosts Ben Gilbert and David Rosenthal also highlight recent developments, including the league's massive audience growth, the cultural crossover with Taylor Swift, and the surprising entry of private equity.\",\n  \"topics\": [\n    {\n      \"title\": \"The NFL's Cooperative Business Model\",\n      \"description\": \"Unlike other sports leagues, NFL owners have historically chosen to grow the overall pie by dividing revenues equally, creating a unique form of 'communist capitalism' that drives long-term stability and success.\"\n    },\n    {\n      \"title\": \"Modern Juggernaut and New Crossovers\",\n      \"description\": \"Three years after the original 2023 episode, the NFL has expanded further through massive audience growth, the cultural phenomenon of Taylor Swift, and the recent arrival of private equity investment.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Introduction of the Remastered NFL Episode\",\n      \"description\": \"Ben Gilbert and David Rosenthal introduce a remastered version of their January 2023 NFL episode, updated with current production standards and new developments like hosting the Super Bowl's Innovation Summit in San Francisco in 2026.\",\n      \"timestamp\": \"00:00:42\"\n    },\n    {\n      \"title\": \"Private Equity Enters the League\",\n      \"description\": \"David Rosenthal notes that a wild and unexpected new development since the original episode is how private equity has entered the NFL, a topic covered in a special new update section at the end of the episode.\",\n      \"timestamp\": \"00:02:24\"\n    },\n    {\n      \"title\": \"Unprecedented Popularity and Revenue Sharing\",\n      \"description\": \"Ben Gilbert highlights that football is America's favorite sport by far—more than three times as popular as basketball—built on a foundation of bold, long-term cooperation and equal revenue sharing among owners.\",\n      \"timestamp\": \"00:02:48\"\n    }\n  ],\n  \"speaker_background\": [],\n  \"data_references\": [\n    {\n      \"item\": \"Football's relative popularity compared to the next highest sport\",\n      \"value\": \"more than three times\",\n      \"context\": \"Illustrates the massive dominance of football over basketball as America's favorite sport.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "5m-acquired-jamie-dimon",
+      "durationSec": 300,
+      "sourceRows": 25,
+      "latencyMs": 2420,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1290,
+        "completion_tokens": 558,
+        "total_tokens": 1848,
+        "cost": 0.001782,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.001782,
+          "upstream_inference_prompt_cost": 0.000387,
+          "upstream_inference_completions_cost": 0.001395
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": false,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 0,
+          "sourceDigitTokens": [
+            "2025"
+          ],
+          "appendixDigitTokens": [],
+          "omittedSourceDigitTokens": [
+            "2025"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Ben Gilbert and David Rosenthal introduce the Summer 2025 season of Acquired, featuring a visit with Jamie Dimon at J.P. Morgan headquarters. They reflect on the puzzle of how Dimon successfully avoided major bank failures and bloat that typically plague large financial institutions.",
+        "topics": [
+          {
+            "title": "Institutional Longevity and Historical Artifacts",
+            "description": "Ben and David discuss missing the opportunity to view the original dueling pistols of Alexander Hamilton and Aaron Burr, which are owned by J.P. Morgan and kept in their headquarters, noting they will have to return to see them in the new building's executive floor."
+          },
+          {
+            "title": "The J.P. Morgan Leadership Playbook",
+            "description": "The hosts examine how Jamie Dimon successfully navigated the traditional pitfalls of large organizations—such as dramatic blowups, bank failures, and extreme operational bloat—to maintain an enduringly effective financial institution."
+          }
+        ],
+        "details": [
+          {
+            "title": "Missed opportunity to view historical dueling pistols",
+            "description": "Ben and David realize they failed to ask Jamie Dimon to see the original dueling pistols of Alexander Hamilton and Aaron Burr during their meet-and-greet at his office.",
+            "timestamp": "00:00:05"
+          },
+          {
+            "title": "Kickoff of the Summer 2025 season of Acquired",
+            "description": "Ben Gilbert and David Rosenthal officially open the new season of the podcast focusing on great companies and their underlying playbooks.",
+            "timestamp": "00:01:03"
+          },
+          {
+            "title": "Core organizational question about Jamie Dimon",
+            "description": "Ben frames the central inquiry of the episode around how Jamie Dimon prevented J.P. Morgan from suffering the spectacular blowups, failures, and severe bloat common to large financial firms.",
+            "timestamp": "00:02:42"
+          },
+          {
+            "title": "In-person meeting with Jamie Dimon",
+            "description": "Jamie Dimon greets Ben and David, remarking that they dressed up for him, while David notes Dimon's appearance compared to a previous video board appearance at Chase.",
+            "timestamp": "00:04:46"
+          }
+        ],
+        "speaker_background": [],
+        "data_references": []
+      },
+      "rawOutput": "```json\n{\n  \"summary\": \"Ben Gilbert and David Rosenthal introduce the Summer 2025 season of Acquired, featuring a visit with Jamie Dimon at J.P. Morgan headquarters. They reflect on the puzzle of how Dimon successfully avoided major bank failures and bloat that typically plague large financial institutions.\",\n  \"topics\": [\n    {\n      \"title\": \"Institutional Longevity and Historical Artifacts\",\n      \"description\": \"Ben and David discuss missing the opportunity to view the original dueling pistols of Alexander Hamilton and Aaron Burr, which are owned by J.P. Morgan and kept in their headquarters, noting they will have to return to see them in the new building's executive floor.\"\n    },\n    {\n      \"title\": \"The J.P. Morgan Leadership Playbook\",\n      \"description\": \"The hosts examine how Jamie Dimon successfully navigated the traditional pitfalls of large organizations—such as dramatic blowups, bank failures, and extreme operational bloat—to maintain an enduringly effective financial institution.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Missed opportunity to view historical dueling pistols\",\n      \"description\": \"Ben and David realize they failed to ask Jamie Dimon to see the original dueling pistols of Alexander Hamilton and Aaron Burr during their meet-and-greet at his office.\",\n      \"timestamp\": \"00:00:05\"\n    },\n    {\n      \"title\": \"Kickoff of the Summer 2025 season of Acquired\",\n      \"description\": \"Ben Gilbert and David Rosenthal officially open the new season of the podcast focusing on great companies and their underlying playbooks.\",\n      \"timestamp\": \"00:01:03\"\n    },\n    {\n      \"title\": \"Core organizational question about Jamie Dimon\",\n      \"description\": \"Ben frames the central inquiry of the episode around how Jamie Dimon prevented J.P. Morgan from suffering the spectacular blowups, failures, and severe bloat common to large financial firms.\",\n      \"timestamp\": \"00:02:42\"\n    },\n    {\n      \"title\": \"In-person meeting with Jamie Dimon\",\n      \"description\": \"Jamie Dimon greets Ben and David, remarking that they dressed up for him, while David notes Dimon's appearance compared to a previous video board appearance at Chase.\",\n      \"timestamp\": \"00:04:46\"\n    }\n  ],\n  \"speaker_background\": [],\n  \"data_references\": []\n}\n```"
+    },
+    {
+      "caseId": "30m-lex-bill-ackman",
+      "durationSec": 1800,
+      "sourceRows": 73,
+      "latencyMs": 4579,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 8344,
+        "completion_tokens": 949,
+        "total_tokens": 9293,
+        "cost": 0.0048757,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0048757,
+          "upstream_inference_prompt_cost": 0.0025032,
+          "upstream_inference_completions_cost": 0.0023725
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": true,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 3,
+          "sourceDigitTokens": [
+            "5%",
+            "10",
+            "18",
+            "11",
+            "30%",
+            "90s",
+            "2000",
+            "1950",
+            "75",
+            "50%",
+            "$1",
+            "19",
+            "200",
+            "500",
+            "3,500",
+            "20",
+            "$1.50",
+            "$2",
+            "250",
+            "15",
+            "4%"
+          ],
+          "appendixDigitTokens": [
+            "50%",
+            "15",
+            "4%"
+          ],
+          "omittedSourceDigitTokens": [
+            "5%",
+            "10",
+            "18",
+            "11",
+            "30%",
+            "90s",
+            "2000",
+            "1950",
+            "75",
+            "$1",
+            "19",
+            "200",
+            "500",
+            "3,500",
+            "20",
+            "$1.50",
+            "$2",
+            "250"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Activist investor Bill Ackman outlines core principles of value investing, emphasizing the distinction between short-term market speculation and long-term business evaluation based on the present value of future cash flows. Drawing on lessons from Benjamin Graham, he explains that exceptional investments require a deep understanding of business moats, persistent consumer demand, and a significant margin of safety. He illustrates these concepts through holdings like Universal Music Group, Chipotle, Restaurant Brands, and Alphabet, demonstrating how temporary setbacks or market overreactions to technological shifts can create high-conviction buying opportunities.",
+        "topics": [
+          {
+            "title": "Price vs. Value and the Margin of Safety",
+            "description": "Benjamin Graham's foundational insight is that the stock market in the short term is a voting machine reflecting speculation, but in the long term a weighing machine reflecting true economic value. Investors must calculate the present value of a business's lifetime cash flows and demand a 'margin of safety'—buying at a deep enough discount to withstand valuation errors and avoid permanent capital loss."
+          },
+          {
+            "title": "Identifying Moats and Non-Disruptable Businesses",
+            "description": "Investing in an era of rapid technological disruption requires finding businesses with wide, durable moats—companies where consumers have ingrained habits and where you can close your eyes for a decade and know the enterprise will be more valuable. Examples include enduring cultural staples like music (Universal Music Group) and simple, scalable quick-service restaurant models (Chipotle)."
+          },
+          {
+            "title": "Capitalizing on Market Overreactions to AI and Crises",
+            "description": "Temporary crises (such as food safety issues at Chipotle or a public relations misstep in AI demonstrations like Google's Bard) frequently cause disproportionate sell-offs by disappointed shareholders. Astute investors can acquire dominant companies at attractive earnings yields when the market misjudges their recovery potential and intrinsic advantages."
+          }
+        ],
+        "details": [
+          {
+            "title": "Defining Investment Versus Speculation",
+            "description": "Bill Ackman distinguishes speculation—such as short-term crypto trading where participants buy purely because prices are rising without knowing intrinsic worth—from investing, which requires rigorous homework on competitive dynamics, management actions, and cash-flow modeling.",
+            "timestamp": "00:02:18"
+          },
+          {
+            "title": "Evaluating Music as a Durable Asset Class",
+            "description": "Discussing Universal Music Group, Bill Ackman argues that music is a thousands-year-old human experience with persistent demand. He reasons that while distribution formats evolve from physical records to streaming (and potentially future form factors like Neuralink), content owners and record labels will retain the primary economic value.",
+            "timestamp": "00:05:19"
+          },
+          {
+            "title": "The Alphabet (Google) Investment Thesis",
+            "description": "Bill Ackman explains how Microsoft's ChatGPT announcement and Google's early clumsy Bard demonstration caused a market panic that dropped Google's stock to roughly 15 times earnings. He argues the market overreacted, underestimating Google's massive training data, engineering talent, and financial resources relative to nimble startups.",
+            "timestamp": "00:24:13"
+          }
+        ],
+        "speaker_background": [
+          "Bill Ackman: Legendary activist investor"
+        ],
+        "data_references": [
+          {
+            "item": "Stock price drop percentage for Chipotle during its food safety crisis",
+            "value": "50%",
+            "context": "Illustrates how temporary operational crises can depress the share price of a fundamentally great business, creating a discounted entry point for long-term investors."
+          },
+          {
+            "item": "Alphabet stock valuation multiple during the AI market scare",
+            "value": "15 times earnings",
+            "context": "Represents an extremely low price for a dominant business quality, translating to a nearly 7.5% earnings yield that is highly attractive compared to government bond rates."
+          },
+          {
+            "item": "Government bond comparison yield",
+            "value": "4%",
+            "context": "Used to contrast the lower return of lending money to the government against the much higher going-in earnings yield of undervalued large-cap tech companies like Google."
+          }
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Activist investor Bill Ackman outlines core principles of value investing, emphasizing the distinction between short-term market speculation and long-term business evaluation based on the present value of future cash flows. Drawing on lessons from Benjamin Graham, he explains that exceptional investments require a deep understanding of business moats, persistent consumer demand, and a significant margin of safety. He illustrates these concepts through holdings like Universal Music Group, Chipotle, Restaurant Brands, and Alphabet, demonstrating how temporary setbacks or market overreactions to technological shifts can create high-conviction buying opportunities.\",\n  \"topics\": [\n    {\n      \"title\": \"Price vs. Value and the Margin of Safety\",\n      \"description\": \"Benjamin Graham's foundational insight is that the stock market in the short term is a voting machine reflecting speculation, but in the long term a weighing machine reflecting true economic value. Investors must calculate the present value of a business's lifetime cash flows and demand a 'margin of safety'—buying at a deep enough discount to withstand valuation errors and avoid permanent capital loss.\"\n    },\n    {\n      \"title\": \"Identifying Moats and Non-Disruptable Businesses\",\n      \"description\": \"Investing in an era of rapid technological disruption requires finding businesses with wide, durable moats—companies where consumers have ingrained habits and where you can close your eyes for a decade and know the enterprise will be more valuable. Examples include enduring cultural staples like music (Universal Music Group) and simple, scalable quick-service restaurant models (Chipotle).\"\n    },\n    {\n      \"title\": \"Capitalizing on Market Overreactions to AI and Crises\",\n      \"description\": \"Temporary crises (such as food safety issues at Chipotle or a public relations misstep in AI demonstrations like Google's Bard) frequently cause disproportionate sell-offs by disappointed shareholders. Astute investors can acquire dominant companies at attractive earnings yields when the market misjudges their recovery potential and intrinsic advantages.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Defining Investment Versus Speculation\",\n      \"description\": \"Bill Ackman distinguishes speculation—such as short-term crypto trading where participants buy purely because prices are rising without knowing intrinsic worth—from investing, which requires rigorous homework on competitive dynamics, management actions, and cash-flow modeling.\",\n      \"timestamp\": \"00:02:18\"\n    },\n    {\n      \"title\": \"Evaluating Music as a Durable Asset Class\",\n      \"description\": \"Discussing Universal Music Group, Bill Ackman argues that music is a thousands-year-old human experience with persistent demand. He reasons that while distribution formats evolve from physical records to streaming (and potentially future form factors like Neuralink), content owners and record labels will retain the primary economic value.\",\n      \"timestamp\": \"00:05:19\"\n    },\n    {\n      \"title\": \"The Alphabet (Google) Investment Thesis\",\n      \"description\": \"Bill Ackman explains how Microsoft's ChatGPT announcement and Google's early clumsy Bard demonstration caused a market panic that dropped Google's stock to roughly 15 times earnings. He argues the market overreacted, underestimating Google's massive training data, engineering talent, and financial resources relative to nimble startups.\",\n      \"timestamp\": \"00:24:13\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Bill Ackman: Legendary activist investor\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Stock price drop percentage for Chipotle during its food safety crisis\",\n      \"value\": \"50%\",\n      \"context\": \"Illustrates how temporary operational crises can depress the share price of a fundamentally great business, creating a discounted entry point for long-term investors.\"\n    },\n    {\n      \"item\": \"Alphabet stock valuation multiple during the AI market scare\",\n      \"value\": \"15 times earnings\",\n      \"context\": \"Represents an extremely low price for a dominant business quality, translating to a nearly 7.5% earnings yield that is highly attractive compared to government bond rates.\"\n    },\n    {\n      \"item\": \"Government bond comparison yield\",\n      \"value\": \"4%\",\n      \"context\": \"Used to contrast the lower return of lending money to the government against the much higher going-in earnings yield of undervalued large-cap tech companies like Google.\"\n    }\n  ]\n}"
+    },
+    {
+      "caseId": "5m-lex-javier-milei",
+      "durationSec": 300,
+      "sourceRows": 6,
+      "latencyMs": 3302,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1553,
+        "completion_tokens": 900,
+        "total_tokens": 2453,
+        "cost": 0.0027159,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0027159,
+          "upstream_inference_prompt_cost": 0.0004659,
+          "upstream_inference_completions_cost": 0.00225
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": false,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 3,
+          "sourceDigitTokens": [
+            "16",
+            "2013",
+            "2014",
+            "2,000",
+            "1800",
+            "200",
+            "95%",
+            "10%"
+          ],
+          "appendixDigitTokens": [
+            "95%",
+            "10%",
+            "16"
+          ],
+          "omittedSourceDigitTokens": [
+            "2013",
+            "2014",
+            "2,000",
+            "1800",
+            "200"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Argentinian President Javier Milei discusses his journey to libertarian and anarcho-capitalist economic principles, noting that his realization was sparked by the hockey-stick trajectory of per capita GDP and population growth since 1800. He reflects on the contradiction between traditional neoclassical economic theories condemning monopolies and the massive rise in living standards and drop in extreme poverty driven by free-market productivity. The conversation explores the tension between state bureaucracy, free-market reforms, and the universal fight for economic and political freedom.",
+        "topics": [
+          {
+            "title": "The Historical Hockey Stick of Economic Growth",
+            "description": "Javier Milei identifies the years 2013-2014 as the period when he deeply understood freedom as an economic growth specialist. Observing that per capita GDP remained flat for two millennia before surging like a hockey stick around 1800 alongside a sevenfold population increase, he recognized the unprecedented scale of human progress driven by modern productivity."
+          },
+          {
+            "title": "Reconciling Neoclassical Theory with Human Progress",
+            "description": "Milei highlights a central paradox in traditional economics: standard neoclassical theory views increasing returns, monopolies, and concentrated structures as harmful, yet this same market evolution lifted the world from 95% extreme poverty to under 10% while allowing middle-income citizens to live better than Roman emperors. This contradiction forced him to question flaws in traditional economic critiques of market structures."
+          }
+        ],
+        "details": [
+          {
+            "title": "Definition of the Difference Between a Madman and a Genius",
+            "description": "Javier Milei opens by stating that the difference between a madman and a genius is success.",
+            "timestamp": "00:00:00"
+          },
+          {
+            "title": "Argentina's Economic Crisis and Rapid Turnaround",
+            "description": "Lex Fridman notes that Milei inherited a country on the brink of hyperinflation, heavy debt, and mass poverty, but achieved Argentina's first fiscal surplus in 16 years and brought inflation down to a three-year low within months.",
+            "timestamp": "00:01:02"
+          },
+          {
+            "title": "Discovery of Economic Freedom Through GDP Data",
+            "description": "Javier Milei explains how analyzing 2,000 years of per capita GDP statistics between 2013 and 2014 revealed a hockey-stick acceleration around 1800, prompting his realization of the power of economic freedom.",
+            "timestamp": "00:03:33"
+          },
+          {
+            "title": "The Paradox of Monopolies and Poverty Reduction",
+            "description": "Javier Milei questions why neoclassical theory views concentrated market structures negatively when the same period of growth reduced extreme poverty from 95% to under 10% and vastly outpaced ancient living standards.",
+            "timestamp": "00:04:20"
+          }
+        ],
+        "speaker_background": [
+          "Javier Milei: President of Argentina, libertarian, anarcho-capitalist, and economist",
+          "Lex Fridman: Podcast host"
+        ],
+        "data_references": [
+          {
+            "item": "Extreme poverty rate reduction",
+            "value": "From 95% to less than 10%",
+            "context": "Illustrates the massive human welfare improvements driven by productivity and economic growth over the last 200 years."
+          },
+          {
+            "item": "Fiscal surplus milestone",
+            "value": "First fiscal surplus in 16 years",
+            "context": "Highlights the rapid fiscal turnaround achieved by Milei's administration in just a few months."
+          },
+          {
+            "item": "Population growth multiplier",
+            "value": "Multiplied sevenfold",
+            "context": "Describes demographic and productivity expansion over the 200 years following the 1800 economic acceleration."
+          }
+        ]
+      },
+      "rawOutput": "```json\n{\n  \"summary\": \"Argentinian President Javier Milei discusses his journey to libertarian and anarcho-capitalist economic principles, noting that his realization was sparked by the hockey-stick trajectory of per capita GDP and population growth since 1800. He reflects on the contradiction between traditional neoclassical economic theories condemning monopolies and the massive rise in living standards and drop in extreme poverty driven by free-market productivity. The conversation explores the tension between state bureaucracy, free-market reforms, and the universal fight for economic and political freedom.\",\n  \"topics\": [\n    {\n      \"title\": \"The Historical Hockey Stick of Economic Growth\",\n      \"description\": \"Javier Milei identifies the years 2013-2014 as the period when he deeply understood freedom as an economic growth specialist. Observing that per capita GDP remained flat for two millennia before surging like a hockey stick around 1800 alongside a sevenfold population increase, he recognized the unprecedented scale of human progress driven by modern productivity.\"\n    },\n    {\n      \"title\": \"Reconciling Neoclassical Theory with Human Progress\",\n      \"description\": \"Milei highlights a central paradox in traditional economics: standard neoclassical theory views increasing returns, monopolies, and concentrated structures as harmful, yet this same market evolution lifted the world from 95% extreme poverty to under 10% while allowing middle-income citizens to live better than Roman emperors. This contradiction forced him to question flaws in traditional economic critiques of market structures.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Definition of the Difference Between a Madman and a Genius\",\n      \"description\": \"Javier Milei opens by stating that the difference between a madman and a genius is success.\",\n      \"timestamp\": \"00:00:00\"\n    },\n    {\n      \"title\": \"Argentina's Economic Crisis and Rapid Turnaround\",\n      \"description\": \"Lex Fridman notes that Milei inherited a country on the brink of hyperinflation, heavy debt, and mass poverty, but achieved Argentina's first fiscal surplus in 16 years and brought inflation down to a three-year low within months.\",\n      \"timestamp\": \"00:01:02\"\n    },\n    {\n      \"title\": \"Discovery of Economic Freedom Through GDP Data\",\n      \"description\": \"Javier Milei explains how analyzing 2,000 years of per capita GDP statistics between 2013 and 2014 revealed a hockey-stick acceleration around 1800, prompting his realization of the power of economic freedom.\",\n      \"timestamp\": \"00:03:33\"\n    },\n    {\n      \"title\": \"The Paradox of Monopolies and Poverty Reduction\",\n      \"description\": \"Javier Milei questions why neoclassical theory views concentrated market structures negatively when the same period of growth reduced extreme poverty from 95% to under 10% and vastly outpaced ancient living standards.\",\n      \"timestamp\": \"00:04:20\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Javier Milei: President of Argentina, libertarian, anarcho-capitalist, and economist\",\n    \"Lex Fridman: Podcast host\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Extreme poverty rate reduction\",\n      \"value\": \"From 95% to less than 10%\",\n      \"context\": \"Illustrates the massive human welfare improvements driven by productivity and economic growth over the last 200 years.\"\n    },\n    {\n      \"item\": \"Fiscal surplus milestone\",\n      \"value\": \"First fiscal surplus in 16 years\",\n      \"context\": \"Highlights the rapid fiscal turnaround achieved by Milei's administration in just a few months.\"\n    },\n    {\n      \"item\": \"Population growth multiplier\",\n      \"value\": \"Multiplied sevenfold\",\n      \"context\": \"Describes demographic and productivity expansion over the 200 years following the 1800 economic acceleration.\"\n    }\n  ]\n}\n```"
+    },
+    {
+      "caseId": "3m-lex-adam-frank",
+      "durationSec": 180,
+      "sourceRows": 8,
+      "latencyMs": 3178,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1373,
+        "completion_tokens": 808,
+        "total_tokens": 2181,
+        "cost": 0.0024319,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0024319,
+          "upstream_inference_prompt_cost": 0.0004119,
+          "upstream_inference_completions_cost": 0.00202
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": false,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 3,
+          "sourceDigitTokens": [
+            "10",
+            "20",
+            "30",
+            "2500",
+            "2"
+          ],
+          "appendixDigitTokens": [
+            "2500",
+            "10",
+            "20",
+            "30"
+          ],
+          "omittedSourceDigitTokens": [
+            "2"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Astrophysicist Adam Frank discusses the shift of the search for alien civilizations from a 2,500-year philosophical debate into an empirical science supported by upcoming data and exoplanet discoveries. He explains that early 20th-century theories incorrectly predicted planets were extremely rare, whereas modern understandings and simulations demonstrate that planets are ubiquitous around stars. This ubiquity provides a baseline for evaluating the probability of technological civilizations in cosmic history.",
+        "topics": [
+          {
+            "title": "Empirical Shift in the Search for Extraterrestrial Life",
+            "description": "After millennia of philosophical debate, humanity now stands on the threshold of gathering hard data over the next 10 to 30 years. Even a null result will allow scientists to place rigorous empirical limits on the prevalence of life."
+          },
+          {
+            "title": "Planetary Ubiquity vs. Historical Scarcity Theories",
+            "description": "Early 20th-century theories posited that planets formed only through rare stellar near-misses, implying only one in a trillion stars would have them. Modern science has overturned this, revealing that planets are actually everywhere and every star in the night sky has them."
+          }
+        ],
+        "details": [
+          {
+            "title": "Cosmic frequency of technological civilizations",
+            "description": "Adam Frank explains that statistical thresholds imply Earth is not the first technological civilization in cosmic history, assuming nature does not hold a specific bias against civilizations.",
+            "timestamp": "00:00:00"
+          },
+          {
+            "title": "Timeline for empirical data",
+            "description": "Adam Frank notes that within 10, 20, or 30 years, humanity will have relevant data to answer the question of how many alien civilizations exist.",
+            "timestamp": "00:00:49"
+          },
+          {
+            "title": "Historical debate over planets",
+            "description": "Adam Frank highlights that the 2,500-year-old debate between thinkers like Aristotle and Democritus over the uniqueness of Earth has been resolved by discovering that planets are everywhere.",
+            "timestamp": "00:01:23"
+          },
+          {
+            "title": "Turn-of-the-century planetary formation theory",
+            "description": "Adam Frank describes an outdated 20th-century theory where planets formed exclusively via rare gravitational squeezes from passing stars, which would have meant only one in a trillion stars had planets.",
+            "timestamp": "00:01:59"
+          }
+        ],
+        "speaker_background": [
+          "Adam Frank: Astrophysicist interested in the evolution of star systems and the search for alien civilizations in our universe"
+        ],
+        "data_references": [
+          {
+            "item": "Duration for historical debate",
+            "value": "2500 years",
+            "context": "Illustrates the profound historical scale of human speculation regarding planets and alien life before modern science."
+          },
+          {
+            "item": "Near-future timeframe for relevant data",
+            "value": "10, 20, 30 years",
+            "context": "Highlights the imminent window in which astronomers and astrophysicists expect to gather hard data to constrain the prevalence of life."
+          },
+          {
+            "item": "Outdated predicted rarity of planetary systems",
+            "value": "one in a trillion",
+            "context": "Contrasts old theories of planetary scarcity caused by stellar collisions with the modern reality that every star has planets."
+          }
+        ]
+      },
+      "rawOutput": "```json\n{\n  \"summary\": \"Astrophysicist Adam Frank discusses the shift of the search for alien civilizations from a 2,500-year philosophical debate into an empirical science supported by upcoming data and exoplanet discoveries. He explains that early 20th-century theories incorrectly predicted planets were extremely rare, whereas modern understandings and simulations demonstrate that planets are ubiquitous around stars. This ubiquity provides a baseline for evaluating the probability of technological civilizations in cosmic history.\",\n  \"topics\": [\n    {\n      \"title\": \"Empirical Shift in the Search for Extraterrestrial Life\",\n      \"description\": \"After millennia of philosophical debate, humanity now stands on the threshold of gathering hard data over the next 10 to 30 years. Even a null result will allow scientists to place rigorous empirical limits on the prevalence of life.\"\n    },\n    {\n      \"title\": \"Planetary Ubiquity vs. Historical Scarcity Theories\",\n      \"description\": \"Early 20th-century theories posited that planets formed only through rare stellar near-misses, implying only one in a trillion stars would have them. Modern science has overturned this, revealing that planets are actually everywhere and every star in the night sky has them.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Cosmic frequency of technological civilizations\",\n      \"description\": \"Adam Frank explains that statistical thresholds imply Earth is not the first technological civilization in cosmic history, assuming nature does not hold a specific bias against civilizations.\",\n      \"timestamp\": \"00:00:00\"\n    },\n    {\n      \"title\": \"Timeline for empirical data\",\n      \"description\": \"Adam Frank notes that within 10, 20, or 30 years, humanity will have relevant data to answer the question of how many alien civilizations exist.\",\n      \"timestamp\": \"00:00:49\"\n    },\n    {\n      \"title\": \"Historical debate over planets\",\n      \"description\": \"Adam Frank highlights that the 2,500-year-old debate between thinkers like Aristotle and Democritus over the uniqueness of Earth has been resolved by discovering that planets are everywhere.\",\n      \"timestamp\": \"00:01:23\"\n    },\n    {\n      \"title\": \"Turn-of-the-century planetary formation theory\",\n      \"description\": \"Adam Frank describes an outdated 20th-century theory where planets formed exclusively via rare gravitational squeezes from passing stars, which would have meant only one in a trillion stars had planets.\",\n      \"timestamp\": \"00:01:59\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Adam Frank: Astrophysicist interested in the evolution of star systems and the search for alien civilizations in our universe\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Duration for historical debate\",\n      \"value\": \"2500 years\",\n      \"context\": \"Illustrates the profound historical scale of human speculation regarding planets and alien life before modern science.\"\n    },\n    {\n      \"item\": \"Near-future timeframe for relevant data\",\n      \"value\": \"10, 20, 30 years\",\n      \"context\": \"Highlights the imminent window in which astronomers and astrophysicists expect to gather hard data to constrain the prevalence of life.\"\n    },\n    {\n      \"item\": \"Outdated predicted rarity of planetary systems\",\n      \"value\": \"one in a trillion\",\n      \"context\": \"Contrasts old theories of planetary scarcity caused by stellar collisions with the modern reality that every star has planets.\"\n    }\n  ]\n}\n```"
+    },
+    {
+      "caseId": "3m-lex-shapiro-destiny",
+      "durationSec": 180.9735,
+      "sourceRows": 7,
+      "latencyMs": 2355,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1326,
+        "completion_tokens": 591,
+        "total_tokens": 1917,
+        "cost": 0.0018753,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0018753,
+          "upstream_inference_prompt_cost": 0.0003978,
+          "upstream_inference_completions_cost": 0.0014775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": false,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 0,
+          "sourceDigitTokens": [],
+          "appendixDigitTokens": [],
+          "omittedSourceDigitTokens": [],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Destiny and Ben outline their respective liberal and conservative political philosophies, highlighting both underlying disagreements and surprising points of convergence. While Destiny emphasizes government assistance to ensure individual capability, Ben advocates for a subsidiary, decentralized view of government focused on preserving pre-existing liberties.",
+        "topics": [
+          {
+            "title": "Liberal Philosophy and Government Assistance",
+            "description": "Destiny defines liberalism through the goal of helping individuals achieve their maximum potential in a large country by providing boosts in education, housing, food, and clothing. However, Destiny rejects total command economies and argues that taxes should fund necessary programs rather than serve as a punishment or a demonization of wealth."
+          },
+          {
+            "title": "Conservative Philosophy and Subsidiarity",
+            "description": "Ben defines conservatism around the minimization of government interference, emphasizing a subsidiary view where local governments handle more responsibilities due to higher homogeneity and consent. The primary role of government is to protect pre-existing liberties such as national defense, property rights, and religious freedom."
+          }
+        ],
+        "details": [
+          {
+            "title": "Foundational Goal of Government according to Destiny",
+            "description": "Destiny argues that the goal of government should be to ensure everybody achieves as much as possible by providing necessary boosts in education, housing, food, and clothing, while maintaining a liberal stance that rejects a total command economy.",
+            "timestamp": "00:00:21"
+          },
+          {
+            "title": "Destiny's View on Wealth and Taxation",
+            "description": "Destiny asserts that taxes should be used to fund desired programs rather than as a punishment, and criticizes Democrats for demonizing success and billionaire wealth, stating it is not inherently bad to be wealthy.",
+            "timestamp": "00:01:04"
+          },
+          {
+            "title": "Ben's Subsidiarity Framework",
+            "description": "Ben explains that governmental discussions should focus on where and at what level government gets involved, advocating for a subsidiary view where local governments do more because of higher homogeneity and consent, while abstraction up the chain becomes divisive.",
+            "timestamp": "00:02:03"
+          },
+          {
+            "title": "Ben's View on Key Liberties",
+            "description": "Ben states that government exists basically to preserve pre-existing key liberties, such as national defense, protection of property rights, and religious freedom, aligning with the Constitution and Bill of Rights.",
+            "timestamp": "00:02:03"
+          }
+        ],
+        "speaker_background": [],
+        "data_references": []
+      },
+      "rawOutput": "```json\n{\n  \"summary\": \"Destiny and Ben outline their respective liberal and conservative political philosophies, highlighting both underlying disagreements and surprising points of convergence. While Destiny emphasizes government assistance to ensure individual capability, Ben advocates for a subsidiary, decentralized view of government focused on preserving pre-existing liberties.\",\n  \"topics\": [\n    {\n      \"title\": \"Liberal Philosophy and Government Assistance\",\n      \"description\": \"Destiny defines liberalism through the goal of helping individuals achieve their maximum potential in a large country by providing boosts in education, housing, food, and clothing. However, Destiny rejects total command economies and argues that taxes should fund necessary programs rather than serve as a punishment or a demonization of wealth.\"\n    },\n    {\n      \"title\": \"Conservative Philosophy and Subsidiarity\",\n      \"description\": \"Ben defines conservatism around the minimization of government interference, emphasizing a subsidiary view where local governments handle more responsibilities due to higher homogeneity and consent. The primary role of government is to protect pre-existing liberties such as national defense, property rights, and religious freedom.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Foundational Goal of Government according to Destiny\",\n      \"description\": \"Destiny argues that the goal of government should be to ensure everybody achieves as much as possible by providing necessary boosts in education, housing, food, and clothing, while maintaining a liberal stance that rejects a total command economy.\",\n      \"timestamp\": \"00:00:21\"\n    },\n    {\n      \"title\": \"Destiny's View on Wealth and Taxation\",\n      \"description\": \"Destiny asserts that taxes should be used to fund desired programs rather than as a punishment, and criticizes Democrats for demonizing success and billionaire wealth, stating it is not inherently bad to be wealthy.\",\n      \"timestamp\": \"00:01:04\"\n    },\n    {\n      \"title\": \"Ben's Subsidiarity Framework\",\n      \"description\": \"Ben explains that governmental discussions should focus on where and at what level government gets involved, advocating for a subsidiary view where local governments do more because of higher homogeneity and consent, while abstraction up the chain becomes divisive.\",\n      \"timestamp\": \"00:02:03\"\n    },\n    {\n      \"title\": \"Ben's View on Key Liberties\",\n      \"description\": \"Ben states that government exists basically to preserve pre-existing key liberties, such as national defense, protection of property rights, and religious freedom, aligning with the Constitution and Bill of Rights.\",\n      \"timestamp\": \"00:02:03\"\n    }\n  ],\n  \"speaker_background\": [],\n  \"data_references\": []\n}\n```"
+    },
+    {
+      "caseId": "5m-acquired-alphabet",
+      "durationSec": 300,
+      "sourceRows": 45,
+      "latencyMs": 2957,
+      "error": null,
+      "resolvedModel": "google/gemini-3.5-flash-lite",
+      "provider": "Google",
+      "usage": {
+        "prompt_tokens": 1938,
+        "completion_tokens": 673,
+        "total_tokens": 2611,
+        "cost": 0.0022639,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0022639,
+          "upstream_inference_prompt_cost": 0.0005814,
+          "upstream_inference_completions_cost": 0.0016825
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "strictJsonOnly": false,
+      "schemaViolations": [],
+      "structure": {
+        "passed": true,
+        "violations": [],
+        "invalidDetailTimestamps": [],
+        "metricAppendix": {
+          "acceptanceCriterion": false,
+          "itemCount": 1,
+          "sourceDigitTokens": [
+            "2025",
+            "1990s",
+            "2004",
+            "2000s",
+            "2x",
+            "2005",
+            "2006"
+          ],
+          "appendixDigitTokens": [
+            "2004"
+          ],
+          "omittedSourceDigitTokens": [
+            "2025",
+            "1990s",
+            "2000s",
+            "2x",
+            "2005",
+            "2006"
+          ],
+          "unsupportedAppendixDigitTokens": []
+        }
+      },
+      "structurePassed": true,
+      "parsedSummary": {
+        "summary": "Google evolved from a breakthrough search engine into the preeminent innovation factory of the 2000s, turning low-cost commodity hardware and search ads into a cash-gushing machine. Despite launching numerous high-profile failures—ranging from Google+ and Glass to hot air balloons—the company cleverly structured its efforts around organizing the world's information and protecting its core business model. This story explores Google's journey, its reorganization into Alphabet, and how its diverse products served strategic business purposes right up to the dawn of the AI era.",
+        "topics": [
+          {
+            "title": "Google as an Innovation Factory and Incubator",
+            "description": "Google used its immense cash flow from search ads to fund a wide array of experimental products, platforms, and colossal failures (like Google+, Wave, Buzz, and Glass). This framing questions whether Google is fundamentally just a search engine, the platform company of the web era, or an incubator that struck gold with search."
+          },
+          {
+            "title": "The Strategic Purpose of Alphabet's Reorganization",
+            "description": "Google's structural reorganization into Alphabet and its pursuit of diverse, sometimes money-losing or pre-revenue bets helped manage market perceptions and strategic imperatives, moving beyond being viewed strictly as a single-product search play."
+          }
+        ],
+        "details": [
+          {
+            "title": "Google's Early Technical and Business Foundation",
+            "description": "Ben Gilbert explains that Google combined a breakthrough search algorithm, low-cost commodity hardware servers, and the search ad business model to turn search into a cash-gushing business prior to its 2004 IPO.",
+            "timestamp": "00:00:51"
+          },
+          {
+            "title": "Cataloging Google's Colossal Failures",
+            "description": "Ben Gilbert and David Rosenthal review Google's history of failed product launches, including Google+, Google Wave, Buzz, numerous messaging apps, internet-beaming hot air balloons, and Google Glass.",
+            "timestamp": "00:01:53"
+          },
+          {
+            "title": "Applying the 'Pure Play' Dilemma to Google",
+            "description": "David Rosenthal uses a quote from the fictional character Russ Hanneman from HBO's Silicon Valley to illustrate how post-IPO companies face pressure when they are viewed purely as revenue-generating machines rather than unbounded potential plays, framing Google's strategic dilemma in the mid-2000s.",
+            "timestamp": "00:04:00"
+          }
+        ],
+        "speaker_background": [
+          "Ben Gilbert: Co-host of Acquired",
+          "David Rosenthal: Co-host of Acquired"
+        ],
+        "data_references": [
+          {
+            "item": "Google's IPO year",
+            "value": "2004",
+            "context": "Marks the milestone when Google took its cash-gushing search business public."
+          }
+        ]
+      },
+      "rawOutput": "```json\n{\n  \"summary\": \"Google evolved from a breakthrough search engine into the preeminent innovation factory of the 2000s, turning low-cost commodity hardware and search ads into a cash-gushing machine. Despite launching numerous high-profile failures—ranging from Google+ and Glass to hot air balloons—the company cleverly structured its efforts around organizing the world's information and protecting its core business model. This story explores Google's journey, its reorganization into Alphabet, and how its diverse products served strategic business purposes right up to the dawn of the AI era.\",\n  \"topics\": [\n    {\n      \"title\": \"Google as an Innovation Factory and Incubator\",\n      \"description\": \"Google used its immense cash flow from search ads to fund a wide array of experimental products, platforms, and colossal failures (like Google+, Wave, Buzz, and Glass). This framing questions whether Google is fundamentally just a search engine, the platform company of the web era, or an incubator that struck gold with search.\"\n    },\n    {\n      \"title\": \"The Strategic Purpose of Alphabet's Reorganization\",\n      \"description\": \"Google's structural reorganization into Alphabet and its pursuit of diverse, sometimes money-losing or pre-revenue bets helped manage market perceptions and strategic imperatives, moving beyond being viewed strictly as a single-product search play.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Google's Early Technical and Business Foundation\",\n      \"description\": \"Ben Gilbert explains that Google combined a breakthrough search algorithm, low-cost commodity hardware servers, and the search ad business model to turn search into a cash-gushing business prior to its 2004 IPO.\",\n      \"timestamp\": \"00:00:51\"\n    },\n    {\n      \"title\": \"Cataloging Google's Colossal Failures\",\n      \"description\": \"Ben Gilbert and David Rosenthal review Google's history of failed product launches, including Google+, Google Wave, Buzz, numerous messaging apps, internet-beaming hot air balloons, and Google Glass.\",\n      \"timestamp\": \"00:01:53\"\n    },\n    {\n      \"title\": \"Applying the 'Pure Play' Dilemma to Google\",\n      \"description\": \"David Rosenthal uses a quote from the fictional character Russ Hanneman from HBO's Silicon Valley to illustrate how post-IPO companies face pressure when they are viewed purely as revenue-generating machines rather than unbounded potential plays, framing Google's strategic dilemma in the mid-2000s.\",\n      \"timestamp\": \"00:04:00\"\n    }\n  ],\n  \"speaker_background\": [\n    \"Ben Gilbert: Co-host of Acquired\",\n    \"David Rosenthal: Co-host of Acquired\"\n  ],\n  \"data_references\": [\n    {\n      \"item\": \"Google's IPO year\",\n      \"value\": \"2004\",\n      \"context\": \"Marks the milestone when Google took its cash-gushing search business public.\"\n    }\n  ]\n}\n```"
+    }
+  ],
+  "semanticQuality": "requires review of unmodified outputs; no gold summaries exist"
+}
