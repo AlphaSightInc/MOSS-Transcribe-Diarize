@@ -1,0 +1,63 @@
+{
+  "all_audio_hashes_match": true,
+  "audio_checks": [
+    {
+      "case_id": "mono_javier_intro_50s",
+      "expected": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d",
+      "match": true,
+      "observed": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/mono_javier_intro_50s/audio.wav"
+    },
+    {
+      "case_id": "interview_bill_ackman_60s",
+      "expected": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "match": true,
+      "observed": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_bill_ackman_60s/audio.wav"
+    },
+    {
+      "case_id": "interview_keyu_jin_60s",
+      "expected": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
+      "match": true,
+      "observed": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_keyu_jin_60s/audio.wav"
+    },
+    {
+      "case_id": "interview_adam_frank_180s",
+      "expected": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "match": true,
+      "observed": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_adam_frank_180s/audio.wav"
+    },
+    {
+      "case_id": "discussion_jamie_dimon_180s",
+      "expected": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "match": true,
+      "observed": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/discussion_jamie_dimon_180s/audio.wav"
+    },
+    {
+      "case_id": "discussion_rtfl_90s",
+      "expected": "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe",
+      "match": true,
+      "observed": "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe",
+      "path": "/tmp/moss-live-policy-sweep-20260825-v1/corpus/discussion_rtfl_90s/audio.wav"
+    }
+  ],
+  "source_checkouts_context_only": {
+    "LiveTranscribe": {
+      "branch": "ralph/production",
+      "dirty": true,
+      "head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70",
+      "path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe",
+      "status_porcelain": "M AGENTS.md\n M ProjectResources/Frontend/app.js\n M ProjectResources/Frontend/app.js.map\n M Sources/ASR/WhisperKitService.swift\n M Tests/UnitTests/ASRTests/WhisperKitServiceTests.swift\n M docs/adr/0003-whisperkit-in-process-compute-scheduler.md\n M docs/adr/0020-live-finalization-contract.md\n M docs/adr/0029-refined-live-overlay-display-authority.md\n M docs/adr/0032-isolated-live-vad-lane-promotion.md\n M docs/adr/README.md\n M frontend/src/App.test.tsx\n M frontend/src/App.tsx\n M frontend/src/api/types.ts\n M frontend/src/components/ControlPanel.test.tsx\n M frontend/src/components/RefinementControls.tsx\n M scripts/build_app_bundle.sh\n M scripts/tests/test_build_app_bundle_contract.py\n?? .lavish/\n?? docs/adr/0033-streaming-capture-resampling.md\n?? docs/adr/0034-native-inference-admission-policy.md\n?? docs/adr/0035-transcript-stable-segment-identity.md\n?? docs/evidence/head-to-head-projectclerk-0812.md"
+    },
+    "ProjectClerk": {
+      "branch": "main",
+      "dirty": true,
+      "head": "4345b66190322216410cd56804b5fc82c1ce842c",
+      "path": "/Users/ga0/Desktop/AI_Projects/Github_Projects/ProjectClerk",
+      "status_porcelain": "M CLAUDE.md\n M Sources/App/SessionViewModel.swift\n M Sources/Audio/AudioSource.swift\n M Sources/Audio/MicCapture.swift\n M Sources/Audio/SystemAudioCapture.swift\n M Sources/Diarization/SystemDiarizer.swift\n M Sources/Persistence/SessionStore.swift\n M Sources/Transcription/ChannelTranscriber.swift\n M Sources/Transcription/WhisperKitEngine.swift\n M project.yml\n M scripts/deploy-to-ireneatwork.sh\n M scripts/setup-signing.sh\n?? .aisight/\n?? .lavish/\n?? AGENTS.md\n?? Prototypes/\n?? Sources/App/SessionRuntime.swift\n?? Tests/\n?? docs/evidence/\n?? docs/plan-2026-08-13-production-readiness.md\n?? docs/plan-2026-08-17-terminal-contract-remediation.md\n?? docs/plan-2026-08-18-rough-loop-operator-strategy.md\n?? docs/reviews/\n?? scripts/prototype-acoustic-stability.sh\n?? scripts/prototype-evidence-retention.sh\n?? scripts/ralph/\n?? tasks/"
+    }
+  }
+}

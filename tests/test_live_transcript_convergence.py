@@ -10,11 +10,17 @@ the selected column (trio WER `.131861`, content recall `.9439`) to every printe
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
+from moss_transcribe_diarize.app.live_session import (
+    AudioFrame,
+    CanonicalResult,
+    EffectiveTranscriptSegment,
+    LiveSession,
+)
 from moss_transcribe_diarize.app.live_transcript_convergence import (
     DEFAULT_ROLLING_GEOMETRY,
     RollingGeometry,
@@ -200,6 +206,86 @@ def test_a_timestamp_past_the_window_is_clamped_into_it_never_owned_outside():
     assert proposal.segments[-1].end_sample == WINDOW
 
 
+def test_retained_jamie_window_4_is_normalized_and_makes_window_5_plannable():
+    """G4: the observed cross-speaker overlap cannot forfeit the rest of the meeting."""
+
+    session = LiveSession(max_retained_samples=6 * WINDOW)
+    session.accept_frame(
+        AudioFrame(sequence=0, pcm=silence(6 * WINDOW), sample_count=6 * WINDOW)
+    )
+    frozen = session.freeze_until(6 * WINDOW, reason="retained_jamie_regression")
+    assert session.submit_canonical(
+        CanonicalResult(
+            span_id=frozen.id,
+            epoch=frozen.epoch,
+            start_sample=0,
+            end_sample=6 * WINDOW,
+            transcript="[0][S01]base[60]",
+        )
+    )
+
+    converger = RollingTranscriptConverger(epoch=0)
+    for _ in range(4):
+        feed(converger, WINDOW)
+        request = converger.observe_base(session.snapshot())[0]
+        proposal = converger.complete(request.id, decoded(window_transcript(*TURNS)))
+        assert proposal is not None
+        assert session.apply_text_revision(proposal).applied
+
+    feed(converger, WINDOW)
+    request = converger.observe_base(session.snapshot())[0]
+    # Window 5 is already retained by the time window 4 answers, as in paced live capture.
+    feed(converger, WINDOW)
+    proposal = converger.complete(
+        request.id,
+        decoded(
+            window_transcript(
+                (0.00, "S01", "Incredible.", 0.98),
+                (
+                    0.81,
+                    "S02",
+                    "So the question, of course, is how did he do it? I mean, banks fail. "
+                    "Financial firms often have spectacular blowups and large",
+                    9.97,
+                ),
+            )
+        ),
+    )
+    assert proposal is not None
+
+    raw_segments = (
+        EffectiveTranscriptSegment(640000, 655680, "Incredible.", None, "rolling"),
+        EffectiveTranscriptSegment(
+            652960,
+            799520,
+            "So the question, of course, is how did he do it? I mean, banks fail. "
+            "Financial firms often have spectacular blowups and large",
+            None,
+            "rolling",
+        ),
+    )
+    raw_outcome = session.apply_text_revision(replace(proposal, segments=raw_segments))
+    assert (raw_outcome.applied, raw_outcome.refusal) == (False, "segments_out_of_order")
+
+    assert [(row.start_sample, row.end_sample) for row in proposal.segments] == [
+        (640000, 655680),
+        (655680, 799520),
+    ]
+    assert proposal.normalization_displaced_samples == 2720
+    assert proposal.normalization_merged_segments == 0
+    assert proposal.normalization_dropped_segments == 0
+    assert len(" ".join(row.text for row in proposal.segments).split()) == 24
+    assert session.apply_text_revision(proposal).applied
+
+    following = converger.observe_base(session.snapshot())
+    assert len(following) == 1
+    assert (following[0].window_index, following[0].start_sample, following[0].end_sample) == (
+        5,
+        5 * WINDOW,
+        6 * WINDOW,
+    )
+
+
 # ---------------------------------------------------------------- failure behaviour
 
 
@@ -224,6 +310,39 @@ def test_a_window_that_publishes_nothing_stalls_instead_of_emptying_its_interval
     assert (accounting.status, accounting.windows_failed) == (RollingStatus.WINDOW_FAILED, 1)
     assert converger.observe_base(
         Surface(committed_samples=2 * WINDOW, canonical_through_sample=WINDOW)
+    ) == ()
+
+
+def test_a_refused_proposal_keeps_its_cause_and_accounts_later_audio_without_retaining_it():
+    """A3: refinement stops; base capture and the session sample clock do not."""
+
+    converger = RollingTranscriptConverger(epoch=0)
+    feed(converger, 2 * WINDOW)
+    request = converger.observe_base(Surface(committed_samples=2 * WINDOW))[0]
+    assert converger.complete(request.id, decoded(window_transcript(*TURNS))) is not None
+    before = converger.accounting()
+
+    converger.note_proposal_refused("stale_text_revision_version")
+    refused = converger.accounting()
+    assert refused.status is RollingStatus.PROPOSAL_REFUSED
+    assert refused.proposal_refusals == 1
+    assert refused.last_proposal_refusal == "stale_text_revision_version"
+    assert refused.windows_completed == before.windows_completed == 1
+    assert refused.windows_failed == before.windows_failed == 0
+    assert refused.decoded_audio_samples == before.decoded_audio_samples == WINDOW
+    assert refused.observed_frontier_sample == before.observed_frontier_sample == 0
+    assert refused.retained_samples == 0
+    assert refused.in_flight_request_id is None
+
+    feed(converger, 3 * WINDOW)
+    after = converger.accounting()
+    assert after.status is RollingStatus.PROPOSAL_REFUSED
+    assert after.last_proposal_refusal == "stale_text_revision_version"
+    assert after.proposal_refusals == 1
+    assert after.accepted_samples == 5 * WINDOW
+    assert after.retained_samples == 0
+    assert converger.observe_base(
+        Surface(committed_samples=5 * WINDOW, canonical_through_sample=0)
     ) == ()
 
 

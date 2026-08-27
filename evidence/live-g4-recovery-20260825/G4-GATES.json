@@ -1,0 +1,1493 @@
+{
+  "all_gates_pass": true,
+  "denominator": {
+    "actual_live_sessions": 12,
+    "cases": 6,
+    "changed_regions": 494,
+    "first_publication_regions": 536,
+    "observed_audio_seconds": 1239.987,
+    "passes": 2,
+    "rolling_windows": 122
+  },
+  "gates": {
+    "G1_exact_execution": true,
+    "G2_full_rolling_coverage": true,
+    "G3_root_cause_closure": true,
+    "G4_jamie_witness": true,
+    "G5_runtime": true,
+    "G6_surface_reported": true,
+    "G7_provenance": true
+  },
+  "integrity": {
+    "per_observation": [
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "mono_javier_intro_50s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 50.0,
+        "expected_window_count": 5,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.163771,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 5,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_bill_ackman_60s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 60.0,
+        "expected_window_count": 6,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.165947,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 6,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_keyu_jin_60s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 60.0,
+        "expected_window_count": 6,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.151276,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 6,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_adam_frank_180s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 180.0,
+        "expected_window_count": 18,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.157303,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 18,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "discussion_jamie_dimon_180s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 180.0,
+        "expected_window_count": 18,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 2720,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.156725,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 18,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "discussion_rtfl_90s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 89.9935,
+        "expected_window_count": 8,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "A",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.168776,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 8,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "discussion_rtfl_90s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 89.9935,
+        "expected_window_count": 8,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.150221,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 8,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "discussion_jamie_dimon_180s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 180.0,
+        "expected_window_count": 18,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 2720,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.159472,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 18,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_adam_frank_180s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 180.0,
+        "expected_window_count": 18,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.152591,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 18,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_keyu_jin_60s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 60.0,
+        "expected_window_count": 6,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.148894,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 6,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "interview_bill_ackman_60s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 60.0,
+        "expected_window_count": 6,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.159401,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 6,
+        "window_grid_exact": true
+      },
+      {
+        "admission_refusals": 0,
+        "all_windows_applied": true,
+        "all_windows_rolling": true,
+        "case_id": "mono_javier_intro_50s",
+        "corpus_hashes_exact": true,
+        "duration_seconds": 50.0,
+        "expected_window_count": 5,
+        "failed_windows": 0,
+        "final_queue_depth": 0,
+        "max_queue_depth": 1,
+        "normalization": {
+          "displaced_samples": 0,
+          "dropped_segments": 0,
+          "merged_segments": 0
+        },
+        "pass": "B",
+        "pcm_evicted": 0,
+        "pre_stop_combined_rtf": 0.159532,
+        "proposal_refusals": 0,
+        "sample_accounting_exact": true,
+        "stale_completions": 0,
+        "terminal_failures": [],
+        "text_revision_refusals": [],
+        "window_count": 5,
+        "window_grid_exact": true
+      }
+    ],
+    "raw_surface_checks": [
+      {
+        "case_id": "mono_javier_intro_50s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "a1b6bed05b96daa6c9bead6716e8dbe3079b84359fd03d0a899a64e8ea8437a9",
+            "observed_sha256": "a1b6bed05b96daa6c9bead6716e8dbe3079b84359fd03d0a899a64e8ea8437a9",
+            "path": "deployed-10-10/pass-A/mono_javier_intro_50s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "ad567dd3e508886223d599d69a6492225bd8ea8121a290bc77815a21e60dfd6f",
+            "observed_sha256": "ad567dd3e508886223d599d69a6492225bd8ea8121a290bc77815a21e60dfd6f",
+            "path": "deployed-10-10/pass-A/mono_javier_intro_50s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "a76c22a468236fd3f295e25e84823ae3795a74a5c37623128af9d8316b4baa1a",
+            "observed_sha256": "a76c22a468236fd3f295e25e84823ae3795a74a5c37623128af9d8316b4baa1a",
+            "path": "deployed-10-10/pass-A/mono_javier_intro_50s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "56db8b892fb08568455d887759aeedfba15723c05f0f13838f39bdff64cb1616",
+            "observed_sha256": "56db8b892fb08568455d887759aeedfba15723c05f0f13838f39bdff64cb1616",
+            "path": "deployed-10-10/pass-A/mono_javier_intro_50s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_bill_ackman_60s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "observed_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "path": "deployed-10-10/pass-A/interview_bill_ackman_60s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "99999b21ddd450de7019eca4ca06e4ddc1a94465650f77cadb54a5ebe558957d",
+            "observed_sha256": "99999b21ddd450de7019eca4ca06e4ddc1a94465650f77cadb54a5ebe558957d",
+            "path": "deployed-10-10/pass-A/interview_bill_ackman_60s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "d880e9f30cf26a184d206f8945e53d28a5a82daa3f42e41608b40d33ecbc22b5",
+            "observed_sha256": "d880e9f30cf26a184d206f8945e53d28a5a82daa3f42e41608b40d33ecbc22b5",
+            "path": "deployed-10-10/pass-A/interview_bill_ackman_60s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "87c733fb8eaa193baf457694dd62032623e793139d22909aa0777703ebab652c",
+            "observed_sha256": "87c733fb8eaa193baf457694dd62032623e793139d22909aa0777703ebab652c",
+            "path": "deployed-10-10/pass-A/interview_bill_ackman_60s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_keyu_jin_60s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "observed_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "path": "deployed-10-10/pass-A/interview_keyu_jin_60s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "a8fb43667ca7f5ac02efbe096d46d1f1a1b28dd4b5e02afc9960ef254c2d20bd",
+            "observed_sha256": "a8fb43667ca7f5ac02efbe096d46d1f1a1b28dd4b5e02afc9960ef254c2d20bd",
+            "path": "deployed-10-10/pass-A/interview_keyu_jin_60s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "511e8b2a17aeeeed542f8b835fdfcf74e8cbdacb78eceedffca43387f430ef90",
+            "observed_sha256": "511e8b2a17aeeeed542f8b835fdfcf74e8cbdacb78eceedffca43387f430ef90",
+            "path": "deployed-10-10/pass-A/interview_keyu_jin_60s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "de8434045612a193cadf3fdfec86f0c6566d0bd7e2c48f4bd9e02756d89e6758",
+            "observed_sha256": "de8434045612a193cadf3fdfec86f0c6566d0bd7e2c48f4bd9e02756d89e6758",
+            "path": "deployed-10-10/pass-A/interview_keyu_jin_60s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_adam_frank_180s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "e098a24308826d0b8ea418e78c57c7ce28f287c64e82689cb4a663696a6b3270",
+            "observed_sha256": "e098a24308826d0b8ea418e78c57c7ce28f287c64e82689cb4a663696a6b3270",
+            "path": "deployed-10-10/pass-A/interview_adam_frank_180s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "6afcedc652a7a88bcf537b329f88a7fdb83bfd237fdfa2357f3281a124c8acca",
+            "observed_sha256": "6afcedc652a7a88bcf537b329f88a7fdb83bfd237fdfa2357f3281a124c8acca",
+            "path": "deployed-10-10/pass-A/interview_adam_frank_180s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "2a8cedae1947bdbbcab4ed6f6633ecdd6e5f1c6b08559b76655ad34f0f488522",
+            "observed_sha256": "2a8cedae1947bdbbcab4ed6f6633ecdd6e5f1c6b08559b76655ad34f0f488522",
+            "path": "deployed-10-10/pass-A/interview_adam_frank_180s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "c9dc3610042b2068907543635bd170d6abd156b232b3fc10a7e8c6f182d8f388",
+            "observed_sha256": "c9dc3610042b2068907543635bd170d6abd156b232b3fc10a7e8c6f182d8f388",
+            "path": "deployed-10-10/pass-A/interview_adam_frank_180s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "discussion_jamie_dimon_180s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "fc5c54a9e3d6d751f3b3e13337f948b47d32f05eeeb2815f4e45beb20f3dc1d2",
+            "observed_sha256": "fc5c54a9e3d6d751f3b3e13337f948b47d32f05eeeb2815f4e45beb20f3dc1d2",
+            "path": "deployed-10-10/pass-A/discussion_jamie_dimon_180s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "746287b70752acff32330a9ac4b128301e61ac6ab14ff17c3032de2101218ff1",
+            "observed_sha256": "746287b70752acff32330a9ac4b128301e61ac6ab14ff17c3032de2101218ff1",
+            "path": "deployed-10-10/pass-A/discussion_jamie_dimon_180s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "0a1ae193161dd82c455ae47c9f7db32ab9d49d97d3e652de6e5b252d754ab1d2",
+            "observed_sha256": "0a1ae193161dd82c455ae47c9f7db32ab9d49d97d3e652de6e5b252d754ab1d2",
+            "path": "deployed-10-10/pass-A/discussion_jamie_dimon_180s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "54095888c0cf4caf51997cdcf2e1aa54d7feb540fa7571c9470bf3c16e62aa8c",
+            "observed_sha256": "54095888c0cf4caf51997cdcf2e1aa54d7feb540fa7571c9470bf3c16e62aa8c",
+            "path": "deployed-10-10/pass-A/discussion_jamie_dimon_180s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "discussion_rtfl_90s",
+        "pass": "A",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "cb3acd886ff44b0b5cb3b07539d203df9601038a5d15556f098e777497193f30",
+            "observed_sha256": "cb3acd886ff44b0b5cb3b07539d203df9601038a5d15556f098e777497193f30",
+            "path": "deployed-10-10/pass-A/discussion_rtfl_90s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "observed_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "path": "deployed-10-10/pass-A/discussion_rtfl_90s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "observed_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "path": "deployed-10-10/pass-A/discussion_rtfl_90s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "7cb552a62726b6e9e71f4ab717c1a6130144d9fb4f464334e95d7a2f69d99a52",
+            "observed_sha256": "7cb552a62726b6e9e71f4ab717c1a6130144d9fb4f464334e95d7a2f69d99a52",
+            "path": "deployed-10-10/pass-A/discussion_rtfl_90s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "discussion_rtfl_90s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "cb3acd886ff44b0b5cb3b07539d203df9601038a5d15556f098e777497193f30",
+            "observed_sha256": "cb3acd886ff44b0b5cb3b07539d203df9601038a5d15556f098e777497193f30",
+            "path": "deployed-10-10/pass-B/discussion_rtfl_90s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "observed_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "path": "deployed-10-10/pass-B/discussion_rtfl_90s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "observed_sha256": "0cdbb11191e4b628b3cf8cea3a9c880e8f7d9c89cc82f25107d7f13af74ca42a",
+            "path": "deployed-10-10/pass-B/discussion_rtfl_90s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "7cb552a62726b6e9e71f4ab717c1a6130144d9fb4f464334e95d7a2f69d99a52",
+            "observed_sha256": "7cb552a62726b6e9e71f4ab717c1a6130144d9fb4f464334e95d7a2f69d99a52",
+            "path": "deployed-10-10/pass-B/discussion_rtfl_90s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "discussion_jamie_dimon_180s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "fc5c54a9e3d6d751f3b3e13337f948b47d32f05eeeb2815f4e45beb20f3dc1d2",
+            "observed_sha256": "fc5c54a9e3d6d751f3b3e13337f948b47d32f05eeeb2815f4e45beb20f3dc1d2",
+            "path": "deployed-10-10/pass-B/discussion_jamie_dimon_180s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "746287b70752acff32330a9ac4b128301e61ac6ab14ff17c3032de2101218ff1",
+            "observed_sha256": "746287b70752acff32330a9ac4b128301e61ac6ab14ff17c3032de2101218ff1",
+            "path": "deployed-10-10/pass-B/discussion_jamie_dimon_180s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "0a1ae193161dd82c455ae47c9f7db32ab9d49d97d3e652de6e5b252d754ab1d2",
+            "observed_sha256": "0a1ae193161dd82c455ae47c9f7db32ab9d49d97d3e652de6e5b252d754ab1d2",
+            "path": "deployed-10-10/pass-B/discussion_jamie_dimon_180s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "54095888c0cf4caf51997cdcf2e1aa54d7feb540fa7571c9470bf3c16e62aa8c",
+            "observed_sha256": "54095888c0cf4caf51997cdcf2e1aa54d7feb540fa7571c9470bf3c16e62aa8c",
+            "path": "deployed-10-10/pass-B/discussion_jamie_dimon_180s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_adam_frank_180s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "e098a24308826d0b8ea418e78c57c7ce28f287c64e82689cb4a663696a6b3270",
+            "observed_sha256": "e098a24308826d0b8ea418e78c57c7ce28f287c64e82689cb4a663696a6b3270",
+            "path": "deployed-10-10/pass-B/interview_adam_frank_180s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "6afcedc652a7a88bcf537b329f88a7fdb83bfd237fdfa2357f3281a124c8acca",
+            "observed_sha256": "6afcedc652a7a88bcf537b329f88a7fdb83bfd237fdfa2357f3281a124c8acca",
+            "path": "deployed-10-10/pass-B/interview_adam_frank_180s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "2a8cedae1947bdbbcab4ed6f6633ecdd6e5f1c6b08559b76655ad34f0f488522",
+            "observed_sha256": "2a8cedae1947bdbbcab4ed6f6633ecdd6e5f1c6b08559b76655ad34f0f488522",
+            "path": "deployed-10-10/pass-B/interview_adam_frank_180s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "c9dc3610042b2068907543635bd170d6abd156b232b3fc10a7e8c6f182d8f388",
+            "observed_sha256": "c9dc3610042b2068907543635bd170d6abd156b232b3fc10a7e8c6f182d8f388",
+            "path": "deployed-10-10/pass-B/interview_adam_frank_180s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_keyu_jin_60s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "observed_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+            "path": "deployed-10-10/pass-B/interview_keyu_jin_60s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "a8fb43667ca7f5ac02efbe096d46d1f1a1b28dd4b5e02afc9960ef254c2d20bd",
+            "observed_sha256": "a8fb43667ca7f5ac02efbe096d46d1f1a1b28dd4b5e02afc9960ef254c2d20bd",
+            "path": "deployed-10-10/pass-B/interview_keyu_jin_60s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "511e8b2a17aeeeed542f8b835fdfcf74e8cbdacb78eceedffca43387f430ef90",
+            "observed_sha256": "511e8b2a17aeeeed542f8b835fdfcf74e8cbdacb78eceedffca43387f430ef90",
+            "path": "deployed-10-10/pass-B/interview_keyu_jin_60s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "de8434045612a193cadf3fdfec86f0c6566d0bd7e2c48f4bd9e02756d89e6758",
+            "observed_sha256": "de8434045612a193cadf3fdfec86f0c6566d0bd7e2c48f4bd9e02756d89e6758",
+            "path": "deployed-10-10/pass-B/interview_keyu_jin_60s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "interview_bill_ackman_60s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "observed_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+            "path": "deployed-10-10/pass-B/interview_bill_ackman_60s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "b9c4f3497689b3b8e8178d055c8a1fe0a4deb31f24d688785161a16a86b7e56f",
+            "observed_sha256": "b9c4f3497689b3b8e8178d055c8a1fe0a4deb31f24d688785161a16a86b7e56f",
+            "path": "deployed-10-10/pass-B/interview_bill_ackman_60s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "c5949542ab9d0b24e3b7fc30d1b39f85a185951e92c29a0e639dfa86d7168e4e",
+            "observed_sha256": "c5949542ab9d0b24e3b7fc30d1b39f85a185951e92c29a0e639dfa86d7168e4e",
+            "path": "deployed-10-10/pass-B/interview_bill_ackman_60s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "8bb3b9e2c143ab4d4b1496401d2333115f3d1d1b183d970c75a707dff2bb5a2a",
+            "observed_sha256": "8bb3b9e2c143ab4d4b1496401d2333115f3d1d1b183d970c75a707dff2bb5a2a",
+            "path": "deployed-10-10/pass-B/interview_bill_ackman_60s/actual/stop_return.jsonl"
+          }
+        }
+      },
+      {
+        "case_id": "mono_javier_intro_50s",
+        "pass": "B",
+        "support_files_present": true,
+        "surfaces": {
+          "post_stop_final": {
+            "exists_nonempty": true,
+            "expected_sha256": "a1b6bed05b96daa6c9bead6716e8dbe3079b84359fd03d0a899a64e8ea8437a9",
+            "observed_sha256": "a1b6bed05b96daa6c9bead6716e8dbe3079b84359fd03d0a899a64e8ea8437a9",
+            "path": "deployed-10-10/pass-B/mono_javier_intro_50s/actual/post_stop_final.jsonl"
+          },
+          "pre_stop_immediate": {
+            "exists_nonempty": true,
+            "expected_sha256": "ad567dd3e508886223d599d69a6492225bd8ea8121a290bc77815a21e60dfd6f",
+            "observed_sha256": "ad567dd3e508886223d599d69a6492225bd8ea8121a290bc77815a21e60dfd6f",
+            "path": "deployed-10-10/pass-B/mono_javier_intro_50s/actual/pre_stop_immediate.jsonl"
+          },
+          "pre_stop_settled": {
+            "exists_nonempty": true,
+            "expected_sha256": "a76c22a468236fd3f295e25e84823ae3795a74a5c37623128af9d8316b4baa1a",
+            "observed_sha256": "a76c22a468236fd3f295e25e84823ae3795a74a5c37623128af9d8316b4baa1a",
+            "path": "deployed-10-10/pass-B/mono_javier_intro_50s/actual/pre_stop_settled.jsonl"
+          },
+          "stop_return": {
+            "exists_nonempty": true,
+            "expected_sha256": "56db8b892fb08568455d887759aeedfba15723c05f0f13838f39bdff64cb1616",
+            "observed_sha256": "56db8b892fb08568455d887759aeedfba15723c05f0f13838f39bdff64cb1616",
+            "path": "deployed-10-10/pass-B/mono_javier_intro_50s/actual/stop_return.jsonl"
+          }
+        }
+      }
+    ]
+  },
+  "latency": {
+    "by_pass": {
+      "A": {
+        "changed_region_correction_age_seconds": {
+          "count": 247,
+          "max": 11.426665,
+          "mean": 5.62139,
+          "p50_nearest_rank": 5.46601,
+          "p95_nearest_rank": 10.469591
+        },
+        "first_publication_age_seconds": {
+          "count": 268,
+          "max": 4.126809,
+          "mean": 2.977237,
+          "p50_nearest_rank": 3.197977,
+          "p95_nearest_rank": 3.638837
+        }
+      },
+      "B": {
+        "changed_region_correction_age_seconds": {
+          "count": 247,
+          "max": 11.94579,
+          "mean": 5.618427,
+          "p50_nearest_rank": 5.444113,
+          "p95_nearest_rank": 10.471099
+        },
+        "first_publication_age_seconds": {
+          "count": 268,
+          "max": 3.786204,
+          "mean": 2.967521,
+          "p50_nearest_rank": 3.19121,
+          "p95_nearest_rank": 3.659641
+        }
+      }
+    },
+    "category": {
+      "monologue": {
+        "case_aggregate_mean": {
+          "changed_region_correction_age_seconds": 10.845014,
+          "drain_wait_seconds": 0.675795,
+          "first_publication_age_seconds": 3.312656,
+          "stop_to_final_seconds": 2.163179
+        },
+        "changed_region_correction_age_seconds_pooled": {
+          "count": 44,
+          "max": 11.94579,
+          "mean": 6.019834,
+          "p50_nearest_rank": 5.797775,
+          "p95_nearest_rank": 10.845014
+        },
+        "first_publication_age_seconds_pooled": {
+          "count": 52,
+          "max": 3.394811,
+          "mean": 2.472577,
+          "p50_nearest_rank": 3.049811,
+          "p95_nearest_rank": 3.312656
+        }
+      },
+      "multi-person conversation": {
+        "case_aggregate_mean": {
+          "changed_region_correction_age_seconds": 8.781206,
+          "drain_wait_seconds": 0.000388,
+          "first_publication_age_seconds": 3.489595,
+          "stop_to_final_seconds": 3.820041
+        },
+        "changed_region_correction_age_seconds_pooled": {
+          "count": 78,
+          "max": 10.350079,
+          "mean": 4.501362,
+          "p50_nearest_rank": 5.025406,
+          "p95_nearest_rank": 8.781206
+        },
+        "first_publication_age_seconds_pooled": {
+          "count": 86,
+          "max": 3.663196,
+          "mean": 2.587223,
+          "p50_nearest_rank": 3.003615,
+          "p95_nearest_rank": 3.489595
+        }
+      },
+      "multi-person discussion": {
+        "case_aggregate_mean": {
+          "changed_region_correction_age_seconds": 10.474767,
+          "drain_wait_seconds": 0.850296,
+          "first_publication_age_seconds": 3.734393,
+          "stop_to_final_seconds": 9.097724
+        },
+        "changed_region_correction_age_seconds_pooled": {
+          "count": 148,
+          "max": 10.836466,
+          "mean": 6.27659,
+          "p50_nearest_rank": 5.633642,
+          "p95_nearest_rank": 10.474767
+        },
+        "first_publication_age_seconds_pooled": {
+          "count": 154,
+          "max": 4.126809,
+          "mean": 3.166965,
+          "p50_nearest_rank": 3.230021,
+          "p95_nearest_rank": 3.734393
+        }
+      },
+      "two-person interview": {
+        "case_aggregate_mean": {
+          "changed_region_correction_age_seconds": 8.885314,
+          "drain_wait_seconds": 0.6154,
+          "first_publication_age_seconds": 3.405341,
+          "stop_to_final_seconds": 4.260224
+        },
+        "changed_region_correction_age_seconds_pooled": {
+          "count": 224,
+          "max": 10.893799,
+          "mean": 5.496967,
+          "p50_nearest_rank": 5.442501,
+          "p95_nearest_rank": 10.469591
+        },
+        "first_publication_age_seconds_pooled": {
+          "count": 244,
+          "max": 3.6011,
+          "mean": 3.091834,
+          "p50_nearest_rank": 3.196694,
+          "p95_nearest_rank": 3.491069
+        }
+      }
+    },
+    "control_pass_p95_spread": {
+      "changed_region_correction_age_seconds": 0.001508,
+      "first_publication_age_seconds": 0.020804
+    },
+    "duration_weighted_mean": {
+      "changed_region_correction_age_seconds": 9.807608,
+      "drain_wait_seconds": 0.545686,
+      "first_publication_age_seconds": 3.531165,
+      "stop_to_final_seconds": 6.110295
+    },
+    "interpretation": "First-publication and correction aggregates use pooled nearest-rank distributions; macro/category/duration-weighted values aggregate each case's pooled p95. Drain and Stop values aggregate each case's two-pass mean.",
+    "macro_mean": {
+      "changed_region_correction_age_seconds": 9.459488,
+      "drain_wait_seconds": 0.562113,
+      "first_publication_age_seconds": 3.458778,
+      "stop_to_final_seconds": 4.643603
+    },
+    "pooled": {
+      "changed_region_correction_age_seconds": {
+        "count": 494,
+        "max": 11.94579,
+        "mean": 5.619908,
+        "p50_nearest_rank": 5.464955,
+        "p95_nearest_rank": 10.471099
+      },
+      "drain_wait_seconds": {
+        "count": 12,
+        "max": 0.910279,
+        "mean": 0.562113,
+        "p50_nearest_rank": 0.670865,
+        "p95_nearest_rank": 0.910279
+      },
+      "first_publication_age_seconds": {
+        "count": 536,
+        "max": 4.126809,
+        "mean": 2.972379,
+        "p50_nearest_rank": 3.194699,
+        "p95_nearest_rank": 3.652696
+      },
+      "stop_to_final_seconds": {
+        "count": 12,
+        "max": 9.118021,
+        "mean": 4.643602,
+        "p50_nearest_rank": 3.061993,
+        "p95_nearest_rank": 9.118021
+      }
+    }
+  },
+  "provenance": {
+    "branch": "ralph/live-convergence-0824",
+    "corpus_manifest_sha256": "80fc15bd730f7aa44d8a69aa6e7e00aaf43ed54e2af8a03abc2c8934d7438d7c",
+    "descriptor": {
+      "bounds": {
+        "hard_cap_samples": 40000,
+        "max_events": 1000,
+        "max_frame_samples": 16000,
+        "max_identity_speakers": 16,
+        "max_queue_depth": 16,
+        "max_retained_samples": 960000,
+        "max_tape_bytes": 9600000,
+        "stop_drain_deadline_seconds": 5.0
+      },
+      "config_hashes": {
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+        "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+        "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+        "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+      },
+      "feature_enabled": true,
+      "frame_samples": 8000,
+      "live_protocol": {
+        "capabilities": {
+          "binary": false,
+          "idempotent_frames": true,
+          "lanes": true,
+          "resumable": true
+        },
+        "max_protocol_version": 2,
+        "min_protocol_version": 2,
+        "protocol": "moss-live-service.v2"
+      },
+      "live_protocol_version": "moss-live-service.v1",
+      "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+      "provider_name": "moss-rtx-webrtc-wespeaker",
+      "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "sample_rate": 16000,
+      "schema_version": 1,
+      "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea"
+    },
+    "head": "7608c91ce36441d9075fbba41e18c5fae8f464ac",
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "production_file_sha256": {
+      "moss_transcribe_diarize/app/live_coordinator.py": "4566af8ccdf83bcebf8ccb28be7977c1b15ceffc0bc9ced29ddf4edd1489f7ec",
+      "moss_transcribe_diarize/app/live_service_runtime.py": "fcaadb8e36649950c987d751df9e1effbbf70dab9b0e2e979e9481ea08f8e80f",
+      "moss_transcribe_diarize/app/live_session.py": "a76565f1db51527465acef20259ded27690404ceba8821dd7e5803579aab5049",
+      "moss_transcribe_diarize/app/live_transcript_convergence.py": "b16b84b339f642556e62907ef53d01a1bb7eb927469f56f8769621d3820f7974"
+    },
+    "production_patch_sha256": "b006de9b04c73315c4c6e323d77fe112739fcd33f0d0110e13794133a5278e85",
+    "service_pid": 57283,
+    "stable": true
+  },
+  "quality": {
+    "aggregate": {
+      "post_stop_final": {
+        "category_mean": {
+          "monologue": {
+            "content_recall": 0.920354,
+            "der": 0.0178,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.005552,
+            "tbsa": 0.962314,
+            "wer": 0.097345
+          },
+          "multi-person conversation": {
+            "content_recall": 0.956311,
+            "der": 0.335454,
+            "matched_word_speaker_accuracy": 0.956311,
+            "reference_speech_der": 0.250765,
+            "tbsa": 0.864493,
+            "wer": 0.053398
+          },
+          "multi-person discussion": {
+            "content_recall": 0.963415,
+            "der": 0.059382,
+            "matched_word_speaker_accuracy": 0.954704,
+            "reference_speech_der": 0.056067,
+            "tbsa": 0.954289,
+            "wer": 0.069686
+          },
+          "two-person interview": {
+            "content_recall": 0.960324,
+            "der": 0.073574,
+            "matched_word_speaker_accuracy": 0.960324,
+            "reference_speech_der": 0.066101,
+            "tbsa": 0.923825,
+            "wer": 0.116672
+          }
+        },
+        "duration_weighted_mean": {
+          "content_recall": 0.955253,
+          "der": 0.101545,
+          "matched_word_speaker_accuracy": 0.952724,
+          "reference_speech_der": 0.082782,
+          "tbsa": 0.926618,
+          "wer": 0.094127
+        },
+        "macro_mean": {
+          "content_recall": 0.953508,
+          "der": 0.10556,
+          "matched_word_speaker_accuracy": 0.952057,
+          "reference_speech_der": 0.085114,
+          "tbsa": 0.925429,
+          "wer": 0.095074
+        }
+      },
+      "pre_stop_immediate": {
+        "category_mean": {
+          "monologue": {
+            "content_recall": 0.831858,
+            "der": 0.1522,
+            "matched_word_speaker_accuracy": 0.831858,
+            "reference_speech_der": 0.134529,
+            "tbsa": 0.837177,
+            "wer": 0.19469
+          },
+          "multi-person conversation": {
+            "content_recall": 0.92233,
+            "der": 0.430644,
+            "matched_word_speaker_accuracy": 0.834951,
+            "reference_speech_der": 0.352785,
+            "tbsa": 0.800622,
+            "wer": 0.135922
+          },
+          "multi-person discussion": {
+            "content_recall": 0.928571,
+            "der": 0.106363,
+            "matched_word_speaker_accuracy": 0.912892,
+            "reference_speech_der": 0.093739,
+            "tbsa": 0.901015,
+            "wer": 0.111498
+          },
+          "two-person interview": {
+            "content_recall": 0.899011,
+            "der": 0.140824,
+            "matched_word_speaker_accuracy": 0.881966,
+            "reference_speech_der": 0.125425,
+            "tbsa": 0.856842,
+            "wer": 0.185941
+          }
+        },
+        "duration_weighted_mean": {
+          "content_recall": 0.910893,
+          "der": 0.166882,
+          "matched_word_speaker_accuracy": 0.888709,
+          "reference_speech_der": 0.143471,
+          "tbsa": 0.865066,
+          "wer": 0.150216
+        },
+        "macro_mean": {
+          "content_recall": 0.896632,
+          "der": 0.18528,
+          "matched_word_speaker_accuracy": 0.870933,
+          "reference_speech_der": 0.159555,
+          "tbsa": 0.851557,
+          "wer": 0.166655
+        }
+      },
+      "pre_stop_settled": {
+        "category_mean": {
+          "monologue": {
+            "content_recall": 0.867257,
+            "der": 0.113,
+            "matched_word_speaker_accuracy": 0.867257,
+            "reference_speech_der": 0.093316,
+            "tbsa": 0.875427,
+            "wer": 0.159292
+          },
+          "multi-person conversation": {
+            "content_recall": 0.92233,
+            "der": 0.430644,
+            "matched_word_speaker_accuracy": 0.834951,
+            "reference_speech_der": 0.352785,
+            "tbsa": 0.800622,
+            "wer": 0.135922
+          },
+          "multi-person discussion": {
+            "content_recall": 0.947735,
+            "der": 0.094352,
+            "matched_word_speaker_accuracy": 0.932056,
+            "reference_speech_der": 0.081653,
+            "tbsa": 0.919246,
+            "wer": 0.094077
+          },
+          "two-person interview": {
+            "content_recall": 0.946831,
+            "der": 0.110195,
+            "matched_word_speaker_accuracy": 0.944937,
+            "reference_speech_der": 0.093691,
+            "tbsa": 0.888841,
+            "wer": 0.151121
+          }
+        },
+        "duration_weighted_mean": {
+          "content_recall": 0.936111,
+          "der": 0.148653,
+          "matched_word_speaker_accuracy": 0.918326,
+          "reference_speech_der": 0.124682,
+          "tbsa": 0.885911,
+          "wer": 0.129643
+        },
+        "macro_mean": {
+          "content_recall": 0.929636,
+          "der": 0.16143,
+          "matched_word_speaker_accuracy": 0.911512,
+          "reference_speech_der": 0.134804,
+          "tbsa": 0.87697,
+          "wer": 0.140442
+        }
+      }
+    },
+    "per_case_two_pass_mean": {
+      "discussion_jamie_dimon_180s": {
+        "category": "multi-person discussion",
+        "duration_seconds": 180.0,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 148,
+            "max": 10.836466,
+            "mean": 6.27659,
+            "p50_nearest_rank": 5.633642,
+            "p95_nearest_rank": 10.474767
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.910279,
+            "mean": 0.850296,
+            "p50_nearest_rank": 0.790313,
+            "p95_nearest_rank": 0.910279
+          },
+          "first_publication_age_seconds": {
+            "count": 154,
+            "max": 4.126809,
+            "mean": 3.166965,
+            "p50_nearest_rank": 3.230021,
+            "p95_nearest_rank": 3.734393
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 9.118021,
+            "mean": 9.097724,
+            "p50_nearest_rank": 9.077427,
+            "p95_nearest_rank": 9.118021
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 0.963415,
+            "der": 0.059382,
+            "matched_word_speaker_accuracy": 0.954704,
+            "reference_speech_der": 0.056067,
+            "tbsa": 0.954289,
+            "wer": 0.069686
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.928571,
+            "der": 0.106363,
+            "matched_word_speaker_accuracy": 0.912892,
+            "reference_speech_der": 0.093739,
+            "tbsa": 0.901015,
+            "wer": 0.111498
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.947735,
+            "der": 0.094352,
+            "matched_word_speaker_accuracy": 0.932056,
+            "reference_speech_der": 0.081653,
+            "tbsa": 0.919246,
+            "wer": 0.094077
+          }
+        }
+      },
+      "discussion_rtfl_90s": {
+        "category": "multi-person conversation",
+        "duration_seconds": 89.9935,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 78,
+            "max": 10.350079,
+            "mean": 4.501362,
+            "p50_nearest_rank": 5.025406,
+            "p95_nearest_rank": 8.781206
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.000394,
+            "mean": 0.000388,
+            "p50_nearest_rank": 0.000383,
+            "p95_nearest_rank": 0.000394
+          },
+          "first_publication_age_seconds": {
+            "count": 86,
+            "max": 3.663196,
+            "mean": 2.587223,
+            "p50_nearest_rank": 3.003615,
+            "p95_nearest_rank": 3.489595
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 3.843164,
+            "mean": 3.820041,
+            "p50_nearest_rank": 3.796919,
+            "p95_nearest_rank": 3.843164
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 0.956311,
+            "der": 0.335454,
+            "matched_word_speaker_accuracy": 0.956311,
+            "reference_speech_der": 0.250765,
+            "tbsa": 0.864493,
+            "wer": 0.053398
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.92233,
+            "der": 0.430644,
+            "matched_word_speaker_accuracy": 0.834951,
+            "reference_speech_der": 0.352785,
+            "tbsa": 0.800622,
+            "wer": 0.135922
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.92233,
+            "der": 0.430644,
+            "matched_word_speaker_accuracy": 0.834951,
+            "reference_speech_der": 0.352785,
+            "tbsa": 0.800622,
+            "wer": 0.135922
+          }
+        }
+      },
+      "interview_adam_frank_180s": {
+        "category": "two-person interview",
+        "duration_seconds": 180.0,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 144,
+            "max": 10.893799,
+            "mean": 6.229692,
+            "p50_nearest_rank": 5.58198,
+            "p95_nearest_rank": 10.527801
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.341623,
+            "mean": 0.338934,
+            "p50_nearest_rank": 0.336245,
+            "p95_nearest_rank": 0.341623
+          },
+          "first_publication_age_seconds": {
+            "count": 148,
+            "max": 3.6011,
+            "mean": 3.076622,
+            "p50_nearest_rank": 3.224597,
+            "p95_nearest_rank": 3.537279
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 8.020761,
+            "mean": 7.766455,
+            "p50_nearest_rank": 7.512149,
+            "p95_nearest_rank": 8.020761
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 0.949153,
+            "der": 0.066222,
+            "matched_word_speaker_accuracy": 0.949153,
+            "reference_speech_der": 0.054079,
+            "tbsa": 0.921019,
+            "wer": 0.126177
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.926554,
+            "der": 0.105056,
+            "matched_word_speaker_accuracy": 0.926554,
+            "reference_speech_der": 0.091888,
+            "tbsa": 0.88343,
+            "wer": 0.146893
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.94162,
+            "der": 0.091167,
+            "matched_word_speaker_accuracy": 0.94162,
+            "reference_speech_der": 0.077717,
+            "tbsa": 0.899841,
+            "wer": 0.13371
+          }
+        }
+      },
+      "interview_bill_ackman_60s": {
+        "category": "two-person interview",
+        "duration_seconds": 60.0,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 40,
+            "max": 8.166677,
+            "mean": 4.186636,
+            "p50_nearest_rank": 3.052514,
+            "p95_nearest_rank": 8.090386
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.891716,
+            "mean": 0.841517,
+            "p50_nearest_rank": 0.791317,
+            "p95_nearest_rank": 0.891716
+          },
+          "first_publication_age_seconds": {
+            "count": 48,
+            "max": 3.395332,
+            "mean": 3.110944,
+            "p50_nearest_rank": 3.153724,
+            "p95_nearest_rank": 3.348384
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 3.061993,
+            "mean": 3.041683,
+            "p50_nearest_rank": 3.021372,
+            "p95_nearest_rank": 3.061993
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 0.931818,
+            "der": 0.0755,
+            "matched_word_speaker_accuracy": 0.931818,
+            "reference_speech_der": 0.075863,
+            "tbsa": 0.918756,
+            "wer": 0.159091
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.835227,
+            "der": 0.16925,
+            "matched_word_speaker_accuracy": 0.784091,
+            "reference_speech_der": 0.155738,
+            "tbsa": 0.834137,
+            "wer": 0.267045
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.920455,
+            "der": 0.12825,
+            "matched_word_speaker_accuracy": 0.914773,
+            "reference_speech_der": 0.112836,
+            "tbsa": 0.875387,
+            "wer": 0.204545
+          }
+        }
+      },
+      "interview_keyu_jin_60s": {
+        "category": "two-person interview",
+        "duration_seconds": 60.0,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 40,
+            "max": 8.239324,
+            "mean": 4.169489,
+            "p50_nearest_rank": 3.140917,
+            "p95_nearest_rank": 8.037756
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.670865,
+            "mean": 0.665749,
+            "p50_nearest_rank": 0.660634,
+            "p95_nearest_rank": 0.670865
+          },
+          "first_publication_age_seconds": {
+            "count": 48,
+            "max": 3.432294,
+            "mean": 3.119627,
+            "p50_nearest_rank": 3.142723,
+            "p95_nearest_rank": 3.33036
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 2.04958,
+            "mean": 1.972533,
+            "p50_nearest_rank": 1.895485,
+            "p95_nearest_rank": 2.04958
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 1.0,
+            "der": 0.079,
+            "matched_word_speaker_accuracy": 1.0,
+            "reference_speech_der": 0.068361,
+            "tbsa": 0.9317,
+            "wer": 0.064748
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.935252,
+            "der": 0.148167,
+            "matched_word_speaker_accuracy": 0.935252,
+            "reference_speech_der": 0.12865,
+            "tbsa": 0.852958,
+            "wer": 0.143885
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.978417,
+            "der": 0.111167,
+            "matched_word_speaker_accuracy": 0.978417,
+            "reference_speech_der": 0.090519,
+            "tbsa": 0.891296,
+            "wer": 0.115108
+          }
+        }
+      },
+      "mono_javier_intro_50s": {
+        "category": "monologue",
+        "duration_seconds": 50.0,
+        "latency": {
+          "changed_region_correction_age_seconds": {
+            "count": 44,
+            "max": 11.94579,
+            "mean": 6.019834,
+            "p50_nearest_rank": 5.797775,
+            "p95_nearest_rank": 10.845014
+          },
+          "drain_wait_seconds": {
+            "count": 2,
+            "max": 0.679712,
+            "mean": 0.675795,
+            "p50_nearest_rank": 0.671879,
+            "p95_nearest_rank": 0.679712
+          },
+          "first_publication_age_seconds": {
+            "count": 52,
+            "max": 3.394811,
+            "mean": 2.472577,
+            "p50_nearest_rank": 3.049811,
+            "p95_nearest_rank": 3.312656
+          },
+          "stop_to_final_seconds": {
+            "count": 2,
+            "max": 2.17133,
+            "mean": 2.163179,
+            "p50_nearest_rank": 2.155028,
+            "p95_nearest_rank": 2.17133
+          }
+        },
+        "observations": 2,
+        "quality": {
+          "post_stop_final": {
+            "content_recall": 0.920354,
+            "der": 0.0178,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.005552,
+            "tbsa": 0.962314,
+            "wer": 0.097345
+          },
+          "pre_stop_immediate": {
+            "content_recall": 0.831858,
+            "der": 0.1522,
+            "matched_word_speaker_accuracy": 0.831858,
+            "reference_speech_der": 0.134529,
+            "tbsa": 0.837177,
+            "wer": 0.19469
+          },
+          "pre_stop_settled": {
+            "content_recall": 0.867257,
+            "der": 0.113,
+            "matched_word_speaker_accuracy": 0.867257,
+            "reference_speech_der": 0.093316,
+            "tbsa": 0.875427,
+            "wer": 0.159292
+          }
+        }
+      }
+    }
+  },
+  "runtime": {
+    "combined_pre_stop_rtf": 0.15734,
+    "endpoint_queue_drained": true,
+    "legacy_strict_replay_failures": [
+      {
+        "case_id": "mono_javier_intro_50s",
+        "kind": "canonical_decode_rtf",
+        "message": "canonical decoder p95 RTF 3.27197 exceeded strict bound 1.",
+        "pass": "A"
+      }
+    ],
+    "max_refinement_queue_depth": 1,
+    "max_session_pre_stop_rtf": 0.168776
+  },
+  "schema": "moss-g4-gates.v1",
+  "source": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-g4-recovery-20260825/deployed-10-10/moss-results.json"
+}

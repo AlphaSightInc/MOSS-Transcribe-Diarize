@@ -1627,11 +1627,22 @@ class LiveServiceRuntime:
             "windows_planned": None if result is None else result.windows_planned,
             "windows_completed": None if result is None else result.windows_completed,
             "windows_failed": None if result is None else result.windows_failed,
+            "proposal_refusals": None if result is None else result.proposal_refusals,
+            "last_proposal_refusal": None if result is None else result.last_proposal_refusal,
             "stale_completions": None if result is None else result.stale_completions,
             "decoded_audio_samples": None if result is None else result.decoded_audio_samples,
             "retained_samples": None if result is None else result.retained_samples,
             "retained_high_water_samples": None if result is None else result.retained_high_water_samples,
             "admission_refusals": None if result is None else result.admission_refusals,
+            "normalization_merged_segments": (
+                None if result is None else result.normalization_merged_segments
+            ),
+            "normalization_dropped_segments": (
+                None if result is None else result.normalization_dropped_segments
+            ),
+            "normalization_displaced_samples": (
+                None if result is None else result.normalization_displaced_samples
+            ),
         }
         self._record_event(state, "rolling_decode_completed", payload)
         if result is None or not result.proposed:

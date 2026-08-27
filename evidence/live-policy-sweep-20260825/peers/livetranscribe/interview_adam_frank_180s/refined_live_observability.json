@@ -1,0 +1,180 @@
+{
+  "liveHeadMethod" : "recording elapsed after provisional publication minus latest ASR word end",
+  "liveHeadWordVisibilityLatencyLastSeconds" : 11.978839026689542,
+  "liveHeadWordVisibilityLatencyMaxSeconds" : 12.685633090734484,
+  "liveHeadWordVisibilityLatencyP50Seconds" : 11.090130586624156,
+  "liveHeadWordVisibilityLatencyP95Seconds" : 12.039594756042955,
+  "liveHeadWordVisibilityLatencySampleCount" : 227,
+  "refinedLiveOSFObservability" : {
+    "latestPreStopTransition" : {
+      "applyIntentsPrepared" : 0,
+      "disposition" : "published_audit",
+      "receiptSHA256" : "9b7e1b5c93b222de44e351b6e6b1bf1948b96dcef4278689270dfe15e77d4dcf",
+      "schemaVersion" : "refined-live-osf-shadow-transition.v1",
+      "snapshot" : {
+        "completedCount" : 1,
+        "currentResult" : {
+          "anchorSnapshotSHA256" : "158d2ce70967847f6ccf80a5673c787cc41552c5cc4c0e781cd71d51e3bd99b2",
+          "applyIntentsPrepared" : 0,
+          "canonicalRevision" : 52,
+          "canonicalRowsMutated" : 0,
+          "captureID" : "7418ca98-cc99-4bb2-bcb6-9655f0eac00b",
+          "confirmedAnchorCount" : 0,
+          "evaluation" : {
+            "disposition" : "abstained",
+            "finalizerMappingCount" : 2,
+            "finalizerMappingsSHA256" : "4db4a8d7edfac2c43b836988276b958a454d187e51da815a79ced793ef5fc52b",
+            "incumbentCoverageCount" : 0,
+            "minimumEquivalentPeerViews" : 2,
+            "policySchemaVersion" : 1,
+            "profileHash" : "8d3efe40b406b45251b96637feb12370cc7fe062f78c3f83cb9f8e838c1153d3",
+            "reason" : "no_incumbent_group_to_split",
+            "receiptSHA256" : "6bcd307febeb639808a713185be2185801b51c39e30b2d82e94d79c480d2c3bf",
+            "schemaVersion" : "refined-live-osf-post-k-evaluation.v1",
+            "supportingViewIDs" : [
+
+            ],
+            "viewSetSHA256" : "23c2f210b3fadaa7b9dfd8b2f6558c677c6731000d9c4a334e6adfd30f144a8f"
+          },
+          "finalizerAnchorMutations" : 0,
+          "finalizerMappingsSHA256" : "4db4a8d7edfac2c43b836988276b958a454d187e51da815a79ced793ef5fc52b",
+          "fixedCoverageSHA256" : "f5dcd1a92ef0832cc3ec54f8f0231e534908980bb933b6cf159bf9a76766ff9b",
+          "generation" : 1,
+          "identityMapping" : {
+            "assignments" : [
+
+            ],
+            "disposition" : "not_selected",
+            "reason" : "selection_abstained"
+          },
+          "pcmEndFrame" : 883712,
+          "pcmSHA256" : "dc753dc559d515993f923ae521c5e159becbf7682def4c96fcb75e41b005917a",
+          "pcmStartFrame" : 845823,
+          "policy" : {
+            "enabled" : true,
+            "minimumEquivalentPeerViews" : 2,
+            "profileHash" : "8d3efe40b406b45251b96637feb12370cc7fe062f78c3f83cb9f8e838c1153d3",
+            "schemaVersion" : 1
+          },
+          "receiptSHA256" : "672b9b80128b616a4561c70753f84eaef1818073a3933564dccb5a361ff9b12c",
+          "routeEpoch" : 0,
+          "sampleRate" : 16000,
+          "schemaVersion" : "refined-live-osf-shadow-result.v3",
+          "selection" : {
+            "disposition" : "abstained",
+            "equivalentSupportingViewIDs" : [
+
+            ],
+            "reason" : "no_incumbent_group_to_split"
+          },
+          "sessionID" : "7418ca98-cc99-4bb2-bcb6-9655f0eac00b",
+          "speakerBankMutations" : 0,
+          "tentativeAnchorCount" : 5,
+          "views" : [
+            {
+              "coverageCount" : 1,
+              "coverageSHA256" : "b2dc13bad4b7900e3c92cec9a504fb511d1c65aec72033ab80d36dc52dc3f16a",
+              "partitionSHA256" : "43aadde0dadc150f228ff48cf05cc96c42afe052965dddd0ae8e9f3323ba649f",
+              "phaseOffsetSamples" : 0,
+              "structuralSpeakerCount" : 1,
+              "viewID" : "phase-0"
+            },
+            {
+              "coverageCount" : 1,
+              "coverageSHA256" : "b2dc13bad4b7900e3c92cec9a504fb511d1c65aec72033ab80d36dc52dc3f16a",
+              "partitionSHA256" : "43aadde0dadc150f228ff48cf05cc96c42afe052965dddd0ae8e9f3323ba649f",
+              "phaseOffsetSamples" : 204,
+              "structuralSpeakerCount" : 1,
+              "viewID" : "phase-204"
+            },
+            {
+              "coverageCount" : 1,
+              "coverageSHA256" : "b2dc13bad4b7900e3c92cec9a504fb511d1c65aec72033ab80d36dc52dc3f16a",
+              "partitionSHA256" : "43aadde0dadc150f228ff48cf05cc96c42afe052965dddd0ae8e9f3323ba649f",
+              "phaseOffsetSamples" : 409,
+              "structuralSpeakerCount" : 1,
+              "viewID" : "phase-409"
+            },
+            {
+              "coverageCount" : 1,
+              "coverageSHA256" : "b2dc13bad4b7900e3c92cec9a504fb511d1c65aec72033ab80d36dc52dc3f16a",
+              "partitionSHA256" : "43aadde0dadc150f228ff48cf05cc96c42afe052965dddd0ae8e9f3323ba649f",
+              "phaseOffsetSamples" : 614,
+              "structuralSpeakerCount" : 1,
+              "viewID" : "phase-614"
+            },
+            {
+              "coverageCount" : 1,
+              "coverageSHA256" : "b2dc13bad4b7900e3c92cec9a504fb511d1c65aec72033ab80d36dc52dc3f16a",
+              "partitionSHA256" : "43aadde0dadc150f228ff48cf05cc96c42afe052965dddd0ae8e9f3323ba649f",
+              "phaseOffsetSamples" : 819,
+              "structuralSpeakerCount" : 1,
+              "viewID" : "phase-819"
+            }
+          ]
+        },
+        "requestedCount" : 1,
+        "schemaVersion" : "refined-live-osf-shadow-snapshot.v3",
+        "startedCount" : 1,
+        "state" : "current",
+        "stopTombstoned" : false,
+        "supersededCount" : 0
+      }
+    },
+    "latestTransition" : {
+      "applyIntentsPrepared" : 0,
+      "disposition" : "cleared",
+      "receiptSHA256" : "a5e9baafa7e8a0a2fe9605f73fec09c7632d8dfd6e588d7af9ff9186d1655525",
+      "schemaVersion" : "refined-live-osf-shadow-transition.v1",
+      "snapshot" : {
+        "completedCount" : 1,
+        "requestedCount" : 1,
+        "schemaVersion" : "refined-live-osf-shadow-snapshot.v3",
+        "startedCount" : 1,
+        "state" : "cleared",
+        "stopTombstoned" : true,
+        "supersededCount" : 0
+      }
+    },
+    "schemaVersion" : "refined-live-osf-observability.v1"
+  },
+  "refinedLiveOSFSchedulingObservability" : {
+    "latestDisposition" : "requested",
+    "periodicFinalizationResultCount" : 3,
+    "periodicProcessedResultCount" : 1,
+    "requestScheduledCount" : 1,
+    "schemaVersion" : "refined-live-osf-scheduling-observability.v2"
+  },
+  "refinedLiveOverlayTelemetry" : {
+    "completedCount" : 17,
+    "computeSeconds" : 6.398899458,
+    "gateWaitSeconds" : 0.001082208,
+    "lastSkippedReason" : "canonical_pressure",
+    "maxPendingRequestCount" : 1,
+    "peakRequestPCMBytes" : 2903296,
+    "pendingRequestCount" : 0,
+    "physicalMemoryBytes" : 137438953472,
+    "processResidentMemoryBytes" : 5331255296,
+    "publicationAgeSeconds" : 0.000726625,
+    "requestAgeSeconds" : 6.400708291,
+    "requestPCMBytes" : 0,
+    "requestedCount" : 92,
+    "retainedPCMBytes" : 8343552,
+    "schemaVersion" : "refined-live-overlay-telemetry.v1",
+    "skippedByReason" : [
+      {
+        "count" : 21,
+        "reason" : "canonical_pressure"
+      },
+      {
+        "count" : 70,
+        "reason" : "superseded"
+      }
+    ],
+    "startedCount" : 17,
+    "supersededCount" : 54,
+    "thermalState" : "nominal"
+  },
+  "schemaVersion" : "refined-live-observability.v3",
+  "wordTimestampsEnabled" : true
+}

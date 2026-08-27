@@ -245,6 +245,12 @@ class TextRevisionProposal:
     end_sample: int
     segments: tuple[EffectiveTranscriptSegment, ...]
     decode_elapsed_sec: float | None = None
+    # Producer-side normalization telemetry. The session does not interpret these fields:
+    # its seven validations remain the sole publication authority. They travel with the
+    # inert proposal so the coordinator can report what made a rolling decode admissible.
+    normalization_merged_segments: int = 0
+    normalization_dropped_segments: int = 0
+    normalization_displaced_samples: int = 0
 
 
 #: Where terminal finalization stands (plan §7.3). `not_started` until a terminal pass begins,

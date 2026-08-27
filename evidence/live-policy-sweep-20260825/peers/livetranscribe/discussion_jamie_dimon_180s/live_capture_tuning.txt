@@ -1,0 +1,8 @@
+terminal_timeout_sec: 300
+snapshot_interval_sec: 1
+pre_stop_drain_timeout_sec: 180
+pre_stop_drain_poll_interval_sec: 1
+wait_for_osf_readiness: 0
+osf_readiness_timeout_sec: 180
+requested_rlo: inherit
+requested_osf: inherit

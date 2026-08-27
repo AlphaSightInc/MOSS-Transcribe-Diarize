@@ -1,0 +1,4 @@
+timestamp_utc: 2026-08-25T20:00:46Z
+override_path: /Users/ga0/Library/Containers/com.livetranscribe.app/Data/Library/Application Support/LiveTranscribe/CalibrationProfile.override.json
+status: defaults_clear
+profile_override_present: false

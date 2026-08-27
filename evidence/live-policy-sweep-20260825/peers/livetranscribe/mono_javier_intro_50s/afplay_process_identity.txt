@@ -1,0 +1,5 @@
+timestamp_utc: 2026-08-25T19:58:06Z
+afplay_pid: 47547
+spawned_by_script: true
+audio_path: /tmp/moss-live-policy-sweep-20260825-v1/corpus/mono_javier_intro_50s/audio.wav
+process_start_identity: Tue Aug 25 15:58:06 2026 00:00 afplay /tmp/moss-live-policy-sweep-20260825-v1/corpus/mono_javier_intro_50s/audio.wav

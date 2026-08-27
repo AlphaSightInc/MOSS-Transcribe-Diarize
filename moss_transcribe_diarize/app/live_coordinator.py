@@ -217,11 +217,16 @@ class CoordinatorRefinementResult:
     windows_planned: int
     windows_completed: int
     windows_failed: int
+    proposal_refusals: int
+    last_proposal_refusal: str | None
     stale_completions: int
     decoded_audio_samples: int
     retained_samples: int
     retained_high_water_samples: int
     admission_refusals: int
+    normalization_merged_segments: int
+    normalization_dropped_segments: int
+    normalization_displaced_samples: int
     # Whether the window produced a proposal at all. Without it an applied=False result
     # cannot say whether the session refused a revision or there was never one to refuse --
     # two facts that plan §7.4 gives two different events.
@@ -860,6 +865,10 @@ class LiveCoordinator:
             applied = outcome.applied
             refusal = outcome.refusal
             revised_segments = outcome.revised_segments
+            if not applied:
+                if refusal is None:
+                    raise LiveCoordinatorError("a refused rolling proposal did not name why.")
+                converger.note_proposal_refused(refusal)
         # The second `observe_base`: an applied revision is what advances the frontier the
         # next window must begin at, so without this call the converger never plans again.
         rolling_windows = self._observe_base_and_queue()
@@ -890,11 +899,22 @@ class LiveCoordinator:
             windows_planned=accounting.windows_planned,
             windows_completed=accounting.windows_completed,
             windows_failed=accounting.windows_failed,
+            proposal_refusals=accounting.proposal_refusals,
+            last_proposal_refusal=accounting.last_proposal_refusal,
             stale_completions=accounting.stale_completions,
             decoded_audio_samples=accounting.decoded_audio_samples,
             retained_samples=accounting.retained_samples,
             retained_high_water_samples=accounting.retained_high_water_samples,
             admission_refusals=self._rolling_admission_refusals,
+            normalization_merged_segments=(
+                0 if proposal is None else proposal.normalization_merged_segments
+            ),
+            normalization_dropped_segments=(
+                0 if proposal is None else proposal.normalization_dropped_segments
+            ),
+            normalization_displaced_samples=(
+                0 if proposal is None else proposal.normalization_displaced_samples
+            ),
         )
 
     def release_refinement(self, item: ArbiterWorkItem) -> bool:
@@ -964,7 +984,7 @@ class LiveCoordinator:
 
     def _accept_rolling_pcm(self, start_sample: int, pcm: bytes) -> tuple[RollingWindowPlan, ...]:
         converger = self.converger
-        if converger is None or converger.accounting().status is not RollingStatus.ROLLING:
+        if converger is None or converger.accounting().status is RollingStatus.STOPPED:
             return ()
         return self._queue_refinement(converger.accept_pcm(start_sample, pcm))
 

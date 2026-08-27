@@ -1,0 +1,329 @@
+[
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Clerk",
+    "height" : 24,
+    "path" : "root\/0\/0\/0",
+    "role" : "AXButton",
+    "width" : 79,
+    "x" : 111,
+    "y" : -731
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 15,
+    "path" : "root\/0\/0\/1",
+    "role" : "AXStaticText",
+    "value" : "English",
+    "width" : 44,
+    "x" : 507.25,
+    "y" : -726.5
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 15,
+    "path" : "root\/0\/0\/2",
+    "role" : "AXStaticText",
+    "value" : "Recording",
+    "width" : 57.5,
+    "x" : 578.25,
+    "y" : -726.5
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Contacts",
+    "height" : 32,
+    "path" : "root\/0\/0\/3",
+    "role" : "AXButton",
+    "width" : 97,
+    "x" : 953,
+    "y" : -735
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "History",
+    "height" : 32,
+    "path" : "root\/0\/0\/4",
+    "role" : "AXButton",
+    "width" : 86.5,
+    "x" : 1058,
+    "y" : -735
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Settings",
+    "height" : 32,
+    "path" : "root\/0\/0\/5",
+    "role" : "AXButton",
+    "width" : 93,
+    "x" : 1152.5,
+    "y" : -735
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 15,
+    "path" : "root\/0\/0\/6",
+    "role" : "AXStaticText",
+    "value" : "Recording",
+    "width" : 59.5,
+    "x" : 1291.5,
+    "y" : -726.5
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 18,
+    "path" : "root\/0\/0\/7",
+    "role" : "AXStaticText",
+    "value" : "Capture",
+    "width" : 59.5,
+    "x" : 121,
+    "y" : -677
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 29,
+    "path" : "root\/0\/0\/8",
+    "role" : "AXStaticText",
+    "value" : "Live Session",
+    "width" : 139.5,
+    "x" : 546.75,
+    "y" : -672
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Conversation",
+    "height" : 28,
+    "path" : "root\/0\/0\/9",
+    "role" : "AXButton",
+    "width" : 106,
+    "x" : 813,
+    "y" : -669
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Summary",
+    "height" : 28,
+    "path" : "root\/0\/0\/10",
+    "role" : "AXButton",
+    "width" : 106,
+    "x" : 921,
+    "y" : -669
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 18,
+    "path" : "root\/0\/0\/11",
+    "role" : "AXStaticText",
+    "value" : "Speakers",
+    "width" : 67,
+    "x" : 1080,
+    "y" : -677
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 14,
+    "path" : "root\/0\/0\/12",
+    "role" : "AXStaticText",
+    "value" : "LANGUAGE \/ ENGINE",
+    "width" : 131,
+    "x" : 121,
+    "y" : -633
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 14,
+    "path" : "root\/0\/0\/13",
+    "role" : "AXStaticText",
+    "value" : "0 turns",
+    "width" : 50,
+    "x" : 548.5,
+    "y" : -638
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 14,
+    "path" : "root\/0\/0\/14",
+    "role" : "AXStaticText",
+    "value" : "加载声纹模型…",
+    "width" : 76,
+    "x" : 608.5,
+    "y" : -638
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 14,
+    "path" : "root\/0\/0\/17",
+    "role" : "AXStaticText",
+    "value" : "MICROPHONE (ME)",
+    "width" : 121.5,
+    "x" : 121,
+    "y" : -551
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Muted — them only",
+    "height" : 40,
+    "path" : "root\/0\/0\/18",
+    "role" : "AXButton",
+    "width" : 252,
+    "x" : 121,
+    "y" : -523
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 14,
+    "path" : "root\/0\/0\/19",
+    "role" : "AXStaticText",
+    "value" : "SPEAKERS",
+    "width" : 67,
+    "x" : 121,
+    "y" : -469
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "description" : "Stop Recording",
+    "height" : 46,
+    "path" : "root\/0\/0\/22",
+    "role" : "AXButton",
+    "width" : 252,
+    "x" : 121,
+    "y" : -372
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 28,
+    "path" : "root\/0\/0\/23",
+    "role" : "AXStaticText",
+    "value" : "On-device processing. Audio never leaves this Mac; voiceprints stay local.",
+    "width" : 246,
+    "x" : 121,
+    "y" : -312
+  },
+  {
+    "actions" : [
+      "AXScrollLeftByPage",
+      "AXScrollRightByPage",
+      "AXScrollUpByPage",
+      "AXScrollDownByPage"
+    ],
+    "height" : 547,
+    "path" : "root\/0\/0\/24",
+    "role" : "AXScrollArea",
+    "width" : 651,
+    "x" : 401,
+    "y" : -609
+  },
+  {
+    "actions" : [
+      "AXScrollToVisible"
+    ],
+    "height" : 17,
+    "path" : "root\/0\/0\/24\/0\/0",
+    "role" : "AXStaticText",
+    "value" : "Once recording starts, the conversation appears here in order, attributed to each speaker.",
+    "width" : 578,
+    "x" : 429,
+    "y" : -575
+  },
+  {
+    "actions" : [
+      "AXScrollLeftByPage",
+      "AXScrollRightByPage",
+      "AXScrollUpByPage",
+      "AXScrollDownByPage"
+    ],
+    "height" : 585,
+    "path" : "root\/0\/0\/25",
+    "role" : "AXScrollArea",
+    "width" : 300,
+    "x" : 1066,
+    "y" : -647
+  },
+  {
+    "actions" : [
+
+    ],
+    "height" : 45,
+    "path" : "root\/0\/0\/25\/0",
+    "role" : "AXStaticText",
+    "value" : "Speakers appear here as they talk. Name one to teach the notes who's who — and save their voiceprint.",
+    "width" : 272,
+    "x" : 1080,
+    "y" : -633
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "height" : 16,
+    "path" : "root\/0\/1",
+    "role" : "AXButton",
+    "width" : 16,
+    "x" : 97,
+    "y" : -769
+  },
+  {
+    "actions" : [
+      "AXPress",
+      "AXZoomWindow",
+      "AXShowMenu"
+    ],
+    "height" : 16,
+    "path" : "root\/0\/2",
+    "role" : "AXButton",
+    "width" : 16,
+    "x" : 143,
+    "y" : -769
+  },
+  {
+    "actions" : [
+      "AXPress"
+    ],
+    "height" : 16,
+    "path" : "root\/0\/3",
+    "role" : "AXButton",
+    "width" : 16,
+    "x" : 120,
+    "y" : -769
+  }
+]

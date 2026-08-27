@@ -1,0 +1,102 @@
+{
+  "accounting": {
+    "proposal_refusals": 0,
+    "retained_samples": 0,
+    "status": "rolling",
+    "windows_completed": 5,
+    "windows_failed": 0,
+    "windows_planned": 6
+  },
+  "gates": {
+    "window_4_displaced_2720": true,
+    "window_4_words_24_of_24": true,
+    "window_4_zero_merge_drop": true,
+    "window_5_queued": true,
+    "windows_0_4_applied": true
+  },
+  "next_window": {
+    "end_sample": 960000,
+    "start_sample": 800000,
+    "window_index": 5
+  },
+  "records": [
+    {
+      "applied": true,
+      "canonical_through_sample": 160000,
+      "displaced_samples": 0,
+      "dropped": 0,
+      "interval": [
+        0,
+        160000
+      ],
+      "merged": 0,
+      "published_words": 28,
+      "raw_words": 28,
+      "refusal": null,
+      "window_index": 0
+    },
+    {
+      "applied": true,
+      "canonical_through_sample": 320000,
+      "displaced_samples": 0,
+      "dropped": 0,
+      "interval": [
+        160000,
+        320000
+      ],
+      "merged": 0,
+      "published_words": 34,
+      "raw_words": 34,
+      "refusal": null,
+      "window_index": 1
+    },
+    {
+      "applied": true,
+      "canonical_through_sample": 480000,
+      "displaced_samples": 0,
+      "dropped": 0,
+      "interval": [
+        320000,
+        480000
+      ],
+      "merged": 0,
+      "published_words": 33,
+      "raw_words": 33,
+      "refusal": null,
+      "window_index": 2
+    },
+    {
+      "applied": true,
+      "canonical_through_sample": 640000,
+      "displaced_samples": 0,
+      "dropped": 0,
+      "interval": [
+        480000,
+        640000
+      ],
+      "merged": 0,
+      "published_words": 32,
+      "raw_words": 32,
+      "refusal": null,
+      "window_index": 3
+    },
+    {
+      "applied": true,
+      "canonical_through_sample": 800000,
+      "displaced_samples": 2720,
+      "dropped": 0,
+      "interval": [
+        640000,
+        800000
+      ],
+      "merged": 0,
+      "published_words": 24,
+      "raw_words": 24,
+      "refusal": null,
+      "window_index": 4
+    }
+  ],
+  "schema": "moss-g4-jamie-production-class-probe.v1",
+  "source_cache": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/moss/shadow-cache/pass-A.json",
+  "verdict": "PASS"
+}

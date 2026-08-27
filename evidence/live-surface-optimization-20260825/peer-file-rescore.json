@@ -1,0 +1,334 @@
+{
+ "cases": {
+  "lex_adam_frank_3m": {
+   "livetranscribe": {
+    "convert": {
+     "relabels_applied": false,
+     "relabels_changed": 0,
+     "rows": 38
+    },
+    "der": 0.056222,
+    "segments": 38,
+    "speaker_accuracy": 0.943778,
+    "tbsa_composite": 0.918405,
+    "text_coverage": 0.955471,
+    "v2_content_recall": 0.919021,
+    "v2_matched_word_speaker": 0.917137,
+    "wall_s": null,
+    "wer": 0.180791
+   },
+   "moss_file": {
+    "der": 0.053222,
+    "false_alarm": 0.0,
+    "miss": 0.048833,
+    "segments": 38,
+    "speaker_accuracy": 0.946778,
+    "speaker_confusion": 0.004389,
+    "text_coverage": 0.95226,
+    "v2": {
+     "content_recall": 0.949153,
+     "der_reference_speech": 0.054079,
+     "matched_word_speaker_accuracy": 0.949153,
+     "wer": 0.126177
+    },
+    "wer": 0.126177
+   },
+   "moss_live_terminal": {
+    "der": 0.066222,
+    "false_alarm": 0.0,
+    "miss": 0.061833,
+    "segments": 37,
+    "speaker_accuracy": 0.933778,
+    "speaker_confusion": 0.004389,
+    "text_coverage": 0.939511,
+    "v2": {
+     "content_recall": 0.949153,
+     "der_reference_speech": 0.054079,
+     "matched_word_speaker_accuracy": 0.949153,
+     "wer": 0.126177
+    },
+    "wer": 0.126177
+   },
+   "moss_runs_agree": true,
+   "projectclerk": {
+    "convert": {
+     "rows": 58
+    },
+    "der": 0.166778,
+    "segments": 58,
+    "speaker_accuracy": 0.833222,
+    "tbsa_composite": 0.844097,
+    "text_coverage": 0.839675,
+    "v2_content_recall": 0.939736,
+    "v2_matched_word_speaker": 0.93597,
+    "wall_s": null,
+    "wer": 0.12806
+   }
+  },
+  "lex_bill_ackman": {
+   "livetranscribe": {
+    "convert": {
+     "relabels_applied": false,
+     "relabels_changed": 0,
+     "rows": 26
+    },
+    "der": 0.214,
+    "segments": 26,
+    "speaker_accuracy": 0.786,
+    "tbsa_composite": 0.842201,
+    "text_coverage": 0.844416,
+    "v2_content_recall": 0.926136,
+    "v2_matched_word_speaker": 0.903409,
+    "wall_s": null,
+    "wer": 0.119318
+   },
+   "moss_file": {
+    "der": 0.0755,
+    "false_alarm": 0.0,
+    "miss": 0.051,
+    "segments": 18,
+    "speaker_accuracy": 0.9245,
+    "speaker_confusion": 0.0245,
+    "text_coverage": 0.952215,
+    "v2": {
+     "content_recall": 0.931818,
+     "der_reference_speech": 0.075863,
+     "matched_word_speaker_accuracy": 0.931818,
+     "wer": 0.159091
+    },
+    "wer": 0.159091
+   },
+   "moss_live_terminal": {
+    "der": 0.0755,
+    "false_alarm": 0.0,
+    "miss": 0.051,
+    "segments": null,
+    "speaker_accuracy": 0.9245,
+    "speaker_confusion": 0.0245,
+    "text_coverage": 0.952215,
+    "v2": {
+     "content_recall": 0.931818,
+     "der_reference_speech": 0.075863,
+     "matched_word_speaker_accuracy": 0.931818,
+     "wer": 0.159091
+    },
+    "wer": 0.159091
+   },
+   "moss_runs_agree": true,
+   "projectclerk": {
+    "convert": {
+     "rows": 18
+    },
+    "der": 0.254,
+    "segments": 18,
+    "speaker_accuracy": 0.746,
+    "tbsa_composite": 0.815484,
+    "text_coverage": 0.832099,
+    "v2_content_recall": 0.897727,
+    "v2_matched_word_speaker": 0.8125,
+    "wall_s": null,
+    "wer": 0.119318
+   }
+  },
+  "lex_javier_milei": {
+   "livetranscribe": {
+    "convert": {
+     "relabels_applied": false,
+     "relabels_changed": 0,
+     "rows": 18
+    },
+    "der": 0.163167,
+    "segments": 18,
+    "speaker_accuracy": 0.836833,
+    "tbsa_composite": 0.855564,
+    "text_coverage": 0.847419,
+    "v2_content_recall": 0.92,
+    "v2_matched_word_speaker": 0.92,
+    "wall_s": null,
+    "wer": 0.12
+   },
+   "moss_file": {
+    "der": 0.151833,
+    "false_alarm": 0.0,
+    "miss": 0.151833,
+    "segments": 20,
+    "speaker_accuracy": 0.848167,
+    "speaker_confusion": 0.0,
+    "text_coverage": 0.870992,
+    "v2": {
+     "content_recall": 0.92,
+     "der_reference_speech": 0.059524,
+     "matched_word_speaker_accuracy": 0.92,
+     "wer": 0.088
+    },
+    "wer": 0.088
+   },
+   "moss_live_terminal": {
+    "der": 0.151833,
+    "false_alarm": 0.0,
+    "miss": 0.151833,
+    "segments": null,
+    "speaker_accuracy": 0.848167,
+    "speaker_confusion": 0.0,
+    "text_coverage": 0.870992,
+    "v2": {
+     "content_recall": 0.92,
+     "der_reference_speech": 0.059524,
+     "matched_word_speaker_accuracy": 0.92,
+     "wer": 0.088
+    },
+    "wer": 0.088
+   },
+   "moss_runs_agree": true,
+   "projectclerk": {
+    "convert": {
+     "rows": 11
+    },
+    "der": 0.182167,
+    "segments": 11,
+    "speaker_accuracy": 0.817833,
+    "tbsa_composite": 0.868098,
+    "text_coverage": 0.845464,
+    "v2_content_recall": 0.936,
+    "v2_matched_word_speaker": 0.936,
+    "wall_s": null,
+    "wer": 0.064
+   }
+  },
+  "lex_keyu_jin_1m": {
+   "livetranscribe": {
+    "convert": {
+     "relabels_applied": false,
+     "relabels_changed": 0,
+     "rows": 16
+    },
+    "der": 0.164167,
+    "segments": 16,
+    "speaker_accuracy": 0.9355,
+    "tbsa_composite": 0.935034,
+    "text_coverage": 0.954717,
+    "v2_content_recall": 0.985612,
+    "v2_matched_word_speaker": 0.985612,
+    "wall_s": null,
+    "wer": 0.100719
+   },
+   "moss_file": {
+    "der": 0.079,
+    "false_alarm": 0.0,
+    "miss": 0.067667,
+    "segments": 10,
+    "speaker_accuracy": 0.921,
+    "speaker_confusion": 0.011333,
+    "text_coverage": 0.936387,
+    "v2": {
+     "content_recall": 1.0,
+     "der_reference_speech": 0.068361,
+     "matched_word_speaker_accuracy": 1.0,
+     "wer": 0.064748
+    },
+    "wer": 0.064748
+   },
+   "moss_live_terminal": {
+    "der": 0.079,
+    "false_alarm": 0.0,
+    "miss": 0.067667,
+    "segments": null,
+    "speaker_accuracy": 0.921,
+    "speaker_confusion": 0.011333,
+    "text_coverage": 0.936387,
+    "v2": {
+     "content_recall": 1.0,
+     "der_reference_speech": 0.068361,
+     "matched_word_speaker_accuracy": 1.0,
+     "wer": 0.064748
+    },
+    "wer": 0.064748
+   },
+   "moss_runs_agree": true,
+   "projectclerk": {
+    "convert": {
+     "rows": 13
+    },
+    "der": 0.158333,
+    "segments": 13,
+    "speaker_accuracy": 0.841667,
+    "tbsa_composite": 0.88573,
+    "text_coverage": 0.896103,
+    "v2_content_recall": 0.992806,
+    "v2_matched_word_speaker": 0.94964,
+    "wall_s": null,
+    "wer": 0.064748
+   }
+  },
+  "lex_keyu_jin_5m": {
+   "livetranscribe": {
+    "convert": {
+     "relabels_applied": false,
+     "relabels_changed": 0,
+     "rows": 67
+    },
+    "der": 0.0991,
+    "segments": 67,
+    "speaker_accuracy": 0.9009,
+    "tbsa_composite": 0.914868,
+    "text_coverage": 0.932045,
+    "v2_content_recall": 0.963064,
+    "v2_matched_word_speaker": 0.942544,
+    "wall_s": null,
+    "wer": 0.079343
+   },
+   "moss_file": {
+    "der": 0.057933,
+    "false_alarm": 0.0,
+    "miss": 0.0478,
+    "segments": 67,
+    "speaker_accuracy": 0.942067,
+    "speaker_confusion": 0.010133,
+    "text_coverage": 0.952109,
+    "v2": {
+     "content_recall": 0.97264,
+     "der_reference_speech": 0.044897,
+     "matched_word_speaker_accuracy": 0.97264,
+     "wer": 0.050616
+    },
+    "wer": 0.050616
+   },
+   "moss_live_terminal": {
+    "der": 0.057933,
+    "false_alarm": 0.0,
+    "miss": 0.0478,
+    "segments": 67,
+    "speaker_accuracy": 0.942067,
+    "speaker_confusion": 0.010133,
+    "text_coverage": 0.952109,
+    "v2": {
+     "content_recall": 0.97264,
+     "der_reference_speech": 0.044897,
+     "matched_word_speaker_accuracy": 0.97264,
+     "wer": 0.050616
+    },
+    "wer": 0.050616
+   },
+   "moss_runs_agree": true,
+   "projectclerk": {
+    "convert": {
+     "rows": 65
+    },
+    "der": 0.120367,
+    "segments": 65,
+    "speaker_accuracy": 0.879633,
+    "tbsa_composite": 0.899234,
+    "text_coverage": 0.887617,
+    "v2_content_recall": 0.967168,
+    "v2_matched_word_speaker": 0.967168,
+    "wall_s": null,
+    "wer": 0.05472
+   }
+  }
+ },
+ "provenance": {
+  "moss_numbers_from": "evidence/live-convergence-0824/M4-e4-exit-2/gates.json",
+  "scored_by": "MOSS-Transcribe-Diarize deployed scorer + evaluator v2 (one instrument)",
+  "walls_measured_on": "m4mbp (M4 MacBook Pro), sequential, one system at a time"
+ }
+}

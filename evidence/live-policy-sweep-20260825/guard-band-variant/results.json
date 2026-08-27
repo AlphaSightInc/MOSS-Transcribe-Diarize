@@ -1,0 +1,2515 @@
+{
+  "cases": {
+    "discussion_jamie_dimon_180s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.963415,
+            "der": 0.105689,
+            "hypothesis_words": 585,
+            "matched_word_speaker_accuracy": 0.940767,
+            "reference_speech_der": 0.090906,
+            "reference_words": 574,
+            "segments": 54,
+            "speaker_accuracy": 0.899618,
+            "tbsa": 0.917319,
+            "text_coverage": 0.923173,
+            "text_speaker_accuracy": 0.905164,
+            "wer": 0.071429
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 41,
+              "words_taken": 41
+            },
+            {
+              "decision": "text_anchor_cut=16",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 51,
+              "words_taken": 35
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 47,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 45,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 4,
+              "range": [
+                40.0,
+                55.0
+              ],
+              "words_available": 41,
+              "words_taken": 29
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 5,
+              "range": [
+                50.0,
+                65.0
+              ],
+              "words_available": 48,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 6,
+              "range": [
+                60.0,
+                75.0
+              ],
+              "words_available": 53,
+              "words_taken": 36
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 7,
+              "range": [
+                70.0,
+                85.0
+              ],
+              "words_available": 53,
+              "words_taken": 36
+            },
+            {
+              "decision": "text_anchor_cut=20",
+              "join": 8,
+              "range": [
+                80.0,
+                95.0
+              ],
+              "words_available": 47,
+              "words_taken": 27
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 9,
+              "range": [
+                90.0,
+                105.0
+              ],
+              "words_available": 44,
+              "words_taken": 29
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 10,
+              "range": [
+                100.0,
+                115.0
+              ],
+              "words_available": 44,
+              "words_taken": 32
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 11,
+              "range": [
+                110.0,
+                125.0
+              ],
+              "words_available": 48,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 12,
+              "range": [
+                120.0,
+                135.0
+              ],
+              "words_available": 46,
+              "words_taken": 32
+            },
+            {
+              "decision": "text_anchor_cut=16",
+              "join": 13,
+              "range": [
+                130.0,
+                145.0
+              ],
+              "words_available": 60,
+              "words_taken": 44
+            },
+            {
+              "decision": "text_anchor_cut=20",
+              "join": 14,
+              "range": [
+                140.0,
+                155.0
+              ],
+              "words_available": 68,
+              "words_taken": 48
+            },
+            {
+              "decision": "text_anchor_cut=21",
+              "join": 15,
+              "range": [
+                150.0,
+                165.0
+              ],
+              "words_available": 46,
+              "words_taken": 25
+            },
+            {
+              "decision": "text_anchor_cut=10",
+              "join": 16,
+              "range": [
+                160.0,
+                175.0
+              ],
+              "words_available": 35,
+              "words_taken": 25
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.952962,
+            "der": 0.085463,
+            "hypothesis_words": 578,
+            "matched_word_speaker_accuracy": 0.928571,
+            "reference_speech_der": 0.074925,
+            "reference_words": 574,
+            "segments": 66,
+            "speaker_accuracy": 0.9199,
+            "tbsa": 0.931928,
+            "text_coverage": 0.951018,
+            "text_speaker_accuracy": 0.921677,
+            "wer": 0.078397
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 28
+            },
+            {
+              "anchor_word": "the",
+              "cut_time": 8.677147435897435,
+              "decision": "anchor_in_safe_zone",
+              "join": 1,
+              "valid_anchors": 6,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "with",
+              "cut_time": 16.4034174714662,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 7,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "spitting",
+              "cut_time": 23.560470588235294,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 8,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "dominance,",
+              "cut_time": 31.21485507246377,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 8,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "Mississippi",
+              "cut_time": 38.72607614386524,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 6,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "anchor_word": "Financial",
+              "cut_time": 46.50307685115931,
+              "decision": "anchor_in_safe_zone",
+              "join": 6,
+              "valid_anchors": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "anchor_word": "that",
+              "cut_time": 53.72666666666667,
+              "decision": "anchor_in_safe_zone",
+              "join": 7,
+              "valid_anchors": 11,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "anchor_word": "tell",
+              "cut_time": 61.16377049180328,
+              "decision": "anchor_in_safe_zone",
+              "join": 8,
+              "valid_anchors": 8,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "anchor_word": "different",
+              "cut_time": 68.68657407407407,
+              "decision": "anchor_in_safe_zone",
+              "join": 9,
+              "valid_anchors": 9,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "anchor_word": "iteration.",
+              "cut_time": 76.34279279279279,
+              "decision": "anchor_in_safe_zone",
+              "join": 10,
+              "valid_anchors": 6,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            },
+            {
+              "anchor_word": "Times,",
+              "cut_time": 82.9938013437166,
+              "decision": "anchor_in_safe_zone",
+              "join": 11,
+              "valid_anchors": 2,
+              "zone": [
+                82.5,
+                85.0
+              ]
+            },
+            {
+              "anchor_word": "cannot",
+              "cut_time": 91.07235294117648,
+              "decision": "anchor_in_safe_zone",
+              "join": 12,
+              "valid_anchors": 7,
+              "zone": [
+                90.0,
+                92.5
+              ]
+            },
+            {
+              "anchor_word": "list,",
+              "cut_time": 98.69576923076923,
+              "decision": "anchor_in_safe_zone",
+              "join": 13,
+              "valid_anchors": 6,
+              "zone": [
+                97.5,
+                100.0
+              ]
+            },
+            {
+              "anchor_word": "more",
+              "cut_time": 106.14727272727274,
+              "decision": "anchor_in_safe_zone",
+              "join": 14,
+              "valid_anchors": 6,
+              "zone": [
+                105.0,
+                107.5
+              ]
+            },
+            {
+              "anchor_word": "on",
+              "cut_time": 113.823658008658,
+              "decision": "anchor_in_safe_zone",
+              "join": 15,
+              "valid_anchors": 8,
+              "zone": [
+                112.5,
+                115.0
+              ]
+            },
+            {
+              "anchor_word": "same",
+              "cut_time": 121.23491908091908,
+              "decision": "anchor_in_safe_zone",
+              "join": 16,
+              "valid_anchors": 5,
+              "zone": [
+                120.0,
+                122.5
+              ]
+            },
+            {
+              "anchor_word": "clear",
+              "cut_time": 128.9508382936508,
+              "decision": "anchor_in_safe_zone",
+              "join": 17,
+              "valid_anchors": 7,
+              "zone": [
+                127.5,
+                130.0
+              ]
+            },
+            {
+              "anchor_word": "know",
+              "cut_time": 136.29954545454544,
+              "decision": "anchor_in_safe_zone",
+              "join": 18,
+              "valid_anchors": 12,
+              "zone": [
+                135.0,
+                137.5
+              ]
+            },
+            {
+              "anchor_word": "Our",
+              "cut_time": 143.81294642857142,
+              "decision": "anchor_in_safe_zone",
+              "join": 19,
+              "valid_anchors": 11,
+              "zone": [
+                142.5,
+                145.0
+              ]
+            },
+            {
+              "anchor_word": "you.",
+              "cut_time": 151.11858695652177,
+              "decision": "anchor_in_safe_zone",
+              "join": 20,
+              "valid_anchors": 10,
+              "zone": [
+                150.0,
+                152.5
+              ]
+            },
+            {
+              "anchor_word": "purposes",
+              "cut_time": 158.94354609929078,
+              "decision": "anchor_in_safe_zone",
+              "join": 21,
+              "valid_anchors": 4,
+              "zone": [
+                157.5,
+                160.0
+              ]
+            },
+            {
+              "anchor_word": "up",
+              "cut_time": 166.32613636363635,
+              "decision": "anchor_in_safe_zone",
+              "join": 22,
+              "valid_anchors": 4,
+              "zone": [
+                165.0,
+                167.5
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.947735,
+            "der": 0.082479,
+            "hypothesis_words": 579,
+            "matched_word_speaker_accuracy": 0.926829,
+            "reference_speech_der": 0.071489,
+            "reference_words": 574,
+            "segments": 61,
+            "speaker_accuracy": 0.922884,
+            "tbsa": 0.931309,
+            "text_coverage": 0.953407,
+            "text_speaker_accuracy": 0.924572,
+            "wer": 0.08885
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 28
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "cut_time": 46.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "cut_time": 53.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 7,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "cut_time": 61.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 8,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "cut_time": 68.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 9,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "cut_time": 76.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 10,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            },
+            {
+              "cut_time": 83.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 11,
+              "zone": [
+                82.5,
+                85.0
+              ]
+            },
+            {
+              "cut_time": 91.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 12,
+              "zone": [
+                90.0,
+                92.5
+              ]
+            },
+            {
+              "cut_time": 98.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 13,
+              "zone": [
+                97.5,
+                100.0
+              ]
+            },
+            {
+              "cut_time": 106.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 14,
+              "zone": [
+                105.0,
+                107.5
+              ]
+            },
+            {
+              "cut_time": 113.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 15,
+              "zone": [
+                112.5,
+                115.0
+              ]
+            },
+            {
+              "cut_time": 121.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 16,
+              "zone": [
+                120.0,
+                122.5
+              ]
+            },
+            {
+              "cut_time": 128.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 17,
+              "zone": [
+                127.5,
+                130.0
+              ]
+            },
+            {
+              "cut_time": 136.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 18,
+              "zone": [
+                135.0,
+                137.5
+              ]
+            },
+            {
+              "cut_time": 143.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 19,
+              "zone": [
+                142.5,
+                145.0
+              ]
+            },
+            {
+              "cut_time": 151.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 20,
+              "zone": [
+                150.0,
+                152.5
+              ]
+            },
+            {
+              "cut_time": 158.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 21,
+              "zone": [
+                157.5,
+                160.0
+              ]
+            },
+            {
+              "cut_time": 166.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 22,
+              "zone": [
+                165.0,
+                167.5
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 255.0,
+        "15_10_requests": 17,
+        "15_10_wall_seconds": 9.075214290991426,
+        "guard_audio_seconds": 342.5,
+        "guard_requests": 23,
+        "guard_wall_seconds": 11.922943624434993
+      },
+      "duration_seconds": 180.0
+    },
+    "discussion_rtfl_90s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.932039,
+            "der": 0.412225,
+            "hypothesis_words": 202,
+            "matched_word_speaker_accuracy": 0.84466,
+            "reference_speech_der": 0.331385,
+            "reference_words": 206,
+            "segments": 36,
+            "speaker_accuracy": 0.728784,
+            "tbsa": 0.813357,
+            "text_coverage": 0.836587,
+            "text_speaker_accuracy": 0.730991,
+            "wer": 0.087379
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 45,
+              "words_taken": 45
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 42,
+              "words_taken": 28
+            },
+            {
+              "decision": "text_anchor_cut=11",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 31,
+              "words_taken": 20
+            },
+            {
+              "decision": "text_anchor_cut=9",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 29,
+              "words_taken": 20
+            },
+            {
+              "decision": "text_anchor_cut=7",
+              "join": 4,
+              "range": [
+                40.0,
+                55.0
+              ],
+              "words_available": 25,
+              "words_taken": 18
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 5,
+              "range": [
+                50.0,
+                65.0
+              ],
+              "words_available": 41,
+              "words_taken": 27
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 6,
+              "range": [
+                60.0,
+                75.0
+              ],
+              "words_available": 28,
+              "words_taken": 11
+            },
+            {
+              "decision": "text_anchor_cut=6",
+              "join": 7,
+              "range": [
+                70.0,
+                85.0
+              ],
+              "words_available": 26,
+              "words_taken": 20
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.951456,
+            "der": 0.426878,
+            "hypothesis_words": 206,
+            "matched_word_speaker_accuracy": 0.864078,
+            "reference_speech_der": 0.348034,
+            "reference_words": 206,
+            "segments": 42,
+            "speaker_accuracy": 0.732636,
+            "tbsa": 0.822957,
+            "text_coverage": 0.843919,
+            "text_speaker_accuracy": 0.739473,
+            "wer": 0.072816
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 29
+            },
+            {
+              "anchor_word": "those",
+              "cut_time": 8.666125000000001,
+              "decision": "anchor_in_safe_zone",
+              "join": 1,
+              "valid_anchors": 8,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "compete,",
+              "cut_time": 16.108841463414635,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 10,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "motivate",
+              "cut_time": 23.553418300653597,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 5,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "leisurely",
+              "cut_time": 31.259767441860465,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 8,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "Maybe",
+              "cut_time": 39.1015306122449,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "anchor_word": "cocksucker.",
+              "cut_time": 45.6275,
+              "decision": "anchor_in_safe_zone",
+              "join": 6,
+              "valid_anchors": 1,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "anchor_word": "Cause",
+              "cut_time": 53.66583333333334,
+              "decision": "anchor_in_safe_zone",
+              "join": 7,
+              "valid_anchors": 9,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "anchor_word": "whispered",
+              "cut_time": 61.29206349206349,
+              "decision": "anchor_in_safe_zone",
+              "join": 8,
+              "valid_anchors": 9,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "cut_time": 68.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 9,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "anchor_word": "someone",
+              "cut_time": 76.08263513513513,
+              "decision": "anchor_in_safe_zone",
+              "join": 10,
+              "valid_anchors": 7,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.946602,
+            "der": 0.433018,
+            "hypothesis_words": 205,
+            "matched_word_speaker_accuracy": 0.859223,
+            "reference_speech_der": 0.355911,
+            "reference_words": 206,
+            "segments": 41,
+            "speaker_accuracy": 0.725205,
+            "tbsa": 0.814614,
+            "text_coverage": 0.834413,
+            "text_speaker_accuracy": 0.729967,
+            "wer": 0.07767
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 29
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "cut_time": 46.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "cut_time": 53.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 7,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "cut_time": 61.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 8,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "cut_time": 68.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 9,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "cut_time": 76.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 10,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 120.0,
+        "15_10_requests": 8,
+        "15_10_wall_seconds": 4.6292309158016,
+        "guard_audio_seconds": 162.5,
+        "guard_requests": 11,
+        "guard_wall_seconds": 6.098415165673941
+      },
+      "duration_seconds": 89.9935
+    },
+    "interview_adam_frank_180s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.943503,
+            "der": 0.088573,
+            "hypothesis_words": 548,
+            "matched_word_speaker_accuracy": 0.94162,
+            "reference_speech_der": 0.075921,
+            "reference_words": 531,
+            "segments": 63,
+            "speaker_accuracy": 0.911427,
+            "tbsa": 0.900525,
+            "text_coverage": 0.915991,
+            "text_speaker_accuracy": 0.910745,
+            "wer": 0.137476
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 48,
+              "words_taken": 48
+            },
+            {
+              "decision": "text_anchor_cut=9",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 35,
+              "words_taken": 26
+            },
+            {
+              "decision": "text_anchor_cut=8",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 30,
+              "words_taken": 22
+            },
+            {
+              "decision": "text_anchor_cut=8",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 34,
+              "words_taken": 26
+            },
+            {
+              "decision": "text_anchor_cut=9",
+              "join": 4,
+              "range": [
+                40.0,
+                55.0
+              ],
+              "words_available": 38,
+              "words_taken": 29
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 5,
+              "range": [
+                50.0,
+                65.0
+              ],
+              "words_available": 49,
+              "words_taken": 35
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 6,
+              "range": [
+                60.0,
+                75.0
+              ],
+              "words_available": 50,
+              "words_taken": 35
+            },
+            {
+              "decision": "text_anchor_cut=17",
+              "join": 7,
+              "range": [
+                70.0,
+                85.0
+              ],
+              "words_available": 47,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 8,
+              "range": [
+                80.0,
+                95.0
+              ],
+              "words_available": 43,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 9,
+              "range": [
+                90.0,
+                105.0
+              ],
+              "words_available": 48,
+              "words_taken": 36
+            },
+            {
+              "decision": "text_anchor_cut=18",
+              "join": 10,
+              "range": [
+                100.0,
+                115.0
+              ],
+              "words_available": 50,
+              "words_taken": 32
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 11,
+              "range": [
+                110.0,
+                125.0
+              ],
+              "words_available": 45,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 12,
+              "range": [
+                120.0,
+                135.0
+              ],
+              "words_available": 46,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 13,
+              "range": [
+                130.0,
+                145.0
+              ],
+              "words_available": 45,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=18",
+              "join": 14,
+              "range": [
+                140.0,
+                155.0
+              ],
+              "words_available": 46,
+              "words_taken": 28
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 15,
+              "range": [
+                150.0,
+                165.0
+              ],
+              "words_available": 44,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 16,
+              "range": [
+                160.0,
+                175.0
+              ],
+              "words_available": 43,
+              "words_taken": 31
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.93597,
+            "der": 0.075703,
+            "hypothesis_words": 540,
+            "matched_word_speaker_accuracy": 0.932203,
+            "reference_speech_der": 0.063356,
+            "reference_words": 531,
+            "segments": 67,
+            "speaker_accuracy": 0.924297,
+            "tbsa": 0.912187,
+            "text_coverage": 0.93036,
+            "text_speaker_accuracy": 0.924972,
+            "wer": 0.13371
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 38
+            },
+            {
+              "anchor_word": "like,",
+              "cut_time": 8.861724137931034,
+              "decision": "anchor_in_safe_zone",
+              "join": 1,
+              "valid_anchors": 7,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "happened.",
+              "cut_time": 16.34875,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 11,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "with",
+              "cut_time": 23.929878048780488,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 7,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "alien",
+              "cut_time": 30.89514569842738,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "description.",
+              "cut_time": 38.47114754098361,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 6,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "anchor_word": "So",
+              "cut_time": 46.4975,
+              "decision": "anchor_in_safe_zone",
+              "join": 6,
+              "valid_anchors": 7,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "anchor_word": "a",
+              "cut_time": 53.66065789473684,
+              "decision": "anchor_in_safe_zone",
+              "join": 7,
+              "valid_anchors": 8,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "anchor_word": "capacity",
+              "cut_time": 61.30510204081632,
+              "decision": "anchor_in_safe_zone",
+              "join": 8,
+              "valid_anchors": 7,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "anchor_word": "question.",
+              "cut_time": 68.9088247490179,
+              "decision": "anchor_in_safe_zone",
+              "join": 9,
+              "valid_anchors": 6,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "anchor_word": "will",
+              "cut_time": 76.27354004252302,
+              "decision": "anchor_in_safe_zone",
+              "join": 10,
+              "valid_anchors": 6,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            },
+            {
+              "anchor_word": "one",
+              "cut_time": 83.69053073089701,
+              "decision": "anchor_in_safe_zone",
+              "join": 11,
+              "valid_anchors": 8,
+              "zone": [
+                82.5,
+                85.0
+              ]
+            },
+            {
+              "anchor_word": "been",
+              "cut_time": 91.28178952991452,
+              "decision": "anchor_in_safe_zone",
+              "join": 12,
+              "valid_anchors": 6,
+              "zone": [
+                90.0,
+                92.5
+              ]
+            },
+            {
+              "anchor_word": "amount",
+              "cut_time": 98.85691780821918,
+              "decision": "anchor_in_safe_zone",
+              "join": 13,
+              "valid_anchors": 8,
+              "zone": [
+                97.5,
+                100.0
+              ]
+            },
+            {
+              "anchor_word": "planets",
+              "cut_time": 106.4243552927928,
+              "decision": "anchor_in_safe_zone",
+              "join": 14,
+              "valid_anchors": 8,
+              "zone": [
+                105.0,
+                107.5
+              ]
+            },
+            {
+              "anchor_word": "lifetime",
+              "cut_time": 113.69110750594852,
+              "decision": "anchor_in_safe_zone",
+              "join": 15,
+              "valid_anchors": 8,
+              "zone": [
+                112.5,
+                115.0
+              ]
+            },
+            {
+              "anchor_word": "planets",
+              "cut_time": 121.18354807112718,
+              "decision": "anchor_in_safe_zone",
+              "join": 16,
+              "valid_anchors": 8,
+              "zone": [
+                120.0,
+                122.5
+              ]
+            },
+            {
+              "anchor_word": "there",
+              "cut_time": 128.63468866749687,
+              "decision": "anchor_in_safe_zone",
+              "join": 17,
+              "valid_anchors": 5,
+              "zone": [
+                127.5,
+                130.0
+              ]
+            },
+            {
+              "anchor_word": "squeezed",
+              "cut_time": 136.2764761904762,
+              "decision": "anchor_in_safe_zone",
+              "join": 18,
+              "valid_anchors": 5,
+              "zone": [
+                135.0,
+                137.5
+              ]
+            },
+            {
+              "anchor_word": "Instead,",
+              "cut_time": 143.55219512195123,
+              "decision": "anchor_in_safe_zone",
+              "join": 19,
+              "valid_anchors": 8,
+              "zone": [
+                142.5,
+                145.0
+              ]
+            },
+            {
+              "anchor_word": "of",
+              "cut_time": 151.14504479283318,
+              "decision": "anchor_in_safe_zone",
+              "join": 20,
+              "valid_anchors": 5,
+              "zone": [
+                150.0,
+                152.5
+              ]
+            },
+            {
+              "anchor_word": "of",
+              "cut_time": 158.736,
+              "decision": "anchor_in_safe_zone",
+              "join": 21,
+              "valid_anchors": 7,
+              "zone": [
+                157.5,
+                160.0
+              ]
+            },
+            {
+              "anchor_word": "there.",
+              "cut_time": 166.32176470588237,
+              "decision": "anchor_in_safe_zone",
+              "join": 22,
+              "valid_anchors": 6,
+              "zone": [
+                165.0,
+                167.5
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.932203,
+            "der": 0.072077,
+            "hypothesis_words": 540,
+            "matched_word_speaker_accuracy": 0.93032,
+            "reference_speech_der": 0.059485,
+            "reference_words": 531,
+            "segments": 64,
+            "speaker_accuracy": 0.927923,
+            "tbsa": 0.913038,
+            "text_coverage": 0.934005,
+            "text_speaker_accuracy": 0.928617,
+            "wer": 0.141243
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 38
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "cut_time": 46.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            },
+            {
+              "cut_time": 53.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 7,
+              "zone": [
+                52.5,
+                55.0
+              ]
+            },
+            {
+              "cut_time": 61.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 8,
+              "zone": [
+                60.0,
+                62.5
+              ]
+            },
+            {
+              "cut_time": 68.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 9,
+              "zone": [
+                67.5,
+                70.0
+              ]
+            },
+            {
+              "cut_time": 76.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 10,
+              "zone": [
+                75.0,
+                77.5
+              ]
+            },
+            {
+              "cut_time": 83.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 11,
+              "zone": [
+                82.5,
+                85.0
+              ]
+            },
+            {
+              "cut_time": 91.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 12,
+              "zone": [
+                90.0,
+                92.5
+              ]
+            },
+            {
+              "cut_time": 98.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 13,
+              "zone": [
+                97.5,
+                100.0
+              ]
+            },
+            {
+              "cut_time": 106.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 14,
+              "zone": [
+                105.0,
+                107.5
+              ]
+            },
+            {
+              "cut_time": 113.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 15,
+              "zone": [
+                112.5,
+                115.0
+              ]
+            },
+            {
+              "cut_time": 121.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 16,
+              "zone": [
+                120.0,
+                122.5
+              ]
+            },
+            {
+              "cut_time": 128.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 17,
+              "zone": [
+                127.5,
+                130.0
+              ]
+            },
+            {
+              "cut_time": 136.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 18,
+              "zone": [
+                135.0,
+                137.5
+              ]
+            },
+            {
+              "cut_time": 143.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 19,
+              "zone": [
+                142.5,
+                145.0
+              ]
+            },
+            {
+              "cut_time": 151.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 20,
+              "zone": [
+                150.0,
+                152.5
+              ]
+            },
+            {
+              "cut_time": 158.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 21,
+              "zone": [
+                157.5,
+                160.0
+              ]
+            },
+            {
+              "cut_time": 166.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 22,
+              "zone": [
+                165.0,
+                167.5
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 255.0,
+        "15_10_requests": 17,
+        "15_10_wall_seconds": 8.659461213974282,
+        "guard_audio_seconds": 342.5,
+        "guard_requests": 23,
+        "guard_wall_seconds": 12.222283622832038
+      },
+      "duration_seconds": 180.0
+    },
+    "interview_bill_ackman_60s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.9375,
+            "der": 0.134476,
+            "hypothesis_words": 187,
+            "matched_word_speaker_accuracy": 0.9375,
+            "reference_speech_der": 0.126065,
+            "reference_words": 176,
+            "segments": 20,
+            "speaker_accuracy": 0.865524,
+            "tbsa": 0.872987,
+            "text_coverage": 0.89484,
+            "text_speaker_accuracy": 0.881017,
+            "wer": 0.170455
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 48,
+              "words_taken": 48
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 53,
+              "words_taken": 39
+            },
+            {
+              "decision": "text_anchor_cut=20",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 57,
+              "words_taken": 37
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 32,
+              "words_taken": 18
+            },
+            {
+              "decision": "text_anchor_cut=10",
+              "join": 4,
+              "range": [
+                40.0,
+                55.0
+              ],
+              "words_available": 36,
+              "words_taken": 26
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.914773,
+            "der": 0.111831,
+            "hypothesis_words": 185,
+            "matched_word_speaker_accuracy": 0.903409,
+            "reference_speech_der": 0.100279,
+            "reference_words": 176,
+            "segments": 27,
+            "speaker_accuracy": 0.888169,
+            "tbsa": 0.883991,
+            "text_coverage": 0.919685,
+            "text_speaker_accuracy": 0.900992,
+            "wer": 0.193182
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 34
+            },
+            {
+              "anchor_word": "voting",
+              "cut_time": 8.707019474196688,
+              "decision": "anchor_in_safe_zone",
+              "join": 1,
+              "valid_anchors": 9,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "term,",
+              "cut_time": 16.11667083333333,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 8,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "worth,",
+              "cut_time": 23.704669117647057,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 7,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "of",
+              "cut_time": 31.23217391304348,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 8,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "crypto,",
+              "cut_time": 39.11054644808743,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 4,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "anchor_word": "run,",
+              "cut_time": 45.806442577030815,
+              "decision": "anchor_in_safe_zone",
+              "join": 6,
+              "valid_anchors": 3,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.909091,
+            "der": 0.104246,
+            "hypothesis_words": 183,
+            "matched_word_speaker_accuracy": 0.892045,
+            "reference_speech_der": 0.0967,
+            "reference_words": 176,
+            "segments": 24,
+            "speaker_accuracy": 0.895754,
+            "tbsa": 0.885135,
+            "text_coverage": 0.918734,
+            "text_speaker_accuracy": 0.904683,
+            "wer": 0.193182
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 34
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "cut_time": 46.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 75.0,
+        "15_10_requests": 5,
+        "15_10_wall_seconds": 2.6525778350187466,
+        "guard_audio_seconds": 102.5,
+        "guard_requests": 7,
+        "guard_wall_seconds": 3.947803750052117
+      },
+      "duration_seconds": 60.0
+    },
+    "interview_keyu_jin_60s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.992806,
+            "der": 0.105278,
+            "hypothesis_words": 150,
+            "matched_word_speaker_accuracy": 0.992806,
+            "reference_speech_der": 0.087885,
+            "reference_words": 139,
+            "segments": 18,
+            "speaker_accuracy": 0.894722,
+            "tbsa": 0.907524,
+            "text_coverage": 0.91354,
+            "text_speaker_accuracy": 0.898418,
+            "wer": 0.086331
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 34,
+              "words_taken": 34
+            },
+            {
+              "decision": "text_anchor_cut=11",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 31,
+              "words_taken": 20
+            },
+            {
+              "decision": "text_anchor_cut=10",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 41,
+              "words_taken": 31
+            },
+            {
+              "decision": "text_anchor_cut=12",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 42,
+              "words_taken": 30
+            },
+            {
+              "decision": "text_anchor_cut=15",
+              "join": 4,
+              "range": [
+                40.0,
+                55.0
+              ],
+              "words_available": 35,
+              "words_taken": 20
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.985612,
+            "der": 0.088222,
+            "hypothesis_words": 151,
+            "matched_word_speaker_accuracy": 0.978417,
+            "reference_speech_der": 0.063438,
+            "reference_words": 139,
+            "segments": 22,
+            "speaker_accuracy": 0.911778,
+            "tbsa": 0.909137,
+            "text_coverage": 0.922541,
+            "text_speaker_accuracy": 0.908066,
+            "wer": 0.107914
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 24
+            },
+            {
+              "anchor_word": "deference",
+              "cut_time": 8.642162337662336,
+              "decision": "anchor_in_safe_zone",
+              "join": 1,
+              "valid_anchors": 4,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "of",
+              "cut_time": 16.31899675324675,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 6,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "hopefully",
+              "cut_time": 23.427648087431695,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "the",
+              "cut_time": 31.29280376344086,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 8,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "radical",
+              "cut_time": 38.89836996336996,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 7,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "anchor_word": "you",
+              "cut_time": 46.15894409937888,
+              "decision": "anchor_in_safe_zone",
+              "join": 6,
+              "valid_anchors": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.964029,
+            "der": 0.095467,
+            "hypothesis_words": 147,
+            "matched_word_speaker_accuracy": 0.964029,
+            "reference_speech_der": 0.070904,
+            "reference_words": 139,
+            "segments": 20,
+            "speaker_accuracy": 0.904533,
+            "tbsa": 0.900981,
+            "text_coverage": 0.916463,
+            "text_speaker_accuracy": 0.901988,
+            "wer": 0.122302
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 24
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            },
+            {
+              "cut_time": 46.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 6,
+              "zone": [
+                45.0,
+                47.5
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 75.0,
+        "15_10_requests": 5,
+        "15_10_wall_seconds": 2.20273241691757,
+        "guard_audio_seconds": 102.5,
+        "guard_requests": 7,
+        "guard_wall_seconds": 2.8805054598487914
+      },
+      "duration_seconds": 60.0
+    },
+    "mono_javier_intro_50s": {
+      "arms": {
+        "15_10_lexical_fresh": {
+          "scores": {
+            "content_recall": 0.920354,
+            "der": 0.074867,
+            "hypothesis_words": 109,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.053242,
+            "reference_words": 113,
+            "segments": 15,
+            "speaker_accuracy": 0.925133,
+            "tbsa": 0.919514,
+            "text_coverage": 0.925133,
+            "text_speaker_accuracy": 0.925133,
+            "wer": 0.097345
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "range": [
+                0.0,
+                15.0
+              ],
+              "words_available": 28,
+              "words_taken": 28
+            },
+            {
+              "decision": "text_anchor_cut=9",
+              "join": 1,
+              "range": [
+                10.0,
+                25.0
+              ],
+              "words_available": 34,
+              "words_taken": 25
+            },
+            {
+              "decision": "text_anchor_cut=14",
+              "join": 2,
+              "range": [
+                20.0,
+                35.0
+              ],
+              "words_available": 37,
+              "words_taken": 23
+            },
+            {
+              "decision": "text_anchor_cut=13",
+              "join": 3,
+              "range": [
+                30.0,
+                45.0
+              ],
+              "words_available": 35,
+              "words_taken": 22
+            }
+          ]
+        },
+        "guard_anchor": {
+          "scores": {
+            "content_recall": 0.920354,
+            "der": 0.102073,
+            "hypothesis_words": 109,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.053889,
+            "reference_words": 113,
+            "segments": 16,
+            "speaker_accuracy": 0.897927,
+            "tbsa": 0.899109,
+            "text_coverage": 0.897927,
+            "text_speaker_accuracy": 0.897927,
+            "wer": 0.097345
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 18
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "anchor_word": "corrupt",
+              "cut_time": 16.34779922779923,
+              "decision": "anchor_in_safe_zone",
+              "join": 2,
+              "valid_anchors": 6,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "anchor_word": "of",
+              "cut_time": 23.823805828318022,
+              "decision": "anchor_in_safe_zone",
+              "join": 3,
+              "valid_anchors": 6,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "anchor_word": "head",
+              "cut_time": 31.380177865612648,
+              "decision": "anchor_in_safe_zone",
+              "join": 4,
+              "valid_anchors": 7,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "anchor_word": "In",
+              "cut_time": 38.809177358490565,
+              "decision": "anchor_in_safe_zone",
+              "join": 5,
+              "valid_anchors": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            }
+          ]
+        },
+        "guard_mid": {
+          "scores": {
+            "content_recall": 0.920354,
+            "der": 0.096,
+            "hypothesis_words": 111,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.047406,
+            "reference_words": 113,
+            "segments": 15,
+            "speaker_accuracy": 0.904,
+            "tbsa": 0.899239,
+            "text_coverage": 0.904,
+            "text_speaker_accuracy": 0.904,
+            "wer": 0.115044
+          },
+          "stitch_report": [
+            {
+              "decision": "first_window",
+              "join": 0,
+              "owned": [
+                0.0,
+                10.0
+              ],
+              "words_taken": 18
+            },
+            {
+              "cut_time": 8.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 1,
+              "zone": [
+                7.5,
+                10.0
+              ]
+            },
+            {
+              "cut_time": 16.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 2,
+              "zone": [
+                15.0,
+                17.5
+              ]
+            },
+            {
+              "cut_time": 23.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 3,
+              "zone": [
+                22.5,
+                25.0
+              ]
+            },
+            {
+              "cut_time": 31.25,
+              "decision": "zone_midpoint_fallback",
+              "join": 4,
+              "zone": [
+                30.0,
+                32.5
+              ]
+            },
+            {
+              "cut_time": 38.75,
+              "decision": "zone_midpoint_fallback",
+              "join": 5,
+              "zone": [
+                37.5,
+                40.0
+              ]
+            }
+          ]
+        }
+      },
+      "decode": {
+        "15_10_audio_seconds": 60.0,
+        "15_10_requests": 4,
+        "15_10_wall_seconds": 1.7485058750025928,
+        "guard_audio_seconds": 87.5,
+        "guard_requests": 6,
+        "guard_wall_seconds": 2.694147081929259
+      },
+      "duration_seconds": 50.0
+    }
+  },
+  "macro": {
+    "15_10_lexical_fresh": {
+      "content_recall": 0.9482695,
+      "der": 0.15351800000000002,
+      "matched_word_speaker_accuracy": 0.9296178333333334,
+      "tbsa": 0.8885376666666667,
+      "wer": 0.1084025
+    },
+    "guard_anchor": {
+      "content_recall": 0.9435211666666666,
+      "der": 0.14836166666666667,
+      "matched_word_speaker_accuracy": 0.921172,
+      "tbsa": 0.8932181666666666,
+      "wer": 0.113894
+    },
+    "guard_mid": {
+      "content_recall": 0.9366690000000001,
+      "der": 0.1472145,
+      "matched_word_speaker_accuracy": 0.9154666666666667,
+      "tbsa": 0.8907193333333333,
+      "wer": 0.1230485
+    }
+  },
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "preregistration": "PREREGISTRATION-guard-band.md"
+}

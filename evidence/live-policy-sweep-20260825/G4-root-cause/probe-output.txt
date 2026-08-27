@@ -1,0 +1,10 @@
+raw decode (63 tokens): [0.00][S01]Incredible.[0.98][0.81][S02]So the question, of course, is how did he do it? I mean, banks fail. Financial firms often have spectacular blowups and large[9.97]
+
+parsed 2 segments:
+  [0] S01 [640000,655680) 'Incredible.'
+  [1] S02 [652960,799520) 'So the question, of course, is how did he do it? I mean, ban'  <-- OUT OF ORDER (starts 2720 samples before previous end)
+
+refusal BEFORE resolver: segments_out_of_order
+resolver: merged=0 dropped=0 displaced=2720
+refusal AFTER resolver: None
+words before=24 after=24 lost=0

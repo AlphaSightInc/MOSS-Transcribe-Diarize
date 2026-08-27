@@ -1,0 +1,147 @@
+{
+  "cases": [
+    {
+      "audio": {
+        "duration_seconds": 50.0,
+        "pcm_sha256": "6cfe2630bc44b7aaf8cdf51bcc1dd215ea18b84abda3395e2b48da5341a5e8e5",
+        "samples": 800000,
+        "wav_bytes": 1600044,
+        "wav_sha256": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d"
+      },
+      "case_id": "mono_javier_intro_50s",
+      "category": "monologue",
+      "derived": true,
+      "reference_rows": 1,
+      "reference_sha256": "7cf13340bd21d6fda932f66036ceb97e3b42880487a495815dc77ede8f68eab9",
+      "reference_speakers": [
+        "Lex Fridman"
+      ],
+      "source_audio_sha256": "799892a4f3f8d2e64eea867ee84e268696ae1d71123d56734a5aeb65a5c321fd",
+      "source_directory": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_javier_milei",
+      "source_reference_sha256": "89fcc6958bf5d6d10ec59680b97065dff0d12debed4e9000f536d0e0fc32baa8",
+      "source_slice_seconds": [
+        10.0,
+        60.0
+      ],
+      "whole_file_byte_identical": false
+    },
+    {
+      "audio": {
+        "duration_seconds": 60.0,
+        "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+        "samples": 960000,
+        "wav_bytes": 1920078,
+        "wav_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca"
+      },
+      "case_id": "interview_bill_ackman_60s",
+      "category": "two-person interview",
+      "derived": false,
+      "reference_rows": 5,
+      "reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c",
+      "reference_speakers": [
+        "Bill Ackman",
+        "Lex Fridman"
+      ],
+      "source_audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "source_directory": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman",
+      "source_reference_sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c",
+      "whole_file_byte_identical": true
+    },
+    {
+      "audio": {
+        "duration_seconds": 60.0,
+        "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+        "samples": 960000,
+        "wav_bytes": 1920078,
+        "wav_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120"
+      },
+      "case_id": "interview_keyu_jin_60s",
+      "category": "two-person interview",
+      "derived": false,
+      "reference_rows": 4,
+      "reference_sha256": "0c7cb619df47707a2e4ea9ce29441047cf58b01f65a52952e7833aa03bb5a1d0",
+      "reference_speakers": [
+        "Keyu Jin",
+        "Lex Fridman"
+      ],
+      "source_audio_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
+      "source_directory": "prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin",
+      "source_reference_sha256": "0c7cb619df47707a2e4ea9ce29441047cf58b01f65a52952e7833aa03bb5a1d0",
+      "whole_file_byte_identical": true
+    },
+    {
+      "audio": {
+        "duration_seconds": 180.0,
+        "pcm_sha256": "dfba8c243a60c818cac4946e13d722f8538aacee2dab2b97fdb4f06eec8bc5fb",
+        "samples": 2880000,
+        "wav_bytes": 5760078,
+        "wav_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f"
+      },
+      "case_id": "interview_adam_frank_180s",
+      "category": "two-person interview",
+      "derived": false,
+      "reference_rows": 8,
+      "reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc",
+      "reference_speakers": [
+        "Adam Frank",
+        "Lex Fridman"
+      ],
+      "source_audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "source_directory": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/lex_adam_frank",
+      "source_reference_sha256": "650450979435c9f4389959465f87dbf37c78109bc925c24d67878cc9574bc9cc",
+      "whole_file_byte_identical": true
+    },
+    {
+      "audio": {
+        "duration_seconds": 180.0,
+        "pcm_sha256": "dbec9dca27d2f590de50c3513413d6c7f20f67a301af4f402b533a101cd2bc50",
+        "samples": 2880000,
+        "wav_bytes": 5760044,
+        "wav_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070"
+      },
+      "case_id": "discussion_jamie_dimon_180s",
+      "category": "multi-person discussion",
+      "derived": false,
+      "reference_rows": 16,
+      "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+      "reference_speakers": [
+        "Ben",
+        "David",
+        "Jamie"
+      ],
+      "source_audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "source_directory": "prototypes/streaming-diarization/data/real/calibration_diarization_3min/samples/acquired_jamie_dimon_3min",
+      "source_reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+      "whole_file_byte_identical": true
+    },
+    {
+      "audio": {
+        "duration_seconds": 89.9935,
+        "pcm_sha256": "f051770b5ca658c3d32c859f8800cb2279aafc3af56f80ef3379b7d0c1d09233",
+        "samples": 1439896,
+        "wav_bytes": 2879870,
+        "wav_sha256": "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe"
+      },
+      "case_id": "discussion_rtfl_90s",
+      "category": "multi-person conversation",
+      "derived": false,
+      "reference_rows": 26,
+      "reference_sha256": "03734014d811a67fee2c19d6ef465fb9e8e4fb66a0e4eda5cb66a043b1f3dde1",
+      "reference_speakers": [
+        "ARRIVAL",
+        "BOSS",
+        "ENG_A",
+        "ENG_B"
+      ],
+      "source_audio_sha256": "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe",
+      "source_directory": "prototypes/streaming-diarization/data/real/regression_fixtures/youtube_rtfl_first_90s",
+      "source_reference_sha256": "03734014d811a67fee2c19d6ef465fb9e8e4fb66a0e4eda5cb66a043b1f3dde1",
+      "whole_file_byte_identical": true
+    }
+  ],
+  "denominator": {
+    "audio_seconds": 619.9935,
+    "cases": 6
+  },
+  "schema": "moss-live-policy-corpus.v1"
+}

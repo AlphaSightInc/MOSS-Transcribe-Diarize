@@ -1,0 +1,535 @@
+{
+  "audio": {
+    "channels": 1,
+    "duration_seconds": 60.0,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/audio.wav",
+    "pcm_bytes": 1920000,
+    "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+    "sample_count": 960000,
+    "sample_rate": 16000,
+    "sample_width_bytes": 2,
+    "wav_bytes": 1920078,
+    "wav_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca"
+  },
+  "case_id": "lex_bill_ackman",
+  "duration_seconds": 60.0,
+  "events": {
+    "base_unsubmitted": 0,
+    "correction_age_seconds": {
+      "count": 20,
+      "max": 8.188504,
+      "mean": 4.221525,
+      "p50": 4.160762,
+      "p95": 8.132618
+    },
+    "correction_rows": [
+      {
+        "age_seconds": 8.188504083,
+        "canonical_item_id": 0,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 5.595199833,
+        "canonical_item_id": 1,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 3.062792125,
+        "canonical_item_id": 2,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 0.5744615,
+        "canonical_item_id": 3,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 8.129676333,
+        "canonical_item_id": 5,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 5.5055155,
+        "canonical_item_id": 6,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 2.937435291,
+        "canonical_item_id": 7,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 0.469525666,
+        "canonical_item_id": 8,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 8.107959667,
+        "canonical_item_id": 10,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 5.494095209,
+        "canonical_item_id": 11,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 2.939814834,
+        "canonical_item_id": 12,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 0.478165542,
+        "canonical_item_id": 13,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 7.919565292,
+        "canonical_item_id": 15,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 5.258731709,
+        "canonical_item_id": 16,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 2.878892542,
+        "canonical_item_id": 17,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 0.30821875,
+        "canonical_item_id": 18,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 7.962125208,
+        "canonical_item_id": 20,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 5.411721583,
+        "canonical_item_id": 21,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 2.830478208,
+        "canonical_item_id": 22,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 0.37761675,
+        "canonical_item_id": 23,
+        "rolling_item_id": 24
+      }
+    ],
+    "decode_requests": {
+      "base": 24,
+      "rolling": 6,
+      "terminal": 1,
+      "total": 31
+    },
+    "decode_seconds": {
+      "base": 6.258254,
+      "rolling": 2.566374,
+      "terminal": 2.136962
+    },
+    "decoded_audio_work_seconds": {
+      "base": 60.0,
+      "rolling": 210.0,
+      "terminal": 60.0
+    },
+    "first_publication_rows": [
+      {
+        "age_seconds": 2.5170538330000003,
+        "first_spoken_word_seconds": 0.51,
+        "item_id": 0,
+        "publication_seconds": 3.027053833
+      },
+      {
+        "age_seconds": 3.120358083,
+        "first_spoken_word_seconds": 2.5,
+        "item_id": 1,
+        "publication_seconds": 5.620358083
+      },
+      {
+        "age_seconds": 3.152765791,
+        "first_spoken_word_seconds": 5.0,
+        "item_id": 2,
+        "publication_seconds": 8.152765791
+      },
+      {
+        "age_seconds": 3.141096416,
+        "first_spoken_word_seconds": 7.5,
+        "item_id": 3,
+        "publication_seconds": 10.641096416
+      },
+      {
+        "age_seconds": 2.984968833,
+        "first_spoken_word_seconds": 10.0,
+        "item_id": 5,
+        "publication_seconds": 12.984968833
+      },
+      {
+        "age_seconds": 3.1091296659999994,
+        "first_spoken_word_seconds": 12.5,
+        "item_id": 6,
+        "publication_seconds": 15.609129666
+      },
+      {
+        "age_seconds": 2.8672098749999986,
+        "first_spoken_word_seconds": 15.31,
+        "item_id": 7,
+        "publication_seconds": 18.177209875
+      },
+      {
+        "age_seconds": 3.1451195,
+        "first_spoken_word_seconds": 17.5,
+        "item_id": 8,
+        "publication_seconds": 20.6451195
+      },
+      {
+        "age_seconds": 2.9996553329999998,
+        "first_spoken_word_seconds": 20.0,
+        "item_id": 10,
+        "publication_seconds": 22.999655333
+      },
+      {
+        "age_seconds": 2.9935197910000007,
+        "first_spoken_word_seconds": 22.62,
+        "item_id": 11,
+        "publication_seconds": 25.613519791
+      },
+      {
+        "age_seconds": 3.1678001659999993,
+        "first_spoken_word_seconds": 25.0,
+        "item_id": 12,
+        "publication_seconds": 28.167800166
+      },
+      {
+        "age_seconds": 3.129449458,
+        "first_spoken_word_seconds": 27.5,
+        "item_id": 13,
+        "publication_seconds": 30.629449458
+      },
+      {
+        "age_seconds": 3.0261540830000015,
+        "first_spoken_word_seconds": 30.0,
+        "item_id": 15,
+        "publication_seconds": 33.026154083
+      },
+      {
+        "age_seconds": 3.1869876660000003,
+        "first_spoken_word_seconds": 32.5,
+        "item_id": 16,
+        "publication_seconds": 35.686987666
+      },
+      {
+        "age_seconds": 3.0668268330000004,
+        "first_spoken_word_seconds": 35.0,
+        "item_id": 17,
+        "publication_seconds": 38.066826833
+      },
+      {
+        "age_seconds": 3.1375006250000013,
+        "first_spoken_word_seconds": 37.5,
+        "item_id": 18,
+        "publication_seconds": 40.637500625
+      },
+      {
+        "age_seconds": 2.9899241250000017,
+        "first_spoken_word_seconds": 40.0,
+        "item_id": 20,
+        "publication_seconds": 42.989924125
+      },
+      {
+        "age_seconds": 2.500327750000004,
+        "first_spoken_word_seconds": 43.04,
+        "item_id": 21,
+        "publication_seconds": 45.54032775
+      },
+      {
+        "age_seconds": 3.1215711250000027,
+        "first_spoken_word_seconds": 45.0,
+        "item_id": 22,
+        "publication_seconds": 48.121571125
+      },
+      {
+        "age_seconds": 3.0144325829999943,
+        "first_spoken_word_seconds": 47.56,
+        "item_id": 23,
+        "publication_seconds": 50.574432583
+      },
+      {
+        "age_seconds": 2.920168832999998,
+        "first_spoken_word_seconds": 50.08,
+        "item_id": 25,
+        "publication_seconds": 53.000168833
+      },
+      {
+        "age_seconds": 3.3025064580000034,
+        "first_spoken_word_seconds": 52.5,
+        "item_id": 26,
+        "publication_seconds": 55.802506458
+      },
+      {
+        "age_seconds": 3.254188124999999,
+        "first_spoken_word_seconds": 55.08,
+        "item_id": 27,
+        "publication_seconds": 58.334188125
+      },
+      {
+        "age_seconds": 3.1899214580000006,
+        "first_spoken_word_seconds": 57.5,
+        "item_id": 28,
+        "publication_seconds": 60.689921458
+      }
+    ],
+    "first_publication_seconds": {
+      "count": 24,
+      "max": 3.302506,
+      "mean": 3.043277,
+      "p50": 3.114744,
+      "p95": 3.244548
+    },
+    "rolling_queue": {
+      "admission_refusals": 0,
+      "completed": 6,
+      "failed_windows": 0,
+      "final_depth": 0,
+      "max_depth": 1,
+      "stale_completions": 0
+    },
+    "rtf": {
+      "all_decode_combined": 0.182693,
+      "base": 0.104304,
+      "pre_stop_combined": 0.147077,
+      "rolling": 0.042773,
+      "terminal": 0.035616
+    },
+    "stop_to_final_seconds": 2.857481,
+    "terminal_failures": []
+  },
+  "file": {
+    "byte_identical": true,
+    "comparator_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M4-e4-exit-2/passes/trio-A/lex_bill_ackman/file-hypothesis.jsonl",
+    "comparator_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+    "generated_tokens": 518,
+    "job_id": "98ade7fe5c73",
+    "jsonl_sha256": "8d33dba7835dcb553a4dfb734411b54241bd1624faa98c4ae7519950e6af39e0",
+    "status": "waiting_review",
+    "wall_seconds": 3.059837
+  },
+  "provenance": {
+    "base_url": "https://127.0.0.1:7861",
+    "client_host": "MacStudio.local",
+    "deployed_code_revision": "22dc5b8de3ed31a94dcb1b93d2256f8cb8ac75d8",
+    "inference": {
+      "decoding": "greedy",
+      "max_length": 16384,
+      "max_new_tokens": 12000,
+      "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+      "temperature": 1.0
+    },
+    "model": {
+      "backend": "vllm",
+      "base_url": "http://127.0.0.1:18000/v1",
+      "device": "vllm-api",
+      "dtype": "remote",
+      "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+      "processor": {},
+      "speaker_identity": {
+        "availability": {
+          "available": false,
+          "reason": "disabled"
+        },
+        "config": {
+          "tier_a": {
+            "min_overlap_dice": 0.75,
+            "min_overlap_support_seconds": 2.0,
+            "mutual_margin_seconds": 1.0
+          },
+          "tier_b": {
+            "enabled": false,
+            "margin": 0.2,
+            "max_segments_per_node": 3,
+            "min_segment_seconds": 2.0,
+            "similarity": 0.7
+          }
+        },
+        "provider": {
+          "device": "cpu",
+          "embedding_dimension": 256,
+          "frontend_version": "wespeaker-onnx-fbank-v1",
+          "provider": "wespeaker_resnet152_lm",
+          "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+          "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+        },
+        "schema_version": 2
+      },
+      "windowing": {
+        "stride_seconds": 120,
+        "window_seconds": 150
+      }
+    },
+    "repo_head": "7608c91ce36441d9075fbba41e18c5fae8f464ac",
+    "runtime_descriptor": {
+      "bounds": {
+        "hard_cap_samples": 40000,
+        "max_events": 1000,
+        "max_frame_samples": 16000,
+        "max_identity_speakers": 16,
+        "max_queue_depth": 16,
+        "max_retained_samples": 960000,
+        "max_tape_bytes": 9600000,
+        "stop_drain_deadline_seconds": 5.0
+      },
+      "config_hashes": {
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+        "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+        "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+        "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+      },
+      "feature_enabled": true,
+      "frame_samples": 8000,
+      "live_protocol": {
+        "capabilities": {
+          "binary": false,
+          "idempotent_frames": true,
+          "lanes": true,
+          "resumable": true
+        },
+        "max_protocol_version": 2,
+        "min_protocol_version": 2,
+        "protocol": "moss-live-service.v2"
+      },
+      "live_protocol_version": "moss-live-service.v1",
+      "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+      "provider_name": "moss-rtx-webrtc-wespeaker",
+      "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "sample_rate": 16000,
+      "schema_version": 1,
+      "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea"
+    },
+    "started_utc": "2026-08-25T19:01:54.267918Z"
+  },
+  "reference": {
+    "bytes": 1535,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_bill_ackman/reference.jsonl",
+    "sha256": "9e50d6d3c9006337d1d357af5593f669ef0e3014b734fb6ddcc9a119bf49d71c"
+  },
+  "run": "stability-03-lex_bill_ackman",
+  "sample_accounting": {
+    "accepted_samples": 960000,
+    "accounted_samples": 960000,
+    "exact": true
+  },
+  "surface_clocks": {
+    "post_stop_final": {
+      "observed_monotonic_ns": 785147517150541,
+      "observed_utc": "2026-08-25T19:01:51.081763Z",
+      "surface": "post_stop_final"
+    },
+    "pre_stop_immediate": {
+      "observed_monotonic_ns": 785143900966458,
+      "observed_utc": "2026-08-25T19:01:47.465595Z",
+      "surface": "pre_stop_immediate"
+    },
+    "pre_stop_settled": {
+      "observed_monotonic_ns": 785144659504958,
+      "observed_utc": "2026-08-25T19:01:48.224129Z",
+      "surface": "pre_stop_settled",
+      "wait": {
+        "drained": true,
+        "polls": 7,
+        "seconds": 0.758543,
+        "timeout_seconds": 20.0
+      }
+    },
+    "stop_return": {
+      "observed_monotonic_ns": 785144949592166,
+      "observed_utc": "2026-08-25T19:01:48.514215Z",
+      "surface": "stop_return"
+    }
+  },
+  "surface_files": {
+    "file": "evidence/live-surface-optimization-20260825/stability-03-lex_bill_ackman/file.jsonl",
+    "post_stop_final": "evidence/live-surface-optimization-20260825/stability-03-lex_bill_ackman/post_stop_final.jsonl",
+    "pre_stop_immediate": "evidence/live-surface-optimization-20260825/stability-03-lex_bill_ackman/pre_stop_immediate.jsonl",
+    "pre_stop_settled": "evidence/live-surface-optimization-20260825/stability-03-lex_bill_ackman/pre_stop_settled.jsonl",
+    "stop_return": "evidence/live-surface-optimization-20260825/stability-03-lex_bill_ackman/stop_return.jsonl"
+  },
+  "surface_scores": {
+    "file": {
+      "content_recall": 0.931818,
+      "der": 0.0755,
+      "hypothesis_words": 184,
+      "matched_word_speaker_accuracy": 0.931818,
+      "reference_speech_der": 0.075863,
+      "reference_words": 176,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "tbsa": 0.918756,
+      "text_coverage": 0.952215,
+      "text_speaker_accuracy": 0.938134,
+      "wer": 0.159091
+    },
+    "post_stop_final": {
+      "content_recall": 0.931818,
+      "der": 0.0755,
+      "hypothesis_words": 184,
+      "matched_word_speaker_accuracy": 0.931818,
+      "reference_speech_der": 0.075863,
+      "reference_words": 176,
+      "segments": 18,
+      "speaker_accuracy": 0.9245,
+      "tbsa": 0.918756,
+      "text_coverage": 0.952215,
+      "text_speaker_accuracy": 0.938134,
+      "wer": 0.159091
+    },
+    "pre_stop_immediate": {
+      "content_recall": 0.835227,
+      "der": 0.172,
+      "hypothesis_words": 176,
+      "matched_word_speaker_accuracy": 0.784091,
+      "reference_speech_der": 0.158528,
+      "reference_words": 176,
+      "segments": 21,
+      "speaker_accuracy": 0.828,
+      "tbsa": 0.831351,
+      "text_coverage": 0.879365,
+      "text_speaker_accuracy": 0.854386,
+      "wer": 0.272727
+    },
+    "pre_stop_settled": {
+      "content_recall": 0.920455,
+      "der": 0.131,
+      "hypothesis_words": 191,
+      "matched_word_speaker_accuracy": 0.914773,
+      "reference_speech_der": 0.115626,
+      "reference_words": 176,
+      "segments": 22,
+      "speaker_accuracy": 0.869,
+      "tbsa": 0.872601,
+      "text_coverage": 0.913532,
+      "text_speaker_accuracy": 0.888553,
+      "wer": 0.210227
+    },
+    "stop_return": {
+      "content_recall": 0.926136,
+      "der": 0.127333,
+      "hypothesis_words": 191,
+      "matched_word_speaker_accuracy": 0.920455,
+      "reference_speech_der": 0.111789,
+      "reference_words": 176,
+      "segments": 21,
+      "speaker_accuracy": 0.872667,
+      "tbsa": 0.876313,
+      "text_coverage": 0.916587,
+      "text_speaker_accuracy": 0.891608,
+      "wer": 0.204545
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "moss-live-policy-projectclerk-unmeasured.v1",
+  "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+  "attempted_case": "mono_javier_intro_50s",
+  "attempted_actual_live": true,
+  "observed": {
+    "ui_status": "system audio not enabled",
+    "system_audio_buffers": 0,
+    "diagnostic": "requesting shareable content, then stop with zero audio buffers",
+    "audio_playback_completed": true
+  },
+  "failed_precondition": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+  "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible.",
+  "evidence": [
+    "projectclerk/mono_javier_intro_50s/system-audio-diagnostic.log",
+    "projectclerk/mono_javier_intro_50s/live-snapshots/t_0025.json",
+    "projectclerk/mono_javier_intro_50s/binary-sha256.txt"
+  ],
+  "comparison_cells": [
+    {"case_id": "mono_javier_intro_50s", "state": "unmeasured", "reason": "fresh attempted playback captured zero system-audio buffers"},
+    {"case_id": "interview_bill_ackman_60s", "state": "unmeasured", "reason": "same binary-level permission precondition; playback not repeated"},
+    {"case_id": "interview_keyu_jin_60s", "state": "unmeasured", "reason": "same binary-level permission precondition; playback not repeated"},
+    {"case_id": "interview_adam_frank_180s", "state": "unmeasured", "reason": "same binary-level permission precondition; playback not repeated"},
+    {"case_id": "discussion_jamie_dimon_180s", "state": "unmeasured", "reason": "same binary-level permission precondition; playback not repeated"},
+    {"case_id": "discussion_rtfl_90s", "state": "unmeasured", "reason": "same binary-level permission precondition; playback not repeated"}
+  ]
+}

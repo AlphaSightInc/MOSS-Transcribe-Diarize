@@ -1,0 +1,2228 @@
+{
+  "entries": {
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4356417499948293,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 261,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.51][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.05][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.48][9.51][S02] It represents-[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.51][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.05][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.48][9.51][S02] It represents-[9.99]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5864211659645662,
+      "error": null,
+      "generated_tokens": 117,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 341,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.54][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.08][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.54][9.54][S01] It represents speculative interests, you know, supply and demand of people in the short term.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[0.54][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.08][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.\"[9.54][9.54][S01] It represents speculative interests, you know, supply and demand of people in the short term.[15.03]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.376638124929741,
+      "error": null,
+      "generated_tokens": 88,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 245,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine, you're much more accurate.[9.42][9.66][S02] It's going to.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine, you're much more accurate.[9.42][9.66][S02] It's going to.[9.98]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7013281249674037,
+      "error": null,
+      "generated_tokens": 142,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 390,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine.[7.72][8.32][S01] You're much more accurate.[9.41][9.68][S01] It's going to tell you what something is worth.[11.11][11.35][S01] And so if you can divine what something's worth, then you can really take.[14.99]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Sense speculative interests, you know, supply and demand of people in the short term.[5.26][5.31][S01] But in the long term, it's the stock market's a weighing machine.[7.72][8.32][S01] You're much more accurate.[9.41][9.68][S01] It's going to tell you what something is worth.[11.11][11.35][S01] And so if you can divine what something's worth, then you can really take.[14.99]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.452889958047308,
+      "error": null,
+      "generated_tokens": 110,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 297,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] And that's.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] And that's.[9.96]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.628966209013015,
+      "error": null,
+      "generated_tokens": 144,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 409,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] In that same way, there's a kind of difference between speculation and investing.[13.74][13.89][S01] Yeah, speculation is.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Tell you what something is worth. And so if you can divine what something's worth,[3.84][4.23][S01] then you can really take advantage of the market because it's really here to to help you.[7.77][8.04][S01] And that's kind of the message of the book.[9.24][9.63][S02] In that same way, there's a kind of difference between speculation and investing.[13.74][13.89][S01] Yeah, speculation is.[14.97]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3260207499843091,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 200,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto.[9.24][9.84][S01] Right?[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto.[9.24][9.84][S01] Right?[10.02]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5101078749867156,
+      "error": null,
+      "generated_tokens": 126,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 299,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto, right?[10.11][10.13][S02] You're.[10.51][10.68][S01] Strong words.[11.42][12.21][S02] Well, uh, short term trading crypto.[14.81]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Same way, there's a kind of difference between speculation and investing.[3.78][3.88][S02] Yeah, speculation is just, it's a bit like buying, trading crypto, right?[10.11][10.13][S02] You're.[10.51][10.68][S01] Strong words.[11.42][12.21][S02] Well, uh, short term trading crypto.[14.81]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4019211250124499,
+      "error": null,
+      "generated_tokens": 92,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 196,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Your[0.48][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the.[8.88][9.75][S02] You know.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Your[0.48][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the.[8.88][9.75][S02] You know.[10.02]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.46399258403107524,
+      "error": null,
+      "generated_tokens": 111,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 270,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] That your[0.54][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the,[8.88][9.78][S01] you know, it's many investors, you know, in a bubble going into the, you know,[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] That your[0.54][0.69][S02] Strong words.[1.44][2.19][S01] Well, uh, short term trading crypto, maybe in the long run, there's intrinsic value, but uh, the,[8.88][9.78][S01] you know, it's many investors, you know, in a bubble going into the, you know,[14.97]"
+    },
+    "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3949323749402538,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 242,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] You know, it's many investors, you know, in a bubble going into the, you know,[5.12][5.12][S01] the crash were really just pure speculators. They didn't know what things were worth. They[9.52][9.52][S01] just knew they were.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] You know, it's many investors, you know, in a bubble going into the, you know,[5.12][5.12][S01] the crash were really just pure speculators. They didn't know what things were worth. They[9.52][9.52][S01] just knew they were.[9.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2994833330158144,
+      "error": null,
+      "generated_tokens": 65,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 187,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][5.65][S01] Um, but deference, a certain amount of deference to authority.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][5.65][S01] Um, but deference, a certain amount of deference to authority.[9.99]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4100072500295937,
+      "error": null,
+      "generated_tokens": 93,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 273,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][6.14][S01] But deference, a certain amount of deference to authority is not blind submission.[11.98][12.06][S01] It's been written implicitly in our contract.[14.72]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Kind of the same thing. There's paternalism. They think that they're responsible for you.[5.28][6.14][S01] But deference, a certain amount of deference to authority is not blind submission.[11.98][12.06][S01] It's been written implicitly in our contract.[14.72]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.26033945800736547,
+      "error": null,
+      "generated_tokens": 55,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 164,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Is not blind submission.[1.99][2.08][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference.[9.27]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Is not blind submission.[1.99][2.08][S01] It's been written implicitly in our contract for thousands of years that in exchange for some deference.[9.27]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.42933745798654854,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 271,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Is not blind submission.[1.98][2.06][S01] It's been written implicitly in our contract for thousands of years[6.66][6.68][S01] that in exchange for some deference,[9.28][10.12][S01] we are given stability, security, and peace, and hopefully prosperity.[14.72]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Is not blind submission.[1.98][2.06][S01] It's been written implicitly in our contract for thousands of years[6.66][6.68][S01] that in exchange for some deference,[9.28][10.12][S01] we are given stability, security, and peace, and hopefully prosperity.[14.72]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3407633339520544,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 205,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.44][9.78][S02] So[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.44][9.78][S02] So[9.94]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.39099016692489386,
+      "error": null,
+      "generated_tokens": 92,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 280,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.48][9.78][S02] So that a little bit of the rebel is allowed in balance with the difference.[15.01]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] We are given stability, security, and peace, and hopefully prosperity.[4.69][5.06][S02] So there is some element that we have in the West of freedom of the individual.[9.48][9.78][S02] So that a little bit of the rebel is allowed in balance with the difference.[15.01]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3505765829468146,
+      "error": null,
+      "generated_tokens": 80,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 220,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] A little bit of the rebel is allowed[2.52][3.01][S01] uh in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] A little bit of the rebel is allowed[2.52][3.01][S01] uh in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneur?[9.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.42208804201800376,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 290,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] A little bit of the rebel is allowed in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?[11.72][12.38][S02] If you don't have a sense of self, a sense of.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] A little bit of the rebel is allowed in balance with the deference to authority.[5.68][5.88][S02] Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?[11.72][12.38][S02] If you don't have a sense of self, a sense of.[14.98]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3712800000794232,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 190,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] You see in China.[1.72][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you.[9.77]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] You see in China.[1.72][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you.[9.77]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4402677920879796,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 246,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] You see in China.[1.74][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you, you, you drive opportunities, it's all self motivated.[14.45]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] You see in China.[1.74][2.45][S01] If you don't have a sense of self, a sense of the fact that you can find opportunities,[8.27][8.27][S01] you look for opportunities, you, you, you drive opportunities, it's all self motivated.[14.45]"
+    },
+    "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.37114587507676333,
+      "error": null,
+      "generated_tokens": 73,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 173,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.15][S01] You you drive opportunities.[2.35][2.81][S01] Um, it's all self motivated.[4.47][4.95][S02] Is there still a young kid in China that's able to dream to be?[9.89]",
+      "token_cap": 938,
+      "transcript": "[0.15][S01] You you drive opportunities.[2.35][2.81][S01] Um, it's all self motivated.[4.47][4.95][S02] Is there still a young kid in China that's able to dream to be?[9.89]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4164563750382513,
+      "error": null,
+      "generated_tokens": 98,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 266,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] We're not the first. It's happened somewhere else. And to me, that was an annoy- that was mind blowing.[4.12][4.29][S01] Doesn't tell me there's anybody nearby. The galaxy could be sterile. It just told me that like, you know.[9.56][9.92][S02] It.[10.04]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] We're not the first. It's happened somewhere else. And to me, that was an annoy- that was mind blowing.[4.12][4.29][S01] Doesn't tell me there's anybody nearby. The galaxy could be sterile. It just told me that like, you know.[9.56][9.92][S02] It.[10.04]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.48369179107248783,
+      "error": null,
+      "generated_tokens": 110,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 335,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] We're not the first. It's happened somewhere else. And to me, that was an annoy, that was mind blowing.[4.12][4.29][S01] Doesn't tell me there's anybody nearby. The galaxy could be sterile. It just told me that like, you know,[9.56][10.62][S01] unless nature's really against, it has some bias against civilizations.[14.72]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] We're not the first. It's happened somewhere else. And to me, that was an annoy, that was mind blowing.[4.12][4.29][S01] Doesn't tell me there's anybody nearby. The galaxy could be sterile. It just told me that like, you know,[9.56][10.62][S01] unless nature's really against, it has some bias against civilizations.[14.72]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1120000:1280000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.36867695790715516,
+      "error": null,
+      "generated_tokens": 87,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 242,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Hard data finally that will one way or the other.[3.59][3.61][S01] You know, even if we don't find anything immediately, we will have gone through a number of planets.[8.65][8.75][S01] We'll be able to start putting limits.[10.01]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Hard data finally that will one way or the other.[3.59][3.61][S01] You know, even if we don't find anything immediately, we will have gone through a number of planets.[8.65][8.75][S01] We'll be able to start putting limits.[10.01]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1120000:1360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5037888329243287,
+      "error": null,
+      "generated_tokens": 116,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 314,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Hard data finally that will one way or the other.[3.62][3.63][S01] You know, even if we don't find anything immediately, we will have gone through a number of planets.[8.69][8.75][S01] We'll be able to start putting limits on how common life is.[12.93][13.42][S01] The one answer I can tell you.[14.91]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Hard data finally that will one way or the other.[3.62][3.63][S01] You know, even if we don't find anything immediately, we will have gone through a number of planets.[8.69][8.75][S01] We'll be able to start putting limits on how common life is.[12.93][13.42][S01] The one answer I can tell you.[14.91]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1280000:1440000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3955632500583306,
+      "error": null,
+      "generated_tokens": 94,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 215,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] On how common life is.[3.42][3.45][S01] The one answer I can tell you, which is was an important part of the problem is how many planets[8.21][8.21][S01] are there, right?[9.44][9.44][S01] And just[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] On how common life is.[3.42][3.45][S01] The one answer I can tell you, which is was an important part of the problem is how many planets[8.21][8.21][S01] are there, right?[9.44][9.44][S01] And just[9.94]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1280000:1520000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4679642500123009,
+      "error": null,
+      "generated_tokens": 97,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 277,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] On how common life is.[2.88][3.42][S01] The one answer I can tell you, which is was an important part of the problem is how many planets are there?[8.76][8.85][S01] Right? And just like people have been arguing about the existence of life elsewhere for 2000.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] On how common life is.[2.88][3.42][S01] The one answer I can tell you, which is was an important part of the problem is how many planets are there?[8.76][8.85][S01] Right? And just like people have been arguing about the existence of life elsewhere for 2000.[14.97]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1440000:1600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.35646791697945446,
+      "error": null,
+      "generated_tokens": 83,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 225,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Like people have been arguing about the existence of life elsewhere for 2,500 years.[6.24][6.27][S01] People have been arguing about planets for the exact same amount of time, right?[9.81][9.83][S02] You can[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Like people have been arguing about the existence of life elsewhere for 2,500 years.[6.24][6.27][S01] People have been arguing about planets for the exact same amount of time, right?[9.81][9.83][S02] You can[9.99]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1440000:1680000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5044841669732705,
+      "error": null,
+      "generated_tokens": 123,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 356,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Like people have been arguing about the existence of life elsewhere for 2,500 years.[6.24][6.27][S01] People have been arguing about planets for the exact same amount of time, right?[9.78][9.81][S01] You can see Aristotle yelling at Democritus about this.[12.99][13.02][S01] You know, you can see they had very wildly different opinions.[15.01]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Like people have been arguing about the existence of life elsewhere for 2,500 years.[6.24][6.27][S01] People have been arguing about planets for the exact same amount of time, right?[9.78][9.81][S01] You can see Aristotle yelling at Democritus about this.[12.99][13.02][S01] You know, you can see they had very wildly different opinions.[15.01]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1600000:1760000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.42299462493974715,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 268,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] See Aristotle yelling at Democritus about this.[2.94][3.03][S01] You know, you can see they had very wildly different opinions about how common planets[6.87][6.90][S01] were going to be and how unique Earth was.[8.76][9.06][S01] And that question got[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] See Aristotle yelling at Democritus about this.[2.94][3.03][S01] You know, you can see they had very wildly different opinions about how common planets[6.87][6.90][S01] were going to be and how unique Earth was.[8.76][9.06][S01] And that question got[9.96]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1600000:1840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5656087079551071,
+      "error": null,
+      "generated_tokens": 140,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 373,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] See Aristotle yelling at Democritus about this.[2.94][3.03][S01] You know, you can see they had very wildly different opinions about how common planets[6.87][6.90][S01] were going to be and how unique Earth was.[8.82][9.09][S01] And that question got answered, right?[10.95][11.55][S01] Which is pretty remarkable that in a lifetime you can have a 2,500.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] See Aristotle yelling at Democritus about this.[2.94][3.03][S01] You know, you can see they had very wildly different opinions about how common planets[6.87][6.90][S01] were going to be and how unique Earth was.[8.82][9.09][S01] And that question got answered, right?[10.95][11.55][S01] Which is pretty remarkable that in a lifetime you can have a 2,500.[14.97]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.41611300001386553,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 227,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.63][S01] Unless nature's really against, has some bias against civilizations.[5.16][5.19][S01] We're not the first time this has happened.[6.51][6.52][S01] This has happened elsewhere over the course of cosmic history.[9.63]",
+      "token_cap": 938,
+      "transcript": "[0.63][S01] Unless nature's really against, has some bias against civilizations.[5.16][5.19][S01] We're not the first time this has happened.[6.51][6.52][S01] This has happened elsewhere over the course of cosmic history.[9.63]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4916358340997249,
+      "error": null,
+      "generated_tokens": 102,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 295,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.65][S01] Unless nature's really against, has some bias against civilizations.[5.16][5.19][S01] We're not the first time this has happened.[6.51][6.52][S01] This has happened elsewhere over the course of cosmic history.[9.63][11.97][S02] The following is a conversation with Adam Frank.[14.76]",
+      "token_cap": 1373,
+      "transcript": "[0.65][S01] Unless nature's really against, has some bias against civilizations.[5.16][5.19][S01] We're not the first time this has happened.[6.51][6.52][S01] This has happened elsewhere over the course of cosmic history.[9.63][11.97][S02] The following is a conversation with Adam Frank.[14.76]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1760000:1920000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5126835840055719,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 246,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Answered, right?[1.02][1.53][S01] Which is pretty remarkable that in a lifetime you can have a 2,500 year old question.[6.12][6.33][S01] The answer is they're everywhere.[8.01][8.16][S01] There are planets everywhere and it was.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Answered, right?[1.02][1.53][S01] Which is pretty remarkable that in a lifetime you can have a 2,500 year old question.[6.12][6.33][S01] The answer is they're everywhere.[8.01][8.16][S01] There are planets everywhere and it was.[9.96]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1760000:2000000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6778119159862399,
+      "error": null,
+      "generated_tokens": 166,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 7,
+        "raw_chars": 396,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Answered, right?[1.46][1.52][S01] Which is pretty remarkable that in a lifetime you can add a 2,500 year old question.[6.24][6.27][S01] The answer is they're everywhere.[8.11][8.14][S01] There are planets everywhere.[9.55][9.58][S01] And it was possible that planets were really rare.[12.35][12.38][S01] We didn't really understand how planets formed.[14.49][14.52][S01] And so[14.95]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Answered, right?[1.46][1.52][S01] Which is pretty remarkable that in a lifetime you can add a 2,500 year old question.[6.24][6.27][S01] The answer is they're everywhere.[8.11][8.14][S01] There are planets everywhere.[9.55][9.58][S01] And it was possible that planets were really rare.[12.35][12.38][S01] We didn't really understand how planets formed.[14.49][14.52][S01] And so[14.95]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1920000:2080000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.35272116702981293,
+      "error": null,
+      "generated_tokens": 71,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 203,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Possible that planets were really rare. We didn't really understand how planets formed.[4.26][4.56][S01] And so if you go back to, say, the turn of the 20th century, there was a theory.[9.72]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Possible that planets were really rare. We didn't really understand how planets formed.[4.26][4.56][S01] And so if you go back to, say, the turn of the 20th century, there was a theory.[9.72]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:1920000:2160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4397744170855731,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 308,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Possible that planets were really rare. We didn't really understand how planets formed.[4.26][4.56][S01] And so if you go back to, say, the turn of the 20th century,[7.62][8.43][S01] there was a theory that said planets formed when two stars passed by each other closely and then material.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Possible that planets were really rare. We didn't really understand how planets formed.[4.26][4.56][S01] And so if you go back to, say, the turn of the 20th century,[7.62][8.43][S01] there was a theory that said planets formed when two stars passed by each other closely and then material.[14.97]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2080000:2240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3668483750661835,
+      "error": null,
+      "generated_tokens": 64,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 203,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] That said, planets formed when two stars passed by each other closely and then material[4.95][4.95][S01] was gravitationally squeezed out, in which case those kinds of collisions are so[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] That said, planets formed when two stars passed by each other closely and then material[4.95][4.95][S01] was gravitationally squeezed out, in which case those kinds of collisions are so[9.99]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2080000:2320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43349204200785607,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 314,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] That said, planets formed when two stars passed by each other closely and then material[4.95][4.95][S01] was gravitationally squeezed out, in which case those kinds of collisions are so rare[10.74][10.74][S01] that you would expect one in a trillion stars to have planets. Instead, every star in[14.94]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] That said, planets formed when two stars passed by each other closely and then material[4.95][4.95][S01] was gravitationally squeezed out, in which case those kinds of collisions are so rare[10.74][10.74][S01] that you would expect one in a trillion stars to have planets. Instead, every star in[14.94]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2240000:2400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.40594916697591543,
+      "error": null,
+      "generated_tokens": 81,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 218,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] So rare that you would expect one in a trillion stars to have planets.[3.24][3.25][S01] Instead, every star in the night sky has planets.[6.24][7.05][S02] So one of the things you've done is simulate.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] So rare that you would expect one in a trillion stars to have planets.[3.24][3.25][S01] Instead, every star in the night sky has planets.[6.24][7.05][S02] So one of the things you've done is simulate.[9.99]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2240000:2480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4670962499221787,
+      "error": null,
+      "generated_tokens": 113,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 312,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] So rare that you would expect one in a trillion stars to have planets.[3.24][3.25][S01] Instead, every star in the night sky has planets.[6.24][7.05][S02] So one of the things you've done is simulated the formation of stars.[11.76][12.15][S02] How difficult do you think it is to simulate the?[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] So rare that you would expect one in a trillion stars to have planets.[3.24][3.25][S01] Instead, every star in the night sky has planets.[6.24][7.05][S02] So one of the things you've done is simulated the formation of stars.[11.76][12.15][S02] How difficult do you think it is to simulate the?[14.97]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2400000:2560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.49444979208055884,
+      "error": null,
+      "generated_tokens": 97,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 259,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Simulated the formation of stars.[1.78][2.16][S01] How difficult do you think it is to simulate?[4.28][4.71][S01] The formation of planets, like simulate a solar system?[7.32][7.41][S01] The, through the entire evolution of the solar system?[9.72]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Simulated the formation of stars.[1.78][2.16][S01] How difficult do you think it is to simulate?[4.28][4.71][S01] The formation of planets, like simulate a solar system?[7.32][7.41][S01] The, through the entire evolution of the solar system?[9.72]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2400000:2640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5805997080169618,
+      "error": null,
+      "generated_tokens": 142,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 6,
+        "raw_chars": 357,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] The formation of stars.[1.74][2.16][S01] How difficult do you think it is to simulate?[4.26][4.71][S01] The formation of planets, like simulate a solar system?[7.32][7.41][S01] The through the entire evolution of the solar system?[9.72][10.02][S01] This is kind of a a numerical simulation.[12.72][13.17][S01] Sneaking up to the question.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] The formation of stars.[1.74][2.16][S01] How difficult do you think it is to simulate?[4.26][4.71][S01] The formation of planets, like simulate a solar system?[7.32][7.41][S01] The through the entire evolution of the solar system?[9.72][10.02][S01] This is kind of a a numerical simulation.[12.72][13.17][S01] Sneaking up to the question.[14.97]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2560000:2720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.32085999997798353,
+      "error": null,
+      "generated_tokens": 68,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 205,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] This is kind of a a numerical simulation sneaking up to the question of how many planets are there?[6.54][6.65][S02] That actually we're able to do now. There is, you can run simulations.[9.95]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] This is kind of a a numerical simulation sneaking up to the question of how many planets are there?[6.54][6.65][S02] That actually we're able to do now. There is, you can run simulations.[9.95]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2560000:2800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4393559159943834,
+      "error": null,
+      "generated_tokens": 97,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 290,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] This is kind of a numerical simulation sneaking up to the question of how many planets are there?[6.54][6.65][S02] That actually we're able to do now. There is, you can run simulations of the formation of planetary system.[13.28][13.53][S02] So if you run the simulation,[14.85]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] This is kind of a numerical simulation sneaking up to the question of how many planets are there?[6.54][6.65][S02] That actually we're able to do now. There is, you can run simulations of the formation of planetary system.[13.28][13.53][S02] So if you run the simulation,[14.85]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:2720000:2880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3697996250120923,
+      "error": null,
+      "generated_tokens": 80,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 214,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Of the formation of planetary system.[3.28][3.54][S01] So if you run the simulation, really where you want to start is a cloud of gas, these giant interstellar clouds of gas.[9.54][9.81][S01] That[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Of the formation of planetary system.[3.28][3.54][S01] So if you run the simulation, really where you want to start is a cloud of gas, these giant interstellar clouds of gas.[9.54][9.81][S01] That[9.96]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6994265420362353,
+      "error": null,
+      "generated_tokens": 56,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 160,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[1.96][S01] The following is a conversation with Adam Frank,[4.76][4.80][S01] an astrophysicist interested in the evolution of star systems and the search[9.96]",
+      "token_cap": 938,
+      "transcript": "[1.96][S01] The following is a conversation with Adam Frank,[4.76][4.80][S01] an astrophysicist interested in the evolution of star systems and the search[9.96]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5984647499863058,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 261,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[1.96][S01] The following is a conversation with Adam Frank,[4.76][4.80][S01] an astrophysicist interested in the evolution of star systems[9.33][9.36][S01] and the search for alien civilizations in our universe.[13.93][13.96][S01] This is Alex Friedman.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[1.96][S01] The following is a conversation with Adam Frank,[4.76][4.80][S01] an astrophysicist interested in the evolution of star systems[9.33][9.36][S01] and the search for alien civilizations in our universe.[13.93][13.96][S01] This is Alex Friedman.[15.03]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5005530409980565,
+      "error": null,
+      "generated_tokens": 88,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 217,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.48][S01] For alien civilizations in our universe.[3.12][3.93][S01] This is the Lex Friedman Podcast.[5.76][6.00][S01] To support it, please check out our sponsors in the description.[8.85][9.21][S01] And now.[9.81]",
+      "token_cap": 938,
+      "transcript": "[0.48][S01] For alien civilizations in our universe.[3.12][3.93][S01] This is the Lex Friedman Podcast.[5.76][6.00][S01] To support it, please check out our sponsors in the description.[8.85][9.21][S01] And now.[9.81]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5451013339916244,
+      "error": null,
+      "generated_tokens": 118,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 288,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.48][S01] For alien civilizations in our universe.[3.12][3.93][S01] This is the Lex Friedman Podcast.[5.76][6.03][S01] To support it, please check out our sponsors in the description.[8.85][9.21][S01] And now, dear friends, here's Adam Frank.[12.66][13.83][S02] You wrote a book.[14.91]",
+      "token_cap": 1373,
+      "transcript": "[0.48][S01] For alien civilizations in our universe.[3.12][3.93][S01] This is the Lex Friedman Podcast.[5.76][6.03][S01] To support it, please check out our sponsors in the description.[8.85][9.21][S01] And now, dear friends, here's Adam Frank.[12.66][13.83][S02] You wrote a book.[14.91]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3784413749817759,
+      "error": null,
+      "generated_tokens": 91,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 210,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] Dear friends, here's Adam Frank.[2.65][3.86][S01] You wrote a book about aliens.[6.02][6.44][S01] So the big question, how many alien civilizations are out there?[9.26][9.59][S02] Yeah, that's[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] Dear friends, here's Adam Frank.[2.65][3.86][S01] You wrote a book about aliens.[6.02][6.44][S01] So the big question, how many alien civilizations are out there?[9.26][9.59][S02] Yeah, that's[9.98]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.750207458040677,
+      "error": null,
+      "generated_tokens": 124,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 309,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] Dear friends, here's Adam Frank.[2.65][3.86][S01] You wrote a book about aliens.[6.02][6.44][S01] So the big question, how many alien civilizations are out there?[9.26][9.61][S02] Yeah, that's the question, right?[10.91][11.06][S02] The amazing thing is that after two and a half millennia.[14.96]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] Dear friends, here's Adam Frank.[2.65][3.86][S01] You wrote a book about aliens.[6.02][6.44][S01] So the big question, how many alien civilizations are out there?[9.26][9.61][S02] Yeah, that's the question, right?[10.91][11.06][S02] The amazing thing is that after two and a half millennia.[14.96]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:800000:1040000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7251102919690311,
+      "error": null,
+      "generated_tokens": 139,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 355,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] The question, right?[0.99][1.05][S01] The amazing thing is that after two and a half millennia of, you know,[5.64][5.64][S01] people yelling at each other or setting each other on fire occasionally over the answer,[9.48][9.63][S01] we now actually have the capacity to answer that question.[13.02][13.35][S01] So in the next 10, 20, 30.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] The question, right?[0.99][1.05][S01] The amazing thing is that after two and a half millennia of, you know,[5.64][5.64][S01] people yelling at each other or setting each other on fire occasionally over the answer,[9.48][9.63][S01] we now actually have the capacity to answer that question.[13.02][13.35][S01] So in the next 10, 20, 30.[15.03]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.36925962497480214,
+      "error": null,
+      "generated_tokens": 85,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 240,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] The question, right?[0.99][1.05][S01] The amazing thing is that after two and a half millennia of, you know, people yelling at each other[6.81][6.81][S01] or setting each other on fire occasionally over the answer, we now.[9.93]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] The question, right?[0.99][1.05][S01] The amazing thing is that after two and a half millennia of, you know, people yelling at each other[6.81][6.81][S01] or setting each other on fire occasionally over the answer, we now.[9.93]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:960000:1120000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3809843329945579,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 223,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Actually have the capacity to answer that question.[3.02][3.35][S01] So in the next 10, 20, 30 years, we're going to have data relevant to the answer to that question.[9.23][9.41][S01] We're going to have.[9.89]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Actually have the capacity to answer that question.[3.02][3.35][S01] So in the next 10, 20, 30 years, we're going to have data relevant to the answer to that question.[9.23][9.41][S01] We're going to have.[9.89]"
+    },
+    "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f:960000:1200000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4831540840677917,
+      "error": null,
+      "generated_tokens": 113,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 311,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Actually have the capacity to answer that question.[3.02][3.36][S01] So in the next 10, 20, 30 years, we're going to have data relevant to the answer to that question.[9.24][9.42][S01] We're going to have hard data finally that will, one way or the other, you know, even if we don't find any.[14.94]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Actually have the capacity to answer that question.[3.02][3.36][S01] So in the next 10, 20, 30 years, we're going to have data relevant to the answer to that question.[9.24][9.42][S01] We're going to have hard data finally that will, one way or the other, you know, even if we don't find any.[14.94]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5967000409727916,
+      "error": null,
+      "generated_tokens": 112,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 237,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.84][S01] How long do we think each one will take?[2.45][2.52][S02] I don't know, who cares?[3.81][4.63][S02] Four hours apiece?[5.81][5.87][S03] Yeah, maybe for you.[7.25][7.88][S03] Each one of those tasks would take me three.[10.03]",
+      "token_cap": 938,
+      "transcript": "[0.84][S01] How long do we think each one will take?[2.45][2.52][S02] I don't know, who cares?[3.81][4.63][S02] Four hours apiece?[5.81][5.87][S03] Yeah, maybe for you.[7.25][7.88][S03] Each one of those tasks would take me three.[10.03]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7121631249319762,
+      "error": null,
+      "generated_tokens": 166,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 7,
+        "raw_chars": 351,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.84][S01] How long do we think each one will take?[2.45][2.52][S02] I don't know, who cares?[3.81][4.63][S02] Four hours apiece?[5.81][5.87][S03] Yeah, maybe for you.[7.25][7.88][S03] Each one of those tasks would take me three, max.[10.56][10.63][S01] Not tasks, stories.[12.12][12.18][S03] I've got a story, why don't you choke on my balls?[14.21]",
+      "token_cap": 1373,
+      "transcript": "[0.84][S01] How long do we think each one will take?[2.45][2.52][S02] I don't know, who cares?[3.81][4.63][S02] Four hours apiece?[5.81][5.87][S03] Yeah, maybe for you.[7.25][7.88][S03] Each one of those tasks would take me three, max.[10.56][10.63][S01] Not tasks, stories.[12.12][12.18][S03] I've got a story, why don't you choke on my balls?[14.21]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:1120000:1280000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3596275410382077,
+      "error": null,
+      "generated_tokens": 55,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 154,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[2.64][S01] Do you know what compersion is?[3.84][5.32][S01] It's when someone takes pleasure in seeing their loved one gratified by another person.[9.96]",
+      "token_cap": 938,
+      "transcript": "[2.64][S01] Do you know what compersion is?[3.84][5.32][S01] It's when someone takes pleasure in seeing their loved one gratified by another person.[9.96]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:1120000:1360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4284364590421319,
+      "error": null,
+      "generated_tokens": 98,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 234,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[2.64][S01] Do you know what compersion is?[3.84][5.32][S01] It's when someone takes pleasure in seeing their loved one gratified by another person.[10.02][11.05][S01] Sexually.[11.82][12.76][S01] It's the opposite of jealousy.[14.12]",
+      "token_cap": 1373,
+      "transcript": "[2.64][S01] Do you know what compersion is?[3.84][5.32][S01] It's when someone takes pleasure in seeing their loved one gratified by another person.[10.02][11.05][S01] Sexually.[11.82][12.76][S01] It's the opposite of jealousy.[14.12]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4216090829577297,
+      "error": null,
+      "generated_tokens": 98,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 221,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.57][S01] Not tasks, stories.[2.11][2.18][S02] I've got a story. Why don't you choke on my balls?[4.22][4.54][S01] He's trying to get us to compete so we work faster.[7.47][7.71][S01] He thinks this wall of psych.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.57][S01] Not tasks, stories.[2.11][2.18][S02] I've got a story. Why don't you choke on my balls?[4.22][4.54][S01] He's trying to get us to compete so we work faster.[7.47][7.71][S01] He thinks this wall of psych.[9.96]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6567681250162423,
+      "error": null,
+      "generated_tokens": 133,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 304,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.57][S01] Not tasks, stories.[2.12][2.18][S02] I've got a story. Why don't you choke on my balls?[4.22][4.54][S03] He's trying to get us to compete, so we work faster.[7.44][7.71][S03] He thinks this wall of psych 101, MBA, mind control bullshit is going to motivate us.[14.21][14.48][S01] Fine.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.57][S01] Not tasks, stories.[2.12][2.18][S02] I've got a story. Why don't you choke on my balls?[4.22][4.54][S03] He's trying to get us to compete, so we work faster.[7.44][7.71][S03] He thinks this wall of psych 101, MBA, mind control bullshit is going to motivate us.[14.21][14.48][S01] Fine.[14.98]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5911791670368984,
+      "error": null,
+      "generated_tokens": 77,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 179,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.06][S01] 101 MBA mind control bullshit is going to motivate us.[4.22][4.55][S02] Fine, don't compete. Do them at whatever speed you like.[7.46][9.62][S01] So we're gonna.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.06][S01] 101 MBA mind control bullshit is going to motivate us.[4.22][4.55][S02] Fine, don't compete. Do them at whatever speed you like.[7.46][9.62][S01] So we're gonna.[9.98]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5455992089118809,
+      "error": null,
+      "generated_tokens": 105,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 242,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.06][S01] 101 MBA mind control bullshit is going to motivate us.[4.24][4.55][S02] Fine, don't compete. Do them at whatever speed you like.[7.48][9.65][S01] So we're gonna work at a nice leisurely pace, right?[12.21][12.84][S03] Sure.[13.34]",
+      "token_cap": 1373,
+      "transcript": "[0.06][S01] 101 MBA mind control bullshit is going to motivate us.[4.24][4.55][S02] Fine, don't compete. Do them at whatever speed you like.[7.48][9.65][S01] So we're gonna work at a nice leisurely pace, right?[12.21][12.84][S03] Sure.[13.34]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.47554379201028496,
+      "error": null,
+      "generated_tokens": 101,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 192,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.06][S01] I work at a nice leisurely pace, right?[2.22][2.86][S02] Sure.[3.34][6.18][S01] But why are you tapping faster?[7.58][7.66][S02] I'm not.[8.22][9.02][S02] Maybe my leisurely.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.06][S01] I work at a nice leisurely pace, right?[2.22][2.86][S02] Sure.[3.34][6.18][S01] But why are you tapping faster?[7.58][7.66][S02] I'm not.[8.22][9.02][S02] Maybe my leisurely.[9.98]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7584571250481531,
+      "error": null,
+      "generated_tokens": 128,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 6,
+        "raw_chars": 256,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.06][S01] I work at a nice leisurely pace, right?[2.14][2.86][S02] Sure.[3.34][6.18][S01] But why are you tapping faster?[7.57][7.65][S02] I'm not.[8.21][9.03][S02] Maybe my leisurely pace is just a little faster than yours.[11.91][14.44][S01] Oh.[14.98]",
+      "token_cap": 1373,
+      "transcript": "[0.06][S01] I work at a nice leisurely pace, right?[2.14][2.86][S02] Sure.[3.34][6.18][S01] But why are you tapping faster?[7.57][7.65][S02] I'm not.[8.21][9.03][S02] Maybe my leisurely pace is just a little faster than yours.[11.91][14.44][S01] Oh.[14.98]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3300242080586031,
+      "error": null,
+      "generated_tokens": 63,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 119,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.06][S01] Paces just a little faster than yours.[1.87][4.48][S02] Holy cocksucker.[6.24][7.85][S01] Ha, booyah.[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.06][S01] Paces just a little faster than yours.[1.87][4.48][S02] Holy cocksucker.[6.24][7.85][S01] Ha, booyah.[9.94]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6264257080620155,
+      "error": null,
+      "generated_tokens": 111,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 229,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.06][S01] Paces just a little faster than yours.[1.87][4.48][S02] Holy cocksucker.[6.22][8.99][S01] Booyah.[9.72][10.98][S03] Guys, have you been out front yet?[13.04][13.61][S03] Because you might want to come see this.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.06][S01] Paces just a little faster than yours.[1.87][4.48][S02] Holy cocksucker.[6.22][8.99][S01] Booyah.[9.72][10.98][S03] Guys, have you been out front yet?[13.04][13.61][S03] Because you might want to come see this.[14.88]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:800000:1040000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7439627499552444,
+      "error": null,
+      "generated_tokens": 172,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 8,
+        "raw_chars": 352,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.94][S01] Guys, have you been out front yet?[3.12][3.56][S01] Cause you might wanna come see this.[4.84][4.88][S02] I'm good.[5.68][5.72][S03] Fuck off, we're working.[7.16][7.20][S03] What was that?[8.03][9.77][S02] What?[10.34][10.64][S03] Tara just whispered something to you and then she looked at me in a weird way.[13.81][14.74][S02] No.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.94][S01] Guys, have you been out front yet?[3.12][3.56][S01] Cause you might wanna come see this.[4.84][4.88][S02] I'm good.[5.68][5.72][S03] Fuck off, we're working.[7.16][7.20][S03] What was that?[8.03][9.77][S02] What?[10.34][10.64][S03] Tara just whispered something to you and then she looked at me in a weird way.[13.81][14.74][S02] No.[14.97]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6290109170367941,
+      "error": null,
+      "generated_tokens": 121,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 6,
+        "raw_chars": 231,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.94][S01] Guys, have you been out front yet?[3.12][3.56][S01] Cause you might wanna come see this.[4.84][4.88][S02] I'm good.[5.68][5.72][S03] Fuck off, we're working.[7.16][7.20][S04] What was that?[8.03][9.77][S02] What?[10.03]",
+      "token_cap": 938,
+      "transcript": "[0.94][S01] Guys, have you been out front yet?[3.12][3.56][S01] Cause you might wanna come see this.[4.84][4.88][S02] I'm good.[5.68][5.72][S03] Fuck off, we're working.[7.16][7.20][S04] What was that?[8.03][9.77][S02] What?[10.03]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:960000:1120000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.45732204196974635,
+      "error": null,
+      "generated_tokens": 72,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 161,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.67][S01] Tara just whispered something to you and then she looked at me in a weird way.[3.82][4.74][S02] No, she didn't.[5.52][6.34][S01] Yeah, she did.[7.12]",
+      "token_cap": 938,
+      "transcript": "[0.67][S01] Tara just whispered something to you and then she looked at me in a weird way.[3.82][4.74][S02] No, she didn't.[5.52][6.34][S01] Yeah, she did.[7.12]"
+    },
+    "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe:960000:1200000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4828082920284942,
+      "error": null,
+      "generated_tokens": 96,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 212,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.67][S01] Tara just whispered something to you and then she looked at me in a weird way.[3.82][4.74][S02] No, she didn't.[5.52][6.34][S01] Yeah, she did.[7.12][12.58][S02] Do you know what compersion is?[13.84]",
+      "token_cap": 1373,
+      "transcript": "[0.67][S01] Tara just whispered something to you and then she looked at me in a weird way.[3.82][4.74][S02] No, she didn't.[5.52][6.34][S01] Yeah, she did.[7.12][12.58][S02] Do you know what compersion is?[13.84]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.9536458749789745,
+      "error": null,
+      "generated_tokens": 72,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 174,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.90][S01] the president of Argentina.[6.27][6.30][S01] He is a libertarian, a narco-capitalist, and[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.90][S01] the president of Argentina.[6.27][6.30][S01] He is a libertarian, a narco-capitalist, and[9.99]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.430242707952857,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 255,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist,[11.25][11.25][S01] who campaigned with a chainsaw that symbolized his[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.87][S01] The following is a conversation with Javier Mal\u00e9,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist,[11.25][11.25][S01] who campaigned with a chainsaw that symbolized his[14.88]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3056841669604182,
+      "error": null,
+      "generated_tokens": 69,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 178,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[7.52][7.52][S01] of the state.[9.25][9.25][S01] He stepped[9.91]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy[7.52][7.52][S01] of the state.[9.25][9.25][S01] He stepped[9.91]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.37213958392385393,
+      "error": null,
+      "generated_tokens": 86,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 259,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash[6.27][6.27][S01] the corrupt bureaucracy of the state.[9.31][9.31][S01] He stepped into the presidency one year ago with a country on the brink of hyperinflation.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] economist who campaigned with a chainsaw that symbolized his promise to slash[6.27][6.27][S01] the corrupt bureaucracy of the state.[9.31][9.31][S01] He stepped into the presidency one year ago with a country on the brink of hyperinflation.[14.88]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2688652500510216,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 181,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.11][S01] Into the presidency one year ago, with the country on the brink of hyperinflation,[4.91][4.94][S01] deep in debt, and suffering from mass unemployment and poverty.[8.91]",
+      "token_cap": 938,
+      "transcript": "[0.11][S01] Into the presidency one year ago, with the country on the brink of hyperinflation,[4.91][4.94][S01] deep in debt, and suffering from mass unemployment and poverty.[8.91]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5087532500037923,
+      "error": null,
+      "generated_tokens": 121,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 319,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.11][S01] Into the presidency one year ago,[2.12][2.68][S01] with the country on the brink of hyperinflation,[4.81][4.94][S01] deep in debt and suffering from mass unemployment and poverty.[9.01][10.01][S01] He took this crisis head on,[11.84][12.11][S01] transforming one of Latin America's largest economies.[15.01]",
+      "token_cap": 1373,
+      "transcript": "[0.11][S01] Into the presidency one year ago,[2.12][2.68][S01] with the country on the brink of hyperinflation,[4.81][4.94][S01] deep in debt and suffering from mass unemployment and poverty.[9.01][10.01][S01] He took this crisis head on,[11.84][12.11][S01] transforming one of Latin America's largest economies.[15.01]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2696804590523243,
+      "error": null,
+      "generated_tokens": 59,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 178,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] He took this crisis head on, transforming one of Latin America's largest economies through[5.76][5.76][S01] pure free market principles. In just a few months in[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] He took this crisis head on, transforming one of Latin America's largest economies through[5.76][5.76][S01] pure free market principles. In just a few months in[9.96]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.45337687502615154,
+      "error": null,
+      "generated_tokens": 106,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 289,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] He took this crisis head on, transforming one of Latin America's largest economies[5.52][5.52][S01] through pure free market principles.[8.83][8.83][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[13.82][13.82][S01] in 16 years.[15.03]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] He took this crisis head on, transforming one of Latin America's largest economies[5.52][5.52][S01] through pure free market principles.[8.83][8.83][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[13.82][13.82][S01] in 16 years.[15.03]"
+    },
+    "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2723384170094505,
+      "error": null,
+      "generated_tokens": 60,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 177,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Office, he already achieved Argentina's first fiscal surplus in 16 years.[5.14][5.66][S01] And not just avoided the hyperinflation, but brought inflation down.[9.94]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Office, he already achieved Argentina's first fiscal surplus in 16 years.[5.14][5.66][S01] And not just avoided the hyperinflation, but brought inflation down.[9.94]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:0:160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4405244159279391,
+      "error": null,
+      "generated_tokens": 76,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 207,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] First Republic.[1.52][1.55][S01] Jamie is now the longest serving CEO of any major Wall Street bank and is viewed[6.62][6.62][S01] as kind of the great stabilizer of the American financial.[9.86]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] First Republic.[1.52][1.55][S01] Jamie is now the longest serving CEO of any major Wall Street bank and is viewed[6.62][6.62][S01] as kind of the great stabilizer of the American financial.[9.86]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:0:240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6031171249924228,
+      "error": null,
+      "generated_tokens": 129,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 327,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] First Republic.[1.52][1.55][S01] Jamie is now the longest serving CEO of any major Wall Street bank and is viewed[6.62][6.62][S01] as kind of the great stabilizer of the American financial system, especially during[11.33][11.33][S01] the 2008 financial crisis.[13.29][13.29][S01] He now sits atop the largest[14.95]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] First Republic.[1.52][1.55][S01] Jamie is now the longest serving CEO of any major Wall Street bank and is viewed[6.62][6.62][S01] as kind of the great stabilizer of the American financial system, especially during[11.33][11.33][S01] the 2008 financial crisis.[13.29][13.29][S01] He now sits atop the largest[14.95]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1120000:1280000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.45999616594053805,
+      "error": null,
+      "generated_tokens": 85,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 235,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.57][S01] We're always trying to figure out what version of Acquired works live with an[3.69][3.69][S01] audience, and this is our latest iteration.[6.87][6.87][S01] The Radio City Show also had a second act, a late night talk.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.57][S01] We're always trying to figure out what version of Acquired works live with an[3.69][3.69][S01] audience, and this is our latest iteration.[6.87][6.87][S01] The Radio City Show also had a second act, a late night talk.[9.99]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1120000:1360000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5636340830242261,
+      "error": null,
+      "generated_tokens": 130,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 366,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.57][S01] We're always trying to figure out what version of Acquired works live with[3.61][3.61][S01] an audience, and this is our latest iteration.[6.91][6.91][S01] The Radio City Show also had a second act, a late night talk show, where we had conversations[11.36][11.36][S01] with the CEO of the New York Times, Meredith Kobit-Levian, and the chairman of[14.99]",
+      "token_cap": 1373,
+      "transcript": "[0.57][S01] We're always trying to figure out what version of Acquired works live with[3.61][3.61][S01] an audience, and this is our latest iteration.[6.91][6.91][S01] The Radio City Show also had a second act, a late night talk show, where we had conversations[11.36][11.36][S01] with the CEO of the New York Times, Meredith Kobit-Levian, and the chairman of[14.99]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1280000:1440000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4155330000212416,
+      "error": null,
+      "generated_tokens": 90,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 251,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Talk show where we had conversations with the CEO of the New York Times,[2.75][2.75][S01] Meredith Kobit-Levian, and the chairman of IAC, Barry Diller,[6.99][6.99][S01] plus some cameos from around the acquired cinematic university.[10.01]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Talk show where we had conversations with the CEO of the New York Times,[2.75][2.75][S01] Meredith Kobit-Levian, and the chairman of IAC, Barry Diller,[6.99][6.99][S01] plus some cameos from around the acquired cinematic university.[10.01]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1280000:1520000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5608562909765169,
+      "error": null,
+      "generated_tokens": 122,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 334,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] Talk show where we had conversations with the CEO of the New York Times,[2.76][2.76][S01] Meredith Kobit-Levian, and the chairman of IAC, Barry Diller,[6.99][6.99][S01] plus some cameos from around the acquired cinematic universe.[10.21][10.21][S01] And we cannot wait to share all of that with you at a later date.[14.32]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] Talk show where we had conversations with the CEO of the New York Times,[2.76][2.76][S01] Meredith Kobit-Levian, and the chairman of IAC, Barry Diller,[6.99][6.99][S01] plus some cameos from around the acquired cinematic universe.[10.21][10.21][S01] And we cannot wait to share all of that with you at a later date.[14.32]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1440000:1600000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4201048749964684,
+      "error": null,
+      "generated_tokens": 82,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 210,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.12][S01] And we cannot wait to share all of that with you at a later date.[4.32][5.07][S01] Well, if you want to know every time an episode drops, check out our email list,[8.67][8.67][S01] acquire.fm/[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.12][S01] And we cannot wait to share all of that with you at a later date.[4.32][5.07][S01] Well, if you want to know every time an episode drops, check out our email list,[8.67][8.67][S01] acquire.fm/[9.99]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1440000:1680000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.591781958937645,
+      "error": null,
+      "generated_tokens": 116,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 309,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.12][S01] And we cannot wait to share all of that with you at a later date.[4.32][5.07][S01] Well, if you want to know every time an episode drops, check out our email list,[8.73][8.73][S01] acquire.fm/email. Come join the Slack and talk about this with us afterwards,[13.89][13.89][S01] acquire.fm/.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.12][S01] And we cannot wait to share all of that with you at a later date.[4.32][5.07][S01] Well, if you want to know every time an episode drops, check out our email list,[8.73][8.73][S01] acquire.fm/email. Come join the Slack and talk about this with us afterwards,[13.89][13.89][S01] acquire.fm/.[14.97]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1600000:1760000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4252797500230372,
+      "error": null,
+      "generated_tokens": 84,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 224,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Email, come join the Slack and talk about this with us afterwards.[3.91][3.91][S01] Acquired.fm/Slack. If you want more acquired between each monthly episode, check out ACQ2,[9.44][9.44][S01] our interview.[9.98]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Email, come join the Slack and talk about this with us afterwards.[3.91][3.91][S01] Acquired.fm/Slack. If you want more acquired between each monthly episode, check out ACQ2,[9.44][9.44][S01] our interview.[9.98]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1600000:1840000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5694562090793625,
+      "error": null,
+      "generated_tokens": 121,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 342,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] Email, come join the Slack and talk about this with us afterwards.[3.91][3.91][S01] Acquired.fm/Slack. If you want more acquired between each monthly episode, check out ACQ2,[9.36][9.36][S01] our interview show, where we talk with founders and CEOs building businesses in areas we've[13.51][13.51][S01] covered on the show.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] Email, come join the Slack and talk about this with us afterwards.[3.91][3.91][S01] Acquired.fm/Slack. If you want more acquired between each monthly episode, check out ACQ2,[9.36][9.36][S01] our interview show, where we talk with founders and CEOs building businesses in areas we've[13.51][13.51][S01] covered on the show.[14.88]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:160000:320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3152978749712929,
+      "error": null,
+      "generated_tokens": 56,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 208,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01]system, especially during the two thousand and eight financial crisis. He now sits atop the largest bank in the U. S. with an over eight hundred billion dollar market cap, which has more than[9.88]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01]system, especially during the two thousand and eight financial crisis. He now sits atop the largest bank in the U. S. with an over eight hundred billion dollar market cap, which has more than[9.88]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:160000:400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.49604816595092416,
+      "error": null,
+      "generated_tokens": 76,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 307,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01]system, especially during the two thousand and eight financial crisis. He now sits atop the largest bank in the U. S. with an over eight hundred billion dollar market cap, which is more than twice their nearest competitor. They are the only bank within spitting distance of the sort of big[15.02]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01]system, especially during the two thousand and eight financial crisis. He now sits atop the largest bank in the U. S. with an over eight hundred billion dollar market cap, which is more than twice their nearest competitor. They are the only bank within spitting distance of the sort of big[15.02]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1760000:1920000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.47555854194797575,
+      "error": null,
+      "generated_tokens": 85,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 237,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] You show where we talk with founders and CEOs building businesses in areas we've[3.54][3.54][S01] covered on the show. And before we dive in, we want to briefly thank our presenting[7.56][7.56][S01] partner, J P Morgan.[9.27]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] You show where we talk with founders and CEOs building businesses in areas we've[3.54][3.54][S01] covered on the show. And before we dive in, we want to briefly thank our presenting[7.56][7.56][S01] partner, J P Morgan.[9.27]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1760000:2000000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5008159580174834,
+      "error": null,
+      "generated_tokens": 102,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 315,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Show where we talk with founders and CEOs building businesses in areas we've covered on the show.[4.26][4.74][S01] And before we dive in, we want to briefly thank our presenting partner, J P Morgan.[9.33][10.59][S02] Yes, the same J P Morgan, which is funny because when we started planning this.[14.97]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Show where we talk with founders and CEOs building businesses in areas we've covered on the show.[4.26][4.74][S01] And before we dive in, we want to briefly thank our presenting partner, J P Morgan.[9.33][10.59][S02] Yes, the same J P Morgan, which is funny because when we started planning this.[14.97]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1920000:2080000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.3415534170344472,
+      "error": null,
+      "generated_tokens": 68,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 196,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.57][S01] Yes, the same JP Morgan, which is funny because when we started planning this[5.01][5.01][S01] show together, gosh, almost a year ago, it was immediately clear to Ben and me that[9.72]",
+      "token_cap": 938,
+      "transcript": "[0.57][S01] Yes, the same JP Morgan, which is funny because when we started planning this[5.01][5.01][S01] show together, gosh, almost a year ago, it was immediately clear to Ben and me that[9.72]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:1920000:2160000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5899975840002298,
+      "error": null,
+      "generated_tokens": 117,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 321,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.57][S01] Yes, the same JP Morgan, which is funny because when we started planning this[5.01][5.01][S01] show together, gosh, almost a year ago, it was immediately clear to Ben and me[9.44][9.44][S01] that the very best person who acquired could interview in New York also happened[14.63][14.63][S01] to be their[14.95]",
+      "token_cap": 1373,
+      "transcript": "[0.57][S01] Yes, the same JP Morgan, which is funny because when we started planning this[5.01][5.01][S01] show together, gosh, almost a year ago, it was immediately clear to Ben and me[9.44][9.44][S01] that the very best person who acquired could interview in New York also happened[14.63][14.63][S01] to be their[14.95]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2080000:2240000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4445149169769138,
+      "error": null,
+      "generated_tokens": 87,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 253,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] The very best person who acquired Good Interview in New York also happened to be their CEO.[5.42][5.78][S02] And as you all know from the episodes over the last couple of years, JP Morgan has been[8.86][8.86][S02] a fantastic partner.[10.02]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] The very best person who acquired Good Interview in New York also happened to be their CEO.[5.42][5.78][S02] And as you all know from the episodes over the last couple of years, JP Morgan has been[8.86][8.86][S02] a fantastic partner.[10.02]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2080000:2320000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.677371249999851,
+      "error": null,
+      "generated_tokens": 126,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 388,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] The very best person who acquired Could Interview in New York also happened to be their CEO.[5.44][5.75][S02] And as you all know from the episodes over the last couple of years,[8.11][8.12][S02] JP Morgan has been a fantastic partner of ours and their payments team demoed all kinds of cool technology at the event.[13.48][13.76][S02] Our huge thanks to the JP Morgan.[15.02]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] The very best person who acquired Could Interview in New York also happened to be their CEO.[5.44][5.75][S02] And as you all know from the episodes over the last couple of years,[8.11][8.12][S02] JP Morgan has been a fantastic partner of ours and their payments team demoed all kinds of cool technology at the event.[13.48][13.76][S02] Our huge thanks to the JP Morgan.[15.02]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2240000:2400000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.43007379199843854,
+      "error": null,
+      "generated_tokens": 96,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 285,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] And their payments team demoed all kinds of cool technology at the event.[3.48][3.75][S01] Our huge thanks to the JP Morgan team for putting on the show with us.[6.63][6.75][S01] And if you ever want to learn more, just click the link in the show notes and tell them.[9.93]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] And their payments team demoed all kinds of cool technology at the event.[3.48][3.75][S01] Our huge thanks to the JP Morgan team for putting on the show with us.[6.63][6.75][S01] And if you ever want to learn more, just click the link in the show notes and tell them.[9.93]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2240000:2480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6822877910453826,
+      "error": null,
+      "generated_tokens": 137,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 417,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] And their payments team demoed all kinds of cool technology at the event.[3.48][3.75][S01] Our huge thanks to the JP Morgan team for putting on the show with us.[6.63][6.75][S01] And if you ever want to learn more, just click the link in the show notes and tell them that Ben and David sent you.[11.25][11.82][S01] So with that, this show is not investment advice. David and I may have investments.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] And their payments team demoed all kinds of cool technology at the event.[3.48][3.75][S01] Our huge thanks to the JP Morgan team for putting on the show with us.[6.63][6.75][S01] And if you ever want to learn more, just click the link in the show notes and tell them that Ben and David sent you.[11.25][11.82][S01] So with that, this show is not investment advice. David and I may have investments.[14.88]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2400000:2560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.39598241599742323,
+      "error": null,
+      "generated_tokens": 86,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 259,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] That Ben and David sent you. So with that, this show is not investment advice.[3.66][3.66][S01] Dave and I may have investments in the companies we discuss, and this show is for informational[7.92][7.92][S01] and entertainment purposes only.[9.57]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] That Ben and David sent you. So with that, this show is not investment advice.[3.66][3.66][S01] Dave and I may have investments in the companies we discuss, and this show is for informational[7.92][7.92][S01] and entertainment purposes only.[9.57]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2400000:2640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.7858584170462564,
+      "error": null,
+      "generated_tokens": 147,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 6,
+        "raw_chars": 386,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] That Ben and David sent you.[1.85][1.88][S01] So with that, this show is not investment advice.[3.68][3.69][S01] David and I may have investments in the companies we discuss.[6.17][6.20][S01] And this show is for informational and entertainment purposes only.[10.01][10.04][S01] Onto our conversation with Jamie Dimon.[12.21][13.52][S02] Well, this feels appropriate.[14.56]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] That Ben and David sent you.[1.85][1.88][S01] So with that, this show is not investment advice.[3.68][3.69][S01] David and I may have investments in the companies we discuss.[6.17][6.20][S01] And this show is for informational and entertainment purposes only.[10.01][10.04][S01] Onto our conversation with Jamie Dimon.[12.21][13.52][S02] Well, this feels appropriate.[14.56]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2560000:2720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.49591158307157457,
+      "error": null,
+      "generated_tokens": 86,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 189,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.04][S01] Onto our conversation with Jamie Dimon.[2.16][3.52][S02] Well, this feels appropriate.[4.56][5.72][S03] You guys dressed up for me.[6.88][9.44][S02] You dressed up for me.[9.96]",
+      "token_cap": 938,
+      "transcript": "[0.04][S01] Onto our conversation with Jamie Dimon.[2.16][3.52][S02] Well, this feels appropriate.[4.56][5.72][S03] You guys dressed up for me.[6.88][9.44][S02] You dressed up for me.[9.96]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2560000:2800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.5817673329729587,
+      "error": null,
+      "generated_tokens": 121,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 276,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.04][S01] Onto our conversation with Jamie Dimon.[2.16][3.52][S02] Well, this feels appropriate.[4.56][5.72][S03] You guys dressed up for me.[6.88][9.48][S02] You dressed up for us, too. Thank you.[10.68][11.68][S04] Last year, we had you on the video board at Jason.[14.32]",
+      "token_cap": 1373,
+      "transcript": "[0.04][S01] Onto our conversation with Jamie Dimon.[2.16][3.52][S02] Well, this feels appropriate.[4.56][5.72][S03] You guys dressed up for me.[6.88][9.48][S02] You dressed up for us, too. Thank you.[10.68][11.68][S04] Last year, we had you on the video board at Jason.[14.32]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:2720000:2880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.48952116700820625,
+      "error": null,
+      "generated_tokens": 110,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 238,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.08][S01] Last year, we had you on the video board at Jason.[3.99][4.88][S01] You were looking very summery there.[6.32][7.12][S01] You look great tonight.[7.84][7.92][S02] Yes.[8.48][8.96][S02] Well, we know you're a big history.[9.92]",
+      "token_cap": 938,
+      "transcript": "[0.08][S01] Last year, we had you on the video board at Jason.[3.99][4.88][S01] You were looking very summery there.[6.32][7.12][S01] You look great tonight.[7.84][7.92][S02] Yes.[8.48][8.96][S02] Well, we know you're a big history.[9.92]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:320000:480000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.2935783750144765,
+      "error": null,
+      "generated_tokens": 56,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 211,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01]twice their nearest competitor. They are the only bank within spitting distance of these sort of big trillion dollar tech companies that we've covered here on Acquired. And to really put a finer[9.92]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01]twice their nearest competitor. They are the only bank within spitting distance of these sort of big trillion dollar tech companies that we've covered here on Acquired. And to really put a finer[9.92]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:320000:560000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4909449580591172,
+      "error": null,
+      "generated_tokens": 100,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 329,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] Twice their nearest competitor. They are the only bank within spitting[3.78][3.78][S01] distance of the sort of big trillion dollar tech companies that we've covered here on Acquired.[8.46][8.82][S01] And to really put a finer point on the dominance, they are the most valuable company east of the Mississippi.[14.88]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] Twice their nearest competitor. They are the only bank within spitting[3.78][3.78][S01] distance of the sort of big trillion dollar tech companies that we've covered here on Acquired.[8.46][8.82][S01] And to really put a finer point on the dominance, they are the most valuable company east of the Mississippi.[14.88]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:480000:640000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.29028391698375344,
+      "error": null,
+      "generated_tokens": 50,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 197,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01]point on the dominance, they are the most valuable company east of the Mississippi in the United States and the only company east of the Mississippi worth more than half a trillion[9.92]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01]point on the dominance, they are the most valuable company east of the Mississippi in the United States and the only company east of the Mississippi worth more than half a trillion[9.92]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:480000:720000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4016699579078704,
+      "error": null,
+      "generated_tokens": 68,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 1,
+        "raw_chars": 268,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01]point on the dominance, they are the most valuable company east of the Mississippi in the United States and the only company east of the Mississippi worth more than half a trillion dollars. Incredible. So the question, of course, is how did he do it?[14.62]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01]point on the dominance, they are the most valuable company east of the Mississippi in the United States and the only company east of the Mississippi worth more than half a trillion dollars. Incredible. So the question, of course, is how did he do it?[14.62]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:640000:800000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4143235000083223,
+      "error": null,
+      "generated_tokens": 63,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 2,
+        "raw_chars": 170,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01]Incredible.[0.98][0.81][S02]So the question, of course, is how did he do it? I mean, banks fail. Financial firms often have spectacular blowups and large[9.97]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01]Incredible.[0.98][0.81][S02]So the question, of course, is how did he do it? I mean, banks fail. Financial firms often have spectacular blowups and large[9.97]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:640000:880000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6171884590294212,
+      "error": null,
+      "generated_tokens": 128,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 5,
+        "raw_chars": 324,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.78][S01] Incredible.[1.38][1.68][S02] So the question, of course, is how did he do it?[4.71][5.01][S02] I mean, banks fail.[6.12][6.15][S02] Financial firms often have spectacular blowups and large organizations, period, financial or not,[12.27][12.51][S02] can often get so bloated that they slow down to a crawl.[14.91]",
+      "token_cap": 1373,
+      "transcript": "[0.78][S01] Incredible.[1.38][1.68][S02] So the question, of course, is how did he do it?[4.71][5.01][S02] I mean, banks fail.[6.12][6.15][S02] Financial firms often have spectacular blowups and large organizations, period, financial or not,[12.27][12.51][S02] can often get so bloated that they slow down to a crawl.[14.91]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:800000:1040000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6228957080747932,
+      "error": null,
+      "generated_tokens": 128,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 340,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.00][S01] organizations, period, financial or not, can often get so bloated that they slow down to a crawl.[5.13][5.16][S01] So what did Jamie Dimon do differently?[7.44][7.83][S01] Well, today's episode, we have Jamie with us, himself, to tell the story.[11.76][12.03][S01] We recorded this live in front of 6,000 acquired fans at[14.94]",
+      "token_cap": 1373,
+      "transcript": "[0.00][S01] organizations, period, financial or not, can often get so bloated that they slow down to a crawl.[5.13][5.16][S01] So what did Jamie Dimon do differently?[7.44][7.83][S01] Well, today's episode, we have Jamie with us, himself, to tell the story.[11.76][12.03][S01] We recorded this live in front of 6,000 acquired fans at[14.94]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:800000:960000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.4679794580442831,
+      "error": null,
+      "generated_tokens": 87,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 235,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.00][S01] Organizations, period, financial or not, can often get so bloated that they slow down to a crawl.[5.13][5.16][S01] So what did Jamie Dimon do differently?[7.44][7.83][S01] Well, today's episode, we have Jamie with us.[9.99]",
+      "token_cap": 938,
+      "transcript": "[0.00][S01] Organizations, period, financial or not, can often get so bloated that they slow down to a crawl.[5.13][5.16][S01] So what did Jamie Dimon do differently?[7.44][7.83][S01] Well, today's episode, we have Jamie with us.[9.99]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:960000:1120000:OpenMOSS-Team/MOSS-Transcribe-Diarize:938:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6730885410215706,
+      "error": null,
+      "generated_tokens": 95,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 3,
+        "raw_chars": 246,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 339,
+      "raw_text": "[0.07][S01] Us, himself, to tell the story. We recorded this live in front of 6,000 acquired[4.49][4.49][S01] fans at Radio City Music Hall in New York City. So you'll notice it's a different[8.83][8.83][S01] format than our usual episode.[10.01]",
+      "token_cap": 938,
+      "transcript": "[0.07][S01] Us, himself, to tell the story. We recorded this live in front of 6,000 acquired[4.49][4.49][S01] fans at Radio City Music Hall in New York City. So you'll notice it's a different[8.83][8.83][S01] format than our usual episode.[10.01]"
+    },
+    "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070:960000:1200000:OpenMOSS-Team/MOSS-Transcribe-Diarize:1373:5696a90762c9a738": {
+      "capped": false,
+      "classification": "valid",
+      "elapsed_seconds": 0.6755207920214161,
+      "error": null,
+      "generated_tokens": 131,
+      "health": {
+        "closing_timestamp": true,
+        "malformed": false,
+        "parsed_segments": 4,
+        "raw_chars": 363,
+        "refusal": false,
+        "zero_parsed_with_output": false
+      },
+      "prompt_tokens": 467,
+      "raw_text": "[0.08][S01] Us, himself, to tell the story.[2.06][2.08][S01] We recorded this live in front of 6,000 Acquired fans at Radio City Music Hall in New York City.[7.21][7.24][S01] So you'll notice it's a different format than our usual episode.[10.61][10.64][S01] We're always trying to figure out what version of Acquired works live with an audience, and this-[14.99]",
+      "token_cap": 1373,
+      "transcript": "[0.08][S01] Us, himself, to tell the story.[2.06][2.08][S01] We recorded this live in front of 6,000 Acquired fans at Radio City Music Hall in New York City.[7.21][7.24][S01] So you'll notice it's a different format than our usual episode.[10.61][10.64][S01] We're always trying to figure out what version of Acquired works live with an audience, and this-[14.99]"
+    }
+  },
+  "schema": "moss-context-arms-decode-cache.v2"
+}

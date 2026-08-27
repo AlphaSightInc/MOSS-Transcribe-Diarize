@@ -1,0 +1,8 @@
+{
+  "channels": 1,
+  "duration_seconds": 50.0,
+  "sample_rate": 16000,
+  "sample_width": 2,
+  "samples": 800000,
+  "sha256": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d"
+}

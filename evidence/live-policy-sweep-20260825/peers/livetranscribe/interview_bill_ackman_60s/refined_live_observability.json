@@ -1,0 +1,68 @@
+{
+  "liveHeadMethod" : "recording elapsed after provisional publication minus latest ASR word end",
+  "liveHeadWordVisibilityLatencyLastSeconds" : 0.7321130313873283,
+  "liveHeadWordVisibilityLatencyMaxSeconds" : 2.9052150506973256,
+  "liveHeadWordVisibilityLatencyP50Seconds" : 0.956998954057692,
+  "liveHeadWordVisibilityLatencyP95Seconds" : 1.7269262733459474,
+  "liveHeadWordVisibilityLatencySampleCount" : 76,
+  "refinedLiveOSFObservability" : {
+    "latestTransition" : {
+      "applyIntentsPrepared" : 0,
+      "disposition" : "cleared",
+      "receiptSHA256" : "fb573ba51c370e4d8dcfe93ce09b497630b96cc51899408f081b704ed1b52630",
+      "schemaVersion" : "refined-live-osf-shadow-transition.v1",
+      "snapshot" : {
+        "completedCount" : 0,
+        "requestedCount" : 0,
+        "schemaVersion" : "refined-live-osf-shadow-snapshot.v3",
+        "startedCount" : 0,
+        "state" : "cleared",
+        "stopTombstoned" : true,
+        "supersededCount" : 0
+      }
+    },
+    "schemaVersion" : "refined-live-osf-observability.v1"
+  },
+  "refinedLiveOSFSchedulingObservability" : {
+    "latestDisposition" : "finalization_not_processed",
+    "periodicFinalizationResultCount" : 1,
+    "periodicProcessedResultCount" : 0,
+    "requestScheduledCount" : 0,
+    "schemaVersion" : "refined-live-osf-scheduling-observability.v2"
+  },
+  "refinedLiveOverlayTelemetry" : {
+    "completedCount" : 6,
+    "computeSeconds" : 3.876477708,
+    "gateWaitSeconds" : 0.0006065,
+    "lastSkippedReason" : "stop_tombstoned",
+    "maxPendingRequestCount" : 1,
+    "peakRequestPCMBytes" : 2903296,
+    "pendingRequestCount" : 0,
+    "physicalMemoryBytes" : 137438953472,
+    "processResidentMemoryBytes" : 5129650176,
+    "requestAgeSeconds" : 0.0006065,
+    "requestPCMBytes" : 0,
+    "requestedCount" : 38,
+    "retainedPCMBytes" : 4890624,
+    "schemaVersion" : "refined-live-overlay-telemetry.v1",
+    "skippedByReason" : [
+      {
+        "count" : 12,
+        "reason" : "canonical_pressure"
+      },
+      {
+        "count" : 1,
+        "reason" : "stop_tombstoned"
+      },
+      {
+        "count" : 25,
+        "reason" : "superseded"
+      }
+    ],
+    "startedCount" : 6,
+    "supersededCount" : 21,
+    "thermalState" : "nominal"
+  },
+  "schemaVersion" : "refined-live-observability.v3",
+  "wordTimestampsEnabled" : true
+}

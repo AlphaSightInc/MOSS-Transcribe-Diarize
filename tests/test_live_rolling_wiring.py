@@ -49,6 +49,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceRuntime,
+    _ManualCanonicalPumpScheduler,
 )
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
@@ -154,7 +155,7 @@ def _endpoint_config() -> EndpointPolicyConfig:
     )
 
 
-def _descriptor() -> LiveServiceDescriptor:
+def _descriptor(*, max_events: int = 1000) -> LiveServiceDescriptor:
     return LiveServiceDescriptor(
         source_revision="0" * 40,
         provider_name="rolling-wiring",
@@ -170,7 +171,7 @@ def _descriptor() -> LiveServiceDescriptor:
             max_queue_depth=16,
             max_retained_samples=960000,
             max_identity_speakers=16,
-            max_events=1000,
+            max_events=max_events,
             hard_cap_samples=HARD_CAP_SAMPLES,
             stop_drain_deadline_seconds=5.0,
         ),
@@ -178,15 +179,22 @@ def _descriptor() -> LiveServiceDescriptor:
     )
 
 
-def _runtime(*, base: ScriptedDecoder, rolling: ScriptedDecoder | None) -> LiveServiceRuntime:
+def _runtime(
+    *,
+    base: ScriptedDecoder,
+    rolling: ScriptedDecoder | None,
+    max_events: int = 1000,
+    scheduler: _ManualCanonicalPumpScheduler | None = None,
+) -> LiveServiceRuntime:
     return LiveServiceRuntime(
-        descriptor=_descriptor(),
+        descriptor=_descriptor(max_events=max_events),
         endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config()),
         speech_provider_factory=ScriptedSpeech,
         decoder_factory=lambda: base,
         rolling_decoder_factory=None if rolling is None else (lambda: rolling),
         identity_preparer_factory=ScriptedIdentity,
         session_id_factory=lambda: "rolling-session",
+        _canonical_scheduler=scheduler,
     )
 
 
@@ -523,6 +531,35 @@ class RollingEventSerializationTest(unittest.TestCase):
         }
         self.assertEqual(statuses, {RollingStatus.ROLLING.value})
 
+    def test_overlap_normalization_cost_reaches_the_completion_event_without_text(self):
+        base, witness = _decoders(rolling=True)
+
+        def overlapping(*, span, pcm):
+            self.assertEqual(len(pcm), span.sample_count * 2)
+            witness.calls.append((span.start_sample, span.end_sample))
+            return InferenceTranscript(
+                transcript=(
+                    "[0.00][S01]Incredible.[0.98]"
+                    "[0.81][S02]So the question is how did he do it?[9.97]"
+                ),
+                elapsed_sec=0.01,
+                token_cap=canonical_decode_token_cap(sample_count=span.sample_count),
+                capped=False,
+            )
+
+        witness.transcribe_pcm = overlapping
+        runtime = _runtime(base=base, rolling=witness)
+        session_id = _run_meeting(runtime, frames=ONE_WINDOW_FRAMES)
+
+        completed = self._events(runtime, session_id, "rolling_decode_completed")
+        self.assertEqual(len(completed), 1)
+        self.assertEqual(completed[0]["outcome"], "applied")
+        self.assertEqual(completed[0]["normalization_merged_segments"], 0)
+        self.assertEqual(completed[0]["normalization_dropped_segments"], 0)
+        self.assertEqual(completed[0]["normalization_displaced_samples"], 2720)
+        self.assertNotIn("transcript", completed[0])
+        self.assertNotIn("text", completed[0])
+
     def test_a_failed_window_closes_its_account_and_names_why(self):
         base, witness = _decoders(
             rolling=True, rolling_failure=LiveProviderTransientError("witness timed out")
@@ -566,34 +603,83 @@ class RollingEventSerializationTest(unittest.TestCase):
         """`applied=False` means two opposite things until the refusal is named."""
 
         base, witness = _decoders(rolling=True)
-        runtime = _runtime(base=base, rolling=witness)
+        scheduler = _ManualCanonicalPumpScheduler()
+        runtime = _runtime(
+            base=base, rolling=witness, max_events=5000, scheduler=scheduler
+        )
         created = runtime.create()
         session = runtime._sessions[created.session_id].session
         accepted = session.apply_text_revision
+        before_refusal = []
+        after_refusal = []
 
         def stale(proposal):
             # A real refusal from the real validation: the producer's base version is behind.
-            return accepted(
+            before_refusal.append(session.snapshot())
+            outcome = accepted(
                 replace(proposal, base_text_revision_version=proposal.base_text_revision_version + 7)
             )
+            after_refusal.append(session.snapshot())
+            return outcome
 
         session.apply_text_revision = stale
-        for sequence in range(ONE_WINDOW_FRAMES):
+        for sequence in range(4 * ONE_WINDOW_FRAMES):
             runtime.accept_frame(
                 created.session_id,
                 AudioFrame(
                     sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
                 ),
             )
+            scheduler.drain()
+
         asyncio.run(runtime.stop(created.session_id, 5.0))
 
         completed = self._events(runtime, created.session_id, "rolling_decode_completed")
         refused = self._events(runtime, created.session_id, "text_revision_refused")
         self.assertEqual([item["outcome"] for item in completed], ["refused"])
+        self.assertEqual(completed[0]["rolling_status"], RollingStatus.PROPOSAL_REFUSED.value)
+        self.assertIn(completed[0]["rolling_status"], {status.value for status in RollingStatus})
+        self.assertEqual(completed[0]["proposal_refusals"], 1)
+        self.assertEqual(completed[0]["last_proposal_refusal"], "stale_text_revision_version")
+        self.assertEqual(completed[0]["retained_samples"], 0)
+        self.assertEqual(completed[0]["windows_planned"], 1)
+        self.assertEqual(completed[0]["normalization_merged_segments"], 0)
+        self.assertEqual(completed[0]["normalization_dropped_segments"], 0)
+        self.assertEqual(completed[0]["normalization_displaced_samples"], 0)
         self.assertEqual([item["refusal"] for item in refused], ["stale_text_revision_version"])
         self.assertEqual(refused[0]["source"], "rolling")
         self.assertEqual(self._events(runtime, created.session_id, "text_revision_applied"), [])
-        self.assertEqual(runtime.snapshot(created.session_id).session.text_revision_version, 0)
+        self.assertEqual(
+            [item["window_index"] for item in self._events(runtime, created.session_id, "rolling_decode_queued")],
+            [0],
+        )
+        self.assertEqual(len(before_refusal), 1)
+        self.assertEqual(len(after_refusal), 1)
+        self.assertEqual(after_refusal[0].effective_transcript, before_refusal[0].effective_transcript)
+        self.assertEqual(after_refusal[0].committed, before_refusal[0].committed)
+        self.assertEqual(
+            after_refusal[0].committed_prefix_hash, before_refusal[0].committed_prefix_hash
+        )
+        self.assertEqual(
+            after_refusal[0].text_revision_version, before_refusal[0].text_revision_version
+        )
+        self.assertEqual(
+            after_refusal[0].canonical_through_sample,
+            before_refusal[0].canonical_through_sample,
+        )
+
+        snapshot = runtime.snapshot(created.session_id).session
+        self.assertEqual(snapshot.text_revision_version, 0)
+        self.assertEqual(snapshot.canonical_through_sample, 0)
+        self.assertEqual(snapshot.accepted_samples, snapshot.accounted_samples)
+        self.assertEqual(snapshot.accepted_samples, 4 * WINDOW_SAMPLES)
+        self.assertEqual({row.authority for row in snapshot.effective_transcript}, {"provisional"})
+        accounting = runtime._sessions[created.session_id].coordinator.rolling_accounting()
+        self.assertEqual(accounting.proposal_refusals, 1)
+        self.assertEqual(accounting.last_proposal_refusal, "stale_text_revision_version")
+        self.assertEqual(accounting.accepted_samples, 4 * WINDOW_SAMPLES)
+        self.assertEqual(accounting.retained_samples, 0)
+        self.assertEqual(witness.calls, [(0, WINDOW_SAMPLES)])
 
     def test_an_admission_the_arbiter_refused_is_announced_rather_than_only_counted(self):
         """Two halves of one property: the coordinator reports the refusal, the runtime shows it."""

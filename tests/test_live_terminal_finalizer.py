@@ -39,7 +39,7 @@ from moss_transcribe_diarize.app.live_transcript_convergence import (
     TerminalDecodePlan,
     TerminalOutcome,
     TerminalTranscriptFinalizer,
-    resolve_terminal_overlaps,
+    resolve_segment_overlaps,
     terminal_speaker_mapping,
 )
 
@@ -348,7 +348,7 @@ SEAM_SHAPES = {
 }
 
 
-class TerminalSeamResolutionTest(unittest.TestCase):
+class SegmentOverlapResolutionTest(unittest.TestCase):
     """T1 -- the seam rule alone (`evidence/live-convergence-0824/M4-seam-overlap/`).
 
     File mode stitches its 150/120 windows by midpoint ownership, so two segments straddling
@@ -365,7 +365,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
 
         for name in ("disjoint", "touching", "single"):
             with self.subTest(shape=name):
-                resolution = resolve_terminal_overlaps(SEAM_SHAPES[name])
+                resolution = resolve_segment_overlaps(SEAM_SHAPES[name])
                 assert resolution.segments == SEAM_SHAPES[name]
                 assert (resolution.merged, resolution.dropped) == (0, 0)
                 assert resolution.displaced_samples == 0
@@ -379,7 +379,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
 
         for name, shape in SEAM_SHAPES.items():
             with self.subTest(shape=name):
-                resolution = resolve_terminal_overlaps(shape)
+                resolution = resolve_segment_overlaps(shape)
                 boundaries = {item[1] for item in shape} | {item[2] for item in shape}
                 frontier = min(item[1] for item in shape)
                 for _speaker, start, end, _text in resolution.segments:
@@ -398,7 +398,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
     def test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union(self):
         """The corpus's own seam, sample for sample."""
 
-        resolution = resolve_terminal_overlaps(MEETING_SEAM)
+        resolution = resolve_segment_overlaps(MEETING_SEAM)
 
         assert resolution.segments == (
             (
@@ -416,7 +416,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
     def test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left(self):
         """One interval, one owner. The later speaker keeps its words over what remains."""
 
-        resolution = resolve_terminal_overlaps(SEAM_SHAPES["pair_cross_speaker"])
+        resolution = resolve_segment_overlaps(SEAM_SHAPES["pair_cross_speaker"])
 
         assert resolution.segments == (("A", 0, 160, "one"), ("B", 160, 200, "two"))
         assert (resolution.merged, resolution.dropped) == (0, 0)
@@ -425,7 +425,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
     def test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one(self):
         """The one case that loses words -- and the alternative is inventing a boundary."""
 
-        resolution = resolve_terminal_overlaps(SEAM_SHAPES["contained_cross_speaker"])
+        resolution = resolve_segment_overlaps(SEAM_SHAPES["contained_cross_speaker"])
 
         assert resolution.segments == (("A", 0, 200, "one"),)
         assert (resolution.merged, resolution.dropped) == (0, 1)
@@ -433,7 +433,7 @@ class TerminalSeamResolutionTest(unittest.TestCase):
     def test_the_order_the_decoder_emitted_its_segments_in_does_not_change_the_result(self):
         shape = SEAM_SHAPES["unsorted_input"]
 
-        assert resolve_terminal_overlaps(shape).segments == tuple(
+        assert resolve_segment_overlaps(shape).segments == tuple(
             sorted(shape, key=lambda item: item[1])
         )
 
@@ -464,7 +464,7 @@ class TerminalSeamAndSpeakerNamesTest(unittest.TestCase):
 
         as_decoded = terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
         resolved = terminal_speaker_mapping(
-            resolve_terminal_overlaps(placed).segments,
+            resolve_segment_overlaps(placed).segments,
             base_surface=base, canonical_speakers=SPEAKERS,
         )
 
@@ -510,7 +510,7 @@ class TerminalSeamAndSpeakerNamesTest(unittest.TestCase):
         placed = list(MEETING_SEAM) + [("S02", 2_190_000, 2_200_000, "so one of the things")]
 
         assert terminal_speaker_mapping(
-            resolve_terminal_overlaps(placed).segments,
+            resolve_segment_overlaps(placed).segments,
             base_surface=base, canonical_speakers=SPEAKERS,
         ) == terminal_speaker_mapping(placed, base_surface=base, canonical_speakers=SPEAKERS)
 
@@ -570,7 +570,7 @@ class TerminalFinalizerSessionTest(unittest.TestCase):
         result = TerminalTranscriptFinalizer(
             runner=WholeMeetingStub("[0][S01]one two three[3]")
         ).finalize(
-            plan=plan_for(3 * SECOND),
+            plan=plan_for(3 * SECOND, rolling_status=RollingStatus.PROPOSAL_REFUSED),
             tape=tape_of(3 * SECOND),
             base_text_revision_version=rolled.text_revision_version,
             base_surface=rolled.effective_transcript,

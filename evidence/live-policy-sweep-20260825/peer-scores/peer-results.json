@@ -1,0 +1,654 @@
+{
+  "aggregate": {
+    "LiveTranscribe:post_stop_final": {
+      "denominator": {
+        "audio_seconds": 619.9935,
+        "cases": 6
+      },
+      "duration_weighted_mean": {
+        "content_recall": 0.8932875062045004,
+        "der": 0.38322084028139003,
+        "matched_word_speaker_accuracy": 0.8487742667431191,
+        "reference_speech_der": 0.3722063322994515,
+        "speaker_accuracy": 0.6488702207644111,
+        "tbsa": 0.7516675743036015,
+        "text_coverage": 0.8190341514507813,
+        "wer": 0.18435978529371677
+      },
+      "macro_mean": {
+        "content_recall": 0.9029066666666666,
+        "der": 0.3913491666666667,
+        "matched_word_speaker_accuracy": 0.8732585,
+        "reference_speech_der": 0.37329033333333334,
+        "speaker_accuracy": 0.6450328333333334,
+        "tbsa": 0.7471093333333334,
+        "text_coverage": 0.8086794999999999,
+        "wer": 0.18123083333333334
+      }
+    },
+    "LiveTranscribe:pre_stop_settled": {
+      "denominator": {
+        "audio_seconds": 619.9935,
+        "cases": 6
+      },
+      "duration_weighted_mean": {
+        "content_recall": 0.877796688612058,
+        "der": 0.3929365581614968,
+        "matched_word_speaker_accuracy": 0.7519216675755471,
+        "reference_speech_der": 0.37382171764865274,
+        "speaker_accuracy": 0.643149584301287,
+        "tbsa": 0.7562058988908754,
+        "text_coverage": 0.824385030926937,
+        "wer": 0.1582505254998641
+      },
+      "macro_mean": {
+        "content_recall": 0.8757823333333333,
+        "der": 0.4007118333333333,
+        "matched_word_speaker_accuracy": 0.7379791666666667,
+        "reference_speech_der": 0.3793881666666667,
+        "speaker_accuracy": 0.639829,
+        "tbsa": 0.7537551666666666,
+        "text_coverage": 0.8182086666666667,
+        "wer": 0.15356383333333334
+      }
+    }
+  },
+  "checks": {
+    "binary_hashes_match": true,
+    "denominator_12_comparison_cells": true,
+    "livetranscribe_terminal_states": true,
+    "played_audio_hashes_match": true,
+    "projectclerk_unmeasured_declared": true
+  },
+  "denominator": {
+    "actual_live_sessions": 7,
+    "comparison_cells": 12,
+    "scored_surfaces": 12,
+    "unmeasured_projectclerk_cells": 6
+  },
+  "runs": [
+    {
+      "audio_sha256": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "mono_javier_intro_50s",
+      "duration_seconds": 50.0,
+      "latency": {
+        "asr_latency_p95_seconds": 0.7391687631607056,
+        "canonical_processing_latency_p95_seconds": 0.8454097807407379,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 0,
+          "max": null,
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 4.563999884098768,
+          "mean": 4.563999884098768,
+          "p50": 4.563999884098768,
+          "p95": 4.563999884098768
+        },
+        "pre_stop_drain_wait_seconds": 1.025684,
+        "stop_to_terminal_seconds": 96.54999995231628
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 12.471999883651733,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 11,
+          "scores": {
+            "content_recall": 0.920354,
+            "der": 0.12556,
+            "hypothesis_words": 107,
+            "matched_word_speaker_accuracy": 0.920354,
+            "reference_speech_der": 0.085714,
+            "reference_words": 113,
+            "segments": 11,
+            "speaker_accuracy": 0.87444,
+            "tbsa": 0.881494,
+            "text_coverage": 0.87444,
+            "text_speaker_accuracy": 0.87444,
+            "wer": 0.097345
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 2,
+          "scores": {
+            "content_recall": 0.929204,
+            "der": 0.10896,
+            "hypothesis_words": 106,
+            "matched_word_speaker_accuracy": 0.840708,
+            "reference_speech_der": 0.102669,
+            "reference_words": 113,
+            "segments": 2,
+            "speaker_accuracy": 0.89104,
+            "tbsa": 0.928021,
+            "text_coverage": 0.96944,
+            "text_speaker_accuracy": 0.89104,
+            "wer": 0.070796
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "mono_javier_intro_50s",
+      "duration_seconds": 50.0,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": true,
+        "measurement": "unmeasured",
+        "reason": "fresh attempted playback captured zero system-audio buffers",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    },
+    {
+      "audio_sha256": "17d0f2dcae933c000b7d5513d95eab77a5da458ac9e900adedad5c582ddffdca",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "interview_bill_ackman_60s",
+      "duration_seconds": 60.0,
+      "latency": {
+        "asr_latency_p95_seconds": 2.570819801092145,
+        "canonical_processing_latency_p95_seconds": 3.4837870180606823,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 0,
+          "max": null,
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 3.5450000767409797,
+          "mean": 3.5450000767409797,
+          "p50": 3.5450000767409797,
+          "p95": 3.5450000767409797
+        },
+        "pre_stop_drain_wait_seconds": 1.029592,
+        "stop_to_terminal_seconds": 63.067999839782715
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 12.045000076293945,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 26,
+          "scores": {
+            "content_recall": 0.948864,
+            "der": 0.18725,
+            "hypothesis_words": 204,
+            "matched_word_speaker_accuracy": 0.9375,
+            "reference_speech_der": 0.173265,
+            "reference_words": 176,
+            "segments": 26,
+            "speaker_accuracy": 0.81275,
+            "tbsa": 0.829001,
+            "text_coverage": 0.867051,
+            "text_speaker_accuracy": 0.83443,
+            "wer": 0.232955
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 7,
+          "scores": {
+            "content_recall": 0.818182,
+            "der": 0.188567,
+            "hypothesis_words": 159,
+            "matched_word_speaker_accuracy": 0.727273,
+            "reference_speech_der": 0.177381,
+            "reference_words": 176,
+            "segments": 7,
+            "speaker_accuracy": 0.811433,
+            "tbsa": 0.840128,
+            "text_coverage": 0.892977,
+            "text_speaker_accuracy": 0.836011,
+            "wer": 0.227273
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": null,
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "interview_bill_ackman_60s",
+      "duration_seconds": 60.0,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": false,
+        "measurement": "unmeasured",
+        "reason": "same binary-level permission precondition; playback not repeated",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    },
+    {
+      "audio_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "interview_keyu_jin_60s",
+      "duration_seconds": 60.0,
+      "latency": {
+        "asr_latency_p95_seconds": 2.227941399812699,
+        "canonical_processing_latency_p95_seconds": 2.7378677725791936,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 0,
+          "max": null,
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 6.0,
+          "mean": 6.0,
+          "p50": 6.0,
+          "p95": 6.0
+        },
+        "pre_stop_drain_wait_seconds": 1.0304190000000002,
+        "stop_to_terminal_seconds": 58.76100015640259
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 7.523999929428101,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 14,
+          "scores": {
+            "content_recall": 0.94964,
+            "der": 0.483867,
+            "hypothesis_words": 151,
+            "matched_word_speaker_accuracy": 0.94964,
+            "reference_speech_der": 0.477705,
+            "reference_words": 139,
+            "segments": 14,
+            "speaker_accuracy": 0.516133,
+            "tbsa": 0.688379,
+            "text_coverage": 0.821344,
+            "text_speaker_accuracy": 0.485185,
+            "wer": 0.172662
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 6,
+          "scores": {
+            "content_recall": 0.892086,
+            "der": 0.503667,
+            "hypothesis_words": 130,
+            "matched_word_speaker_accuracy": 0.805755,
+            "reference_speech_der": 0.498111,
+            "reference_words": 139,
+            "segments": 6,
+            "speaker_accuracy": 0.496333,
+            "tbsa": 0.677261,
+            "text_coverage": 0.782985,
+            "text_speaker_accuracy": 0.468473,
+            "wer": 0.136691
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": null,
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "interview_keyu_jin_60s",
+      "duration_seconds": 60.0,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": false,
+        "measurement": "unmeasured",
+        "reason": "same binary-level permission precondition; playback not repeated",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    },
+    {
+      "audio_sha256": "c9bcf9c5de10271d1517c76d0fbbff0063c90ab90b8d9f927c9d4623f3af6c7f",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "interview_adam_frank_180s",
+      "duration_seconds": 180.0,
+      "latency": {
+        "asr_latency_p95_seconds": 2.021081233024597,
+        "canonical_processing_latency_p95_seconds": 2.6385525166988373,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 0,
+          "max": null,
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 9.0,
+          "mean": 9.0,
+          "p50": 9.0,
+          "p95": 9.0
+        },
+        "pre_stop_drain_wait_seconds": 1.086495,
+        "stop_to_terminal_seconds": 87.19400000572205
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 10.303999900817871,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 26,
+          "scores": {
+            "content_recall": 0.853107,
+            "der": 0.302389,
+            "hypothesis_words": 509,
+            "matched_word_speaker_accuracy": 0.851224,
+            "reference_speech_der": 0.307239,
+            "reference_words": 531,
+            "segments": 26,
+            "speaker_accuracy": 0.697611,
+            "tbsa": 0.786799,
+            "text_coverage": 0.9066,
+            "text_speaker_accuracy": 0.698205,
+            "wer": 0.239171
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 11,
+          "scores": {
+            "content_recall": 0.862524,
+            "der": 0.321644,
+            "hypothesis_words": 505,
+            "matched_word_speaker_accuracy": 0.777778,
+            "reference_speech_der": 0.314245,
+            "reference_words": 531,
+            "segments": 11,
+            "speaker_accuracy": 0.678356,
+            "tbsa": 0.777266,
+            "text_coverage": 0.876209,
+            "text_speaker_accuracy": 0.676246,
+            "wer": 0.199623
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": null,
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "interview_adam_frank_180s",
+      "duration_seconds": 180.0,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": false,
+        "measurement": "unmeasured",
+        "reason": "same binary-level permission precondition; playback not repeated",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    },
+    {
+      "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "discussion_jamie_dimon_180s",
+      "duration_seconds": 180.0,
+      "latency": {
+        "asr_latency_p95_seconds": 2.4408086657524106,
+        "canonical_processing_latency_p95_seconds": 3.3929041862487788,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 0,
+          "max": null,
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 8.0,
+          "mean": 8.0,
+          "p50": 8.0,
+          "p95": 8.0
+        },
+        "pre_stop_drain_wait_seconds": 1.0792819999999999,
+        "stop_to_terminal_seconds": 108.72300004959106
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 9.247999906539917,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 45,
+          "scores": {
+            "content_recall": 0.925087,
+            "der": 0.269035,
+            "hypothesis_words": 571,
+            "matched_word_speaker_accuracy": 0.794425,
+            "reference_speech_der": 0.272232,
+            "reference_words": 574,
+            "segments": 45,
+            "speaker_accuracy": 0.733758,
+            "tbsa": 0.806249,
+            "text_coverage": 0.834977,
+            "text_speaker_accuracy": 0.736237,
+            "wer": 0.121951
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 10,
+          "scores": {
+            "content_recall": 0.912892,
+            "der": 0.260198,
+            "hypothesis_words": 556,
+            "matched_word_speaker_accuracy": 0.858885,
+            "reference_speech_der": 0.255477,
+            "reference_words": 574,
+            "segments": 10,
+            "speaker_accuracy": 0.745165,
+            "tbsa": 0.827851,
+            "text_coverage": 0.883129,
+            "text_speaker_accuracy": 0.748109,
+            "wer": 0.121951
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": null,
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "discussion_jamie_dimon_180s",
+      "duration_seconds": 180.0,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": false,
+        "measurement": "unmeasured",
+        "reason": "same binary-level permission precondition; playback not repeated",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    },
+    {
+      "audio_sha256": "dd48a724629aa05846a7c266218ee161083c60933e3c6a313540442536c95cbe",
+      "binary_matches_preregistered": true,
+      "binary_sha256": "5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b",
+      "case_id": "discussion_rtfl_90s",
+      "duration_seconds": 89.9935,
+      "latency": {
+        "asr_latency_p95_seconds": 3.221111476421356,
+        "canonical_processing_latency_p95_seconds": 3.6302075684070583,
+        "clock_notes": [
+          "first-visible and correction clocks are one-second API snapshot observations; append-only segment growth is not a correction",
+          "stop-to-terminal uses stop response updated_at through terminal session updated_at"
+        ],
+        "correction_age_seconds": {
+          "count": 1,
+          "max": 14.0,
+          "mean": 14.0,
+          "p50": 14.0,
+          "p95": 14.0
+        },
+        "first_visible_audio_age_seconds": {
+          "count": 1,
+          "max": 7.0,
+          "mean": 7.0,
+          "p50": 7.0,
+          "p95": 7.0
+        },
+        "pre_stop_drain_wait_seconds": 1.06382,
+        "stop_to_terminal_seconds": 58.12400007247925
+      },
+      "playback_offset": {
+        "method": "afplay UTC-second timestamp minus session.started_at",
+        "seconds": 10.611999988555908,
+        "timestamp_resolution_seconds": 1.0
+      },
+      "product": "LiveTranscribe",
+      "state": {
+        "capture_mode": "speaker",
+        "pre_stop_drain_ready": true,
+        "terminal_status": "completed"
+      },
+      "surfaces": {
+        "post_stop_final": {
+          "rows": 28,
+          "scores": {
+            "content_recall": 0.820388,
+            "der": 0.979994,
+            "hypothesis_words": 183,
+            "matched_word_speaker_accuracy": 0.786408,
+            "reference_speech_der": 0.923587,
+            "reference_words": 206,
+            "segments": 28,
+            "speaker_accuracy": 0.235505,
+            "tbsa": 0.490734,
+            "text_coverage": 0.547665,
+            "text_speaker_accuracy": 0.262192,
+            "wer": 0.223301
+          }
+        },
+        "pre_stop_settled": {
+          "rows": 18,
+          "scores": {
+            "content_recall": 0.839806,
+            "der": 1.021235,
+            "hypothesis_words": 176,
+            "matched_word_speaker_accuracy": 0.417476,
+            "reference_speech_der": 0.928446,
+            "reference_words": 206,
+            "segments": 18,
+            "speaker_accuracy": 0.216647,
+            "tbsa": 0.472004,
+            "text_coverage": 0.504512,
+            "text_speaker_accuracy": 0.216717,
+            "wer": 0.165049
+          }
+        }
+      }
+    },
+    {
+      "audio_sha256": null,
+      "binary_matches_preregistered": true,
+      "binary_sha256": "106c10081ae758de27208ad053522c05e69ca15a5f91215f270f2a1461311c0c",
+      "case_id": "discussion_rtfl_90s",
+      "duration_seconds": 89.9935,
+      "latency": {
+        "reason": "Screen Recording/System Audio permission is not granted to the packaged ProjectClerk binary on m4mbp",
+        "state": "unmeasured"
+      },
+      "product": "ProjectClerk",
+      "state": {
+        "attempted_actual_live": false,
+        "measurement": "unmeasured",
+        "reason": "same binary-level permission precondition; playback not repeated",
+        "required_action": "The operator must grant Screen Recording permission to com.projectclerk.app before an actual-live comparison is possible."
+      },
+      "surfaces": {}
+    }
+  ],
+  "schema": "moss-live-policy-peer-scores.v1"
+}

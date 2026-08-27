@@ -1,0 +1,1095 @@
+{
+  "activation_metrics" : {
+    "asr" : {
+      "canonical_commit_receipts" : [
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "66A9599E-A376-4713-B842-3FA4481A0A4C",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 554.22604084014893,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 10,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 11,
+              "request_audio_end_frame" : 286720,
+              "request_audio_sample_count" : 64512,
+              "request_audio_start_frame" : 222208,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "non_positive_duration" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380691.97519398,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 1,
+          "enqueued_at" : 809380691.82414699,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 151.0469913482666,
+          "retained_pcm_frame_count" : 64512,
+          "retained_pcm_sha256" : "b1d6440ff5c7056f028fc26c975b60ae9fdc1781cb4f1af30ed09c24a6cfc4ad",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380692.67706704,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 286720,
+          "utterance_end_sec" : 17.920000000000002,
+          "utterance_start_frame" : 222208,
+          "utterance_start_sec" : 13.888,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "7772AD83-2093-46BE-B20C-BC907D1FB4F7",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 673.84696006774902,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 0,
+              "prompt_sha256" : "40e5c0b470787f9dd1a8d1981aaf6a0139896836adc412c1298dbbb5f7aaf09a",
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 4,
+              "request_audio_end_frame" : 299008,
+              "request_audio_sample_count" : 41088,
+              "request_audio_start_frame" : 257920,
+              "strategy_id" : "promptless",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380693.44590604,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 2,
+          "enqueued_at" : 809380693.28695405,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 158.95199775695801,
+          "retained_pcm_frame_count" : 41088,
+          "retained_pcm_sha256" : "0e85e83b728fb36923231b9b152c42b28960132c09a01a1611c4fa69c6d9aee0",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380694.22307301,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 299008,
+          "utterance_end_sec" : 18.688000000000002,
+          "utterance_start_frame" : 257920,
+          "utterance_start_sec" : 16.120000000000001,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "CAE0FC30-59B4-40AD-AC5D-B8DE7D2F55E9",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 753.84402275085449,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 6,
+              "prompt_sha256" : "6ba35684fa895446c32039ee9fdd310eef3d34b3aff449cced25d24686c44819",
+              "raw_response_category" : "content",
+              "raw_segment_count" : 2,
+              "raw_word_count" : 9,
+              "request_audio_end_frame" : 374784,
+              "request_audio_sample_count" : 76800,
+              "request_audio_start_frame" : 297984,
+              "strategy_id" : "promptless",
+              "word_rejection_counts" : {
+                "outside_request_envelope" : 1,
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380697.47772801,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 3,
+          "enqueued_at" : 809380697.32447803,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 153.24997901916504,
+          "retained_pcm_frame_count" : 76800,
+          "retained_pcm_sha256" : "b340205c59ec6bddc7432df13c5a065faeda6d1036238784cf9237de9da73186",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380698.38309598,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 374784,
+          "utterance_end_sec" : 23.423999999999999,
+          "utterance_start_frame" : 297984,
+          "utterance_start_sec" : 18.623999999999999,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "FC8E775C-2AA3-47A0-B90A-D510207D7704",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 734.27700996398926,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 0,
+              "prompt_sha256" : "32b2287657638016694124460ad4eecfc128aac1a6f73ebf48b9be90d42f430e",
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 4,
+              "request_audio_end_frame" : 381952,
+              "request_audio_sample_count" : 35968,
+              "request_audio_start_frame" : 345984,
+              "strategy_id" : "promptless",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380698.53675103,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 4,
+          "enqueued_at" : 809380698.28736496,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 249.38607215881348,
+          "retained_pcm_frame_count" : 35968,
+          "retained_pcm_sha256" : "6c0b6e9f467d3b13b642bc5b7987410072c55b87ac5e418e172efd6e11082afa",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380699.36226797,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 381952,
+          "utterance_end_sec" : 23.872,
+          "utterance_start_frame" : 345984,
+          "utterance_start_sec" : 21.623999999999999,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "0B195E92-9322-4A1F-8673-1C097DBCDD95",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 378.9680004119873,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 4,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 5,
+              "request_audio_end_frame" : 421888,
+              "request_audio_sample_count" : 39936,
+              "request_audio_start_frame" : 381952,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380701.00424397,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 5,
+          "enqueued_at" : 809380700.84418404,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 160.05992889404297,
+          "retained_pcm_frame_count" : 39936,
+          "retained_pcm_sha256" : "8a685cb748c95532bbef1a1dbf9f841cd0dc63aa2d51bf47617d4f42f5a78079",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380701.46532798,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 421888,
+          "utterance_end_sec" : 26.367999999999999,
+          "utterance_start_frame" : 381952,
+          "utterance_start_sec" : 23.872,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "05A711BE-BF92-4418-A9AD-DC810E9AAA9A",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 470.44909000396729,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 11,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 16,
+              "request_audio_end_frame" : 494592,
+              "request_audio_sample_count" : 93312,
+              "request_audio_start_frame" : 401280,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380704.96639502,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 6,
+          "enqueued_at" : 809380704.81092596,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 155.46905994415283,
+          "retained_pcm_frame_count" : 93312,
+          "retained_pcm_sha256" : "10baee86017e58c8a8eef1c6ebbd38657d0437bc414231621fef75dcee41f7ec",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380705.58780801,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 494592,
+          "utterance_end_sec" : 30.911999999999999,
+          "utterance_start_frame" : 401280,
+          "utterance_start_sec" : 25.079999999999998,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "C537E31C-D338-4733-91BC-4247524D9E8F",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 349.78699684143066,
+              "mapped_empty_reason" : "leading_context_only",
+              "mapped_segment_count" : 0,
+              "mapped_word_count" : 0,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 6,
+              "request_audio_end_frame" : 499712,
+              "request_audio_sample_count" : 33920,
+              "request_audio_start_frame" : 465792,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+
+              }
+            }
+          ],
+          "dequeued_at" : 809380705.98889399,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 7,
+          "enqueued_at" : 809380705.83014798,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 158.74600410461426,
+          "retained_pcm_frame_count" : 33920,
+          "retained_pcm_sha256" : "e91d770c9c9f575f305284777ec4b3dc77bd32f1b88bc586630010f0e3ef0a70",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380706.33892095,
+          "terminal_outcome" : {
+            "category" : "no_progress",
+            "reason" : "leading_context_only_suppressed"
+          },
+          "utterance_end_frame" : 499712,
+          "utterance_end_sec" : 31.231999999999999,
+          "utterance_start_frame" : 465792,
+          "utterance_start_sec" : 29.111999999999998,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "7CB5F34B-00F3-48A4-BF43-E2B53CADE25B",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 386.09898090362549,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 7,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 8,
+              "request_audio_end_frame" : 561152,
+              "request_audio_sample_count" : 49152,
+              "request_audio_start_frame" : 512000,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380709.82393599,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 8,
+          "enqueued_at" : 809380709.67317605,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 150.75993537902832,
+          "retained_pcm_frame_count" : 49152,
+          "retained_pcm_sha256" : "cd3d83da7f0cfcb588636fce7a6e4791475b6b807505e2d6ff3f7e5b0ff2f6b5",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380710.32135999,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 561152,
+          "utterance_end_sec" : 35.072000000000003,
+          "utterance_start_frame" : 512000,
+          "utterance_start_sec" : 32,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "7D7D8FB9-D070-4DE4-9CBD-8D5F23ECC07B",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 506.85501098632812,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 11,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 17,
+              "request_audio_end_frame" : 635904,
+              "request_audio_sample_count" : 93312,
+              "request_audio_start_frame" : 542592,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380713.80520999,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 9,
+          "enqueued_at" : 809380713.65003598,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 155.17401695251465,
+          "retained_pcm_frame_count" : 93312,
+          "retained_pcm_sha256" : "2e172fc88c56e727684ef18f4c537663e1667072e4ae0655beda9208cc4f78dc",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380714.46688199,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 635904,
+          "utterance_end_sec" : 39.744000000000007,
+          "utterance_start_frame" : 542592,
+          "utterance_start_sec" : 33.912000000000006,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "AE10804B-B148-4616-B658-F5F8FF1F9723",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 403.80299091339111,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 4,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 9,
+              "request_audio_end_frame" : 671744,
+              "request_audio_sample_count" : 60544,
+              "request_audio_start_frame" : 611200,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380716.74096596,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 10,
+          "enqueued_at" : 809380716.58849502,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 152.47094631195068,
+          "retained_pcm_frame_count" : 60544,
+          "retained_pcm_sha256" : "76f82c455277c17dae72c64b904867d56368dbaffc0f435fda0d4178c2965e5f",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380717.23725402,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 671744,
+          "utterance_end_sec" : 41.984000000000002,
+          "utterance_start_frame" : 611200,
+          "utterance_start_sec" : 38.200000000000003,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "30C5ADA5-0828-4795-9988-405F7B7926FE",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 522.16708660125732,
+              "mapped_segment_count" : 2,
+              "mapped_word_count" : 10,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 3,
+              "raw_word_count" : 15,
+              "request_audio_end_frame" : 753664,
+              "request_audio_sample_count" : 93312,
+              "request_audio_start_frame" : 660352,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380721.1609,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 11,
+          "enqueued_at" : 809380721.00536096,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 155.53903579711914,
+          "retained_pcm_frame_count" : 93312,
+          "retained_pcm_sha256" : "b1d5a6fe70c73478c01017720c59ee58ebc600abf2014dafc0f00c1fa2b79e1e",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380721.86547601,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 753664,
+          "utterance_end_sec" : 47.104000000000006,
+          "utterance_start_frame" : 660352,
+          "utterance_start_sec" : 41.272000000000006,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "4A51F197-CAF1-4FA6-AF32-CDA48C9106D3",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 420.34304141998291,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 6,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 11,
+              "request_audio_end_frame" : 814080,
+              "request_audio_sample_count" : 89216,
+              "request_audio_start_frame" : 724864,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380725.63424504,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 12,
+          "enqueued_at" : 809380725.47969306,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 154.55198287963867,
+          "retained_pcm_frame_count" : 89216,
+          "retained_pcm_sha256" : "ecaa6f78341c1a42e5ccbad220934c9875da37f95a8cabfae65fdd37c4da5bcb",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380726.20891201,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 814080,
+          "utterance_end_sec" : 50.880000000000003,
+          "utterance_start_frame" : 724864,
+          "utterance_start_sec" : 45.304000000000002,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "8F5538EC-14AD-40BB-849C-D58242254E47",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 530.15303611755371,
+              "mapped_segment_count" : 2,
+              "mapped_word_count" : 11,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 3,
+              "raw_word_count" : 15,
+              "request_audio_end_frame" : 892928,
+              "request_audio_sample_count" : 93312,
+              "request_audio_start_frame" : 799616,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380729.86316597,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 13,
+          "enqueued_at" : 809380729.70865095,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 154.51502799987793,
+          "retained_pcm_frame_count" : 93312,
+          "retained_pcm_sha256" : "857623059ea2fd19cb32d77d94349fa925d963e3fc4ab1d9b4c42f1a38fb7e12",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380730.585145,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 892928,
+          "utterance_end_sec" : 55.808000000000007,
+          "utterance_start_frame" : 799616,
+          "utterance_start_sec" : 49.976000000000006,
+          "vad_commit_reason" : "hardMaxUtterance",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "92668717-CAB4-4FC1-9CED-2D65CB59E5F7",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 399.50096607208252,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 4,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 9,
+              "request_audio_end_frame" : 934912,
+              "request_audio_sample_count" : 70784,
+              "request_audio_start_frame" : 864128,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380732.804757,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 14,
+          "enqueued_at" : 809380732.65152395,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 153.23305130004883,
+          "retained_pcm_frame_count" : 70784,
+          "retained_pcm_sha256" : "cfebc3f451037457abf317e32a1f830b4021f6dd0477dee2456bbdc1499fc856",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380733.32512903,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 934912,
+          "utterance_end_sec" : 58.432000000000002,
+          "utterance_start_frame" : 864128,
+          "utterance_start_sec" : 54.008000000000003,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "49F082EB-1E80-437F-BBF2-1CBEEE14DE35",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 410.71701049804688,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 5,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 10,
+              "request_audio_end_frame" : 979968,
+              "request_audio_sample_count" : 69760,
+              "request_audio_start_frame" : 910208,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380735.87268901,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 15,
+          "enqueued_at" : 809380735.71989703,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 152.79197692871094,
+          "retained_pcm_frame_count" : 69760,
+          "retained_pcm_sha256" : "354e9e28026ca2795dac219003ee44b14e16a4c0e0bc71ef3221b354cfbb9ad6",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380736.40763295,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 979968,
+          "utterance_end_sec" : 61.248000000000005,
+          "utterance_start_frame" : 910208,
+          "utterance_start_sec" : 56.888000000000005,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        },
+        {
+          "batch_size" : 1,
+          "capture_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "commit_id" : "AF12D6B8-E47E-459F-80C6-F029CC40B080",
+          "decode_attempts" : [
+            {
+              "decode_latency_ms" : 390.87998867034912,
+              "mapped_segment_count" : 1,
+              "mapped_word_count" : 2,
+              "raw_response_category" : "content",
+              "raw_segment_count" : 1,
+              "raw_word_count" : 6,
+              "request_audio_end_frame" : 1008640,
+              "request_audio_sample_count" : 49280,
+              "request_audio_start_frame" : 959360,
+              "strategy_id" : "initial",
+              "word_rejection_counts" : {
+                "outside_segment_envelope" : 1
+              }
+            }
+          ],
+          "dequeued_at" : 809380737.79211998,
+          "dominant_lane" : "system_audio",
+          "enqueue_sequence" : 16,
+          "enqueued_at" : 809380737.64145994,
+          "original_index" : 0,
+          "queue_outcome" : "dequeued",
+          "queue_wait_ms" : 150.66003799438477,
+          "retained_pcm_frame_count" : 49280,
+          "retained_pcm_sha256" : "de856f924224085273b4b0d4eee1ea9ebe0857a1cea7138a01e060b2913e52cf",
+          "route_epoch" : 0,
+          "route_epoch_consistent" : true,
+          "sample_rate" : 16000,
+          "schema_version" : "canonical-commit-receipt.v1",
+          "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+          "terminal_at" : 809380738.27152801,
+          "terminal_outcome" : {
+            "category" : "progress"
+          },
+          "utterance_end_frame" : 1008640,
+          "utterance_end_sec" : 63.039999999999999,
+          "utterance_start_frame" : 959360,
+          "utterance_start_sec" : 59.960000000000001,
+          "vad_commit_reason" : "endSilence",
+          "vad_commit_source" : "silero"
+        }
+      ],
+      "canonical_continuation_merge_count" : 14,
+      "canonical_empty_attempt_diagnostics" : [
+
+      ],
+      "canonical_word_envelope_rejections" : [
+        {
+          "commit_end_sec" : 17.920000000000002,
+          "commit_start_sec" : 13.888,
+          "raw_relative_end_sec" : 0.019999999552965164,
+          "raw_relative_start_sec" : 0.019999999552965164,
+          "reason" : "non_positive_duration",
+          "rebased_absolute_end_sec" : 13.907999999552965,
+          "rebased_absolute_start_sec" : 13.907999999552965,
+          "request_end_sec" : 17.920000000000002,
+          "request_start_sec" : 13.888,
+          "segment_end_sec" : 17.828000057220457,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 13.907999999552965,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 18.688000000000002,
+          "commit_start_sec" : 16.120000000000001,
+          "raw_relative_end_sec" : 2.1600000858306885,
+          "raw_relative_start_sec" : 1.7200000286102295,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 18.280000085830689,
+          "rebased_absolute_start_sec" : 17.84000002861023,
+          "request_end_sec" : 18.688000000000002,
+          "request_start_sec" : 16.120000000000001,
+          "segment_end_sec" : 18.280000085830689,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 17.920000000000002,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 23.423999999999999,
+          "commit_start_sec" : 18.623999999999999,
+          "raw_relative_end_sec" : 0.8399999737739563,
+          "raw_relative_start_sec" : 0.61000001430511475,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 19.463999973773955,
+          "rebased_absolute_start_sec" : 19.234000014305114,
+          "request_end_sec" : 23.423999999999999,
+          "request_start_sec" : 18.623999999999999,
+          "segment_end_sec" : 23.423999999999999,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 19.391999999999999,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 23.423999999999999,
+          "commit_start_sec" : 18.623999999999999,
+          "raw_relative_end_sec" : 5.0999999046325684,
+          "raw_relative_start_sec" : 4.4000000953674316,
+          "reason" : "outside_request_envelope",
+          "rebased_absolute_end_sec" : 23.723999904632567,
+          "rebased_absolute_start_sec" : 23.02400009536743,
+          "request_end_sec" : 23.423999999999999,
+          "request_start_sec" : 18.623999999999999,
+          "segment_end_sec" : 23.423999999999999,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 19.391999999999999,
+          "strategy" : "initial",
+          "word_ordinal" : 7
+        },
+        {
+          "commit_end_sec" : 23.872,
+          "commit_start_sec" : 21.623999999999999,
+          "raw_relative_end_sec" : 1.940000057220459,
+          "raw_relative_start_sec" : 1.3999999761581421,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 23.564000057220458,
+          "rebased_absolute_start_sec" : 23.023999976158141,
+          "request_end_sec" : 23.872,
+          "request_start_sec" : 21.623999999999999,
+          "segment_end_sec" : 23.564000057220458,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 23.423999999999999,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 26.367999999999999,
+          "commit_start_sec" : 23.872,
+          "raw_relative_end_sec" : 0.47999998927116394,
+          "raw_relative_start_sec" : 0.019999999552965164,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 24.351999989271164,
+          "rebased_absolute_start_sec" : 23.891999999552965,
+          "request_end_sec" : 26.367999999999999,
+          "request_start_sec" : 23.872,
+          "segment_end_sec" : 26.171999952316284,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 24.32,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 30.911999999999999,
+          "commit_start_sec" : 25.079999999999998,
+          "raw_relative_end_sec" : 1.9199999570846558,
+          "raw_relative_start_sec" : 1.6000000238418579,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 26.999999957084654,
+          "rebased_absolute_start_sec" : 26.680000023841856,
+          "request_end_sec" : 30.911999999999999,
+          "request_start_sec" : 25.079999999999998,
+          "segment_end_sec" : 30.860000209808348,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 26.879999999999999,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 35.072000000000003,
+          "commit_start_sec" : 32,
+          "raw_relative_end_sec" : 0.34000000357627869,
+          "raw_relative_start_sec" : 0.25999999046325684,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 32.340000003576279,
+          "rebased_absolute_start_sec" : 32.259999990463257,
+          "request_end_sec" : 35.072000000000003,
+          "request_start_sec" : 32,
+          "segment_end_sec" : 34.900000095367432,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 32.32,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 39.744000000000007,
+          "commit_start_sec" : 33.912000000000006,
+          "raw_relative_end_sec" : 1.8400000333786011,
+          "raw_relative_start_sec" : 1.7000000476837158,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 35.752000033378607,
+          "rebased_absolute_start_sec" : 35.612000047683722,
+          "request_end_sec" : 39.744000000000007,
+          "request_start_sec" : 33.912000000000006,
+          "segment_end_sec" : 39.471999942779547,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 35.712000000000003,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 41.984000000000002,
+          "commit_start_sec" : 38.200000000000003,
+          "raw_relative_end_sec" : 1.8400000333786011,
+          "raw_relative_start_sec" : 1.440000057220459,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 40.040000033378604,
+          "rebased_absolute_start_sec" : 39.640000057220462,
+          "request_end_sec" : 41.984000000000002,
+          "request_start_sec" : 38.200000000000003,
+          "segment_end_sec" : 41.819999885559085,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 40,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 47.104000000000006,
+          "commit_start_sec" : 41.272000000000006,
+          "raw_relative_end_sec" : 1.8600000143051147,
+          "raw_relative_start_sec" : 1.6399999856948853,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 43.13200001430512,
+          "rebased_absolute_start_sec" : 42.911999985694891,
+          "request_end_sec" : 47.104000000000006,
+          "request_start_sec" : 41.272000000000006,
+          "segment_end_sec" : 44.672000095367437,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 43.072000000000003,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 50.880000000000003,
+          "commit_start_sec" : 45.304000000000002,
+          "raw_relative_end_sec" : 2.1400001049041748,
+          "raw_relative_start_sec" : 1.6399999856948853,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 47.444000104904177,
+          "rebased_absolute_start_sec" : 46.943999985694887,
+          "request_end_sec" : 50.880000000000003,
+          "request_start_sec" : 45.304000000000002,
+          "segment_end_sec" : 50.463999847412111,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 47.103999999999999,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 55.808000000000007,
+          "commit_start_sec" : 49.976000000000006,
+          "raw_relative_end_sec" : 1.8400000333786011,
+          "raw_relative_start_sec" : 1.6699999570846558,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 51.816000033378607,
+          "rebased_absolute_start_sec" : 51.645999957084662,
+          "request_end_sec" : 55.808000000000007,
+          "request_start_sec" : 49.976000000000006,
+          "segment_end_sec" : 53.216000009536749,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 51.776000000000003,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 58.432000000000002,
+          "commit_start_sec" : 54.008000000000003,
+          "raw_relative_end_sec" : 2.119999885559082,
+          "raw_relative_start_sec" : 1.7799999713897705,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 56.127999885559085,
+          "rebased_absolute_start_sec" : 55.787999971389773,
+          "request_end_sec" : 58.432000000000002,
+          "request_start_sec" : 54.008000000000003,
+          "segment_end_sec" : 57.888000114440921,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 55.808,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 61.248000000000005,
+          "commit_start_sec" : 56.888000000000005,
+          "raw_relative_end_sec" : 1.8400000333786011,
+          "raw_relative_start_sec" : 1.2400000095367432,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 58.728000033378606,
+          "rebased_absolute_start_sec" : 58.128000009536748,
+          "request_end_sec" : 61.248000000000005,
+          "request_start_sec" : 56.888000000000005,
+          "segment_end_sec" : 61.107999790191656,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 58.688000000000002,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        },
+        {
+          "commit_end_sec" : 63.039999999999999,
+          "commit_start_sec" : 59.960000000000001,
+          "raw_relative_end_sec" : 1.9600000381469727,
+          "raw_relative_start_sec" : 1.6599999666213989,
+          "reason" : "outside_segment_envelope",
+          "rebased_absolute_end_sec" : 61.920000038146974,
+          "rebased_absolute_start_sec" : 61.6199999666214,
+          "request_end_sec" : 63.039999999999999,
+          "request_start_sec" : 59.960000000000001,
+          "segment_end_sec" : 62.779999933242799,
+          "segment_ordinal" : 0,
+          "segment_start_sec" : 61.759999999999998,
+          "strategy" : "initial",
+          "word_ordinal" : 0
+        }
+      ],
+      "provisional_emit_count" : 0,
+      "provisional_heuristic_fallback_count" : 0
+    },
+    "speaker_bank" : {
+      "centroid_accept_count" : 14,
+      "centroid_recovery_count" : 0,
+      "centroid_reject_count" : 0,
+      "continuity_fallback_count" : 0,
+      "create_count" : 1,
+      "long_utterance_truncation_count" : 0,
+      "match_count" : 14,
+      "short_utterance_skip_count" : 0
+    },
+    "speaker_identity" : {
+      "absorbed_count" : 0,
+      "created_count" : 0,
+      "decision_reason_counts" : {
+        "best_match" : 14,
+        "create_new_speaker" : 1
+      },
+      "promoted_count" : 0,
+      "provisional_merge_absorption_count" : 0,
+      "provisional_stale_drop_count" : 0,
+      "provisional_to_confirmed_transition_count" : 1
+    },
+    "vad" : {
+      "commit_count" : 16,
+      "hard_max_count" : 6,
+      "mean_utterance_duration_sec" : 4.1180000000000003,
+      "short_drop_count" : 0
+    }
+  },
+  "canonical_assignment" : {
+    "override_count" : 0,
+    "provisional_disagreement_count" : 0,
+    "sample_records" : [
+
+    ]
+  },
+  "duration_sec" : 0,
+  "guardrails" : {
+    "cursor_regression_warnings" : 0,
+    "routing_watchdog_warnings" : 0,
+    "unknown_speaker_rows" : 0
+  },
+  "refresh_events" : [
+
+  ],
+  "session_id" : "72ad6ea6-5374-4f60-b325-984f0357461d",
+  "speaker_admission" : {
+    "admitted_count" : 15,
+    "attempt_count" : 15,
+    "counts_by_reason" : {
+      "admitted" : 15
+    },
+    "rejected_count" : 0,
+    "schema_version" : "1.0.0",
+    "terminal_reason" : "admitted"
+  },
+  "speaker_bank" : {
+    "final_global_speaker_count" : 1,
+    "final_live_speaker_count" : 1,
+    "final_speaker_centroid_summaries" : {
+      "SPEAKER_01" : {
+        "dimension" : 256,
+        "norm" : 1.000000016104668
+      }
+    },
+    "max_speakers" : 8,
+    "preloaded_fingerprint_count" : 0
+  },
+  "speaker_bank_shadow" : {
+    "assignment_count" : 0,
+    "comparison_count" : 0,
+    "disagreement_count" : 0,
+    "disagreement_rate" : 0,
+    "legacy_distinct_speakers" : 0,
+    "legacy_fragment_runs" : 0,
+    "max_speakers" : 0,
+    "records" : [
+
+    ],
+    "shadow_distinct_speakers" : 0,
+    "shadow_fragment_runs" : 0
+  }
+}

@@ -1,0 +1,11 @@
+timestamp_utc: 2026-08-25T20:05:49Z
+original_volume: 31
+target_volume: 20
+set_command: osascript -e 'set volume output volume 20'
+set_returncode: 0
+set_stdout: 
+set_stderr: 
+get_command: osascript -e 'output volume of (get volume settings)'
+get_returncode: 0
+observed_volume: 20
+get_stderr: 

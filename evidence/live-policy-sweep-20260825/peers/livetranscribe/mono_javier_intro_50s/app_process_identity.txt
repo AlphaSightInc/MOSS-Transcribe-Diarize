@@ -1,0 +1,6 @@
+timestamp_utc: 2026-08-25T19:57:46Z
+app_pid: 47472
+spawned_by_script: true
+preexisting_listener_pid: none
+preexisting_app_pid: none
+process_start_identity: Tue Aug 25 15:57:46 2026 00:00 /Users/ga0/Desktop/AI_Projects/LiveTranscribe/.build/app-bundles/debug/LiveTranscribe.app/Contents/MacOS/LiveTranscribe

@@ -1,0 +1,1069 @@
+{
+  "assigned_utterance_count" : 36,
+  "audio_duration_sec" : 80.352000000000004,
+  "centroid_similarity_summary" : {
+    "initial" : {
+      "above_merge_threshold_pair_count" : 0,
+      "max_similarity" : 0.024189417923860087,
+      "mean_similarity" : 0.024189417923860087,
+      "merge_threshold" : 0.89000000000000001,
+      "min_similarity" : 0.024189417923860087,
+      "pair_count" : 1,
+      "top_pairs" : [
+        {
+          "similarity" : 0.024189417923860087,
+          "speaker_a" : "SPEAKER_01",
+          "speaker_b" : "SPEAKER_02"
+        }
+      ]
+    },
+    "post_merge" : {
+      "above_merge_threshold_pair_count" : 0,
+      "max_similarity" : 0.081091824840270832,
+      "mean_similarity" : 0.081091824840270832,
+      "merge_threshold" : 0.89000000000000001,
+      "min_similarity" : 0.081091824840270832,
+      "pair_count" : 1,
+      "top_pairs" : [
+        {
+          "similarity" : 0.081091824840270832,
+          "speaker_a" : "SPEAKER_01",
+          "speaker_b" : "SPEAKER_02"
+        }
+      ]
+    }
+  },
+  "cluster_summaries" : {
+    "initial" : {
+      "centroid_summaries" : {
+        "SPEAKER_01" : {
+          "dimension" : 256,
+          "norm" : 1.0000000376268663
+        },
+        "SPEAKER_02" : {
+          "dimension" : 256,
+          "norm" : 0.99999999077728685
+        }
+      },
+      "cluster_count" : 2,
+      "cluster_sizes" : {
+        "SPEAKER_01" : 31,
+        "SPEAKER_02" : 2
+      }
+    },
+    "post_merge" : {
+      "centroid_summaries" : {
+        "SPEAKER_01" : {
+          "dimension" : 256,
+          "norm" : 0.99999999328575651
+        },
+        "SPEAKER_02" : {
+          "dimension" : 256,
+          "norm" : 1.0000000392453985
+        }
+      },
+      "cluster_count" : 2,
+      "cluster_sizes" : {
+        "SPEAKER_01" : 30,
+        "SPEAKER_02" : 3
+      }
+    }
+  },
+  "initial_cluster_count" : 2,
+  "initial_cluster_sizes" : {
+    "SPEAKER_01" : 31,
+    "SPEAKER_02" : 2
+  },
+  "initial_labels" : [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "merged_labels" : [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "post_merge_cluster_count" : 2,
+  "post_merge_cluster_sizes" : {
+    "SPEAKER_01" : 30,
+    "SPEAKER_02" : 3
+  },
+  "speaker_summary" : {
+    "alias_map" : {
+      "SPEAKER_02" : "SPEAKER_01",
+      "SPEAKER_03" : "SPEAKER_01",
+      "SPEAKER_04" : "SPEAKER_01",
+      "SPEAKER_05" : "SPEAKER_01",
+      "SPEAKER_06" : "SPEAKER_01",
+      "SPEAKER_07" : "SPEAKER_01"
+    },
+    "assigned_speaker_count" : 2,
+    "assigned_speaker_ids" : [
+      "SPEAKER_01",
+      "SPEAKER_02"
+    ],
+    "assignment_count" : 36,
+    "speaker_count" : 1,
+    "speakers" : [
+      {
+        "centroid_update_count" : 24,
+        "is_fingerprint" : false,
+        "last_seen_sec" : 72,
+        "speaker_id" : "SPEAKER_01",
+        "status" : "confirmed",
+        "utterance_count" : 30
+      }
+    ],
+    "stats" : {
+      "centroid_accept" : 22,
+      "centroid_recovery" : 0,
+      "centroid_reject" : 0,
+      "continuity_bias" : 0,
+      "create_new" : 7,
+      "match_existing" : 29
+    }
+  },
+  "subsegment_count" : 33,
+  "subsegment_diagnostics" : [
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000053606835,
+      "end_sec" : 13.824000358581543,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 12.479999542236328
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000716636943,
+      "end_sec" : 15.295999526977539,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 14.208000183105469
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000191657454,
+      "end_sec" : 16.895999908447266,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 16.063999176025391
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000258334119,
+      "end_sec" : 21.375999450683594,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 17.343999862670898
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000446119053,
+      "end_sec" : 22.656000137329102,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 21.568000793457031
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000320735811,
+      "end_sec" : 25.856000900268555,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 22.91200065612793
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000665460209,
+      "end_sec" : 27.200000762939453,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 26.368000030517578
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.000000005350056,
+      "end_sec" : 28.288000106811523,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 27.392000198364258
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000055972704,
+      "end_sec" : 29.695999145507812,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 28.351999282836914
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999999914577808,
+      "end_sec" : 31.360000610351562,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 30.271999359130859
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000201793524,
+      "end_sec" : 33.088001251220703,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 31.680000305175781
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999998213826813,
+      "end_sec" : 34.560001373291016,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 33.344001770019531
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.000000017721105,
+      "end_sec" : 35.903999328613281,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 34.624000549316406
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000636736932,
+      "end_sec" : 37.951999664306641,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 36.159999847412109
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999996738571606,
+      "end_sec" : 38.976001739501953,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 38.015998840332031
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000622346894,
+      "end_sec" : 39.872001647949219,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 39.167999267578125
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000582256796,
+      "end_sec" : 41.279998779296875,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 40.063999176025391
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999998056731865,
+      "end_sec" : 44.928001403808594,
+      "initial_label" : 1,
+      "merged_label" : 1,
+      "start_sec" : 41.599998474121094
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000949647869,
+      "end_sec" : 45.759998321533203,
+      "initial_label" : 1,
+      "merged_label" : 1,
+      "start_sec" : 44.992000579833984
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000116186227,
+      "end_sec" : 49.279998779296875,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 46.208000183105469
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000599000258,
+      "end_sec" : 50.624000549316406,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 49.535999298095703
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999997092979354,
+      "end_sec" : 52.416000366210938,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 51.840000152587891
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000022432687,
+      "end_sec" : 54.784000396728516,
+      "initial_label" : 0,
+      "merged_label" : 1,
+      "start_sec" : 52.672000885009766
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000670662923,
+      "end_sec" : 56.832000732421875,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 55.040000915527344
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000231873387,
+      "end_sec" : 59.200000762939453,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 56.895999908447266
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000733050094,
+      "end_sec" : 60.159999847412109,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 59.520000457763672
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000600922927,
+      "end_sec" : 60.928001403808594,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 60.352001190185547
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999999398375794,
+      "end_sec" : 62.33599853515625,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 61.824001312255859
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000478919058,
+      "end_sec" : 63.936000823974609,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 62.464000701904297
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.000000069166425,
+      "end_sec" : 65.21600341796875,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 64.064002990722656
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 0.99999997415151454,
+      "end_sec" : 66.624000549316406,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 65.344001770019531
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000640493889,
+      "end_sec" : 68.096000671386719,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 66.816001892089844
+    },
+    {
+      "embedding_dimension" : 256,
+      "embedding_norm" : 1.0000000550652044,
+      "end_sec" : 72,
+      "initial_label" : 0,
+      "merged_label" : 0,
+      "start_sec" : 68.351997375488281
+    }
+  ],
+  "utterance_assignments" : [
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.3440008163452148,
+      "embedding_available" : true,
+      "end_sec" : 13.824000358581543,
+      "gap_from_previous_sec" : 0,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 12.479999542236328,
+      "utterance_index" : 0
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.57329291105270386,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.0879993438720703,
+      "embedding_available" : true,
+      "end_sec" : 15.295999526977539,
+      "gap_from_previous_sec" : 0.38399982452392578,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 14.208000183105469,
+      "utterance_index" : 1
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.64867126941680908,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_best_tentative",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.832000732421875,
+      "embedding_available" : true,
+      "end_sec" : 16.895999908447266,
+      "gap_from_previous_sec" : 0.76799964904785156,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 16.063999176025391,
+      "utterance_index" : 2
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.82273411750793457,
+        "continuity_similarity" : 0.82273411750793457,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 4.0319995880126953,
+      "embedding_available" : true,
+      "end_sec" : 21.375999450683594,
+      "gap_from_previous_sec" : 0.44799995422363281,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 17.343999862670898,
+      "utterance_index" : 3
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.65981227159500122,
+        "continuity_similarity" : 0.65981227159500122,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.0879993438720703,
+      "embedding_available" : true,
+      "end_sec" : 22.656000137329102,
+      "gap_from_previous_sec" : 0.1920013427734375,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 21.568000793457031,
+      "utterance_index" : 4
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.86064869165420532,
+        "continuity_similarity" : 0.83766132593154907,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 2.944000244140625,
+      "embedding_available" : true,
+      "end_sec" : 25.856000900268555,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 22.91200065612793,
+      "utterance_index" : 5
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_02"
+      },
+      "duration_sec" : 0.832000732421875,
+      "embedding_available" : true,
+      "end_sec" : 27.200000762939453,
+      "gap_from_previous_sec" : 0.51199913024902344,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 26.368000030517578,
+      "utterance_index" : 6
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.57325899600982666,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_best_tentative",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_02"
+      },
+      "duration_sec" : 0.89599990844726562,
+      "embedding_available" : true,
+      "end_sec" : 28.288000106811523,
+      "gap_from_previous_sec" : 0.19199943542480469,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 27.392000198364258,
+      "utterance_index" : 7
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.79599469900131226,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.74758011102676392,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.3439998626708984,
+      "embedding_available" : true,
+      "end_sec" : 29.695999145507812,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 28.351999282836914,
+      "utterance_index" : 8
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.19199943542480469,
+      "embedding_available" : false,
+      "end_sec" : 29.951999664306641,
+      "gap_from_previous_sec" : 0.064001083374023438,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 29.760000228881836,
+      "utterance_index" : 9
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.79872244596481323,
+        "continuity_similarity" : 0.79872244596481323,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.0880012512207031,
+      "embedding_available" : true,
+      "end_sec" : 31.360000610351562,
+      "gap_from_previous_sec" : 0.31999969482421875,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 30.271999359130859,
+      "utterance_index" : 10
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.83853942155838013,
+        "continuity_similarity" : 0.83853942155838013,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.4080009460449219,
+      "embedding_available" : true,
+      "end_sec" : 33.088001251220703,
+      "gap_from_previous_sec" : 0.31999969482421875,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 31.680000305175781,
+      "utterance_index" : 11
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.73184037208557129,
+        "continuity_similarity" : 0.72852957248687744,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.2159996032714844,
+      "embedding_available" : true,
+      "end_sec" : 34.560001373291016,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 33.344001770019531,
+      "utterance_index" : 12
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.85362052917480469,
+        "continuity_similarity" : 0.85362052917480469,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.279998779296875,
+      "embedding_available" : true,
+      "end_sec" : 35.903999328613281,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 34.624000549316406,
+      "utterance_index" : 13
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.80785685777664185,
+        "continuity_similarity" : 0.80785685777664185,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.7919998168945312,
+      "embedding_available" : true,
+      "end_sec" : 37.951999664306641,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 36.159999847412109,
+      "utterance_index" : 14
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.96000289916992188,
+      "embedding_available" : true,
+      "end_sec" : 38.976001739501953,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 38.015998840332031,
+      "utterance_index" : 15
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.70400238037109375,
+      "embedding_available" : true,
+      "end_sec" : 39.872001647949219,
+      "gap_from_previous_sec" : 0.19199752807617188,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 39.167999267578125,
+      "utterance_index" : 16
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.73546558618545532,
+        "continuity_similarity" : 0.73546558618545532,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.2159996032714844,
+      "embedding_available" : true,
+      "end_sec" : 41.279998779296875,
+      "gap_from_previous_sec" : 0.19199752807617188,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 40.063999176025391,
+      "utterance_index" : 17
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.16706325113773346,
+        "continuity_similarity" : 0.025217361748218536,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_03"
+      },
+      "duration_sec" : 3.3280029296875,
+      "embedding_available" : true,
+      "end_sec" : 44.928001403808594,
+      "gap_from_previous_sec" : 0.31999969482421875,
+      "speaker" : "SPEAKER_02",
+      "start_sec" : 41.599998474121094,
+      "utterance_index" : 18
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_04"
+      },
+      "duration_sec" : 0.76799774169921875,
+      "embedding_available" : true,
+      "end_sec" : 45.759998321533203,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_02",
+      "start_sec" : 44.992000579833984,
+      "utterance_index" : 19
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_last_assigned",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_04"
+      },
+      "duration_sec" : 0.25600051879882812,
+      "embedding_available" : false,
+      "end_sec" : 46.144001007080078,
+      "gap_from_previous_sec" : 0.12800216674804688,
+      "speaker" : "SPEAKER_02",
+      "start_sec" : 45.88800048828125,
+      "utterance_index" : 20
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.81551551818847656,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.051780346781015396,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 3.0719985961914062,
+      "embedding_available" : true,
+      "end_sec" : 49.279998779296875,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 46.208000183105469,
+      "utterance_index" : 21
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.75653654336929321,
+        "continuity_similarity" : 0.75653654336929321,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.0880012512207031,
+      "embedding_available" : true,
+      "end_sec" : 50.624000549316406,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 49.535999298095703,
+      "utterance_index" : 22
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.31999969482421875,
+      "embedding_available" : false,
+      "end_sec" : 51.263999938964844,
+      "gap_from_previous_sec" : 0.31999969482421875,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 50.944000244140625,
+      "utterance_index" : 23
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_05"
+      },
+      "duration_sec" : 0.57600021362304688,
+      "embedding_available" : true,
+      "end_sec" : 52.416000366210938,
+      "gap_from_previous_sec" : 0.57600021362304688,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 51.840000152587891,
+      "utterance_index" : 24
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.20786412060260773,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : -0.007176666054874659,
+        "speaker_id" : "SPEAKER_06"
+      },
+      "duration_sec" : 2.11199951171875,
+      "embedding_available" : true,
+      "end_sec" : 54.784000396728516,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_02",
+      "start_sec" : 52.672000885009766,
+      "utterance_index" : 25
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.73945862054824829,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.34277823567390442,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.7919998168945312,
+      "embedding_available" : true,
+      "end_sec" : 56.832000732421875,
+      "gap_from_previous_sec" : 0.25600051879882812,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 55.040000915527344,
+      "utterance_index" : 26
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.75482571125030518,
+        "continuity_similarity" : 0.75482571125030518,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.15319254994392395,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 2.3040008544921875,
+      "embedding_available" : true,
+      "end_sec" : 59.200000762939453,
+      "gap_from_previous_sec" : 0.063999176025390625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 56.895999908447266,
+      "utterance_index" : 27
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.6399993896484375,
+      "embedding_available" : true,
+      "end_sec" : 60.159999847412109,
+      "gap_from_previous_sec" : 0.31999969482421875,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 59.520000457763672,
+      "utterance_index" : 28
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "short_utterance_previous_confirmed",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 0.57600021362304688,
+      "embedding_available" : true,
+      "end_sec" : 60.928001403808594,
+      "gap_from_previous_sec" : 0.1920013427734375,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 60.352001190185547,
+      "utterance_index" : 29
+    },
+    {
+      "decision" : {
+        "best_similarity" : null,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "create_new_speaker",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_07"
+      },
+      "duration_sec" : 0.51199722290039062,
+      "embedding_available" : true,
+      "end_sec" : 62.33599853515625,
+      "gap_from_previous_sec" : 0.89599990844726562,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 61.824001312255859,
+      "utterance_index" : 30
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.78540939092636108,
+        "continuity_similarity" : null,
+        "continuity_speaker_id" : null,
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.54423511028289795,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.4720001220703125,
+      "embedding_available" : true,
+      "end_sec" : 63.936000823974609,
+      "gap_from_previous_sec" : 0.12800216674804688,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 62.464000701904297,
+      "utterance_index" : 31
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.63675087690353394,
+        "continuity_similarity" : 0.63675087690353394,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : 0.57825183868408203,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.1520004272460938,
+      "embedding_available" : true,
+      "end_sec" : 65.21600341796875,
+      "gap_from_previous_sec" : 0.12800216674804688,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 64.064002990722656,
+      "utterance_index" : 32
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.70868062973022461,
+        "continuity_similarity" : 0.70868062973022461,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.279998779296875,
+      "embedding_available" : true,
+      "end_sec" : 66.624000549316406,
+      "gap_from_previous_sec" : 0.12799835205078125,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 65.344001770019531,
+      "utterance_index" : 33
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.76594394445419312,
+        "continuity_similarity" : 0.76594394445419312,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 1.279998779296875,
+      "embedding_available" : true,
+      "end_sec" : 68.096000671386719,
+      "gap_from_previous_sec" : 0.1920013427734375,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 66.816001892089844,
+      "utterance_index" : 34
+    },
+    {
+      "decision" : {
+        "best_similarity" : 0.85778015851974487,
+        "continuity_similarity" : 0.85778015851974487,
+        "continuity_speaker_id" : "SPEAKER_01",
+        "decision_reason" : "best_match",
+        "runner_up_similarity" : null,
+        "speaker_id" : "SPEAKER_01"
+      },
+      "duration_sec" : 3.6480026245117188,
+      "embedding_available" : true,
+      "end_sec" : 72,
+      "gap_from_previous_sec" : 0.2559967041015625,
+      "speaker" : "SPEAKER_01",
+      "start_sec" : 68.351997375488281,
+      "utterance_index" : 35
+    }
+  ],
+  "utterance_count" : 36
+}

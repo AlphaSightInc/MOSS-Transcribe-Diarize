@@ -1,0 +1,12 @@
+{
+  "audio_path" : "",
+  "mode" : "live",
+  "selected_refinement_lane" : "remote",
+  "selected_refinement_lane_reason" : "capture_mode_speaker",
+  "session_id" : "a7834f12-ac60-4dd2-bd5a-fa8445bcef0a",
+  "started_at" : "2026-08-25T20:03:30.476Z",
+  "status" : "completed",
+  "title" : "speaker",
+  "title_source" : "auto_default",
+  "updated_at" : "2026-08-25T20:05:45.956Z"
+}

@@ -1,0 +1,12 @@
+COPIED live_diagnostics.json -> live_diagnostics.json
+COPIED activation_metrics.json -> activation_metrics.json
+COPIED refined_live_observability.json -> refined_live_observability.json
+COPIED session_meta.json -> session_meta.json
+COPIED stop_time_refinement_diagnostics.json -> stop_time_refinement_diagnostics.json
+COPIED stop_time_file_transcript_diagnostics.json -> stop_time_file_transcript_diagnostics.json
+OPTIONAL_MISSING stop_time_second_pass_asr_diagnostics.json (source: /Users/ga0/Library/Containers/com.livetranscribe.app/Data/Library/Application Support/LiveTranscribe/sessions/a7834f12-ac60-4dd2-bd5a-fa8445bcef0a/stop_time_second_pass_asr_diagnostics.json)
+COPIED stop_time_file_refinement/file_diarization_diagnostics.json -> stop_time_file_refinement_diarization_diagnostics.json
+COPIED stop_time_file_refinement/activation_metrics.json -> stop_time_file_refinement_activation_metrics.json
+COPIED transcripts/segments.json -> segments.json
+OPTIONAL_MISSING speaker_evidence (source: /Users/ga0/Library/Containers/com.livetranscribe.app/Data/Library/Application Support/LiveTranscribe/sessions/a7834f12-ac60-4dd2-bd5a-fa8445bcef0a/speaker_evidence)
+OPTIONAL_MISSING boundary_evidence (source: /Users/ga0/Library/Containers/com.livetranscribe.app/Data/Library/Application Support/LiveTranscribe/sessions/a7834f12-ac60-4dd2-bd5a-fa8445bcef0a/boundary_evidence)

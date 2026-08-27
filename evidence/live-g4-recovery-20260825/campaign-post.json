@@ -1,0 +1,153 @@
+{
+  "captured_utc": "2026-08-25T23:21:00.073674Z",
+  "git": {
+    "branch": "ralph/live-convergence-0824",
+    "head": "7608c91ce36441d9075fbba41e18c5fae8f464ac",
+    "production_file_sha256": {
+      "moss_transcribe_diarize/app/live_coordinator.py": "4566af8ccdf83bcebf8ccb28be7977c1b15ceffc0bc9ced29ddf4edd1489f7ec",
+      "moss_transcribe_diarize/app/live_service_runtime.py": "fcaadb8e36649950c987d751df9e1effbbf70dab9b0e2e979e9481ea08f8e80f",
+      "moss_transcribe_diarize/app/live_session.py": "a76565f1db51527465acef20259ded27690404ceba8821dd7e5803579aab5049",
+      "moss_transcribe_diarize/app/live_transcript_convergence.py": "b16b84b339f642556e62907ef53d01a1bb7eb927469f56f8769621d3820f7974"
+    },
+    "production_patch_sha256": "b006de9b04c73315c4c6e323d77fe112739fcd33f0d0110e13794133a5278e85",
+    "status_short": "M moss_transcribe_diarize/app/live_coordinator.py\n M moss_transcribe_diarize/app/live_service_runtime.py\n M moss_transcribe_diarize/app/live_session.py\n M moss_transcribe_diarize/app/live_transcript_convergence.py\n M prototypes/streaming-diarization/live-convergence/measure_seam_overlap.py\n M tests/test_live_rolling_wiring.py\n M tests/test_live_terminal_finalizer.py\n M tests/test_live_transcript_convergence.py\n?? docs/handoffs/handoff-live-surface-optimization-20260825.md\n?? docs/plans/live-g4-recovery-and-arm-decision-20260825.md\n?? evidence/live-g4-recovery-20260825/\n?? evidence/live-policy-sweep-20260825/\n?? evidence/live-surface-optimization-20260825/\n?? prototypes/streaming-diarization/live-policy-sweep-20260825/\n?? prototypes/streaming-diarization/live-surface-optimization/"
+  },
+  "remote_model": {
+    "data": [
+      {
+        "created": 1787700060,
+        "id": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+        "max_model_len": 16384,
+        "object": "model",
+        "owned_by": "vllm",
+        "parent": null,
+        "permission": [
+          {
+            "allow_create_engine": false,
+            "allow_fine_tuning": false,
+            "allow_logprobs": true,
+            "allow_sampling": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "created": 1787700060,
+            "group": null,
+            "id": "modelperm-b08224577568a062",
+            "is_blocking": false,
+            "object": "model_permission",
+            "organization": "*"
+          }
+        ],
+        "root": "/home/devcontainers/.local/share/moss-transcribe-diarize/model"
+      }
+    ],
+    "object": "list"
+  },
+  "runtime": {
+    "ffmpeg": {
+      "available": true,
+      "ffmpeg": "/opt/homebrew/bin/ffmpeg",
+      "ffprobe": "/opt/homebrew/bin/ffprobe"
+    },
+    "inference": {
+      "decoding": "greedy",
+      "max_length": 16384,
+      "max_new_tokens": 12000,
+      "prompt": "\u8bf7\u5c06\u97f3\u9891\u8f6c\u5199\u4e3a\u6587\u672c\uff0c\u6bcf\u4e00\u6bb5\u9700\u4ee5\u8d77\u59cb\u65f6\u95f4\u6233\u548c\u8bf4\u8bdd\u4eba\u7f16\u53f7\uff08[S01]\u3001[S02]\u3001[S03]\u2026\uff09\u5f00\u5934\uff0c\u6b63\u6587\u4e3a\u5bf9\u5e94\u7684\u8bed\u97f3\u5185\u5bb9\uff0c\u5e76\u5728\u6bb5\u672b\u6807\u6ce8\u7ed3\u675f\u65f6\u95f4\u6233\uff0c\u4ee5\u6e05\u6670\u6807\u660e\u8be5\u6bb5\u8bed\u97f3\u8303\u56f4\u3002",
+      "temperature": 1.0
+    },
+    "live": {
+      "descriptor": {
+        "bounds": {
+          "hard_cap_samples": 40000,
+          "max_events": 1000,
+          "max_frame_samples": 16000,
+          "max_identity_speakers": 16,
+          "max_queue_depth": 16,
+          "max_retained_samples": 960000,
+          "max_tape_bytes": 9600000,
+          "stop_drain_deadline_seconds": 5.0
+        },
+        "config_hashes": {
+          "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+          "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+          "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+          "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+        },
+        "feature_enabled": true,
+        "frame_samples": 8000,
+        "live_protocol": {
+          "capabilities": {
+            "binary": false,
+            "idempotent_frames": true,
+            "lanes": true,
+            "resumable": true
+          },
+          "max_protocol_version": 2,
+          "min_protocol_version": 2,
+          "protocol": "moss-live-service.v2"
+        },
+        "live_protocol_version": "moss-live-service.v1",
+        "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+        "provider_name": "moss-rtx-webrtc-wespeaker",
+        "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "sample_rate": 16000,
+        "schema_version": 1,
+        "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea"
+      },
+      "enabled": true,
+      "sample_rate": 16000
+    },
+    "model": {
+      "backend": "vllm",
+      "base_url": "http://127.0.0.1:18000/v1",
+      "device": "vllm-api",
+      "dtype": "remote",
+      "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+      "processor": {},
+      "speaker_identity": {
+        "availability": {
+          "available": false,
+          "reason": "disabled"
+        },
+        "config": {
+          "tier_a": {
+            "min_overlap_dice": 0.75,
+            "min_overlap_support_seconds": 2.0,
+            "mutual_margin_seconds": 1.0
+          },
+          "tier_b": {
+            "enabled": false,
+            "margin": 0.2,
+            "max_segments_per_node": 3,
+            "min_segment_seconds": 2.0,
+            "similarity": 0.7
+          }
+        },
+        "provider": {
+          "device": "cpu",
+          "embedding_dimension": 256,
+          "frontend_version": "wespeaker-onnx-fbank-v1",
+          "provider": "wespeaker_resnet152_lm",
+          "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+          "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+        },
+        "schema_version": 2
+      },
+      "windowing": {
+        "stride_seconds": 120,
+        "window_seconds": 150
+      }
+    }
+  },
+  "schema": "moss-g4-runtime-provenance.v1",
+  "service": {
+    "cwd": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize",
+    "listener": "COMMAND     PID USER   FD   TYPE            DEVICE SIZE/OFF NODE NAME\npython3.1 57283  gao    6u  IPv4 0x96e99397732fb03      0t0  TCP *:7861 (LISTEN)",
+    "pid": 57283,
+    "process": "57283 34874 Tue Aug 25 18:57:58 2026     .venv/bin/python -m moss_transcribe_diarize.app.web_cli --backend vllm --model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-base-url http://127.0.0.1:18000/v1 --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize --vllm-timeout 1800 --runs-dir /Users/gao/.local/share/moss-transcribe-diarize/dev-runs --host 0.0.0.0 --port 7861 --max-len 16384 --max-new-tokens 12000 --live --live-provider-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json --live-auth-state /Users/gao/.local/share/moss-transcribe-diarize/g3/live-auth.json --live-shared-token-file /Users/gao/.local/share/moss-transcribe-diarize/g3/shared-token --live-tls-certfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-cert.pem --live-tls-keyfile /Users/gao/.local/share/moss-transcribe-diarize/g3/live-key.pem --live-helper-lease-seconds 30 --live-vector-journal-path /Users/gao/.local/share/moss-transcribe-diarize/g3/vector-journal.jsonl"
+  },
+  "vllm_queue_metrics": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ]
+}

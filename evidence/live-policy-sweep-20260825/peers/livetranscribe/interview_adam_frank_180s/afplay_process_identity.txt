@@ -1,0 +1,5 @@
+timestamp_utc: 2026-08-25T20:06:08Z
+afplay_pid: 49200
+spawned_by_script: true
+audio_path: /tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_adam_frank_180s/audio.wav
+process_start_identity: Tue Aug 25 16:06:08 2026 00:00 afplay /tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_adam_frank_180s/audio.wav

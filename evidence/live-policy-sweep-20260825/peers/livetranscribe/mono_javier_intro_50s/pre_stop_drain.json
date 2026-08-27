@@ -1,0 +1,12 @@
+{
+  "canonical_pending_work": false,
+  "last_error": null,
+  "observed_consecutive_clear_polls": 2,
+  "poll_count": 2,
+  "pre_stop_drain_wait_ms": 1025.684,
+  "ready_for_pre_stop_snapshot": true,
+  "required_consecutive_clear_polls": 2,
+  "schema_version": 1,
+  "session_id": "72ad6ea6-5374-4f60-b325-984f0357461d",
+  "timed_out": false
+}

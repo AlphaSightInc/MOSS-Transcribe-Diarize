@@ -1,0 +1,535 @@
+{
+  "audio": {
+    "channels": 1,
+    "duration_seconds": 60.0,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/audio.wav",
+    "pcm_bytes": 1920000,
+    "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+    "sample_count": 960000,
+    "sample_rate": 16000,
+    "sample_width_bytes": 2,
+    "wav_bytes": 1920078,
+    "wav_sha256": "c1729a51d5a55f8b94c5083300f6be67cddf010afb426eaf4192b4503c4fc120"
+  },
+  "case_id": "lex_keyu_jin_1m",
+  "duration_seconds": 60.0,
+  "events": {
+    "base_unsubmitted": 0,
+    "correction_age_seconds": {
+      "count": 20,
+      "max": 8.157561,
+      "mean": 4.160785,
+      "p50": 4.167588,
+      "p95": 8.148085
+    },
+    "correction_rows": [
+      {
+        "age_seconds": 7.80362,
+        "canonical_item_id": 0,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 5.381575416,
+        "canonical_item_id": 1,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 2.961031791,
+        "canonical_item_id": 2,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 0.278594416,
+        "canonical_item_id": 3,
+        "rolling_item_id": 4
+      },
+      {
+        "age_seconds": 7.981244083,
+        "canonical_item_id": 5,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 5.374144416,
+        "canonical_item_id": 6,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 2.799954916,
+        "canonical_item_id": 7,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 0.267470208,
+        "canonical_item_id": 8,
+        "rolling_item_id": 9
+      },
+      {
+        "age_seconds": 7.998627375,
+        "canonical_item_id": 10,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 5.431093042,
+        "canonical_item_id": 11,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 2.784402167,
+        "canonical_item_id": 12,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 0.335283042,
+        "canonical_item_id": 13,
+        "rolling_item_id": 14
+      },
+      {
+        "age_seconds": 8.147586542,
+        "canonical_item_id": 15,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 5.540109917,
+        "canonical_item_id": 16,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 2.909287,
+        "canonical_item_id": 17,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 0.457224542,
+        "canonical_item_id": 18,
+        "rolling_item_id": 19
+      },
+      {
+        "age_seconds": 8.157560542,
+        "canonical_item_id": 20,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 5.40194575,
+        "canonical_item_id": 21,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 2.86301975,
+        "canonical_item_id": 22,
+        "rolling_item_id": 24
+      },
+      {
+        "age_seconds": 0.3419165,
+        "canonical_item_id": 23,
+        "rolling_item_id": 24
+      }
+    ],
+    "decode_requests": {
+      "base": 24,
+      "rolling": 6,
+      "terminal": 1,
+      "total": 31
+    },
+    "decode_seconds": {
+      "base": 6.460012,
+      "rolling": 2.010769,
+      "terminal": 1.965571
+    },
+    "decoded_audio_work_seconds": {
+      "base": 60.0,
+      "rolling": 210.0,
+      "terminal": 60.0
+    },
+    "first_publication_rows": [
+      {
+        "age_seconds": 3.256681,
+        "first_spoken_word_seconds": 0.0,
+        "item_id": 0,
+        "publication_seconds": 3.256681
+      },
+      {
+        "age_seconds": 3.0287255840000005,
+        "first_spoken_word_seconds": 2.65,
+        "item_id": 1,
+        "publication_seconds": 5.678725584
+      },
+      {
+        "age_seconds": 3.099269208999999,
+        "first_spoken_word_seconds": 5.0,
+        "item_id": 2,
+        "publication_seconds": 8.099269209
+      },
+      {
+        "age_seconds": 3.281706584,
+        "first_spoken_word_seconds": 7.5,
+        "item_id": 3,
+        "publication_seconds": 10.781706584
+      },
+      {
+        "age_seconds": 3.0446754170000006,
+        "first_spoken_word_seconds": 10.0,
+        "item_id": 5,
+        "publication_seconds": 13.044675417
+      },
+      {
+        "age_seconds": 3.1517750840000005,
+        "first_spoken_word_seconds": 12.5,
+        "item_id": 6,
+        "publication_seconds": 15.651775084
+      },
+      {
+        "age_seconds": 3.1459645839999997,
+        "first_spoken_word_seconds": 15.08,
+        "item_id": 7,
+        "publication_seconds": 18.225964584
+      },
+      {
+        "age_seconds": 3.2584492920000017,
+        "first_spoken_word_seconds": 17.5,
+        "item_id": 8,
+        "publication_seconds": 20.758449292
+      },
+      {
+        "age_seconds": 2.917617291999999,
+        "first_spoken_word_seconds": 20.11,
+        "item_id": 10,
+        "publication_seconds": 23.027617292
+      },
+      {
+        "age_seconds": 3.0951516249999997,
+        "first_spoken_word_seconds": 22.5,
+        "item_id": 11,
+        "publication_seconds": 25.595151625
+      },
+      {
+        "age_seconds": 3.2418425000000006,
+        "first_spoken_word_seconds": 25.0,
+        "item_id": 12,
+        "publication_seconds": 28.2418425
+      },
+      {
+        "age_seconds": 3.190961625,
+        "first_spoken_word_seconds": 27.5,
+        "item_id": 13,
+        "publication_seconds": 30.690961625
+      },
+      {
+        "age_seconds": 3.0433205419999965,
+        "first_spoken_word_seconds": 30.0,
+        "item_id": 15,
+        "publication_seconds": 33.043320542
+      },
+      {
+        "age_seconds": 2.800797166999999,
+        "first_spoken_word_seconds": 32.85,
+        "item_id": 16,
+        "publication_seconds": 35.650797167
+      },
+      {
+        "age_seconds": 3.211620083999996,
+        "first_spoken_word_seconds": 35.07,
+        "item_id": 17,
+        "publication_seconds": 38.281620084
+      },
+      {
+        "age_seconds": 3.233682541999997,
+        "first_spoken_word_seconds": 37.5,
+        "item_id": 18,
+        "publication_seconds": 40.733682542
+      },
+      {
+        "age_seconds": 2.8424118750000034,
+        "first_spoken_word_seconds": 40.08,
+        "item_id": 20,
+        "publication_seconds": 42.922411875
+      },
+      {
+        "age_seconds": 3.1780266669999975,
+        "first_spoken_word_seconds": 42.5,
+        "item_id": 21,
+        "publication_seconds": 45.678026667
+      },
+      {
+        "age_seconds": 3.216952667000001,
+        "first_spoken_word_seconds": 45.0,
+        "item_id": 22,
+        "publication_seconds": 48.216952667
+      },
+      {
+        "age_seconds": 3.238055916999997,
+        "first_spoken_word_seconds": 47.5,
+        "item_id": 23,
+        "publication_seconds": 50.738055917
+      },
+      {
+        "age_seconds": 2.8723198750000023,
+        "first_spoken_word_seconds": 50.15,
+        "item_id": 25,
+        "publication_seconds": 53.022319875
+      },
+      {
+        "age_seconds": 2.7574247499999984,
+        "first_spoken_word_seconds": 52.78,
+        "item_id": 26,
+        "publication_seconds": 55.53742475
+      },
+      {
+        "age_seconds": 3.207657709000003,
+        "first_spoken_word_seconds": 55.0,
+        "item_id": 27,
+        "publication_seconds": 58.207657709
+      },
+      {
+        "age_seconds": 2.939488458999996,
+        "first_spoken_word_seconds": 57.71,
+        "item_id": 28,
+        "publication_seconds": 60.649488459
+      }
+    ],
+    "first_publication_seconds": {
+      "count": 24,
+      "max": 3.281707,
+      "mean": 3.093941,
+      "p50": 3.14887,
+      "p95": 3.258184
+    },
+    "rolling_queue": {
+      "admission_refusals": 0,
+      "completed": 6,
+      "failed_windows": 0,
+      "final_depth": 0,
+      "max_depth": 1,
+      "stale_completions": 0
+    },
+    "rtf": {
+      "all_decode_combined": 0.173939,
+      "base": 0.107667,
+      "pre_stop_combined": 0.14118,
+      "rolling": 0.033513,
+      "terminal": 0.03276
+    },
+    "stop_to_final_seconds": 2.410814,
+    "terminal_failures": []
+  },
+  "file": {
+    "byte_identical": true,
+    "comparator_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-convergence-0824/M4-e4-exit-2/passes/trio-A/lex_keyu_jin/file-hypothesis.jsonl",
+    "comparator_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+    "generated_tokens": 342,
+    "job_id": "387a36c7b572",
+    "jsonl_sha256": "01431a29e5eb546f52413f2a19dff1a82985f9053033894c2b6f440056ffb2c1",
+    "status": "waiting_review",
+    "wall_seconds": 2.044118
+  },
+  "provenance": {
+    "base_url": "https://127.0.0.1:7861",
+    "client_host": "MacStudio.local",
+    "deployed_code_revision": "22dc5b8de3ed31a94dcb1b93d2256f8cb8ac75d8",
+    "inference": {
+      "decoding": "greedy",
+      "max_length": 16384,
+      "max_new_tokens": 12000,
+      "prompt": "请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。",
+      "temperature": 1.0
+    },
+    "model": {
+      "backend": "vllm",
+      "base_url": "http://127.0.0.1:18000/v1",
+      "device": "vllm-api",
+      "dtype": "remote",
+      "path": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+      "processor": {},
+      "speaker_identity": {
+        "availability": {
+          "available": false,
+          "reason": "disabled"
+        },
+        "config": {
+          "tier_a": {
+            "min_overlap_dice": 0.75,
+            "min_overlap_support_seconds": 2.0,
+            "mutual_margin_seconds": 1.0
+          },
+          "tier_b": {
+            "enabled": false,
+            "margin": 0.2,
+            "max_segments_per_node": 3,
+            "min_segment_seconds": 2.0,
+            "similarity": 0.7
+          }
+        },
+        "provider": {
+          "device": "cpu",
+          "embedding_dimension": 256,
+          "frontend_version": "wespeaker-onnx-fbank-v1",
+          "provider": "wespeaker_resnet152_lm",
+          "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+          "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+        },
+        "schema_version": 2
+      },
+      "windowing": {
+        "stride_seconds": 120,
+        "window_seconds": 150
+      }
+    },
+    "repo_head": "7608c91ce36441d9075fbba41e18c5fae8f464ac",
+    "runtime_descriptor": {
+      "bounds": {
+        "hard_cap_samples": 40000,
+        "max_events": 1000,
+        "max_frame_samples": 16000,
+        "max_identity_speakers": 16,
+        "max_queue_depth": 16,
+        "max_retained_samples": 960000,
+        "max_tape_bytes": 9600000,
+        "stop_drain_deadline_seconds": 5.0
+      },
+      "config_hashes": {
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+        "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+        "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+        "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+      },
+      "feature_enabled": true,
+      "frame_samples": 8000,
+      "live_protocol": {
+        "capabilities": {
+          "binary": false,
+          "idempotent_frames": true,
+          "lanes": true,
+          "resumable": true
+        },
+        "max_protocol_version": 2,
+        "min_protocol_version": 2,
+        "protocol": "moss-live-service.v2"
+      },
+      "live_protocol_version": "moss-live-service.v1",
+      "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+      "provider_name": "moss-rtx-webrtc-wespeaker",
+      "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "sample_rate": 16000,
+      "schema_version": 1,
+      "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea"
+    },
+    "started_utc": "2026-08-25T18:56:23.867386Z"
+  },
+  "reference": {
+    "bytes": 1228,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_diarization_1min/samples/lex_keyu_jin/reference.jsonl",
+    "sha256": "0c7cb619df47707a2e4ea9ce29441047cf58b01f65a52952e7833aa03bb5a1d0"
+  },
+  "run": "pass-B-lex_keyu_jin_1m",
+  "sample_accounting": {
+    "accepted_samples": 960000,
+    "accounted_samples": 960000,
+    "exact": true
+  },
+  "surface_clocks": {
+    "post_stop_final": {
+      "observed_monotonic_ns": 784818142785208,
+      "observed_utc": "2026-08-25T18:56:21.708835Z",
+      "surface": "post_stop_final"
+    },
+    "pre_stop_immediate": {
+      "observed_monotonic_ns": 784815070601666,
+      "observed_utc": "2026-08-25T18:56:18.636665Z",
+      "surface": "pre_stop_immediate"
+    },
+    "pre_stop_settled": {
+      "observed_monotonic_ns": 784815731811208,
+      "observed_utc": "2026-08-25T18:56:19.297871Z",
+      "surface": "pre_stop_settled",
+      "wait": {
+        "drained": true,
+        "polls": 6,
+        "seconds": 0.66121,
+        "timeout_seconds": 20.0
+      }
+    },
+    "stop_return": {
+      "observed_monotonic_ns": 784816070638125,
+      "observed_utc": "2026-08-25T18:56:19.636689Z",
+      "surface": "stop_return"
+    }
+  },
+  "surface_files": {
+    "file": "evidence/live-surface-optimization-20260825/pass-B-lex_keyu_jin_1m/file.jsonl",
+    "post_stop_final": "evidence/live-surface-optimization-20260825/pass-B-lex_keyu_jin_1m/post_stop_final.jsonl",
+    "pre_stop_immediate": "evidence/live-surface-optimization-20260825/pass-B-lex_keyu_jin_1m/pre_stop_immediate.jsonl",
+    "pre_stop_settled": "evidence/live-surface-optimization-20260825/pass-B-lex_keyu_jin_1m/pre_stop_settled.jsonl",
+    "stop_return": "evidence/live-surface-optimization-20260825/pass-B-lex_keyu_jin_1m/stop_return.jsonl"
+  },
+  "surface_scores": {
+    "file": {
+      "content_recall": 1.0,
+      "der": 0.079,
+      "hypothesis_words": 148,
+      "matched_word_speaker_accuracy": 1.0,
+      "reference_speech_der": 0.068361,
+      "reference_words": 139,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "tbsa": 0.9317,
+      "text_coverage": 0.936387,
+      "text_speaker_accuracy": 0.92538,
+      "wer": 0.064748
+    },
+    "post_stop_final": {
+      "content_recall": 1.0,
+      "der": 0.079,
+      "hypothesis_words": 148,
+      "matched_word_speaker_accuracy": 1.0,
+      "reference_speech_der": 0.068361,
+      "reference_words": 139,
+      "segments": 10,
+      "speaker_accuracy": 0.921,
+      "tbsa": 0.9317,
+      "text_coverage": 0.936387,
+      "text_speaker_accuracy": 0.92538,
+      "wer": 0.064748
+    },
+    "pre_stop_immediate": {
+      "content_recall": 0.935252,
+      "der": 0.148167,
+      "hypothesis_words": 143,
+      "matched_word_speaker_accuracy": 0.935252,
+      "reference_speech_der": 0.12865,
+      "reference_words": 139,
+      "segments": 17,
+      "speaker_accuracy": 0.851833,
+      "tbsa": 0.852958,
+      "text_coverage": 0.859971,
+      "text_speaker_accuracy": 0.844849,
+      "wer": 0.143885
+    },
+    "pre_stop_settled": {
+      "content_recall": 0.978417,
+      "der": 0.111167,
+      "hypothesis_words": 151,
+      "matched_word_speaker_accuracy": 0.978417,
+      "reference_speech_der": 0.090519,
+      "reference_words": 139,
+      "segments": 18,
+      "speaker_accuracy": 0.888833,
+      "tbsa": 0.891296,
+      "text_coverage": 0.901496,
+      "text_speaker_accuracy": 0.886374,
+      "wer": 0.115108
+    },
+    "stop_return": {
+      "content_recall": 0.985612,
+      "der": 0.097333,
+      "hypothesis_words": 150,
+      "matched_word_speaker_accuracy": 0.985612,
+      "reference_speech_der": 0.083476,
+      "reference_words": 139,
+      "segments": 16,
+      "speaker_accuracy": 0.902667,
+      "tbsa": 0.905494,
+      "text_coverage": 0.913867,
+      "text_speaker_accuracy": 0.90205,
+      "wer": 0.100719
+    }
+  }
+}

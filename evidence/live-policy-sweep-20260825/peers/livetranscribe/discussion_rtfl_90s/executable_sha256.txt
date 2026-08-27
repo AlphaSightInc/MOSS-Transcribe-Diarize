@@ -1,0 +1,1 @@
+5a59299c1a8fd157cd456e809f6fbd0996970fd3fb462abd411cbec99d72358b  /Users/ga0/Desktop/AI_Projects/LiveTranscribe/.build/app-bundles/debug/LiveTranscribe.app/Contents/MacOS/LiveTranscribe

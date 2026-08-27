@@ -1,0 +1,1641 @@
+{
+  "base_url": "http://127.0.0.1:18000/v1",
+  "cache_started_empty": true,
+  "cases": {
+    "lex_adam_frank_3m": {
+      "arms": {
+        "10/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 18,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 10.256774374851958,
+            "p50_seconds": 3.7758728329651063,
+            "p95_seconds": 8.749467249014415,
+            "total_regions": 18,
+            "words": 546
+          },
+          "cost": {
+            "decode_audio_seconds": 180.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 18,
+            "max_request_seconds_contended": 1.781619624933228,
+            "p50_request_seconds_contended": 0.44692089600721374,
+            "projected_base_plus_witness_rtf": 0.20435,
+            "requests": 18,
+            "wall_seconds_contended": 16.28280241624452
+          },
+          "decode_health": {
+            "decodes": 18,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.951036,
+            "der": 0.079889,
+            "matched_word_speaker_accuracy": 0.951036,
+            "reference_speech_der": 0.066209,
+            "segments": 56,
+            "speaker_accuracy": 0.920111,
+            "tbsa": 0.913315,
+            "text_coverage": 0.928022,
+            "wer": 0.122411
+          }
+        },
+        "10/5:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 35,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 6.409017500001937,
+            "p50_seconds": 2.722616583108902,
+            "p95_seconds": 5.24994116603397,
+            "total_regions": 35,
+            "words": 282
+          },
+          "cost": {
+            "decode_audio_seconds": 350.0,
+            "decoded_audio_work_ratio": 1.944444,
+            "fresh_requests": 17,
+            "max_request_seconds_contended": 1.7978902499889955,
+            "p50_request_seconds_contended": 0.43818608298897743,
+            "projected_base_plus_witness_rtf": 0.283074,
+            "requests": 35,
+            "wall_seconds_contended": 30.453133250353858
+          },
+          "decode_health": {
+            "decodes": 35,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.947269,
+            "der": 0.10232,
+            "matched_word_speaker_accuracy": 0.945386,
+            "reference_speech_der": 0.088983,
+            "segments": 72,
+            "speaker_accuracy": 0.89768,
+            "tbsa": 0.89242,
+            "text_coverage": 0.903928,
+            "wer": 0.13371
+          }
+        },
+        "15/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 18,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 12.754931792034768,
+            "p50_seconds": 6.408082167059177,
+            "p95_seconds": 11.494093500077724,
+            "total_regions": 18,
+            "words": 412
+          },
+          "cost": {
+            "decode_audio_seconds": 270.0,
+            "decoded_audio_work_ratio": 1.5,
+            "fresh_requests": 18,
+            "max_request_seconds_contended": 1.990170874982141,
+            "p50_request_seconds_contended": 1.7805973750073463,
+            "projected_base_plus_witness_rtf": 0.241423,
+            "requests": 18,
+            "wall_seconds_contended": 22.95601591479499
+          },
+          "decode_health": {
+            "decodes": 18,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.945386,
+            "der": 0.085257,
+            "matched_word_speaker_accuracy": 0.943503,
+            "reference_speech_der": 0.072537,
+            "segments": 63,
+            "speaker_accuracy": 0.914743,
+            "tbsa": 0.904598,
+            "text_coverage": 0.920166,
+            "wer": 0.13371
+          }
+        },
+        "6/6:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 25,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 7.060202249893919,
+            "p50_seconds": 1.9898295828606933,
+            "p95_seconds": 4.949953332995065,
+            "total_regions": 30,
+            "words": 445
+          },
+          "cost": {
+            "decode_audio_seconds": 180.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 30,
+            "max_request_seconds_contended": 1.7193446670426056,
+            "p50_request_seconds_contended": 0.2591570205404423,
+            "projected_base_plus_witness_rtf": 0.216352,
+            "requests": 30,
+            "wall_seconds_contended": 18.44330620788969
+          },
+          "decode_health": {
+            "decodes": 30,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.93032,
+            "der": 0.091611,
+            "matched_word_speaker_accuracy": 0.93032,
+            "reference_speech_der": 0.07783,
+            "segments": 60,
+            "speaker_accuracy": 0.908389,
+            "tbsa": 0.898261,
+            "text_coverage": 0.915914,
+            "wer": 0.146893
+          }
+        },
+        "8/4:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 44,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 5.072455584057607,
+            "p50_seconds": 1.7841725829756,
+            "p95_seconds": 4.284602875006385,
+            "total_regions": 44,
+            "words": 286
+          },
+          "cost": {
+            "decode_audio_seconds": 352.0,
+            "decoded_audio_work_ratio": 1.955556,
+            "fresh_requests": 44,
+            "max_request_seconds_contended": 1.6775645000161603,
+            "p50_request_seconds_contended": 0.31201727100415155,
+            "projected_base_plus_witness_rtf": 0.247828,
+            "requests": 44,
+            "wall_seconds_contended": 24.10891325492412
+          },
+          "decode_health": {
+            "decodes": 44,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.937853,
+            "der": 0.114453,
+            "matched_word_speaker_accuracy": 0.93597,
+            "reference_speech_der": 0.101477,
+            "segments": 78,
+            "speaker_accuracy": 0.885547,
+            "tbsa": 0.882217,
+            "text_coverage": 0.891012,
+            "wer": 0.135593
+          }
+        }
+      },
+      "base_control": {
+        "cost": {
+          "decode_audio_seconds": 180.0,
+          "fresh_requests": 77,
+          "max_request_seconds_contended": 1.7590112499892712,
+          "p50_request_seconds_contended": 0.20622241601813585,
+          "requests": 77,
+          "wall_seconds_contended": 38.882291585206985
+        },
+        "scores": {
+          "content_recall": 0.905838,
+          "der": 0.109333,
+          "matched_word_speaker_accuracy": 0.903955,
+          "reference_speech_der": 0.097557,
+          "segments": 81,
+          "speaker_accuracy": 0.890667,
+          "tbsa": 0.873393,
+          "text_coverage": 0.897451,
+          "wer": 0.190207
+        }
+      },
+      "comparator": {
+        "content_recall": 0.94162,
+        "der": 0.091167,
+        "hypothesis_words": 544,
+        "matched_word_speaker_accuracy": 0.94162,
+        "reference_speech_der": 0.077717,
+        "reference_words": 531,
+        "segments": 56,
+        "speaker_accuracy": 0.908833,
+        "tbsa": 0.899841,
+        "text_coverage": 0.913822,
+        "text_speaker_accuracy": 0.908576,
+        "wer": 0.13371
+      },
+      "duration_seconds": 180.0
+    },
+    "lex_bill_ackman": {
+      "arms": {
+        "10/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 4,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 8.186289750039577,
+            "p50_seconds": 3.9345182919641957,
+            "p95_seconds": 8.186289750039577,
+            "total_regions": 6,
+            "words": 114
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.7465074160136282,
+            "p50_request_seconds_contended": 1.054542166471947,
+            "projected_base_plus_witness_rtf": 0.214314,
+            "requests": 6,
+            "wall_seconds_contended": 6.222079789964482
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 1,
+          "scores": {
+            "content_recall": 0.926136,
+            "der": 0.127333,
+            "matched_word_speaker_accuracy": 0.920455,
+            "reference_speech_der": 0.111789,
+            "segments": 21,
+            "speaker_accuracy": 0.872667,
+            "tbsa": 0.876313,
+            "text_coverage": 0.916587,
+            "wer": 0.204545
+          }
+        },
+        "10/5:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 11,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 8.186289750039577,
+            "p50_seconds": 4.012426248984411,
+            "p95_seconds": 8.186289750039577,
+            "total_regions": 11,
+            "words": 115
+          },
+          "cost": {
+            "decode_audio_seconds": 110.0,
+            "decoded_audio_work_ratio": 1.833333,
+            "fresh_requests": 5,
+            "max_request_seconds_contended": 2.0695874579250813,
+            "p50_request_seconds_contended": 1.6162177079822868,
+            "projected_base_plus_witness_rtf": 0.324283,
+            "requests": 11,
+            "wall_seconds_contended": 12.820200956892222
+          },
+          "decode_health": {
+            "decodes": 11,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.9375,
+            "der": 0.150748,
+            "matched_word_speaker_accuracy": 0.926136,
+            "reference_speech_der": 0.138034,
+            "segments": 26,
+            "speaker_accuracy": 0.849252,
+            "tbsa": 0.864897,
+            "text_coverage": 0.893581,
+            "wer": 0.181818
+          }
+        },
+        "15/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 6,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 12.074812834034674,
+            "p50_seconds": 5.429401957895607,
+            "p95_seconds": 12.074812834034674,
+            "total_regions": 6,
+            "words": 146
+          },
+          "cost": {
+            "decode_audio_seconds": 90.0,
+            "decoded_audio_work_ratio": 1.5,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.9791270419955254,
+            "p50_request_seconds_contended": 1.2565103334491141,
+            "projected_base_plus_witness_rtf": 0.23615,
+            "requests": 6,
+            "wall_seconds_contended": 7.532245333888568
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.943182,
+            "der": 0.134575,
+            "matched_word_speaker_accuracy": 0.943182,
+            "reference_speech_der": 0.126168,
+            "segments": 20,
+            "speaker_accuracy": 0.865425,
+            "tbsa": 0.872926,
+            "text_coverage": 0.894758,
+            "wer": 0.170455
+          }
+        },
+        "6/6:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 8,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 7.182487167068757,
+            "p50_seconds": 2.305537416948937,
+            "p95_seconds": 4.966367584071122,
+            "total_regions": 10,
+            "words": 147
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 10,
+            "max_request_seconds_contended": 1.7801484590163454,
+            "p50_request_seconds_contended": 0.41194454196374863,
+            "projected_base_plus_witness_rtf": 0.26005,
+            "requests": 10,
+            "wall_seconds_contended": 8.966211167862639
+          },
+          "decode_health": {
+            "decodes": 10,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.909091,
+            "der": 0.113667,
+            "matched_word_speaker_accuracy": 0.909091,
+            "reference_speech_der": 0.108999,
+            "segments": 22,
+            "speaker_accuracy": 0.886333,
+            "tbsa": 0.872752,
+            "text_coverage": 0.915588,
+            "wer": 0.221591
+          }
+        },
+        "8/4:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 14,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 4.948576542083174,
+            "p50_seconds": 3.022866875049658,
+            "p95_seconds": 4.948576542083174,
+            "total_regions": 14,
+            "words": 112
+          },
+          "cost": {
+            "decode_audio_seconds": 112.0,
+            "decoded_audio_work_ratio": 1.866667,
+            "fresh_requests": 14,
+            "max_request_seconds_contended": 1.8774403339484707,
+            "p50_request_seconds_contended": 0.45876237499760464,
+            "projected_base_plus_witness_rtf": 0.316609,
+            "requests": 14,
+            "wall_seconds_contended": 12.359764917055145
+          },
+          "decode_health": {
+            "decodes": 14,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.920455,
+            "der": 0.152322,
+            "matched_word_speaker_accuracy": 0.909091,
+            "reference_speech_der": 0.142646,
+            "segments": 31,
+            "speaker_accuracy": 0.847678,
+            "tbsa": 0.864152,
+            "text_coverage": 0.896074,
+            "wer": 0.198864
+          }
+        }
+      },
+      "base_control": {
+        "cost": {
+          "decode_audio_seconds": 60.0,
+          "fresh_requests": 24,
+          "max_request_seconds_contended": 1.5683709579752758,
+          "p50_request_seconds_contended": 0.2084431879920885,
+          "requests": 24,
+          "wall_seconds_contended": 10.986285624676384
+        },
+        "scores": {
+          "content_recall": 0.863636,
+          "der": 0.198,
+          "matched_word_speaker_accuracy": 0.857955,
+          "reference_speech_der": 0.189222,
+          "segments": 31,
+          "speaker_accuracy": 0.802,
+          "tbsa": 0.805686,
+          "text_coverage": 0.845688,
+          "wer": 0.272727
+        }
+      },
+      "comparator": {
+        "content_recall": 0.920455,
+        "der": 0.131,
+        "hypothesis_words": 191,
+        "matched_word_speaker_accuracy": 0.914773,
+        "reference_speech_der": 0.115626,
+        "reference_words": 176,
+        "segments": 22,
+        "speaker_accuracy": 0.869,
+        "tbsa": 0.872601,
+        "text_coverage": 0.913532,
+        "text_speaker_accuracy": 0.888553,
+        "wer": 0.210227
+      },
+      "duration_seconds": 60.0
+    },
+    "lex_javier_milei": {
+      "arms": {
+        "10/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 5,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 9.69230058394838,
+            "p50_seconds": 3.900211416920648,
+            "p95_seconds": 8.268044792134315,
+            "total_regions": 6,
+            "words": 96
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.7695797920459881,
+            "p50_request_seconds_contended": 0.38688233349239454,
+            "projected_base_plus_witness_rtf": 0.193116,
+            "requests": 6,
+            "wall_seconds_contended": 4.844181625987403
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.92,
+            "der": 0.117333,
+            "matched_word_speaker_accuracy": 0.92,
+            "reference_speech_der": 0.052269,
+            "segments": 14,
+            "speaker_accuracy": 0.882667,
+            "tbsa": 0.906296,
+            "text_coverage": 0.907061,
+            "wer": 0.096
+          }
+        },
+        "10/5:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 11,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 7.572188290883787,
+            "p50_seconds": 2.8877330409688895,
+            "p95_seconds": 7.572188290883787,
+            "total_regions": 11,
+            "words": 74
+          },
+          "cost": {
+            "decode_audio_seconds": 110.0,
+            "decoded_audio_work_ratio": 1.833333,
+            "fresh_requests": 5,
+            "max_request_seconds_contended": 1.822172333020717,
+            "p50_request_seconds_contended": 0.3948658750159666,
+            "projected_base_plus_witness_rtf": 0.268614,
+            "requests": 11,
+            "wall_seconds_contended": 9.37409787508659
+          },
+          "decode_health": {
+            "decodes": 11,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.928,
+            "der": 0.127939,
+            "matched_word_speaker_accuracy": 0.928,
+            "reference_speech_der": 0.064292,
+            "segments": 18,
+            "speaker_accuracy": 0.872061,
+            "tbsa": 0.899667,
+            "text_coverage": 0.895556,
+            "wer": 0.088
+          }
+        },
+        "15/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 6,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 14.003719373955391,
+            "p50_seconds": 6.422369209015741,
+            "p95_seconds": 14.003719373955391,
+            "total_regions": 6,
+            "words": 85
+          },
+          "cost": {
+            "decode_audio_seconds": 90.0,
+            "decoded_audio_work_ratio": 1.5,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.878643124946393,
+            "p50_request_seconds_contended": 1.2561952914693393,
+            "projected_base_plus_witness_rtf": 0.231748,
+            "requests": 6,
+            "wall_seconds_contended": 7.16214208281599
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.936,
+            "der": 0.124821,
+            "matched_word_speaker_accuracy": 0.936,
+            "reference_speech_der": 0.061184,
+            "segments": 16,
+            "speaker_accuracy": 0.875179,
+            "tbsa": 0.905094,
+            "text_coverage": 0.900126,
+            "wer": 0.08
+          }
+        },
+        "6/6:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 8,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 6.503966291998513,
+            "p50_seconds": 1.7112968320818638,
+            "p95_seconds": 4.961669874028303,
+            "total_regions": 10,
+            "words": 101
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 10,
+            "max_request_seconds_contended": 1.6995483330683783,
+            "p50_request_seconds_contended": 0.32581822894280776,
+            "projected_base_plus_witness_rtf": 0.227051,
+            "requests": 10,
+            "wall_seconds_contended": 6.88032724999357
+          },
+          "decode_health": {
+            "decodes": 10,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.904,
+            "der": 0.1495,
+            "matched_word_speaker_accuracy": 0.904,
+            "reference_speech_der": 0.067894,
+            "segments": 15,
+            "speaker_accuracy": 0.8505,
+            "tbsa": 0.877206,
+            "text_coverage": 0.873608,
+            "wer": 0.112
+          }
+        },
+        "8/4:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 14,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 6.8837309159571305,
+            "p50_seconds": 2.300878916997462,
+            "p95_seconds": 6.8837309159571305,
+            "total_regions": 14,
+            "words": 71
+          },
+          "cost": {
+            "decode_audio_seconds": 112.0,
+            "decoded_audio_work_ratio": 1.866667,
+            "fresh_requests": 14,
+            "max_request_seconds_contended": 1.793325333041139,
+            "p50_request_seconds_contended": 0.45837943750666454,
+            "projected_base_plus_witness_rtf": 0.302605,
+            "requests": 14,
+            "wall_seconds_contended": 11.413549874792807
+          },
+          "decode_health": {
+            "decodes": 14,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.904,
+            "der": 0.175386,
+            "matched_word_speaker_accuracy": 0.896,
+            "reference_speech_der": 0.08674,
+            "segments": 23,
+            "speaker_accuracy": 0.824614,
+            "tbsa": 0.852145,
+            "text_coverage": 0.845527,
+            "wer": 0.128
+          }
+        }
+      },
+      "base_control": {
+        "cost": {
+          "decode_audio_seconds": 60.0,
+          "fresh_requests": 32,
+          "max_request_seconds_contended": 1.6105629169614986,
+          "p50_request_seconds_contended": 0.2388165210140869,
+          "requests": 32,
+          "wall_seconds_contended": 15.901838375837542
+        },
+        "scores": {
+          "content_recall": 0.92,
+          "der": 0.1775,
+          "matched_word_speaker_accuracy": 0.92,
+          "reference_speech_der": 0.108631,
+          "segments": 28,
+          "speaker_accuracy": 0.8225,
+          "tbsa": 0.848778,
+          "text_coverage": 0.846371,
+          "wer": 0.144
+        }
+      },
+      "comparator": {
+        "content_recall": 0.88,
+        "der": 0.161667,
+        "hypothesis_words": 117,
+        "matched_word_speaker_accuracy": 0.88,
+        "reference_speech_der": 0.101749,
+        "reference_words": 125,
+        "segments": 15,
+        "speaker_accuracy": 0.838333,
+        "tbsa": 0.858226,
+        "text_coverage": 0.858968,
+        "text_speaker_accuracy": 0.858968,
+        "wer": 0.144
+      },
+      "duration_seconds": 60.0
+    },
+    "lex_keyu_jin_1m": {
+      "arms": {
+        "10/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 5,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 7.7890712501248345,
+            "p50_seconds": 3.983729875064455,
+            "p95_seconds": 7.7890712501248345,
+            "total_regions": 6,
+            "words": 123
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.8330411249771714,
+            "p50_request_seconds_contended": 0.5192786040715873,
+            "projected_base_plus_witness_rtf": 0.191772,
+            "requests": 6,
+            "wall_seconds_contended": 5.19504533323925
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.985612,
+            "der": 0.097333,
+            "matched_word_speaker_accuracy": 0.985612,
+            "reference_speech_der": 0.083476,
+            "segments": 16,
+            "speaker_accuracy": 0.902667,
+            "tbsa": 0.905494,
+            "text_coverage": 0.913867,
+            "wer": 0.100719
+          }
+        },
+        "10/5:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 11,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 7.7890712501248345,
+            "p50_seconds": 2.8011702079093084,
+            "p95_seconds": 7.7890712501248345,
+            "total_regions": 11,
+            "words": 92
+          },
+          "cost": {
+            "decode_audio_seconds": 110.0,
+            "decoded_audio_work_ratio": 1.833333,
+            "fresh_requests": 5,
+            "max_request_seconds_contended": 1.8384534999495372,
+            "p50_request_seconds_contended": 0.4449251660844311,
+            "projected_base_plus_witness_rtf": 0.272386,
+            "requests": 11,
+            "wall_seconds_contended": 10.031892292201519
+          },
+          "decode_health": {
+            "decodes": 11,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 1.0,
+            "der": 0.101365,
+            "matched_word_speaker_accuracy": 1.0,
+            "reference_speech_der": 0.087288,
+            "segments": 19,
+            "speaker_accuracy": 0.898635,
+            "tbsa": 0.905753,
+            "text_coverage": 0.914212,
+            "wer": 0.100719
+          }
+        },
+        "15/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 6,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 14.146015082951635,
+            "p50_seconds": 6.626489999005571,
+            "p95_seconds": 14.146015082951635,
+            "total_regions": 6,
+            "words": 116
+          },
+          "cost": {
+            "decode_audio_seconds": 90.0,
+            "decoded_audio_work_ratio": 1.5,
+            "fresh_requests": 6,
+            "max_request_seconds_contended": 1.800705749890767,
+            "p50_request_seconds_contended": 1.146495749533642,
+            "projected_base_plus_witness_rtf": 0.218032,
+            "requests": 6,
+            "wall_seconds_contended": 6.770684706862085
+          },
+          "decode_health": {
+            "decodes": 6,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 1.0,
+            "der": 0.090111,
+            "matched_word_speaker_accuracy": 1.0,
+            "reference_speech_der": 0.079469,
+            "segments": 16,
+            "speaker_accuracy": 0.909889,
+            "tbsa": 0.92256,
+            "text_coverage": 0.926771,
+            "wer": 0.071942
+          }
+        },
+        "6/6:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 8,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 5.877201875089668,
+            "p50_seconds": 2.3386103759985417,
+            "p95_seconds": 5.627639834070578,
+            "total_regions": 10,
+            "words": 123
+          },
+          "cost": {
+            "decode_audio_seconds": 60.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 10,
+            "max_request_seconds_contended": 1.764739834005013,
+            "p50_request_seconds_contended": 0.377335270983167,
+            "projected_base_plus_witness_rtf": 0.228568,
+            "requests": 10,
+            "wall_seconds_contended": 7.4028320430079475
+          },
+          "decode_health": {
+            "decodes": 10,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.971223,
+            "der": 0.063833,
+            "matched_word_speaker_accuracy": 0.971223,
+            "reference_speech_der": 0.052387,
+            "segments": 14,
+            "speaker_accuracy": 0.936167,
+            "tbsa": 0.919804,
+            "text_coverage": 0.94699,
+            "wer": 0.143885
+          }
+        },
+        "8/4:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 14,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 5.968218541005626,
+            "p50_seconds": 2.1243078340776265,
+            "p95_seconds": 5.67728366702795,
+            "total_regions": 14,
+            "words": 86
+          },
+          "cost": {
+            "decode_audio_seconds": 112.0,
+            "decoded_audio_work_ratio": 1.866667,
+            "fresh_requests": 14,
+            "max_request_seconds_contended": 1.7911757919937372,
+            "p50_request_seconds_contended": 0.340495208511129,
+            "projected_base_plus_witness_rtf": 0.296696,
+            "requests": 14,
+            "wall_seconds_contended": 11.49051466723904
+          },
+          "decode_health": {
+            "decodes": 14,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.985612,
+            "der": 0.115362,
+            "matched_word_speaker_accuracy": 0.985612,
+            "reference_speech_der": 0.101198,
+            "segments": 28,
+            "speaker_accuracy": 0.884638,
+            "tbsa": 0.879693,
+            "text_coverage": 0.888885,
+            "wer": 0.129496
+          }
+        }
+      },
+      "base_control": {
+        "cost": {
+          "decode_audio_seconds": 60.0,
+          "fresh_requests": 24,
+          "max_request_seconds_contended": 1.5550109159667045,
+          "p50_request_seconds_contended": 0.1833418959286064,
+          "requests": 24,
+          "wall_seconds_contended": 10.986270543769933
+        },
+        "scores": {
+          "content_recall": 0.956835,
+          "der": 0.111167,
+          "matched_word_speaker_accuracy": 0.956835,
+          "reference_speech_der": 0.091034,
+          "segments": 26,
+          "speaker_accuracy": 0.888833,
+          "tbsa": 0.873604,
+          "text_coverage": 0.903249,
+          "wer": 0.194245
+        }
+      },
+      "comparator": {
+        "content_recall": 0.978417,
+        "der": 0.111167,
+        "hypothesis_words": 151,
+        "matched_word_speaker_accuracy": 0.978417,
+        "reference_speech_der": 0.090519,
+        "reference_words": 139,
+        "segments": 18,
+        "speaker_accuracy": 0.888833,
+        "tbsa": 0.891296,
+        "text_coverage": 0.901496,
+        "text_speaker_accuracy": 0.886374,
+        "wer": 0.115108
+      },
+      "duration_seconds": 60.0
+    },
+    "lex_keyu_jin_5m": {
+      "arms": {
+        "10/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 29,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 11.495435042018073,
+            "p50_seconds": 4.427605084124963,
+            "p95_seconds": 9.019169083982703,
+            "total_regions": 30,
+            "words": 722
+          },
+          "cost": {
+            "decode_audio_seconds": 300.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 30,
+            "max_request_seconds_contended": 1.853694458026439,
+            "p50_request_seconds_contended": 0.3703588540083729,
+            "projected_base_plus_witness_rtf": 0.195354,
+            "requests": 30,
+            "wall_seconds_contended": 24.87563920696266
+          },
+          "decode_health": {
+            "decodes": 30,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 1,
+          "scores": {
+            "content_recall": 0.957592,
+            "der": 0.0886,
+            "matched_word_speaker_accuracy": 0.954856,
+            "reference_speech_der": 0.066913,
+            "segments": 77,
+            "speaker_accuracy": 0.9114,
+            "tbsa": 0.916156,
+            "text_coverage": 0.918924,
+            "wer": 0.082079
+          }
+        },
+        "10/5:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 59,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 8.869159250012599,
+            "p50_seconds": 2.787134125083682,
+            "p95_seconds": 6.393752125049941,
+            "total_regions": 59,
+            "words": 400
+          },
+          "cost": {
+            "decode_audio_seconds": 590.0,
+            "decoded_audio_work_ratio": 1.966667,
+            "fresh_requests": 29,
+            "max_request_seconds_contended": 1.853694458026439,
+            "p50_request_seconds_contended": 0.3701015410479158,
+            "projected_base_plus_witness_rtf": 0.272146,
+            "requests": 59,
+            "wall_seconds_contended": 47.91321499913465
+          },
+          "decode_health": {
+            "decodes": 59,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.95896,
+            "der": 0.105034,
+            "matched_word_speaker_accuracy": 0.95212,
+            "reference_speech_der": 0.087441,
+            "segments": 121,
+            "speaker_accuracy": 0.894966,
+            "tbsa": 0.904045,
+            "text_coverage": 0.904026,
+            "wer": 0.084815
+          }
+        },
+        "15/10:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 30,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": true,
+            "max_seconds": 14.10770012492314,
+            "p50_seconds": 5.7689260830404265,
+            "p95_seconds": 10.354224124983887,
+            "total_regions": 30,
+            "words": 565
+          },
+          "cost": {
+            "decode_audio_seconds": 450.0,
+            "decoded_audio_work_ratio": 1.5,
+            "fresh_requests": 30,
+            "max_request_seconds_contended": 1.9311477079754695,
+            "p50_request_seconds_contended": 0.6847760420059785,
+            "projected_base_plus_witness_rtf": 0.222665,
+            "requests": 30,
+            "wall_seconds_contended": 33.0687259597471
+          },
+          "decode_health": {
+            "decodes": 30,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.961696,
+            "der": 0.092249,
+            "matched_word_speaker_accuracy": 0.95896,
+            "reference_speech_der": 0.076538,
+            "segments": 98,
+            "speaker_accuracy": 0.907751,
+            "tbsa": 0.914878,
+            "text_coverage": 0.915079,
+            "wer": 0.075239
+          }
+        },
+        "6/6:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 46,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 7.246673375894318,
+            "p50_seconds": 2.068581583085461,
+            "p95_seconds": 5.253232667050327,
+            "total_regions": 50,
+            "words": 700
+          },
+          "cost": {
+            "decode_audio_seconds": 300.0,
+            "decoded_audio_work_ratio": 1.0,
+            "fresh_requests": 50,
+            "max_request_seconds_contended": 1.5889879589667544,
+            "p50_request_seconds_contended": 0.24171660403953865,
+            "projected_base_plus_witness_rtf": 0.203605,
+            "requests": 50,
+            "wall_seconds_contended": 27.350882834172808
+          },
+          "decode_health": {
+            "decodes": 50,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 1,
+          "scores": {
+            "content_recall": 0.949384,
+            "der": 0.065833,
+            "matched_word_speaker_accuracy": 0.946648,
+            "reference_speech_der": 0.045623,
+            "segments": 73,
+            "speaker_accuracy": 0.934167,
+            "tbsa": 0.927432,
+            "text_coverage": 0.941115,
+            "wer": 0.102599
+          }
+        },
+        "8/4:lexical": {
+          "correction_age_floor": {
+            "changed_regions": 74,
+            "definition": "floor: window_end + window_decode - (span_end + span_decode), changed regions only",
+            "floor_exceeds_g6": false,
+            "max_seconds": 6.826793082947843,
+            "p50_seconds": 2.1537151670316206,
+            "p95_seconds": 4.639987749001008,
+            "total_regions": 74,
+            "words": 399
+          },
+          "cost": {
+            "decode_audio_seconds": 592.0,
+            "decoded_audio_work_ratio": 1.973333,
+            "fresh_requests": 74,
+            "max_request_seconds_contended": 1.7172640409553424,
+            "p50_request_seconds_contended": 0.32262752047972754,
+            "projected_base_plus_witness_rtf": 0.28438,
+            "requests": 74,
+            "wall_seconds_contended": 51.58332383132074
+          },
+          "decode_health": {
+            "decodes": 74,
+            "discarded_to_empty": 0,
+            "malformed": 0,
+            "malformed_rate": 0.0,
+            "missing_closing_timestamp": 0,
+            "refusals": 0,
+            "zero_parsed_with_output": 0
+          },
+          "join_duplicates": 0,
+          "scores": {
+            "content_recall": 0.950752,
+            "der": 0.11654,
+            "matched_word_speaker_accuracy": 0.942544,
+            "reference_speech_der": 0.101001,
+            "segments": 136,
+            "speaker_accuracy": 0.88346,
+            "tbsa": 0.889963,
+            "text_coverage": 0.889973,
+            "wer": 0.099863
+          }
+        }
+      },
+      "base_control": {
+        "cost": {
+          "decode_audio_seconds": 300.0,
+          "fresh_requests": 128,
+          "max_request_seconds_contended": 1.6132051669992507,
+          "p50_request_seconds_contended": 0.15293464600108564,
+          "requests": 128,
+          "wall_seconds_contended": 48.070094999391586
+        },
+        "scores": {
+          "content_recall": 0.930233,
+          "der": 0.097933,
+          "matched_word_speaker_accuracy": 0.926129,
+          "reference_speech_der": 0.07939,
+          "segments": 127,
+          "speaker_accuracy": 0.902067,
+          "tbsa": 0.892334,
+          "text_coverage": 0.908445,
+          "wer": 0.146375
+        }
+      },
+      "comparator": {
+        "content_recall": 0.948016,
+        "der": 0.095467,
+        "hypothesis_words": 738,
+        "matched_word_speaker_accuracy": 0.94528,
+        "reference_speech_der": 0.074033,
+        "reference_words": 731,
+        "segments": 78,
+        "speaker_accuracy": 0.904533,
+        "tbsa": 0.909365,
+        "text_coverage": 0.912604,
+        "text_speaker_accuracy": 0.906313,
+        "wer": 0.090287
+      },
+      "duration_seconds": 300.0
+    }
+  },
+  "elapsed_seconds": 502.638939,
+  "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+  "preregistration": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/live-surface-optimization/PREREGISTRATION-GEOMETRY.md",
+  "request_concurrency": 1,
+  "schema": "moss-live-surface-geometry.v1",
+  "summary": {
+    "arms": {
+      "10/10:lexical": {
+        "correction_age_floor_p95_max": 9.019169083982703,
+        "decoded_audio_work_ratio_mean": 1.0,
+        "eligible_for_deployed_shadow": true,
+        "eligible_for_production": false,
+        "five_case": {
+          "comparator_wer": 0.138666,
+          "content_recall": 0.948075,
+          "der": 0.102098,
+          "matched_word_speaker_accuracy": 0.946392,
+          "wer": 0.121151,
+          "wer_gain": 0.017515
+        },
+        "fresh_request_count": 66,
+        "material_wer_gain": true,
+        "no_case_regression_over_0_02": true,
+        "per_case": {
+          "lex_adam_frank_3m": {
+            "der": 0.079889,
+            "der_delta": -0.011278,
+            "matched_word_speaker_accuracy": 0.951036,
+            "wer": 0.122411,
+            "wer_delta": -0.011299
+          },
+          "lex_bill_ackman": {
+            "der": 0.127333,
+            "der_delta": -0.003667,
+            "matched_word_speaker_accuracy": 0.920455,
+            "wer": 0.204545,
+            "wer_delta": -0.005682
+          },
+          "lex_javier_milei": {
+            "der": 0.117333,
+            "der_delta": -0.044334,
+            "matched_word_speaker_accuracy": 0.92,
+            "wer": 0.096,
+            "wer_delta": -0.048
+          },
+          "lex_keyu_jin_1m": {
+            "der": 0.097333,
+            "der_delta": -0.013834,
+            "matched_word_speaker_accuracy": 0.985612,
+            "wer": 0.100719,
+            "wer_delta": -0.014389
+          },
+          "lex_keyu_jin_5m": {
+            "der": 0.0886,
+            "der_delta": -0.006867,
+            "matched_word_speaker_accuracy": 0.954856,
+            "wer": 0.082079,
+            "wer_delta": -0.008208
+          }
+        },
+        "production_blockers": [
+          "alternate-geometry correction p50/p95 on production event clocks unmeasured",
+          "alternate-geometry live queue/refusal/stale-window behavior unmeasured",
+          "offline full-WAV plan does not reproduce the current pre-Stop final-tail schedule"
+        ],
+        "projected_combined_rtf_max": 0.214314,
+        "request_count": 66,
+        "trio": {
+          "comparator_wer": 0.156445,
+          "der": 0.114,
+          "matched_word_speaker_accuracy": 0.942022,
+          "wer": 0.133755,
+          "wer_gain": 0.02269
+        }
+      },
+      "10/5:lexical": {
+        "correction_age_floor_p95_max": 8.186289750039577,
+        "decoded_audio_work_ratio_mean": 1.882222,
+        "eligible_for_deployed_shadow": true,
+        "eligible_for_production": false,
+        "five_case": {
+          "comparator_wer": 0.138666,
+          "content_recall": 0.954346,
+          "der": 0.117481,
+          "matched_word_speaker_accuracy": 0.950328,
+          "wer": 0.117812,
+          "wer_gain": 0.020854
+        },
+        "fresh_request_count": 61,
+        "material_wer_gain": true,
+        "no_case_regression_over_0_02": true,
+        "per_case": {
+          "lex_adam_frank_3m": {
+            "der": 0.10232,
+            "der_delta": 0.011153,
+            "matched_word_speaker_accuracy": 0.945386,
+            "wer": 0.13371,
+            "wer_delta": 0.0
+          },
+          "lex_bill_ackman": {
+            "der": 0.150748,
+            "der_delta": 0.019748,
+            "matched_word_speaker_accuracy": 0.926136,
+            "wer": 0.181818,
+            "wer_delta": -0.028409
+          },
+          "lex_javier_milei": {
+            "der": 0.127939,
+            "der_delta": -0.033728,
+            "matched_word_speaker_accuracy": 0.928,
+            "wer": 0.088,
+            "wer_delta": -0.056
+          },
+          "lex_keyu_jin_1m": {
+            "der": 0.101365,
+            "der_delta": -0.009802,
+            "matched_word_speaker_accuracy": 1.0,
+            "wer": 0.100719,
+            "wer_delta": -0.014389
+          },
+          "lex_keyu_jin_5m": {
+            "der": 0.105034,
+            "der_delta": 0.009567,
+            "matched_word_speaker_accuracy": 0.95212,
+            "wer": 0.084815,
+            "wer_delta": -0.005472
+          }
+        },
+        "production_blockers": [
+          "alternate-geometry correction p50/p95 on production event clocks unmeasured",
+          "alternate-geometry live queue/refusal/stale-window behavior unmeasured",
+          "offline full-WAV plan does not reproduce the current pre-Stop final-tail schedule"
+        ],
+        "projected_combined_rtf_max": 0.324283,
+        "request_count": 127,
+        "trio": {
+          "comparator_wer": 0.156445,
+          "der": 0.126684,
+          "matched_word_speaker_accuracy": 0.951379,
+          "wer": 0.123512,
+          "wer_gain": 0.032933
+        }
+      },
+      "15/10:lexical": {
+        "correction_age_floor_p95_max": 14.146015082951635,
+        "decoded_audio_work_ratio_mean": 1.5,
+        "eligible_for_deployed_shadow": true,
+        "eligible_for_production": false,
+        "five_case": {
+          "comparator_wer": 0.138666,
+          "content_recall": 0.957253,
+          "der": 0.105403,
+          "matched_word_speaker_accuracy": 0.956329,
+          "wer": 0.106269,
+          "wer_gain": 0.032397
+        },
+        "fresh_request_count": 66,
+        "material_wer_gain": true,
+        "no_case_regression_over_0_02": true,
+        "per_case": {
+          "lex_adam_frank_3m": {
+            "der": 0.085257,
+            "der_delta": -0.00591,
+            "matched_word_speaker_accuracy": 0.943503,
+            "wer": 0.13371,
+            "wer_delta": 0.0
+          },
+          "lex_bill_ackman": {
+            "der": 0.134575,
+            "der_delta": 0.003575,
+            "matched_word_speaker_accuracy": 0.943182,
+            "wer": 0.170455,
+            "wer_delta": -0.039772
+          },
+          "lex_javier_milei": {
+            "der": 0.124821,
+            "der_delta": -0.036846,
+            "matched_word_speaker_accuracy": 0.936,
+            "wer": 0.08,
+            "wer_delta": -0.064
+          },
+          "lex_keyu_jin_1m": {
+            "der": 0.090111,
+            "der_delta": -0.021056,
+            "matched_word_speaker_accuracy": 1.0,
+            "wer": 0.071942,
+            "wer_delta": -0.043166
+          },
+          "lex_keyu_jin_5m": {
+            "der": 0.092249,
+            "der_delta": -0.003218,
+            "matched_word_speaker_accuracy": 0.95896,
+            "wer": 0.075239,
+            "wer_delta": -0.015048
+          }
+        },
+        "production_blockers": [
+          "alternate-geometry correction p50/p95 on production event clocks unmeasured",
+          "alternate-geometry live queue/refusal/stale-window behavior unmeasured",
+          "offline full-WAV plan does not reproduce the current pre-Stop final-tail schedule"
+        ],
+        "projected_combined_rtf_max": 0.241423,
+        "request_count": 66,
+        "trio": {
+          "comparator_wer": 0.156445,
+          "der": 0.116502,
+          "matched_word_speaker_accuracy": 0.959727,
+          "wer": 0.107466,
+          "wer_gain": 0.048979
+        }
+      },
+      "6/6:lexical": {
+        "correction_age_floor_p95_max": 5.627639834070578,
+        "decoded_audio_work_ratio_mean": 1.0,
+        "eligible_for_deployed_shadow": false,
+        "eligible_for_production": false,
+        "five_case": {
+          "comparator_wer": 0.138666,
+          "content_recall": 0.932804,
+          "der": 0.096889,
+          "matched_word_speaker_accuracy": 0.932256,
+          "wer": 0.145394,
+          "wer_gain": -0.006728
+        },
+        "fresh_request_count": 110,
+        "material_wer_gain": false,
+        "no_case_regression_over_0_02": false,
+        "per_case": {
+          "lex_adam_frank_3m": {
+            "der": 0.091611,
+            "der_delta": 0.000444,
+            "matched_word_speaker_accuracy": 0.93032,
+            "wer": 0.146893,
+            "wer_delta": 0.013183
+          },
+          "lex_bill_ackman": {
+            "der": 0.113667,
+            "der_delta": -0.017333,
+            "matched_word_speaker_accuracy": 0.909091,
+            "wer": 0.221591,
+            "wer_delta": 0.011364
+          },
+          "lex_javier_milei": {
+            "der": 0.1495,
+            "der_delta": -0.012167,
+            "matched_word_speaker_accuracy": 0.904,
+            "wer": 0.112,
+            "wer_delta": -0.032
+          },
+          "lex_keyu_jin_1m": {
+            "der": 0.063833,
+            "der_delta": -0.047334,
+            "matched_word_speaker_accuracy": 0.971223,
+            "wer": 0.143885,
+            "wer_delta": 0.028777
+          },
+          "lex_keyu_jin_5m": {
+            "der": 0.065833,
+            "der_delta": -0.029634,
+            "matched_word_speaker_accuracy": 0.946648,
+            "wer": 0.102599,
+            "wer_delta": 0.012312
+          }
+        },
+        "production_blockers": [
+          "alternate-geometry correction p50/p95 on production event clocks unmeasured",
+          "alternate-geometry live queue/refusal/stale-window behavior unmeasured",
+          "offline full-WAV plan does not reproduce the current pre-Stop final-tail schedule"
+        ],
+        "projected_combined_rtf_max": 0.26005,
+        "request_count": 110,
+        "trio": {
+          "comparator_wer": 0.156445,
+          "der": 0.109,
+          "matched_word_speaker_accuracy": 0.928105,
+          "wer": 0.159159,
+          "wer_gain": -0.002714
+        }
+      },
+      "8/4:lexical": {
+        "correction_age_floor_p95_max": 6.8837309159571305,
+        "decoded_audio_work_ratio_mean": 1.905778,
+        "eligible_for_deployed_shadow": false,
+        "eligible_for_production": false,
+        "five_case": {
+          "comparator_wer": 0.138666,
+          "content_recall": 0.939734,
+          "der": 0.134813,
+          "matched_word_speaker_accuracy": 0.933843,
+          "wer": 0.138363,
+          "wer_gain": 0.000303
+        },
+        "fresh_request_count": 160,
+        "material_wer_gain": false,
+        "no_case_regression_over_0_02": false,
+        "per_case": {
+          "lex_adam_frank_3m": {
+            "der": 0.114453,
+            "der_delta": 0.023286,
+            "matched_word_speaker_accuracy": 0.93597,
+            "wer": 0.135593,
+            "wer_delta": 0.001883
+          },
+          "lex_bill_ackman": {
+            "der": 0.152322,
+            "der_delta": 0.021322,
+            "matched_word_speaker_accuracy": 0.909091,
+            "wer": 0.198864,
+            "wer_delta": -0.011363
+          },
+          "lex_javier_milei": {
+            "der": 0.175386,
+            "der_delta": 0.013719,
+            "matched_word_speaker_accuracy": 0.896,
+            "wer": 0.128,
+            "wer_delta": -0.016
+          },
+          "lex_keyu_jin_1m": {
+            "der": 0.115362,
+            "der_delta": 0.004195,
+            "matched_word_speaker_accuracy": 0.985612,
+            "wer": 0.129496,
+            "wer_delta": 0.014388
+          },
+          "lex_keyu_jin_5m": {
+            "der": 0.11654,
+            "der_delta": 0.021073,
+            "matched_word_speaker_accuracy": 0.942544,
+            "wer": 0.099863,
+            "wer_delta": 0.009576
+          }
+        },
+        "production_blockers": [
+          "alternate-geometry correction p50/p95 on production event clocks unmeasured",
+          "alternate-geometry live queue/refusal/stale-window behavior unmeasured",
+          "offline full-WAV plan does not reproduce the current pre-Stop final-tail schedule"
+        ],
+        "projected_combined_rtf_max": 0.316609,
+        "request_count": 160,
+        "trio": {
+          "comparator_wer": 0.156445,
+          "der": 0.14769,
+          "matched_word_speaker_accuracy": 0.930234,
+          "wer": 0.15212,
+          "wer_gain": 0.004325
+        }
+      }
+    },
+    "comparators": {
+      "five_case_pre_stop_settled_wer": 0.138666,
+      "trio_pre_stop_settled_wer": 0.156445
+    },
+    "recommended_deployed_shadow": "15/10:lexical",
+    "recommended_production_change": null,
+    "unmeasured": [
+      "alternate-geometry event-clock correction latency",
+      "alternate-geometry live queue and failure behavior",
+      "actual peer live surfaces"
+    ]
+  }
+}

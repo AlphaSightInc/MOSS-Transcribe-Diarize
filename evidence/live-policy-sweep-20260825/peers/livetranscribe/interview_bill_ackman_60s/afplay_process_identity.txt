@@ -1,0 +1,5 @@
+timestamp_utc: 2026-08-25T20:01:06Z
+afplay_pid: 48112
+spawned_by_script: true
+audio_path: /tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_bill_ackman_60s/audio.wav
+process_start_identity: Tue Aug 25 16:01:06 2026 00:00 afplay /tmp/moss-live-policy-sweep-20260825-v1/corpus/interview_bill_ackman_60s/audio.wav

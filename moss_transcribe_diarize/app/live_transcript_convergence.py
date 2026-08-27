@@ -43,9 +43,10 @@ Failure behaviour is plan §5.2's, verbatim in effect:
   that bound means the base path is a whole window behind, so the audio a later window needs
   is already gone; the converger says so and stops planning rather than skipping a window.
 
-A refused proposal needs no separate state: the next window is planned only once the
-session's own `canonical_through_sample` has reached that window's start, so a proposal the
-session declines simply stops the grid instead of burning GPU on revisions that cannot apply.
+A normalized proposal the session still refuses ends rolling as `proposal_refused`. The
+frontier and reader-visible surface do not move; the base listener keeps publishing and the
+terminal pass remains the recovery authority. Naming that state preserves the first cause
+instead of letting later ring pressure rename it `pcm_evicted`.
 
 **The second listener is at the bottom of this file.** `TerminalTranscriptFinalizer` (plan §6
 M6) hears the whole meeting once, after capture stops, through file mode's own 150/120
@@ -106,6 +107,8 @@ class RollingStatus(str, Enum):
     STOPPED = "stopped"
     #: A window decode published no segments (plan §5.2 "rolling failure").
     WINDOW_FAILED = "window_failed"
+    #: A decoded, normalized proposal was refused by the session publication authority.
+    PROPOSAL_REFUSED = "proposal_refused"
     #: The bounded ring reached `2 x window` samples and dropped audio a window still needed.
     PCM_EVICTED = "pcm_evicted"
 
@@ -216,6 +219,8 @@ class RollingConvergerAccounting:
     windows_planned: int
     windows_completed: int
     windows_failed: int
+    proposal_refusals: int
+    last_proposal_refusal: str | None
     stale_completions: int
     decoded_audio_samples: int
     accepted_samples: int
@@ -257,6 +262,8 @@ class RollingTranscriptConverger:
         self._windows_planned = 0
         self._windows_completed = 0
         self._windows_failed = 0
+        self._proposal_refusals = 0
+        self._last_proposal_refusal: str | None = None
         self._stale_completions = 0
         self._decoded_audio_samples = 0
         self._retained_high_water = 0
@@ -282,8 +289,17 @@ class RollingTranscriptConverger:
         if self._status is RollingStatus.STOPPED:
             raise ValueError("a stopped converger accepts no further audio.")
 
+        sample_count = len(pcm) // PCM16_BYTES_PER_SAMPLE
+        if self._status is not RollingStatus.ROLLING:
+            # Refinement may stop; capture may not. Keep the session clock exact without
+            # retaining audio that this converger has already decided it will never decode.
+            self._accepted_samples += sample_count
+            self._buffer = bytearray()
+            self._buffer_start_sample = self._accepted_samples
+            return ()
+
         self._buffer.extend(pcm)
-        self._accepted_samples += len(pcm) // PCM16_BYTES_PER_SAMPLE
+        self._accepted_samples += sample_count
         self._trim()
         return self._plan()
 
@@ -330,10 +346,10 @@ class RollingTranscriptConverger:
         self._in_flight = None
         self._decoded_audio_samples += request.sample_count
 
-        segments = self._segments_of(request, outcome)
+        segments, normalization = self._segments_of(request, outcome)
         if not segments:
             self._windows_failed += 1
-            self._status = RollingStatus.WINDOW_FAILED
+            self._end_refinement(RollingStatus.WINDOW_FAILED)
             return None
 
         self._windows_completed += 1
@@ -345,7 +361,21 @@ class RollingTranscriptConverger:
             end_sample=request.end_sample,
             segments=segments,
             decode_elapsed_sec=outcome.elapsed_sec,
+            normalization_merged_segments=normalization.merged,
+            normalization_dropped_segments=normalization.dropped,
+            normalization_displaced_samples=normalization.displaced_samples,
         )
+
+    def note_proposal_refused(self, reason: str) -> None:
+        """Freeze rolling on the session's stable refusal without changing its frontier."""
+
+        if not reason:
+            raise ValueError("a rolling proposal refusal must name its stable reason.")
+        if self._status is not RollingStatus.ROLLING:
+            return
+        self._proposal_refusals += 1
+        self._last_proposal_refusal = reason
+        self._end_refinement(RollingStatus.PROPOSAL_REFUSED)
 
     # ---------------------------------------------------------------- session end
 
@@ -400,6 +430,8 @@ class RollingTranscriptConverger:
             windows_planned=self._windows_planned,
             windows_completed=self._windows_completed,
             windows_failed=self._windows_failed,
+            proposal_refusals=self._proposal_refusals,
+            last_proposal_refusal=self._last_proposal_refusal,
             stale_completions=self._stale_completions,
             decoded_audio_samples=self._decoded_audio_samples,
             accepted_samples=self._accepted_samples,
@@ -483,13 +515,23 @@ class RollingTranscriptConverger:
         if excess > 0:
             del self._buffer[: excess * PCM16_BYTES_PER_SAMPLE]
             self._buffer_start_sample += excess
+            self._retained_high_water = max(self._retained_high_water, self._retained_samples)
             if self._status is RollingStatus.ROLLING:
-                self._status = RollingStatus.PCM_EVICTED
+                self._end_refinement(RollingStatus.PCM_EVICTED)
+                return
         self._retained_high_water = max(self._retained_high_water, self._retained_samples)
+
+    def _end_refinement(self, status: RollingStatus) -> None:
+        """Enter a named non-rolling state and release audio refinement can no longer use."""
+
+        self._status = status
+        self._in_flight = None
+        self._buffer = bytearray()
+        self._buffer_start_sample = self._accepted_samples
 
     def _segments_of(
         self, request: RollingDecodeRequest, outcome: InferenceTranscript
-    ) -> tuple[EffectiveTranscriptSegment, ...]:
+    ) -> tuple[tuple[EffectiveTranscriptSegment, ...], SegmentOverlapResolution]:
         """The window's words on the session clock, owned by exactly this window.
 
         `span_segments` is the one reader of the transcript grammar in this codebase and it
@@ -500,22 +542,28 @@ class RollingTranscriptConverger:
         evidence is E3's (plan D5).
         """
 
-        segments: list[EffectiveTranscriptSegment] = []
+        placed: list[tuple[str, int, int, str]] = []
         for parsed in span_segments(outcome.transcript, sample_count=request.sample_count):
             start = request.start_sample + int(round(parsed.start * LIVE_SAMPLE_RATE))
             end = request.start_sample + int(round(parsed.end * LIVE_SAMPLE_RATE))
             if end <= start or not parsed.text.strip():
                 continue
-            segments.append(
+            # Keep the decoder-local speaker until overlap normalization. It decides whether
+            # two overlapping decodings join or the later speaker yields the earlier extent;
+            # it is discarded before publication because it is not a meeting identity.
+            placed.append((parsed.speaker, start, end, parsed.text))
+        resolution = resolve_segment_overlaps(placed)
+        segments = tuple(
                 EffectiveTranscriptSegment(
                     start_sample=start,
                     end_sample=end,
-                    text=parsed.text,
+                    text=text,
                     canonical_speaker=None,
                     authority="rolling",
                 )
+            for _speaker, start, end, text in resolution.segments
             )
-        return tuple(segments)
+        return segments, resolution
 
 
 # ======================================================================================
@@ -590,7 +638,7 @@ class TerminalFinalizationAccounting:
     The three `seam_*` fields are the same idea for the other step this adapter performs.
     File mode's windows may decode one stretch of audio twice (`_stitch_segments` keeps a
     segment whose *midpoint* its window owns), and a live surface may not hold two owners
-    for one interval, so `resolve_terminal_overlaps` joins them before publication. A reader
+    for one interval, so `resolve_segment_overlaps` joins them before publication. A reader
     told only "terminal finalized, 37 segments" cannot see that the decoder emitted 38.
     """
 
@@ -692,8 +740,8 @@ class WholeMeetingRunner(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
-class TerminalSeamResolution:
-    """What resolving a terminal proposal's window seams cost the proposal.
+class SegmentOverlapResolution:
+    """What resolving any decoder proposal's overlapping segments cost the proposal.
 
     `segments` are `(local_speaker, start_sample, end_sample, text)` in publication order:
     sorted, strictly advancing and pairwise disjoint. The three counts are the price, so a
@@ -707,13 +755,15 @@ class TerminalSeamResolution:
 
 
 #: The resolution of a pass that produced no segments to resolve.
-EMPTY_SEAM_RESOLUTION = TerminalSeamResolution(segments=(), merged=0, dropped=0, displaced_samples=0)
+EMPTY_OVERLAP_RESOLUTION = SegmentOverlapResolution(
+    segments=(), merged=0, dropped=0, displaced_samples=0
+)
 
 
-def resolve_terminal_overlaps(
+def resolve_segment_overlaps(
     placed: Sequence[tuple[str, int, int, str]],
-) -> TerminalSeamResolution:
-    """Make a whole-meeting decode publishable on a live surface, without inventing a boundary.
+) -> SegmentOverlapResolution:
+    """Make a decoder proposal publishable on a live surface, without inventing a boundary.
 
     File mode stitches its 150/120 windows by *midpoint ownership*: a segment survives if the
     window that decoded it owns its midpoint. Two windows overlap by 30 seconds, so two
@@ -767,7 +817,7 @@ def resolve_terminal_overlaps(
             displaced += frontier - start
             start = frontier
         out.append((speaker, start, end, text))
-    return TerminalSeamResolution(
+    return SegmentOverlapResolution(
         segments=tuple(out), merged=merged, dropped=dropped, displaced_samples=displaced
     )
 
@@ -886,7 +936,7 @@ class TerminalTranscriptFinalizer:
         tuple[EffectiveTranscriptSegment, ...],
         tuple[str, ...],
         dict[str, str],
-        TerminalSeamResolution,
+        SegmentOverlapResolution,
     ]:
         """The whole meeting's words on the session clock, attributed to the meeting's people.
 
@@ -910,7 +960,7 @@ class TerminalTranscriptFinalizer:
         # Before the names are decided, not after: the seam rule joins two decodings of one
         # *local* speaker, and two locals that the mapping happens to send to one person are
         # two people as far as the decoder is concerned (measured as a different rule).
-        resolution = resolve_terminal_overlaps(placed)
+        resolution = resolve_segment_overlaps(placed)
         # Read off what is actually proposed, so `mapped_speakers` and
         # `unattributed_segments` describe the surface the session is offered.
         local_speakers = tuple(sorted({speaker for speaker, _, _, _ in resolution.segments}))
@@ -972,7 +1022,7 @@ class TerminalTranscriptFinalizer:
         segments: tuple[EffectiveTranscriptSegment, ...],
         local_speakers: tuple[str, ...],
         mapping: Mapping[str, str],
-        resolution: TerminalSeamResolution = EMPTY_SEAM_RESOLUTION,
+        resolution: SegmentOverlapResolution = EMPTY_OVERLAP_RESOLUTION,
     ) -> TerminalFinalizationAccounting:
         window_count = int(getattr(result, "window_count", 0) or 0)
         return TerminalFinalizationAccounting(

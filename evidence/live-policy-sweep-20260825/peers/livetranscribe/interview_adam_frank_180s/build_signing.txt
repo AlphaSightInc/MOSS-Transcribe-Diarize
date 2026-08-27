@@ -1,0 +1,2 @@
+[bundle] /Users/ga0/Desktop/AI_Projects/LiveTranscribe/.build/app-bundles/debug/LiveTranscribe.app
+Signing with: LiveTranscribe Local Dev

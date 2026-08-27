@@ -973,14 +973,14 @@ def verify_production(root: Path = BATCH) -> int:
     """Does the rule that SHIPPED do what the selected arm was measured doing?
 
     The arm was chosen here, in this file; production carries its own implementation
-    (`resolve_terminal_overlaps`, candidate 8e-2). Two implementations of one rule are two
+    (`resolve_segment_overlaps`, candidate 8e-2). Two implementations of one rule are two
     rules until someone compares them, and if they disagree then every number in
     `evidence/live-convergence-0824/M4-seam-overlap/` describes something that never shipped.
     So: same inputs -- every file arm in the batch, plus every synthetic shape -- segment for
     segment, text for text.
     """
 
-    from moss_transcribe_diarize.app.live_transcript_convergence import resolve_terminal_overlaps
+    from moss_transcribe_diarize.app.live_transcript_convergence import resolve_segment_overlaps
 
     def as_tuples(segments):
         return tuple((item.speaker, item.start_sample, item.end_sample, item.text) for item in segments)
@@ -990,7 +990,7 @@ def verify_production(root: Path = BATCH) -> int:
     failures = []
     for name, segments in inputs:
         measured = arm_merge_overlapping(segments)
-        shipped = resolve_terminal_overlaps(as_tuples(segments))
+        shipped = resolve_segment_overlaps(as_tuples(segments))
         if as_tuples(measured.segments) != shipped.segments:
             failures.append(f"{name}: segments differ")
         elif (measured.merged, measured.dropped, measured.displaced_samples) != (
@@ -1014,7 +1014,7 @@ def main() -> int:
     parser.add_argument(
         "--verify-production",
         action="store_true",
-        help="compare the shipped `resolve_terminal_overlaps` against the selected arm",
+        help="compare the shipped `resolve_segment_overlaps` against the selected arm",
     )
     args = parser.parse_args()
     if args.selftest:

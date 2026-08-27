@@ -531,6 +531,41 @@ cap). Data: 8 synthetic meetings from LibriSpeech dev-clean (K∈{2,3,4,6} × 2 
   `evidence/live-convergence-0824/M3-disposition/` (E3, 14 of 14),
   `evidence/live-convergence-0824/M4-e4-exit-2/` (E4, 12 of 14).
 
+- **G4 rolling-refusal recovery and honest deployed 10/10 baseline — PASS (2026-08-25).** A
+  truth-blind audit ran the existing overlap rule over every retained rolling proposal in two
+  six-case passes: ordinary inputs were byte-identical `120/120`, normalized inputs applied
+  `122/122`, no word or gated score regressed, and Jamie window 4 moved its later start exactly
+  2,720 samples while preserving 24/24 words. Production now uses that producer-neutral resolver
+  before rolling and terminal publication. A still-refused rolling proposal becomes explicit
+  `proposal_refused`: its stable reason/count persist, retained PCM is released, base capture
+  keeps exact accounting, and transcript bytes, commits, revision version, and canonical frontier
+  do not move. `LiveSession` validation and ADR-0005 authority remain unchanged.
+
+  The reviewed patch then ran 12 paced actual-live sessions over six real clips, two passes and
+  1,239.987 audio-seconds. **G1-G7 all pass:** all 122/122 full 10-second windows applied in order;
+  both Jamie runs completed windows 0-17; text/proposal refusals, PCM evictions, failed/stale
+  windows, admission refusals, and terminal failures were zero; combined pre-Stop inference RTF
+  was `.157340`, refinement queue depth was at most one, and endpoint queues drained to zero.
+  The new settled pre-Stop baseline is macro WER `.140442`, content recall `.929636`, TBSA
+  `.876970`, legacy DER `.161430`, matched-word speaker accuracy `.911512`, and reference-speech
+  DER `.134804`. Pooled first-publication p95 is `3.652696 s`; changed-region correction p95 is
+  separately `10.471099 s`, so the owner must now decide D-M2-3: bind `<=6 s` and prototype a
+  shorter/partial geometry, or authorize 15/10 lexical with an explicit correction ceiling. Old
+  15/10 shadows are historical only, not a promotion comparator. Full gates, per-case/category/
+  weighted tables, raw paths, patch hashes, and the unsigned owner packet:
+  `evidence/live-g4-recovery-20260825/REPORT.md` and `D-M2-3.md`.
+
+- **15/10 lexical causal publication — REJECTED (2026-08-25).** After D-M2-3 signed O2, the
+  production-path prototype replayed all 112 saved 15/10 windows across two six-case passes. The
+  frozen batch algorithm reproduced saved content and settled speaker projection in 12/12
+  case-runs, but it could not become an append-only live publisher: 46 selected words straddled an
+  already-owned frontier and 24 more were wholly behind it. Every case-run reached the real
+  session's `segment_outside_owned_interval` refusal. Moving such a word forward invents a time
+  boundary; keeping its decoded start rewrites accepted authority. No measured rule authorizes
+  either, so Goal 2 stopped at B1: no production implementation, deployment, or ABBA inference.
+  Full cursor-, token-, straddler-, proposal-, seam-, and surface-level evidence:
+  `evidence/live-15-10-lexical-20260825/causal-prototype.json`.
+
 Production decision (2026-07-30): min_score 0.35, margin 0.1, matching evidence
 0.5 s, birth 1.0 s, enrollment 2.0 s, k=10 exemplars, sweep every 60 s + merge
 threshold 0.70 + terminal sweep at session end. The hash-pinned production-plan replay

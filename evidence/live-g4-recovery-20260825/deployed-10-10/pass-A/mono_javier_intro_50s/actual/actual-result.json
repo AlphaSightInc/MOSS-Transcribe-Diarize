@@ -1,0 +1,496 @@
+{
+  "audio": {
+    "channels": 1,
+    "duration_seconds": 50.0,
+    "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav",
+    "pcm_bytes": 1600000,
+    "pcm_sha256": "6cfe2630bc44b7aaf8cdf51bcc1dd215ea18b84abda3395e2b48da5341a5e8e5",
+    "sample_count": 800000,
+    "sample_rate": 16000,
+    "sample_width_bytes": 2,
+    "wav_bytes": 1600044,
+    "wav_sha256": "e3fd4795eddc9bce726fdec6f1307afd84b01edefe6380f4513eb46f84a30f3d"
+  },
+  "case_id": "mono_javier_intro_50s",
+  "duration_seconds": 50.0,
+  "events": {
+    "base_unsubmitted": 0,
+    "correction_age_seconds": {
+      "count": 22,
+      "max": 11.426665,
+      "mean": 6.008524,
+      "p50": 5.823997,
+      "p95": 10.818737
+    },
+    "correction_rows": [
+      {
+        "age_seconds": 11.426664875,
+        "canonical_item_id": 0,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 8.913776292,
+        "canonical_item_id": 1,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 6.2835495,
+        "canonical_item_id": 2,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 5.886240958,
+        "canonical_item_id": 3,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 5.732217875,
+        "canonical_item_id": 3,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 2.75662175,
+        "canonical_item_id": 4,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 0.331434667,
+        "canonical_item_id": 5,
+        "rolling_item_id": 6
+      },
+      {
+        "age_seconds": 8.59348675,
+        "canonical_item_id": 7,
+        "rolling_item_id": 12
+      },
+      {
+        "age_seconds": 8.395503333,
+        "canonical_item_id": 7,
+        "rolling_item_id": 12
+      },
+      {
+        "age_seconds": 5.975303708,
+        "canonical_item_id": 8,
+        "rolling_item_id": 12
+      },
+      {
+        "age_seconds": 3.459987875,
+        "canonical_item_id": 9,
+        "rolling_item_id": 12
+      },
+      {
+        "age_seconds": 3.341706708,
+        "canonical_item_id": 10,
+        "rolling_item_id": 12
+      },
+      {
+        "age_seconds": 10.845014042,
+        "canonical_item_id": 11,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 8.437388125,
+        "canonical_item_id": 13,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 5.761753584,
+        "canonical_item_id": 14,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 3.37845975,
+        "canonical_item_id": 15,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 3.259512167,
+        "canonical_item_id": 16,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 3.146142792,
+        "canonical_item_id": 16,
+        "rolling_item_id": 18
+      },
+      {
+        "age_seconds": 10.31946975,
+        "canonical_item_id": 17,
+        "rolling_item_id": 23
+      },
+      {
+        "age_seconds": 7.909017583,
+        "canonical_item_id": 19,
+        "rolling_item_id": 23
+      },
+      {
+        "age_seconds": 5.283406375,
+        "canonical_item_id": 20,
+        "rolling_item_id": 23
+      },
+      {
+        "age_seconds": 2.750873583,
+        "canonical_item_id": 21,
+        "rolling_item_id": 23
+      }
+    ],
+    "decode_requests": {
+      "base": 27,
+      "rolling": 5,
+      "terminal": 1,
+      "total": 33
+    },
+    "decode_seconds": {
+      "base": 6.412254,
+      "rolling": 1.776311,
+      "terminal": 1.298522
+    },
+    "decoded_audio_work_seconds": {
+      "base": 50.0,
+      "rolling": 150.0,
+      "terminal": 50.0
+    },
+    "first_publication_rows": [
+      {
+        "age_seconds": 0.872103333,
+        "first_spoken_word_seconds": 0.0,
+        "item_id": 0,
+        "publication_seconds": 0.872103333
+      },
+      {
+        "age_seconds": 2.544991916,
+        "first_spoken_word_seconds": 0.8400000000000001,
+        "item_id": 1,
+        "publication_seconds": 3.384991916
+      },
+      {
+        "age_seconds": 3.2552187079999997,
+        "first_spoken_word_seconds": 2.7600000000000002,
+        "item_id": 2,
+        "publication_seconds": 6.015218708
+      },
+      {
+        "age_seconds": 1.1625272500000001,
+        "first_spoken_word_seconds": 5.25,
+        "item_id": 3,
+        "publication_seconds": 6.41252725
+      },
+      {
+        "age_seconds": 0.6465503330000004,
+        "first_spoken_word_seconds": 5.92,
+        "item_id": 3,
+        "publication_seconds": 6.566550333
+      },
+      {
+        "age_seconds": 3.192146457999999,
+        "first_spoken_word_seconds": 6.3500000000000005,
+        "item_id": 4,
+        "publication_seconds": 9.542146458
+      },
+      {
+        "age_seconds": 3.237333541,
+        "first_spoken_word_seconds": 8.73,
+        "item_id": 5,
+        "publication_seconds": 11.967333541
+      },
+      {
+        "age_seconds": 3.049811041,
+        "first_spoken_word_seconds": 11.23,
+        "item_id": 7,
+        "publication_seconds": 14.279811041
+      },
+      {
+        "age_seconds": 0.6877944580000008,
+        "first_spoken_word_seconds": 13.79,
+        "item_id": 7,
+        "publication_seconds": 14.477794458
+      },
+      {
+        "age_seconds": 3.1079940830000012,
+        "first_spoken_word_seconds": 13.79,
+        "item_id": 8,
+        "publication_seconds": 16.897994083
+      },
+      {
+        "age_seconds": 3.123309916,
+        "first_spoken_word_seconds": 16.29,
+        "item_id": 9,
+        "publication_seconds": 19.413309916
+      },
+      {
+        "age_seconds": 0.7415910829999994,
+        "first_spoken_word_seconds": 18.79,
+        "item_id": 10,
+        "publication_seconds": 19.531591083
+      },
+      {
+        "age_seconds": 3.1677917079999993,
+        "first_spoken_word_seconds": 19.27,
+        "item_id": 11,
+        "publication_seconds": 22.437791708
+      },
+      {
+        "age_seconds": 3.1354176249999988,
+        "first_spoken_word_seconds": 21.71,
+        "item_id": 13,
+        "publication_seconds": 24.845417625
+      },
+      {
+        "age_seconds": 3.381052166,
+        "first_spoken_word_seconds": 24.14,
+        "item_id": 14,
+        "publication_seconds": 27.521052166
+      },
+      {
+        "age_seconds": 2.9743460000000006,
+        "first_spoken_word_seconds": 26.93,
+        "item_id": 15,
+        "publication_seconds": 29.904346
+      },
+      {
+        "age_seconds": 0.8832935830000004,
+        "first_spoken_word_seconds": 29.14,
+        "item_id": 16,
+        "publication_seconds": 30.023293583
+      },
+      {
+        "age_seconds": 0.7766629579999993,
+        "first_spoken_word_seconds": 29.36,
+        "item_id": 16,
+        "publication_seconds": 30.136662958
+      },
+      {
+        "age_seconds": 2.951263583000003,
+        "first_spoken_word_seconds": 29.98,
+        "item_id": 17,
+        "publication_seconds": 32.931263583
+      },
+      {
+        "age_seconds": 3.0817157500000008,
+        "first_spoken_word_seconds": 32.26,
+        "item_id": 19,
+        "publication_seconds": 35.34171575
+      },
+      {
+        "age_seconds": 3.207326958000003,
+        "first_spoken_word_seconds": 34.76,
+        "item_id": 20,
+        "publication_seconds": 37.967326958
+      },
+      {
+        "age_seconds": 3.239859750000001,
+        "first_spoken_word_seconds": 37.26,
+        "item_id": 21,
+        "publication_seconds": 40.49985975
+      },
+      {
+        "age_seconds": 3.2104135830000047,
+        "first_spoken_word_seconds": 39.76,
+        "item_id": 22,
+        "publication_seconds": 42.970413583
+      },
+      {
+        "age_seconds": 3.0019735410000052,
+        "first_spoken_word_seconds": 42.339999999999996,
+        "item_id": 24,
+        "publication_seconds": 45.341973541
+      },
+      {
+        "age_seconds": 3.099747958000002,
+        "first_spoken_word_seconds": 44.839999999999996,
+        "item_id": 25,
+        "publication_seconds": 47.939747958
+      },
+      {
+        "age_seconds": 2.6035941660000006,
+        "first_spoken_word_seconds": 47.79,
+        "item_id": 26,
+        "publication_seconds": 50.393594166
+      }
+    ],
+    "first_publication_seconds": {
+      "count": 26,
+      "max": 3.381052,
+      "mean": 2.474455,
+      "p50": 3.065763,
+      "p95": 3.251379
+    },
+    "rolling_queue": {
+      "admission_refusals": 0,
+      "completed": 5,
+      "failed_windows": 0,
+      "final_depth": 0,
+      "last_proposal_refusal": null,
+      "max_depth": 1,
+      "proposal_refusals": 0,
+      "stale_completions": 0,
+      "status_counts": {
+        "rolling": 5
+      },
+      "text_revision_refusals": [],
+      "windows": [
+        {
+          "end_sample": 160000,
+          "normalization_displaced_samples": 0,
+          "normalization_dropped_segments": 0,
+          "normalization_merged_segments": 0,
+          "outcome": "applied",
+          "rolling_status": "rolling",
+          "start_sample": 0,
+          "window_index": 0
+        },
+        {
+          "end_sample": 320000,
+          "normalization_displaced_samples": 0,
+          "normalization_dropped_segments": 0,
+          "normalization_merged_segments": 0,
+          "outcome": "applied",
+          "rolling_status": "rolling",
+          "start_sample": 160000,
+          "window_index": 1
+        },
+        {
+          "end_sample": 480000,
+          "normalization_displaced_samples": 0,
+          "normalization_dropped_segments": 0,
+          "normalization_merged_segments": 0,
+          "outcome": "applied",
+          "rolling_status": "rolling",
+          "start_sample": 320000,
+          "window_index": 2
+        },
+        {
+          "end_sample": 640000,
+          "normalization_displaced_samples": 0,
+          "normalization_dropped_segments": 0,
+          "normalization_merged_segments": 0,
+          "outcome": "applied",
+          "rolling_status": "rolling",
+          "start_sample": 480000,
+          "window_index": 3
+        },
+        {
+          "end_sample": 800000,
+          "normalization_displaced_samples": 0,
+          "normalization_dropped_segments": 0,
+          "normalization_merged_segments": 0,
+          "outcome": "applied",
+          "rolling_status": "rolling",
+          "start_sample": 640000,
+          "window_index": 4
+        }
+      ]
+    },
+    "rtf": {
+      "all_decode_combined": 0.189742,
+      "base": 0.128245,
+      "pre_stop_combined": 0.163771,
+      "rolling": 0.035526,
+      "terminal": 0.02597
+    },
+    "stop_to_final_seconds": 2.155028,
+    "terminal_failures": []
+  },
+  "reference_sha256": "7cf13340bd21d6fda932f66036ceb97e3b42880487a495815dc77ede8f68eab9",
+  "replay_gate_failure": {
+    "kind": "canonical_decode_rtf",
+    "message": "canonical decoder p95 RTF 3.27197 exceeded strict bound 1."
+  },
+  "sample_accounting": {
+    "accepted_samples": 800000,
+    "accounted_samples": 800000,
+    "exact": true
+  },
+  "surface_clocks": {
+    "post_stop_final": {
+      "observed_monotonic_ns": 799402706244291,
+      "observed_utc": "2026-08-25T22:59:26.424094Z",
+      "surface": "post_stop_final"
+    },
+    "pre_stop_immediate": {
+      "observed_monotonic_ns": 799399879081416,
+      "observed_utc": "2026-08-25T22:59:23.596914Z",
+      "surface": "pre_stop_immediate"
+    },
+    "pre_stop_settled": {
+      "observed_monotonic_ns": 799400551012000,
+      "observed_utc": "2026-08-25T22:59:24.268853Z",
+      "surface": "pre_stop_settled",
+      "wait": {
+        "drained": true,
+        "polls": 6,
+        "seconds": 0.671879,
+        "timeout_seconds": 30.0
+      }
+    },
+    "stop_return": {
+      "observed_monotonic_ns": 799401113333000,
+      "observed_utc": "2026-08-25T22:59:24.831171Z",
+      "surface": "stop_return"
+    }
+  },
+  "surface_scores": {
+    "post_stop_final": {
+      "content_recall": 0.920354,
+      "der": 0.0178,
+      "hypothesis_words": 110,
+      "matched_word_speaker_accuracy": 0.920354,
+      "reference_speech_der": 0.005552,
+      "reference_words": 113,
+      "segments": 10,
+      "speaker_accuracy": 0.9822,
+      "tbsa": 0.962314,
+      "text_coverage": 0.9822,
+      "text_speaker_accuracy": 0.9822,
+      "wer": 0.097345
+    },
+    "pre_stop_immediate": {
+      "content_recall": 0.831858,
+      "der": 0.1522,
+      "hypothesis_words": 101,
+      "matched_word_speaker_accuracy": 0.831858,
+      "reference_speech_der": 0.134529,
+      "reference_words": 113,
+      "segments": 12,
+      "speaker_accuracy": 0.8478,
+      "tbsa": 0.837177,
+      "text_coverage": 0.8478,
+      "text_speaker_accuracy": 0.8478,
+      "wer": 0.19469
+    },
+    "pre_stop_settled": {
+      "content_recall": 0.867257,
+      "der": 0.113,
+      "hypothesis_words": 105,
+      "matched_word_speaker_accuracy": 0.867257,
+      "reference_speech_der": 0.093316,
+      "reference_words": 113,
+      "segments": 13,
+      "speaker_accuracy": 0.887,
+      "tbsa": 0.875427,
+      "text_coverage": 0.887,
+      "text_speaker_accuracy": 0.887,
+      "wer": 0.159292
+    },
+    "stop_return": {
+      "content_recall": 0.911504,
+      "der": 0.0598,
+      "hypothesis_words": 109,
+      "matched_word_speaker_accuracy": 0.911504,
+      "reference_speech_der": 0.036515,
+      "reference_words": 113,
+      "segments": 12,
+      "speaker_accuracy": 0.9402,
+      "tbsa": 0.928601,
+      "text_coverage": 0.9402,
+      "text_speaker_accuracy": 0.9402,
+      "wer": 0.106195
+    }
+  },
+  "surface_sha256": {
+    "post_stop_final": "a1b6bed05b96daa6c9bead6716e8dbe3079b84359fd03d0a899a64e8ea8437a9",
+    "pre_stop_immediate": "ad567dd3e508886223d599d69a6492225bd8ea8121a290bc77815a21e60dfd6f",
+    "pre_stop_settled": "a76c22a468236fd3f295e25e84823ae3795a74a5c37623128af9d8316b4baa1a",
+    "stop_return": "56db8b892fb08568455d887759aeedfba15723c05f0f13838f39bdff64cb1616"
+  }
+}

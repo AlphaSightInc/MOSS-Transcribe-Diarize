@@ -1,0 +1,42 @@
+{
+  "asr" : {
+    "canonical_continuation_merge_count" : 0,
+    "canonical_empty_attempt_diagnostics" : [
+
+    ],
+    "provisional_emit_count" : 0,
+    "provisional_heuristic_fallback_count" : 0
+  },
+  "speaker_bank" : {
+    "centroid_accept_count" : 12,
+    "centroid_recovery_count" : 0,
+    "centroid_reject_count" : 3,
+    "continuity_fallback_count" : 1,
+    "create_count" : 15,
+    "long_utterance_truncation_count" : 0,
+    "match_count" : 28,
+    "short_utterance_skip_count" : 12
+  },
+  "speaker_identity" : {
+    "absorbed_count" : 0,
+    "created_count" : 15,
+    "decision_reason_counts" : {
+      "best_match" : 13,
+      "continuity_grace" : 1,
+      "create_new_speaker" : 15,
+      "short_utterance_best_tentative" : 1,
+      "short_utterance_last_assigned" : 9,
+      "short_utterance_previous_confirmed" : 4
+    },
+    "promoted_count" : 0,
+    "provisional_merge_absorption_count" : 0,
+    "provisional_stale_drop_count" : 0,
+    "provisional_to_confirmed_transition_count" : 0
+  },
+  "vad" : {
+    "commit_count" : 43,
+    "hard_max_count" : 0,
+    "mean_utterance_duration_sec" : 1.259163,
+    "short_drop_count" : 0
+  }
+}

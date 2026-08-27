@@ -1,0 +1,6 @@
+timestamp_utc: 2026-08-25T20:11:00Z
+app_pid: 49147
+action: pid_scoped_quit
+quit_command: /Users/ga0/Desktop/AI_Projects/LiveTranscribe/scripts/live_capture_pid_quit_tool.swift 49147
+quit_tool_output: {"pid":49147,"found":true,"bundle_id":"com.livetranscribe.app","terminate_requested":true}
+post_quit_alive: false

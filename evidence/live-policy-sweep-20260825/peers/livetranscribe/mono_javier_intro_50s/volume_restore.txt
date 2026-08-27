@@ -1,0 +1,4 @@
+timestamp_utc: 2026-08-25T20:00:43Z
+original_volume: 31
+restore_command: osascript -e 'set volume output volume 31'
+observed_after_restore: 31

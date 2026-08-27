@@ -1,0 +1,22 @@
+{
+  "all_heads_unchanged": true,
+  "all_statuses_unchanged": true,
+  "source_checkouts_context_only": {
+    "LiveTranscribe": {
+      "branch": "ralph/production",
+      "head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70",
+      "head_unchanged": true,
+      "path": "/Users/ga0/Desktop/AI_Projects/LiveTranscribe",
+      "status_porcelain": "M AGENTS.md\n M ProjectResources/Frontend/app.js\n M ProjectResources/Frontend/app.js.map\n M Sources/ASR/WhisperKitService.swift\n M Tests/UnitTests/ASRTests/WhisperKitServiceTests.swift\n M docs/adr/0003-whisperkit-in-process-compute-scheduler.md\n M docs/adr/0020-live-finalization-contract.md\n M docs/adr/0029-refined-live-overlay-display-authority.md\n M docs/adr/0032-isolated-live-vad-lane-promotion.md\n M docs/adr/README.md\n M frontend/src/App.test.tsx\n M frontend/src/App.tsx\n M frontend/src/api/types.ts\n M frontend/src/components/ControlPanel.test.tsx\n M frontend/src/components/RefinementControls.tsx\n M scripts/build_app_bundle.sh\n M scripts/tests/test_build_app_bundle_contract.py\n?? .lavish/\n?? docs/adr/0033-streaming-capture-resampling.md\n?? docs/adr/0034-native-inference-admission-policy.md\n?? docs/adr/0035-transcript-stable-segment-identity.md\n?? docs/evidence/head-to-head-projectclerk-0812.md",
+      "status_unchanged": true
+    },
+    "ProjectClerk": {
+      "branch": "main",
+      "head": "4345b66190322216410cd56804b5fc82c1ce842c",
+      "head_unchanged": true,
+      "path": "/Users/ga0/Desktop/AI_Projects/Github_Projects/ProjectClerk",
+      "status_porcelain": "M CLAUDE.md\n M Sources/App/SessionViewModel.swift\n M Sources/Audio/AudioSource.swift\n M Sources/Audio/MicCapture.swift\n M Sources/Audio/SystemAudioCapture.swift\n M Sources/Diarization/SystemDiarizer.swift\n M Sources/Persistence/SessionStore.swift\n M Sources/Transcription/ChannelTranscriber.swift\n M Sources/Transcription/WhisperKitEngine.swift\n M project.yml\n M scripts/deploy-to-ireneatwork.sh\n M scripts/setup-signing.sh\n?? .aisight/\n?? .lavish/\n?? AGENTS.md\n?? Prototypes/\n?? Sources/App/SessionRuntime.swift\n?? Tests/\n?? docs/evidence/\n?? docs/plan-2026-08-13-production-readiness.md\n?? docs/plan-2026-08-17-terminal-contract-remediation.md\n?? docs/plan-2026-08-18-rough-loop-operator-strategy.md\n?? docs/reviews/\n?? scripts/prototype-acoustic-stability.sh\n?? scripts/prototype-evidence-retention.sh\n?? scripts/ralph/\n?? tasks/",
+      "status_unchanged": true
+    }
+  }
+}
