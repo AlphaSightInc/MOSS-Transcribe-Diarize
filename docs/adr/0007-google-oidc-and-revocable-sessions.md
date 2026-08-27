@@ -42,3 +42,9 @@ local RSA key and JWK. It accepts one valid token and rejects bad signature, bad
 a wrong audience even when `azp` matches, wrong authorized party, expiry with zero
 leeway, nonce, and callback state before Account admission. `email_verified` is rejected at the
 MOSS identity boundary. The prototype makes no provider request.
+
+The Account authority-generation prototype in
+`prototypes/phase2-account-revocation-generation/NOTES.md` reproduced the baseline failure: after
+revoke, explicit re-allow, and fresh same-`sub` sign-in, a pre-revoke workspace created a new active
+Meeting. With the generation fence, every pre-revoke list, open, snapshot, and create path is
+rejected while the fresh workspace creates and reads an active Meeting.
