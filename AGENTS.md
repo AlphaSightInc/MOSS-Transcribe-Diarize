@@ -4,6 +4,44 @@ Method norms for every agent session in this repo (interactive, ralph iterations
 codex). An active ralph run's `scripts/ralph-afk/prd.md` governs WHAT to build and in
 what order; this file governs HOW.
 
+## Structural-primitive design contract
+
+Before research, architecture, or any new algorithm, data structure, threshold, or
+policy, state:
+
+1. **Structural question** — what underlying behavior or uncertainty must be
+   explained?
+2. **Minimum primitives** — the smallest sufficient concepts, their boundaries, and
+   why each cannot be removed or decomposed further.
+3. **Invariants** — what must remain true across supported inputs and implementations.
+4. **Assumptions and unknowns** — name unsupported beliefs; say `unknown` or
+   `unmeasured` instead of filling gaps with machinery or proxy claims.
+5. **Falsifier** — what reachable evidence would disprove the proposed design.
+6. **Tool decision** — why each proposed experiment or tool is necessary and what
+   result would change the decision.
+
+Work in this order:
+
+```text
+Domain structure
+→ primitives and invariants
+→ reasoning and algorithms
+→ failure boundaries
+→ only then implementation tooling
+```
+
+- Seek the **smallest sufficient design**. Each component must earn its place through
+  necessity and practical value.
+- Put complexity in the **composition of clean primitives**, not inside specialized
+  components.
+- Use examples and corpora to attack and falsify the design, not to define it through
+  enumerated labels, languages, speakers, or known cases. Generalize across this
+  project's documented inputs; do not invent unsupported use cases.
+- Keep core primitives and invariants independent of replaceable storage, models,
+  frameworks, and vendors unless the mission specifically depends on one.
+- **Scaffolding is not the product.** Do not build a framework around an unresolved
+  structural idea.
+
 ## Prototype before you implement
 
 For any new algorithm, data structure, threshold, or policy choice: build or extend a
@@ -11,7 +49,8 @@ throwaway prototype and MEASURE, before writing production code. Pitfalls must d
 prototypes, not in certification runs. In Claude sessions the `/prototype` skill
 scaffolds this; the bar is the same regardless of tooling:
 
-- State the question the prototype answers. One command to run. Print full state.
+- State the contract's question, hypothesis, and falsifier. One command to run. Print
+  full state.
 - Measured, not asserted — numbers over adjectives, on the production code path where
   possible (real encoder, deployed thresholds, live-path semantics).
 - Record the verdict (`NOTES.md` beside the prototype, then the relevant design doc or
@@ -76,4 +115,3 @@ And two that look like the above and are not. Report these:
   ✓  a digest that lets you skip re-reading a large file you already have
   ✓  a rare-looking input this project's own documentation example produces
 Before running any check, answer: what specific failure would this detect, and what would I do differently if it occurred? No answer means do not run it. Say plainly when something is correct. Do not manufacture findings.
-
