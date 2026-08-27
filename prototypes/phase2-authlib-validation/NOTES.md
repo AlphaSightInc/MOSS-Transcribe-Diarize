@@ -8,15 +8,15 @@ OIDC failures locally, before any Account admission or callback token request?
 ## One command
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp/moss-phase2-auth-only.NTprLU \
-  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/.venv/bin/python \
-  -m pytest -q -s tests/phase2/test_google_account_workspace.py
+uv run --frozen --extra dev pytest -q -s \
+  tests/phase2/test_google_account_workspace.py::test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission
 ```
 
 ## Measured verdict — 2026-08-27
 
 The absorbed deterministic prototype generated one local RSA key, installed only its
-public JWK in the configured Authlib remote metadata, and made no HTTP requests.
+public JWK in the configured Authlib remote metadata, used Google's documented issuer values,
+and made no HTTP requests.
 
 | Case | Measured result |
 | --- | --- |

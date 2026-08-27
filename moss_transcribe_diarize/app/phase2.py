@@ -24,6 +24,7 @@ OAUTH_COOKIE_MAX_AGE = 10 * 60
 SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
 GOOGLE_CALLBACK_URL = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/auth/google/callback"
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+GOOGLE_ISSUERS = ("https://accounts.google.com", "accounts.google.com")
 DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )
@@ -35,6 +36,10 @@ class SchemaVersionError(RuntimeError):
 
 class GoogleOidcRejected(ValueError):
     """Google/Authlib rejected the temporary authorization transaction."""
+
+
+class AccountRevoked(PermissionError):
+    """An Account lost authority before an owner-bound mutation committed."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,13 +139,11 @@ class AuthlibGoogleOidc:
 
     async def complete(self, request: Any) -> GoogleIdentity:
         try:
-            metadata = await self._remote.load_server_metadata()
-            issuer = metadata["issuer"]
             token = await self._remote.authorize_access_token(
                 request,
                 leeway=0,
                 claims_options={
-                    "iss": {"values": [issuer]},
+                    "iss": {"values": list(GOOGLE_ISSUERS)},
                     "aud": {"value": self._client_id},
                 },
             )
@@ -434,24 +437,6 @@ class Phase2Store:
                 )
             return True
 
-    async def sign_out(self, account: Account, session_id: str | None) -> None:
-        """Durably terminalize this Account's active work before revoking one browser session."""
-
-        now = _now_ms()
-        async with self._mutation():
-            await self._connection.execute(
-                """
-                UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
-                WHERE account_id = ? AND status = 'active'
-                """,
-                (now, account.account_id),
-            )
-            if session_id:
-                await self._connection.execute(
-                    "DELETE FROM sign_in_sessions WHERE session_id = ? AND account_id = ?",
-                    (session_id, account.account_id),
-                )
-
     async def recover_active_meetings(self) -> None:
         """The product process never resumes capture that was active before startup."""
 
@@ -560,9 +545,11 @@ class Phase2Store:
     async def _list_meetings(self, account_id: str) -> list[Meeting]:
         cursor = await self._connection.execute(
             """
-            SELECT meeting_id, mode, title, status, created_at_ms
-            FROM meetings WHERE account_id = ?
-            ORDER BY created_at_ms DESC, meeting_id DESC
+            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
+            FROM meetings m
+            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            WHERE m.account_id = ?
+            ORDER BY m.created_at_ms DESC, m.meeting_id DESC
             """,
             (account_id,),
         )
@@ -576,18 +563,25 @@ class Phase2Store:
         meeting_id = secrets.token_urlsafe(18)
         now = _now_ms()
         async with self._mutation():
-            await self._connection.execute(
+            cursor = await self._connection.execute(
                 """
                 INSERT INTO meetings(account_id, meeting_id, mode, title, status, created_at_ms, updated_at_ms)
-                VALUES (?, ?, ?, NULL, 'active', ?, ?)
+                SELECT account_id, ?, ?, NULL, 'active', ?, ?
+                FROM accounts WHERE account_id = ? AND enabled = 1
                 """,
-                (account_id, meeting_id, mode, now, now),
+                (meeting_id, mode, now, now, account_id),
             )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Account is revoked.")
         return MeetingHandle(self, account_id, meeting_id)
 
     async def _open_meeting(self, account_id: str, meeting_id: str) -> "MeetingHandle | None":
         cursor = await self._connection.execute(
-            "SELECT 1 FROM meetings WHERE account_id = ? AND meeting_id = ?",
+            """
+            SELECT 1 FROM meetings m
+            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            WHERE m.account_id = ? AND m.meeting_id = ?
+            """,
             (account_id, meeting_id),
         )
         row = await cursor.fetchone()
@@ -597,8 +591,10 @@ class Phase2Store:
     async def _meeting_snapshot(self, account_id: str, meeting_id: str) -> Meeting:
         cursor = await self._connection.execute(
             """
-            SELECT meeting_id, mode, title, status, created_at_ms
-            FROM meetings WHERE account_id = ? AND meeting_id = ?
+            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
+            FROM meetings m
+            JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+            WHERE m.account_id = ? AND m.meeting_id = ?
             """,
             (account_id, meeting_id),
         )
@@ -676,6 +672,10 @@ def create_phase2_app(
         https_only=True,
     )
 
+    @app.exception_handler(AccountRevoked)
+    async def account_revoked(_: Request, __: AccountRevoked):
+        return JSONResponse({"detail": "Sign in required."}, status_code=401)
+
     async def require_account(request: Request) -> Account:
         account = await request.app.state.phase2_store.account_for_session(
             request.cookies.get(SESSION_COOKIE)
@@ -736,9 +736,13 @@ def create_phase2_app(
     async def google_callback(request: Request):
         try:
             identity = await oidc.complete(request)
-            admitted = await request.app.state.phase2_store.admit(identity)
         except GoogleOidcRejected:
             return clear_oauth_transaction(request, RedirectResponse("/?auth=error", status_code=303))
+        try:
+            admitted = await request.app.state.phase2_store.admit(identity)
+        except Exception:
+            response = JSONResponse({"detail": "Sign-in could not be saved."}, status_code=500)
+            return clear_oauth_transaction(request, response)
         if admitted is None:
             return clear_oauth_transaction(request, RedirectResponse("/?auth=denied", status_code=303))
         _, session_id = admitted
@@ -747,8 +751,8 @@ def create_phase2_app(
 
     @app.post("/auth/logout", status_code=204)
     async def logout(request: Request):
-        account = await require_account(request)
-        await request.app.state.phase2_store.sign_out(account, request.cookies.get(SESSION_COOKIE))
+        await require_account(request)
+        await request.app.state.phase2_store.revoke_session(request.cookies.get(SESSION_COOKIE))
         response = Response(status_code=204)
         response.delete_cookie(
             SESSION_COOKIE,

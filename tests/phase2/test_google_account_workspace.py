@@ -8,23 +8,25 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from authlib.integrations.base_client.errors import MismatchingStateError
 from fastapi.responses import RedirectResponse
 from fastapi.testclient import TestClient
 from joserfc import jwt
-from joserfc.errors import BadSignatureError, ExpiredTokenError, InvalidClaimError
+from joserfc.errors import ExpiredTokenError, InvalidClaimError
 from joserfc.jwk import RSAKey
 from starlette.requests import Request
 
 from moss_transcribe_diarize.app.phase2 import (
+    GOOGLE_ISSUERS,
     GOOGLE_CALLBACK_URL,
     DEFAULT_PHASE2_DATABASE_PATH,
     OAUTH_COOKIE,
     SESSION_COOKIE,
     AuthlibGoogleOidc,
     GoogleIdentity,
+    GoogleOidcRejected,
     Phase2Store,
     SchemaVersionError,
     create_phase2_app,
@@ -38,9 +40,6 @@ class FakeGoogleRemote:
     responses: dict[str, dict[str, object] | Exception]
     start_calls: list[dict[str, object]]
     complete_calls: list[dict[str, object]]
-
-    async def load_server_metadata(self) -> dict[str, str]:
-        return {"issuer": "https://google.test"}
 
     async def authorize_redirect(self, request: Any, redirect_uri: str, **kwargs: object):
         self.start_calls.append({"redirect_uri": redirect_uri, **kwargs})
@@ -122,7 +121,7 @@ def test_authlib_172_google_client_is_openid_only_and_uses_s256_pkce():
 def test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission():
     """A deterministic real-Authlib prototype; see prototypes/phase2-authlib-validation/NOTES.md."""
 
-    issuer = "https://offline-issuer.test"
+    issuer = GOOGLE_ISSUERS[0]
     client_id = "offline-moss-client"
     signing_key = RSAKey.generate_key(2048, private=True)
     oidc = AuthlibGoogleOidc.configured(client_id=client_id, client_secret="test-secret")
@@ -130,15 +129,16 @@ def test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admi
     remote.server_metadata = {
         "_loaded_at": 0,
         "issuer": issuer,
+        "authorization_endpoint": "https://accounts.google.test/authorize",
         "jwks": {"keys": [signing_key.as_dict(private=False)]},
         "id_token_signing_alg_values_supported": ["RS256"],
     }
-    claims_options = {
-        "iss": {"values": [issuer]},
-        "aud": {"value": client_id},
-    }
 
-    def signed_id_token(**overrides: object) -> dict[str, object]:
+    def signed_id_token(
+        expected_nonce: str,
+        key: RSAKey = signing_key,
+        **overrides: object,
+    ) -> dict[str, object]:
         now = int(time.time())
         claims: dict[str, object] = {
             "iss": issuer,
@@ -146,88 +146,96 @@ def test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admi
             "aud": client_id,
             "exp": now + 60,
             "iat": now,
-            "nonce": "offline-nonce",
+            "nonce": expected_nonce,
+            "email": "offline@example.com",
+            "email_verified": True,
+            "name": "Offline Person",
         }
         claims.update(overrides)
-        return {"id_token": jwt.encode({"alg": "RS256"}, claims, signing_key)}
-
-    async def exercise() -> dict[str, str]:
-        outcomes: dict[str, str] = {}
-
-        claims = await remote.parse_id_token(
-            signed_id_token(),
-            nonce="offline-nonce",
-            leeway=0,
-            claims_options=claims_options,
-        )
-        outcomes["valid"] = str(claims["sub"])
-
-        cases = {
-            "issuer": (signed_id_token(iss="https://wrong-issuer.test"), InvalidClaimError),
-            # OIDC requires azp when aud has multiple values; a mismatching azp is Authlib's
-            # deterministic audience/authorized-party rejection path.
-            "audience": (signed_id_token(aud="wrong-client"), InvalidClaimError),
-            "authorized_party": (
-                signed_id_token(aud=[client_id, "another-client"], azp="wrong-client"),
-                InvalidClaimError,
-            ),
-            "expiry": (signed_id_token(exp=int(time.time()) - 1), ExpiredTokenError),
-            "nonce": (signed_id_token(nonce="wrong-nonce"), InvalidClaimError),
+        return {
+            "access_token": "offline-access-token",
+            "id_token": jwt.encode({"alg": "RS256"}, claims, key),
         }
-        for name, (token, expected) in cases.items():
-            with pytest.raises(expected):
-                await remote.parse_id_token(
-                    token,
-                    nonce="offline-nonce",
-                    leeway=0,
-                    claims_options=claims_options,
-                )
-            outcomes[name] = expected.__name__
 
-        wrong_key = RSAKey.generate_key(2048, private=True)
-        with pytest.raises(BadSignatureError):
-            await remote.parse_id_token(
-                {
-                    "id_token": jwt.encode(
-                        {"alg": "RS256"},
-                        {
-                            "iss": issuer,
-                            "sub": "offline-subject",
-                            "aud": client_id,
-                            "exp": int(time.time()) + 60,
-                            "iat": int(time.time()),
-                            "nonce": "offline-nonce",
-                        },
-                        wrong_key,
-                    )
-                },
-                nonce="offline-nonce",
-                leeway=0,
-                claims_options=claims_options,
-            )
-        outcomes["signature"] = BadSignatureError.__name__
-
-        async def network_must_not_run(**_: object) -> object:
-            raise AssertionError("bad state reached the token endpoint")
-
-        remote.fetch_access_token = network_must_not_run
-        request = Request(
+    def request(session: dict[str, object], query_string: bytes = b"") -> Request:
+        return Request(
             {
                 "type": "http",
                 "method": "GET",
                 "scheme": "https",
                 "path": "/auth/google/callback",
                 "raw_path": b"/auth/google/callback",
-                "query_string": b"code=offline-code&state=wrong-state",
+                "query_string": query_string,
                 "headers": [],
                 "server": ("moss.test", 443),
                 "client": ("127.0.0.1", 1),
-                "session": {},
+                "session": session,
             }
         )
-        with pytest.raises(MismatchingStateError):
-            await remote.authorize_access_token(request)
-        outcomes["state"] = MismatchingStateError.__name__
+
+    async def complete_transaction(
+        *,
+        overrides: dict[str, object] | None = None,
+        key: RSAKey = signing_key,
+        wrong_state: bool = False,
+    ) -> GoogleIdentity | GoogleOidcRejected:
+        session: dict[str, object] = {}
+        start = await oidc.begin(request(session))
+        query = parse_qs(urlsplit(start.headers["location"]).query)
+        state = query["state"][0]
+        nonce = query["nonce"][0]
+        token = signed_id_token(nonce, key, **(overrides or {}))
+
+        async def fetch_access_token(**_: object) -> dict[str, object]:
+            return token
+
+        remote.fetch_access_token = fetch_access_token
+        callback_state = "wrong-state" if wrong_state else state
+        callback = request(session, f"code=offline-code&state={callback_state}".encode())
+        try:
+            return await oidc.complete(callback)
+        except GoogleOidcRejected as exc:
+            return exc
+
+    async def exercise() -> dict[str, str]:
+        outcomes: dict[str, str] = {}
+        valid = await complete_transaction()
+        assert isinstance(valid, GoogleIdentity)
+        outcomes["valid"] = valid.account_id
+
+        cases = {
+            "issuer": {"iss": "https://wrong-issuer.test"},
+            # Matching azp makes Authlib's built-in authorized-party check pass; only MOSS's
+            # explicit audience option can reject this token.
+            "audience": {"aud": "wrong-client", "azp": client_id},
+            "authorized_party": {
+                "aud": [client_id, "another-client"],
+                "azp": "wrong-client",
+            },
+            "expiry": {"exp": int(time.time()) - 1},
+            "nonce": {"nonce": "wrong-nonce"},
+        }
+        expected_errors = {
+            "issuer": InvalidClaimError.__name__,
+            "audience": InvalidClaimError.__name__,
+            "authorized_party": InvalidClaimError.__name__,
+            "expiry": ExpiredTokenError.__name__,
+            "nonce": InvalidClaimError.__name__,
+        }
+        for name, overrides in cases.items():
+            rejected = await complete_transaction(overrides=overrides)
+            assert isinstance(rejected, GoogleOidcRejected)
+            outcomes[name] = type(rejected.__cause__).__name__
+
+        wrong_key = RSAKey.generate_key(2048, private=True)
+        rejected = await complete_transaction(key=wrong_key)
+        assert isinstance(rejected, GoogleOidcRejected)
+        outcomes["signature"] = type(rejected.__cause__).__name__
+
+        rejected = await complete_transaction(wrong_state=True)
+        assert isinstance(rejected, GoogleOidcRejected)
+        outcomes["state"] = type(rejected.__cause__).__name__
+        assert {name: outcomes[name] for name in expected_errors} == expected_errors
         return outcomes
 
     outcomes = asyncio.run(exercise())
@@ -349,7 +357,7 @@ def test_allowed_callback_binds_subject_issues_opaque_cookie_and_opens_empty_wor
             {
                 "leeway": 0,
                 "claims_options": {
-                    "iss": {"values": ["https://google.test"]},
+                    "iss": {"values": list(GOOGLE_ISSUERS)},
                     "aud": {"value": "test-client-id"},
                 },
             }
@@ -466,7 +474,7 @@ def test_sign_out_revokes_only_this_browser_and_restart_keeps_other_session(tmp_
     try:
         assert connection.execute(
             "SELECT status FROM meetings WHERE meeting_id = ?", (active["id"],)
-        ).fetchone()[0] == "interrupted"
+        ).fetchone()[0] == "active"
     finally:
         connection.close()
 
@@ -474,6 +482,14 @@ def test_sign_out_revokes_only_this_browser_and_restart_keeps_other_session(tmp_
     with TestClient(restarted, base_url="https://moss.test") as after_restart:
         after_restart.cookies.set(SESSION_COOKIE, survivor_cookie, domain="moss.test", path="/")
         assert after_restart.get("/api/auth/session").status_code == 200
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (active["id"],)
+        ).fetchone()[0] == "interrupted"
+    finally:
+        connection.close()
 
 
 def test_product_app_startup_interrupts_existing_active_meetings(tmp_path: Path):
@@ -563,6 +579,7 @@ def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reall
         {
             "first": identity("sub-a", "first@example.com"),
             "second": identity("sub-a", "second@example.com"),
+            "wrong-owner": identity("sub-b", "second@example.com"),
         },
     )
 
@@ -576,10 +593,66 @@ def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reall
         }
         assert sign_in(client, "second").headers["location"] == "/?auth=denied"
 
+        assert asyncio.run(execute(database, "allow", "second@example.com")) == {
+            "email": "second@example.com",
+            "enabled": True,
+        }
+        assert sign_in(client, "wrong-owner").headers["location"] == "/?auth=denied"
+        assert sign_in(client, "second").status_code == 303
+        assert client.get("/api/auth/session").json()["email"] == "second@example.com"
+
     assert asyncio.run(execute(database, "list")) == [
         {"email": "first@example.com", "enabled": False},
-        {"email": "second@example.com", "enabled": False},
+        {"email": "second@example.com", "enabled": True},
     ]
+
+
+def test_stale_workspace_cannot_create_after_account_revoke(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+
+    async def exercise() -> None:
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("person@example.com")
+            account, _ = (await store.admit(GoogleIdentity("sub-a", "person@example.com", "Person")))
+            workspace = store.workspace(account)
+            admin_store = await Phase2Store.open(database)
+            try:
+                assert await admin_store.revoke_email("person@example.com") is True
+            finally:
+                await admin_store.close()
+            with pytest.raises(PermissionError, match="revoked"):
+                await workspace.create_meeting("live")
+        finally:
+            await store.close()
+
+    asyncio.run(exercise())
+
+
+def test_callback_storage_error_clears_temporary_oauth_cookie(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    asyncio.run(provision(database, "person@example.com"))
+    app, _ = make_app(database, {"allowed": identity()})
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        start = client.get("/auth/google", follow_redirects=False)
+        assert start.status_code == 302
+        assert client.cookies.get(OAUTH_COOKIE) is not None
+
+        async def fail_admission(_: GoogleIdentity):
+            raise sqlite3.OperationalError("forced admission failure")
+
+        app.state.phase2_store.admit = fail_admission
+        response = client.get(
+            "/auth/google/callback?state=correct-state&code=allowed",
+            follow_redirects=False,
+        )
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Sign-in could not be saved."}
+        assert client.cookies.get(OAUTH_COOKIE) is None
+        assert client.cookies.get(SESSION_COOKIE) is None
+
+    assert database_counts(database) == (0, 0)
 
 
 def test_host_local_allow_list_and_revoke_commands_normalize_only_trim_and_case(tmp_path: Path):

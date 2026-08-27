@@ -31,3 +31,12 @@ a browser-trusted Let's Encrypt certificate obtained through NS1 DNS-01.
 - Google outage may block new sign-ins; existing MOSS sessions continue.
 - Google-side logout or grant revocation does not revoke MOSS; MOSS sign-out and Account revoke do.
 - Re-allowing an email requires fresh Google sign-in and restores only the same Google `sub` owner.
+
+## Measured validation
+
+The deterministic Authlib 1.7.2 prototype in
+`prototypes/phase2-authlib-validation/NOTES.md` exercises the production claim options with a
+local RSA key and JWK. It accepts one valid token and rejects bad signature, bad issuer,
+a wrong audience even when `azp` matches, wrong authorized party, expiry with zero
+leeway, nonce, and callback state before Account admission. `email_verified` is rejected at the
+MOSS identity boundary. The prototype makes no provider request.
