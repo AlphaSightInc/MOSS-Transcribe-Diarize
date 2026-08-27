@@ -24,11 +24,16 @@ dependencies = [
   "fastapi>=0.115",
   "uvicorn>=0.30",
   "python-multipart>=0.0.9",
+  "aiosqlite==0.22.1",
+  "Authlib==1.7.2",
+  "itsdangerous==2.2.0",
 ]
 
 [project.scripts]
 mtd-subtitle = "moss_transcribe_diarize.app.cli:main"
 mtd-subtitle-web = "moss_transcribe_diarize.app.web_cli:main"
+mtd-admin = "moss_transcribe_diarize.app.phase2_admin:main"
+mtd-phase2-web = "moss_transcribe_diarize.app.phase2_web_cli:main"
 
 [project.optional-dependencies]
 torch-runtime = [

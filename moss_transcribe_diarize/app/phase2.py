@@ -1,0 +1,841 @@
+"""The small Phase-2 ownership and sign-in foundation.
+
+Phase 1's global JobManager is deliberately not imported here.  This module starts with
+the only authority Phase 2 permits: a verified Google identity opens one AccountWorkspace.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import secrets
+import time
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, AsyncIterator, Mapping, Protocol
+
+from starlette.requests import Request
+
+
+SCHEMA_VERSION = 1
+OAUTH_COOKIE = "__Host-moss_oauth"
+SESSION_COOKIE = "__Host-moss_session"
+OAUTH_COOKIE_MAX_AGE = 10 * 60
+SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
+GOOGLE_CALLBACK_URL = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/auth/google/callback"
+GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+DEFAULT_PHASE2_DATABASE_PATH = (
+    Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
+)
+
+
+class SchemaVersionError(RuntimeError):
+    """The greenfield database exists but is not the one schema this product accepts."""
+
+
+class GoogleOidcRejected(ValueError):
+    """Google/Authlib rejected the temporary authorization transaction."""
+
+
+@dataclass(frozen=True, slots=True)
+class GoogleIdentity:
+    account_id: str
+    email: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class Account:
+    account_id: str
+    email: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class Meeting:
+    meeting_id: str
+    mode: str
+    title: str | None
+    status: str
+    created_at_ms: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.meeting_id,
+            "mode": self.mode,
+            "title": self.title,
+            "status": self.status,
+            "created_at_ms": self.created_at_ms,
+        }
+
+
+class GoogleOidc(Protocol):
+    async def begin(self, request: Any) -> Any: ...
+
+    async def complete(self, request: Any) -> GoogleIdentity: ...
+
+
+class AuthlibGoogleOidc:
+    """Authlib's OIDC verifier, kept at the one external-identity boundary.
+
+    Authlib persists state, nonce, and the generated S256 code verifier in the signed
+    temporary Starlette session.  The token returned by Google stays local to ``complete``;
+    only the verified identity below crosses into MOSS persistence.
+    """
+
+    def __init__(
+        self,
+        *,
+        remote: Any,
+        callback_url: str = GOOGLE_CALLBACK_URL,
+        client_id: str | None = None,
+    ):
+        self._remote = remote
+        self._callback_url = callback_url
+        self._client_id = client_id if client_id is not None else remote.client_id
+
+    @classmethod
+    def configured(
+        cls,
+        *,
+        client_id: str,
+        client_secret: str,
+        callback_url: str = GOOGLE_CALLBACK_URL,
+    ) -> "AuthlibGoogleOidc":
+        try:
+            from authlib.integrations.starlette_client import OAuth
+        except ImportError as exc:  # pragma: no cover - package dependency is definitive.
+            raise RuntimeError("Install Authlib 1.7.2 to enable Google sign-in.") from exc
+
+        oauth = OAuth()
+        oauth.register(
+            name="google",
+            client_id=client_id,
+            client_secret=client_secret,
+            server_metadata_url=GOOGLE_DISCOVERY_URL,
+            client_kwargs={
+                "scope": "openid profile email",
+                "code_challenge_method": "S256",
+            },
+        )
+        return cls(
+            remote=oauth.create_client("google"),
+            callback_url=callback_url,
+            client_id=client_id,
+        )
+
+    async def begin(self, request: Any) -> Any:
+        return await self._remote.authorize_redirect(
+            request,
+            self._callback_url,
+            prompt="select_account",
+            access_type="online",
+        )
+
+    async def complete(self, request: Any) -> GoogleIdentity:
+        try:
+            metadata = await self._remote.load_server_metadata()
+            issuer = metadata["issuer"]
+            token = await self._remote.authorize_access_token(
+                request,
+                leeway=0,
+                claims_options={
+                    "iss": {"values": [issuer]},
+                    "aud": {"value": self._client_id},
+                },
+            )
+            claims = token["userinfo"]
+        except Exception as exc:  # Authlib raises provider-specific OAuth/JWT errors.
+            raise GoogleOidcRejected("Google could not verify this sign-in.") from exc
+
+        if not isinstance(claims, Mapping):
+            raise GoogleOidcRejected("Google returned no verified identity.")
+        account_id = claims.get("sub")
+        email = claims.get("email")
+        display_name = claims.get("name")
+        if not isinstance(account_id, str) or not account_id.strip():
+            raise GoogleOidcRejected("Google returned no verified subject.")
+        if not isinstance(email, str) or not normalize_email(email):
+            raise GoogleOidcRejected("Google returned no email.")
+        if claims.get("email_verified") is not True:
+            raise GoogleOidcRejected("Google email is not verified.")
+        return GoogleIdentity(
+            account_id=account_id,
+            email=normalize_email(email),
+            display_name=display_name if isinstance(display_name, str) else "",
+        )
+
+
+def normalize_email(value: str) -> str:
+    """The exact-email policy's only normalization; aliases deliberately remain distinct."""
+
+    return value.strip().lower()
+
+
+class Phase2Store:
+    """One SQLite connection hidden behind AccountWorkspace ownership operations."""
+
+    def __init__(self, connection: Any):
+        self._connection = connection
+        self._write_lock = asyncio.Lock()
+
+    @classmethod
+    async def open(cls, database_path: str | Path) -> "Phase2Store":
+        try:
+            import aiosqlite
+        except ImportError as exc:  # pragma: no cover - package dependency is definitive.
+            raise RuntimeError("Install aiosqlite 0.22.1 to enable Phase-2 persistence.") from exc
+
+        path_text = str(database_path)
+        is_memory = path_text == ":memory:"
+        path = None if is_memory else Path(database_path)
+        existed = False if is_memory else path.exists()
+        if path is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        connection = await aiosqlite.connect(path_text)
+        connection.row_factory = aiosqlite.Row
+        store = cls(connection)
+        try:
+            # An old database is refused as found.  In particular, do not ask SQLite to switch
+            # journal modes before proving that this file is schema v1: WAL setup itself mutates
+            # a pre-existing database and can create sidecar files.
+            version = await store.user_version()
+            if existed and version != SCHEMA_VERSION:
+                raise SchemaVersionError(
+                    f"Refusing existing database with user_version={version}; expected {SCHEMA_VERSION}."
+                )
+
+            await connection.execute("PRAGMA journal_mode=WAL")
+            await connection.execute("PRAGMA foreign_keys=ON")
+            await connection.execute("PRAGMA synchronous=FULL")
+            if not existed and version == 0:
+                await store._initialize_schema()
+            elif version != SCHEMA_VERSION:
+                raise SchemaVersionError(
+                    f"Refusing existing database with user_version={version}; expected {SCHEMA_VERSION}."
+                )
+            return store
+        except BaseException:
+            await connection.close()
+            raise
+
+    async def close(self) -> None:
+        await self._connection.close()
+
+    async def user_version(self) -> int:
+        cursor = await self._connection.execute("PRAGMA user_version")
+        row = await cursor.fetchone()
+        await cursor.close()
+        return int(row[0])
+
+    async def table_names(self) -> set[str]:
+        cursor = await self._connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return {str(row[0]) for row in rows}
+
+    async def sqlite_settings(self) -> dict[str, object]:
+        settings: dict[str, object] = {}
+        for name in ("journal_mode", "foreign_keys", "synchronous"):
+            cursor = await self._connection.execute(f"PRAGMA {name}")
+            row = await cursor.fetchone()
+            await cursor.close()
+            settings[name] = row[0]
+        return settings
+
+    async def _initialize_schema(self) -> None:
+        await self._connection.executescript(
+            """
+            CREATE TABLE account_allowlist (
+                email TEXT PRIMARY KEY,
+                enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
+                bound_account_id TEXT,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL
+            );
+            CREATE TABLE accounts (
+                account_id TEXT PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                display_name TEXT NOT NULL,
+                enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL
+            );
+            CREATE TABLE sign_in_sessions (
+                session_id TEXT PRIMARY KEY,
+                account_id TEXT NOT NULL,
+                created_at_ms INTEGER NOT NULL,
+                FOREIGN KEY(account_id) REFERENCES accounts(account_id)
+            );
+            CREATE TABLE meetings (
+                account_id TEXT NOT NULL,
+                meeting_id TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                title TEXT,
+                status TEXT NOT NULL,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, meeting_id),
+                FOREIGN KEY(account_id) REFERENCES accounts(account_id)
+            );
+            CREATE TABLE meeting_transcripts (
+                account_id TEXT NOT NULL,
+                meeting_id TEXT NOT NULL,
+                document_json TEXT NOT NULL,
+                version INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, meeting_id),
+                FOREIGN KEY(account_id, meeting_id)
+                    REFERENCES meetings(account_id, meeting_id)
+            );
+            CREATE TABLE meeting_speakers (
+                account_id TEXT NOT NULL,
+                meeting_id TEXT NOT NULL,
+                speaker_id TEXT NOT NULL,
+                label TEXT,
+                voiceprint_id TEXT,
+                PRIMARY KEY(account_id, meeting_id, speaker_id),
+                FOREIGN KEY(account_id, meeting_id)
+                    REFERENCES meetings(account_id, meeting_id),
+                FOREIGN KEY(account_id, voiceprint_id)
+                    REFERENCES voiceprints(account_id, voiceprint_id)
+            );
+            CREATE TABLE meeting_audio (
+                account_id TEXT NOT NULL,
+                meeting_id TEXT NOT NULL,
+                state TEXT NOT NULL,
+                relative_path TEXT,
+                byte_count INTEGER,
+                duration_ms INTEGER,
+                updated_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, meeting_id),
+                FOREIGN KEY(account_id, meeting_id)
+                    REFERENCES meetings(account_id, meeting_id)
+            );
+            CREATE TABLE voiceprints (
+                account_id TEXT NOT NULL,
+                voiceprint_id TEXT NOT NULL,
+                label TEXT NOT NULL,
+                revision INTEGER NOT NULL,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, voiceprint_id),
+                FOREIGN KEY(account_id) REFERENCES accounts(account_id)
+            );
+            CREATE TABLE voiceprint_samples (
+                account_id TEXT NOT NULL,
+                voiceprint_id TEXT NOT NULL,
+                sample_id TEXT NOT NULL,
+                vector BLOB NOT NULL,
+                source_meeting_id TEXT,
+                created_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, voiceprint_id, sample_id),
+                FOREIGN KEY(account_id, voiceprint_id)
+                    REFERENCES voiceprints(account_id, voiceprint_id),
+                FOREIGN KEY(account_id, source_meeting_id)
+                    REFERENCES meetings(account_id, meeting_id)
+            );
+            CREATE TABLE llm_artifacts (
+                account_id TEXT NOT NULL,
+                meeting_id TEXT NOT NULL,
+                artifact_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                state TEXT NOT NULL,
+                document_json TEXT,
+                provenance_json TEXT,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                PRIMARY KEY(account_id, meeting_id, artifact_id),
+                FOREIGN KEY(account_id, meeting_id)
+                    REFERENCES meetings(account_id, meeting_id)
+            );
+            CREATE INDEX sign_in_sessions_account ON sign_in_sessions(account_id);
+            CREATE INDEX meetings_account_created ON meetings(account_id, created_at_ms DESC);
+            PRAGMA user_version = 1;
+            """
+        )
+        await self._connection.commit()
+
+    @asynccontextmanager
+    async def _mutation(self) -> AsyncIterator[None]:
+        async with self._write_lock:
+            await self._connection.execute("BEGIN")
+            try:
+                yield
+            except BaseException:
+                await self._connection.rollback()
+                raise
+            else:
+                await self._connection.commit()
+
+    async def allow_email(self, email: str) -> None:
+        normalized = _required_email(email)
+        now = _now_ms()
+        async with self._mutation():
+            await self._connection.execute(
+                """
+                INSERT INTO account_allowlist(email, enabled, bound_account_id, created_at_ms, updated_at_ms)
+                VALUES (?, 1, NULL, ?, ?)
+                ON CONFLICT(email) DO UPDATE SET enabled = 1, updated_at_ms = excluded.updated_at_ms
+                """,
+                (normalized, now, now),
+            )
+
+    async def list_allowlist(self) -> list[dict[str, object]]:
+        cursor = await self._connection.execute(
+            "SELECT email, enabled FROM account_allowlist ORDER BY email"
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [{"email": row["email"], "enabled": bool(row["enabled"])} for row in rows]
+
+    async def revoke_email(self, email: str) -> bool:
+        normalized = _required_email(email)
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                "SELECT bound_account_id FROM account_allowlist WHERE email = ?", (normalized,)
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row is None:
+                return False
+            account_id = row["bound_account_id"]
+            if account_id is not None:
+                # An Account may have changed email after more than one allowed callback.  A
+                # revoke is Account authority, so another already-bound email cannot restore it.
+                await self._connection.execute(
+                    """
+                    UPDATE account_allowlist SET enabled = 0, updated_at_ms = ?
+                    WHERE bound_account_id = ?
+                    """,
+                    (now, account_id),
+                )
+                await self._connection.execute(
+                    "UPDATE accounts SET enabled = 0, updated_at_ms = ? WHERE account_id = ?",
+                    (now, account_id),
+                )
+                await self._connection.execute(
+                    "DELETE FROM sign_in_sessions WHERE account_id = ?", (account_id,)
+                )
+                await self._connection.execute(
+                    """
+                    UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
+                    WHERE account_id = ? AND status = 'active'
+                    """,
+                    (now, account_id),
+                )
+            else:
+                await self._connection.execute(
+                    "UPDATE account_allowlist SET enabled = 0, updated_at_ms = ? WHERE email = ?",
+                    (now, normalized),
+                )
+            return True
+
+    async def sign_out(self, account: Account, session_id: str | None) -> None:
+        """Durably terminalize this Account's active work before revoking one browser session."""
+
+        now = _now_ms()
+        async with self._mutation():
+            await self._connection.execute(
+                """
+                UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
+                WHERE account_id = ? AND status = 'active'
+                """,
+                (now, account.account_id),
+            )
+            if session_id:
+                await self._connection.execute(
+                    "DELETE FROM sign_in_sessions WHERE session_id = ? AND account_id = ?",
+                    (session_id, account.account_id),
+                )
+
+    async def recover_active_meetings(self) -> None:
+        """The product process never resumes capture that was active before startup."""
+
+        now = _now_ms()
+        async with self._mutation():
+            await self._connection.execute(
+                "UPDATE meetings SET status = 'interrupted', updated_at_ms = ? WHERE status = 'active'",
+                (now,),
+            )
+
+    async def admit(self, identity: GoogleIdentity) -> tuple[Account, str] | None:
+        """Atomically bind an allowed verified subject and issue its opaque MOSS session."""
+
+        email = _required_email(identity.email)
+        account_id = identity.account_id.strip()
+        if not account_id:
+            raise ValueError("Google subject is required.")
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                "SELECT enabled, bound_account_id FROM account_allowlist WHERE email = ?", (email,)
+            )
+            allowlist = await cursor.fetchone()
+            await cursor.close()
+            if allowlist is None or not bool(allowlist["enabled"]):
+                return None
+            bound_account_id = allowlist["bound_account_id"]
+            if bound_account_id is not None and bound_account_id != account_id:
+                return None
+
+            cursor = await self._connection.execute(
+                "SELECT account_id FROM accounts WHERE email = ?", (email,)
+            )
+            email_owner = await cursor.fetchone()
+            await cursor.close()
+            if email_owner is not None and email_owner["account_id"] != account_id:
+                return None
+
+            cursor = await self._connection.execute(
+                "SELECT account_id FROM accounts WHERE account_id = ?", (account_id,)
+            )
+            account_row = await cursor.fetchone()
+            await cursor.close()
+            if account_row is None:
+                await self._connection.execute(
+                    """
+                    INSERT INTO accounts(account_id, email, display_name, enabled, created_at_ms, updated_at_ms)
+                    VALUES (?, ?, ?, 1, ?, ?)
+                    """,
+                    (account_id, email, identity.display_name, now, now),
+                )
+            else:
+                await self._connection.execute(
+                    """
+                    UPDATE accounts SET email = ?, display_name = ?, enabled = 1, updated_at_ms = ?
+                    WHERE account_id = ?
+                    """,
+                    (email, identity.display_name, now, account_id),
+                )
+            if bound_account_id is None:
+                await self._connection.execute(
+                    "UPDATE account_allowlist SET bound_account_id = ?, updated_at_ms = ? WHERE email = ?",
+                    (account_id, now, email),
+                )
+            session_id = secrets.token_urlsafe(32)
+            await self._connection.execute(
+                "INSERT INTO sign_in_sessions(session_id, account_id, created_at_ms) VALUES (?, ?, ?)",
+                (session_id, account_id, now),
+            )
+            return Account(account_id=account_id, email=email, display_name=identity.display_name), session_id
+
+    async def account_for_session(self, session_id: str | None) -> Account | None:
+        if not session_id:
+            return None
+        cursor = await self._connection.execute(
+            """
+            SELECT a.account_id, a.email, a.display_name
+            FROM sign_in_sessions s
+            JOIN accounts a ON a.account_id = s.account_id
+            WHERE s.session_id = ? AND a.enabled = 1
+            """,
+            (session_id,),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        if row is None:
+            return None
+        return Account(
+            account_id=row["account_id"],
+            email=row["email"],
+            display_name=row["display_name"],
+        )
+
+    async def revoke_session(self, session_id: str | None) -> bool:
+        if not session_id:
+            return False
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                "DELETE FROM sign_in_sessions WHERE session_id = ?", (session_id,)
+            )
+            return cursor.rowcount == 1
+
+    def workspace(self, account: Account) -> "AccountWorkspace":
+        return AccountWorkspace(self, account)
+
+    async def _list_meetings(self, account_id: str) -> list[Meeting]:
+        cursor = await self._connection.execute(
+            """
+            SELECT meeting_id, mode, title, status, created_at_ms
+            FROM meetings WHERE account_id = ?
+            ORDER BY created_at_ms DESC, meeting_id DESC
+            """,
+            (account_id,),
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [_meeting_from_row(row) for row in rows]
+
+    async def _create_meeting(self, account_id: str, mode: str) -> "MeetingHandle":
+        if mode not in {"live", "file"}:
+            raise ValueError("mode must be live or file.")
+        meeting_id = secrets.token_urlsafe(18)
+        now = _now_ms()
+        async with self._mutation():
+            await self._connection.execute(
+                """
+                INSERT INTO meetings(account_id, meeting_id, mode, title, status, created_at_ms, updated_at_ms)
+                VALUES (?, ?, ?, NULL, 'active', ?, ?)
+                """,
+                (account_id, meeting_id, mode, now, now),
+            )
+        return MeetingHandle(self, account_id, meeting_id)
+
+    async def _open_meeting(self, account_id: str, meeting_id: str) -> "MeetingHandle | None":
+        cursor = await self._connection.execute(
+            "SELECT 1 FROM meetings WHERE account_id = ? AND meeting_id = ?",
+            (account_id, meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        return MeetingHandle(self, account_id, meeting_id) if row is not None else None
+
+    async def _meeting_snapshot(self, account_id: str, meeting_id: str) -> Meeting:
+        cursor = await self._connection.execute(
+            """
+            SELECT meeting_id, mode, title, status, created_at_ms
+            FROM meetings WHERE account_id = ? AND meeting_id = ?
+            """,
+            (account_id, meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        if row is None:  # A handle is never permitted to escape its Account query.
+            raise KeyError(meeting_id)
+        return _meeting_from_row(row)
+
+
+class AccountWorkspace:
+    """The only public persistence authority opened by a valid MOSS session."""
+
+    def __init__(self, store: Phase2Store, account: Account):
+        self._store = store
+        self._account = account
+
+    async def list_meetings(self) -> list[Meeting]:
+        return await self._store._list_meetings(self._account.account_id)
+
+    async def create_meeting(self, mode: str) -> "MeetingHandle":
+        return await self._store._create_meeting(self._account.account_id, mode)
+
+    async def open_meeting(self, meeting_id: str) -> "MeetingHandle | None":
+        return await self._store._open_meeting(self._account.account_id, meeting_id)
+
+
+class MeetingHandle:
+    """A Meeting locator that is already bound to its owner and cannot be rebound by callers."""
+
+    def __init__(self, store: Phase2Store, account_id: str, meeting_id: str):
+        self._store = store
+        self._account_id = account_id
+        self.meeting_id = meeting_id
+
+    async def snapshot(self) -> Meeting:
+        return await self._store._meeting_snapshot(self._account_id, self.meeting_id)
+
+
+def create_phase2_app(
+    *,
+    database_path: str | Path,
+    oidc: GoogleOidc,
+    oauth_cookie_secret: str,
+):
+    """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
+
+    try:
+        from fastapi import FastAPI, HTTPException
+        from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+        from starlette.middleware.sessions import SessionMiddleware
+    except ImportError as exc:  # pragma: no cover - package dependency is definitive.
+        raise RuntimeError("Install FastAPI and itsdangerous to run the Phase-2 app.") from exc
+
+    if not oauth_cookie_secret:
+        raise ValueError("oauth_cookie_secret is required.")
+
+    @asynccontextmanager
+    async def lifespan(app: Any) -> AsyncIterator[None]:
+        store = await Phase2Store.open(database_path)
+        await store.recover_active_meetings()
+        app.state.phase2_store = store
+        try:
+            yield
+        finally:
+            await store.close()
+
+    app = FastAPI(title="MOSS", lifespan=lifespan)
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=oauth_cookie_secret,
+        session_cookie=OAUTH_COOKIE,
+        max_age=OAUTH_COOKIE_MAX_AGE,
+        same_site="lax",
+        https_only=True,
+    )
+
+    async def require_account(request: Request) -> Account:
+        account = await request.app.state.phase2_store.account_for_session(
+            request.cookies.get(SESSION_COOKIE)
+        )
+        if account is None:
+            raise HTTPException(status_code=401, detail="Sign in required.")
+        return account
+
+    def clear_oauth_transaction(request: Request, response: Response) -> Response:
+        request.session.clear()
+        response.delete_cookie(
+            OAUTH_COOKIE,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
+    def set_session_cookie(response: Response, session_id: str) -> Response:
+        response.set_cookie(
+            SESSION_COOKIE,
+            session_id,
+            max_age=SESSION_COOKIE_MAX_AGE,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
+    @app.get("/", response_class=HTMLResponse)
+    async def root(request: Request):
+        account = await request.app.state.phase2_store.account_for_session(
+            request.cookies.get(SESSION_COOKIE)
+        )
+        if account is None:
+            state = request.query_params.get("auth")
+            if state == "revoked" or request.cookies.get(SESSION_COOKIE):
+                return HTMLResponse(_signed_out_html("revoked"), headers={"Cache-Control": "no-store"})
+            if state == "denied":
+                return HTMLResponse(_signed_out_html("denied"), headers={"Cache-Control": "no-store"})
+            if state == "error":
+                return HTMLResponse(_signed_out_html("error"), headers={"Cache-Control": "no-store"})
+            return HTMLResponse(_signed_out_html("signed-out"), headers={"Cache-Control": "no-store"})
+        workspace = request.app.state.phase2_store.workspace(account)
+        meetings = await workspace.list_meetings()
+        response = HTMLResponse(
+            _workspace_html(account, meetings), headers={"Cache-Control": "no-store"}
+        )
+        return set_session_cookie(response, request.cookies[SESSION_COOKIE])
+
+    @app.get("/auth/google")
+    async def google_start(request: Request):
+        return await oidc.begin(request)
+
+    @app.get("/auth/google/callback")
+    async def google_callback(request: Request):
+        try:
+            identity = await oidc.complete(request)
+            admitted = await request.app.state.phase2_store.admit(identity)
+        except GoogleOidcRejected:
+            return clear_oauth_transaction(request, RedirectResponse("/?auth=error", status_code=303))
+        if admitted is None:
+            return clear_oauth_transaction(request, RedirectResponse("/?auth=denied", status_code=303))
+        _, session_id = admitted
+        response = clear_oauth_transaction(request, RedirectResponse("/", status_code=303))
+        return set_session_cookie(response, session_id)
+
+    @app.post("/auth/logout", status_code=204)
+    async def logout(request: Request):
+        account = await require_account(request)
+        await request.app.state.phase2_store.sign_out(account, request.cookies.get(SESSION_COOKIE))
+        response = Response(status_code=204)
+        response.delete_cookie(
+            SESSION_COOKIE,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
+    @app.get("/api/auth/session")
+    async def auth_session(request: Request):
+        account = await require_account(request)
+        response = JSONResponse({"email": account.email, "display_name": account.display_name})
+        return set_session_cookie(response, request.cookies[SESSION_COOKIE])
+
+    @app.get("/api/meetings")
+    async def list_meetings(request: Request):
+        account = await require_account(request)
+        workspace = request.app.state.phase2_store.workspace(account)
+        meetings = await workspace.list_meetings()
+        return {"meetings": [meeting.to_dict() for meeting in meetings]}
+
+    @app.post("/api/meetings", status_code=201)
+    async def create_meeting(request: Request):
+        account = await require_account(request)
+        try:
+            payload = await request.json()
+            mode = payload["mode"] if isinstance(payload, dict) else None
+            if not isinstance(mode, str):
+                raise ValueError("mode must be live or file.")
+            handle = await request.app.state.phase2_store.workspace(account).create_meeting(mode)
+            return (await handle.snapshot()).to_dict()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/meetings/{meeting_id}")
+    async def open_meeting(meeting_id: str, request: Request):
+        account = await require_account(request)
+        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
+        if handle is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
+        return (await handle.snapshot()).to_dict()
+
+    return app
+
+
+def _required_email(value: str) -> str:
+    normalized = normalize_email(value)
+    if not normalized:
+        raise ValueError("email is required.")
+    return normalized
+
+
+def _now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def _meeting_from_row(row: Any) -> Meeting:
+    return Meeting(
+        meeting_id=row["meeting_id"],
+        mode=row["mode"],
+        title=row["title"],
+        status=row["status"],
+        created_at_ms=int(row["created_at_ms"]),
+    )
+
+
+def _signed_out_html(state: str) -> str:
+    if state == "revoked":
+        message = "Access revoked — partial meeting preserved. Sign in with an allowed Google account."
+    elif state == "denied":
+        message = "Account not allowed — use another Google account or contact the operator."
+    elif state == "error":
+        message = "Google sign-in could not be verified. Start again."
+    else:
+        message = "Sign in to open your private Account workspace."
+    return f"""<!doctype html>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
+<body><main data-auth-state=\"{state}\"><h1>MOSS</h1><p>{message}</p>
+<a data-action=\"google-sign-in\" href=\"/auth/google\">Sign in with Google</a></main></body></html>"""
+
+
+def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
+    empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
+    return f"""<!doctype html>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
+<body><main data-auth-state=\"signed-in\"><header><span data-account-email>{account.email}</span>
+<form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
+<section data-workspace=\"account\"><h1>Your meetings</h1>{empty}</section></main></body></html>"""
