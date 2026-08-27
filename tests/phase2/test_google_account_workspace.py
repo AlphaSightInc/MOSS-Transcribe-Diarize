@@ -631,14 +631,29 @@ def test_reallow_does_not_resurrect_pre_revoke_workspace(tmp_path: Path):
             fresh_account, _ = (
                 await store.admit(GoogleIdentity("sub-a", "person@example.com", "Person"))
             )
-            assert await workspace.list_meetings() == []
-            assert await workspace.open_meeting(stale_meeting.meeting_id) is None
-            with pytest.raises(KeyError, match=stale_meeting.meeting_id):
+            stale_list = await workspace.list_meetings()
+            stale_open = await workspace.open_meeting(stale_meeting.meeting_id)
+            assert stale_list == []
+            assert stale_open is None
+            with pytest.raises(KeyError, match=stale_meeting.meeting_id) as stale_snapshot:
                 await stale_meeting.snapshot()
-            with pytest.raises(PermissionError, match="revoked"):
+            with pytest.raises(PermissionError, match="revoked") as stale_create:
                 await workspace.create_meeting("live")
             fresh_meeting = await store.workspace(fresh_account).create_meeting("live")
-            assert (await fresh_meeting.snapshot()).status == "active"
+            fresh_status = (await fresh_meeting.snapshot()).status
+            assert fresh_status == "active"
+            print(
+                {
+                    "same_account": fresh_account.account_id == account.account_id,
+                    "old_generation": account.authority_generation,
+                    "fresh_generation": fresh_account.authority_generation,
+                    "stale_list": stale_list,
+                    "stale_open": stale_open,
+                    "stale_snapshot": type(stale_snapshot.value).__name__,
+                    "stale_create": type(stale_create.value).__name__,
+                    "fresh_status": fresh_status,
+                }
+            )
         finally:
             await store.close()
 

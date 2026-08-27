@@ -15,7 +15,7 @@ falsifies the design.
 ## One command
 
 ```bash
-uv run --frozen --extra dev pytest -q \
+uv run --frozen --extra dev pytest -q -s \
   tests/phase2/test_google_account_workspace.py::test_reallow_does_not_resurrect_pre_revoke_workspace
 ```
 
