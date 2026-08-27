@@ -466,7 +466,10 @@ def test_sign_out_revokes_only_this_browser_and_restart_keeps_other_session(tmp_
         assert sign_in(second, "two").status_code == 303
         survivor_cookie = second.cookies.get(SESSION_COOKIE)
         active = first.post("/api/meetings", json={"mode": "live"}).json()
-        assert first.post("/auth/logout").status_code == 204
+        logout = first.post("/auth/logout", follow_redirects=False)
+        assert logout.status_code == 303
+        assert logout.headers["location"] == "/"
+        assert 'data-auth-state="signed-out"' in first.get("/").text
         assert first.get("/api/auth/session").status_code == 401
         assert second.get("/api/auth/session").status_code == 200
 
@@ -585,7 +588,7 @@ def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reall
 
     with TestClient(app, base_url="https://moss.test") as client:
         assert sign_in(client, "first").status_code == 303
-        assert client.post("/auth/logout").status_code == 204
+        assert client.post("/auth/logout", follow_redirects=False).status_code == 303
         assert sign_in(client, "second").status_code == 303
         assert asyncio.run(execute(database, "revoke", "first@example.com")) == {
             "email": "first@example.com",
@@ -795,4 +798,5 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "ssl_certfile": "/etc/moss/cert.pem",
         "ssl_keyfile": "/etc/moss/key.pem",
         "proxy_headers": False,
+        "access_log": False,
     }

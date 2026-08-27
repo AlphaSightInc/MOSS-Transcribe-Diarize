@@ -69,6 +69,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         ssl_certfile=str(Path(args.tls_certfile).expanduser()),
         ssl_keyfile=str(Path(args.tls_keyfile).expanduser()),
         proxy_headers=False,
+        access_log=False,
     )
 
 

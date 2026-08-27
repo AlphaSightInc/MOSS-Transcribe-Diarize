@@ -5,6 +5,12 @@
 Can the exact Authlib 1.7.2 Starlette client configuration used by MOSS reject signed
 OIDC failures locally, before any Account admission or callback token request?
 
+## Hypothesis and falsifier
+
+Authlib plus MOSS's explicit issuer, audience, state, nonce, and zero-leeway options accept only
+the valid signed transaction. Acceptance of any malformed case below, or any outbound provider
+request during the run, falsifies the design.
+
 ## One command
 
 ```bash

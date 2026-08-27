@@ -749,11 +749,11 @@ def create_phase2_app(
         response = clear_oauth_transaction(request, RedirectResponse("/", status_code=303))
         return set_session_cookie(response, session_id)
 
-    @app.post("/auth/logout", status_code=204)
+    @app.post("/auth/logout")
     async def logout(request: Request):
         await require_account(request)
         await request.app.state.phase2_store.revoke_session(request.cookies.get(SESSION_COOKIE))
-        response = Response(status_code=204)
+        response = RedirectResponse("/", status_code=303)
         response.delete_cookie(
             SESSION_COOKIE,
             path="/",
