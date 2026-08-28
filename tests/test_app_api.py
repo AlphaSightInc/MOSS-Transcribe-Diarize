@@ -674,7 +674,7 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["checkpoint_state"], "complete")
             self.assertEqual(persisted["resume_attempts"], 0)
 
-    def test_resume_failed_checkpoint_job_is_idempotent_while_active(self):
+    def test_resume_failed_checkpoint_job_conflicts_while_active(self):
         from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
 
         payload = b"audio"
@@ -723,9 +723,8 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(resumed.checkpoint_state, "ready")
             self.assertTrue(runner.started.wait(timeout=2))
 
-            active = manager.resume_job(job.id)
-            self.assertIn(active.status, {"queued", "loading_model", "transcribing", "postprocessing", "rendering"})
-            self.assertEqual(active.resume_attempts, 3)
+            with self.assertRaisesRegex(RuntimeError, "already has an active execution"):
+                manager.resume_job(job.id)
 
             runner.release.set()
             manager._queue.join()
@@ -846,9 +845,8 @@ class AppApiTest(unittest.TestCase):
             self.assertTrue(runner.started.wait(timeout=2))
 
             active = client.post(f"/api/jobs/{job.id}/resume")
-            self.assertEqual(active.status_code, 200)
-            self.assertEqual(active.json()["id"], job.id)
-            self.assertEqual(active.json()["resume_attempts"], 1)
+            self.assertEqual(active.status_code, 409)
+            self.assertIn("already has an active execution", active.json()["detail"])
 
             runner.release.set()
             finished = wait_terminal(client, job.id)

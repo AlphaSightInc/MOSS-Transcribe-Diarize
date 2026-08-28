@@ -43,7 +43,7 @@ reopening the old deployment. All three commands use the same Linux-home marker 
 
 ## Measured prerequisite verdict
 
-`prototypes/phase1-creation-quiesce/` derived `PASS` from 40/40 predicates on Python 3.10.19 and
+`prototypes/phase1-creation-quiesce/` derived `PASS` from 43/43 predicates on Python 3.10.19 and
 3.12.12. It spawned two distinct operating-system processes with production `create_app` runtime
 views over the same marker, plus isolated production registration, upload-cancellation, and
 terminal-runtime falsifiers. Distinct PIDs converged across enable, process replacement, and
@@ -71,6 +71,11 @@ and injected durable save failures into resume and render. Raw Live ownership no
 the undisclosed session before admission closes. Resume and render mutate a copied candidate,
 persist it, and only then publish it to the process registry and worker/thread; save failure leaves
 the exact prior memory and disk state with no worker, and a later retry registers once and drains.
+The resume concurrency falsifier then held the real worker and interleaved two HTTP requests: both
+previously observed `failed`, returned success, and queued the same ID, while one JobRecord hid the
+second accepted execution. One manager-local critical section now owns failed-state observation
+through durable candidate, registry publication, and enqueue. Exactly one request succeeds, the
+competitor receives typed conflict, and injected save/enqueue failure restores the prior state.
 The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.

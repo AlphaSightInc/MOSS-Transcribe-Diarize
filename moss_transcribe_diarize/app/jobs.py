@@ -263,6 +263,7 @@ class JobManager:
         self.temperature = temperature
         self._jobs: dict[str, JobRecord] = {}
         self._queue: queue.Queue[str] = queue.Queue()
+        self._resume_lock = threading.Lock()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
         startup_resume_ids = self._load_existing_jobs()
@@ -408,36 +409,40 @@ class JobManager:
         )
 
     def resume_job(self, job_id: str) -> JobRecord:
-        job = self.get_job(job_id)
-        if job.status in ACTIVE_STATES:
-            return job
-        if job.status in {"waiting_review", "done", "cancelled"}:
-            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
-        if job.status != "failed":
-            raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
-        if not self._runner_accepts_checkpoint():
-            raise RuntimeError("This job does not support checkpoint resume.")
-        if not job.checkpoint_dir or not job.source_sha256:
-            raise RuntimeError("Job has no checkpoint state to resume.")
-        if not Path(job.input_path).exists():
-            raise FileNotFoundError(str(job.input_path))
+        # One transition owns durable state, registry publication, and enqueue. Without
+        # this boundary two request threads can both observe ``failed`` and register the
+        # same execution twice while activity reporting still shows one JobRecord.
+        with self._resume_lock:
+            job = self.get_job(job_id)
+            if job.status in ACTIVE_STATES:
+                raise RuntimeError(f"Job {job.id} already has an active execution.")
+            if job.status in {"waiting_review", "done", "cancelled"}:
+                raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+            if job.status != "failed":
+                raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
+            if not self._runner_accepts_checkpoint():
+                raise RuntimeError("This job does not support checkpoint resume.")
+            if not job.checkpoint_dir or not job.source_sha256:
+                raise RuntimeError("Job has no checkpoint state to resume.")
+            if not Path(job.input_path).exists():
+                raise FileNotFoundError(str(job.input_path))
 
-        candidate = replace(job)
-        candidate.resume_attempts += 1
-        candidate.status = "queued"
-        candidate.progress = min(candidate.progress, 0.84)
-        candidate.error = None
-        candidate.checkpoint_state = "ready"
-        candidate.updated_at = time.time()
-        self._save_job(candidate)
-        self._jobs[candidate.id] = candidate
-        try:
-            self._queue.put(candidate.id)
-        except BaseException:
-            self._jobs[job.id] = job
-            self._save_job(job)
-            raise
-        return candidate
+            candidate = replace(job)
+            candidate.resume_attempts += 1
+            candidate.status = "queued"
+            candidate.progress = min(candidate.progress, 0.84)
+            candidate.error = None
+            candidate.checkpoint_state = "ready"
+            candidate.updated_at = time.time()
+            self._save_job(candidate)
+            self._jobs[candidate.id] = candidate
+            try:
+                self._queue.put(candidate.id)
+            except BaseException:
+                self._jobs[job.id] = job
+                self._save_job(job)
+                raise
+            return candidate
 
     def list_jobs(self) -> list[JobRecord]:
         return sorted(self._jobs.values(), key=lambda job: job.updated_at, reverse=True)

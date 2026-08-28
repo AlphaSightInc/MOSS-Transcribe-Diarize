@@ -144,6 +144,36 @@ class ProbeRunner:
         )
 
 
+class ConcurrentResumeRunner(ProbeRunner):
+    """Hold a second job so two resume requests can register before worker dequeue."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+        self.blocker_started = threading.Event()
+        self.release_blocker = threading.Event()
+
+    def transcribe(self, audio_path: str, **kwargs: Any) -> TranscriptionResult:
+        self.calls += 1
+        callback = kwargs.get("status_callback")
+        if callback is not None:
+            callback("transcribing", 0.5, 1)
+        if self.calls == 2:
+            self.blocker_started.set()
+            if not self.release_blocker.wait(timeout=10):
+                raise RuntimeError("prototype resume blocker timed out")
+        return TranscriptionResult(
+            text="[0][S01]prototype[1]",
+            prompt_len=1,
+            generated_tokens=1,
+            elapsed_sec=0.01,
+            model=self.model_path,
+            audio=str(audio_path),
+            decoding="greedy",
+            temperature=None,
+        )
+
+
 def make_batch_app(root: Path, gate: Phase1CreationGate, runner: ProbeRunner):
     app = server.create_app(
         model_path="fake-model",
@@ -729,6 +759,34 @@ def resume_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
         "queue": app.state.manager._queue.qsize(),
         "activity": app.state.manager.activity_counts(),
     }
+    enqueue_observations: list[dict[str, Any]] = []
+    original_put = app.state.manager._queue.put
+
+    def fail_enqueue(candidate_id: str) -> None:
+        if candidate_id == job_id:
+            enqueue_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "registry": app.state.manager.get_job(job_id).to_dict(),
+                    "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+                }
+            )
+            raise OSError("prototype resume enqueue failure")
+        original_put(candidate_id)
+
+    app.state.manager._queue.put = fail_enqueue
+    try:
+        enqueue_failed = client.post(f"/api/jobs/{job_id}/resume")
+    finally:
+        app.state.manager._queue.put = original_put
+    after_enqueue_failure = {
+        "status": enqueue_failed.status_code,
+        "gate": gate.snapshot().to_dict(),
+        "memory": app.state.manager.get_job(job_id).to_dict(),
+        "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+    }
     retried = client.post(f"/api/jobs/{job_id}/resume")
     retry_body = retried.json()
     try:
@@ -739,6 +797,8 @@ def resume_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
         "before": {"memory": before_memory, "disk": before_disk, "queue": before_queue},
         "save_observations": save_observations,
         "after_failure": after_failure,
+        "enqueue_observations": enqueue_observations,
+        "after_enqueue_failure": after_enqueue_failure,
         "retry": {
             "status": retried.status_code,
             "body": retry_body,
@@ -746,6 +806,105 @@ def resume_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
             "activity": app.state.manager.activity_counts(),
         },
     }
+
+
+def concurrent_resume_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Force two failed-to-queued transitions while the one production worker is held."""
+
+    gate = Phase1CreationGate(marker)
+    runner = ConcurrentResumeRunner()
+    app, wrapped = make_batch_app(root, gate, runner)
+    setup = TestClient(wrapped)
+    first = TestClient(wrapped)
+    second = TestClient(wrapped)
+    created = setup.post(
+        "/api/jobs", files={"file": ("resume-target.wav", b"target", "audio/wav")}
+    )
+    created.raise_for_status()
+    job_id = created.json()["id"]
+    wait_job(setup, job_id)
+    target = app.state.manager.get_job(job_id)
+    target.status = "failed"
+    target.progress = 0.5
+    target.error = "prototype prior failure"
+    target.resume_attempts = 2
+    target.checkpoint_state = "partial"
+    app.state.manager._save_job(target)
+
+    blocker = setup.post(
+        "/api/jobs", files={"file": ("resume-blocker.wav", b"blocker", "audio/wav")}
+    )
+    blocker.raise_for_status()
+    if not runner.blocker_started.wait(timeout=10):
+        raise AssertionError("resume blocker did not start")
+
+    original_save = app.state.manager._save_job
+    save_barrier = threading.Barrier(2)
+    save_serial = threading.Lock()
+    save_observations: list[dict[str, Any]] = []
+
+    def interleaved_save(candidate: Any) -> None:
+        if candidate.id == job_id and candidate.status == "queued":
+            save_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "registry": app.state.manager.get_job(job_id).to_dict(),
+                    "candidate": candidate.to_dict(),
+                }
+            )
+            try:
+                save_barrier.wait(timeout=1)
+            except threading.BrokenBarrierError:
+                pass
+            with save_serial:
+                original_save(candidate)
+            return
+        original_save(candidate)
+
+    responses: list[dict[str, Any]] = []
+
+    def resume(client: TestClient, label: str) -> None:
+        response = client.post(f"/api/jobs/{job_id}/resume")
+        responses.append(
+            {
+                "label": label,
+                "status": response.status_code,
+                "body": response.json(),
+            }
+        )
+
+    app.state.manager._save_job = interleaved_save
+    try:
+        first_thread = threading.Thread(target=resume, args=(first, "first"), daemon=True)
+        second_thread = threading.Thread(target=resume, args=(second, "second"), daemon=True)
+        first_thread.start()
+        second_thread.start()
+        first_thread.join(timeout=5)
+        second_thread.join(timeout=5)
+        if first_thread.is_alive() or second_thread.is_alive():
+            raise AssertionError("concurrent resume requests did not return")
+    finally:
+        app.state.manager._save_job = original_save
+
+    while_held = {
+        "responses": sorted(responses, key=lambda item: item["label"]),
+        "save_observations": save_observations,
+        "gate": gate.snapshot().to_dict(),
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+        "target": app.state.manager.get_job(job_id).to_dict(),
+        "runner_calls": runner.calls,
+    }
+    runner.release_blocker.set()
+    app.state.manager._queue.join()
+    after_drain = {
+        "target": app.state.manager.get_job(job_id).to_dict(),
+        "blocker": app.state.manager.get_job(blocker.json()["id"]).to_dict(),
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+        "runner_calls": runner.calls,
+    }
+    return {"while_held": while_held, "after_drain": after_drain}
 
 
 def render_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
@@ -1024,6 +1183,22 @@ def main() -> int:
             and resume_failure["after_failure"]["queue"] == resume_failure["before"]["queue"]
             and resume_failure["after_failure"]["activity"] == {"queued": 0, "active": 0}
         )
+        checks["resume_enqueue_failure_restores_exact_truth"] = (
+            resume_failure["enqueue_observations"][0]["entrants"] == 1
+            and resume_failure["enqueue_observations"][0]["registry"]["status"]
+            == "queued"
+            and resume_failure["after_enqueue_failure"]["status"] == 400
+            and resume_failure["after_enqueue_failure"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and resume_failure["after_enqueue_failure"]["memory"]
+            == resume_failure["before"]["memory"]
+            and resume_failure["after_enqueue_failure"]["disk"]
+            == resume_failure["before"]["disk"]
+            and resume_failure["after_enqueue_failure"]["queue"]
+            == resume_failure["before"]["queue"]
+            and resume_failure["after_enqueue_failure"]["activity"]
+            == {"queued": 0, "active": 0}
+        )
         checks["resume_after_failure_retries_and_drains"] = (
             resume_failure["retry"]["status"] == 200
             and resume_failure["retry"]["body"]["resume_attempts"] == 3
@@ -1031,6 +1206,33 @@ def main() -> int:
             and resume_failure["retry"]["activity"] == {"queued": 0, "active": 0}
         )
         emit(states, "resume_save_failure", **resume_failure)
+
+        concurrent_resume = concurrent_resume_state(
+            root / "concurrent-resume", root / "concurrent-resume-state" / "marker"
+        )
+        resume_statuses = sorted(
+            response["status"]
+            for response in concurrent_resume["while_held"]["responses"]
+        )
+        checks["concurrent_resume_registers_exactly_once"] = (
+            resume_statuses == [200, 409]
+            and len(concurrent_resume["while_held"]["save_observations"]) == 1
+            and concurrent_resume["while_held"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and concurrent_resume["while_held"]["queue"] == 1
+            and concurrent_resume["while_held"]["activity"]
+            == {"queued": 1, "active": 1}
+            and concurrent_resume["while_held"]["runner_calls"] == 2
+        )
+        checks["concurrent_resume_drains_one_execution"] = (
+            concurrent_resume["after_drain"]["target"]["status"] == "waiting_review"
+            and concurrent_resume["after_drain"]["target"]["resume_attempts"] == 3
+            and concurrent_resume["after_drain"]["queue"] == 0
+            and concurrent_resume["after_drain"]["activity"]
+            == {"queued": 0, "active": 0}
+            and concurrent_resume["after_drain"]["runner_calls"] == 3
+        )
+        emit(states, "concurrent_resume", **concurrent_resume)
 
         render_failure = render_save_failure_state(
             root / "render-save-failure", root / "render-save-failure-state" / "marker"
@@ -1414,7 +1616,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 40
+    verdict = all(checks.values()) and len(checks) == 43
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (
@@ -1430,7 +1632,7 @@ def main() -> int:
             "an existing continuation blocked by the gate, terminal work hidden as drained, "
             "cancellation releasing admission before its upload transaction is removed, or a "
             "create/resume/render failure leaving undisclosed or contradictory work after "
-            "admission reports zero."
+            "admission reports zero, or concurrent resume registering more than one execution."
         ),
         "checks": checks,
         "states": states,

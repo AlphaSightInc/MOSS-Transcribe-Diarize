@@ -89,6 +89,24 @@ class _SecondCallBlockingRunner(NoopRunner):
         return super().transcribe(audio_path, **kwargs)
 
 
+class _ConcurrentResumeRunner(CheckpointRecordingRunner):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+        self.blocker_started = threading.Event()
+        self.release_blocker = threading.Event()
+
+    def transcribe(self, audio_path, **kwargs):
+        self.calls += 1
+        callback = kwargs.get("status_callback")
+        if callback is not None:
+            callback("transcribing", 0.5, 1)
+        if self.calls == 2:
+            self.blocker_started.set()
+            assert self.release_blocker.wait(timeout=10)
+        return NoopRunner.transcribe(self, audio_path, **kwargs)
+
+
 def _assert_quiesced(response) -> None:
     assert response.status_code == 503
     assert response.json()["failure"] == {
@@ -773,12 +791,127 @@ def test_resume_save_failure_restores_old_truth_before_admission_closes(
     assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
 
     monkeypatch.setattr(app.state.manager, "_save_job", original_save)
+    original_put = app.state.manager._queue.put
+    put_observed: list[dict[str, object]] = []
+
+    def fail_enqueue(candidate_id: str) -> None:
+        if candidate_id == job_id:
+            put_observed.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "registry_status": app.state.manager.get_job(job_id).status,
+                }
+            )
+            raise OSError("test resume enqueue failure")
+        original_put(candidate_id)
+
+    monkeypatch.setattr(app.state.manager._queue, "put", fail_enqueue)
+    enqueue_failed = client.post(f"/api/jobs/{job_id}/resume")
+    assert enqueue_failed.status_code == 400
+    assert put_observed == [{"entrants": 1, "registry_status": "queued"}]
+    assert gate.snapshot().entrants == 0
+    assert app.state.manager.get_job(job_id).to_dict() == before
+    assert json.loads(job.job_path.read_text(encoding="utf-8")) == before
+    assert app.state.manager._queue.qsize() == 0
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+    monkeypatch.setattr(app.state.manager._queue, "put", original_put)
     retried = client.post(f"/api/jobs/{job_id}/resume")
     assert retried.status_code == 200
     assert retried.json()["resume_attempts"] == 3
     terminal = _wait_for_job(client, job_id)
     assert terminal["status"] == "waiting_review"
     assert terminal["resume_attempts"] == 3
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+
+def test_concurrent_resume_registers_one_execution_and_conflicts_the_other(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = Phase1CreationGate(tmp_path / "state" / "phase1-creation-quiesced")
+    runner = _ConcurrentResumeRunner()
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=runner,
+        phase1_creation_gate=gate,
+    )
+    setup = TestClient(app)
+    first = TestClient(app)
+    second = TestClient(app)
+    created = setup.post(
+        "/api/jobs", files={"file": ("resume-target.wav", b"target", "audio/wav")}
+    )
+    job_id = created.json()["id"]
+    _wait_for_job(setup, job_id)
+    target = app.state.manager.get_job(job_id)
+    target.status = "failed"
+    target.progress = 0.5
+    target.error = "prior failure"
+    target.resume_attempts = 2
+    target.checkpoint_state = "partial"
+    app.state.manager._save_job(target)
+
+    blocker = setup.post(
+        "/api/jobs", files={"file": ("resume-blocker.wav", b"blocker", "audio/wav")}
+    )
+    assert blocker.status_code == 200
+    assert runner.blocker_started.wait(timeout=5)
+
+    original_save = app.state.manager._save_job
+    first_save_entered = threading.Event()
+    release_first_save = threading.Event()
+    save_observations: list[dict[str, object]] = []
+
+    def hold_first_candidate(candidate) -> None:
+        if candidate.id == job_id and candidate.status == "queued":
+            save_observations.append(
+                {
+                    "registry_status": app.state.manager.get_job(job_id).status,
+                }
+            )
+            first_save_entered.set()
+            assert release_first_save.wait(timeout=10)
+        original_save(candidate)
+
+    monkeypatch.setattr(app.state.manager, "_save_job", hold_first_candidate)
+    responses: list[object] = []
+
+    def resume(client: TestClient) -> None:
+        responses.append(client.post(f"/api/jobs/{job_id}/resume"))
+
+    first_thread = threading.Thread(target=resume, args=(first,), daemon=True)
+    second_thread = threading.Thread(target=resume, args=(second,), daemon=True)
+    first_thread.start()
+    assert first_save_entered.wait(timeout=5)
+    second_thread.start()
+    for _ in range(100):
+        if gate.snapshot().entrants == 2:
+            break
+        time.sleep(0.01)
+    assert gate.snapshot().entrants == 2
+    release_first_save.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+    assert not first_thread.is_alive()
+    assert not second_thread.is_alive()
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    conflict = next(response for response in responses if response.status_code == 409)
+    assert conflict.json()["detail"] == f"Job {job_id} already has an active execution."
+    assert save_observations == [{"registry_status": "failed"}]
+    assert gate.snapshot().entrants == 0
+    assert app.state.manager._queue.qsize() == 1
+    assert app.state.manager.activity_counts() == {"queued": 1, "active": 1}
+    assert runner.calls == 2
+
+    runner.release_blocker.set()
+    app.state.manager._queue.join()
+    terminal = app.state.manager.get_job(job_id)
+    assert terminal.status == "waiting_review"
+    assert terminal.resume_attempts == 3
+    assert runner.calls == 3
+    assert app.state.manager._queue.qsize() == 0
     assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
 
 
