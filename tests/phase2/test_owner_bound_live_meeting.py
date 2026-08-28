@@ -47,7 +47,9 @@ from moss_transcribe_diarize.app.phase2 import (
 from moss_transcribe_diarize.app.phase2_audio import (
     LiveMeetingAudioStages,
     MeetingAudioArchive,
+    MeetingAudioCleanupError,
 )
+from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
 
 class NeverOidc:
@@ -982,6 +984,185 @@ def test_restart_between_live_meeting_row_and_stage_marks_unavailable_without_se
         assert meeting["audio"]["state"] == "unavailable"
         assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 404
     assert not (tmp_path / "meetings" / "sub-a" / meeting_id).exists()
+
+
+def test_interrupted_reallowed_live_meeting_reconciles_missing_metadata_artifact(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    audio_root = tmp_path / "meetings"
+    _, meeting_id = asyncio.run(
+        prepare_crashed_live_meeting(database, audio_root, "metadata")
+    )
+    retained = audio_root / "sub-a" / meeting_id / "audio.mp3"
+    retained.unlink()
+
+    async def revoke_and_reallow() -> str:
+        store = await Phase2Store.open(database)
+        try:
+            assert await store.revoke_email("a@example.com") is True
+            await store.allow_email("a@example.com")
+            admitted = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
+            assert admitted is not None
+            return admitted[1]
+        finally:
+            await store.close()
+
+    reallowed_session = asyncio.run(revoke_and_reallow())
+    app = make_app(database)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, reallowed_session)
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["audio"]["state"] == "unavailable"
+        assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 404
+    meeting_dir = audio_root / "sub-a" / meeting_id
+    assert not (meeting_dir / ".live-mix.pcm").exists()
+    assert not tuple(meeting_dir.glob("*.mp3"))
+
+
+def test_interrupted_live_artifact_cleanup_uncertainty_preserves_metadata_and_stage(
+    tmp_path: Path,
+):
+    class UncertainArchive(MeetingAudioArchive):
+        def resolve(
+            self,
+            account_id: str,
+            meeting_id: str,
+            relative_path: str,
+            byte_count: int,
+        ) -> None:
+            del account_id, meeting_id, relative_path, byte_count
+            return None
+
+        def discard_stored(
+            self,
+            account_id: str,
+            meeting_id: str,
+            relative_path: str,
+        ) -> None:
+            del account_id, meeting_id, relative_path
+            raise MeetingAudioCleanupError("injected artifact cleanup uncertainty")
+
+    database = tmp_path / "moss.sqlite3"
+    audio_root = tmp_path / "meetings"
+    session_id, meeting_id = asyncio.run(
+        prepare_crashed_live_meeting(database, audio_root, "metadata")
+    )
+
+    async def interrupt_then_attempt_recovery():
+        store = await Phase2Store.open(database)
+        try:
+            account = await store.account_for_session(session_id)
+            assert account is not None
+            workspace = store.workspace(account)
+            handle = await workspace.open_meeting(meeting_id)
+            assert handle is not None
+            await handle.finish("interrupted")
+        finally:
+            await store.close()
+
+        uncertain = UncertainArchive(audio_root)
+        stages = LiveMeetingAudioStages(uncertain, max_bytes=32_000)
+        reopened = await Phase2Store.open(database)
+        try:
+            with pytest.raises(MeetingAudioCleanupError):
+                await reopened.recover_active_meetings(
+                    audio_archive=uncertain,
+                    live_audio_stages=stages,
+                )
+            account = await reopened.account_for_session(session_id)
+            assert account is not None
+            handle = await reopened.workspace(account).open_meeting(meeting_id)
+            assert handle is not None
+            return await handle.snapshot()
+        finally:
+            await reopened.close()
+
+    snapshot = asyncio.run(interrupt_then_attempt_recovery())
+    meeting_dir = audio_root / "sub-a" / meeting_id
+    assert snapshot.status == "interrupted"
+    assert snapshot.audio is not None and snapshot.audio.state == "available"
+    assert (meeting_dir / "audio.mp3").is_file()
+    assert (meeting_dir / ".live-mix.pcm").is_file()
+
+
+def test_runtime_create_refusal_with_cleanup_uncertainty_recovers_on_restart(
+    tmp_path: Path,
+):
+    class RejectCreateRuntime:
+        def create(self, *, echo_mode: str | None, session_id: str) -> None:
+            del echo_mode, session_id
+            raise ValueError("injected runtime creation refusal")
+
+    class PersistentDiscardFailure:
+        def __init__(self, stages: LiveMeetingAudioStages) -> None:
+            self.stages = stages
+            self.attempts = 0
+
+        def __getattr__(self, name: str):
+            return getattr(self.stages, name)
+
+        def discard(self, account_id: str, meeting_id: str) -> None:
+            del account_id, meeting_id
+            self.attempts += 1
+            raise OSError("injected persistent stage cleanup failure")
+
+    database = tmp_path / "moss.sqlite3"
+    audio_root = tmp_path / "meetings"
+
+    async def refuse_then_recover():
+        archive = MeetingAudioArchive(audio_root)
+        stages = LiveMeetingAudioStages(archive, max_bytes=32_000)
+        persistent = PersistentDiscardFailure(stages)
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("a@example.com")
+            admitted = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
+            assert admitted is not None
+            account, session_id = admitted
+            workspace = store.workspace(account)
+            live = Phase2LiveMeetings(
+                RejectCreateRuntime(),
+                audio_archive=archive,
+                audio_stages=persistent,
+            )
+            with pytest.raises(ValueError, match="runtime creation refusal"):
+                await live.create(
+                    account=account,
+                    workspace=workspace,
+                    origin_session=session_id,
+                    echo_mode=None,
+                )
+            meetings = await workspace.list_meetings()
+            assert len(meetings) == 1
+            meeting_id = meetings[0].meeting_id
+            assert meetings[0].status == "active"
+            assert persistent.attempts == 1
+            assert stages.path(account.account_id, meeting_id).is_file()
+        finally:
+            await store.close()
+
+        reopened_archive = MeetingAudioArchive(audio_root)
+        reopened_stages = LiveMeetingAudioStages(reopened_archive, max_bytes=32_000)
+        reopened = await Phase2Store.open(database)
+        try:
+            await reopened.recover_active_meetings(
+                audio_archive=reopened_archive,
+                live_audio_stages=reopened_stages,
+            )
+            account = await reopened.account_for_session(session_id)
+            assert account is not None
+            handle = await reopened.workspace(account).open_meeting(meeting_id)
+            assert handle is not None
+            return await handle.snapshot(), reopened_stages.path(account.account_id, meeting_id)
+        finally:
+            await reopened.close()
+
+    snapshot, stage_path = asyncio.run(refuse_then_recover())
+    assert snapshot.status == "interrupted"
+    assert snapshot.audio is not None and snapshot.audio.state == "unavailable"
+    assert not stage_path.exists()
 
 
 def test_public_snapshot_waits_for_the_serialized_transcript_commit(tmp_path: Path):

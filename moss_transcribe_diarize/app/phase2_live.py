@@ -124,14 +124,7 @@ class Phase2LiveMeetings:
             # frame appends and cannot outlive a cancelled creation task in a worker.
             self.audio_stages.reserve(account.account_id, handle.meeting_id)
         except BaseException:
-            try:
-                self.audio_stages.discard(account.account_id, handle.meeting_id)
-            except Exception:
-                pass
-            try:
-                await handle.finish("failed")
-            except Exception:
-                pass
+            await self._finish_failed_create_if_stage_absent(account.account_id, handle)
             raise
         binding = _LiveBinding(
             owner_key=(account.account_id, account.authority_generation),
@@ -151,20 +144,31 @@ class Phase2LiveMeetings:
             binding.queue.put_nowait(None)
             if binding.worker is not None:
                 await binding.worker
-            try:
-                await asyncio.to_thread(
-                    self.audio_stages.discard,
-                    account.account_id,
-                    handle.meeting_id,
-                )
-            except Exception:
-                pass
-            try:
-                await handle.finish("failed")
-            except Exception:
-                pass
+            await self._finish_failed_create_if_stage_absent(account.account_id, handle)
             raise
         return binding
+
+    async def _finish_failed_create_if_stage_absent(
+        self,
+        account_id: str,
+        handle: Any,
+    ) -> None:
+        """Publish failed creation only after the fixed raw stage is verified absent."""
+
+        try:
+            await asyncio.to_thread(
+                self.audio_stages.discard,
+                account_id,
+                handle.meeting_id,
+            )
+        except Exception:
+            # The active row is the sole startup-recovery authority while raw-path truth
+            # is uncertain; a false terminal row would make the stage unreachable.
+            return
+        try:
+            await handle.finish("failed")
+        except Exception:
+            pass
 
     def open(
         self,

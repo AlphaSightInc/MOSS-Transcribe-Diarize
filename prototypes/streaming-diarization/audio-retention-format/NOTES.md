@@ -148,6 +148,15 @@ and removed the fixed stage. If both attempts fail after revocation already made
 startup selects canonical interrupted Live rows regardless of whether the Account has since been
 re-allowed, then derives the fixed owner path; it never searches the filesystem. It removes
 unrecorded MP3 only when metadata grants neither available nor partial truth, then verifies
-raw-stage cleanup. Persistent cleanup failure therefore blocks startup visibly instead of silently
-leaving raw material behind. Ticket #18 owns the later improvement that moves revocation ordering
-before generation fencing.
+raw-stage cleanup. For metadata-backed interrupted audio, a missing artifact goes through the same
+production discard-and-verified-absence seam before a guarded update may record unavailable. Forced
+discard uncertainty retained both the available metadata and raw stage and failed startup visibly;
+it never wrote unavailable. Persistent cleanup failure therefore blocks startup instead of silently
+leaving raw material behind.
+
+The creation-failure probe also rejected terminal `failed` while a reserved raw stage survived. A
+forced runtime creation refusal plus persistent discard failure now left the canonical Meeting
+active with the stage present; a fresh Store/archive/stager restart removed the stage and ended it
+interrupted/unavailable. A failed creation is therefore eligible for durable `failed` only after
+the fixed stage is verified absent. Ticket #18 owns the later improvement that moves revocation
+ordering before generation fencing.

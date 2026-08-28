@@ -57,6 +57,12 @@ class _FailingDiscardStages:
         self.stages.discard(account_id, meeting_id)
 
 
+class _RejectCreateRuntime:
+    def create(self, *, echo_mode: str | None, session_id: str) -> None:
+        del echo_mode, session_id
+        raise ValueError("prototype runtime creation refusal")
+
+
 def pcm_tone(samples: int, frequency: float = 880.0) -> bytes:
     values = [
         round(12_000 * math.sin(2 * math.pi * frequency * index / SAMPLE_RATE))
@@ -354,6 +360,136 @@ async def _cleanup_failure_probe(work: Path, pcm: bytes) -> dict[str, object]:
         await store.close()
 
 
+async def _missing_interrupted_artifact_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    audio_root = work / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, session_id = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        stages.reserve(account.account_id, handle.meeting_id)
+        stage = stages.create(handle.meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+        stages.release(handle.meeting_id)
+        prefix = stages.prefix(
+            account.account_id,
+            handle.meeting_id,
+            expected_samples=len(pcm) // 2,
+        )
+        assert prefix is not None
+        audio = await handle.publish_audio(
+            archive,
+            prefix.path,
+            partial=False,
+            raw_pcm=True,
+        )
+        await handle.finish("interrupted")
+        assert audio.relative_path is not None
+        (audio_root / audio.relative_path).unlink()
+        meeting_id = handle.meeting_id
+    finally:
+        await store.close()
+
+    reopened_archive = MeetingAudioArchive(audio_root)
+    reopened_stages = LiveMeetingAudioStages(reopened_archive, max_bytes=len(pcm))
+    reopened = await Phase2Store.open(database)
+    try:
+        await reopened.recover_active_meetings(
+            audio_archive=reopened_archive,
+            live_audio_stages=reopened_stages,
+        )
+        reopened_account = await reopened.account_for_session(session_id)
+        assert reopened_account is not None
+        reopened_handle = await reopened.workspace(reopened_account).open_meeting(meeting_id)
+        assert reopened_handle is not None
+        snapshot = await reopened_handle.snapshot()
+    finally:
+        await reopened.close()
+    return {
+        "meeting_status": snapshot.status,
+        "audio_state": snapshot.audio.state,
+        "stage_exists": reopened_stages.path("account-a", meeting_id).exists(),
+        "artifact_exists": bool(tuple((audio_root / "account-a" / meeting_id).glob("*.mp3"))),
+    }
+
+
+async def _failed_create_cleanup_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    audio_root = work / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    persistent = _FailingDiscardStages(stages, failures=None)
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, session_id = admitted
+        workspace = store.workspace(account)
+        live = Phase2LiveMeetings(
+            _RejectCreateRuntime(),
+            audio_archive=archive,
+            audio_stages=persistent,
+        )
+        try:
+            await live.create(
+                account=account,
+                workspace=workspace,
+                origin_session=session_id,
+                echo_mode=None,
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("runtime creation refusal was not propagated")
+        meetings = await workspace.list_meetings()
+        assert len(meetings) == 1
+        meeting_id = meetings[0].meeting_id
+        before = {
+            "cleanup_attempts": persistent.attempts,
+            "meeting_status": meetings[0].status,
+            "stage_exists": stages.path(account.account_id, meeting_id).exists(),
+        }
+    finally:
+        await store.close()
+
+    reopened_archive = MeetingAudioArchive(audio_root)
+    reopened_stages = LiveMeetingAudioStages(reopened_archive, max_bytes=len(pcm))
+    reopened = await Phase2Store.open(database)
+    try:
+        await reopened.recover_active_meetings(
+            audio_archive=reopened_archive,
+            live_audio_stages=reopened_stages,
+        )
+        reopened_account = await reopened.account_for_session(session_id)
+        assert reopened_account is not None
+        handle = await reopened.workspace(reopened_account).open_meeting(meeting_id)
+        assert handle is not None
+        after_snapshot = await handle.snapshot()
+        after = {
+            "meeting_status": after_snapshot.status,
+            "audio_state": None if after_snapshot.audio is None else after_snapshot.audio.state,
+            "stage_exists": reopened_stages.path("account-a", meeting_id).exists(),
+        }
+    finally:
+        try:
+            reopened_stages.discard("account-a", meeting_id)
+        except Exception:
+            pass
+        await reopened.close()
+    return {"before_restart": before, "after_restart": after}
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="moss-live-audio-prototype-") as temporary:
         root = Path(temporary)
@@ -497,6 +633,15 @@ def main() -> None:
             "cleanup_failure_ordering": asyncio.run(
                 _cleanup_failure_probe(root / "cleanup-failure", frame_pcm)
             ),
+            "missing_interrupted_artifact": asyncio.run(
+                _missing_interrupted_artifact_probe(
+                    root / "missing-interrupted-artifact",
+                    frame_pcm,
+                )
+            ),
+            "failed_create_cleanup": asyncio.run(
+                _failed_create_cleanup_probe(root / "failed-create-cleanup", frame_pcm)
+            ),
         }
         state["verdict"] = "PASS" if (
             state["normal_stage"]["byte_exact"]
@@ -529,6 +674,24 @@ def main() -> None:
                 "transient_authority_revoked": {
                     "cleanup_attempts": 2,
                     "cleanup_verified": True,
+                    "stage_exists": False,
+                },
+            }
+            and state["missing_interrupted_artifact"] == {
+                "meeting_status": "interrupted",
+                "audio_state": "unavailable",
+                "stage_exists": False,
+                "artifact_exists": False,
+            }
+            and state["failed_create_cleanup"] == {
+                "before_restart": {
+                    "cleanup_attempts": 1,
+                    "meeting_status": "active",
+                    "stage_exists": True,
+                },
+                "after_restart": {
+                    "meeting_status": "interrupted",
+                    "audio_state": "unavailable",
                     "stage_exists": False,
                 },
             }

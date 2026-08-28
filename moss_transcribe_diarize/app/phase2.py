@@ -540,7 +540,10 @@ class Phase2Store:
             async with self._external_read():
                 cursor = await self._connection.execute(
                     """
-                    SELECT m.account_id, m.meeting_id, ma.state AS audio_state
+                    SELECT m.account_id, m.meeting_id,
+                           ma.state AS audio_state,
+                           ma.relative_path AS audio_relative_path,
+                           ma.byte_count AS audio_byte_count
                     FROM meetings m
                     LEFT JOIN meeting_audio ma
                       ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
@@ -548,10 +551,28 @@ class Phase2Store:
                     ORDER BY m.created_at_ms, m.meeting_id
                     """
                 )
-                revoked_rows = await cursor.fetchall()
+                interrupted_rows = await cursor.fetchall()
                 await cursor.close()
-            for row in revoked_rows:
-                if row["audio_state"] not in {"available", "partial"}:
+            for row in interrupted_rows:
+                if row["audio_state"] in {"available", "partial"}:
+                    resolved = audio_archive.resolve(
+                        row["account_id"],
+                        row["meeting_id"],
+                        row["audio_relative_path"],
+                        int(row["audio_byte_count"]),
+                    )
+                    if resolved is None:
+                        await asyncio.to_thread(
+                            audio_archive.discard_stored,
+                            row["account_id"],
+                            row["meeting_id"],
+                            row["audio_relative_path"],
+                        )
+                        await self._mark_interrupted_meeting_audio_unavailable(
+                            row["account_id"],
+                            row["meeting_id"],
+                        )
+                else:
                     await asyncio.to_thread(
                         audio_archive.discard_unrecorded,
                         row["account_id"],
@@ -591,6 +612,34 @@ class Phase2Store:
                 "UPDATE meetings SET status = 'interrupted', updated_at_ms = ? WHERE status = 'active'",
                 (now,),
             )
+
+    async def _mark_interrupted_meeting_audio_unavailable(
+        self,
+        account_id: str,
+        meeting_id: str,
+    ) -> None:
+        """Reconcile terminal Live artifact truth without reviving captured authority."""
+
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meeting_audio
+                SET state = 'unavailable', relative_path = NULL, byte_count = NULL,
+                    duration_ms = NULL, format = NULL, sample_rate_hz = NULL,
+                    channels = NULL, bit_rate_bps = NULL, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ?
+                  AND state IN ('available', 'partial')
+                  AND EXISTS (
+                    SELECT 1 FROM meetings
+                    WHERE account_id = ? AND meeting_id = ?
+                      AND mode = 'live' AND status = 'interrupted'
+                  )
+                """,
+                (now, account_id, meeting_id, account_id, meeting_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("Interrupted Live Meeting audio truth changed during recovery.")
 
     async def admit(self, identity: GoogleIdentity) -> tuple[Account, str] | None:
         """Atomically bind an allowed verified subject and issue its opaque MOSS session."""

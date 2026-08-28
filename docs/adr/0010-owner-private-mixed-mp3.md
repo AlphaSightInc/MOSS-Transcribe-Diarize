@@ -68,5 +68,8 @@ active Live Meeting rows and recovers each fixed owner path without filesystem s
   cancellation-shielded with one causal retry. If both attempts fail after SQLite has already
   interrupted the Meeting, startup reconciles canonical interrupted Live rows and fixed owner paths
   without filesystem search, even if the Account has since been re-allowed. Metadata-backed MP3 is
-  preserved, unrecorded MP3 is removed, and persistent cleanup failure blocks startup visibly.
-  Issue #18 owns moving revocation ordering before generation fencing.
+  resolved through the same archive truth seam: verified absence permits a guarded unavailable
+  update, while cleanup uncertainty preserves metadata and blocks startup visibly. Unrecorded MP3
+  is removed. A failed Live creation likewise reaches durable `failed` only after the fixed stage
+  is verified absent; uncertainty leaves its canonical active row for startup recovery rather than
+  making raw PCM unreachable. Issue #18 owns moving revocation ordering before generation fencing.
