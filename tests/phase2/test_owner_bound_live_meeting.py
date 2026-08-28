@@ -1313,8 +1313,55 @@ def test_operator_interrupt_returns_durable_while_held_live_inference_is_later_d
         feeder = threading.Thread(target=feed)
         feeder.start()
         assert decode_started.wait(timeout=2)
+        live = app.state.phase2_live
+        runtime = live.runtime
+        with runtime._lock:
+            target_state = runtime._sessions[target]
+            target_state.arbiter.submit_live_canonical(
+                key=f"{target}:queued-canonical",
+                payload={"kind": "canonical"},
+            )
+            target_state.arbiter.submit_live_refinement(
+                coalesce_key=f"{target}:queued-refinement",
+                payload={"kind": "refinement"},
+            )
+            target_state.arbiter.submit_live_provisional(
+                coalesce_key=f"{target}:queued-provisional",
+                payload={"kind": "provisional"},
+            )
+            target_queues = target_state.arbiter.snapshot()
+        feed_two_lane_span(client, peer)
+        aggregate_before = live.operator_snapshot()["queues"]
+        assert (
+            target_queues.live_canonical,
+            target_queues.live_refinement,
+            target_queues.live_provisional,
+        ) == (1, 1, 1)
+        assert (
+            aggregate_before["live_canonical"],
+            aggregate_before["live_refinement"],
+            aggregate_before["live_provisional"],
+        ) == (2, 1, 1)
+
         result = asyncio.run(execute_interrupt(socket, target))
         assert result == {"meeting_id": target, "interrupted": True}
+        with runtime._lock:
+            target_after = runtime._sessions[target].arbiter.snapshot()
+        aggregate_after = live.operator_snapshot()["queues"]
+        assert (
+            target_after.live_canonical,
+            target_after.live_refinement,
+            target_after.live_provisional,
+        ) == (0, 0, 0)
+        assert (
+            aggregate_after["live_canonical"],
+            aggregate_after["live_refinement"],
+            aggregate_after["live_provisional"],
+        ) == (1, 0, 0)
+        assert asyncio.run(execute_interrupt(socket, target)) == {
+            "meeting_id": target,
+            "interrupted": False,
+        }
         durable = client.get(f"/api/meetings/{target}").json()
         assert durable["status"] == "interrupted"
         assert durable["transcript"] is None
@@ -1325,10 +1372,18 @@ def test_operator_interrupt_returns_durable_while_held_live_inference_is_later_d
         feeder.join(timeout=5)
         assert not feeder.is_alive()
         assert feed_errors == []
-        time.sleep(0.05)
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            peer_raw = runtime.snapshot(peer)
+            if peer_raw.session.accounted_samples > 0 and peer_raw.pending_work_items == 0:
+                break
+            time.sleep(0.005)
+        else:  # pragma: no cover - the assertion above owns the timeout.
+            raise AssertionError("peer Live work did not complete")
         after_late_result = client.get(f"/api/meetings/{target}").json()
         assert after_late_result["status"] == "interrupted"
         assert after_late_result["transcript"] is None
+        assert runtime.snapshot(target).session.accounted_samples == 0
         assert client.post(
             f"/api/live/sessions/{peer}/heartbeat",
             json=heartbeat(),

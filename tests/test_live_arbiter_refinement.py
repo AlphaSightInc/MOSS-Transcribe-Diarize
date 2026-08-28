@@ -191,3 +191,32 @@ def test_snapshot_reports_refinement_depth_separately_from_provisional():
     assert snapshot.live_provisional == 1
     assert snapshot.live_refinement == 1
     assert snapshot.live_refinement_running == 0
+
+
+def test_discard_live_queued_removes_all_live_kinds_but_not_batch_or_running_work():
+    arbiter = _arbiter()
+    arbiter.submit_batch(key="file-job", payload="batch")
+    arbiter.submit_live_canonical(key="session-a:span", payload="canonical", weight=2)
+    running = arbiter.submit_live_refinement(coalesce_key="session-a:running", payload="running")
+    assert arbiter.next_work().payload == "batch"
+    assert arbiter.next_work().payload == "canonical"
+    assert arbiter.next_work().payload == "running"
+    arbiter.submit_batch(key="file-job-queued", payload="queued-batch")
+    arbiter.submit_live_canonical(key="session-a:queued", payload="queued-canonical")
+    arbiter.submit_live_refinement(coalesce_key="session-a:queued", payload="queued-refinement")
+    arbiter.submit_live_provisional(coalesce_key="session-a", payload="queued-provisional")
+
+    discarded = arbiter.discard_live_queued()
+
+    assert [item.payload for item in discarded] == [
+        "queued-canonical",
+        "queued-refinement",
+        "queued-provisional",
+    ]
+    snapshot = arbiter.snapshot()
+    assert snapshot.live_canonical == 0
+    assert snapshot.live_refinement == 0
+    assert snapshot.live_provisional == 0
+    assert snapshot.live_refinement_running == 1
+    assert arbiter.next_work().payload == "queued-batch"
+    assert arbiter.release_live_refinement(item_id=running.item_id) is True

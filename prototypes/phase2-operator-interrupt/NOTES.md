@@ -33,3 +33,27 @@ an admitted SQLite transcript commit, a synchronous File runner, and a real FFmp
 the target alone became interrupted, delayed results committed nothing, File input cleanup preceded
 return, complete MP3 bytes/metadata stayed identical while state became partial, and a cancelled
 Unix handler remained joined by product shutdown.
+
+## Runtime queue correction — RED before production (2026-08-28)
+
+The extended probe held one real `LiveServiceRuntime` target decode, then placed exactly one
+canonical, one refinement, and one provisional item in that target's per-session arbiter while a
+peer canonical item waited. Production `abort` left target depth `3 -> 3`; the operator aggregate
+stayed `4 -> 4`. After releasing the held provider, its answer committed zero and the peer reached
+1,000 accounted samples, but the terminal target still owned all three queued items. This falsified
+the claim that the Phase-2 publication fence alone drained accepted lower-runtime work.
+
+**Required correction:** the runtime that owns the per-session arbiter must discard all queued Live
+kinds and reconcile their timing/readiness counters under its existing lock before `abort` first
+awaits. The already-running provider remains non-cancellable and is rejected by terminal authority;
+peer state is outside the target arbiter and must remain untouched.
+
+## Runtime queue correction — PASS
+
+The absorbed probe repeated the same held production runtime interleaving. Target canonical,
+refinement, and provisional depth changed exactly `3 -> 0` inside `abort` before its first await;
+operator aggregate depth changed `4 -> 1`, retaining only the peer canonical item. Releasing the
+held target provider committed zero target samples, the peer reached 1,000 accounted samples, all
+queued timing/readiness entries were reconciled, and repeat abort changed no counter. The existing
+`--suppress fence` and `--suppress cleanup` controls remain independent falsifiers for the higher
+owner composition.

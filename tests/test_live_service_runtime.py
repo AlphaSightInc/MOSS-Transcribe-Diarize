@@ -1028,6 +1028,97 @@ def test_abort_fences_late_in_flight_canonical_result():
     assert event_kinds[-1] == "session_aborted"
 
 
+def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_depths():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    runtime = _runtime(
+        speech=(True, False),
+        decoder=decoder,
+        session_ids=("target-session", "peer-session"),
+        scheduler=scheduler,
+    )
+    target = runtime.create()
+    peer = runtime.create()
+    runtime.accept_frame(target.session_id, _frame(0, byte=b"t"))
+    runtime.accept_frame(target.session_id, _frame(1, byte=b"t"))
+    assert decoder.entered.wait(timeout=1.0)
+
+    with runtime._lock:
+        target_state = runtime._sessions[target.session_id]
+        held_timing_ids = set(target_state.canonical_timing)
+        canonical = target_state.arbiter.submit_live_canonical(
+            key=f"{target.session_id}:queued-canonical",
+            payload={"kind": "canonical"},
+        )
+        runtime._record_canonical_queued(target_state, canonical.item_id)
+        refinement = target_state.arbiter.submit_live_refinement(
+            coalesce_key=f"{target.session_id}:queued-refinement",
+            payload={"kind": "refinement"},
+        )
+        target_state.rolling_timing[refinement.item_id] = SimpleNamespace()
+        target_state.arbiter.submit_live_provisional(
+            coalesce_key=f"{target.session_id}:queued-provisional",
+            payload={"kind": "provisional"},
+        )
+        target_before = target_state.arbiter.snapshot()
+
+    runtime.accept_frame(peer.session_id, _frame(0, byte=b"p"))
+    runtime.accept_frame(peer.session_id, _frame(1, byte=b"p"))
+    aggregate_before = runtime._operator_queue_snapshot()
+    assert (
+        target_before.live_canonical,
+        target_before.live_refinement,
+        target_before.live_provisional,
+    ) == (1, 1, 1)
+    assert (
+        aggregate_before["live_canonical"],
+        aggregate_before["live_refinement"],
+        aggregate_before["live_provisional"],
+    ) == (2, 1, 1)
+
+    aborted = asyncio.run(runtime.abort(target.session_id, "interrupted_by_operator"))
+
+    with runtime._lock:
+        target_state = runtime._sessions[target.session_id]
+        target_after = target_state.arbiter.snapshot()
+        assert set(target_state.canonical_timing) == held_timing_ids
+        assert target_state.rolling_timing == {}
+    aggregate_after = runtime._operator_queue_snapshot()
+    assert (
+        target_after.live_canonical,
+        target_after.live_refinement,
+        target_after.live_provisional,
+    ) == (0, 0, 0)
+    assert (
+        aggregate_after["live_canonical"],
+        aggregate_after["live_refinement"],
+        aggregate_after["live_provisional"],
+    ) == (1, 0, 0)
+    assert aborted.session.status == "aborted"
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while time.monotonic() < deadline:
+        peer_snapshot = runtime.snapshot(peer.session_id)
+        if peer_snapshot.session.accounted_samples == 1000:
+            break
+        time.sleep(0.001)
+    else:  # pragma: no cover - the assertion above owns the timeout
+        raise AssertionError("peer canonical work did not complete")
+
+    target_snapshot = runtime.snapshot(target.session_id)
+    with runtime._lock:
+        assert runtime._sessions[target.session_id].canonical_timing == {}
+    before_repeat = runtime._operator_queue_snapshot()
+    repeated = asyncio.run(runtime.abort(target.session_id, "interrupted_by_operator"))
+    assert repeated.session.status == "aborted"
+    assert runtime._operator_queue_snapshot() == before_repeat
+    assert target_snapshot.session.accounted_samples == 0
+    assert target_snapshot.session.committed == ()
+    assert peer_snapshot.session.accounted_samples == 1000
+
+
 def test_canonical_failure_does_not_starve_sibling_session():
     scheduler = _ManualCanonicalPumpScheduler()
     decoder = SelectiveFailingDecoder()

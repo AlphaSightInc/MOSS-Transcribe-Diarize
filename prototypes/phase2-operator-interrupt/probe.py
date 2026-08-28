@@ -14,8 +14,30 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import threading
+import time
 from dataclasses import dataclass, field
 
+from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
+from moss_transcribe_diarize.app.live_endpoint import (
+    EndpointPolicy,
+    EndpointPolicyConfig,
+    SpeechObservation,
+)
+from moss_transcribe_diarize.app.live_service_runtime import (
+    LiveServiceBounds,
+    LiveServiceConfigHashes,
+    LiveServiceDescriptor,
+    LiveServiceRuntime,
+    hash_config,
+)
+from moss_transcribe_diarize.app.live_session import (
+    AudioFrame,
+    FrozenSpan,
+    LIVE_SAMPLE_RATE,
+    LiveIdentityPreparation,
+    LiveIdentitySnapshot,
+)
 from moss_transcribe_diarize.app.phase2_lifecycle import AccountLifecycle
 
 
@@ -137,7 +159,196 @@ class Control:
         del meeting_id
 
 
+class _ScriptedSpeech:
+    def __init__(self) -> None:
+        self._speech = [True, False, True, False]
+
+    def observe(
+        self,
+        *,
+        frame: AudioFrame,
+        start_sample: int,
+        end_sample: int,
+    ) -> tuple[SpeechObservation, ...]:
+        del frame
+        return (
+            SpeechObservation(
+                start_sample=start_sample,
+                end_sample=end_sample,
+                speech_present=self._speech.pop(0),
+            ),
+        )
+
+
+class _HeldTargetDecoder:
+    max_samples = 4_000
+
+    def __init__(self, started: threading.Event, release: threading.Event) -> None:
+        self.started = started
+        self.release = release
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        if pcm.startswith(b"t"):
+            self.started.set()
+            if not self.release.wait(timeout=5):
+                raise RuntimeError("probe did not release held target decode")
+        seconds = span.sample_count / LIVE_SAMPLE_RATE
+        return InferenceTranscript(f"[0][S01]runtime[{seconds:g}]")
+
+
+class _PreparedIdentity:
+    def prepare(
+        self,
+        *,
+        span: FrozenSpan,
+        pcm: bytes,
+        transcript: str,
+        base_snapshot: LiveIdentitySnapshot,
+    ) -> LiveIdentityPreparation:
+        del pcm, transcript
+        return LiveIdentityPreparation(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            base_snapshot_version=base_snapshot.version,
+            proposed_snapshot=LiveIdentitySnapshot(
+                version=base_snapshot.version + 1,
+                canonical_speakers=base_snapshot.canonical_speakers or ("speaker-0001",),
+            ),
+            relabeled_transcript="[0][S01]runtime[0.0625]",
+            status="prepared",
+        )
+
+
+def _runtime_frame(sequence: int, marker: bytes) -> AudioFrame:
+    return AudioFrame(sequence=sequence, pcm=marker * 2_000, sample_count=1_000)
+
+
+def _runtime_queue_depth(runtime: LiveServiceRuntime, session_id: str) -> dict[str, int]:
+    with runtime._lock:
+        queues = runtime._sessions[session_id].arbiter.snapshot()
+        return {
+            "canonical": queues.live_canonical,
+            "refinement": queues.live_refinement,
+            "provisional": queues.live_provisional,
+        }
+
+
+def _aggregate_queue_depth(snapshot: dict[str, int | bool]) -> int:
+    return sum(
+        int(snapshot[key])
+        for key in ("live_canonical", "live_refinement", "live_provisional")
+    )
+
+
+async def _runtime_discard_probe() -> dict[str, object]:
+    """Measure the real per-session arbiter at the operator-interrupt boundary."""
+
+    decode_started = threading.Event()
+    release_decode = threading.Event()
+    descriptor = LiveServiceDescriptor(
+        source_revision="operator-interrupt-probe",
+        provider_name="deterministic-probe",
+        provider_revision="1",
+        provider_manifest_hash=hash_config({"provider": "probe"}),
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={"hard_cap_samples": 4_000},
+            identity_config={"max_speakers": 2},
+            decoder_config={"max_samples": 4_000},
+        ),
+        bounds=LiveServiceBounds(
+            max_frame_samples=1_000,
+            max_queue_depth=8,
+            max_retained_samples=8_000,
+            max_identity_speakers=2,
+            max_events=64,
+            hard_cap_samples=4_000,
+        ),
+        frame_samples=1_000,
+    )
+    ids = iter(("runtime-target", "runtime-peer"))
+    runtime = LiveServiceRuntime(
+        descriptor=descriptor,
+        endpoint_policy_factory=lambda: EndpointPolicy(
+            EndpointPolicyConfig(
+                min_speech_samples=1,
+                min_silence_samples=1,
+                hard_cap_samples=4_000,
+            )
+        ),
+        speech_provider_factory=_ScriptedSpeech,
+        decoder_factory=lambda: _HeldTargetDecoder(decode_started, release_decode),
+        identity_preparer_factory=_PreparedIdentity,
+        session_id_factory=lambda: next(ids),
+    )
+    target = runtime.create().session_id
+    peer = runtime.create().session_id
+    runtime.accept_frame(target, _runtime_frame(0, b"t"))
+    runtime.accept_frame(target, _runtime_frame(1, b"t"))
+    if not await asyncio.to_thread(decode_started.wait, 2):
+        raise RuntimeError("target decode did not enter the held in-flight state")
+
+    # One queued canonical item plus the runtime's other two live queue kinds. These are
+    # deliberately queued behind the held target decode so abort must remove rather than run
+    # them. The payloads are never dispatched; their queue/counter lifetime is the question.
+    with runtime._lock:
+        target_state = runtime._sessions[target]
+        target_state.arbiter.submit_live_canonical(
+            key=f"{target}:canonical-probe",
+            payload={"probe": "canonical"},
+        )
+        target_state.arbiter.submit_live_refinement(
+            coalesce_key=f"{target}:rolling:0",
+            payload={"probe": "refinement"},
+        )
+        target_state.arbiter.submit_live_provisional(
+            coalesce_key=f"{target}:provisional",
+            payload={"probe": "provisional"},
+        )
+
+    runtime.accept_frame(peer, _runtime_frame(0, b"p"))
+    runtime.accept_frame(peer, _runtime_frame(1, b"p"))
+    target_before = _runtime_queue_depth(runtime, target)
+    aggregate_before = runtime._operator_queue_snapshot()
+
+    await runtime.abort(target, "interrupted_by_operator")
+    target_after_abort = _runtime_queue_depth(runtime, target)
+    aggregate_after_abort = runtime._operator_queue_snapshot()
+
+    release_decode.set()
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        peer_snapshot = runtime.snapshot(peer)
+        if peer_snapshot is not None and peer_snapshot.session.accounted_samples == 1_000:
+            break
+        await asyncio.sleep(0.005)
+    else:
+        raise RuntimeError("peer canonical work did not complete after target release")
+
+    target_after_release = _runtime_queue_depth(runtime, target)
+    target_snapshot = runtime.snapshot(target)
+    aggregate_before_repeat = runtime._operator_queue_snapshot()
+    repeated = await runtime.abort(target, "interrupted_by_operator")
+    aggregate_after_repeat = runtime._operator_queue_snapshot()
+    assert target_snapshot is not None
+    return {
+        "target_queue_before": target_before,
+        "target_queue_after_abort": target_after_abort,
+        "target_queue_after_release": target_after_release,
+        "aggregate_before": aggregate_before,
+        "aggregate_after_abort": aggregate_after_abort,
+        "aggregate_before_repeat": aggregate_before_repeat,
+        "aggregate_after_repeat": aggregate_after_repeat,
+        "target_accounted_samples": target_snapshot.session.accounted_samples,
+        "target_status": target_snapshot.session.status,
+        "peer_accounted_samples": runtime.snapshot(peer).session.accounted_samples,
+        "repeated_status": repeated.session.status,
+    }
+
+
 async def run(suppress: str | None) -> dict[str, object]:
+    runtime_discard = await _runtime_discard_probe()
     live_target = MeetingState("live-target", "live", queued_results=["late-live"])
     live_peer = MeetingState("live-peer", "live", queued_results=["peer-live"])
     file_target = MeetingState("file-target", "file", queued_results=["late-file"])
@@ -212,6 +423,32 @@ async def run(suppress: str | None) -> dict[str, object]:
         "owned_interrupt_tasks_after_join": len(lifecycle._interrupt_tasks),
     }
     verdict_checks = {
+        "runtime_target_queue_discarded": runtime_discard["target_queue_before"] == {
+            "canonical": 1,
+            "refinement": 1,
+            "provisional": 1,
+        }
+        and runtime_discard["target_queue_after_abort"] == {
+            "canonical": 0,
+            "refinement": 0,
+            "provisional": 0,
+        }
+        and runtime_discard["target_queue_after_release"] == {
+            "canonical": 0,
+            "refinement": 0,
+            "provisional": 0,
+        },
+        "runtime_aggregate_reconciled": _aggregate_queue_depth(
+            runtime_discard["aggregate_before"]
+        )
+        == 4
+        and _aggregate_queue_depth(runtime_discard["aggregate_after_abort"]) == 1,
+        "runtime_late_result_and_peer": runtime_discard["target_accounted_samples"] == 0
+        and runtime_discard["target_status"] == "aborted"
+        and runtime_discard["peer_accounted_samples"] == 1_000,
+        "runtime_repeat_idempotent": runtime_discard["aggregate_before_repeat"]
+        == runtime_discard["aggregate_after_repeat"]
+        and runtime_discard["repeated_status"] == "aborted",
         "concurrent_join": live_result == live_join == {
             "meeting_id": "live-target",
             "interrupted": True,
@@ -244,27 +481,46 @@ async def run(suppress: str | None) -> dict[str, object]:
         and len(lifecycle._interrupt_tasks) == 0,
     }
     return {
-        "structural_question": "Can one opaque host interrupt fence exactly one active Meeting and return only after existing owners make its durable prefix terminal?",
+        "structural_question": (
+            "Can one opaque host interrupt fence exactly one active Meeting and return only "
+            "after existing owners make its durable prefix terminal?"
+        ),
         "minimum_primitives": [
             "one existing Unix Operator Control command",
             "one synchronous per-Meeting owner claim",
+            "one runtime-owned per-session arbiter discard",
             "existing Live/File serialized settlement",
             "one service-owned in-flight interrupt task",
         ],
         "invariants": [
             "claim grants no Account or content access",
+            "canonical, refinement, and provisional target queues become zero before await",
             "queued and late target results cannot commit after claim",
+            "runtime and operator queue counters reconcile without touching peer work",
             "unrelated work continues",
             "available becomes metadata-identical partial and absent becomes unavailable",
             "command completion implies durable terminal truth and source cleanup",
         ],
         "assumptions_unknowns": [
             "production owners already settle transcript/audio/cleanup truth",
-            "production Live/File settlement implementations remain independently tested",
+            (
+                "a running provider request cannot be cancelled and remains fenced by "
+                "terminal authority"
+            ),
         ],
-        "falsifier": "any late commit, peer cancellation, complete audio, surviving source, abandoned cancelled handler, or content-bearing response",
-        "tool_decision": "the production AccountLifecycle interrupt owner plus thin Live/File adapters are necessary because claim-before-await and handler cancellation are the new policies; models, browsers, and network cannot decide them",
+        "falsifier": (
+            "any target queue or counter survives abort, late target commit, peer cancellation, "
+            "complete audio, surviving source, abandoned cancelled handler, or content-bearing "
+            "response"
+        ),
+        "tool_decision": (
+            "the real LiveServiceRuntime per-session arbiter is necessary to measure queue "
+            "ownership/accounting; the production AccountLifecycle plus thin Live/File adapters "
+            "measure claim-before-await and cancellation, while models, browsers, and network "
+            "cannot decide either policy"
+        ),
         "measurements": measurements,
+        "runtime_discard": runtime_discard,
         "full_state": states,
         "verdict_checks": verdict_checks,
         "verdict": "PASS" if all(verdict_checks.values()) else "FAIL",

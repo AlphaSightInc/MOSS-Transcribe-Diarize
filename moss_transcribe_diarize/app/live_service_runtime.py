@@ -981,6 +981,7 @@ class LiveServiceRuntime:
         reason = reason or "aborted"
         with self._lock:
             state = self._get(session_id)
+            self._discard_session_queued_work_locked(state)
             if state.terminal_failure is None:
                 self._fail(
                     state,
@@ -990,6 +991,33 @@ class LiveServiceRuntime:
         snapshot = await state.session.abort(reason)
         with self._lock:
             return self._snapshot(state, session_snapshot=snapshot)
+
+    def _discard_session_queued_work_locked(self, state: _RuntimeSession) -> None:
+        """Discard one terminal session's queued Live work and its owned accounting.
+
+        This runs under the runtime lock before `abort` first awaits. The arbiter removes
+        exactly the not-yet-dispatched items; an in-flight provider request remains truthful
+        in `_in_flight_*` until its existing completion path rejects the late result and
+        closes that accounting. Ready scheduling is global, so only this session's marker is
+        removed and peer callbacks remain runnable.
+        """
+
+        discarded = state.arbiter.discard_live_queued()
+        if not discarded:
+            return
+        for item in discarded:
+            if item.kind == InferenceArbiter.LIVE_CANONICAL:
+                state.canonical_timing.pop(item.id, None)
+            elif item.kind == InferenceArbiter.LIVE_REFINEMENT:
+                state.rolling_timing.pop(item.id, None)
+        self._ready_session_set.discard(state.session_id)
+        self._ready_session_ids = deque(
+            session_id
+            for session_id in self._ready_session_ids
+            if session_id != state.session_id
+        )
+        state.work_changed.set()
+        self._notify_drain_waiters_locked(state)
 
     def _finalize_identity_locked(self, state: _RuntimeSession) -> None:
         """Run ADR-0002's final sweep for a meeting that reached a clean stop.
