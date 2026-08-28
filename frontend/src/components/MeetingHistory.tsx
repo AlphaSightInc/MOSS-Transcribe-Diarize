@@ -36,6 +36,9 @@ export function MeetingHistory() {
   const [renameTitle, setRenameTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
   const selectedRef = useRef<Meeting | null>(null);
+  const refreshGenerationRef = useRef(0);
+  const renameDialogRef = useRef<HTMLDialogElement | null>(null);
+  const renameInputRef = useRef<HTMLInputElement | null>(null);
 
   const groups = useMemo(
     () => groupMeetings(filterMeetings(meetings, query)),
@@ -48,10 +51,12 @@ export function MeetingHistory() {
   };
 
   const refresh = async () => {
+    const generation = ++refreshGenerationRef.current;
     setLoading(true);
     setError(null);
     try {
       const next = await listMeetings();
+      if (generation !== refreshGenerationRef.current) return;
       setMeetings(next);
       const previous = selectedRef.current;
       const repaired = reconcileSelectedMeeting(next, selectedRef.current);
@@ -63,9 +68,13 @@ export function MeetingHistory() {
         sessionTitle.value = "";
       }
     } catch (cause) {
-      setError(errorMessage(cause));
+      if (generation === refreshGenerationRef.current) {
+        setError(errorMessage(cause));
+      }
     } finally {
-      setLoading(false);
+      if (generation === refreshGenerationRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -75,6 +84,30 @@ export function MeetingHistory() {
     document.addEventListener(MEETING_HISTORY_REFRESH_EVENT, handleRefresh);
     return () => document.removeEventListener(MEETING_HISTORY_REFRESH_EVENT, handleRefresh);
   }, []);
+
+  useEffect(() => {
+    if (!renameTarget) return;
+    const dialog = renameDialogRef.current;
+    if (!dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "");
+    }
+    renameInputRef.current?.focus();
+    renameInputRef.current?.select();
+    return () => {
+      if (dialog.open && typeof dialog.close === "function") {
+        dialog.close();
+      } else {
+        dialog.removeAttribute("open");
+      }
+      previousFocus?.focus();
+    };
+  }, [renameTarget]);
 
   const selectMeeting = async (meeting: Meeting) => {
     if (
@@ -102,6 +135,8 @@ export function MeetingHistory() {
     setError(null);
     try {
       const renamed = await renameMeeting(renameTarget.id, renameTitle);
+      refreshGenerationRef.current += 1;
+      setLoading(false);
       const update = (meeting: Meeting): Meeting => meeting.id === renamed.id
         ? { ...meeting, title: renamed.title, title_source: renamed.title_source }
         : meeting;
@@ -216,19 +251,23 @@ export function MeetingHistory() {
       </div>
 
       {renameTarget ? (
-        <div className="history-dialog-wrap">
-          <button
-            type="button"
-            className="history-dialog-backdrop"
-            aria-label="Cancel rename"
-            disabled={renaming}
-            onClick={() => setRenameTarget(null)}
-          />
-          <form className="history-dialog" aria-label="Rename Meeting" onSubmit={submitRename}>
-            <h3>Rename Meeting</h3>
+        <dialog
+          ref={renameDialogRef}
+          className="history-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rename-meeting-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            if (!renaming) setRenameTarget(null);
+          }}
+        >
+          <form aria-label="Rename Meeting" onSubmit={submitRename}>
+            <h3 id="rename-meeting-title">Rename Meeting</h3>
             <label className="history-input-stack">
               <span>Title</span>
               <input
+                ref={renameInputRef}
                 aria-label="Meeting title"
                 value={renameTitle}
                 disabled={renaming}
@@ -253,7 +292,7 @@ export function MeetingHistory() {
               </button>
             </div>
           </form>
-        </div>
+        </dialog>
       ) : null}
     </section>
   );

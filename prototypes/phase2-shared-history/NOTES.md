@@ -5,7 +5,7 @@
 The one-command probe asks whether six primitives are sufficient for one Account history: durable
 Meeting summaries, one active-first total order, derived browser query/date-group/selection state,
 owner-bound rename with manual-title provenance, the existing active-Live observer, and refresh
-reconciliation. The probe prints
+reconciliation fenced by the latest requested generation. The probe prints
 each primitive's boundary and irreducibility, invariants, assumptions/unknowns, falsifier, and the
 necessity plus rejection result for every experiment before printing transition state.
 
@@ -46,6 +46,10 @@ both carried `Customer URL review` with `manual` provenance, repaired stale sele
 simulated restart retained the title/provenance and identical group order. Opening that Meeting from
 another Account returned not-found, created no handle, and changed zero owner rows. Blank title is
 rejected after trimming; no unmeasured length ceiling or durable history cursor is introduced.
+When two reachable refreshes completed in reverse order, the latest requested generation became
+visible and the older completion was ignored. A successful local rename also advanced that
+generation, so a pre-rename list response could not restore the old title. This rejects
+stale-response overwrite without a queue, timer, abort protocol, or durable cursor.
 
 Production should therefore deepen the existing seams rather than add a history repository:
 

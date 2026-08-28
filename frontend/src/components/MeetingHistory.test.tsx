@@ -3,7 +3,10 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Meeting } from "../api/meetings";
-import { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
+import {
+  LIVE_MEETING_OBSERVE_EVENT,
+  MEETING_HISTORY_REFRESH_EVENT
+} from "../lib/meetingEvents";
 import { resetSessionState, sessionTitle, transcript } from "../state/session";
 import { MeetingHistory } from "./MeetingHistory";
 
@@ -137,7 +140,112 @@ describe("MeetingHistory", () => {
     expect(root.querySelector('[aria-pressed="true"]')).toBeNull();
     expect(sessionTitle.value).toBe("");
   });
+
+  it("keeps the newest overlapping refresh response", async () => {
+    const older = deferred<Response>();
+    const newest = deferred<Response>();
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(response({ meetings: [meeting({ title: "Initial" })] }))
+      .mockReturnValueOnce(older.promise)
+      .mockReturnValueOnce(newest.promise);
+    vi.stubGlobal("fetch", fetcher);
+
+    await act(async () => {
+      render(<MeetingHistory />, root);
+    });
+    await vi.waitFor(() => expect(root.textContent).toContain("Initial"));
+
+    act(() => {
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
+    });
+    await act(async () => {
+      newest.resolve(response({ meetings: [meeting({ title: "Newest response" })] }));
+    });
+    await vi.waitFor(() => expect(root.textContent).toContain("Newest response"));
+    await act(async () => {
+      older.resolve(response({ meetings: [meeting({ title: "Older response" })] }));
+    });
+    expect(root.textContent).toContain("Newest response");
+    expect(root.textContent).not.toContain("Older response");
+  });
+
+  it("does not let an older in-flight refresh overwrite a successful rename", async () => {
+    const stale = deferred<Response>();
+    const original = meeting({ id: "shared", title: "Original" });
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(response({ meetings: [original] }))
+      .mockReturnValueOnce(stale.promise)
+      .mockResolvedValueOnce(response({ id: "shared", title: "Owner title", title_source: "manual" }));
+    vi.stubGlobal("fetch", fetcher);
+
+    await act(async () => {
+      render(<MeetingHistory />, root);
+    });
+    await vi.waitFor(() => expect(root.textContent).toContain("Original"));
+    act(() => {
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
+    });
+
+    const rename = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Rename");
+    if (!rename) throw new Error("missing Rename button");
+    rename.focus();
+    act(() => rename.click());
+    const title = root.querySelector<HTMLInputElement>('[aria-label="Meeting title"]');
+    if (!title) throw new Error("missing title field");
+    title.value = "Owner title";
+    act(() => {
+      title.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => root.querySelector<HTMLButtonElement>('button[type="submit"]')?.click());
+    await vi.waitFor(() => expect(root.textContent).toContain("Owner title"));
+
+    await act(async () => {
+      stale.resolve(response({ meetings: [original] }));
+    });
+    expect(root.textContent).toContain("Owner title");
+    expect(root.textContent).not.toContain("Original");
+    expect(root.textContent).toContain("Refresh");
+    expect(root.textContent).not.toContain("Refreshing…");
+  });
+
+  it("opens rename as a modal dialog and restores focus after Escape", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ meetings: [meeting()] })));
+
+    await act(async () => {
+      render(<MeetingHistory />, root);
+    });
+    await vi.waitFor(() => expect(root.textContent).toContain("Meeting A"));
+    const rename = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Rename");
+    if (!rename) throw new Error("missing Rename button");
+    rename.focus();
+    act(() => rename.click());
+
+    const dialog = root.querySelector<HTMLDialogElement>('dialog[role="dialog"]');
+    const title = root.querySelector<HTMLInputElement>('[aria-label="Meeting title"]');
+    if (!dialog || !title) throw new Error("missing rename dialog");
+    expect(dialog.hasAttribute("open")).toBe(true);
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+    expect(dialog.getAttribute("aria-labelledby")).toBe("rename-meeting-title");
+    expect(document.activeElement).toBe(title);
+
+    act(() => {
+      dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
+    });
+    await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+    expect(document.activeElement).toBe(rename);
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((accept) => {
+    resolve = accept;
+  });
+  return { promise, resolve };
+}
 
 function response(body: unknown, status = 200): Response {
   return {

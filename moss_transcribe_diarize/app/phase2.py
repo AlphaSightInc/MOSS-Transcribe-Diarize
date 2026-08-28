@@ -1632,7 +1632,7 @@ def _signed_out_html(state: str) -> str:
     else:
         message = "Sign in to open your private Account workspace."
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title></head>
 <body><main data-auth-state=\"{state}\"><h1>MOSS</h1><p>{message}</p>
 <a data-action=\"google-sign-in\" href=\"/auth/google\">Sign in with Google</a></main></body></html>"""
 
@@ -1659,7 +1659,7 @@ def _workspace_html(
         else ""
     )
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title>{live_head}</head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title>{live_head}</head>
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>

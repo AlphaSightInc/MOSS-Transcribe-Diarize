@@ -445,6 +445,10 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
         assert measured["mobile_order"] == ["file", "live", "history"]
         assert measured["desktop_history_visible"] is True
         assert measured["mobile_history_visible"] is True
+        assert measured["mobile_inner_width"] <= 768
+        assert measured["mobile_media"] is True
+        assert measured["rename_dialog_accessible"] is True
+        assert measured["escape_restored_focus"] is True
         assert measured["both_observed_words"] is True
         assert measured["title_converged"] is True
         assert measured["reload_read_only"] is True
@@ -506,10 +510,50 @@ async def _exercise_two_browsers(
         await second.wait(observed)
 
         await first.evaluate(
-            f"[...document.querySelector('[data-meeting-card=\"{meeting_id}\"]').querySelectorAll('button')]"
-            ".find(button => button.textContent.trim() === 'Rename').click()"
+            f"(() => {{ const button = [...document.querySelector('[data-meeting-card=\"{meeting_id}\"]').querySelectorAll('button')]"
+            ".find(candidate => candidate.textContent.trim() === 'Rename'); "
+            "button.focus(); button.click(); return true; })()"
         )
-        await first.wait("document.querySelector('[aria-label=\"Meeting title\"]')")
+        await first.wait("document.querySelector('dialog.history-dialog[open]')")
+        rename_dialog_accessible = await first.evaluate(
+            "(() => { const dialog = document.querySelector('dialog.history-dialog[open]'); "
+            "const input = document.querySelector('[aria-label=\"Meeting title\"]'); "
+            "return dialog?.getAttribute('role') === 'dialog' && "
+            "dialog?.getAttribute('aria-modal') === 'true' && "
+            "dialog?.getAttribute('aria-labelledby') === 'rename-meeting-title' && "
+            "document.activeElement === input; })()"
+        )
+        await first.command(
+            "Input.dispatchKeyEvent",
+            {
+                "type": "rawKeyDown",
+                "key": "Escape",
+                "code": "Escape",
+                "windowsVirtualKeyCode": 27,
+                "nativeVirtualKeyCode": 27,
+            },
+        )
+        await first.command(
+            "Input.dispatchKeyEvent",
+            {
+                "type": "keyUp",
+                "key": "Escape",
+                "code": "Escape",
+                "windowsVirtualKeyCode": 27,
+                "nativeVirtualKeyCode": 27,
+            },
+        )
+        await first.wait("!document.querySelector('dialog.history-dialog')")
+        await first.wait(
+            "document.activeElement?.textContent.trim() === 'Rename'"
+        )
+        escape_restored_focus = True
+        await first.evaluate(
+            f"(() => {{ const button = [...document.querySelector('[data-meeting-card=\"{meeting_id}\"]').querySelectorAll('button')]"
+            ".find(candidate => candidate.textContent.trim() === 'Rename'); "
+            "button.focus(); button.click(); return true; })()"
+        )
+        await first.wait("document.querySelector('dialog.history-dialog[open]')")
         await first.evaluate(
             "(() => { const input = document.querySelector('[aria-label=\"Meeting title\"]'); "
             "input.value = 'Shared customer review'; "
@@ -544,6 +588,10 @@ async def _exercise_two_browsers(
             "mobile_order": mobile_layout["order"],
             "desktop_history_visible": desktop_layout["historyVisible"],
             "mobile_history_visible": mobile_layout["historyVisible"],
+            "mobile_inner_width": mobile_layout["innerWidth"],
+            "mobile_media": mobile_layout["mobileMedia"],
+            "rename_dialog_accessible": rename_dialog_accessible,
+            "escape_restored_focus": escape_restored_focus,
             "both_observed_words": True,
             "title_converged": True,
             "reload_read_only": reload_read_only,
@@ -560,5 +608,6 @@ async def _measure_layout(page: _ChromePage) -> dict[str, object]:
         "const history = document.querySelector('[data-workspace-section=\"history\"]'); "
         "history.scrollIntoView({block: 'end'}); const box = history.getBoundingClientRect(); "
         "return {order: sections.map(section => section.dataset.workspaceSection), "
-        "historyVisible: box.top < innerHeight && box.bottom > 0}; })()"
+        "historyVisible: box.top < innerHeight && box.bottom > 0, innerWidth, "
+        "mobileMedia: matchMedia('(max-width: 768px)').matches}; })()"
     )

@@ -70,7 +70,9 @@ view token, pairing/device grant, or compatibility mode.
   newest-first with opaque Meeting ID as the deterministic tie-break. Search, local-day grouping,
   and selection reconciliation are derived page state and grant no authority. Owner-written rename
   crosses only the existing Meeting handle, persists `manual` title provenance, survives restart,
-  and converges another same-Account client on refresh. A foreign Account cannot open that handle
+  and converges another same-Account client on refresh. The browser accepts only the latest requested
+  list completion; a successful local rename advances the same generation so an older in-flight list
+  cannot restore stale truth. A foreign Account cannot open that handle
   and changes zero owner rows. The existing Live observer remains the only active-history polling
   path; a history repository, durable cursor, or second capture interface is rejected.
 - The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source

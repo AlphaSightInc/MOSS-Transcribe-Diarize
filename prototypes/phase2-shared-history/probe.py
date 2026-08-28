@@ -68,6 +68,29 @@ class MeetingHandleProbe:
         return renamed
 
 
+class RefreshReconciler:
+    """Page-local generation: only truth newer than the latest request/mutation is visible."""
+
+    def __init__(self, rows: tuple[MeetingRecord, ...]):
+        self.visible_rows = rows
+        self.latest_generation = 0
+
+    def begin(self) -> int:
+        self.latest_generation += 1
+        return self.latest_generation
+
+    def complete(self, generation: int, rows: tuple[MeetingRecord, ...]) -> bool:
+        if generation != self.latest_generation:
+            return False
+        self.visible_rows = rows
+        return True
+
+    def apply_local_mutation(self, rows: tuple[MeetingRecord, ...]) -> int:
+        self.latest_generation += 1
+        self.visible_rows = rows
+        return self.latest_generation
+
+
 def compare_history(left: MeetingRecord, right: MeetingRecord) -> int:
     left_rank = 0 if left.status == "active" else 1
     right_rank = 0 if right.status == "active" else 1
@@ -202,8 +225,8 @@ def print_contract() -> None:
             },
             {
                 "name": "refresh_reconciliation",
-                "boundary": "replace owner list and retain selection only when still owned/present",
-                "irreducible_because": "same-Account clients otherwise retain divergent snapshots",
+                "boundary": "latest requested owner list or successful local mutation replaces visible rows",
+                "irreducible_because": "same-Account clients otherwise retain divergent or stale snapshots",
             },
         ],
         invariants=[
@@ -232,6 +255,16 @@ def print_contract() -> None:
                 "experiment": "two_client_refresh_and_restart",
                 "necessary": "separate durable truth from each client's derived snapshot",
                 "reject_if": "refresh/restart does not converge order and owner title",
+            },
+            {
+                "experiment": "reversed_overlapping_refreshes",
+                "necessary": "attack two reachable event/manual list requests completing out of order",
+                "reject_if": "an older completion replaces the newest requested owner snapshot",
+            },
+            {
+                "experiment": "refresh_then_local_rename",
+                "necessary": "attack an older owner list completing after a successful local mutation",
+                "reject_if": "the pre-rename response replaces the durable renamed title",
             },
             {
                 "experiment": "owner_bound_foreign_open",
@@ -322,6 +355,54 @@ def main() -> None:
         next(row for row in client_b_before if row.meeting_id == renamed.meeting_id),
     )
     assert repaired_selection == renamed
+
+    reconciler = RefreshReconciler(client_b_before)
+    older_generation = reconciler.begin()
+    latest_generation = reconciler.begin()
+    newest_response = tuple(
+        replace(row, title="Newest response") if row.meeting_id == renamed.meeting_id else row
+        for row in client_b_after_refresh
+    )
+    older_response = tuple(
+        replace(row, title="Older response") if row.meeting_id == renamed.meeting_id else row
+        for row in client_b_before
+    )
+    latest_accepted = reconciler.complete(latest_generation, newest_response)
+    older_accepted = reconciler.complete(older_generation, older_response)
+    print_state(
+        "reversed_overlapping_refreshes",
+        older_generation=older_generation,
+        latest_generation=latest_generation,
+        latest_accepted=latest_accepted,
+        older_accepted=older_accepted,
+        visible_rows=[asdict(row) for row in reconciler.visible_rows],
+    )
+    assert latest_accepted is True
+    assert older_accepted is False
+    assert next(
+        row for row in reconciler.visible_rows if row.meeting_id == renamed.meeting_id
+    ).title == "Newest response"
+
+    pre_rename_generation = reconciler.begin()
+    local_rows = tuple(
+        replace(row, title="Local durable rename", title_source="manual")
+        if row.meeting_id == renamed.meeting_id
+        else row
+        for row in reconciler.visible_rows
+    )
+    local_generation = reconciler.apply_local_mutation(local_rows)
+    pre_rename_accepted = reconciler.complete(pre_rename_generation, older_response)
+    print_state(
+        "refresh_then_local_rename",
+        pre_rename_generation=pre_rename_generation,
+        local_generation=local_generation,
+        pre_rename_accepted=pre_rename_accepted,
+        visible_rows=[asdict(row) for row in reconciler.visible_rows],
+    )
+    assert pre_rename_accepted is False
+    assert next(
+        row for row in reconciler.visible_rows if row.meeting_id == renamed.meeting_id
+    ).title == "Local durable rename"
 
     restarted = store.restart()
     restarted_rows = restarted.list_owner("account-a")
