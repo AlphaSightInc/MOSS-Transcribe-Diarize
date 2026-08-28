@@ -657,7 +657,16 @@ def attach_live_routes(
                 v2_session = None
             v2_snapshot = None
             if v2_session is not None:
-                v2_snapshot = await v2_session.stop(0.0)
+                try:
+                    v2_snapshot = await v2_session.stop(0.0)
+                except LiveV2SessionTerminalError:
+                    if v2_session.status != "closed":
+                        raise
+                    # A joined request can observe v2 closed while the first request is
+                    # still inside the shared raw Stop. Continue through adapter.stop:
+                    # the joined intent waits for that outcome, while a later intent
+                    # still reaches the runtime's existing closed conflict.
+                    v2_snapshot = v2_session.snapshot()
                 while v2_snapshot.status == "closing":
                     mixed = v2_mixers.get(session_id).admit_available(
                         session_id,

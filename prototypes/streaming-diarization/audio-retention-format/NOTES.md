@@ -197,7 +197,15 @@ and once any authorized caller starts raw Stop only its runtime outcome clears a
 Held-auth production HTTP regressions measured anonymous-first and foreign-first `401/404` with
 zero raw mutation, then owner `200`; the concurrent fence observed raw `closed`, and both cases
 ended interrupted/partial with no raw PCM. This is request/outcome arbitration, not authority, a
-delay, a retry loop, or a Python-version branch.
+delay, a retry loop, or a Python-version branch. Final public-route review then held the first raw
+Stop after v2 closed and measured the joined owner returning early as `409/v2_session_terminal`.
+Continuing only a cleanly closed v2 session through the same intent produced two durable `200`
+responses with one raw runtime call on Python 3.10.19 and 3.12.12. A later sequential Stop remained
+`409`; pre-existing failed and aborted v2 sessions remained `409/v2_session_terminal`. The probe
+derives a named boolean check for every candidate, claim, lifetime, public-concurrency, and v2
+terminal outcome, prints `verdict: PASS/FAIL`, and exits nonzero on any failed check. The final
+probe passed all 40 checks on each runtime; the focused concurrency/lifetime suite passed 10/10 on
+each runtime, and the combined Python suite passed 1,265 with 4 skipped plus 411 subtests.
 
 If both attempts fail after revocation already made SQLite terminal,
 startup selects canonical interrupted Live rows regardless of whether the Account has since been

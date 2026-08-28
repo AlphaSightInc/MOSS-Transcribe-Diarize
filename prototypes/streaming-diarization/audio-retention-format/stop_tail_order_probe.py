@@ -9,6 +9,7 @@ import platform
 import sqlite3
 import sys
 import tempfile
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -126,6 +127,132 @@ def run_case(root: Path, *, disable_intent_latch: bool) -> dict[str, object]:
             "terminal_finalizer_pending": terminal_scheduler.pending,
             "trace": trace,
         }
+
+
+def public_stop_concurrency(root: Path) -> dict[str, object]:
+    """Hold raw Stop after v2 closes and measure public concurrent/sequential outcomes."""
+
+    database = root / "public-concurrent.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+    outcomes: dict[str, object] = {}
+    raw_stop_entered = threading.Event()
+    shared_stop_entered = threading.Event()
+    release_raw_stop = threading.Event()
+    second_finished = threading.Event()
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        runtime = app.state.phase2_live.runtime
+        original_runtime_stop = runtime.stop
+        original_adapter_stop = app.state.phase2_live.stop
+        raw_calls = 0
+        adapter_calls = 0
+
+        async def held_runtime_stop(session_id, deadline):
+            nonlocal raw_calls
+            raw_calls += 1
+            raw_stop_entered.set()
+            await asyncio.to_thread(release_raw_stop.wait)
+            return await original_runtime_stop(session_id, deadline)
+
+        async def observed_adapter_stop(binding, deadline, intent):
+            nonlocal adapter_calls
+            adapter_calls += 1
+            if adapter_calls == 2:
+                shared_stop_entered.set()
+            return await original_adapter_stop(binding, deadline, intent)
+
+        runtime.stop = held_runtime_stop
+        app.state.phase2_live.stop = observed_adapter_stop
+
+        def stop_request(name: str) -> None:
+            try:
+                outcomes[name] = client.post(
+                    f"/api/live/sessions/{meeting_id}/stop",
+                    json={"deadline": 2.0},
+                )
+            except BaseException as exc:  # pragma: no cover - printed probe state.
+                outcomes[f"{name}_error"] = repr(exc)
+            finally:
+                if name == "second":
+                    second_finished.set()
+
+        first = threading.Thread(target=stop_request, args=("first",))
+        first.start()
+        if not raw_stop_entered.wait(timeout=2):
+            raise RuntimeError("first public Stop never reached the held raw runtime")
+        second = threading.Thread(target=stop_request, args=("second",))
+        second.start()
+        deadline = time.monotonic() + 2.0
+        while (
+            not second_finished.is_set()
+            and not shared_stop_entered.is_set()
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.001)
+        second_returned_before_raw_outcome = second_finished.is_set()
+        release_raw_stop.set()
+        first.join(timeout=5)
+        second.join(timeout=5)
+        if first.is_alive() or second.is_alive():
+            raise RuntimeError("public concurrent Stop probe did not quiesce")
+        if "first_error" in outcomes or "second_error" in outcomes:
+            raise RuntimeError(f"public concurrent Stop probe failed: {outcomes}")
+        first_response = outcomes["first"]
+        second_response = outcomes["second"]
+        sequential_response = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        return {
+            "second_reached_shared_stop": shared_stop_entered.is_set(),
+            "second_returned_before_raw_outcome": second_returned_before_raw_outcome,
+            "raw_stop_calls": raw_calls,
+            "adapter_stop_calls": adapter_calls,
+            "first_status": first_response.status_code,
+            "second_status": second_response.status_code,
+            "first_raw_terminal_status": first_response.json().get("raw_terminal_status"),
+            "second_raw_terminal_status": second_response.json().get(
+                "raw_terminal_status"
+            ),
+            "second_failure": (second_response.json().get("failure") or {}).get("code"),
+            "sequential_status": sequential_response.status_code,
+        }
+
+
+def public_v2_terminal_conflicts(root: Path) -> dict[str, object]:
+    """Prove already failed/aborted v2 capture remains a public terminal conflict."""
+
+    from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+
+    outcomes: dict[str, object] = {}
+    for terminal in ("failed", "aborted"):
+        database = root / f"v2-{terminal}.sqlite3"
+        sessions = asyncio.run(provision(database))
+        app = make_app(database)
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["a"])
+            meeting_id = client.post("/api/live/sessions").json()["id"]
+            v2_session = app.state.live_v2_sessions.get(meeting_id)
+            if terminal == "failed":
+                v2_session.fail_lane(LiveLane.MICROPHONE, "probe_failure")
+                client.portal.call(v2_session.stop, 0.0)
+            else:
+                v2_session.abort("probe_abort")
+            response = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+            outcomes[terminal] = {
+                "status": response.status_code,
+                "failure": (response.json().get("failure") or {}).get("code"),
+                "v2_status": (response.json().get("v2_session") or {}).get("status"),
+            }
+    return outcomes
 
 
 async def stop_attempt_lifetime() -> dict[str, object]:
@@ -309,6 +436,168 @@ def preauth_claim_prototype() -> dict[str, object]:
     }
 
 
+def derive_verdict(output: dict[str, object]) -> dict[str, object]:
+    """Gate every measured contract boundary; keep failures visible in printed JSON."""
+
+    cases = output["cases"]
+    assert isinstance(cases, list)
+    rejected, candidate = cases
+    assert isinstance(rejected, dict) and isinstance(candidate, dict)
+    claims = output["preauth_claims"]
+    lifetime = output["attempt_lifetime"]
+    assert isinstance(claims, dict) and isinstance(lifetime, dict)
+
+    rejected_owner_bit = claims["rejected_owner_bit"]
+    entrant_count = claims["entrant_count_candidate"]
+    all_unauthorized = lifetime["all_unauthorized"]
+    assert isinstance(rejected_owner_bit, dict)
+    assert isinstance(entrant_count, dict)
+    assert isinstance(all_unauthorized, dict)
+
+    joined_after_foreign = entrant_count["joined_after_foreign_release"]
+    joined_after_owner = entrant_count["joined_after_owner_release"]
+    assert isinstance(joined_after_foreign, dict)
+    assert isinstance(joined_after_owner, dict)
+
+    candidate_stop = candidate["stop"]
+    candidate_public = candidate["public"]
+    candidate_raw = candidate["raw"]
+    candidate_meeting = candidate["meeting"]
+    candidate_binding = candidate["binding"]
+    public_concurrency = output["public_stop_concurrency"]
+    terminal_conflicts = output["public_v2_terminal_conflicts"]
+    assert isinstance(candidate_stop, dict)
+    assert isinstance(candidate_public, dict)
+    assert isinstance(candidate_raw, dict)
+    assert isinstance(candidate_meeting, dict)
+    assert isinstance(candidate_binding, dict)
+    assert isinstance(public_concurrency, dict)
+    assert isinstance(terminal_conflicts, dict)
+    rejected_binding = rejected["binding"]
+    rejected_meeting = rejected["meeting"]
+    rejected_raw = rejected["raw"]
+    assert isinstance(rejected_binding, dict)
+    assert isinstance(rejected_meeting, dict)
+    assert isinstance(rejected_raw, dict)
+    python_line = ".".join(str(candidate["python"]).split(".")[:2])
+    rejected_scheduler_outcome = {
+        "3.10": (409, "aborted"),
+        "3.12": (200, "closed"),
+    }.get(python_line)
+
+    checks = {
+        "rejected_control_exposes_scheduler_outcome": rejected_scheduler_outcome
+        == (rejected["stop"]["status_code"], rejected_raw["session"]["status"]),
+        "rejected_control_still_settles_truthfully": rejected["last_durable_prefix_preserved"]
+        is True
+        and rejected_meeting["status"] == "interrupted"
+        and rejected_meeting["audio"]["state"] == "partial"
+        and rejected_binding["terminal_persisted"] is True
+        and rejected["raw_stage_exists"] is False,
+        "rejected_owner_bit_reproduced": rejected_owner_bit
+        == {
+            "foreign_claim_owned_attempt": True,
+            "authorized_join_owned_attempt": False,
+            "identity_cleared_by_foreign_release": True,
+        },
+        "foreign_release_retains_joined_owner": joined_after_foreign
+        == {"entrants": 1, "started": False, "identity_retained": True},
+        "owner_release_waits_for_runtime_outcome": joined_after_owner
+        == {
+            "entrants": 0,
+            "started": True,
+            "identity_retained_until_runtime_outcome": True,
+        },
+        "runtime_outcome_clears_joined_attempt": entrant_count[
+            "cleared_by_runtime_outcome"
+        ]
+        is True,
+        "all_unauthorized_claims_clear": entrant_count[
+            "all_unauthorized_release_clears"
+        ]
+        is True,
+        "duplicate_claim_release_is_noop": entrant_count["duplicate_release_is_noop"]
+        is True,
+        "concurrent_stops_share_snapshot": lifetime["concurrent_shared_snapshot"] is True,
+        "concurrent_stops_call_runtime_once": lifetime["calls_after_concurrent"] == 1,
+        "sequential_stop_reaches_runtime": lifetime["sequential_reached_runtime"] is True,
+        "timeout_reaches_runtime": lifetime["timeout_reached_runtime"] is True,
+        "timeout_allows_retry": lifetime["retry_result"] == "retried",
+        "attempt_lifetime_calls_are_exact": lifetime["total_runtime_calls"] == 4,
+        "attempt_lifetime_clears": lifetime["latch_cleared"] is True,
+        "one_unauthorized_release_retains_peer": all_unauthorized[
+            "retained_after_one_rejection"
+        ]
+        is True,
+        "duplicate_unauthorized_release_preserves_count": all_unauthorized[
+            "duplicate_release_entrants"
+        ]
+        == 1,
+        "last_unauthorized_release_clears": all_unauthorized[
+            "cleared_after_last_rejection"
+        ]
+        is True,
+        "production_stop_returns_200": candidate_stop["status_code"] == 200,
+        "production_stop_reports_closed_raw_capture": candidate_stop["body"][
+            "raw_terminal_status"
+        ]
+        == "closed",
+        "last_durable_prefix_is_preserved": candidate["last_durable_prefix_preserved"]
+        is True,
+        "public_snapshot_is_closed": candidate_public["snapshot"]["session"]["status"]
+        == "closed",
+        "raw_snapshot_is_closed": candidate_raw["session"]["status"] == "closed",
+        "terminal_meeting_is_interrupted": candidate_meeting["status"] == "interrupted",
+        "retained_audio_is_partial": candidate_meeting["audio"]["state"] == "partial",
+        "capture_is_fenced": candidate_binding["capture_fenced"] is True,
+        "persistence_failure_is_explicit": candidate_binding["persistence_failure"]
+        == "transcript_persistence_failed",
+        "terminal_state_is_durable": candidate_binding["terminal_persisted"] is True,
+        "raw_stage_is_absent": candidate["raw_stage_exists"] is False,
+        "held_terminal_finalizer_remains_pending": candidate["terminal_finalizer_pending"]
+        == 1,
+        "concurrent_public_stop_reaches_shared_attempt": public_concurrency[
+            "second_reached_shared_stop"
+        ]
+        is True,
+        "concurrent_public_stop_waits_for_raw_outcome": public_concurrency[
+            "second_returned_before_raw_outcome"
+        ]
+        is False,
+        "concurrent_public_stop_calls_raw_once": public_concurrency["raw_stop_calls"] == 1,
+        "concurrent_public_stop_calls_adapter_twice": public_concurrency[
+            "adapter_stop_calls"
+        ]
+        == 2,
+        "concurrent_public_stops_both_return_200": public_concurrency["first_status"]
+        == public_concurrency["second_status"]
+        == 200,
+        "concurrent_public_stops_both_report_closed": public_concurrency[
+            "first_raw_terminal_status"
+        ]
+        == public_concurrency["second_raw_terminal_status"]
+        == "closed",
+        "concurrent_public_stop_has_no_terminal_failure": public_concurrency[
+            "second_failure"
+        ]
+        is None,
+        "sequential_public_stop_remains_conflict": public_concurrency[
+            "sequential_status"
+        ]
+        == 409,
+        "failed_v2_remains_conflict": terminal_conflicts["failed"]
+        == {"status": 409, "failure": "v2_session_terminal", "v2_status": "failed"},
+        "aborted_v2_remains_conflict": terminal_conflicts["aborted"]
+        == {"status": 409, "failure": "v2_session_terminal", "v2_status": "aborted"},
+    }
+    failed = sorted(name for name, passed in checks.items() if not passed)
+    return {
+        "status": "PASS" if not failed else "FAIL",
+        "checks": checks,
+        "failed_checks": failed,
+    }
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="moss-stop-order-") as temporary:
         root = Path(temporary)
@@ -354,8 +643,13 @@ def main() -> None:
                 run_case(root, disable_intent_latch=False),
             ],
             "attempt_lifetime": asyncio.run(stop_attempt_lifetime()),
+            "public_stop_concurrency": public_stop_concurrency(root),
+            "public_v2_terminal_conflicts": public_v2_terminal_conflicts(root),
         }
+        output["verdict"] = derive_verdict(output)
         print(json.dumps(output, indent=2, sort_keys=True))
+        if output["verdict"]["status"] != "PASS":
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

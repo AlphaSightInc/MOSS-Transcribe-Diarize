@@ -103,3 +103,6 @@ it does not rename or re-encode the MP3.
   authority or mutation. Each entrant owns one release claim, not the shared attempt: a rejected
   anonymous/foreign request cannot clear a joined owner, all rejected claims clear an unstarted
   attempt, and after an authorized start only the raw runtime outcome clears attempt identity.
+  When a joined request observes v2 already `closed`, it continues through that same raw Stop
+  intent instead of returning a premature v2 conflict; failed and aborted v2 states remain
+  conflicts, and a later sequential Stop still receives the existing terminal conflict.

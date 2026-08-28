@@ -36,5 +36,7 @@ for python_version in 3.10 3.12; do uv run --python "$python_version" --frozen -
 
 It prints the rejected no-latch result, the production intent-latch result, complete durable/public
 Meeting state, the rejected owner-bit versus entrant-count claim reducer, and the in-flight-only
-concurrent/unauthorized/sequential/timeout lifecycle. All databases and audio artifacts remain
-temporary.
+concurrent/unauthorized/sequential/timeout lifecycle. It also holds the first public raw Stop after
+v2 closes, gates the joined and sequential public outcomes plus failed/aborted v2 conflicts, prints
+`verdict: PASS/FAIL`, and exits nonzero when any named check fails. The loop therefore gates both
+runtimes. All databases and audio artifacts remain temporary.

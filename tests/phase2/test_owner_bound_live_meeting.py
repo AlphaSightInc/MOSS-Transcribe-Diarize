@@ -911,6 +911,114 @@ def test_pre_auth_stop_entrant_cannot_clear_joined_owner_attempt(
         ).exists()
 
 
+def test_concurrent_public_stops_share_the_inflight_raw_outcome(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        runtime = app.state.phase2_live.runtime
+        original_runtime_stop = runtime.stop
+        original_adapter_stop = app.state.phase2_live.stop
+        raw_stop_entered = threading.Event()
+        shared_stop_entered = threading.Event()
+        release_raw_stop = threading.Event()
+        second_finished = threading.Event()
+        raw_calls = 0
+        adapter_calls = 0
+        outcomes: dict[str, object] = {}
+
+        async def held_runtime_stop(session_id, deadline):
+            nonlocal raw_calls
+            raw_calls += 1
+            raw_stop_entered.set()
+            await asyncio.to_thread(release_raw_stop.wait)
+            return await original_runtime_stop(session_id, deadline)
+
+        async def observed_adapter_stop(binding, deadline, intent):
+            nonlocal adapter_calls
+            adapter_calls += 1
+            if adapter_calls == 2:
+                shared_stop_entered.set()
+            return await original_adapter_stop(binding, deadline, intent)
+
+        runtime.stop = held_runtime_stop
+        app.state.phase2_live.stop = observed_adapter_stop
+
+        def stop_request(name: str) -> None:
+            try:
+                outcomes[name] = client.post(
+                    f"/api/live/sessions/{meeting_id}/stop",
+                    json={"deadline": 2.0},
+                )
+            except BaseException as exc:  # pragma: no cover - assertion reports thread error.
+                outcomes[f"{name}_error"] = exc
+            finally:
+                if name == "second":
+                    second_finished.set()
+
+        first = threading.Thread(target=stop_request, args=("first",))
+        first.start()
+        assert raw_stop_entered.wait(timeout=2)
+        second = threading.Thread(target=stop_request, args=("second",))
+        second.start()
+        second_shared = shared_stop_entered.wait(timeout=2)
+        second_returned_before_raw = second_finished.is_set()
+
+        release_raw_stop.set()
+        first.join(timeout=5)
+        second.join(timeout=5)
+        assert not first.is_alive() and not second.is_alive()
+        assert second_shared
+        assert not second_returned_before_raw
+        assert "first_error" not in outcomes and "second_error" not in outcomes
+        assert outcomes["first"].status_code == outcomes["second"].status_code == 200
+        assert outcomes["first"].json()["raw_terminal_status"] == "closed"
+        assert outcomes["second"].json()["raw_terminal_status"] == "closed"
+        assert raw_calls == 1
+        assert adapter_calls == 2
+
+        sequential = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert sequential.status_code == 409
+
+
+@pytest.mark.parametrize("terminal", ("failed", "aborted"))
+def test_public_stop_keeps_preexisting_v2_terminal_states_as_conflicts(
+    tmp_path: Path,
+    terminal: str,
+):
+    from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        v2_session = app.state.live_v2_sessions.get(meeting_id)
+        if terminal == "failed":
+            v2_session.fail_lane(LiveLane.MICROPHONE, "probe_failure")
+            client.portal.call(v2_session.stop, 0.0)
+        else:
+            v2_session.abort("probe_abort")
+
+        response = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert response.status_code == 409
+        assert response.json()["failure"]["code"] == "v2_session_terminal"
+        assert response.json()["v2_session"]["status"] == terminal
+
+
 def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(
     tmp_path: Path,
 ):
