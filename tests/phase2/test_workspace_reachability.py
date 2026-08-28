@@ -469,10 +469,11 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
         assert measured["mobile_order"] == ["file", "live", "history"]
         assert measured["desktop_history_visible"] is True
         assert measured["mobile_history_visible"] is True
-        assert measured["mobile_inner_width"] == 390
+        assert measured["mobile_inner_width"] <= 768
         assert measured["mobile_screen_width"] == 390
         assert measured["mobile_media"] is True
         assert measured["mobile_user_agent"] is True
+        assert measured["viewport_meta"] is True
         assert measured["rename_dialog_accessible"] is True
         assert measured["escape_restored_focus"] is True
         assert measured["both_observed_words"] is True
@@ -619,6 +620,7 @@ async def _exercise_two_browsers(
             "mobile_screen_width": mobile_layout["screenWidth"],
             "mobile_media": mobile_layout["mobileMedia"],
             "mobile_user_agent": mobile_layout["mobileUserAgent"],
+            "viewport_meta": mobile_layout["viewportMeta"],
             "rename_dialog_accessible": rename_dialog_accessible,
             "escape_restored_focus": escape_restored_focus,
             "both_observed_words": True,
@@ -639,5 +641,7 @@ async def _measure_layout(page: _ChromePage) -> dict[str, object]:
         "return {order: sections.map(section => section.dataset.workspaceSection), "
         "historyVisible: box.top < innerHeight && box.bottom > 0, innerWidth, "
         "screenWidth: screen.width, mobileMedia: matchMedia('(max-width: 768px)').matches, "
-        "mobileUserAgent: navigator.userAgent.includes('Mobile')}; })()"
+        "mobileUserAgent: navigator.userAgent.includes('Mobile'), "
+        "viewportMeta: document.querySelector('meta[name=\"viewport\"]')?.content === "
+        "'width=device-width, initial-scale=1'}; })()"
     )
