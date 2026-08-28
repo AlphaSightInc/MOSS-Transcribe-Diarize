@@ -584,10 +584,12 @@ class Phase2Store:
                             row["meeting_id"],
                         )
                     elif row["audio_state"] == "available":
-                        await self._downgrade_interrupted_live_audio_to_partial(
-                            row["account_id"],
-                            row["meeting_id"],
-                        )
+                        if not await self._downgrade_interrupted_live_audio_to_partial(
+                            row["account_id"], row["meeting_id"]
+                        ):
+                            raise RuntimeError(
+                                "Interrupted Live Meeting audio truth changed during recovery."
+                            )
                 else:
                     await asyncio.to_thread(
                         audio_archive.discard_unrecorded,
@@ -718,7 +720,7 @@ class Phase2Store:
         self,
         account_id: str,
         meeting_id: str,
-    ) -> None:
+    ) -> bool:
         """Keep verified MP3 metadata while making interrupted completeness truthful."""
 
         now = _now_ms()
@@ -736,8 +738,7 @@ class Phase2Store:
                 """,
                 (now, account_id, meeting_id, account_id, meeting_id),
             )
-            if cursor.rowcount != 1:
-                raise RuntimeError("Interrupted Live Meeting audio truth changed during recovery.")
+            return cursor.rowcount == 1
 
     async def admit(self, identity: GoogleIdentity) -> tuple[Account, str] | None:
         """Atomically bind an allowed verified subject and issue its opaque MOSS session."""
@@ -1528,6 +1529,14 @@ class MeetingHandle:
         await self._store._mark_meeting_audio_unavailable(
             self._account_id,
             self._authority_generation,
+            self.meeting_id,
+        )
+
+    async def downgrade_interrupted_audio_to_partial(self) -> bool:
+        """System recovery only: reconcile a captured Live row after authority loss."""
+
+        return await self._store._downgrade_interrupted_live_audio_to_partial(
+            self._account_id,
             self.meeting_id,
         )
 

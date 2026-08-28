@@ -88,5 +88,8 @@ it does not rename or re-encode the MP3.
   than changing truth. If Account revocation lands after MP3 replacement but before metadata, the
   binding remembers that the fixed unrecorded MP3 and raw stage both require cleanup. A transient
   refusal removed both on attempt two; persistent refusal remained explicitly unsettled across
-  shutdown retry instead of declaring terminal settlement over an orphan. Issue #18 owns moving
-  revocation ordering before generation fencing.
+  shutdown retry instead of declaring terminal settlement over an orphan. Revocation can also win
+  after available metadata and raw cleanup but before the atomic transcript/status commit. Every
+  revoked terminal exit therefore applies the same guarded state-only reconciliation before public
+  terminal truth: the measured boundary ended interrupted/partial with identical `audio.mp3` bytes
+  and metadata. Issue #18 owns moving revocation ordering before generation fencing.

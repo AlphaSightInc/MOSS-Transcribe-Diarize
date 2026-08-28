@@ -1587,6 +1587,87 @@ def test_revoke_after_mp3_publish_cleans_or_fences_unrecorded_artifact(
         assert (meeting_dir / ".live-mix.pcm").is_file()
 
 
+def test_revoke_after_audio_settlement_downgrades_before_terminal_publication(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(
+        database,
+        terminal_text="[0][S01]revoked terminal words[0.000375]",
+    )
+    observed: dict[str, object] = {}
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        store = app.state.phase2_store
+        original_finish = binding.handle.finish_with_transcript
+
+        async def revoke_before_terminal_tuple(document, status):
+            before = await binding.handle.snapshot()
+            assert before.audio is not None and before.audio.relative_path is not None
+            retained = tmp_path / "meetings" / before.audio.relative_path
+            observed["audio"] = before.audio.to_dict()
+            observed["bytes"] = retained.read_bytes()
+            observed["raw_absent"] = not (
+                tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+            ).exists()
+            assert await store.revoke_email("a@example.com") is True
+            return await original_finish(document, status)
+
+        binding.handle.finish_with_transcript = revoke_before_terminal_tuple
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        assert binding.terminal_persisted is True
+        assert binding.persistence_failure == "meeting_authority_revoked"
+
+    connection = sqlite3.connect(database)
+    try:
+        row = connection.execute(
+            """
+            SELECT m.status, t.document_json, ma.state, ma.relative_path, ma.byte_count,
+                   ma.duration_ms, ma.format, ma.sample_rate_hz, ma.channels, ma.bit_rate_bps
+            FROM meetings m
+            JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            JOIN meeting_audio ma
+              ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (meeting_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row is not None
+    before_audio = observed["audio"]
+    assert row[0] == "interrupted"
+    assert json.loads(row[1])["segments"][0]["text"] == "owner live words"
+    assert row[2] == "partial"
+    assert row[3:] == tuple(
+        before_audio[key]
+        for key in (
+            "relative_path",
+            "byte_count",
+            "duration_ms",
+            "format",
+            "sample_rate_hz",
+            "channels",
+            "bit_rate_bps",
+        )
+    )
+    retained = tmp_path / "meetings" / row[3]
+    assert retained.name == "audio.mp3"
+    assert retained.read_bytes() == observed["bytes"]
+    assert observed["raw_absent"] is True
+
+
 def test_revoked_live_stage_cleanup_failure_is_reconciled_from_canonical_row_on_startup(
     tmp_path: Path,
 ):

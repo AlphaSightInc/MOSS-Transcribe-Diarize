@@ -526,6 +526,112 @@ async def _revoked_publication_cleanup_probe(
     }
 
 
+async def _revoked_after_metadata_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    archive = MeetingAudioArchive(work / "meetings")
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, _ = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        document = {"segments": [{"id": "seg_0001", "text": "durable prefix"}]}
+        await handle.commit_transcript(document)
+        stages.reserve(account.account_id, handle.meeting_id)
+        stage = stages.create(handle.meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+        prefix = stages.prefix(
+            account.account_id,
+            handle.meeting_id,
+            expected_samples=len(pcm) // 2,
+        )
+        assert prefix is not None
+        before = await handle.publish_audio(
+            archive,
+            prefix.path,
+            partial=False,
+            raw_pcm=True,
+        )
+        await asyncio.to_thread(stages.discard, account.account_id, handle.meeting_id)
+        assert before.relative_path is not None
+        retained = archive.root / before.relative_path
+        bytes_before = retained.read_bytes()
+
+        assert await store.revoke_email("a@example.com")
+        finish_result = "unexpected-success"
+        try:
+            await handle.finish_with_transcript(document, "completed")
+        except AccountRevoked:
+            finish_result = "authority-revoked"
+
+        binding = SimpleNamespace(
+            owner_key=(account.account_id, account.authority_generation),
+            handle=handle,
+            capture_fenced=False,
+            terminal_persisted=False,
+            persistence_failure=None,
+            public_snapshot=None,
+            public_events=(),
+            public_event_high_water=-1,
+            authority_cleanup_task=None,
+            unrecorded_cleanup_required=False,
+            changed=asyncio.Condition(),
+        )
+        live = Phase2LiveMeetings(
+            object(),
+            audio_archive=archive,
+            audio_stages=stages,
+        )
+        await live._complete_revoked_terminal_locked(
+            binding,
+            "meeting_authority_revoked",
+            None,
+            (),
+        )
+        cursor = await store._connection.execute(
+            """
+            SELECT m.status, ma.state, ma.relative_path, ma.byte_count, ma.duration_ms,
+                   ma.format, ma.sample_rate_hz, ma.channels, ma.bit_rate_bps
+            FROM meetings m
+            JOIN meeting_audio ma
+              ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+            WHERE m.account_id = ? AND m.meeting_id = ?
+            """,
+            (account.account_id, handle.meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        assert row is not None
+        metadata_after = tuple(row[index] for index in range(2, 9))
+        metadata_before = (
+            before.relative_path,
+            before.byte_count,
+            before.duration_ms,
+            before.format,
+            before.sample_rate_hz,
+            before.channels,
+            before.bit_rate_bps,
+        )
+        return {
+            "finish_result": finish_result,
+            "meeting_status": row[0],
+            "audio_state": row[1],
+            "metadata_identical": metadata_after == metadata_before,
+            "bytes_identical": retained.read_bytes() == bytes_before,
+            "raw_stage_exists": stages.path(account.account_id, handle.meeting_id).exists(),
+            "terminal_persisted": binding.terminal_persisted,
+        }
+    finally:
+        await store.close()
+
+
 async def _missing_interrupted_artifact_probe(work: Path, pcm: bytes) -> dict[str, object]:
     database = work / "moss.sqlite3"
     audio_root = work / "meetings"
@@ -1024,6 +1130,12 @@ def main() -> None:
                     frame_pcm,
                 )
             ),
+            "revoked_after_metadata": asyncio.run(
+                _revoked_after_metadata_probe(
+                    root / "revoked-after-metadata",
+                    frame_pcm,
+                )
+            ),
             "missing_interrupted_artifact": asyncio.run(
                 _missing_interrupted_artifact_probe(
                     root / "missing-interrupted-artifact",
@@ -1097,6 +1209,15 @@ def main() -> None:
                     "orphan_mp3_exists": True,
                     "raw_stage_exists": True,
                 },
+            }
+            and state["revoked_after_metadata"] == {
+                "finish_result": "authority-revoked",
+                "meeting_status": "interrupted",
+                "audio_state": "partial",
+                "metadata_identical": True,
+                "bytes_identical": True,
+                "raw_stage_exists": False,
+                "terminal_persisted": True,
             }
             and state["missing_interrupted_artifact"] == {
                 "meeting_status": "interrupted",

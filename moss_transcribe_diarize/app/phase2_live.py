@@ -519,6 +519,11 @@ class Phase2LiveMeetings:
         ):
             await self._publish_settlement_failure(binding, reason)
             return
+        try:
+            await binding.handle.downgrade_interrupted_audio_to_partial()
+        except Exception:
+            await self._publish_settlement_failure(binding, reason)
+            return
         await self._publish_terminal_locked(
             binding,
             terminal_snapshot,

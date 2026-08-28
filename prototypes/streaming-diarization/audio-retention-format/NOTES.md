@@ -151,7 +151,7 @@ simulated crash with that file plus a durable Live PCM stage restarted to exactl
 falsified for File mode: an active File row with a durable transcript and staged MP3 restarted
 interrupted/unavailable, preserved the transcript, removed the stage, and retained no MP3.
 
-The production-focused suite then passed 30/30 Live ownership and recovery cases. In particular,
+The production-focused suite then passed 31/31 Live ownership and recovery cases. In particular,
 a transient failure after available MP3 metadata but before stage cleanup was retried through the
 same owner-bound recovery operation: the raw stage was removed on the second attempt; the identical
 relative path, bytes, duration, format, sample rate, channels, and bit rate survived; only state
@@ -170,6 +170,13 @@ removed only raw PCM, and declared cleanup verified while the unrecorded MP3 sur
 binding remembers that both fixed paths require cleanup. Its transient case removed both on recovery
 attempt two; its persistent case made four attempts across settlement plus shutdown, retained the
 MP3 and raw stage for later canonical recovery, and never marked in-memory terminal settlement.
+The opposite revocation boundary was also measured: complete MP3 metadata and raw cleanup succeeded,
+then authority was revoked immediately before the atomic final transcript/status tuple. The rejected
+path publicly settled durable interrupted/available until restart. The accepted revoked-terminal
+path reuses the same system-guarded state transition before public settlement, producing
+interrupted/partial while preserving the `audio.mp3` path, all seven metadata fields, and exact
+bytes; it neither re-encodes nor renames the file. Because all AccountRevoked terminal exits compose
+through that one method, the same invariant covers finish, recovery, and shutdown paths.
 If both attempts fail after revocation already made SQLite terminal,
 startup selects canonical interrupted Live rows regardless of whether the Account has since been
 re-allowed, then derives the fixed owner path; it never searches the filesystem. It removes
