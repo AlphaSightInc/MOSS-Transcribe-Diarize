@@ -1049,6 +1049,14 @@ def fast_failure_concurrent_resume_state(root: Path, marker: Path) -> dict[str, 
             "body": sequential.json(),
         }
     retry_started = runner.retry_started.wait(timeout=2)
+    active_repeat = None
+    if retry_started:
+        repeated = setup.post(f"/api/jobs/{job_id}/resume")
+        active_repeat = {
+            "status": repeated.status_code,
+            "body": repeated.json(),
+            "runner_calls": runner.calls,
+        }
     runner.release_retry.set()
     drain_finished = threading.Event()
 
@@ -1070,6 +1078,7 @@ def fast_failure_concurrent_resume_state(root: Path, marker: Path) -> dict[str, 
         later_claim_acquired = True
     after_drain = {
         "sequential": sequential_response,
+        "active_repeat": active_repeat,
         "target": app.state.manager.get_job(job_id).to_dict(),
         "runner_calls": runner.calls,
         "retry_started": retry_started,
@@ -1457,6 +1466,16 @@ def main() -> int:
             fast_failure_resume["after_drain"]["cancelled_claim_released"]
             and fast_failure_resume["after_drain"]["later_claim_acquired"]
         )
+        checks["later_nonoverlapping_active_resume_is_idempotent"] = (
+            fast_failure_resume["after_drain"]["active_repeat"] is not None
+            and fast_failure_resume["after_drain"]["active_repeat"]["status"] == 200
+            and fast_failure_resume["after_drain"]["active_repeat"]["body"][
+                "resume_attempts"
+            ]
+            == 4
+            and fast_failure_resume["after_drain"]["active_repeat"]["runner_calls"]
+            == 3
+        )
         emit(states, "fast_failure_concurrent_resume", **fast_failure_resume)
 
         render_failure = render_save_failure_state(
@@ -1841,7 +1860,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 46
+    verdict = all(checks.values()) and len(checks) == 47
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (

@@ -28,8 +28,10 @@
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
   One failed job admits at most one execution from overlapping resume requests; a competitor
   receives typed conflict without waiting, cancellation releases the claim exactly once, and a
-  genuinely later retry remains allowed. Save/enqueue failure restores the exact prior durable and
-  in-memory state before admission closes.
+  genuinely later failed-state retry remains allowed. A non-overlapping request that arrives after
+  registration while that execution is active preserves the established Phase-1 idempotent `200`
+  response and does not register another execution. Save/enqueue failure restores the exact prior
+  durable and in-memory state before admission closes.
 - **Assumptions/unknowns:** the retained probe spawns two independent operating-system processes,
   each with a real `server.create_app` and gate, plus isolated production failure falsifiers. It
   exercises the absorbed marker, admission, route, runtime-status, Live, and job implementations
@@ -73,7 +75,9 @@
   `200/200` rejects lock-only serialization, while `200/409` followed by a successful sequential
   retry selects the short route claim. Raising `CancelledError` inside the real claim changes the
   decision if it cannot be reacquired, because then the claim has become persistent lockout rather
-  than request ownership.
+  than request ownership. Repeating resume only after the accepted route returns, while its runner
+  is held active, is necessary to distinguish overlap conflict from established Phase-1
+  idempotency; any new attempt or runner call rejects the restored boundary.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -133,7 +137,7 @@ an overlapping waiter, while the manager section preserves exact durable and que
 
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 46/46 predicates on Python 3.10.19 and 3.12.12 on
+**Accepted.** The command derived `PASS` from 47/47 predicates on Python 3.10.19 and 3.12.12 on
 2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
@@ -176,7 +180,9 @@ an overlapping waiter, while the manager section preserves exact durable and que
 - In the fast-failure interleaving both routes reached admission `2`, but the route claim produced
   `200/409` even after the first execution became failed. Attempts stopped at `3` with one runner
   execution; after both requests returned, a new sequential retry succeeded as attempt `4` and
-  drained. A synthetic cancellation released the same claim and immediate reacquisition succeeded.
+  drained. While that registered retry was active, a later non-overlapping resume returned
+  idempotent `200` at attempt `4` with runner calls still `3`. A synthetic cancellation released
+  the same claim and immediate reacquisition succeeded.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

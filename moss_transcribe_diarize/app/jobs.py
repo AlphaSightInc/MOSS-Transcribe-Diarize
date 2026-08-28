@@ -432,7 +432,7 @@ class JobManager:
         with self._resume_lock:
             job = self.get_job(job_id)
             if job.status in ACTIVE_STATES:
-                raise RuntimeError(f"Job {job.id} already has an active execution.")
+                return job
             if job.status in {"waiting_review", "done", "cancelled"}:
                 raise RuntimeError(f"Job {job.id} is not resumable from status {job.status}.")
             if job.status != "failed":

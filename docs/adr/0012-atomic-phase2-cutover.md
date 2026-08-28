@@ -43,7 +43,7 @@ reopening the old deployment. All three commands use the same Linux-home marker 
 
 ## Measured prerequisite verdict
 
-`prototypes/phase1-creation-quiesce/` derived `PASS` from 46/46 predicates on Python 3.10.19 and
+`prototypes/phase1-creation-quiesce/` derived `PASS` from 47/47 predicates on Python 3.10.19 and
 3.12.12. It spawned two distinct operating-system processes with production `create_app` runtime
 views over the same marker, plus isolated production registration, upload-cancellation, and
 terminal-runtime falsifiers. Distinct PIDs converged across enable, process replacement, and
@@ -81,8 +81,11 @@ failed before the second overlapping request acquired the lock, so both requests
 registered sequential executions. A nonblocking per-Job claim now owns route overlap from entry
 through response construction and releases on every success, failure, or cancellation path. The
 competitor receives typed conflict without waiting; a genuinely later sequential retry remains
-allowed. The claim preserves request identity, while the existing manager critical section still
-owns durable save, registry publication, enqueue, and rollback; neither duplicates the other.
+allowed. Once an accepted route has returned, repeating resume while that registered execution is
+active preserves Phase-1 idempotency (`200`, same attempt, no second execution); `409` describes
+only actual route overlap. The claim preserves request identity, while the existing manager
+critical section still owns durable save, registry publication, enqueue, and rollback; neither
+duplicates the other.
 The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.
