@@ -248,6 +248,39 @@ async def exercise(*, suppress_event_code: str | None = None) -> dict[str, objec
         }
     live.meetings["opaque-meeting-id"]["persistence_failure"] = None
 
+    terminal_operator = Phase2OperatorStatus(
+        store,
+        database_path=Path("/tmp/moss-operator-probe.sqlite3"),
+        audio_root=Path("/tmp/moss-operator-probe-audio"),
+        live=live,
+        files=Files(),
+        v2_sessions=v2_sessions,
+        helper_presence=presence,
+        now=lambda: FIXED_NOW,
+        monotonic_ns=lambda: 1_000_000_000,
+        journal_logger=Journal(),
+    )
+    await terminal_operator.start()
+    live.meetings["opaque-meeting-id"]["terminal_error"] = {
+        "subsystem": "live",
+        "code": "RuntimeError",
+        "severity": "error",
+        "terminal": True,
+        "retryable": False,
+    }
+    try:
+        generic_terminal = await terminal_operator.snapshot()
+        generic_terminal_outcome: dict[str, object] = {
+            "status_available": True,
+            "latest_error": generic_terminal["latest_error"],
+        }
+    except Exception as exc:
+        generic_terminal_outcome = {
+            "status_available": False,
+            "exception_type": type(exc).__name__,
+        }
+    live.meetings["opaque-meeting-id"]["terminal_error"] = None
+
     shutdown_journal = Journal()
     shutdown_operator = Phase2OperatorStatus(
         store,
@@ -262,14 +295,23 @@ async def exercise(*, suppress_event_code: str | None = None) -> dict[str, objec
         journal_logger=shutdown_journal,
     )
     await shutdown_operator.start()
-    live.meetings["opaque-meeting-id"]["persistence_failure"] = "service shutdown"
+    shutdown_trace: list[str] = []
+
+    async def settle_live_owner() -> None:
+        shutdown_trace.append("live_settlement_started")
+        live.meetings["opaque-meeting-id"]["persistence_failure"] = "service shutdown"
+        shutdown_trace.append("live_settlement_finished")
+
     try:
+        await settle_live_owner()
         await shutdown_operator.stop()
+        shutdown_trace.append("operator_stopped")
         shutdown_snapshot = await shutdown_operator.snapshot()
         shutdown_outcome: dict[str, object] = {
             "status_available": True,
             "readiness": shutdown_snapshot["readiness"],
             "latest_error": shutdown_snapshot["latest_error"],
+            "trace": shutdown_trace,
         }
     except Exception as exc:
         shutdown_outcome = {
@@ -313,6 +355,7 @@ async def exercise(*, suppress_event_code: str | None = None) -> dict[str, objec
             value for value in FORBIDDEN if value not in source_text
         ],
         "failed_revoke": failed_revoke_outcome,
+        "generic_terminal": generic_terminal_outcome,
         "shutdown": shutdown_outcome,
     }
     passed = (
@@ -328,9 +371,14 @@ async def exercise(*, suppress_event_code: str | None = None) -> dict[str, objec
         and measurements["failed_revoke"].get("status_available") is True
         and measurements["failed_revoke"]["latest_error"]["code"]
         == "meeting_authority_revoked"
+        and measurements["generic_terminal"].get("status_available") is True
+        and measurements["generic_terminal"]["latest_error"]["code"]
+        == "live_terminal_failure"
         and measurements["shutdown"].get("status_available") is True
         and measurements["shutdown"].get("readiness") == "stopping"
         and measurements["shutdown"]["latest_error"]["code"] == "service_shutdown"
+        and measurements["shutdown"]["trace"]
+        == ["live_settlement_started", "live_settlement_finished", "operator_stopped"]
         and not measurements["forbidden_missing_from_sources"]
         and not measurements["forbidden_in_status"]
         and not measurements["forbidden_in_journal"]

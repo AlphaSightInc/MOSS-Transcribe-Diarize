@@ -1903,17 +1903,21 @@ def create_phase2_app(
                 app.state.phase2_control = control_server
             yield
         finally:
-            if control_server is not None:
-                await control_server.stop()
-            if lifecycle is not None:
-                await lifecycle.shutdown()
-            if operator_status is not None:
-                await operator_status.stop()
-            if phase2_live is not None:
-                await phase2_live.shutdown()
-            if file_tasks is not None:
-                await file_tasks.stop()
-            await store.close()
+            try:
+                if control_server is not None:
+                    await control_server.stop()
+                if lifecycle is not None:
+                    await lifecycle.shutdown()
+                try:
+                    if phase2_live is not None:
+                        await phase2_live.shutdown()
+                    if file_tasks is not None:
+                        await file_tasks.stop()
+                finally:
+                    if operator_status is not None:
+                        await operator_status.stop()
+            finally:
+                await store.close()
 
     app = FastAPI(title="MOSS", lifespan=lifespan)
     app.add_middleware(

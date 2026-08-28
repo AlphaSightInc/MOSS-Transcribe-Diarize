@@ -36,6 +36,7 @@ from moss_transcribe_diarize.app.phase2_operator import (
     serialize_operator_payload,
 )
 from moss_transcribe_diarize.app.live_lane_contract import LiveLane
+from moss_transcribe_diarize.app.live_service_runtime import LiveServiceRuntime
 
 
 FIXED_NOW = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
@@ -134,6 +135,38 @@ class _FakeV2Sessions:
                 for lane, health in self.health.items()
             },
         )
+
+
+class _ShutdownRuntime:
+    def __init__(self) -> None:
+        self.descriptor = SimpleNamespace(
+            frame_samples=160,
+            sample_rate=16_000,
+            bounds=SimpleNamespace(
+                max_tape_bytes=32_000,
+                max_queue_depth=4,
+                max_retained_samples=32_000,
+                max_frame_samples=160,
+            ),
+        )
+
+    def _bind_publication_observer(self, observer: object) -> None:
+        self.observer = observer
+
+    def _unbind_publication_observer(self, observer: object) -> None:
+        assert self.observer is observer
+
+    def _operator_queue_snapshot(self) -> dict[str, int | bool]:
+        return {
+            "batch": 0,
+            "live_canonical": 0,
+            "live_refinement": 0,
+            "live_provisional": 0,
+            "worker_busy": False,
+        }
+
+    async def abort(self, session_id: str, reason: str) -> None:
+        del session_id, reason
 
 
 def _active_live_source() -> dict[str, object]:
@@ -299,7 +332,7 @@ def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: 
             }
             assert account["audio"]["available"] == {"count": 1, "bytes": 123}
             active = {row["meeting_id"]: row for row in status["active_meetings"]}
-            assert active[file_id]["work_phase"] == "running"
+            assert "work_phase" not in active[file_id]
             assert active[live_id]["capture"]["pending_canonical"] == {
                 "count": 2,
                 "limit": 4,
@@ -578,6 +611,15 @@ def test_failed_active_live_revoke_keeps_uds_status_and_shutdown_snapshot_safe(
                 "retryable": True,
             }
             assert status["latest_error"]["code"] == "meeting_authority_revoked"
+            safe_error = status["active_meetings"][0]["safe_error"]
+            rendered = render_operator_status(status)
+            assert (
+                "safe_error=subsystem=persistence code=meeting_authority_revoked "
+                "severity=error terminal=false retryable=true"
+            ) in rendered
+            for key in ("subsystem", "code", "severity", "terminal", "retryable"):
+                expected = str(safe_error[key]).lower() if isinstance(safe_error[key], bool) else str(safe_error[key])
+                assert f"{key}={expected}" in rendered
         finally:
             await server.stop()
 
@@ -646,6 +688,68 @@ def test_lifecycle_persistence_prose_maps_to_safe_error_token(
         assert status["latest_error"]["code"] == expected
         emitted = json.dumps(status, sort_keys=True) + "\n" + "\n".join(journal.lines)
         assert reason not in emitted
+
+    asyncio.run(exercise())
+
+
+def test_runtime_exception_class_code_keeps_uds_status_available_and_safe(
+    tmp_path: Path,
+):
+    async def exercise() -> None:
+        failure = LiveServiceRuntime._failure_from_exception(
+            object(), RuntimeError("raw terminal transcript-sentinel")
+        )
+        assert failure.code == "RuntimeError"
+        store = _MutableStore()
+        store.payload = _active_live_source()
+        live = _FakeLive(
+            {
+                "active-live-id": {
+                    "session_status": "failed",
+                    "pending_canonical": 0,
+                    "pending_limit": 4,
+                    "persistence_failure": None,
+                    "terminal_error": {
+                        "subsystem": "live",
+                        "code": failure.code,
+                        "severity": "error",
+                        "terminal": True,
+                        "retryable": failure.retryable,
+                    },
+                }
+            }
+        )
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+        socket = Path("/tmp") / f"moss-i19-terminal-{os.getpid()}-{time.time_ns()}.sock"
+        server = Phase2ControlServer(socket, SimpleNamespace(), operator)
+        await operator.start()
+        await server.start()
+        try:
+            status = await request_control(socket, "status")
+            assert status["latest_error"]["code"] == "live_terminal_failure"
+            assert status["active_meetings"][0]["safe_error"]["code"] == (
+                "live_terminal_failure"
+            )
+            emitted = json.dumps(status, sort_keys=True) + "\n" + "\n".join(journal.lines)
+            assert "RuntimeError" not in emitted
+            assert "raw terminal transcript-sentinel" not in emitted
+        finally:
+            await server.stop()
+
+        live.meetings["active-live-id"]["terminal_error"]["code"] = (
+            "canonical_decode_failed"
+        )
+        preserved = await operator.snapshot()
+        assert preserved["latest_error"]["code"] == "canonical_decode_failed"
 
     asyncio.run(exercise())
 
@@ -787,6 +891,106 @@ def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellati
         for event in events
     )
     assert "person@example.com" not in json.dumps(events, sort_keys=True)
+
+
+def test_lifespan_observes_held_live_shutdown_failure_before_final_status(
+    tmp_path: Path,
+):
+    async def provision(database: Path):
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("person@example.com")
+            admitted = await store.admit(
+                GoogleIdentity(
+                    account_id="account-a",
+                    email="person@example.com",
+                    display_name="Person",
+                )
+            )
+            assert admitted is not None
+            return admitted[0]
+        finally:
+            await store.close()
+
+    database = tmp_path / "moss.sqlite3"
+    account = asyncio.run(provision(database))
+    socket = Path("/tmp") / f"moss-i19-owner-stop-{os.getpid()}-{time.time_ns()}.sock"
+    runtime = _ShutdownRuntime()
+    app = create_phase2_app(
+        database_path=database,
+        oidc=_NoOidc(),
+        oauth_cookie_secret="test-only-cookie-secret",
+        live_runtime_factory=lambda: runtime,
+        live_helper_lease_seconds=30.0,
+        meeting_audio_root=tmp_path / "meetings",
+        control_socket_path=socket,
+    )
+    trace: list[str] = []
+    entered = threading.Event()
+    release = threading.Event()
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        async def create_live_meeting():
+            workspace = app.state.phase2_store.workspace(account)
+            return await workspace.create_meeting("live")
+
+        handle = client.portal.call(create_live_meeting)
+        binding = SimpleNamespace(
+            terminal_persisted=False,
+            public_snapshot=None,
+            persistence_failure=None,
+            queue=SimpleNamespace(put_nowait=lambda value: None),
+            worker=None,
+        )
+        live = app.state.phase2_live
+        live._bindings[handle.meeting_id] = binding
+
+        async def held_failed_fence(target: object, reason: str) -> None:
+            assert target is binding
+            assert reason == "service shutdown"
+            trace.append("live_shutdown_started")
+            entered.set()
+            assert await asyncio.to_thread(release.wait, 5)
+            binding.persistence_failure = reason
+            trace.append("live_shutdown_settled")
+
+        live._fence = held_failed_fence
+        operator = app.state.phase2_operator_status
+        original_stop = operator.stop
+
+        async def traced_operator_stop() -> None:
+            trace.append("operator_stop_started")
+            await original_stop()
+            trace.append("operator_stop_finished")
+
+        operator.stop = traced_operator_stop
+
+        def release_settlement() -> None:
+            assert entered.wait(timeout=5)
+            assert "operator_stop_started" not in trace
+            release.set()
+
+        releaser = threading.Thread(target=release_settlement)
+        releaser.start()
+
+    releaser.join(timeout=2)
+    assert not releaser.is_alive()
+    assert trace == [
+        "live_shutdown_started",
+        "live_shutdown_settled",
+        "operator_stop_started",
+        "operator_stop_finished",
+    ]
+    assert operator._readiness == "stopping"
+    assert operator._latest_error["code"] == "service_shutdown"
+    events = list(operator._recent_events)
+    assert any(
+        event["kind"] == "safe_error"
+        and event["context"] == {"subsystem": "persistence", "state": "service_shutdown"}
+        for event in events
+    )
+    assert "service shutdown" not in json.dumps(events, sort_keys=True)
+    assert not socket.exists()
 
 
 class _HeldAcquirer:

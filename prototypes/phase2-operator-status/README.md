@@ -21,3 +21,6 @@ uv run --frozen python prototypes/phase2-operator-status/probe.py \
 
 The other accepted suppressions are `active_meetings_changed`, `queue_depth_changed`, and
 `capture_health_changed`.
+
+The binding product contract is `docs/phase2-afk-charter.md` §7. Operator observability is
+deliberately recorded here as measured, reversible evidence rather than in an ADR.

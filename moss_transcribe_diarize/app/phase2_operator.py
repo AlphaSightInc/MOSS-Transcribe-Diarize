@@ -65,7 +65,6 @@ _STATUS_KEYS = frozenset(
         "started_at_utc",
         "elapsed_seconds",
         "safe_error",
-        "work_phase",
         "capture",
         "phase",
         "lanes",
@@ -270,9 +269,7 @@ class Phase2OperatorStatus:
                 ),
                 "safe_error": None,
             }
-            if mode == "file":
-                meeting["work_phase"] = file_phases.get(meeting_id, "settling")
-            elif mode == "live":
+            if mode == "live":
                 raw = _mapping(live_meetings.get(meeting_id))
                 capture = self._live_capture(meeting_id, raw)
                 meeting["capture"] = capture
@@ -634,18 +631,18 @@ def render_operator_status(payload: Mapping[str, object]) -> str:
     lines.append(f"Active Meetings: {len(meetings)}")
     for meeting in meetings:
         row = _mapping(meeting)
-        detail = f"work={row['work_phase']}" if row["mode"] == "file" else _live_human(row)
-        safe_error = row["safe_error"]
-        error_text = (
-            "none"
-            if safe_error is None
-            else str(_mapping(safe_error)["code"])
-        )
-        lines.append(
-            f"  {row['meeting_id']} | {row['email']} | {row['mode']} | "
-            f"{row['lifecycle']} | {row['started_at_utc']} | {row['elapsed_seconds']}s | "
-            f"{detail} | safe_error={error_text}"
-        )
+        parts = [
+            f"  {row['meeting_id']}",
+            str(row["email"]),
+            str(row["mode"]),
+            str(row["lifecycle"]),
+            str(row["started_at_utc"]),
+            f"{row['elapsed_seconds']}s",
+        ]
+        if row["mode"] == "live":
+            parts.append(_live_human(row))
+        parts.append(f"safe_error={_safe_error_human(row['safe_error'])}")
+        lines.append(" | ".join(parts))
     latest = status["latest_error"]
     if latest is None:
         lines.append("Latest safe error: none")
@@ -669,6 +666,17 @@ def configure_operator_journal() -> None:
         LOGGER.addHandler(handler)
     LOGGER.setLevel(logging.INFO)
     LOGGER.propagate = False
+
+
+def _safe_error_human(value: object) -> str:
+    if value is None:
+        return "none"
+    error = _mapping(value)
+    return (
+        f"subsystem={error['subsystem']} code={error['code']} "
+        f"severity={error['severity']} terminal={str(error['terminal']).lower()} "
+        f"retryable={str(error['retryable']).lower()}"
+    )
 
 
 def _live_human(row: Mapping[str, object]) -> str:
@@ -797,9 +805,7 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
         }
         mode = meeting.get("mode")
         if mode == "file":
-            _exact_keys(meeting, base | {"work_phase"}, "active File Meeting")
-            if meeting["work_phase"] not in {"queued", "running", "settling"}:
-                raise OperatorProjectionError("Operator File phase is invalid.")
+            _exact_keys(meeting, base, "active File Meeting")
         elif mode == "live":
             _exact_keys(meeting, base | {"capture"}, "active Live Meeting")
             capture = _mapping(meeting["capture"])
@@ -1009,7 +1015,9 @@ def _safe_token(value: object, name: str) -> str:
 def _safe_live_error(raw: Mapping[str, object]) -> dict[str, object] | None:
     terminal = raw.get("terminal_error")
     if isinstance(terminal, Mapping):
-        return dict(terminal)
+        error = dict(terminal)
+        error["code"] = _canonical_live_terminal_error(error.get("code"))
+        return error
     persistence = raw.get("persistence_failure")
     if isinstance(persistence, str) and persistence:
         return {
@@ -1020,6 +1028,16 @@ def _safe_live_error(raw: Mapping[str, object]) -> dict[str, object] | None:
             "retryable": True,
         }
     return None
+
+
+def _canonical_live_terminal_error(code: object) -> str:
+    if (
+        isinstance(code, str)
+        and len(code) <= 80
+        and re.fullmatch(r"[a-z][a-z0-9_]*", code) is not None
+    ):
+        return code
+    return "live_terminal_failure"
 
 
 def _canonical_live_persistence_error(reason: str) -> str:

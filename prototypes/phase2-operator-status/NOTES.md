@@ -18,6 +18,15 @@ change emitted no edge while the capture phase remained `recording`. After corre
 paths remained available with `meeting_authority_revoked` and `service_shutdown` safe-error codes,
 and the lane change emitted `capture_health_changed` with bounded aggregate health counts.
 
+A second correction attacked the runtime fallback that names an unexpected exception by class.
+The production `_failure_from_exception(RuntimeError(...))` shape produced code `RuntimeError` and
+made the pre-correction status serializer fail. The corrected projection preserved existing safe
+codes but reduced that invalid class-name code to `live_terminal_failure`; status remained
+available and no class name or exception text crossed the projection. The measured shutdown trace
+was `live_settlement_started` → `live_settlement_finished` → `operator_stopped`, so the final
+stopping snapshot observed the settlement-created `service_shutdown` error rather than preceding
+it.
+
 All nine forbidden sentinels were first verified present in the fake Store/Live sources and absent
 from every status and emitted journal serialization. Suppressing each required transition code
 independently produced verdict `FAIL` and process exit 1. After more than the configured bound,
@@ -28,4 +37,6 @@ journal. External log retention remains operator policy.
 
 Production therefore absorbs one current-state projection, one aggregate edge reducer, a private
 64-event bound, canonical lifecycle-error reduction, and a baseline rule: first observation records
-readiness but invents no earlier Account or Meeting transition.
+readiness but invents no earlier Account or Meeting transition. Per-File work phase remains an
+internal input to aggregate queue/worker truth and never crosses the status surface. These measured
+choices implement `docs/phase2-afk-charter.md` §7; no operator-observability ADR exists.
