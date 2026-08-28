@@ -77,6 +77,11 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 - Shutdown durably interrupts active bindings, then identity-unbinds the runtime publication sink
   before closing workers and the event loop. A later terminal listener may still release its tape,
   but cannot advance memory or SQLite.
+- A host Meeting interrupt is owned beyond its Unix handler exactly like accepted Account revoke,
+  but claims only one process-owned Meeting. Concurrent callers share that settlement; lifecycle
+  shutdown joins it before Live/File owners and SQLite close. A terminal or unknown locator is one
+  no-change result. An active SQLite row with no process owner fails visibly rather than reporting
+  no change or bypassing its cleanup owner.
 - Meeting title carries `automatic` or `manual` provenance in the existing Meeting row. Creation
   starts automatic; an owner-bound rename transaction trims and requires a non-empty title, writes
   the title and `manual` together, and is permitted for active or terminal Meetings. This is the

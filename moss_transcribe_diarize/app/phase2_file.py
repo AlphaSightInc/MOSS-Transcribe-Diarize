@@ -62,6 +62,7 @@ class FileMeetingTasks:
         self._audio_archive = audio_archive
         self._tasks: dict[str, _OwnedFileTask] = {}
         self._fenced_owner_keys: set[tuple[str, int]] = set()
+        self._fenced_meeting_ids: set[str] = set()
 
     def clear_transient_work(self) -> None:
         """Remove only children of the dedicated, non-durable File work root."""
@@ -174,7 +175,32 @@ class FileMeetingTasks:
             entry.task.cancel()
         return entries
 
+    def fence_meeting(self, meeting_id: str) -> _OwnedFileTask | None:
+        """Synchronously claim one active File task without fencing its Account peers."""
+
+        entry = self._tasks.get(meeting_id)
+        if entry is None:
+            return None
+        self._fenced_meeting_ids.add(meeting_id)
+        entry.task.cancel()
+        return entry
+
+    async def settle_meeting(self, entry: _OwnedFileTask) -> bool:
+        """Join one claimed task, then make only its durable Meeting interrupted."""
+
+        try:
+            interrupted = await self._settle_entries((entry,))
+            return bool(interrupted)
+        finally:
+            self._fenced_meeting_ids.discard(entry.handle.meeting_id)
+
     async def settle_fenced(
+        self,
+        entries: tuple[_OwnedFileTask, ...],
+    ) -> tuple[str, ...]:
+        return await self._settle_entries(entries)
+
+    async def _settle_entries(
         self,
         entries: tuple[_OwnedFileTask, ...],
     ) -> tuple[str, ...]:
@@ -196,10 +222,9 @@ class FileMeetingTasks:
                 continue
             if snapshot.status != "active":
                 continue
-            if snapshot.audio is None:
-                await entry.handle.record_audio_unavailable()
-            elif snapshot.audio.state == "available":
-                await entry.handle.downgrade_active_audio_to_partial()
+            if self._audio_archive is None:
+                raise RuntimeError("File Meeting audio archive is unavailable.")
+            await entry.handle.recover_interrupted_file_audio(self._audio_archive)
             await entry.handle.finish("interrupted")
             interrupted.append(entry.handle.meeting_id)
         return tuple(interrupted)
@@ -311,7 +336,7 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             return
 
-        if handle.owner_key in self._fenced_owner_keys:
+        if self._is_fenced(handle):
             self._remove_work_dir(input_path.parent)
             return
 
@@ -339,7 +364,7 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
-        if handle.owner_key in self._fenced_owner_keys:
+        if self._is_fenced(handle):
             self._remove_work_dir(input_path.parent)
             return
 
@@ -369,7 +394,7 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
-        if handle.owner_key in self._fenced_owner_keys:
+        if self._is_fenced(handle):
             self._remove_work_dir(input_path.parent)
             return
 
@@ -382,3 +407,9 @@ class FileMeetingTasks:
             await handle.finish("completed")
         except AccountRevoked:
             pass
+
+    def _is_fenced(self, handle: Any) -> bool:
+        return (
+            handle.owner_key in self._fenced_owner_keys
+            or handle.meeting_id in self._fenced_meeting_ids
+        )

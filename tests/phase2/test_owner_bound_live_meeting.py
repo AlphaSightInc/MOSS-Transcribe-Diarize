@@ -51,7 +51,10 @@ from moss_transcribe_diarize.app.phase2_audio import (
     MeetingAudioArchive,
     MeetingAudioCleanupError,
 )
-from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
+from moss_transcribe_diarize.app.phase2_admin import (
+    execute as execute_admin,
+    execute_interrupt,
+)
 from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
 from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
@@ -93,6 +96,20 @@ class Decoder:
         del pcm
         seconds = span.sample_count / LIVE_SAMPLE_RATE
         return InferenceTranscript(f"[0][S01]owner live words[{seconds:g}]")
+
+
+class HeldDecoder:
+    max_samples = 4_000
+
+    def __init__(self, started: threading.Event, release: threading.Event):
+        self.started = started
+        self.release = release
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        del span, pcm
+        self.started.set()
+        assert self.release.wait(timeout=5), "test did not release held Live inference"
+        return InferenceTranscript("[0][S01]late inference result[0.000125]")
 
 
 class WholeMeetingStub:
@@ -153,6 +170,7 @@ def make_runtime(
     terminal_text: str | None = None,
     terminal_scheduler: _ManualTerminalScheduler | None = None,
     max_tape_bytes: int = 32_000,
+    decoder_factory=Decoder,
 ) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
         source_revision="a" * 40,
@@ -185,7 +203,7 @@ def make_runtime(
             )
         ),
         speech_provider_factory=lambda: SpeechProvider(speech),
-        decoder_factory=Decoder,
+        decoder_factory=decoder_factory,
         rolling_decoder_factory=None if terminal_text is None else Decoder,
         identity_preparer_factory=Identity,
         terminal_finalizer=(
@@ -257,6 +275,7 @@ def make_app(
     max_tape_bytes: int = 32_000,
     audio_archive=None,
     control_socket: Path | None = None,
+    decoder_factory=Decoder,
 ):
     return create_phase2_app(
         database_path=database,
@@ -267,6 +286,7 @@ def make_app(
             terminal_text=terminal_text,
             terminal_scheduler=terminal_scheduler,
             max_tape_bytes=max_tape_bytes,
+            decoder_factory=decoder_factory,
         ),
         live_helper_lease_seconds=lease_seconds,
         meeting_audio_root=database.parent / "meetings",
@@ -1166,6 +1186,200 @@ def test_revoke_joins_admitted_commit_and_skips_queued_second_publication(
         admitted_document,
     )
     assert audio_state in {"partial", "unavailable"}
+
+
+def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-live-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(
+        database,
+        control_socket=socket,
+        speech=(True, False, True, False, True, False),
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        target = client.post("/api/live/sessions").json()["id"]
+        peer = client.post("/api/live/sessions").json()["id"]
+        binding = app.state.phase2_live._bindings[target]
+        peer_binding = app.state.phase2_live._bindings[peer]
+        original_commit = binding.handle.commit_transcript
+        commit_started = threading.Event()
+        release_commit = threading.Event()
+        admitted_document: dict[str, object] | None = None
+
+        async def held_commit(document, *, terminal=False):
+            nonlocal admitted_document
+            admitted_document = document
+            commit_started.set()
+            assert await asyncio.to_thread(release_commit.wait, 5)
+            return await original_commit(document, terminal=terminal)
+
+        binding.handle.commit_transcript = held_commit
+        feed_two_lane_span(client, target)
+        assert commit_started.wait(timeout=2)
+        assert admitted_document is not None
+        feed_two_lane_pairs(client, target, range(3, 6))
+
+        outcome: dict[str, object] = {}
+
+        def interrupt() -> None:
+            outcome["result"] = asyncio.run(execute_interrupt(socket, target))
+
+        worker = threading.Thread(target=interrupt)
+        worker.start()
+        deadline = time.monotonic() + 2
+        while not binding.publication_fenced:
+            if time.monotonic() >= deadline:
+                raise AssertionError("operator Live result fence was not installed")
+            time.sleep(0.01)
+        assert peer_binding.publication_fenced is False
+        assert worker.is_alive()
+        release_commit.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"meeting_id": target, "interrupted": True},
+        }
+        assert asyncio.run(execute_interrupt(socket, target)) == {
+            "meeting_id": target,
+            "interrupted": False,
+        }
+        assert client.get("/api/auth/session").status_code == 200
+        target_meeting = client.get(f"/api/meetings/{target}").json()
+        assert target_meeting["status"] == "interrupted"
+        assert target_meeting["transcript"] == admitted_document
+        assert target_meeting["audio"]["state"] in {"partial", "unavailable"}
+        assert client.get(f"/api/meetings/{peer}").json()["status"] == "active"
+        assert client.post(
+            f"/api/live/sessions/{peer}/heartbeat",
+            json=heartbeat(),
+        ).status_code == 200
+        assert client.post(
+            f"/api/live/sessions/{target}/frames",
+            json=v2_frame(6, "system"),
+        ).status_code == 409
+
+    connection = sqlite3.connect(database)
+    try:
+        status, version, document = connection.execute(
+            """
+            SELECT m.status, t.version, t.document_json
+            FROM meetings m
+            JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (target,),
+        ).fetchone()
+    finally:
+        connection.close()
+    assert (status, version, json.loads(document)) == (
+        "interrupted",
+        1,
+        admitted_document,
+    )
+
+
+def test_operator_interrupt_returns_durable_while_held_live_inference_is_later_discarded(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-held-live-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    decode_started = threading.Event()
+    release_decode = threading.Event()
+    app = make_app(
+        database,
+        control_socket=socket,
+        decoder_factory=lambda: HeldDecoder(decode_started, release_decode),
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        target = client.post("/api/live/sessions").json()["id"]
+        peer = client.post("/api/live/sessions").json()["id"]
+        feed_errors: list[BaseException] = []
+
+        def feed() -> None:
+            try:
+                feed_two_lane_span(client, target)
+            except BaseException as exc:  # pragma: no cover - asserted empty below.
+                feed_errors.append(exc)
+
+        feeder = threading.Thread(target=feed)
+        feeder.start()
+        assert decode_started.wait(timeout=2)
+        result = asyncio.run(execute_interrupt(socket, target))
+        assert result == {"meeting_id": target, "interrupted": True}
+        durable = client.get(f"/api/meetings/{target}").json()
+        assert durable["status"] == "interrupted"
+        assert durable["transcript"] is None
+        assert durable["audio"]["state"] in {"partial", "unavailable"}
+        assert client.get(f"/api/meetings/{peer}").json()["status"] == "active"
+
+        release_decode.set()
+        feeder.join(timeout=5)
+        assert not feeder.is_alive()
+        assert feed_errors == []
+        time.sleep(0.05)
+        after_late_result = client.get(f"/api/meetings/{target}").json()
+        assert after_late_result["status"] == "interrupted"
+        assert after_late_result["transcript"] is None
+        assert client.post(
+            f"/api/live/sessions/{peer}/heartbeat",
+            json=heartbeat(),
+        ).status_code == 200
+
+
+def test_operator_interrupt_downgrades_verified_complete_live_audio_without_reencoding(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-live-audio-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        live = app.state.phase2_live
+        binding = live._bindings[meeting_id]
+        stage = live.audio_stages.create(meeting_id)
+        stage.append_mixed(
+            pcm=b"\x01\x00" * 1600,
+            start_timestamp_ns=0,
+            sample_count=1600,
+            sample_rate=LIVE_SAMPLE_RATE,
+        )
+        live.audio_stages.release(meeting_id)
+        stage_path = live.audio_stages.path("sub-a", meeting_id)
+        async def publish_complete_audio():
+            return await binding.handle.publish_audio(
+                live.audio_archive,
+                stage_path,
+                partial=False,
+                raw_pcm=True,
+            )
+
+        available = client.portal.call(publish_complete_audio)
+        assert available.state == "available"
+        artifact = database.parent / "meetings" / available.relative_path
+        original_bytes = artifact.read_bytes()
+        original = available.to_dict()
+
+        assert asyncio.run(execute_interrupt(socket, meeting_id)) == {
+            "meeting_id": meeting_id,
+            "interrupted": True,
+        }
+        terminal = client.get(f"/api/meetings/{meeting_id}").json()
+        assert terminal["status"] == "interrupted"
+        assert terminal["audio"] == {**original, "state": "partial"}
+        assert artifact.read_bytes() == original_bytes
+        assert not stage_path.exists()
 
 
 def test_revoke_joins_real_commit_before_binding_coroutine_resumes(tmp_path: Path):

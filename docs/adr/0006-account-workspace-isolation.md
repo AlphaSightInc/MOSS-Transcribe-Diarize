@@ -26,6 +26,9 @@ view token, pairing/device grant, or compatibility mode.
 
 - Same-Account devices share history and live observation through the same workspace.
 - Operator status remains Operational metadata only; machine authority does not grant content access.
+- Operator interruption resolves only an opaque active Meeting claim already held by its Live/File
+  process owner. The Unix command returns the supplied locator plus changed/no-change; it never
+  opens an Account workspace or returns owner, transcript, title, source, or artifact data.
 - The acceptance harness tests the workspace interface and every public route with two Accounts;
   code review alone cannot establish isolation.
 - The owner-task probe in `prototypes/phase2-owner-bound-file-task/` accepts the smallest reliable

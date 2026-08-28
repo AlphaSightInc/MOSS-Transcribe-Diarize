@@ -560,6 +560,18 @@ class Phase2Store:
             "audio": audio,
         }
 
+    async def operator_has_active_meeting(self, meeting_id: str) -> bool:
+        """Distinguish terminal/no-change from an active row missing its process owner."""
+
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                "SELECT 1 FROM meetings WHERE meeting_id = ? AND status = 'active' LIMIT 1",
+                (meeting_id,),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+        return row is not None
+
     async def revoke_email(self, email: str) -> bool:
         """Direct store primitive retained for offline recovery/tests, not the host CLI."""
 
@@ -802,14 +814,9 @@ class Phase2Store:
         async with self._external_read():
             cursor = await self._connection.execute(
                 """
-                SELECT m.account_id, m.meeting_id, a.authority_generation,
-                       ma.state AS audio_state,
-                       ma.relative_path AS audio_relative_path,
-                       ma.byte_count AS audio_byte_count
+                SELECT m.account_id, m.meeting_id, a.authority_generation
                 FROM meetings m
                 JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
-                LEFT JOIN meeting_audio ma
-                  ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
                 WHERE m.mode = 'file' AND m.status = 'active'
                   AND (? IS NULL OR m.account_id = ?)
                 ORDER BY m.created_at_ms, m.meeting_id
@@ -828,36 +835,7 @@ class Phase2Store:
                 int(row["authority_generation"]),
                 row["meeting_id"],
             )
-            if row["audio_state"] in {"available", "partial"}:
-                await asyncio.to_thread(
-                    audio_archive.discard_staged,
-                    row["account_id"],
-                    row["meeting_id"],
-                )
-                resolved = audio_archive.resolve(
-                    row["account_id"],
-                    row["meeting_id"],
-                    row["audio_relative_path"],
-                    int(row["audio_byte_count"]),
-                )
-                if resolved is None:
-                    await asyncio.to_thread(
-                        audio_archive.discard_stored,
-                        row["account_id"],
-                        row["meeting_id"],
-                        row["audio_relative_path"],
-                    )
-                    await handle.mark_audio_unavailable()
-                elif row["audio_state"] == "available":
-                    await handle.downgrade_active_audio_to_partial()
-            else:
-                await asyncio.to_thread(
-                    audio_archive.discard_unrecorded,
-                    row["account_id"],
-                    row["meeting_id"],
-                )
-                if row["audio_state"] != "unavailable":
-                    await handle.record_audio_unavailable()
+            await handle.recover_interrupted_file_audio(audio_archive)
             await handle.finish("interrupted")
 
     async def _assert_no_active_meetings(self, account_id: str | None = None) -> None:
@@ -1698,6 +1676,34 @@ class MeetingHandle:
             )
         await asyncio.to_thread(stages.discard, self._account_id, self.meeting_id)
         return recovered
+
+    async def recover_interrupted_file_audio(self, archive: Any) -> MeetingAudio:
+        """Reconcile one active File artifact before an interruption becomes terminal."""
+
+        existing = await self.audio()
+        if existing is not None and existing.state in {"available", "partial"}:
+            await asyncio.to_thread(
+                archive.discard_staged,
+                self._account_id,
+                self.meeting_id,
+            )
+            if self.resolve_audio(archive, existing) is None:
+                await asyncio.to_thread(self.discard_audio, archive, existing)
+                await self.mark_audio_unavailable()
+                return _unavailable_meeting_audio()
+            if existing.state == "available":
+                await self.downgrade_active_audio_to_partial()
+                return replace(existing, state="partial")
+            return existing
+
+        await asyncio.to_thread(
+            archive.discard_unrecorded,
+            self._account_id,
+            self.meeting_id,
+        )
+        if existing is not None and existing.state == "unavailable":
+            return existing
+        return await self.record_audio_unavailable()
 
     async def record_audio_unavailable(self) -> MeetingAudio:
         audio = _unavailable_meeting_audio()

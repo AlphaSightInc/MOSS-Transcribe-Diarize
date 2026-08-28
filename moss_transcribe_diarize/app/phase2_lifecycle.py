@@ -22,6 +22,10 @@ class AccountLifecycleSettlementError(RuntimeError):
     """Owned work could not reach durable terminal truth; authority remains unchanged."""
 
 
+class MeetingLifecycleSettlementError(RuntimeError):
+    """One claimed Meeting could not reach durable interrupted truth."""
+
+
 class _DrainGate:
     def __init__(self) -> None:
         self._state = "open"
@@ -86,6 +90,7 @@ class AccountLifecycle:
         self._session_gates: dict[str, _DrainGate] = {}
         self._account_gates: dict[tuple[str, int], _DrainGate] = {}
         self._revoke_tasks: set[asyncio.Task[bool]] = set()
+        self._interrupt_tasks: dict[str, asyncio.Task[bool]] = {}
         self._registry_lock = asyncio.Lock()
 
     def bind_live_control(self, control: Any) -> None:
@@ -162,11 +167,79 @@ class AccountLifecycle:
         return await asyncio.shield(task)
 
     async def shutdown(self) -> None:
-        """Join accepted revoke settlement before work owners or SQLite are stopped."""
+        """Join accepted lifecycle work before Meeting owners or SQLite are stopped."""
 
-        tasks = tuple(self._revoke_tasks)
+        tasks = (*tuple(self._revoke_tasks), *tuple(self._interrupt_tasks.values()))
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def interrupt_meeting(self, meeting_id: str) -> bool:
+        """Own one opaque active-Meeting interruption beyond its Unix handler."""
+
+        if not meeting_id:
+            raise ValueError("meeting_id is required.")
+        async with self._registry_lock:
+            task = self._interrupt_tasks.get(meeting_id)
+            if task is not None and task.done():
+                self._interrupt_tasks.pop(meeting_id, None)
+                task = None
+            if task is None:
+                task = asyncio.create_task(
+                    self._interrupt_meeting(meeting_id),
+                    name=f"phase2-meeting-interrupt-{meeting_id}",
+                )
+                self._interrupt_tasks[meeting_id] = task
+                task.add_done_callback(
+                    lambda completed, target=meeting_id: self._interrupt_done(
+                        target,
+                        completed,
+                    )
+                )
+        return await asyncio.shield(task)
+
+    async def _interrupt_meeting(self, meeting_id: str) -> bool:
+        """Claim synchronously, then delegate truth to the existing mode owner."""
+
+        live_binding = None if self._live is None else self._live.fence_meeting(meeting_id)
+        if live_binding is not None:
+            if self._live_control is None:
+                raise MeetingLifecycleSettlementError(
+                    "Live transport control is unavailable."
+                )
+            try:
+                interrupted = await self._live.interrupt_binding(
+                    live_binding,
+                    self._live_control,
+                    "interrupted_by_operator",
+                )
+            except Exception as exc:
+                if isinstance(exc, MeetingLifecycleSettlementError):
+                    raise
+                raise MeetingLifecycleSettlementError(
+                    "Live Meeting could not reach durable interrupted truth."
+                ) from exc
+            return interrupted
+
+        file_entry = None if self._files is None else self._files.fence_meeting(meeting_id)
+        if file_entry is None:
+            if await self._store.operator_has_active_meeting(meeting_id):
+                raise MeetingLifecycleSettlementError(
+                    "Active Meeting has no process-owned settlement claim."
+                )
+            return False
+        try:
+            interrupted = await self._files.settle_meeting(file_entry)
+        except Exception as exc:
+            raise MeetingLifecycleSettlementError(
+                "File Meeting could not reach durable interrupted truth."
+            ) from exc
+        return interrupted
+
+    def _interrupt_done(self, meeting_id: str, task: asyncio.Task[bool]) -> None:
+        if self._interrupt_tasks.get(meeting_id) is task:
+            self._interrupt_tasks.pop(meeting_id, None)
+        if not task.cancelled():
+            task.exception()
 
     async def _revoke_account(self, email: str) -> bool:
         """Quiesce owned process work, then durably fence the Account generation."""

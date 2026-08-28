@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import io
+import json
 import logging
 import os
 import sqlite3
 import threading
 import time
+import wave
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -19,7 +22,10 @@ from moss_transcribe_diarize.app.phase2 import (
     SESSION_COOKIE,
     create_phase2_app,
 )
-from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
+from moss_transcribe_diarize.app.phase2_admin import (
+    execute as execute_admin,
+    execute_interrupt,
+)
 from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
 
 
@@ -51,6 +57,32 @@ class ControlledRunner:
         if self.failure is not None:
             raise self.failure
         return SimpleNamespace(text=self.text)
+
+
+class SelectiveRunner:
+    model_path = "selective-file-runner"
+
+    def __init__(self) -> None:
+        self.started = {key: threading.Event() for key in (b"target", b"peer")}
+        self.release = {key: threading.Event() for key in (b"target", b"peer")}
+
+    def transcribe(self, input_path: str | Path, **kwargs: object):
+        del kwargs
+        payload = Path(input_path).read_bytes()
+        self.started[payload].set()
+        assert self.release[payload].wait(timeout=5), "test did not release selected inference"
+        label = payload.decode("ascii")
+        return SimpleNamespace(text=f"[0][S01]{label} result[1]")
+
+
+def wav_bytes(*, frames: int = 1600) -> bytes:
+    output = io.BytesIO()
+    with wave.open(output, "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(16_000)
+        handle.writeframes(b"\x01\x00" * frames)
+    return output.getvalue()
 
 
 async def provision(database: Path) -> dict[str, str]:
@@ -239,6 +271,204 @@ def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: 
     finally:
         connection.close()
     assert (status, transcript_count, audio_state) == ("interrupted", 0, "unavailable")
+
+
+def test_operator_interrupt_claims_one_file_task_and_leaves_peer_running(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-file-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    runner = SelectiveRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(database, runner, work_root, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        target = client.post(
+            "/api/meetings/file",
+            files={"file": ("target.media", b"target", "application/octet-stream")},
+        ).json()["id"]
+        peer = client.post(
+            "/api/meetings/file",
+            files={"file": ("peer.media", b"peer", "application/octet-stream")},
+        ).json()["id"]
+        assert runner.started[b"target"].wait(timeout=2)
+        assert runner.started[b"peer"].wait(timeout=2)
+
+        outcome: dict[str, object] = {}
+
+        def interrupt() -> None:
+            outcome["result"] = asyncio.run(execute_interrupt(socket, target))
+
+        worker = threading.Thread(target=interrupt)
+        worker.start()
+        deadline = time.monotonic() + 2
+        while target not in app.state.phase2_file_tasks._fenced_meeting_ids:
+            if time.monotonic() >= deadline:
+                raise AssertionError("target File task was not synchronously claimed")
+            time.sleep(0.01)
+        assert peer not in app.state.phase2_file_tasks._fenced_meeting_ids
+        assert worker.is_alive()
+        assert client.get(f"/api/meetings/{peer}").json()["status"] == "active"
+
+        runner.release[b"target"].set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"meeting_id": target, "interrupted": True}
+        }
+        mutations = [
+            event
+            for event in app.state.phase2_operator_status._recent_events
+            if event["kind"] == "operator_mutation"
+        ]
+        assert mutations[-1]["context"] == {
+            "command": "meetings.interrupt",
+            "outcome": "succeeded",
+        }
+        assert target not in json.dumps(mutations, sort_keys=True)
+        assert asyncio.run(execute_interrupt(socket, target)) == {
+            "meeting_id": target,
+            "interrupted": False,
+        }
+        target_state = client.get(f"/api/meetings/{target}").json()
+        assert target_state["status"] == "interrupted"
+        assert target_state["transcript"] is None
+        assert target_state["audio"]["state"] == "unavailable"
+        assert client.get(f"/api/meetings/{peer}").json()["status"] == "active"
+
+        runner.release[b"peer"].set()
+        peer_state = await_terminal(client, peer, "completed")
+        assert peer_state["transcript"]["segments"][0]["text"] == "peer result"
+
+    assert list(work_root.glob("**/*")) == []
+
+
+def test_control_shutdown_joins_service_owned_file_interrupt(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-file-stop-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(database, runner, work_root, control_socket=socket)
+    client = TestClient(app, base_url="https://moss.test")
+    client.__enter__()
+    session(client, sessions["sub-a"])
+    meeting_id = client.post(
+        "/api/meetings/file",
+        files={"file": ("meeting.wav", b"held-interrupt", "audio/wav")},
+    ).json()["id"]
+    assert runner.started.wait(timeout=2)
+    source = next(work_root.glob("*/input.wav"))
+    outcome: dict[str, object] = {}
+
+    def interrupt() -> None:
+        try:
+            outcome["result"] = asyncio.run(execute_interrupt(socket, meeting_id))
+        except BaseException as exc:
+            outcome["error"] = exc
+
+    command = threading.Thread(target=interrupt)
+    command.start()
+    deadline = time.monotonic() + 2
+    while meeting_id not in app.state.phase2_file_tasks._fenced_meeting_ids:
+        if time.monotonic() >= deadline:
+            raise AssertionError("File interrupt was not claimed before shutdown")
+        time.sleep(0.01)
+
+    shutdown_errors: list[BaseException] = []
+
+    def shutdown() -> None:
+        try:
+            client.__exit__(None, None, None)
+        except BaseException as exc:  # pragma: no cover - asserted empty below.
+            shutdown_errors.append(exc)
+
+    shutdown_thread = threading.Thread(target=shutdown)
+    shutdown_thread.start()
+    time.sleep(0.05)
+    assert shutdown_thread.is_alive()
+    assert source.is_file()
+    runner.release.set()
+    command.join(timeout=5)
+    shutdown_thread.join(timeout=5)
+    assert not command.is_alive() and not shutdown_thread.is_alive()
+    assert shutdown_errors == []
+    assert isinstance(outcome.get("error"), Phase2ControlError)
+    assert not source.exists()
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("interrupted",)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("unavailable",)
+        assert connection.execute(
+            "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+        ).fetchone() == (1, 0)
+    finally:
+        connection.close()
+
+
+def test_operator_interrupt_downgrades_file_audio_at_finish_boundary(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i20-file-audio-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(database, runner, work_root, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        finish_started = threading.Event()
+        release_finish = client.portal.call(asyncio.Event)
+        original_finish = app.state.phase2_store._finish_meeting
+        target_id: str | None = None
+
+        async def held_complete(
+            account_id: str,
+            authority_generation: int,
+            meeting_id: str,
+            status: str,
+        ) -> None:
+            if meeting_id == target_id and status == "completed":
+                finish_started.set()
+                await release_finish.wait()
+            await original_finish(
+                account_id,
+                authority_generation,
+                meeting_id,
+                status,
+            )
+
+        app.state.phase2_store._finish_meeting = held_complete
+        target_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("target.wav", wav_bytes(), "audio/wav")},
+        ).json()["id"]
+        assert runner.started.wait(timeout=2)
+        runner.release.set()
+        assert finish_started.wait(timeout=5)
+        before = client.get(f"/api/meetings/{target_id}").json()
+        assert before["status"] == "active"
+        assert before["audio"]["state"] == "available"
+        artifact = database.parent / "meetings" / before["audio"]["relative_path"]
+        original_bytes = artifact.read_bytes()
+
+        assert asyncio.run(execute_interrupt(socket, target_id)) == {
+            "meeting_id": target_id,
+            "interrupted": True,
+        }
+        after = client.get(f"/api/meetings/{target_id}").json()
+        assert after["status"] == "interrupted"
+        assert after["transcript"] == before["transcript"]
+        assert after["audio"] == {**before["audio"], "state": "partial"}
+        assert artifact.read_bytes() == original_bytes
+        assert list(work_root.glob("**/*")) == []
 
 
 def test_control_shutdown_joins_service_owned_file_revoke_and_runner(tmp_path: Path):

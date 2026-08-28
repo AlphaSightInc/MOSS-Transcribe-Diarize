@@ -24,6 +24,16 @@ async def execute_status(socket: str | Path) -> object:
     return await request_control(socket, "status")
 
 
+async def execute_interrupt(socket: str | Path, meeting_id: str) -> object:
+    if not meeting_id:
+        raise ValueError("MEETING_ID is required.")
+    return await request_control(
+        socket,
+        "meetings.interrupt",
+        meeting_id=meeting_id,
+    )
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Host-local MOSS Phase-2 administration.")
     parser.add_argument(
@@ -39,6 +49,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     revoke = account_commands.add_parser("revoke")
     revoke.add_argument("email", metavar="EMAIL")
     account_commands.add_parser("list")
+    meetings = commands.add_parser("meetings")
+    meeting_commands = meetings.add_subparsers(dest="command", required=True)
+    interrupt = meeting_commands.add_parser("interrupt")
+    interrupt.add_argument("meeting_id", metavar="MEETING_ID")
     status = commands.add_parser("status")
     status.add_argument(
         "--json",
@@ -59,6 +73,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         if not isinstance(result, dict):
             raise RuntimeError("Product status response is invalid.")
         print(json.dumps(result, sort_keys=True) if args.json else render_operator_status(result))
+        return
+    if args.area == "meetings" and args.command == "interrupt":
+        result = asyncio.run(execute_interrupt(args.socket, args.meeting_id))
+        print(json.dumps(result, sort_keys=True))
         return
     raise SystemExit(2)  # argparse keeps this defensive branch unreachable.
 

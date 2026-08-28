@@ -910,6 +910,7 @@ def _validate_safe_error(error: Mapping[str, object], *, latest: bool) -> None:
         if "command" in context and context["command"] not in {
             "accounts.allow",
             "accounts.revoke",
+            "meetings.interrupt",
             "unknown",
         }:
             raise OperatorProjectionError("Operator safe-error command is invalid.")
@@ -993,7 +994,11 @@ def _validate_event_scope(event: Mapping[str, object]) -> None:
         if context["state"] != "clear":
             _safe_token(context["state"], "event error code")
     elif kind == "operator_mutation":
-        if context["command"] not in {"accounts.allow", "accounts.revoke"}:
+        if context["command"] not in {
+            "accounts.allow",
+            "accounts.revoke",
+            "meetings.interrupt",
+        }:
             raise OperatorProjectionError("Operator mutation command is invalid.")
         if context["outcome"] not in {"succeeded", "no_change", "failed"}:
             raise OperatorProjectionError("Operator mutation outcome is invalid.")

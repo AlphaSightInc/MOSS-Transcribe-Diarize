@@ -128,11 +128,17 @@ class Phase2ControlServer:
             raise ValueError("invalid control request")
         command = request.get("command")
         email = request.get("email")
-        if command == "status" and email is None and self._operator is not None:
+        meeting_id = request.get("meeting_id")
+        if (
+            command == "status"
+            and email is None
+            and meeting_id is None
+            and self._operator is not None
+        ):
             return await self._operator.snapshot()
-        if command == "accounts.list" and email is None:
+        if command == "accounts.list" and email is None and meeting_id is None:
             return await self._lifecycle.list_accounts()
-        if command == "accounts.allow" and isinstance(email, str):
+        if command == "accounts.allow" and isinstance(email, str) and meeting_id is None:
             try:
                 result = await self._lifecycle.allow_account(email)
             except Exception as exc:
@@ -140,7 +146,7 @@ class Phase2ControlServer:
                 raise
             await self._observe_mutation(command, "succeeded", None)
             return result
-        if command == "accounts.revoke" and isinstance(email, str):
+        if command == "accounts.revoke" and isinstance(email, str) and meeting_id is None:
             try:
                 revoked = await self._lifecycle.revoke_account(email)
             except Exception as exc:
@@ -152,6 +158,18 @@ class Phase2ControlServer:
                 None,
             )
             return {"email": email.strip().lower(), "revoked": revoked}
+        if command == "meetings.interrupt" and email is None and isinstance(meeting_id, str):
+            try:
+                interrupted = await self._lifecycle.interrupt_meeting(meeting_id)
+            except Exception as exc:
+                await self._observe_mutation(command, "failed", _error_code(exc))
+                raise
+            await self._observe_mutation(
+                command,
+                "succeeded" if interrupted else "no_change",
+                None,
+            )
+            return {"meeting_id": meeting_id, "interrupted": interrupted}
         raise ValueError("invalid control request")
 
     async def _observe_mutation(
@@ -177,6 +195,8 @@ async def request_control(
     path: str | Path,
     command: str,
     email: str | None = None,
+    *,
+    meeting_id: str | None = None,
 ) -> object:
     """One bounded request; no database is opened by the client process."""
 
@@ -187,6 +207,8 @@ async def request_control(
     request = {"command": command}
     if email is not None:
         request["email"] = email
+    if meeting_id is not None:
+        request["meeting_id"] = meeting_id
     try:
         writer.write(json.dumps(request, sort_keys=True).encode("utf-8") + b"\n")
         await writer.drain()
@@ -212,12 +234,15 @@ def _error_code(exc: Exception) -> str:
     from .phase2_lifecycle import (
         AccountLifecycleSettlementError,
         AccountLifecycleUnavailable,
+        MeetingLifecycleSettlementError,
     )
 
     if isinstance(exc, AccountLifecycleUnavailable):
         return "account_lifecycle_busy"
     if isinstance(exc, AccountLifecycleSettlementError):
         return "account_settlement_failed"
+    if isinstance(exc, MeetingLifecycleSettlementError):
+        return "meeting_settlement_failed"
     if isinstance(exc, ValueError):
         return "invalid_request"
     return "control_request_failed"
