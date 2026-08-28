@@ -205,6 +205,38 @@ body.phase2-workspace {
   min-height: 100dvh;
 }
 
+.phase2-workspace [data-authority="account"] .main {
+  grid-template-columns: var(--side-col) minmax(0, 1fr);
+}
+
+.phase2-workspace [data-history-root] {
+  min-height: 120px;
+  margin: 0 18px 24px;
+}
+
+.account-history-panel {
+  position: relative;
+  min-height: 220px;
+  max-height: min(720px, 75vh);
+}
+
+.account-history-panel .history-panel-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.account-history-panel .history-search input {
+  padding-left: 12px;
+}
+
+.account-history-panel .history-card-subtitle {
+  max-width: 80ch;
+}
+
+.account-history-panel .history-action-btn {
+  text-decoration: none;
+}
+
 button,
 input,
 select,
@@ -3330,6 +3362,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .phase2-workspace [data-authority="account"] .main {
+    grid-template-columns: 1fr;
+  }
+
   .panel.collapsed .panel-body {
     display: flex;
   }
@@ -3401,6 +3437,18 @@ textarea:focus {
   .app {
     padding: 12px;
     gap: 8px;
+  }
+
+  .phase2-workspace [data-history-root] {
+    margin-inline: 12px;
+  }
+
+  .account-history-panel {
+    max-height: none;
+  }
+
+  .account-history-panel .history-panel-actions {
+    grid-template-columns: 1fr;
   }
 
   .topbar {

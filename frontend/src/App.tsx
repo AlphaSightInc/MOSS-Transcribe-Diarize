@@ -3,7 +3,13 @@ import { ControlPanel } from "./components/ControlPanel";
 import { FilePanel } from "./components/FilePanel";
 import { SegmentedControl } from "./components/SegmentedControl";
 import { TranscriptPane } from "./components/TranscriptPane";
-import { resetSessionState, sessionStatus, sessionStatusLine } from "./state/session";
+import {
+  resetSessionState,
+  sessionId,
+  sessionMode,
+  sessionStatus,
+  sessionStatusLine
+} from "./state/session";
 
 type PhaseOneMode = "live" | "file";
 
@@ -13,7 +19,8 @@ export function App() {
   const [mode, setMode] = useState<PhaseOneMode>("live");
   const [captureBearer, setCaptureBearer] = useState("");
 
-  const modeLabel = mode === "live" ? "Live" : "File";
+  const displayedMode = accountAuthority && sessionId.value ? sessionMode.value : mode;
+  const modeLabel = displayedMode === "live" ? "Live" : "File";
   const status = sessionStatus.value;
   const modeLocked = status === "active" || status === "closing";
   const statusLabel = sessionStatusLine.value ?? (status === "idle" ? "Standby" : status);
@@ -87,17 +94,19 @@ export function App() {
           <TranscriptPane />
         </section>
 
-        <aside
-          className="panel history-panel collapsed"
-          aria-hidden="true"
-          aria-labelledby="history-panel-title"
-        >
-          <div className="panel-head">
-            <h2 className="panel-title" id="history-panel-title">
-              <span className="panel-title-rail">History</span>
-            </h2>
-          </div>
-        </aside>
+        {!accountAuthority ? (
+          <aside
+            className="panel history-panel collapsed"
+            aria-hidden="true"
+            aria-labelledby="history-panel-title"
+          >
+            <div className="panel-head">
+              <h2 className="panel-title" id="history-panel-title">
+                <span className="panel-title-rail">History</span>
+              </h2>
+            </div>
+          </aside>
+        ) : null}
       </main>
     </div>
   );

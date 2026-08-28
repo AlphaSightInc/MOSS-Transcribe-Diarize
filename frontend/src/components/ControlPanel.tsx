@@ -12,6 +12,10 @@ import {
   saveSessionReattach,
   sessionReattachStorage
 } from "../lib/persistence";
+import {
+  LIVE_MEETING_OBSERVE_EVENT,
+  requestMeetingHistoryRefresh
+} from "../lib/meetingEvents";
 
 type CapturePhase =
   | "idle"
@@ -27,7 +31,7 @@ type LaneMeters = Record<CaptureLane, number>;
 
 const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
-export const LIVE_MEETING_OBSERVE_EVENT = "moss:observe-live-meeting";
+export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 
 interface ControlPanelProps {
   authority?: "bearer" | "account";
@@ -157,12 +161,14 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
           clearSessionReattach(sessionReattachStorage());
           transition("terminal");
           setMessage(terminalMessage);
+          requestMeetingHistoryRefresh();
         }
       });
       pollerRef.current = poller;
       transition("active");
       setMessage("Capture active. Keep both lane meters moving.");
       poller.start();
+      requestMeetingHistoryRefresh();
     } catch (error) {
       transition("error");
       setMessage(errorMessage(error));
@@ -236,6 +242,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
         onTerminal(terminalMessage) {
           transition("terminal");
           setMessage(terminalMessage);
+          requestMeetingHistoryRefresh();
         }
       });
       pollerRef.current = poller;
@@ -256,6 +263,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
           clearSessionReattach(sessionReattachStorage());
           transition("terminal");
           setMessage(terminalMessage);
+          requestMeetingHistoryRefresh();
         }
       });
       pollerRef.current = poller;

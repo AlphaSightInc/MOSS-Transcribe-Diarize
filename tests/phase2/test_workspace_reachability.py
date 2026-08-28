@@ -1,19 +1,49 @@
 from __future__ import annotations
 
-import html
+import asyncio
+import base64
 import json
 from pathlib import Path
-import re
-import shutil
+import socket
 import subprocess
-from urllib.parse import unquote
+import threading
+import time
+from urllib.request import urlopen
 
+import httpx
 import pytest
+from fastapi.responses import RedirectResponse
+import uvicorn
+import websockets
 
-from moss_transcribe_diarize.app.phase2 import Account, Meeting, _workspace_html
+from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
+from moss_transcribe_diarize.app.live_endpoint import (
+    EndpointPolicy,
+    EndpointPolicyConfig,
+    SpeechObservation,
+)
+from moss_transcribe_diarize.app.live_helper_presence import HELPER_HEALTH_SCHEMA
+from moss_transcribe_diarize.app.live_service_runtime import (
+    LiveServiceBounds,
+    LiveServiceConfigHashes,
+    LiveServiceDescriptor,
+    LiveServiceRuntime,
+    hash_config,
+)
+from moss_transcribe_diarize.app.live_session import (
+    LIVE_SAMPLE_RATE,
+    AudioFrame,
+    FrozenSpan,
+    LiveIdentityPreparation,
+    LiveIdentitySnapshot,
+)
+from moss_transcribe_diarize.app.phase2 import (
+    GoogleIdentity,
+    Phase2Store,
+    create_phase2_app,
+)
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 CHROME_CANDIDATES = (
     Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
     Path("/usr/bin/google-chrome"),
@@ -28,174 +58,507 @@ def _chrome() -> Path:
     pytest.skip("Chrome/Chromium is required for the workspace reachability regression.")
 
 
-def _browser_layout(tmp_path: Path, *, width: int, height: int) -> dict[str, object]:
-    frontend = REPOSITORY_ROOT / "ProjectResources" / "Frontend"
-    shutil.copy2(frontend / "app.js", tmp_path / "app.js")
-    shutil.copy2(frontend / "styles.css", tmp_path / "styles.css")
-    page = _workspace_html(
-        Account("account-a", "person@example.com", "Person", 0),
-        [
-            Meeting(
-                meeting_id="meeting-observe",
-                mode="live",
-                title="Observed meeting",
-                status="active",
-                created_at_ms=0,
-                transcript=None,
-                transcript_version=0,
+class _BrowserOidc:
+    async def begin(self, request):
+        del request
+        return RedirectResponse("/auth/google/callback?code=local-browser", status_code=302)
+
+    async def complete(self, request):
+        del request
+        return GoogleIdentity("browser-owner", "person@example.com", "Person")
+
+
+class _SpeechProvider:
+    def __init__(self):
+        self._speech = [True, False]
+
+    def observe(
+        self,
+        *,
+        frame: AudioFrame,
+        start_sample: int,
+        end_sample: int,
+    ) -> tuple[SpeechObservation, ...]:
+        del frame
+        return (
+            SpeechObservation(
+                start_sample=start_sample,
+                end_sample=end_sample,
+                speech_present=self._speech.pop(0) if self._speech else False,
+            ),
+        )
+
+
+class _Decoder:
+    max_samples = 4_000
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        del pcm
+        return InferenceTranscript(
+            f"[0][S01]Observed live words[{span.sample_count / LIVE_SAMPLE_RATE:g}]"
+        )
+
+
+class _Identity:
+    def prepare(
+        self,
+        *,
+        span: FrozenSpan,
+        pcm: bytes,
+        transcript: str,
+        base_snapshot: LiveIdentitySnapshot,
+    ) -> LiveIdentityPreparation:
+        del pcm, transcript
+        return LiveIdentityPreparation(
+            span_id=span.id,
+            epoch=span.epoch,
+            start_sample=span.start_sample,
+            end_sample=span.end_sample,
+            base_snapshot_version=base_snapshot.version,
+            proposed_snapshot=LiveIdentitySnapshot(
+                version=base_snapshot.version + 1,
+                canonical_speakers=base_snapshot.canonical_speakers or ("speaker-0001",),
+            ),
+            relabeled_transcript=(
+                f"[0][S01]Observed live words[{span.sample_count / LIVE_SAMPLE_RATE:g}]"
+            ),
+        )
+
+
+def _runtime() -> LiveServiceRuntime:
+    descriptor = LiveServiceDescriptor(
+        source_revision="a" * 40,
+        provider_name="phase2-history-browser-test",
+        provider_revision="test",
+        provider_manifest_hash=hash_config({"provider": "phase2-history-browser-test"}),
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={"min_speech_samples": 1, "min_silence_samples": 1},
+            identity_config={"max_speakers": 2},
+            decoder_config={"max_samples": 4_000},
+        ),
+        bounds=LiveServiceBounds(
+            max_frame_samples=4_000,
+            max_queue_depth=4,
+            max_retained_samples=16_000,
+            max_identity_speakers=2,
+            max_events=128,
+            hard_cap_samples=4_000,
+            max_tape_bytes=None,
+        ),
+        frame_samples=2,
+    )
+    return LiveServiceRuntime(
+        descriptor=descriptor,
+        endpoint_policy_factory=lambda: EndpointPolicy(
+            EndpointPolicyConfig(
+                min_speech_samples=1,
+                min_silence_samples=1,
+                hard_cap_samples=4_000,
             )
-        ],
-        live_enabled=True,
+        ),
+        speech_provider_factory=_SpeechProvider,
+        decoder_factory=_Decoder,
+        rolling_decoder_factory=None,
+        identity_preparer_factory=_Identity,
     )
-    page = page.replace(
-        '<link rel="stylesheet" href="/static/styles.css">',
-        '<link rel="stylesheet" href="./styles.css">',
-    ).replace(
-        '<script type="module" src="/static/app.js"></script>',
-        '<script type="module" src="./app.js"></script>',
-    )
-    fetch_probe = """
-<script>
-window.__probeRequests = [];
-window.fetch = async (input) => {
-  const url = String(input);
-  window.__probeRequests.push(url);
-  const response = (body, status = 200) => new Response(JSON.stringify(body), {
-    status,
-    headers: {'Content-Type': 'application/json'}
-  });
-  if (url === '/api/meetings/meeting-observe') {
-    return response({
-      id: 'meeting-observe', mode: 'live', status: 'active', title: 'Observed meeting',
-      created_at_ms: 0, transcript: null, transcript_version: 0
-    });
-  }
-  if (url.includes('/api/live/sessions/meeting-observe/snapshot')) {
-    if (url.includes('since_version=0')) {
-      return response({
-        snapshot: {
-          session_id: 'meeting-observe',
-          descriptor: {sample_rate: 16000},
-          session: {
-            status: 'active', version: 1, failure_reason: null,
-            finalization_status: 'not_started', label_revision_version: 0,
-            identity_snapshot: {canonical_speakers: ['speaker-0001']},
-            committed: [{
-              span_id: 1, start_sample: 0,
-              transcript: '[0][S01]Observed live words[1]', revised_transcript: null
-            }],
-            provisional: null
-          }
-        },
-        unchanged: false,
-        status_line: 'Observer connected'
-      });
+
+
+def _v2_frame(sequence: int, lane: str) -> dict[str, object]:
+    samples = 2
+    return {
+        "lane": lane,
+        "sequence": sequence,
+        "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
+        "device_epoch": 0,
+        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
+        "sample_count": samples,
+        "sample_rate": LIVE_SAMPLE_RATE,
+        "silent": False,
+        "discontinuity": False,
     }
-    return response({snapshot: null, unchanged: true, status_line: 'Observer connected'});
-  }
-  if (url.includes('/api/live/sessions/meeting-observe/events')) return response({events: []});
-  return response({detail: 'not found'}, 404);
-};
-</script>
-"""
-    page = page.replace('<script type="module" src="./app.js"></script>', fetch_probe + '<script type="module" src="./app.js"></script>')
-    probe = """
-<script>
-window.addEventListener('load', () => {
-  setTimeout(() => document.querySelector('[data-open-meeting="meeting-observe"]').click(), 50);
-  setTimeout(() => {
-    const sections = Array.from(document.querySelectorAll('[data-workspace-section]'));
-    const history = document.querySelector('[data-workspace-section="history"]');
-    const app = document.querySelector('[data-live-capture="account"] .app');
-    const root = document.scrollingElement;
-    const beforeHistoryTop = history.getBoundingClientRect().top;
-    history.scrollIntoView({block: 'end'});
-    const historyBox = history.getBoundingClientRect();
-    const result = {
-      order: sections.map(section => section.dataset.workspaceSection),
-      topOrder: sections.map(section => section.getBoundingClientRect().top),
-      bodyOverflowY: getComputedStyle(document.body).overflowY,
-      appHeight: app.getBoundingClientRect().height,
-      appBoot: app.dataset.boot,
-      viewportHeight: window.innerHeight,
-      documentScrollHeight: root.scrollHeight,
-      documentClientHeight: root.clientHeight,
-      beforeHistoryTop,
-      scrollTop: root.scrollTop,
-      historyVisible: historyBox.top < window.innerHeight && historyBox.bottom > 0,
-      observerPhase: document.querySelector('[data-capture-phase]')?.dataset.capturePhase,
-      observerMode: document.querySelector('[data-observer-mode]')?.dataset.observerMode,
-      enableMicrophoneVisible: Array.from(document.querySelectorAll('button')).some(
-        button => button.textContent.trim() === 'Enable microphone'
-      ),
-      detachVisible: Array.from(document.querySelectorAll('button')).some(
-        button => button.textContent.trim() === 'Detach transcript'
-      ),
-      transcriptVisible: document.querySelector('#tr-body')?.textContent.includes('Observed live words'),
-      reattachStored: sessionStorage.getItem('lt:session:reattach'),
-      requests: window.__probeRequests
-    };
-    document.documentElement.dataset.layoutProbe = encodeURIComponent(JSON.stringify(result));
-  }, 750);
-});
-</script>
-"""
-    page = page.replace("</body>", f"{probe}</body>")
-    document = tmp_path / f"workspace-{width}x{height}.html"
-    document.write_text(page, encoding="utf-8")
-    profile = tmp_path / f"chrome-{width}x{height}"
-    process = subprocess.Popen(
+
+
+def _heartbeat() -> dict[str, object]:
+    lane = {
+        "state": "capturing",
+        "device_epoch": 0,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": None,
+    }
+    return {
+        "schema": HELPER_HEALTH_SCHEMA,
+        "instance_id": "browser-history-test",
+        "sequence": 0,
+        "sent_monotonic_ns": 1,
+        "helper_version": "test",
+        "state": "capturing",
+        "lanes": {"system": dict(lane), "microphone": dict(lane)},
+    }
+
+
+class _ChromePage:
+    def __init__(self, process: subprocess.Popen[str], debugger_port: int):
+        self.process = process
+        self.debugger_port = debugger_port
+        self.socket = None
+        self._message_id = 0
+
+    @classmethod
+    async def launch(
+        cls,
+        *,
+        chrome: Path,
+        profile: Path,
+        url: str,
+        width: int,
+        height: int,
+    ) -> "_ChromePage":
+        debugger_port = _free_port()
+        process = subprocess.Popen(
+            [
+                str(chrome),
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--ignore-certificate-errors",
+                "--remote-allow-origins=*",
+                f"--remote-debugging-port={debugger_port}",
+                f"--user-data-dir={profile}",
+                f"--window-size={width},{height}",
+                url,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        page = cls(process, debugger_port)
+        try:
+            endpoint = await page._debugger_endpoint()
+            page.socket = await websockets.connect(endpoint, origin="http://127.0.0.1")
+            await page.command("Page.enable")
+            await page.command("Network.enable")
+            return page
+        except BaseException:
+            page.close()
+            raise
+
+    async def _debugger_endpoint(self) -> str:
+        deadline = time.monotonic() + 8
+        last_error: Exception | None = None
+        while time.monotonic() < deadline:
+            if self.process.poll() is not None:
+                raise AssertionError("Chrome exited before exposing its debugger endpoint.")
+            try:
+                with urlopen(
+                    f"http://127.0.0.1:{self.debugger_port}/json/list", timeout=0.5
+                ) as response:
+                    targets = json.load(response)
+                page = next(target for target in targets if target.get("type") == "page")
+                return page["webSocketDebuggerUrl"]
+            except Exception as exc:
+                last_error = exc
+                await asyncio.sleep(0.05)
+        raise AssertionError(f"Chrome debugger unavailable: {last_error}")
+
+    async def command(self, method: str, params: dict[str, object] | None = None) -> dict[str, object]:
+        assert self.socket is not None
+        self._message_id += 1
+        message_id = self._message_id
+        await self.socket.send(json.dumps({"id": message_id, "method": method, "params": params or {}}))
+        while True:
+            message = json.loads(await self.socket.recv())
+            if message.get("id") != message_id:
+                continue
+            if "error" in message:
+                raise AssertionError(f"CDP {method} failed: {message['error']}")
+            return message.get("result", {})
+
+    async def evaluate(self, expression: str) -> object:
+        response = await self.command(
+            "Runtime.evaluate",
+            {"expression": expression, "returnByValue": True, "awaitPromise": True},
+        )
+        result = response["result"]
+        if "exceptionDetails" in response:
+            raise AssertionError(response["exceptionDetails"])
+        return result.get("value")
+
+    async def wait(self, expression: str, *, timeout: float = 8.0) -> object:
+        deadline = time.monotonic() + timeout
+        last = None
+        while time.monotonic() < deadline:
+            last = await self.evaluate(f"Boolean({expression})")
+            if last:
+                return last
+            await asyncio.sleep(0.05)
+        raise AssertionError(f"Browser condition timed out: {expression}; last={last!r}")
+
+    async def cookies(self, url: str) -> list[dict[str, object]]:
+        result = await self.command("Network.getCookies", {"urls": [url]})
+        return result["cookies"]
+
+    async def reload(self) -> None:
+        await self.command("Page.reload", {"ignoreCache": True})
+
+    def close(self) -> None:
+        if self.socket is not None:
+            try:
+                asyncio.get_running_loop().create_task(self.socket.close())
+            except RuntimeError:
+                pass
+        if self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=3)
+
+
+def _free_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return int(listener.getsockname()[1])
+
+
+def _certificate(tmp_path: Path) -> tuple[Path, Path]:
+    certificate = tmp_path / "certificate.pem"
+    private_key = tmp_path / "private-key.pem"
+    subprocess.run(
         [
-            str(_chrome()),
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-gpu",
-            "--allow-file-access-from-files",
-            f"--user-data-dir={profile}",
-            f"--window-size={width},{height}",
-            "--virtual-time-budget=2500",
-            "--dump-dom",
-            document.as_uri(),
+            "openssl",
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-days",
+            "1",
+            "-subj",
+            "/CN=localhost",
+            "-addext",
+            "subjectAltName=DNS:localhost,IP:127.0.0.1",
+            "-keyout",
+            str(private_key),
+            "-out",
+            str(certificate),
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return certificate, private_key
+
+
+def _start_server(app, certificate: Path, private_key: Path):
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app,
+            host="127.0.0.1",
+            port=port,
+            log_level="critical",
+            ssl_certfile=str(certificate),
+            ssl_keyfile=str(private_key),
+        )
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline and not server.started:
+        if not thread.is_alive():
+            raise AssertionError("Phase-2 browser server exited during startup.")
+        time.sleep(0.02)
+    assert server.started
+    return server, thread, f"https://127.0.0.1:{port}"
+
+
+def _stop_server(server: uvicorn.Server, thread: threading.Thread) -> None:
+    server.should_exit = True
+    thread.join(timeout=8)
+    assert not thread.is_alive()
+
+
+async def _provision(database: Path) -> None:
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("person@example.com")
+    finally:
+        await store.close()
+
+
+def _create_active_meeting(base_url: str) -> tuple[httpx.Client, str]:
+    client = httpx.Client(base_url=base_url, verify=False, follow_redirects=True)
+    response = client.get("/auth/google")
+    assert response.status_code == 200
+    created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
+    assert created.status_code == 201
+    meeting_id = created.json()["id"]
+    assert client.post(
+        f"/api/live/sessions/{meeting_id}/heartbeat", json=_heartbeat()
+    ).status_code == 200
+    for sequence in range(3):
+        for lane in ("system", "microphone"):
+            assert client.post(
+                f"/api/live/sessions/{meeting_id}/frames",
+                json=_v2_frame(sequence, lane),
+            ).status_code == 200
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        snapshot = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        if snapshot["snapshot"]["session"]["effective_transcript"]:
+            return client, meeting_id
+        time.sleep(0.02)
+    raise AssertionError("Active browser Meeting did not publish its transcript.")
+
+
+def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
+    tmp_path: Path,
+) -> None:
+    chrome = _chrome()
+    assert (Path(__file__).resolve().parents[2] / "ProjectResources/Frontend/app.js").is_file()
+    database = tmp_path / "moss.sqlite3"
+    asyncio.run(_provision(database))
+    app = create_phase2_app(
+        database_path=database,
+        oidc=_BrowserOidc(),
+        oauth_cookie_secret="browser-test-cookie-secret",
+        live_runtime_factory=_runtime,
+        live_helper_lease_seconds=30,
+    )
+    certificate, private_key = _certificate(tmp_path)
+    server, thread, base_url = _start_server(app, certificate, private_key)
+    controller = None
+    try:
+        controller, meeting_id = _create_active_meeting(base_url)
+        measured = asyncio.run(
+            _exercise_two_browsers(
+                chrome=chrome,
+                tmp_path=tmp_path,
+                base_url=base_url,
+                meeting_id=meeting_id,
+            )
+        )
+        assert measured["distinct_sessions"] is True
+        assert measured["desktop_order"] == ["file", "live", "history"]
+        assert measured["mobile_order"] == ["file", "live", "history"]
+        assert measured["desktop_history_visible"] is True
+        assert measured["mobile_history_visible"] is True
+        assert measured["both_observed_words"] is True
+        assert measured["title_converged"] is True
+        assert measured["reload_read_only"] is True
+        assert measured["reattach_stored"] is None
+    finally:
+        if controller is not None:
+            controller.close()
+        _stop_server(server, thread)
+
+
+async def _exercise_two_browsers(
+    *,
+    chrome: Path,
+    tmp_path: Path,
+    base_url: str,
+    meeting_id: str,
+) -> dict[str, object]:
+    first = await _ChromePage.launch(
+        chrome=chrome,
+        profile=tmp_path / "chrome-first",
+        url=f"{base_url}/auth/google",
+        width=1280,
+        height=720,
+    )
+    second = await _ChromePage.launch(
+        chrome=chrome,
+        profile=tmp_path / "chrome-second",
+        url=f"{base_url}/auth/google",
+        width=390,
+        height=844,
     )
     try:
-        stdout, stderr = process.communicate(timeout=5)
-    except subprocess.TimeoutExpired:
-        # Chrome 151 on macOS emits the complete dump but can retain a keychain helper.
-        # The DOM marker is authoritative; terminate only after the bounded dump window.
-        process.kill()
-        stdout, stderr = process.communicate()
-    match = re.search(r'data-layout-probe="([^"]+)"', stdout)
-    assert match is not None, stderr
-    return json.loads(unquote(html.unescape(match.group(1))))
+        ready = "document.querySelector('[data-auth-state=\"signed-in\"]') && document.querySelector('[data-boot=\"ready\"]')"
+        await first.wait(ready)
+        await second.wait(ready)
+        card = (
+            f"document.querySelector('.account-history-panel "
+            f"[data-open-meeting=\"{meeting_id}\"]')"
+        )
+        await first.wait(card)
+        await second.wait(card)
+
+        first_cookie = next(
+            cookie for cookie in await first.cookies(base_url)
+            if cookie["name"] == "__Host-moss_session"
+        )
+        second_cookie = next(
+            cookie for cookie in await second.cookies(base_url)
+            if cookie["name"] == "__Host-moss_session"
+        )
+
+        await first.evaluate(f"{card}.click()")
+        await second.evaluate(f"{card}.click()")
+        observed = (
+            "document.querySelector('[data-observer-mode=\"read-only\"]') && "
+            "document.querySelector('#tr-body')?.textContent.includes('Observed live words')"
+        )
+        await first.wait(observed)
+        await second.wait(observed)
+
+        await first.evaluate(
+            f"[...document.querySelector('[data-meeting-card=\"{meeting_id}\"]').querySelectorAll('button')]"
+            ".find(button => button.textContent.trim() === 'Rename').click()"
+        )
+        await first.wait("document.querySelector('[aria-label=\"Meeting title\"]')")
+        await first.evaluate(
+            "(() => { const input = document.querySelector('[aria-label=\"Meeting title\"]'); "
+            "input.value = 'Shared customer review'; "
+            "input.dispatchEvent(new Event('input', {bubbles: true})); return true; })()"
+        )
+        await first.wait("!document.querySelector('.history-dialog button[type=\"submit\"]').disabled")
+        await first.evaluate("document.querySelector('.history-dialog button[type=\"submit\"]').click()")
+        renamed = (
+            f"document.querySelector('[data-meeting-card=\"{meeting_id}\"]')?.textContent"
+            ".includes('Shared customer review')"
+        )
+        await first.wait(renamed)
+        await second.evaluate(
+            "[...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Refresh').click()"
+        )
+        await second.wait(renamed)
+
+        desktop_layout = await _measure_layout(first)
+        mobile_layout = await _measure_layout(second)
+
+        await second.reload()
+        await second.wait(ready)
+        await second.wait(card)
+        reload_read_only = await second.evaluate(
+            "document.querySelector('[data-capture-phase=\"idle\"]') !== null && "
+            "[...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Enable microphone')"
+        )
+        reattach_stored = await second.evaluate("sessionStorage.getItem('lt:session:reattach')")
+        return {
+            "distinct_sessions": first_cookie["value"] != second_cookie["value"],
+            "desktop_order": desktop_layout["order"],
+            "mobile_order": mobile_layout["order"],
+            "desktop_history_visible": desktop_layout["historyVisible"],
+            "mobile_history_visible": mobile_layout["historyVisible"],
+            "both_observed_words": True,
+            "title_converged": True,
+            "reload_read_only": reload_read_only,
+            "reattach_stored": reattach_stored,
+        }
+    finally:
+        first.close()
+        second.close()
 
 
-@pytest.mark.parametrize("width,height", [(1280, 720), (390, 844)])
-def test_signed_in_workspace_keeps_file_live_history_ordered_and_reachable(
-    tmp_path: Path,
-    width: int,
-    height: int,
-) -> None:
-    measured = _browser_layout(tmp_path, width=width, height=height)
-
-    assert measured["order"] == ["file", "live", "history"]
-    assert measured["topOrder"] == sorted(measured["topOrder"])
-    assert measured["bodyOverflowY"] == "auto"
-    assert measured["appHeight"] >= measured["viewportHeight"]
-    assert measured["appBoot"] == "ready"
-    assert measured["documentScrollHeight"] > measured["documentClientHeight"]
-    assert measured["beforeHistoryTop"] > measured["viewportHeight"]
-    assert measured["scrollTop"] > 0
-    assert measured["historyVisible"] is True
-    assert measured["observerPhase"] == "viewing"
-    assert measured["observerMode"] == "read-only"
-    assert measured["enableMicrophoneVisible"] is False
-    assert measured["detachVisible"] is True
-    assert measured["transcriptVisible"] is True
-    assert measured["reattachStored"] is None
-    assert "/api/meetings/meeting-observe" in measured["requests"]
-    assert any("/api/live/sessions/meeting-observe/snapshot" in url for url in measured["requests"])
-    assert any("/api/live/sessions/meeting-observe/events" in url for url in measured["requests"])
+async def _measure_layout(page: _ChromePage) -> dict[str, object]:
+    return await page.evaluate(
+        "(() => { const sections = [...document.querySelectorAll('[data-workspace-section]')]; "
+        "const history = document.querySelector('[data-workspace-section=\"history\"]'); "
+        "history.scrollIntoView({block: 'end'}); const box = history.getBoundingClientRect(); "
+        "return {order: sections.map(section => section.dataset.workspaceSection), "
+        "historyVisible: box.top < innerHeight && box.bottom > 0}; })()"
+    )

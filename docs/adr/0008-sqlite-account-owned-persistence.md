@@ -57,3 +57,8 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 - Shutdown durably interrupts active bindings, then identity-unbinds the runtime publication sink
   before closing workers and the event loop. A later terminal listener may still release its tape,
   but cannot advance memory or SQLite.
+- Meeting title carries `automatic` or `manual` provenance in the existing Meeting row. Creation
+  starts automatic; an owner-bound rename transaction trims and requires a non-empty title, writes
+  the title and `manual` together, and is permitted for active or terminal Meetings. This is the
+  durable owner-precedence fact later automatic-title work must respect; no title-history table or
+  rename event stream is introduced.
