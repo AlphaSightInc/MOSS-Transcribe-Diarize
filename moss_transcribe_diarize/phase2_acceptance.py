@@ -138,7 +138,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with the committed suites.  Falling below them means a test was
 # removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1034
+MINIMUM_PYTHON_TESTS = 1035
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {

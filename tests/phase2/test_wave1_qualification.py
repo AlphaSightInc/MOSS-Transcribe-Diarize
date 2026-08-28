@@ -490,6 +490,141 @@ def test_prestop_rtf_includes_rolling_and_scopes_stop_items_to_meeting():
     }
 
 
+def test_live_load_success_reaches_authoritative_result_projection(tmp_path, monkeypatch):
+    fixture_root = tmp_path / "repo"
+    fixture_path = fixture_root / "prototypes/streaming-diarization/concurrency"
+    fixture_path.mkdir(parents=True)
+    (fixture_path / "cpu_hf_local_fixture.json").write_text(
+        json.dumps(
+            {
+                "audio": {"path": "unused.wav"},
+                "clips": [
+                    {
+                        "start_seconds": 0,
+                        "end_seconds": 1,
+                        "expected_marker": "marker",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    empty = tmp_path / "empty.log"
+    empty.write_bytes(b"")
+    sentinel_a = tmp_path / "a.sentinel"
+    sentinel_b = tmp_path / "b.sentinel"
+    sentinel_a.write_bytes(b"account-a")
+    sentinel_b.write_bytes(b"account-b")
+
+    class Event:
+        def __init__(self, kind: str, payload: dict[str, object]) -> None:
+            self.kind = kind
+            self.payload = payload
+
+        def to_dict(self):
+            return {"session_id": "session-1", "kind": self.kind, "payload": self.payload}
+
+    events = [
+        Event("canonical_queued", {"item_id": 0, "runtime_monotonic_ns": 1}),
+        Event("canonical_started", {"item_id": 0, "runtime_monotonic_ns": 2}),
+        Event(
+            "canonical_processed",
+            {
+                "item_id": 0,
+                "runtime_monotonic_ns": 3,
+                "canonical_decode_elapsed_sec": 0.1,
+                "committed_samples": 8_000,
+                "submitted": True,
+            },
+        ),
+        Event(
+            "rolling_decode_queued",
+            {"item_id": 1, "admitted": True, "runtime_monotonic_ns": 4},
+        ),
+        Event(
+            "rolling_decode_completed",
+            {
+                "item_id": 1,
+                "outcome": "applied",
+                "rolling_decode_elapsed_sec": 0.1,
+                "decode_failure": None,
+                "windows_failed": 0,
+                "stale_completions": 0,
+                "runtime_monotonic_ns": 5,
+            },
+        ),
+    ]
+
+    class Adapter:
+        def __init__(self, **kwargs: object) -> None:
+            del kwargs
+
+        def descriptor(self):
+            return SimpleNamespace(frame_samples=8_000)
+
+        def create(self):
+            return SimpleNamespace(
+                session_id="session-1",
+                snapshot=SimpleNamespace(pending_work_items=0),
+            )
+
+        def accept_frame(self, session_id: str, frame: object):
+            del session_id, frame
+            return SimpleNamespace(snapshot=SimpleNamespace(pending_work_items=0))
+
+        async def stop(self, session_id: str, deadline: float):
+            del session_id, deadline
+            session = SimpleNamespace(
+                accepted_samples=8_000,
+                accounted_samples=8_000,
+                effective_transcript=(SimpleNamespace(text="marker"),),
+            )
+            return SimpleNamespace(session=session)
+
+        def events(self, session_id: str):
+            del session_id
+            return events
+
+        async def abort(self, session_id: str, reason: str):
+            del session_id, reason
+
+    class Probe:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            del args, kwargs
+
+        def request(self, method: str, path: str):
+            del method, path
+            return _Response(404, content=b"")
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
+    monkeypatch.setattr(external, "AccountHttpClient", Probe)
+    monkeypatch.setattr(external, "_wav_pcm_clip", lambda *args: (b"\0" * 16_000, "marker"))
+    monkeypatch.setattr(external, "_unit_pid", lambda unit: 1)
+    monkeypatch.setattr(external, "_process_tree_rss", lambda pid: 0)
+    monkeypatch.setattr(external, "_vllm_cache_use", lambda url: 0.0)
+    campaign = _campaign(
+        tmp_path,
+        repo_root=str(fixture_root),
+        account_a_cookie_file=str(empty),
+        account_b_cookie_file=str(empty),
+        account_a_sentinel_file=str(sentinel_a),
+        account_b_sentinel_file=str(sentinel_b),
+        server_log=str(empty),
+        vllm_log=str(empty),
+        vllm_metrics_url="https://metrics.invalid",
+        https_origin="https://moss.test",
+    )
+
+    result = campaign._run_live_load(sessions=1, duration_seconds=0.5)
+
+    assert result["prestop_inference_rtf"] == 0.4
+    assert result["terminal_failures"] == 0
+    assert "stale_failed_windows" not in result
+
+
 def test_campaign_backpressure_retries_exact_target_frame_after_same_campaign_peer():
     probe = external._CampaignBackpressure(8)
     target_calls: list[dict[str, object]] = []

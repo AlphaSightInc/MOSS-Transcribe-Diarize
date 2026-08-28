@@ -2264,7 +2264,6 @@ class FixedAccountCampaign:
             "sequence_gaps": sequence_gaps,
             "dropped_canonical_commits": dropped_commits,
             "terminal_failures": terminal_failures,
-            "stale_failed_windows": stale_failed,
             "cross_account_sentinel_deliveries": cross_sentinel_deliveries,
             "marker_isolation_failures": marker_isolation_failures,
             "wrong_owner_probes": wrong_owner_probes,
