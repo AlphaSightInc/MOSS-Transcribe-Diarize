@@ -133,11 +133,21 @@ PCM16 sample exists. It may never silently claim complete after the declared bou
 failure. The absorbed probe now calls the production stager, archive, Store, and recovery seams
 directly.
 
-The production-focused suite then passed 19/19 Live ownership and recovery cases. In particular,
+The production-focused suite then passed 22/22 Live ownership and recovery cases. In particular,
 a transient failure after available MP3 metadata but before stage cleanup was retried through the
 same owner-bound recovery operation: available metadata/file truth survived, the raw stage was
 removed on the second attempt, and the Meeting durably ended interrupted instead of remaining
-active. Account-authority loss likewise removed the fixed raw stage and unrecorded MP3 while the
-revocation transaction's interrupted Meeting remained authoritative. Terminal-recovery failure is
-therefore an explicit public failure, but it is not permission to leave an owner-authorized durable
-Meeting active.
+active. The adversarial persistent form rejected the earlier policy: it had marked the Meeting
+interrupted while raw PCM survived, making startup recovery ineligible. The production-backed
+probe now leaves that Meeting active, keeps its available MP3 metadata truthful, and exposes the
+terminal-recovery failure; startup later verifies raw absence before interrupting it.
+
+Account-authority loss gets one binding-owned, cancellation-shielded cleanup task with exactly one
+causal retry, not an open-ended retry framework. A forced first failure succeeded on attempt two
+and removed the fixed stage. If both attempts fail after revocation already made SQLite terminal,
+startup selects canonical interrupted Live rows regardless of whether the Account has since been
+re-allowed, then derives the fixed owner path; it never searches the filesystem. It removes
+unrecorded MP3 only when metadata grants neither available nor partial truth, then verifies
+raw-stage cleanup. Persistent cleanup failure therefore blocks startup visibly instead of silently
+leaving raw material behind. Ticket #18 owns the later improvement that moves revocation ordering
+before generation fencing.

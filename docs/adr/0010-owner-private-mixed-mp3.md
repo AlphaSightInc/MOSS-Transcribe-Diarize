@@ -61,6 +61,12 @@ active Live Meeting rows and recovers each fixed owner path without filesystem s
   had no directory and became interrupted/unavailable; every later active boundary retained the
   transcript, reconciled file/metadata truth, removed raw PCM, and ended interrupted. A fully
   finished boundary remained completed. A transient terminal cleanup failure retries that same
-  owner-bound recovery operation and must still end the authorized Meeting durably terminal.
-  Revocation cannot mutate audio metadata, but it still removes the fixed raw stage and unrecorded
-  artifact.
+  owner-bound recovery operation and ends the authorized Meeting durably terminal only after raw
+  absence is verified. Persistent cleanup uncertainty leaves the canonical Meeting active for
+  visible startup recovery; it cannot make terminal status eligible while raw PCM survives.
+  Revocation cannot mutate audio metadata. Its fixed-stage cleanup is binding-owned and
+  cancellation-shielded with one causal retry. If both attempts fail after SQLite has already
+  interrupted the Meeting, startup reconciles canonical interrupted Live rows and fixed owner paths
+  without filesystem search, even if the Account has since been re-allowed. Metadata-backed MP3 is
+  preserved, unrecorded MP3 is removed, and persistent cleanup failure blocks startup visibly.
+  Issue #18 owns moving revocation ordering before generation fencing.

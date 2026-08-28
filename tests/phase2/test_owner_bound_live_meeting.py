@@ -868,6 +868,52 @@ def test_transient_live_stage_cleanup_failure_recovers_truth_and_finishes_interr
         assert attempts == 2
 
 
+def test_persistent_live_stage_cleanup_failure_stays_active_until_startup_recovers(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        stages = app.state.phase2_live.audio_stages
+        attempts = 0
+
+        def always_fail(account_id: str, target_meeting_id: str) -> None:
+            nonlocal attempts
+            del account_id, target_meeting_id
+            attempts += 1
+            raise OSError("injected persistent stage cleanup failure")
+
+        stages.discard = always_fail
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        failed = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        assert failed["persistence_failure"] == "audio_terminal_recovery_failed"
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "active"
+        assert meeting["audio"]["state"] == "available"
+        assert binding.terminal_persisted is False
+        stage_path = tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+        assert stage_path.is_file()
+
+    assert attempts >= 3
+    restarted = make_app(database)
+    with TestClient(restarted, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["audio"]["state"] == "available"
+        assert not stage_path.exists()
+
+
 @pytest.mark.parametrize(
     ("scenario", "expected_state", "expected_name"),
     (
@@ -992,6 +1038,18 @@ def test_account_revoke_fences_a_queued_revision_and_returns_401(tmp_path: Path)
         feed_two_lane_span(client, meeting_id)
         wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
         binding = app.state.phase2_live._bindings[meeting_id]
+        stages = app.state.phase2_live.audio_stages
+        original_discard = stages.discard
+        cleanup_attempts = 0
+
+        def fail_first_cleanup(account_id: str, target_meeting_id: str) -> None:
+            nonlocal cleanup_attempts
+            cleanup_attempts += 1
+            if cleanup_attempts == 1:
+                raise OSError("injected transient revoked-stage cleanup failure")
+            original_discard(account_id, target_meeting_id)
+
+        stages.discard = fail_first_cleanup
         original_commit = binding.handle.commit_transcript
         commit_started = threading.Event()
         release_commit = threading.Event()
@@ -1020,6 +1078,10 @@ def test_account_revoke_fences_a_queued_revision_and_returns_401(tmp_path: Path)
         while not binding.capture_fenced and time.monotonic() < deadline:
             time.sleep(0.01)
         assert binding.capture_fenced is True
+        while not binding.terminal_persisted and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert binding.terminal_persisted is True
+        assert cleanup_attempts == 2
 
     connection = sqlite3.connect(database)
     try:
@@ -1040,6 +1102,102 @@ def test_account_revoke_fences_a_queued_revision_and_returns_401(tmp_path: Path)
     meeting_dir = database.parent / "meetings" / "sub-a" / meeting_id
     assert not (meeting_dir / ".live-mix.pcm").exists()
     assert not tuple(meeting_dir.glob("*.mp3"))
+
+
+def test_revoked_live_stage_cleanup_failure_is_reconciled_from_canonical_row_on_startup(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        stages = app.state.phase2_live.audio_stages
+
+        def always_fail(account_id: str, target_meeting_id: str) -> None:
+            del account_id, target_meeting_id
+            raise OSError("injected persistent revoked-stage cleanup failure")
+
+        stages.discard = always_fail
+        assert client.portal.call(
+            app.state.phase2_store.revoke_email,
+            "a@example.com",
+        ) is True
+        client.portal.call(
+            app.state.phase2_live._fence,
+            binding,
+            "meeting_authority_revoked",
+        )
+        stage_path = tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+        assert stage_path.is_file()
+        assert binding.terminal_persisted is False
+
+    async def reallow() -> str:
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("a@example.com")
+            admitted = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
+            assert admitted is not None
+            return admitted[1]
+        finally:
+            await store.close()
+
+    reallowed_session = asyncio.run(reallow())
+    restarted = make_app(database)
+    with TestClient(restarted, base_url="https://moss.test") as client:
+        assert not stage_path.exists()
+        session(client, reallowed_session)
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        # Issue #18 owns moving cleanup before generation fencing; #17 must not
+        # invent metadata after the captured authority was revoked.
+        assert meeting["audio"] is None
+
+
+def test_revoked_stage_cleanup_task_remains_owned_across_caller_cancellation(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        binding = app.state.phase2_live._bindings[meeting_id]
+        stages = app.state.phase2_live.audio_stages
+        original_discard = stages.discard
+        cleanup_started = threading.Event()
+        release_cleanup = threading.Event()
+
+        def held_cleanup(account_id: str, target_meeting_id: str) -> None:
+            cleanup_started.set()
+            assert release_cleanup.wait(timeout=5)
+            original_discard(account_id, target_meeting_id)
+
+        stages.discard = held_cleanup
+
+        async def cancel_caller() -> None:
+            caller = asyncio.create_task(
+                app.state.phase2_live._discard_stage_after_authority_loss(binding)
+            )
+            assert await asyncio.to_thread(cleanup_started.wait, 2)
+            caller.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await caller
+            owned = binding.authority_cleanup_task
+            assert owned is not None and not owned.done()
+            release_cleanup.set()
+            assert await app.state.phase2_live._discard_stage_after_authority_loss(binding)
+            assert owned.done()
+
+        client.portal.call(cancel_caller)
+        assert not (
+            tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+        ).exists()
 
 
 def test_terminal_transcript_and_status_roll_back_or_commit_as_one_tuple(tmp_path: Path):

@@ -540,6 +540,32 @@ class Phase2Store:
             async with self._external_read():
                 cursor = await self._connection.execute(
                     """
+                    SELECT m.account_id, m.meeting_id, ma.state AS audio_state
+                    FROM meetings m
+                    LEFT JOIN meeting_audio ma
+                      ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+                    WHERE m.mode = 'live' AND m.status = 'interrupted'
+                    ORDER BY m.created_at_ms, m.meeting_id
+                    """
+                )
+                revoked_rows = await cursor.fetchall()
+                await cursor.close()
+            for row in revoked_rows:
+                if row["audio_state"] not in {"available", "partial"}:
+                    await asyncio.to_thread(
+                        audio_archive.discard_unrecorded,
+                        row["account_id"],
+                        row["meeting_id"],
+                    )
+                await asyncio.to_thread(
+                    live_audio_stages.discard,
+                    row["account_id"],
+                    row["meeting_id"],
+                )
+
+            async with self._external_read():
+                cursor = await self._connection.execute(
+                    """
                     SELECT m.account_id, m.meeting_id, a.authority_generation
                     FROM meetings m
                     JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1

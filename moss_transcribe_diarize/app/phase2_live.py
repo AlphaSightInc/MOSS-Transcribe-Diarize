@@ -68,6 +68,7 @@ class _LiveBinding:
     capture_fenced: bool = False
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
+    authority_cleanup_task: asyncio.Task[None] | None = None
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
 
 
@@ -96,7 +97,7 @@ class Phase2LiveMeetings:
 
     async def shutdown(self) -> None:
         for binding in tuple(self._bindings.values()):
-            if not binding.terminal_persisted and not binding.capture_fenced:
+            if not binding.terminal_persisted:
                 await self._fence(binding, "service shutdown")
         self.runtime._unbind_publication_observer(self._publication_observer)
         self._accepting_publications = False
@@ -365,32 +366,32 @@ class Phase2LiveMeetings:
         self,
         binding: _LiveBinding,
         reason: str,
-        terminal_snapshot: LiveServiceSnapshot,
+        terminal_snapshot: LiveServiceSnapshot | None,
         terminal_events: tuple[LiveServiceEvent, ...],
     ) -> None:
         binding.capture_fenced = True
-        authority_revoked = False
+        recovered = False
+        durable_interruption = False
         try:
             await binding.handle.recover_interrupted_audio(
                 self.audio_archive,
                 self.audio_stages,
             )
+            recovered = True
         except AccountRevoked:
-            authority_revoked = True
-            await self._discard_stage_after_authority_loss(binding)
+            durable_interruption = await self._discard_stage_after_authority_loss(binding)
         except Exception:
-            # Metadata remains whatever the owner-bound archive last proved. Meeting
-            # terminality is independent of a still-unavailable storage boundary.
+            # Keep the canonical row active: startup recovery is the only durable owner
+            # of a stage whose verified cleanup has not completed.
             pass
-        durable_interruption = authority_revoked
-        if not authority_revoked:
+        if recovered:
             try:
                 await binding.handle.finish("interrupted")
                 durable_interruption = True
             except AccountRevoked:
-                await self._discard_stage_after_authority_loss(binding)
-                binding.terminal_persisted = True
-                durable_interruption = True
+                durable_interruption = await self._discard_stage_after_authority_loss(
+                    binding
+                )
             except Exception:
                 pass
         if durable_interruption:
@@ -406,20 +407,59 @@ class Phase2LiveMeetings:
         async with binding.changed:
             binding.changed.notify_all()
 
-    async def _discard_stage_after_authority_loss(self, binding: _LiveBinding) -> None:
-        try:
-            await asyncio.to_thread(
-                self.audio_stages.discard,
-                binding.owner_key[0],
-                binding.handle.meeting_id,
+    async def _discard_stage_after_authority_loss(self, binding: _LiveBinding) -> bool:
+        cleanup = binding.authority_cleanup_task
+        if cleanup is None:
+            cleanup = asyncio.create_task(
+                asyncio.to_thread(
+                    self._discard_revoked_stage,
+                    binding.owner_key[0],
+                    binding.handle.meeting_id,
+                ),
+                name=f"phase2-live-revoked-cleanup-{binding.handle.meeting_id}",
             )
+            binding.authority_cleanup_task = cleanup
+        try:
+            await asyncio.shield(cleanup)
+            return True
+        except asyncio.CancelledError:
+            # The task remains owned by the binding; shutdown will await the same work.
+            raise
         except Exception:
-            # Authority is already terminal in SQLite. Cleanup cannot create audio
-            # metadata or regain authority, and the public failure remains explicit.
-            pass
+            return False
+        finally:
+            if cleanup.done() and binding.authority_cleanup_task is cleanup:
+                binding.authority_cleanup_task = None
+
+    def _discard_revoked_stage(self, account_id: str, meeting_id: str) -> None:
+        failure: Exception | None = None
+        for _ in range(2):
+            try:
+                self.audio_stages.discard(account_id, meeting_id)
+                return
+            except Exception as exc:
+                failure = exc
+        assert failure is not None
+        raise failure
 
     async def _fence(self, binding: _LiveBinding, reason: str) -> None:
+        if binding.terminal_persisted:
+            return
         if binding.capture_fenced:
+            try:
+                terminal_snapshot = self.runtime.snapshot(binding.handle.meeting_id)
+            except Exception:
+                terminal_snapshot = None
+            try:
+                terminal_events = self.runtime.events(binding.handle.meeting_id)
+            except Exception:
+                terminal_events = ()
+            await self._terminal_recovery_failed(
+                binding,
+                binding.persistence_failure or reason,
+                terminal_snapshot,
+                terminal_events,
+            )
             return
         binding.capture_fenced = True
         try:
@@ -450,30 +490,33 @@ class Phase2LiveMeetings:
         except AccountRevoked:
             # Account revocation atomically interrupts all active Meetings before the
             # captured handle's generation fence rejects this redundant finish.
-            await self._discard_stage_after_authority_loss(binding)
-            binding.terminal_persisted = True
-            durable_interruption = True
+            durable_interruption = await self._discard_stage_after_authority_loss(binding)
+            binding.terminal_persisted = durable_interruption
         except Exception:
+            recovered = False
             try:
                 await binding.handle.recover_interrupted_audio(
                     self.audio_archive,
                     self.audio_stages,
                 )
+                recovered = True
             except AccountRevoked:
-                await self._discard_stage_after_authority_loss(binding)
-                binding.terminal_persisted = True
-                durable_interruption = True
+                durable_interruption = await self._discard_stage_after_authority_loss(
+                    binding
+                )
+                binding.terminal_persisted = durable_interruption
             except Exception:
                 pass
-            if not durable_interruption:
+            if recovered:
                 try:
                     await binding.handle.finish("interrupted")
                     binding.terminal_persisted = True
                     durable_interruption = True
                 except AccountRevoked:
-                    await self._discard_stage_after_authority_loss(binding)
-                    binding.terminal_persisted = True
-                    durable_interruption = True
+                    durable_interruption = await self._discard_stage_after_authority_loss(
+                        binding
+                    )
+                    binding.terminal_persisted = durable_interruption
                 except Exception:
                     pass
         if durable_interruption and terminal_snapshot is not None:

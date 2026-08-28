@@ -13,12 +13,14 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 from moss_transcribe_diarize.app.phase2 import GoogleIdentity, Phase2Store
 from moss_transcribe_diarize.app.phase2_audio import (
     LiveMeetingAudioStages,
     MeetingAudioArchive,
 )
+from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
 
 SAMPLE_RATE = 16_000
@@ -37,6 +39,22 @@ class _OneFailedStageCreateArchive(MeetingAudioArchive):
             self._fail_once = False
             raise OSError("prototype stage directory refusal")
         super()._ensure_private_directory(path)
+
+
+class _FailingDiscardStages:
+    def __init__(self, stages: LiveMeetingAudioStages, *, failures: int | None) -> None:
+        self.stages = stages
+        self.failures = failures
+        self.attempts = 0
+
+    def __getattr__(self, name: str):
+        return getattr(self.stages, name)
+
+    def discard(self, account_id: str, meeting_id: str) -> None:
+        self.attempts += 1
+        if self.failures is None or self.attempts <= self.failures:
+            raise OSError("prototype stage discard refusal")
+        self.stages.discard(account_id, meeting_id)
 
 
 def pcm_tone(samples: int, frequency: float = 880.0) -> bytes:
@@ -240,6 +258,102 @@ async def _crash_boundaries(work: Path, full_pcm: bytes) -> list[dict[str, objec
     ]
 
 
+async def _cleanup_failure_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    archive = MeetingAudioArchive(work / "meetings")
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, _ = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        await handle.commit_transcript(
+            {"segments": [{"id": "seg_0001", "text": "durable transcript"}]}
+        )
+        stages.reserve(account.account_id, handle.meeting_id)
+        stage = stages.create(handle.meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+        stages.release(handle.meeting_id)
+        prefix = stages.prefix(
+            account.account_id,
+            handle.meeting_id,
+            expected_samples=len(pcm) // 2,
+        )
+        assert prefix is not None
+        await handle.publish_audio(
+            archive,
+            prefix.path,
+            partial=False,
+            raw_pcm=True,
+        )
+
+        persistent = _FailingDiscardStages(stages, failures=None)
+        live = Phase2LiveMeetings(
+            object(),
+            audio_archive=archive,
+            audio_stages=persistent,
+        )
+        binding = SimpleNamespace(
+            owner_key=(account.account_id, account.authority_generation),
+            handle=handle,
+            capture_fenced=False,
+            terminal_persisted=False,
+            persistence_failure=None,
+            public_snapshot=None,
+            public_events=(),
+            public_event_high_water=-1,
+            authority_cleanup_task=None,
+            changed=asyncio.Condition(),
+        )
+        await live._terminal_recovery_failed(
+            binding,
+            "audio_terminal_recovery_failed",
+            None,
+            (),
+        )
+        persistent_snapshot = await handle.snapshot()
+        persistent_state = {
+            "cleanup_attempts": persistent.attempts,
+            "meeting_status": persistent_snapshot.status,
+            "audio_state": persistent_snapshot.audio.state,
+            "stage_exists": stages.path(account.account_id, handle.meeting_id).exists(),
+            "terminal_persisted": binding.terminal_persisted,
+            "failure_explicit": binding.persistence_failure,
+        }
+
+        transient = _FailingDiscardStages(stages, failures=1)
+        revoked_live = Phase2LiveMeetings(
+            object(),
+            audio_archive=archive,
+            audio_stages=transient,
+        )
+        binding.authority_cleanup_task = None
+        revoked_live.audio_stages = transient
+        revoked_clean = await revoked_live._discard_stage_after_authority_loss(binding)
+        transient_state = {
+            "cleanup_attempts": transient.attempts,
+            "cleanup_verified": revoked_clean,
+            "stage_exists": stages.path(account.account_id, handle.meeting_id).exists(),
+        }
+        return {
+            "persistent_authority_valid": persistent_state,
+            "transient_authority_revoked": transient_state,
+        }
+    finally:
+        try:
+            stages.discard("account-a", handle.meeting_id)
+        except Exception:
+            pass
+        await store.close()
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="moss-live-audio-prototype-") as temporary:
         root = Path(temporary)
@@ -329,7 +443,7 @@ def main() -> None:
             "invariants": [
                 "only the exact runtime-accepted mixed bytes enter staging",
                 "each acknowledged staged append is fsynced",
-                "recovery uses only an active Live Meeting record and its fixed owner path",
+                "recovery uses only a canonical Live Meeting record and its fixed owner path",
                 "a torn suffix is excluded at the last complete PCM16 sample",
                 "transcript durability is independent of audio outcome",
                 "terminal success follows transcript, MP3 metadata, stage cleanup, then Meeting status",
@@ -345,7 +459,8 @@ def main() -> None:
             ),
             "tool_decision": (
                 "Use real fsync plus production MeetingAudioArchive/FFmpeg/ffprobe; simulate process "
-                "loss at every terminal ordering edge because each result changes recovery state."
+                "loss at every terminal ordering edge and inject cleanup refusal because each "
+                "result changes whether Meeting terminality is eligible."
             ),
             "normal_stage": {
                 "frames": 120,
@@ -379,6 +494,9 @@ def main() -> None:
                 "outcome": torn_outcome,
             },
             "terminal_crash_boundaries": crash_order_probe(root / "ordering", frame_pcm),
+            "cleanup_failure_ordering": asyncio.run(
+                _cleanup_failure_probe(root / "cleanup-failure", frame_pcm)
+            ),
         }
         state["verdict"] = "PASS" if (
             state["normal_stage"]["byte_exact"]
@@ -399,6 +517,21 @@ def main() -> None:
                 and item["meeting_status"] in {"completed", "interrupted"}
                 for item in state["terminal_crash_boundaries"]
             )
+            and state["cleanup_failure_ordering"] == {
+                "persistent_authority_valid": {
+                    "cleanup_attempts": 1,
+                    "meeting_status": "active",
+                    "audio_state": "available",
+                    "stage_exists": True,
+                    "terminal_persisted": False,
+                    "failure_explicit": "audio_terminal_recovery_failed",
+                },
+                "transient_authority_revoked": {
+                    "cleanup_attempts": 2,
+                    "cleanup_verified": True,
+                    "stage_exists": False,
+                },
+            }
         ) else "FAIL"
         print(json.dumps(state, indent=2, sort_keys=True))
         if state["verdict"] != "PASS":
