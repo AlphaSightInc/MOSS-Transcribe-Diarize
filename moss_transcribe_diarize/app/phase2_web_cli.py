@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .phase2 import AuthlibGoogleOidc, DEFAULT_PHASE2_DATABASE_PATH, create_phase2_app
+from .phase2_audio import DEFAULT_PHASE2_MEETING_AUDIO_ROOT
 from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
 
 
@@ -42,6 +43,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--file-work-root",
         default=str(DEFAULT_PHASE2_FILE_WORK_ROOT),
         help="Dedicated transient directory named file-work.",
+    )
+    parser.add_argument(
+        "--meeting-audio-root",
+        default=str(DEFAULT_PHASE2_MEETING_AUDIO_ROOT),
+        help="Owner-partitioned durable Meeting MP3 root.",
     )
     parser.add_argument("--prompt")
     parser.add_argument("--max-len", type=int, default=131072)
@@ -106,6 +112,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         ),
         file_runner=file_runner,
         file_work_root=Path(args.file_work_root).expanduser(),
+        meeting_audio_root=Path(args.meeting_audio_root).expanduser(),
         file_inference_options={
             "prompt": args.prompt,
             "max_length": args.max_len,

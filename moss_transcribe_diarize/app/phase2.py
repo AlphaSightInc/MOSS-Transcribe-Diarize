@@ -60,6 +60,30 @@ class Account:
 
 
 @dataclass(frozen=True, slots=True)
+class MeetingAudio:
+    state: str
+    relative_path: str | None
+    byte_count: int | None
+    duration_ms: int | None
+    format: str | None
+    sample_rate_hz: int | None
+    channels: int | None
+    bit_rate_bps: int | None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "state": self.state,
+            "relative_path": self.relative_path,
+            "byte_count": self.byte_count,
+            "duration_ms": self.duration_ms,
+            "format": self.format,
+            "sample_rate_hz": self.sample_rate_hz,
+            "channels": self.channels,
+            "bit_rate_bps": self.bit_rate_bps,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class Meeting:
     meeting_id: str
     mode: str
@@ -68,6 +92,7 @@ class Meeting:
     created_at_ms: int
     transcript: dict[str, object] | None = None
     transcript_version: int = 0
+    audio: MeetingAudio | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -78,6 +103,7 @@ class Meeting:
             "created_at_ms": self.created_at_ms,
             "transcript": self.transcript,
             "transcript_version": self.transcript_version,
+            "audio": None if self.audio is None else self.audio.to_dict(),
         }
 
 
@@ -316,12 +342,35 @@ class Phase2Store:
             CREATE TABLE meeting_audio (
                 account_id TEXT NOT NULL,
                 meeting_id TEXT NOT NULL,
-                state TEXT NOT NULL,
+                state TEXT NOT NULL CHECK(state IN ('available', 'partial', 'unavailable')),
                 relative_path TEXT,
                 byte_count INTEGER,
                 duration_ms INTEGER,
+                format TEXT,
+                sample_rate_hz INTEGER,
+                channels INTEGER,
+                bit_rate_bps INTEGER,
                 updated_at_ms INTEGER NOT NULL,
                 PRIMARY KEY(account_id, meeting_id),
+                CHECK(
+                    (state = 'unavailable'
+                        AND relative_path IS NULL
+                        AND byte_count IS NULL
+                        AND duration_ms IS NULL
+                        AND format IS NULL
+                        AND sample_rate_hz IS NULL
+                        AND channels IS NULL
+                        AND bit_rate_bps IS NULL)
+                    OR
+                    (state IN ('available', 'partial')
+                        AND relative_path IS NOT NULL
+                        AND byte_count > 0
+                        AND duration_ms > 0
+                        AND format = 'mp3'
+                        AND sample_rate_hz = 16000
+                        AND channels = 1
+                        AND bit_rate_bps = 48000)
+                ),
                 FOREIGN KEY(account_id, meeting_id)
                     REFERENCES meetings(account_id, meeting_id)
             );
@@ -572,12 +621,18 @@ class Phase2Store:
         cursor = await self._connection.execute(
             """
             SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
-                   t.document_json, t.version AS transcript_version
+                   t.document_json, t.version AS transcript_version,
+                   ma.state AS audio_state, ma.relative_path AS audio_relative_path,
+                   ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
+                   ma.format AS audio_format, ma.sample_rate_hz AS audio_sample_rate_hz,
+                   ma.channels AS audio_channels, ma.bit_rate_bps AS audio_bit_rate_bps
             FROM meetings m
             JOIN accounts a ON a.account_id = m.account_id
                 AND a.enabled = 1 AND a.authority_generation = ?
             LEFT JOIN meeting_transcripts t
                 ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            LEFT JOIN meeting_audio ma
+                ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
             WHERE m.account_id = ?
             ORDER BY m.created_at_ms DESC, m.meeting_id DESC
             """,
@@ -643,12 +698,18 @@ class Phase2Store:
         cursor = await self._connection.execute(
             """
             SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
-                   t.document_json, t.version AS transcript_version
+                   t.document_json, t.version AS transcript_version,
+                   ma.state AS audio_state, ma.relative_path AS audio_relative_path,
+                   ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
+                   ma.format AS audio_format, ma.sample_rate_hz AS audio_sample_rate_hz,
+                   ma.channels AS audio_channels, ma.bit_rate_bps AS audio_bit_rate_bps
             FROM meetings m
             JOIN accounts a ON a.account_id = m.account_id
                 AND a.enabled = 1 AND a.authority_generation = ?
             LEFT JOIN meeting_transcripts t
                 ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            LEFT JOIN meeting_audio ma
+                ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
             WHERE m.account_id = ? AND m.meeting_id = ?
             """,
             (authority_generation, account_id, meeting_id),
@@ -741,6 +802,113 @@ class Phase2Store:
             if cursor.rowcount != 1:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")
 
+    async def _commit_meeting_audio(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        audio: MeetingAudio,
+    ) -> None:
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meetings
+                SET updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (now, account_id, meeting_id, account_id, authority_generation),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+            await self._connection.execute(
+                """
+                INSERT INTO meeting_audio(
+                    account_id, meeting_id, state, relative_path, byte_count, duration_ms,
+                    format, sample_rate_hz, channels, bit_rate_bps, updated_at_ms
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(account_id, meeting_id) DO UPDATE SET
+                    state = excluded.state,
+                    relative_path = excluded.relative_path,
+                    byte_count = excluded.byte_count,
+                    duration_ms = excluded.duration_ms,
+                    format = excluded.format,
+                    sample_rate_hz = excluded.sample_rate_hz,
+                    channels = excluded.channels,
+                    bit_rate_bps = excluded.bit_rate_bps,
+                    updated_at_ms = excluded.updated_at_ms
+                """,
+                (
+                    account_id,
+                    meeting_id,
+                    audio.state,
+                    audio.relative_path,
+                    audio.byte_count,
+                    audio.duration_ms,
+                    audio.format,
+                    audio.sample_rate_hz,
+                    audio.channels,
+                    audio.bit_rate_bps,
+                    now,
+                ),
+            )
+
+    async def _meeting_audio(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ) -> MeetingAudio | None:
+        cursor = await self._connection.execute(
+            """
+            SELECT ma.state AS audio_state, ma.relative_path AS audio_relative_path,
+                   ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
+                   ma.format AS audio_format, ma.sample_rate_hz AS audio_sample_rate_hz,
+                   ma.channels AS audio_channels, ma.bit_rate_bps AS audio_bit_rate_bps
+            FROM meetings m
+            JOIN accounts a ON a.account_id = m.account_id
+                AND a.enabled = 1 AND a.authority_generation = ?
+            LEFT JOIN meeting_audio ma
+                ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+            WHERE m.account_id = ? AND m.meeting_id = ?
+            """,
+            (authority_generation, account_id, meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        if row is None:
+            raise AccountRevoked("Meeting authority is revoked or interrupted.")
+        return _meeting_audio_from_row(row)
+
+    async def _mark_meeting_audio_unavailable(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ) -> None:
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meeting_audio
+                SET state = 'unavailable', relative_path = NULL, byte_count = NULL,
+                    duration_ms = NULL, format = NULL, sample_rate_hz = NULL,
+                    channels = NULL, bit_rate_bps = NULL, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ?
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (now, account_id, meeting_id, account_id, authority_generation),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+
 
 class AccountWorkspace:
     """The only public persistence authority opened by a valid MOSS session."""
@@ -814,6 +982,79 @@ class MeetingHandle:
             status,
         )
 
+    async def publish_audio(self, archive: Any, source_path: str | Path) -> MeetingAudio:
+        try:
+            publication = await asyncio.to_thread(
+                archive.publish,
+                self._account_id,
+                self.meeting_id,
+                source_path,
+            )
+        except Exception:
+            audio = MeetingAudio(
+                state="unavailable",
+                relative_path=None,
+                byte_count=None,
+                duration_ms=None,
+                format=None,
+                sample_rate_hz=None,
+                channels=None,
+                bit_rate_bps=None,
+            )
+            await self._store._commit_meeting_audio(
+                self._account_id,
+                self._authority_generation,
+                self.meeting_id,
+                audio,
+            )
+            return audio
+
+        audio = MeetingAudio(
+            state="available",
+            relative_path=publication.relative_path,
+            byte_count=publication.byte_count,
+            duration_ms=publication.duration_ms,
+            format=publication.format,
+            sample_rate_hz=publication.sample_rate_hz,
+            channels=publication.channels,
+            bit_rate_bps=publication.bit_rate_bps,
+        )
+        try:
+            await self._store._commit_meeting_audio(
+                self._account_id,
+                self._authority_generation,
+                self.meeting_id,
+                audio,
+            )
+        except BaseException:
+            await asyncio.to_thread(archive.remove, publication)
+            raise
+        return audio
+
+    async def audio(self) -> MeetingAudio | None:
+        return await self._store._meeting_audio(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+        )
+
+    async def mark_audio_unavailable(self) -> None:
+        await self._store._mark_meeting_audio_unavailable(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+        )
+
+    def resolve_audio(self, archive: Any, audio: MeetingAudio) -> Path | None:
+        if audio.relative_path is None or audio.byte_count is None:
+            return None
+        return archive.resolve(
+            self._account_id,
+            self.meeting_id,
+            audio.relative_path,
+            audio.byte_count,
+        )
+
 
 def create_phase2_app(
     *,
@@ -824,12 +1065,20 @@ def create_phase2_app(
     file_work_root: str | Path | None = None,
     file_inference_options: Mapping[str, object] | None = None,
     url_acquirer: Any | None = None,
+    meeting_audio_root: str | Path | None = None,
+    file_audio_archive: Any | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
     try:
         from fastapi import FastAPI, HTTPException
-        from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+        from fastapi.responses import (
+            HTMLResponse,
+            JSONResponse,
+            RedirectResponse,
+            Response,
+            StreamingResponse,
+        )
         from starlette.middleware.sessions import SessionMiddleware
     except ImportError as exc:  # pragma: no cover - package dependency is definitive.
         raise RuntimeError("Install FastAPI and itsdangerous to run the Phase-2 app.") from exc
@@ -837,16 +1086,24 @@ def create_phase2_app(
     if not oauth_cookie_secret:
         raise ValueError("oauth_cookie_secret is required.")
 
+    from .phase2_audio import MeetingAudioArchive
+    from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
+
+    resolved_work_root = Path(file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT).expanduser()
+    audio_archive = file_audio_archive or MeetingAudioArchive(
+        meeting_audio_root or resolved_work_root.parent / "meetings"
+    )
     file_tasks = None
     if file_runner is not None:
-        from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT, FileMeetingTasks
+        from .phase2_file import FileMeetingTasks
         from .phase2_url import UrlMediaAcquirer
 
         file_tasks = FileMeetingTasks(
             file_runner,
-            file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT,
+            resolved_work_root,
             **dict(file_inference_options or {}),
             url_acquirer=url_acquirer or UrlMediaAcquirer(),
+            audio_archive=audio_archive,
         )
 
     @asynccontextmanager
@@ -858,6 +1115,7 @@ def create_phase2_app(
                 file_tasks.clear_transient_work()
             app.state.phase2_store = store
             app.state.phase2_file_tasks = file_tasks
+            app.state.phase2_audio_archive = audio_archive
             yield
         finally:
             if file_tasks is not None:
@@ -1043,6 +1301,39 @@ def create_phase2_app(
             raise HTTPException(status_code=404, detail="Meeting not found.")
         return (await handle.snapshot()).to_dict()
 
+    @app.get("/api/meetings/{meeting_id}/audio/download")
+    async def download_meeting_audio(meeting_id: str, request: Request):
+        account = await require_account(request)
+        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
+        if handle is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
+        audio = await handle.audio()
+        if audio is None or audio.state not in {"available", "partial"}:
+            raise HTTPException(status_code=404, detail="Meeting audio is unavailable.")
+        archive = request.app.state.phase2_audio_archive
+        path = handle.resolve_audio(archive, audio)
+        if path is None:
+            await handle.mark_audio_unavailable()
+            raise HTTPException(status_code=404, detail="Meeting audio is unavailable.")
+
+        def whole_file():
+            with path.open("rb") as source:
+                while chunk := source.read(1024 * 1024):
+                    yield chunk
+
+        suffix = ".partial.mp3" if audio.state == "partial" else ".mp3"
+        return StreamingResponse(
+            whole_file(),
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="meeting-{meeting_id}{suffix}"'
+                ),
+                "Content-Length": str(audio.byte_count),
+                "Cache-Control": "private, no-store",
+            },
+        )
+
     return app
 
 
@@ -1067,6 +1358,31 @@ def _meeting_from_row(row: Any) -> Meeting:
         created_at_ms=int(row["created_at_ms"]),
         transcript=None if document_json is None else json.loads(document_json),
         transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
+        audio=_meeting_audio_from_row(row),
+    )
+
+
+def _meeting_audio_from_row(row: Any) -> MeetingAudio | None:
+    state = row["audio_state"]
+    if state is None:
+        return None
+    return MeetingAudio(
+        state=state,
+        relative_path=row["audio_relative_path"],
+        byte_count=None if row["audio_byte_count"] is None else int(row["audio_byte_count"]),
+        duration_ms=(
+            None if row["audio_duration_ms"] is None else int(row["audio_duration_ms"])
+        ),
+        format=row["audio_format"],
+        sample_rate_hz=(
+            None
+            if row["audio_sample_rate_hz"] is None
+            else int(row["audio_sample_rate_hz"])
+        ),
+        channels=None if row["audio_channels"] is None else int(row["audio_channels"]),
+        bit_rate_bps=(
+            None if row["audio_bit_rate_bps"] is None else int(row["audio_bit_rate_bps"])
+        ),
     )
 
 
@@ -1086,12 +1402,7 @@ def _signed_out_html(state: str) -> str:
 
 
 def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
-    history = "".join(
-        "<article data-meeting-card><button type=\"button\" data-open-meeting=\""
-        f"{html.escape(meeting.meeting_id)}\">{html.escape(meeting.title or meeting.mode.title() + ' meeting')}"
-        f" — {html.escape(meeting.status)}</button></article>"
-        for meeting in meetings
-    )
+    history = "".join(_meeting_history_card(meeting) for meeting in meetings)
     empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
     return f"""<!doctype html>
 <html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
@@ -1144,3 +1455,21 @@ for (const button of document.querySelectorAll('[data-open-meeting]')) {{
   }});
 }}
 </script></body></html>"""
+
+
+def _meeting_history_card(meeting: Meeting) -> str:
+    meeting_id = html.escape(meeting.meeting_id)
+    if meeting.audio is not None and meeting.audio.state in {"available", "partial"}:
+        label = "Download partial audio" if meeting.audio.state == "partial" else "Download audio"
+        audio_action = (
+            f'<a data-audio-download href="/api/meetings/{meeting_id}/audio/download">{label}</a>'
+        )
+    elif meeting.audio is not None and meeting.audio.state == "unavailable":
+        audio_action = "<span data-audio-unavailable>Audio unavailable</span>"
+    else:
+        audio_action = ""
+    title = html.escape(meeting.title or meeting.mode.title() + " meeting")
+    return (
+        f'<article data-meeting-card><button type="button" data-open-meeting="{meeting_id}">'
+        f"{title} — {html.escape(meeting.status)}</button>{audio_action}</article>"
+    )

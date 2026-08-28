@@ -44,3 +44,27 @@ choice (32 kbit/s), while 64 kbit/s costs 33% more storage without a selected ex
 reuse purpose. Perceived quality was not measured; this is an explicit product judgment, not a
 quality-gate result. The disposable listening clips were removed after the judgment; the reusable
 one-command size/timing measurement remains in this bench.
+
+## Terminal publication and cleanup
+
+Measured 2026-08-27 with:
+
+```bash
+uv run --frozen python prototypes/streaming-diarization/audio-retention-format/publication_probe.py
+```
+
+The real FFmpeg 8.1 path converted a disposable 48 kHz stereo WAV to one MP3 reported by ffprobe as
+MPEG Layer III, 16,000 Hz, mono, 48,000 bit/s. Every reported audio packet was 48,000 bit/s. MP3
+duration was 1,000 ms; metadata byte count equaled the 6,741-byte file. Root, Account, and Meeting
+directories were `0700`; the file was `0600`; the root-relative path was
+`account-a/meeting-a/audio.mp3`. After terminal cleanup, that MP3 was the only surviving file.
+
+Forced FFmpeg failure produced no staging/output/source files, selected explicit `unavailable`
+metadata with no path/bytes/duration, and left the transcript document byte-for-byte unchanged.
+Forced storage failure immediately after atomic replacement also raised explicitly, removed the
+uncommitted final MP3, left zero Meeting files, and preserved transcript truth.
+The accepted publication policy is therefore: encode to a same-directory staging MP3 with
+`libmp3lame -b:a 48k`, validate the stream and packet contract with ffprobe, fsync and atomically
+replace `audio.mp3`, durably commit metadata, then remove File working input. Metadata-commit failure
+must remove the just-published MP3. Audio failure records `unavailable` after transcript durability
+and never changes transcript success.

@@ -27,3 +27,11 @@ prefix as partial; audio failure never fails or deletes the transcript.
 - History offers complete download, partial download, or unavailable; there is no embedded player.
 - Wrong-owner download resolves `404` through the Account workspace.
 - MOSS implements no quota, expiry, eviction, deletion, backup, storage dashboard, or file manager.
+- The production-semantics probe in
+  `prototypes/streaming-diarization/audio-retention-format/publication_probe.py` accepts
+  `libmp3lame -b:a 48k` into a same-directory staging file followed by fsync and atomic replacement.
+  FFprobe measured MPEG Layer III, 16 kHz, mono, 48,000 bit/s at stream and every packet; metadata
+  duration/bytes matched the artifact, directories were `0700`, the MP3 was `0600`, and it alone
+  survived cleanup. Forced encoding failure left transcript truth unchanged and no source, staging,
+  or output file. Transcript durability therefore precedes encoding; available/unavailable metadata
+  precedes Meeting completion; metadata failure removes a newly published file.

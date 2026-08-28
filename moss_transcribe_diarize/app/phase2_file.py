@@ -39,6 +39,7 @@ class FileMeetingTasks:
         decoding: str | None = None,
         temperature: float | None = None,
         url_acquirer: Any | None = None,
+        audio_archive: Any | None = None,
     ):
         self._runner = runner
         self._work_root = Path(work_root).expanduser()
@@ -50,6 +51,7 @@ class FileMeetingTasks:
         self._decoding = decoding
         self._temperature = temperature if decoding == "sample" else None
         self._url_acquirer = url_acquirer
+        self._audio_archive = audio_archive
         self._tasks: set[asyncio.Task[None]] = set()
 
     def clear_transient_work(self) -> None:
@@ -227,16 +229,45 @@ class FileMeetingTasks:
             return
 
         try:
+            await handle.commit_transcript(document)
+        except AccountRevoked:
+            # Revocation/interruption is already the durable terminal authority. A late result
+            # must disappear rather than reconstructing a handle from its Meeting identifier.
+            self._remove_work_dir(input_path.parent)
+            return
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_work_dir(input_path.parent)
+            raise
+
+        audio_task = asyncio.create_task(
+            handle.publish_audio(self._audio_archive, input_path)
+        )
+        try:
+            await asyncio.shield(audio_task)
+        except asyncio.CancelledError:
+            try:
+                await audio_task
+            except AccountRevoked:
+                pass
+            except Exception:
+                LOGGER.error("File Meeting audio publication failed during shutdown.")
+            self._remove_work_dir(input_path.parent)
+            raise
+        except AccountRevoked:
+            self._remove_work_dir(input_path.parent)
+            return
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_work_dir(input_path.parent)
+            raise
+
+        try:
             self._remove_work_dir(input_path.parent)
         except Exception:
             await self._mark_failed(handle)
             raise
         try:
-            await handle.commit_transcript(document, terminal=True)
+            await handle.finish("completed")
         except AccountRevoked:
-            # Revocation/interruption is already the durable terminal authority. A late result
-            # must disappear rather than reconstructing a handle from its Meeting identifier.
             pass
-        except Exception:
-            await self._mark_failed(handle)
-            raise

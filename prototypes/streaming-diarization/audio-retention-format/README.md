@@ -15,3 +15,14 @@ python3 prototypes/streaming-diarization/audio-retention-format/measure.py
 The command transcodes eight real five-minute MOSS benchmark recordings into a temporary
 directory, prints the complete input/output and wall-time state as JSON, and removes the
 temporary files.
+
+Terminal publication and cleanup policy use a separate one-command falsifier:
+
+```bash
+uv run --frozen python prototypes/streaming-diarization/audio-retention-format/publication_probe.py
+```
+
+It generates a disposable stereo WAV, performs the proposed real FFmpeg conversion and atomic
+publication, probes stream and packet metadata, modes and surviving paths, then forces encoding
+and post-replace storage failures and prints transcript/unavailable/cleanup state. All files remain
+temporary.
