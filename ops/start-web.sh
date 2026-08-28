@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR="/mnt/d/Coding/MOSS-Transcribe-Diarize"
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 VENV_DIR="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/venv"
 MODEL_DIR="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/model"

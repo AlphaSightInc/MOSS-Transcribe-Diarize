@@ -74,10 +74,22 @@ def test_only_account_routes_and_allowlisted_static_assets_are_reachable(tmp_pat
         ("get", "/static/index.html"),
         ("get", "/static/mic-check.html"),
     )
+    implicit_framework_routes = (
+        "/docs",
+        "/docs/oauth2-redirect",
+        "/redoc",
+        "/openapi.json",
+    )
+
+    registered_paths = {route.path for route in app.routes}
+    assert not registered_paths.intersection(implicit_framework_routes)
 
     with TestClient(app, base_url="https://moss.test") as client:
         for method, path in retired_requests:
             assert client.request(method, path).status_code == 404, path
+        for path in implicit_framework_routes:
+            assert client.get(path).status_code == 404, path
+            assert client.head(path).status_code == 404, path
         assert client.get("/").status_code == 200
 
 

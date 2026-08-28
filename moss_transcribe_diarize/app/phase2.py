@@ -1926,7 +1926,13 @@ def create_phase2_app(
             finally:
                 await store.close()
 
-    app = FastAPI(title="MOSS", lifespan=lifespan)
+    app = FastAPI(
+        title="MOSS",
+        lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
     app.add_middleware(
         SessionMiddleware,
         secret_key=oauth_cookie_secret,
@@ -2113,10 +2119,7 @@ def create_phase2_app(
             ) as account:
                 file_tasks = request.app.state.phase2_file_tasks
                 admit_file_upload(request, file_tasks.work_root)
-                try:
-                    form = await request.form()
-                except FileUploadTimeout:
-                    raise
+                form = await request.form()
                 upload = form.get("file")
                 if upload is None or not hasattr(upload, "read"):
                     raise ValueError("Missing upload file.")

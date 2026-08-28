@@ -2,14 +2,11 @@
 import { describe, expect, it } from "vitest";
 import {
   clearSessionReattach,
-  clearSessionId,
   createMemoryStorage,
   loadBoolean,
   loadSessionReattach,
-  loadSessionId,
   saveBoolean,
   saveSessionReattach,
-  saveSessionId,
   storageKeys
 } from "./persistence";
 
@@ -28,18 +25,6 @@ describe("persistence helpers", () => {
     const storage = createMemoryStorage();
 
     expect(loadBoolean(storage, storageKeys.controlPanelCollapsed)).toBeNull();
-  });
-
-  it("round-trips and clears the session id used for mid-capture reattach", () => {
-    const storage = createMemoryStorage();
-
-    expect(loadSessionId(storage)).toBeNull();
-
-    saveSessionId(storage, "session-42");
-    expect(loadSessionId(storage)).toBe("session-42");
-
-    clearSessionId(storage);
-    expect(loadSessionId(storage)).toBeNull();
   });
 
   it("round-trips and clears the Account Meeting reattach record", () => {
@@ -61,5 +46,4 @@ describe("persistence helpers", () => {
     expect(loadSessionReattach(storage)).toBeNull();
     expect(storage.getItem(storageKeys.sessionReattach)).toBeNull();
   });
-
 });

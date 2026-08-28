@@ -14,9 +14,7 @@ const noopStorage: StorageLike = {
 export const storageKeys = {
   controlPanelCollapsed: "lt:ui:controlPanelCollapsed",
   historyPanelCollapsed: "lt:ui:historyPanelCollapsed",
-  sessionId: "lt:session:id",
-  sessionReattach: "lt:session:reattach",
-  llmSettings: "lt:llm:settings"
+  sessionReattach: "lt:session:reattach"
 } as const;
 
 export interface SessionReattachRecord {
@@ -79,19 +77,6 @@ export function loadBoolean(storage: StorageLike, key: string): boolean | null {
 
 export function saveBoolean(storage: StorageLike, key: string, value: boolean): void {
   writeJson(storage, key, value);
-}
-
-export function loadSessionId(storage: StorageLike): string | null {
-  const value = storage.getItem(storageKeys.sessionId)?.trim();
-  return value ? value : null;
-}
-
-export function saveSessionId(storage: StorageLike, sessionId: string): void {
-  storage.setItem(storageKeys.sessionId, sessionId);
-}
-
-export function clearSessionId(storage: StorageLike): void {
-  storage.removeItem(storageKeys.sessionId);
 }
 
 export function loadSessionReattach(storage: StorageLike): SessionReattachRecord | null {
