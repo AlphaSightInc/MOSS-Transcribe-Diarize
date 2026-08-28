@@ -1047,7 +1047,6 @@ def attach_phase2_live_routes(
     control = attach_live_routes(
         app,
         live.runtime,
-        None,
         live_helper_lease_seconds=live_helper_lease_seconds,
         tape_store=live.audio_stages,
         transport_adapter=_Phase2LiveTransportAdapter(live, require_account),

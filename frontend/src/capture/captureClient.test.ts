@@ -36,7 +36,7 @@ type TestLaneState = {
 type ActiveClient = {
   context: AudioContext | null;
   descriptor: CaptureDescriptor | null;
-  session: { id: string; viewToken: string } | null;
+  session: { id: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<string, TestLaneState>;
   stop: (deadlineSeconds: number) => Promise<void>;
@@ -72,7 +72,6 @@ function activeFrameClient(
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void,
 ): { client: ActiveClient; lane: TestLaneState } {
   const client = new CaptureClient({
-    captureBearer: "capture-token",
     helperVersion: "test",
     onTransportError,
   });
@@ -84,7 +83,7 @@ function activeFrameClient(
     frameSamples: 2,
     preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy },
   };
-  active.session = { id: "session", viewToken: "view-only" };
+  active.session = { id: "session" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   active.lanes.set("microphone", lane);
   return { client: active, lane };
@@ -109,7 +108,6 @@ function preSessionClient(onPreSessionFailure: (failure: PreSessionCaptureFailur
     close: vi.fn().mockResolvedValue(undefined),
   });
   const client = new CaptureClient({
-    captureBearer: "capture-token",
     helperVersion: "test",
     onPreSessionFailure,
   });
@@ -137,7 +135,7 @@ function postedSequences(fetchSpy: ReturnType<typeof vi.fn>): number[] {
 type EventLaneClient = {
   context: AudioContext | null;
   descriptor: { sampleRate: number; frameSamples: number } | null;
-  session: { id: string; viewToken: string } | null;
+  session: { id: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<CaptureLane, TestLaneState>;
   attachLane: (lane: "microphone" | "system", stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
@@ -173,11 +171,11 @@ async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone:
     createMediaStreamSource: () => source,
     createGain: () => mute,
   }) as unknown as AudioContext;
-  const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+  const client = new CaptureClient({ helperVersion: "test" });
   const active = client as unknown as EventLaneClient;
   active.context = context;
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
-  active.session = { id: "session", viewToken: "view-only" };
+  active.session = { id: "session" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   const microphone = fakeTrack();
   await active.attachLane("microphone", {} as MediaStream, [microphone]);
@@ -311,7 +309,6 @@ describe("browser capture frame contract", () => {
       status: 200,
       json: async () => ({
         id: "session",
-        view_token: "view-only",
         descriptor: { sample_rate: 4, frame_samples: 2 },
       }),
     });
@@ -351,14 +348,11 @@ describe("browser capture frame contract", () => {
   it("stops through the authenticated server route before local capture teardown", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({
-      captureBearer: "capture-token",
-      helperVersion: "test",
-    });
+    const client = new CaptureClient({ helperVersion: "test" });
     const clientState = client as unknown as {
-      session: { id: string; viewToken: string } | null;
+      session: { id: string } | null;
     };
-    clientState.session = { id: "session/with space", viewToken: "view-only" };
+    clientState.session = { id: "session/with space" };
 
     await client.stop(1.25);
 
@@ -371,7 +365,6 @@ describe("browser capture frame contract", () => {
         credentials: "same-origin",
         signal: expect.any(AbortSignal),
         headers: {
-          Authorization: "Bearer capture-token",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ deadline: 1.25 }),
@@ -380,7 +373,7 @@ describe("browser capture frame contract", () => {
     expect(clientState.session).toBeNull();
   });
 
-  it("uses the signed-in Account cookie without accepting or returning a bearer", async () => {
+  it("uses the signed-in Account cookie without another client credential", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       status: 201,
@@ -390,7 +383,7 @@ describe("browser capture frame contract", () => {
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ authority: "account", helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test" });
     const active = client as unknown as ActiveClient;
     active.context = { sampleRate: 4 } as AudioContext;
     active.descriptor = {
@@ -404,14 +397,12 @@ describe("browser capture frame contract", () => {
     active.onWorkletFrame("microphone", workletFrame(0));
     active.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
 
-    await expect(client.createSession()).resolves.toEqual({
-      id: "account-meeting",
-      viewToken: null,
-    });
-    expect(fetchSpy).toHaveBeenCalledWith(
+    await expect(client.createSession()).resolves.toEqual({ id: "account-meeting" });
+    expect(fetchSpy.mock.calls[0]).toEqual([
       "/api/live/sessions",
-      expect.objectContaining({ credentials: "same-origin", headers: {} }),
-    );
+      expect.objectContaining({ credentials: "same-origin" }),
+    ]);
+    expect((fetchSpy.mock.calls[0][1] as RequestInit).headers).toBeUndefined();
   });
 
   it("rejects an invalid stop deadline before issuing a request", async () => {
@@ -419,7 +410,7 @@ describe("browser capture frame contract", () => {
     vi.stubGlobal("fetch", fetchSpy);
 
     await expect(
-      stopCaptureSession({ id: "session", viewToken: "view" }, "capture-token", -1),
+      stopCaptureSession({ id: "session" }, -1),
     ).rejects.toThrow("stop deadline must be a non-negative finite number");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -427,9 +418,9 @@ describe("browser capture frame contract", () => {
   it("posts a final stopped heartbeat without a recurring timer loop", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test" });
     const active = client as unknown as ActiveClient;
-    active.session = { id: "session/with space", viewToken: "view-only" };
+    active.session = { id: "session/with space" };
 
     await active.stop(0);
 
@@ -567,11 +558,11 @@ describe("browser capture frame contract", () => {
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
-    const active = client as unknown as { session: { id: string; viewToken: string } | null };
+    const client = new CaptureClient({ helperVersion: "test" });
+    const active = client as unknown as { session: { id: string } | null };
     const context = (await client.prepare()) as unknown as FakeAudioContext;
     expect(context.audioWorklet.addModule).toHaveBeenCalledWith("/static/worklets/lane-framer.js");
-    active.session = { id: "session", viewToken: "view-only" };
+    active.session = { id: "session" };
 
     context.state = "suspended";
     context.dispatchEvent(new Event("statechange"));
@@ -644,9 +635,8 @@ describe("browser capture frame contract", () => {
     const display = preSessionClient(onPreSessionFailure);
     display.client.lanes.set("microphone", testLaneState());
     display.client.lanes.set("system", testLaneState());
-    (display.client as unknown as { session: { id: string; viewToken: string } | null }).session = {
+    (display.client as unknown as { session: { id: string } | null }).session = {
       id: "active-session",
-      viewToken: "view-only",
     };
     vi.stubGlobal("navigator", {
       mediaDevices: { getDisplayMedia: vi.fn().mockRejectedValue(displayError) },
@@ -746,12 +736,12 @@ describe("browser capture frame contract", () => {
       return Promise.resolve({ ok: true, status: 200 });
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test" });
     const active = client as unknown as {
-      session: { id: string; viewToken: string } | null;
+      session: { id: string } | null;
       scheduleHeartbeat: (state: string) => Promise<void>;
     };
-    active.session = { id: "session", viewToken: "view-only" };
+    active.session = { id: "session" };
     const close = vi.spyOn(client, "close").mockResolvedValue(undefined);
 
     void active.scheduleHeartbeat("capturing");
@@ -935,6 +925,23 @@ describe("browser capture frame contract", () => {
     );
   });
 
+  it("keeps Account-cookie capture publishing when Chrome backgrounds the tab", async () => {
+    vi.stubGlobal("document", { visibilityState: "hidden" });
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, lane } = activeFrameClient();
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(lane.postInFlight).toBe(false));
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [url, request] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/live/sessions/session/frames");
+    expect(request.headers).toEqual({ "Content-Type": "application/json" });
+    expect(lane.sequence).toBe(1);
+    expect(client.session).toEqual({ id: "session" });
+  });
+
   it("stops local capture on a frame that can never fit the server queue", async () => {
     const fetchSpy = vi.fn().mockResolvedValueOnce({
       ok: false,
@@ -959,12 +966,12 @@ describe("browser capture frame contract", () => {
     for (let turns = 0; turns < 6; turns += 1) {
       const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
       vi.stubGlobal("fetch", fetchSpy);
-      const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+      const client = new CaptureClient({ helperVersion: "test" });
       const active = client as unknown as {
-        session: { id: string; viewToken: string } | null;
+        session: { id: string } | null;
         scheduleHeartbeat: (state: string) => Promise<void>;
       };
-      active.session = { id: "session", viewToken: "view-only" };
+      active.session = { id: "session" };
 
       void active.scheduleHeartbeat("degraded");
       for (let turn = 0; turn < turns; turn += 1) await Promise.resolve();
@@ -982,12 +989,12 @@ describe("browser capture frame contract", () => {
   it("still posts the final stopped heartbeat when stop() lands in that window", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ captureBearer: "capture-token", helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test" });
     const active = client as unknown as {
-      session: { id: string; viewToken: string } | null;
+      session: { id: string } | null;
       scheduleHeartbeat: (state: string) => Promise<void>;
     };
-    active.session = { id: "session", viewToken: "view-only" };
+    active.session = { id: "session" };
 
     void active.scheduleHeartbeat("capturing");
     await Promise.resolve(); // the exact offset that used to swallow the next schedule
@@ -1067,7 +1074,6 @@ describe("browser capture frame contract", () => {
   it("reports the silent-microphone remedy and refuses a session for a lane that never produced any signal", async () => {
     const onPreflightStatus = vi.fn<(statusLine: string) => void>();
     const client = new CaptureClient({
-      captureBearer: "capture-token",
       helperVersion: "test",
       onPreflightStatus,
     });
@@ -1110,13 +1116,11 @@ describe("browser capture frame contract", () => {
       status: 200,
       json: async () => ({
         id: "session",
-        view_token: "view-only",
         descriptor: { sample_rate: 4, frame_samples: 2 },
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
     const client = new CaptureClient({
-      captureBearer: "capture-token",
       helperVersion: "test",
       onPreflightStatus,
     });

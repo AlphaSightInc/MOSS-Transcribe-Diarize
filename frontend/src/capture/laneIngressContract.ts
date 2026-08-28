@@ -4,7 +4,7 @@
  * Nothing in this file is guessed from the client's own comments. Every row of
  * `SERVER_FRAME_OUTCOMES` and every entry of `SERVER_SEQUENCE_CONSUMED` is measured
  * off the production ingress by
- * `evidence/phase1/x2-capture-client/probes/measure_frame_outcome_contract_probe.py`,
+ * the retained frame-outcome measurement,
  * which re-runs `LiveLaneIngress.accept` for each scenario, reads
  * `snapshot(lane).next_sequence` either side of the call, and exits non-zero if one
  * cell here disagrees with what it measured. Change the server and that probe fails

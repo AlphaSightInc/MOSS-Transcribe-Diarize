@@ -9,24 +9,9 @@
   "connectivity": 4,
   "exemptions": [
     {
-      "id": "right-column-rail",
-      "reference_selector": ".history-panel",
-      "candidate_selector": ".history-panel"
-    },
-    {
-      "id": "mode-segmented-control",
-      "reference_selector": "[role='tablist'][aria-label='Session mode']",
-      "candidate_selector": "[role='tablist'][aria-label='Session mode']"
-    },
-    {
       "id": "transcript-summary-toggle",
       "reference_selector": ".tr-legend-right",
       "candidate_selector": ".tr-legend-right"
-    },
-    {
-      "id": "phase1-capture-controls",
-      "reference_selector": "#control-panel .panel-body",
-      "candidate_selector": ".capture-supervisor"
     }
   ]
 }

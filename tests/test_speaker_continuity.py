@@ -403,53 +403,6 @@ def test_canonical_labels_continue_beyond_s08(identity_api):
     assert speakers_by_text(resolution)["new tenth speaker"] == "S10"
 
 
-def test_identity_summary_and_artifact_persist_through_job_api_reload():
-    fastapi = pytest.importorskip("fastapi")
-    assert fastapi is not None
-    from fastapi.testclient import TestClient
-    from moss_transcribe_diarize.app.server import create_app
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        app = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
-        app.state.manager.model_runner = IdentityMetadataRunner()
-        client = TestClient(app)
-
-        created = client.post(
-            "/api/jobs",
-            files={"file": ("sample.wav", b"audio", "audio/wav")},
-        )
-        assert created.status_code == 200
-        job_id = created.json()["id"]
-        finished = wait_terminal(client, job_id)
-
-        assert finished["status"] == "waiting_review", finished.get("error")
-        assert finished["identity_summary"] == {
-            "schema_version": 2,
-            "accepted_edges": 1,
-            "false_accepted_edges": 0,
-            "fragmented_recurring_speakers": 0,
-        }
-        artifact_path = Path(finished["files"]["identity_resolution"])
-        assert artifact_path.exists()
-        assert json.loads(artifact_path.read_text(encoding="utf-8")) == {
-            "schema_version": 2,
-            "summary": {
-                "accepted_edges": 1,
-                "false_accepted_edges": 0,
-                "fragmented_recurring_speakers": 0,
-            },
-        }
-
-        reloaded = create_app(model_path="fake-model", runs_dir=tmpdir, max_new_tokens=5)
-        reloaded.state.manager.model_runner = IdentityMetadataRunner()
-        persisted = TestClient(reloaded).get(f"/api/jobs/{job_id}").json()
-        assert persisted["identity_summary"] == {
-            "schema_version": 2,
-            "accepted_edges": 1,
-            "false_accepted_edges": 0,
-            "fragmented_recurring_speakers": 0,
-        }
-        assert persisted["files"]["identity_resolution"] == str(artifact_path)
 
 
 @pytest.fixture

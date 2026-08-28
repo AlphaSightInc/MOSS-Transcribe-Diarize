@@ -1,7 +1,0 @@
-Iteration 16 committed: `c55d6a6`.
-
-- W2 historic artifact: 59,992,997 → 288,007 bytes; raw PCM removed, predicates/bucket counts pinned.
-- Validation: preflight, 2 focused tests, compile, invariants, diff check PASS.
-- Next: bring tunnel launcher `affeaea`; run vLLM-backed W2.
-- Remaining dirty file: loop telemetry only.
-

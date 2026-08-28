@@ -26,18 +26,14 @@ live-runs/
 *.onnx
 *.log
 
-# Live access credentials and operator pairing material.
+# Host credentials and TLS keys.
 *.key
 *.pem
-*live-auth*.json
-*pairing-payload*
 
-# Host-local live service profile. The tracked template is ops/moss-live.env.example; the
-# filled-in file names host paths and belongs only to the deployment host.
-ops/moss-live.env
+# Host-local Account service profile. The tracked template contains no secrets.
+ops/moss-account.env
 
-# Code-signing material for the local macOS capture app. A .p12 carries a private
-# key and a .keychain-db carries the signing identity; neither may ever be committed.
+# Local certificate and keychain material; none may be committed.
 *.p12
 *.crt
 *.keychain-db

@@ -13,6 +13,7 @@ export default defineConfig({
     cssCodeSplit: false,
     sourcemap: true,
     rollupOptions: {
+      input: path.resolve(__dirname, "src/main.tsx"),
       output: {
         codeSplitting: false,
         entryFileNames: "app.js",

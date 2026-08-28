@@ -1,7 +1,0 @@
-Iteration 31 committed: `765718a`.
-
-- Live vLLM marker inventory: 8/8 unique.
-- Focused tests: 10 passed; contract validator, compile, diff check passed.
-- G4/G5 remain uncertified; next is fresh full v2 matrix run.
-- Only uncommitted file: launcher telemetry.
-

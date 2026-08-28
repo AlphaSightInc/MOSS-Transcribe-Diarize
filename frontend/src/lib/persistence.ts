@@ -1,6 +1,4 @@
-// Ported from the reference frontend. The LLM-settings cache is omitted: the LLM layer is
-// Phase 2 (C10). Everything retained is the storage primitive set the Phase 1 sessionStorage
-// reattach ruling depends on.
+// Browser preferences and the Account Meeting ID used for read-only reload reattachment.
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -23,8 +21,6 @@ export const storageKeys = {
 
 export interface SessionReattachRecord {
   sessionId: string;
-  authority?: "bearer" | "account";
-  viewToken: string | null;
 }
 
 export function browserStorage(): StorageLike {
@@ -101,14 +97,11 @@ export function clearSessionId(storage: StorageLike): void {
 export function loadSessionReattach(storage: StorageLike): SessionReattachRecord | null {
   const value = readJson<unknown>(storage, storageKeys.sessionReattach);
   const record = value as SessionReattachRecord;
-  const accountRecord = record?.authority === "account";
   if (
     typeof value !== "object" ||
     value === null ||
     typeof record.sessionId !== "string" ||
-    !record.sessionId.trim() ||
-    (!accountRecord && (typeof record.viewToken !== "string" || !record.viewToken.trim())) ||
-    (accountRecord && record.viewToken !== null)
+    !record.sessionId.trim()
   ) {
     storage.removeItem(storageKeys.sessionReattach);
     return null;

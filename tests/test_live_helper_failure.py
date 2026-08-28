@@ -250,14 +250,6 @@ class FakeReleaseRegistry:
         self.released.append(session_id)
 
 
-class FakeAccess:
-    def __init__(self) -> None:
-        self.released: list[str] = []
-
-    def release_session(self, session_id: str):
-        self.released.append(session_id)
-
-
 def test_explicit_failed_lane_requires_stable_non_empty_code():
     with pytest.raises(ValueError, match="failure_code"):
         HelperHeartbeat.from_dict(
@@ -302,7 +294,6 @@ def test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once
     v2_sessions = FakeV2Sessions()
     v2_mixers = FakeReleaseRegistry()
     helper_presence = FakeReleaseRegistry()
-    access = FakeAccess()
     aborted: list[tuple[str, str, dict | None]] = []
     terminal_log = RecordingTerminalLog()
     coordinator = LiveHelperFailureCoordinator(
@@ -311,7 +302,6 @@ def test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once
         v2_sessions=v2_sessions,
         v2_mixers=v2_mixers,
         helper_presence=helper_presence,
-        access=access,
         abort_mono=recording_abort(aborted),
         on_terminal=terminal_log,
     )
@@ -336,7 +326,6 @@ def test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once
     ]
     assert v2_mixers.released == ["session-a"]
     assert helper_presence.released == ["session-a"]
-    assert access.released == ["session-a"]
     # A lease that ran out is recorded exactly like any other terminal transition, and it
     # says outright that no lane reported a failure - a silent expiry and an expiry after
     # two failed lanes are different diagnoses.

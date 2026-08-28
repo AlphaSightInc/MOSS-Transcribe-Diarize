@@ -1,28 +1,10 @@
-import { useState } from "preact/hooks";
 import { ControlPanel } from "./components/ControlPanel";
-import { FilePanel } from "./components/FilePanel";
-import { SegmentedControl } from "./components/SegmentedControl";
 import { TranscriptPane } from "./components/TranscriptPane";
-import {
-  resetSessionState,
-  sessionId,
-  sessionMode,
-  sessionStatus,
-  sessionStatusLine
-} from "./state/session";
+import { sessionStatus, sessionStatusLine } from "./state/session";
 
-type PhaseOneMode = "live" | "file";
-
+/** The sole Account-owned Live surface mounted inside the authenticated workspace. */
 export function App() {
-  const accountAuthority =
-    document.querySelector('meta[name="moss-authority"]')?.getAttribute("content") === "account";
-  const [mode, setMode] = useState<PhaseOneMode>("live");
-  const [captureBearer, setCaptureBearer] = useState("");
-
-  const displayedMode = accountAuthority && sessionId.value ? sessionMode.value : mode;
-  const modeLabel = displayedMode === "live" ? "Live" : "File";
   const status = sessionStatus.value;
-  const modeLocked = status === "active" || status === "closing";
   const statusLabel = sessionStatusLine.value ?? (status === "idle" ? "Standby" : status);
 
   return (
@@ -32,7 +14,7 @@ export function App() {
       data-accent="ink"
       data-density="compact"
       data-font="serif"
-      data-authority={accountAuthority ? "account" : "bearer"}
+      data-authority="account"
     >
       <header className="topbar">
         <span className="status top-status" data-state={status}>
@@ -43,70 +25,25 @@ export function App() {
         <div className="session-meta" aria-live="polite">
           <span className="session-title">LiveTranscribe</span>
           <span className="session-dot" aria-hidden="true" />
-          <span className="session-chip">{modeLabel}</span>
+          <span className="session-chip">Live</span>
         </div>
 
         <div className="top-right" />
       </header>
 
-      <main
-        className="main"
-        id="main"
-        data-left-collapsed="false"
-        data-right-collapsed="true"
-      >
+      <main className="main" id="main" data-left-collapsed="false" data-right-collapsed="true">
         <aside className="panel control-panel" id="control-panel" aria-labelledby="capture-panel-title">
           <div className="panel-head">
             <h2 className="panel-title" id="capture-panel-title">Controls</h2>
           </div>
           <div className="panel-body">
-            <section className="control-section">
-              <div className="label">Mode</div>
-              <SegmentedControl
-                ariaLabel="Session mode"
-                disabled={modeLocked}
-                options={[
-                  { value: "live", label: "Live" },
-                  ...(accountAuthority ? [] : [{ value: "file" as const, label: "File" }])
-                ]}
-                value={mode}
-                onChange={(nextMode) => {
-                  if (nextMode === mode || modeLocked) return;
-                  resetSessionState();
-                  setMode(nextMode);
-                }}
-              />
-            </section>
-
-            {mode === "live" ? (
-              <ControlPanel
-                authority={accountAuthority ? "account" : "bearer"}
-                captureBearer={captureBearer}
-                onCaptureBearerChange={setCaptureBearer}
-              />
-            ) : (
-              <FilePanel captureBearer={captureBearer} />
-            )}
+            <ControlPanel />
           </div>
         </aside>
 
         <section className="transcript-shell" id="transcript-panel">
           <TranscriptPane />
         </section>
-
-        {!accountAuthority ? (
-          <aside
-            className="panel history-panel collapsed"
-            aria-hidden="true"
-            aria-labelledby="history-panel-title"
-          >
-            <div className="panel-head">
-              <h2 className="panel-title" id="history-panel-title">
-                <span className="panel-title-rail">History</span>
-              </h2>
-            </div>
-          </aside>
-        ) : null}
       </main>
     </div>
   );

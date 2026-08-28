@@ -52,11 +52,6 @@ class _SessionReleaseRegistry(Protocol):
         ...
 
 
-class _AccessRegistry(Protocol):
-    def release_session(self, session_id: str) -> Any:
-        ...
-
-
 class _MonoAbort(Protocol):
     def __call__(
         self,
@@ -160,7 +155,6 @@ class LiveHelperFailureCoordinator:
         v2_mixers: _SessionReleaseRegistry | None = None,
         tapes: _SessionReleaseRegistry | None = None,
         helper_presence: _SessionReleaseRegistry | None = None,
-        access: _AccessRegistry | None = None,
         abort_mono: _MonoAbort | None = None,
         on_terminal: Callable[[LiveHelperTerminalRecord], None] | None = None,
     ) -> None:
@@ -172,7 +166,6 @@ class LiveHelperFailureCoordinator:
         self._v2_mixers = v2_mixers
         self._tapes = tapes
         self._helper_presence = helper_presence
-        self._access = access
         self._abort_mono = abort_mono
         self._on_terminal = on_terminal or log_live_helper_terminal
         self._sessions: dict[str, _LeaseState] = {}
@@ -383,8 +376,6 @@ class LiveHelperFailureCoordinator:
             self._tapes.release(session_id)
         if self._helper_presence is not None:
             self._helper_presence.release(session_id)
-        if self._access is not None:
-            self._access.release_session(session_id)
 
 
 def _terminal_record(

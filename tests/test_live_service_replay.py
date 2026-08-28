@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import socket
 import tempfile
-import threading
 import time
 import unittest
 import wave
@@ -49,86 +46,7 @@ from tests.test_live_terminal_lifecycle import MEETING_SAMPLES as _TERMINAL_MEET
 from tests.test_live_terminal_lifecycle import _runtime as _terminal_runtime
 
 
-UVICORN_AVAILABLE = importlib.util.find_spec("uvicorn") is not None
-
-
 class LiveServiceReplayContractTest(unittest.TestCase):
-    def test_help_shape_parses_service_backed_flags(self):
-        with self.assertRaises(SystemExit) as cm:
-            live_service_replay.parse_args(["--help"])
-
-        self.assertEqual(cm.exception.code, 0)
-
-    def test_required_cli_flags_are_separate_from_offline_manifest_replay(self):
-        args = live_service_replay.parse_args(
-            [
-                "--base-url",
-                "http://127.0.0.1:7860",
-                "--audio",
-                "audio.wav",
-                "--out-dir",
-                "runs/live-service-replay",
-                "--pace",
-                "1.0",
-                "--max-pacing-lag",
-                "0.25",
-                "--runs",
-                "3",
-                "--expect-revision",
-                "revision",
-                "--expect-provider-hash",
-                "a" * 64,
-                "--expect-config-hash",
-                "b" * 64,
-            ]
-        )
-
-        self.assertEqual(args.base_url, "http://127.0.0.1:7860")
-        self.assertEqual(args.audio, "audio.wav")
-        self.assertEqual(args.runs, 3)
-        self.assertEqual(args.expect_provider_hash, "a" * 64)
-        self.assertIsNone(args.bearer_token_file)
-
-    def test_http_replay_cli_reads_bearer_from_secret_file(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            token_file = root / "capture.secret"
-            token_file.write_text(" capture-token \n", encoding="utf-8")
-            captured = {}
-
-            def run_service_replay(*, service, **kwargs):
-                captured["bearer_token"] = service.bearer_token
-                captured["base_url"] = service.base_url
-                captured["kwargs"] = kwargs
-
-            original = live_service_replay.run_service_replay
-            live_service_replay.run_service_replay = run_service_replay
-            try:
-                exit_code = live_service_replay.main(
-                    [
-                        "--base-url",
-                        "https://moss.lan:7860",
-                        "--audio",
-                        "audio.wav",
-                        "--out-dir",
-                        str(root / "out"),
-                        "--expect-revision",
-                        "revision",
-                        "--expect-provider-hash",
-                        "a" * 64,
-                        "--expect-config-hash",
-                        "b" * 64,
-                        "--bearer-token-file",
-                        str(token_file),
-                    ]
-                )
-            finally:
-                live_service_replay.run_service_replay = original
-
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(captured["bearer_token"], "capture-token")
-        self.assertEqual(captured["base_url"], "https://moss.lan:7860")
-
     def test_service_failure_kinds_map_to_typed_replay_exits(self):
         error = LiveServiceProviderConfigFailure("config mismatch")
 
@@ -772,86 +690,6 @@ class LiveServiceReplayContractTest(unittest.TestCase):
 
         self.assertEqual(service.frame_sequences, [])
 
-    @unittest.skipUnless(UVICORN_AVAILABLE, "uvicorn is not installed")
-    def test_http_adapter_crosses_real_loopback_live_routes(self):
-        from moss_transcribe_diarize.app.live_auth import LiveAccessRegistry, LivePeer
-        from moss_transcribe_diarize.app.server import create_app
-        import uvicorn
-
-        descriptor = _descriptor(frame_samples=400)
-        auth_root = Path(tempfile.mkdtemp())
-        registry = LiveAccessRegistry(
-            state_path=auth_root / "live-auth.json",
-            server_cert_sha256="ab" * 32,
-        )
-        grant = registry.issue_pairing(LivePeer("127.0.0.1", "http"), now=0.0)
-        capture = registry.exchange_pairing(
-            LivePeer("192.168.68.20", "https"),
-            grant.pairing_payload,
-            device_id="replay-device",
-            now=1.0,
-        )
-        app = create_app(
-            model_path="fake-model",
-            runs_dir=tempfile.mkdtemp(),
-            live_enabled=True,
-            live_access_registry=registry,
-            live_helper_lease_seconds=30.0,
-            live_runtime_factory=lambda: _runtime(
-                descriptor=descriptor,
-                speech=(True, False),
-                session_ids=("http-session",),
-                decoder=RecordingDecoder(elapsed_sec=0.01),
-            ),
-        )
-        port = _free_port()
-        server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="critical"))
-        thread = threading.Thread(target=server.run, daemon=True)
-        thread.start()
-        try:
-            deadline = time.monotonic() + 5.0
-            while not server.started and time.monotonic() < deadline:
-                time.sleep(0.01)
-            self.assertTrue(server.started)
-
-            service = live_service_replay.HttpLiveReplayService(
-                base_url=f"http://127.0.0.1:{port}",
-                bearer_token=capture.device_token,
-            )
-            created = service.create()
-            result = service.accept_frame(
-                created.session_id,
-                AudioFrame(sequence=0, pcm=b"\0\0" * 400, sample_count=400),
-            )
-            events = service.events(created.session_id, since_seq=0)
-            filtered_events = service.events(created.session_id, since_seq=1)
-            service.accept_frame(
-                created.session_id,
-                AudioFrame(sequence=1, pcm=b"\0\0" * 400, sample_count=400),
-            )
-            deadline = time.monotonic() + 5.0
-            processed = []
-            while time.monotonic() < deadline:
-                processed = [event for event in service.events(created.session_id) if event.kind == "canonical_processed"]
-                if processed:
-                    break
-                time.sleep(0.01)
-
-            self.assertEqual(created.session_id, "http-session")
-            self.assertEqual(result.ack.accepted_samples, 400)
-            self.assertEqual(events[0].kind, "session_created")
-            self.assertEqual([event.seq for event in filtered_events], [1])
-            self.assertEqual(filtered_events[0].kind, "frame_accepted")
-            self.assertTrue(processed)
-            self.assertEqual(processed[0].payload["canonical_decode_elapsed_sec"], 0.01)
-            self.assertEqual(processed[0].payload["frozen_span_sample_count"], 400)
-            self.assertEqual(processed[0].payload["frozen_span_duration_sec"], 400 / LIVE_SAMPLE_RATE)
-            self.assertAlmostEqual(processed[0].payload["canonical_decode_rtf"], 0.4)
-        finally:
-            server.should_exit = True
-            thread.join(timeout=5)
-
-
 class ReplayTerminalFinalizationWaitTest(unittest.TestCase):
     """Plan §12.3 from the measuring client's side: a run ends when the *meeting* does.
 
@@ -970,36 +808,6 @@ class ReplayTerminalFinalizationWaitTest(unittest.TestCase):
         self.assertEqual(terminal["status"], "failed")
         self.assertEqual(
             [record["kind"] for record in trace].count("terminal_finalization_wait"), 0
-        )
-
-    def test_the_deadline_is_the_callers_and_reaches_the_manifest(self):
-        args = live_service_replay.parse_args(
-            [
-                "--base-url",
-                "http://127.0.0.1:7860",
-                "--audio",
-                "audio.wav",
-                "--out-dir",
-                "runs/live-service-replay",
-                "--expect-revision",
-                "revision",
-                "--expect-provider-hash",
-                "a" * 64,
-                "--expect-config-hash",
-                "b" * 64,
-            ]
-        )
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            trace, _ = _run_terminal_replay(root, finalizer=None, finalization_deadline=12.5)
-            manifest = json.loads((root / "out/replay-manifest.json").read_text(encoding="utf-8"))
-
-        self.assertEqual(
-            args.finalization_deadline, live_service_replay.TERMINAL_FINALIZATION_DEADLINE_SECONDS
-        )
-        self.assertEqual(manifest["cli"]["finalization_deadline"], 12.5)
-        self.assertEqual(
-            _one_trace_record(self, trace, "terminal_finalization_wait")["deadline_seconds"], 12.5
         )
 
     def test_a_non_positive_deadline_is_refused_before_any_audio_is_sent(self):
@@ -1504,12 +1312,6 @@ def _write_wav(path: Path, *, samples: int) -> None:
 
 def _jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-
-
-def _free_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
 
 
 if __name__ == "__main__":

@@ -1,9 +1,0 @@
-Implemented/export caveat commit `7a67754`.
-
-- Non-final (`confirmed`/`provisional`) exports now warn in Markdown, text, and JSON.
-- Fully final exports remain unmarked.
-- Validated: Vitest 4/4; TypeScript typecheck passed.
-- Remaining: local-service auth evidence; frontend bearer scope grant.
-
-Loop telemetry remains uncommitted.
-

@@ -1,6 +1,4 @@
-// Ported from the reference frontend. The two LLM-settings-cache cases are omitted with the
-// cache itself (Phase 2, C10); everything here covers the storage primitives Phase 1 keeps,
-// including the session-id round trip the sessionStorage reattach ruling depends on.
+// Account workspace browser preferences and read-only Meeting reattachment.
 import { describe, expect, it } from "vitest";
 import {
   clearSessionReattach,
@@ -44,41 +42,24 @@ describe("persistence helpers", () => {
     expect(loadSessionId(storage)).toBeNull();
   });
 
-  it("round-trips and clears the tab-scoped reattach record", () => {
+  it("round-trips and clears the Account Meeting reattach record", () => {
     const storage = createMemoryStorage();
 
     expect(loadSessionReattach(storage)).toBeNull();
-    saveSessionReattach(storage, { sessionId: "session-42", viewToken: "view-only" });
-    expect(loadSessionReattach(storage)).toEqual({
-      sessionId: "session-42",
-      viewToken: "view-only"
-    });
+    saveSessionReattach(storage, { sessionId: "session-42" });
+    expect(loadSessionReattach(storage)).toEqual({ sessionId: "session-42" });
 
     clearSessionReattach(storage);
     expect(loadSessionReattach(storage)).toBeNull();
   });
 
-  it("clears malformed reattach credentials", () => {
+  it("clears malformed reattach records", () => {
     const storage = createMemoryStorage({
-      [storageKeys.sessionReattach]: JSON.stringify({ sessionId: "session-42" })
+      [storageKeys.sessionReattach]: JSON.stringify({ sessionId: "" })
     });
 
     expect(loadSessionReattach(storage)).toBeNull();
     expect(storage.getItem(storageKeys.sessionReattach)).toBeNull();
   });
 
-  it("reattaches an Account observer from Meeting ID without storing authority", () => {
-    const storage = createMemoryStorage();
-
-    saveSessionReattach(storage, {
-      sessionId: "account-meeting",
-      authority: "account",
-      viewToken: null,
-    });
-    expect(loadSessionReattach(storage)).toEqual({
-      sessionId: "account-meeting",
-      authority: "account",
-      viewToken: null,
-    });
-  });
 });

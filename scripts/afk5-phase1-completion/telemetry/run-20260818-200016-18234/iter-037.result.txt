@@ -1,9 +1,0 @@
-Iteration 37 committed: `2dff3a6`.
-
-- Live frozen matrix complete; endpoint probes pre/post: 200.
-- 1/2/4 screens + 4-session 600s soak pass; soak p95 2.617s.
-- 8-session fails throughput only: p95 47.160s.
-- Lifecycle audit passes: 5,338/5,338 records.
-- Overall still non-qualifying: overload misses one peer’s rendered marker before reconnect. Next: bounded rendered-ownership wait probe.
-- Launcher telemetry remains intentionally unstaged.
-

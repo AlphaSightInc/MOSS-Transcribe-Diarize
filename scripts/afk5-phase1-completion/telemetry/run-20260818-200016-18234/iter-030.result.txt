@@ -1,6 +1,0 @@
-Committed `bcab94d` — W2 verdict now fails closed; raw run-state unchanged.
-
-PASS: JSON assertions, raw-state SHA preservation, diff check.
-
-Next: unique markers + overload isolation/reconnect evaluator. Loop telemetry left untouched.
-

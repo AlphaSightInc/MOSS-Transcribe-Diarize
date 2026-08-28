@@ -215,7 +215,7 @@ TEXT_REVISION_SOURCES = ("rolling", "terminal")
 
 @dataclass(frozen=True, slots=True)
 class EffectiveTranscriptSegment:
-    """One segment of the surface the portal and export display (plan §7.1).
+    """One segment of the surface the Account browser and export display (plan §7.1).
 
     Sample integers are authoritative; seconds are presentation values. `canonical_speaker`
     is `None` when no identity has been established for these words, which renders as
@@ -851,8 +851,9 @@ class LiveSession:
     def _effective_transcript(self) -> tuple[EffectiveTranscriptSegment, ...]:
         """The surface a reader is shown: revised prefix, then the base's provisional suffix.
 
-        Rebuilt only when something changed it (`_surface_version`), because a portal polls
-        this several times a second and a meeting's committed spans are O(minutes).
+        Rebuilt only when something changed it (`_surface_version`), because the Account
+        browser polls this several times a second and a meeting's committed spans are
+        O(minutes).
         """
 
         if self._effective_cache is not None and self._effective_cache[0] == self._surface_version:
@@ -887,7 +888,7 @@ class LiveSession:
 
         Published means what a reader is shown: a span a sweep has relabelled contributes its
         corrected labels, so the base timeline the projection votes on is the same one the
-        portal renders.
+        Account browser renders.
         """
 
         segments: list[EffectiveTranscriptSegment] = []

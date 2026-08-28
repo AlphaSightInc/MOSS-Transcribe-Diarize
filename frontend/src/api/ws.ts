@@ -26,7 +26,7 @@ export function dispatchWsEvent(event: WsEvent): void {
       applyTranscriptUpdate(event.items, event.metadata);
       return;
     case "stop_progress":
-      // Phase 1 has no LLM state. The event is preserved so later consumers can observe the
+      // The Account transcript has no LLM state. The event is preserved so consumers can observe the
       // reference lifecycle seam without inventing an unreachable LLM event.
       return;
   }

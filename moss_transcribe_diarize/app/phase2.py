@@ -1,8 +1,4 @@
-"""The small Phase-2 ownership and sign-in foundation.
-
-Phase 1's global JobManager is deliberately not imported here.  This module starts with
-the only authority Phase 2 permits: a verified Google identity opens one AccountWorkspace.
-"""
+"""The Account product's ownership, persistence, and sign-in foundation."""
 
 from __future__ import annotations
 
@@ -1786,13 +1782,13 @@ def create_phase2_app(
     try:
         from fastapi import FastAPI, HTTPException
         from fastapi.responses import (
+            FileResponse,
             HTMLResponse,
             JSONResponse,
             RedirectResponse,
             Response,
             StreamingResponse,
         )
-        from fastapi.staticfiles import StaticFiles
         from starlette.middleware.sessions import SessionMiddleware
     except ImportError as exc:  # pragma: no cover - package dependency is definitive.
         raise RuntimeError("Install FastAPI and itsdangerous to run the Phase-2 app.") from exc
@@ -1801,7 +1797,12 @@ def create_phase2_app(
         raise ValueError("oauth_cookie_secret is required.")
 
     from .phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
-    from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
+    from .phase2_file import (
+        DEFAULT_PHASE2_FILE_WORK_ROOT,
+        FileUploadRejected,
+        FileUploadTimeout,
+        admit_file_upload,
+    )
     from .phase2_lifecycle import AccountLifecycleUnavailable
 
     resolved_work_root = Path(file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT).expanduser()
@@ -1936,10 +1937,40 @@ def create_phase2_app(
     )
     frontend_dir = Path(__file__).resolve().parents[2] / "ProjectResources" / "Frontend"
     live_frontend_available = bool(
-        phase2_live is not None and (frontend_dir / "index.html").is_file()
+        phase2_live is not None
+        and all(
+            (frontend_dir / relative).is_file()
+            for relative in ("app.js", "styles.css", "worklets/lane-framer.js")
+        )
     )
-    if live_frontend_available:
-        app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+    static_assets = frozenset(
+        {
+            "app.js",
+            "styles.css",
+            "logo-mark.svg",
+            "worklets/lane-framer.js",
+            "fonts/Fraunces-600.woff2",
+            "fonts/Fraunces-700.woff2",
+            "fonts/IBMPlexMono-400.woff2",
+            "fonts/IBMPlexMono-500.woff2",
+            "fonts/Inter-400.woff2",
+            "fonts/Inter-500.woff2",
+            "fonts/Inter-600.woff2",
+            "fonts/Inter-700.woff2",
+            "fonts/SourceSerif4-400.woff2",
+            "fonts/SourceSerif4-500.woff2",
+            "fonts/SourceSerif4-600.woff2",
+        }
+    )
+
+    @app.get("/static/{asset_path:path}", include_in_schema=False)
+    async def static_asset(asset_path: str):
+        if asset_path not in static_assets:
+            raise HTTPException(status_code=404, detail="Asset not found.")
+        path = frontend_dir / asset_path
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Asset not found.")
+        return FileResponse(path, headers={"Cache-Control": "public, max-age=3600"})
 
     @app.exception_handler(AccountRevoked)
     async def account_revoked(_: Request, __: AccountRevoked):
@@ -2080,15 +2111,24 @@ def create_phase2_app(
             async with request.app.state.phase2_lifecycle.admit_creation(
                 session_id or "",
             ) as account:
-                form = await request.form()
+                file_tasks = request.app.state.phase2_file_tasks
+                admit_file_upload(request, file_tasks.work_root)
+                try:
+                    form = await request.form()
+                except FileUploadTimeout:
+                    raise
                 upload = form.get("file")
                 if upload is None or not hasattr(upload, "read"):
                     raise ValueError("Missing upload file.")
-                handle = await request.app.state.phase2_file_tasks.accept(
+                handle = await file_tasks.accept(
                     request.app.state.phase2_store.workspace(account),
                     upload,
                 )
             return (await handle.snapshot()).to_dict()
+        except FileUploadRejected as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        except FileUploadTimeout as exc:
+            raise HTTPException(status_code=408, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except AccountRevoked:

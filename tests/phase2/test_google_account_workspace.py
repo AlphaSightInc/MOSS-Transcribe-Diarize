@@ -9,7 +9,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -1284,7 +1284,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
 def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer(
     monkeypatch,
 ):
-    from moss_transcribe_diarize.app import live_provider_bundle
+    from moss_transcribe_diarize.app import live_provider_bundle, runner_composition
 
     seen: dict[str, object] = {}
     config = object()
@@ -1298,15 +1298,15 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
             return config
 
     class LiveRunner:
-        def __init__(self, args):
-            seen["live_args"] = args
+        def __init__(self, **kwargs):
+            seen["live_args"] = kwargs
 
-    web_cli = ModuleType("moss_transcribe_diarize.app.web_cli")
-    web_cli._LiveCliRunnerProxy = LiveRunner
-    web_cli._live_terminal_finalizer = (
-        lambda args, *, file_runner: ("terminal", args, file_runner)
+    monkeypatch.setattr(runner_composition, "LazyLiveRunner", LiveRunner)
+    monkeypatch.setattr(
+        runner_composition,
+        "build_terminal_finalizer",
+        lambda **kwargs: ("terminal", kwargs),
     )
-    monkeypatch.setitem(sys.modules, "moss_transcribe_diarize.app.web_cli", web_cli)
 
     def build(received_config, canonical_runner, **kwargs):
         seen["bundle"] = (received_config, canonical_runner, kwargs)
@@ -1317,6 +1317,19 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
     args = SimpleNamespace(
         live_provider_manifest="/etc/moss/live-provider.json",
         live_helper_lease_seconds=30.0,
+        model="fake-model",
+        device="cpu",
+        dtype="float32",
+        backend="hf",
+        vllm_base_url=None,
+        vllm_model=None,
+        vllm_api_key="EMPTY",
+        vllm_timeout=600.0,
+        prompt="prompt",
+        max_len=16384,
+        max_new_tokens=12000,
+        decoding="greedy",
+        temperature=1.0,
     )
 
     assert phase2_web_cli._build_live_runtime_factory(args, file_runner) is runtime_factory
@@ -1325,6 +1338,16 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
     assert isinstance(canonical_runner, LiveRunner)
     assert canonical_runner is not file_runner
     assert kwargs == {
-        "vector_journal": None,
-        "terminal_finalizer": ("terminal", args, file_runner),
+        "terminal_finalizer": (
+            "terminal",
+            {
+                "runner": file_runner,
+                "prompt": "prompt",
+                "max_length": 16384,
+                "max_new_tokens": 12000,
+                "decoding": "greedy",
+                "temperature": 1.0,
+                "max_length_cap": None,
+            },
+        ),
     }

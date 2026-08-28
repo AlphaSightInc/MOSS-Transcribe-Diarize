@@ -20,8 +20,6 @@ const mocks = vi.hoisted(() => {
     }),
     captureClose: vi.fn().mockResolvedValue(undefined),
     captureOptions: null as {
-      authority?: string;
-      captureBearer?: string;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
     } | null,
@@ -75,24 +73,22 @@ describe("ControlPanel reattach", () => {
     root.remove();
   });
 
-  it("reattaches with only the tab-scoped view credential", async () => {
+  it("reattaches read-only with only the Account Meeting ID", async () => {
     window.sessionStorage.setItem(
       storageKeys.sessionReattach,
-      JSON.stringify({ sessionId: "session-42", viewToken: "view-only" })
+      JSON.stringify({ sessionId: "session-42" })
     );
 
     await act(async () => {
-      render(<ControlPanel captureBearer="" onCaptureBearerChange={() => undefined} />, root);
+      render(<ControlPanel />, root);
     });
 
     expect(mocks.poller.start).toHaveBeenCalledOnce();
     expect(mocks.createMossSessionPoller).toHaveBeenCalledWith(
       expect.objectContaining({
-        sessionId: "session-42",
-        accessToken: "view-only"
+        sessionId: "session-42"
       })
     );
-    expect(mocks.createMossSessionPoller.mock.calls[0][0]).not.toHaveProperty("terminalAccessToken");
     expect(root.querySelector('[role="status"]')?.textContent).toContain("Transcript reattached");
     const detach = [...root.querySelectorAll("button")].find(
       (button) => button.textContent?.trim() === "Detach transcript"
@@ -109,7 +105,7 @@ describe("ControlPanel reattach", () => {
       "Site settings > Microphone and select the correct default input.";
 
     await act(async () => {
-      render(<ControlPanel captureBearer="capture-token" onCaptureBearerChange={() => undefined} />, root);
+      render(<ControlPanel />, root);
     });
     const enableMicrophone = [...root.querySelectorAll("button")].find(
       (button) => button.textContent?.trim() === "Enable microphone",
@@ -124,33 +120,22 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
   });
 
-  it("starts Account capture without rendering or requiring a bearer", async () => {
+  it("starts Account capture without rendering or requiring another credential", async () => {
     await act(async () => {
-      render(
-        <ControlPanel
-          authority="account"
-          captureBearer=""
-          onCaptureBearerChange={() => undefined}
-        />,
-        root,
-      );
+      render(<ControlPanel />, root);
     });
-    expect(root.querySelector('[aria-label="Capture bearer"]')).toBeNull();
+    expect(root.querySelector('input[type="password"]')).toBeNull();
     const enableMicrophone = [...root.querySelectorAll("button")].find(
       (button) => button.textContent?.trim() === "Enable microphone",
     );
     expect(enableMicrophone?.disabled).toBe(false);
     await act(async () => enableMicrophone?.click());
-    expect(mocks.captureOptions).toMatchObject({ authority: "account" });
-    expect(mocks.captureOptions?.captureBearer).toBeUndefined();
+    expect(mocks.captureOptions).not.toBeNull();
   });
 
   it("opens an active history Meeting as an ephemeral Account observer", async () => {
     await act(async () => {
-      render(
-        <ControlPanel authority="account" captureBearer="" onCaptureBearerChange={() => undefined} />,
-        root,
-      );
+      render(<ControlPanel />, root);
     });
 
     act(() => {
@@ -163,11 +148,9 @@ describe("ControlPanel reattach", () => {
 
     expect(mocks.createMossSessionPoller).toHaveBeenCalledWith(
       expect.objectContaining({
-        sessionId: "active-live-meeting",
-        authority: "account"
+        sessionId: "active-live-meeting"
       })
     );
-    expect(mocks.createMossSessionPoller.mock.calls[0][0]).not.toHaveProperty("accessToken");
     expect(mocks.poller.start).toHaveBeenCalledOnce();
     expect(root.querySelector('[data-capture-phase="viewing"]')).not.toBeNull();
     expect(root.querySelector('[data-observer-mode="read-only"]')).not.toBeNull();
@@ -180,10 +163,7 @@ describe("ControlPanel reattach", () => {
     mocks.createMossSessionPoller.mockClear();
     mocks.poller.start.mockClear();
     await act(async () => {
-      render(
-        <ControlPanel authority="account" captureBearer="" onCaptureBearerChange={() => undefined} />,
-        root,
-      );
+      render(<ControlPanel />, root);
     });
     expect(mocks.createMossSessionPoller).not.toHaveBeenCalled();
     expect(root.querySelector('[data-capture-phase="idle"]')).not.toBeNull();
@@ -192,10 +172,7 @@ describe("ControlPanel reattach", () => {
 
   it("does not replace an originating capture page with a history observer", async () => {
     await act(async () => {
-      render(
-        <ControlPanel authority="account" captureBearer="" onCaptureBearerChange={() => undefined} />,
-        root,
-      );
+      render(<ControlPanel />, root);
     });
     const enableMicrophone = [...root.querySelectorAll("button")].find(
       (button) => button.textContent?.trim() === "Enable microphone"
@@ -216,10 +193,7 @@ describe("ControlPanel reattach", () => {
 
   it("stops active Account capture visibly when polling receives revoked 401", async () => {
     await act(async () => {
-      render(
-        <ControlPanel authority="account" captureBearer="" onCaptureBearerChange={() => undefined} />,
-        root,
-      );
+      render(<ControlPanel />, root);
     });
     const button = (label: string) =>
       [...root.querySelectorAll("button")].find(

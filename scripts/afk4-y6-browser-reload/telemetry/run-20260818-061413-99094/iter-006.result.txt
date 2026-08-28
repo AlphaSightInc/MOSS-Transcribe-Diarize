@@ -1,5 +1,0 @@
-Iteration 6 committed: `95cfcca`.
-
-Real Chrome probe: 19/19 assertions passed; 19/19 broken inputs rejected. G6 ledger marked PASS. Launcher telemetry remains uncommitted.
-
-<promise>COMPLETE</promise>

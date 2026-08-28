@@ -37,7 +37,7 @@ export interface TranscriptRefinementCompleteMetadata extends TranscriptUpdateMe
   identity_revision_units?: number;
 }
 
-// This is deliberately the reachable Phase-1 subset of the reference union. The poller
+// This is deliberately the reachable Account Live subset of the reference union. The poller
 // translates MOSS runtime events before they reach this shared reference dispatch seam.
 export type WsEvent =
   | {

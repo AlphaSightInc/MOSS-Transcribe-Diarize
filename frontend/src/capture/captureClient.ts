@@ -8,7 +8,7 @@
  * handler that authorised it, and the server session must not exist until both lanes
  * have proved they carry signal.
  *
- *   const client = new CaptureClient({ captureBearer, helperVersion, onMeter, ... });
+ *   const client = new CaptureClient({ helperVersion, onMeter, ... });
  *   await client.prepare();                      // descriptor + AudioContext + worklet
  *   await client.startMicrophone(useEchoCancel); // speakers -> true, headphones -> false
  *   // ... in the display button's own click handler, with no await before it:
@@ -82,7 +82,6 @@ export type V2Frame = {
 
 export type CaptureSession = Readonly<{
   id: string;
-  viewToken: string | null;
 }>;
 
 type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
@@ -127,8 +126,6 @@ export type PreSessionCaptureFailure = Readonly<{
 type LaneHealthState = "capturing" | "degraded" | "failed";
 
 export type CaptureClientOptions = Readonly<{
-  authority?: "bearer" | "account";
-  captureBearer?: string;
   helperVersion: string;
   onMeter?: (lane: CaptureLane, rms: number) => void;
   onPreflightStatus?: (statusLine: string) => void;
@@ -187,7 +184,7 @@ function requestDeadline(timeoutMs: number): Readonly<{ signal: AbortSignal; can
 
 /**
  * Capture-health thresholds. Measured, not chosen -- re-run
- * `evidence/phase1/x2-capture-client/probes/measure_capture_health_thresholds_probe.py`,
+ * the retained capture-health threshold measurement,
  * which frames the tree's real 16 kHz meeting audio at the production descriptor
  * geometry and fails if these numbers stop separating the corpora.
  *
@@ -361,20 +358,17 @@ export function makeV2Frame(
  */
 export async function stopCaptureSession(
   session: CaptureSession,
-  captureBearer: string | null,
   deadlineSeconds: number,
   signal?: AbortSignal,
 ): Promise<void> {
   if (!Number.isFinite(deadlineSeconds) || deadlineSeconds < 0) {
     throw new Error("stop deadline must be a non-negative finite number");
   }
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (captureBearer) headers.Authorization = `Bearer ${captureBearer}`;
   const request: RequestInit = {
     method: "POST",
     cache: "no-store",
     credentials: "same-origin",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deadline: deadlineSeconds }),
   };
   if (signal) request.signal = signal;
@@ -529,18 +523,12 @@ export class CaptureClient {
       method: "POST",
       cache: "no-store",
       credentials: "same-origin",
-      headers: this.authorityHeaders(),
     });
     if (!response.ok) throw new Error(`session create failed: HTTP ${response.status}`);
     const payload = record(await response.json(), "session response");
     const id = payload.id;
-    const viewToken = payload.view_token;
-    if (
-      typeof id !== "string" ||
-      !id ||
-      (this.options.authority !== "account" && (typeof viewToken !== "string" || !viewToken))
-    ) {
-      throw new Error("session response is missing credentials");
+    if (typeof id !== "string" || !id) {
+      throw new Error("session response is missing its Meeting ID");
     }
     const serverDescriptor = record(payload.descriptor, "session descriptor");
     if (
@@ -549,7 +537,7 @@ export class CaptureClient {
     ) {
       throw new Error("session descriptor differs from preflight descriptor");
     }
-    this.session = Object.freeze({ id, viewToken: typeof viewToken === "string" ? viewToken : null });
+    this.session = Object.freeze({ id });
     // Establish the server-owned loss detector before returning control to the page. A reload or
     // close may happen before the next worklet frame; without this initial heartbeat no lease
     // exists to interrupt the now-orphaned Meeting.
@@ -596,7 +584,6 @@ export class CaptureClient {
       try {
         await stopCaptureSession(
           session,
-          this.options.authority === "account" ? null : this.options.captureBearer ?? null,
           remainingDeadline,
           stopDeadline.signal,
         );
@@ -805,7 +792,7 @@ export class CaptureClient {
         method: "POST",
         cache: "no-store",
         credentials: "same-origin",
-        headers: this.authorityHeaders(true),
+        headers: this.requestHeaders(true),
         body: JSON.stringify(frame),
       }, this.frameDeadlineSignal ?? undefined);
     } catch (caught) {
@@ -969,7 +956,7 @@ export class CaptureClient {
             method: "POST",
             cache: "no-store",
             credentials: "same-origin",
-            headers: this.authorityHeaders(true),
+            headers: this.requestHeaders(true),
             body: JSON.stringify({
               schema: "moss-live-helper-health.v1",
               instance_id: this.instanceId,
@@ -1019,12 +1006,9 @@ export class CaptureClient {
     for (const controller of this.requestControllers) controller.abort(reason);
   }
 
-  private authorityHeaders(json = false): Record<string, string> {
+  private requestHeaders(json = false): Record<string, string> {
     const headers: Record<string, string> = {};
     if (json) headers["Content-Type"] = "application/json";
-    if (this.options.authority !== "account") {
-      headers.Authorization = `Bearer ${this.options.captureBearer ?? ""}`;
-    }
     return headers;
   }
 

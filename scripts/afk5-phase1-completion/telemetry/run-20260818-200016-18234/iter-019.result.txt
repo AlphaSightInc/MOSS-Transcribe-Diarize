@@ -1,7 +1,0 @@
-Committed `43d1034` — fixes post-stop stale poller cursor.
-
-- Flat-ingress terminal replay now recovers `0→153→153→0`.
-- Bound 2 measured; focused 14/14, frontend 122/122, typecheck/build, bundle audit 16/16, preflight pass.
-- Only dirty file: loop telemetry, intentionally uncommitted.
-- Next: Defect B RMS/transcription prototype. Fresh attended evidence still required.
-

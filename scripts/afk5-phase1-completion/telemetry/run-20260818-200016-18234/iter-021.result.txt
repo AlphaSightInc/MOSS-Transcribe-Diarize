@@ -1,7 +1,0 @@
-Iteration 21 committed: `acc3cee ralph: iteration 21 - import W2 tunnel launcher`.
-
-- Imported reviewed SSH launcher; `/v1/models` 200.
-- Exact-match, syntax, and AFK preflight passed.
-- Next: prototype remote-vLLM W2 runner; current runner is CPU/HF-only.
-- Left loop telemetry modification untouched.
-

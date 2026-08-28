@@ -1,7 +1,0 @@
-# Ralph loop transient files (local only; loop state stays tracked)
-telemetry/
-.stop
-.lock/
-.claude/
-*.tmp
-*.log

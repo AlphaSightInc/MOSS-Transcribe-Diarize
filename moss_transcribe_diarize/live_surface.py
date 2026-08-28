@@ -1,12 +1,7 @@
-"""How a live surface segment names its speaker, in one place for every reader.
+"""How an Account transcript segment names its speaker, in one place for every reader.
 
-The portal renders the surface, the export writes it, and the F-certification scorer reads it
-back out of a saved snapshot. Those three answer to different dependency budgets -- the scorer
-is loaded straight from a bare checkout with no installed package and no `app` import (see
-`scripts/ralph-afk/live-canary-clauses.py`), which is why this rule lives in a leaf module the
-scorer can import as a sibling rather than inside the session state machine that owns the rest
-of the surface. `app.live_session` re-exports it, so the session remains the name every other
-caller reaches for.
+The browser presentation and transcript export share this dependency-light leaf rule.
+`app.live_session` re-exports it, so runtime callers still reach it through the session model.
 """
 
 from __future__ import annotations
@@ -51,7 +46,7 @@ def published_speaker_label(
     payload. Neither may be rendered as a guess, so both read as the honest
     `UNATTRIBUTED_SPEAKER`.
 
-    It is total because two readers depend on it -- the portal render and the export -- and a
+    It is total because two readers depend on it -- the browser render and the export -- and a
     transcript whose screen and whose file disagree about who spoke is worse than either being
     wrong alone.
     """

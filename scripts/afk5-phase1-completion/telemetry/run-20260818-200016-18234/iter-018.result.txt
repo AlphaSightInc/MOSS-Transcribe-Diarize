@@ -1,6 +1,0 @@
-Committed `baf44a7` — terminal 409s now retain typed server failure details; browser displays the server line.
-
-Validated: API 50/50, capture client 32/32, frontend 120/120, typecheck/build, served-bundle gate PASS. Evidence: `evidence/phase1/g3-attended/iteration-18-terminal-409-envelope.txt`.
-
-Next: residual flat-ingress poller latch. Telemetry only remains dirty.
-

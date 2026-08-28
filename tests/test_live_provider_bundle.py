@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import builtins
 import hashlib
 import importlib.metadata
 import json
@@ -36,7 +35,6 @@ from moss_transcribe_diarize.app.live_provider_bundle import (
 )
 from moss_transcribe_diarize.app.live_service_runtime import hash_config
 from moss_transcribe_diarize.app.live_session import AudioFrame, FrozenSpan, LiveIdentitySnapshot
-from moss_transcribe_diarize.app.live_vector_journal import LiveVectorJournal
 from moss_transcribe_diarize.app.speaker_identity import TierBPreflight
 
 
@@ -354,40 +352,6 @@ def test_bundle_runtime_factory_carries_the_deployments_terminal_finalizer(tmp_p
     assert unnamed._terminal_finalizer is None
 
 
-def test_bundle_runtime_factory_journals_completed_provider_observations(tmp_path):
-    config = LiveProviderBundleConfig.from_manifest(_write_manifest(tmp_path, _manifest(tmp_path)))
-    journal_path = tmp_path / "speaker-vectors.jsonl"
-    journal = LiveVectorJournal(journal_path)
-
-    runtime = build_live_runtime_factory(config, FakeRunner(), vector_journal=journal)()
-    created = runtime.create(echo_mode="headphones")
-    runtime.accept_frame(
-        created.session_id,
-        AudioFrame(sequence=0, pcm=_tone(160), sample_count=160, sample_rate=16000),
-    )
-
-    stopped = asyncio.run(runtime.stop(created.session_id, deadline=1.0))
-    row = json.loads(journal_path.read_text(encoding="utf-8"))
-
-    assert runtime._vector_journal is journal
-    assert stopped.session.status == "closed"
-    assert row == {
-        "session_id": created.session_id,
-        "speaker_label": "speaker-0001",
-        "centroid": [0.6, 0.8],
-        "sample_seconds": 0.01,
-        "exemplar_count": 1,
-        "provisional": False,
-        "embedder_id": "wespeaker_resnet152_lm:test-revision",
-        "embedder_state_sha": _sha256_bytes(b"offline identity provider state"),
-        "created_at": row["created_at"],
-        "echo_mode": "headphones",
-    }
-    assert isinstance(row["created_at"], float)
-    assert runtime.events(created.session_id)[-2].kind == "vector_journal_appended"
-    assert runtime.events(created.session_id)[-2].payload == {"written": 1, "refusals": {}}
-
-
 def test_bundle_factory_constructs_silero_from_declared_import_and_asset(tmp_path):
     config = LiveProviderBundleConfig.from_manifest(
         _write_manifest(tmp_path, _manifest(tmp_path, speech_kind="silero_onnx"))
@@ -561,52 +525,6 @@ def test_bundle_preflight_is_offline_when_network_is_denied(tmp_path, monkeypatc
 
     assert preflight.available is True
     assert preflight.failures == ()
-
-
-def test_web_cli_disabled_live_does_not_import_provider_bundle_or_optional_providers(monkeypatch):
-    from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
-
-    real_import = builtins.__import__
-    forbidden_roots = {"onnxruntime", "webrtcvad", "silero", "pyannote"}
-    forbidden_modules = {"moss_transcribe_diarize.app.live_provider_bundle"}
-
-    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
-        if name in forbidden_modules or name.split(".", 1)[0] in forbidden_roots:
-            raise AssertionError(f"disabled live mode imported optional provider surface: {name}")
-        return real_import(name, globals, locals, fromlist, level)
-
-    monkeypatch.setattr(builtins, "__import__", guarded_import)
-
-    assert (
-        _live_runtime_factory(
-            SimpleNamespace(live=False, live_provider_manifest=None), file_runner=None
-        )
-        is None
-    )
-
-
-def test_web_cli_enabled_live_rejects_bad_manifest_before_app_construction(tmp_path):
-    from moss_transcribe_diarize.app.web_cli import _live_runtime_factory
-
-    manifest_path = _write_manifest(tmp_path, _manifest(tmp_path, runtime_device="cuda"))
-    args = SimpleNamespace(
-        live=True,
-        live_provider_manifest=str(manifest_path),
-        backend="hf",
-        model="fake-model",
-        vllm_model=None,
-        vllm_base_url=None,
-        vllm_api_key="EMPTY",
-        vllm_timeout=600.0,
-        device="cpu",
-        dtype="float32",
-    )
-
-    with pytest.raises(LiveProviderBundleAdmissionError) as exc:
-        _live_runtime_factory(args, file_runner=None)
-
-    assert exc.value.failure.code == "bundle_preflight_failed"
-    assert "runtime.device must be cpu" in exc.value.failure.detail["failures"]
 
 
 def test_silero_onnx_adapter_emits_observations_only_from_injected_inference():

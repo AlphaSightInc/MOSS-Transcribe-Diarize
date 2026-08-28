@@ -1,7 +1,0 @@
-Iteration 38 committed: `f3010a1`.
-
-- Live 120s rendered-ownership probe failed closed; no timeout/reconnect change authorized.
-- Focused tests: 10 passed; guardrail preflight passed.
-- G4/G5 remain non-qualifying.
-- Preserved concurrent monitor/telemetry edits uncommitted.
-

@@ -1,7 +1,0 @@
-Iteration 5 committed: `d05718e`.
-
-- Real Chrome terminal reload: 19/19 assertions passed.
-- Terminal cleared storage; next reload idle/no reads.
-- Remaining: deliberately falsify every assertion.
-- Uncommitted: launcher telemetry only.
-

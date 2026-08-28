@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import argparse
 import asyncio
-import base64
 import hashlib
 import json
 import math
-import sys
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
 import wave
 from dataclasses import dataclass
 from pathlib import Path
@@ -143,107 +137,6 @@ class LiveReplayService(Protocol):
         ...
 
 
-class HttpLiveReplayService:
-    def __init__(self, *, base_url: str, timeout_seconds: float = 10.0, bearer_token: str | None = None):
-        if not base_url:
-            raise ValueError("base_url must be non-empty.")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be positive.")
-        self.base_url = base_url.rstrip("/")
-        self.timeout_seconds = float(timeout_seconds)
-        self.bearer_token = bearer_token
-
-    def create(self) -> LiveServiceCreateResult:
-        payload = self._json("POST", "/api/live/sessions")
-        return LiveServiceCreateResult(
-            session_id=str(payload["id"]),
-            descriptor=_descriptor_from_dict(payload["descriptor"]),
-            snapshot=_snapshot_from_dict(payload["snapshot"]),
-        )
-
-    def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
-        payload = self._json(
-            "POST",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/frames",
-            {
-                "sequence": frame.sequence,
-                "sample_rate": frame.sample_rate,
-                "sample_count": frame.sample_count,
-                "pcm_base64": base64.b64encode(frame.pcm).decode("ascii"),
-            },
-        )
-        snapshot_payload = self._json(
-            "GET",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/snapshot",
-        )["snapshot"]
-        return LiveServiceFrameResult(
-            ack=_frame_ack_from_dict(payload["ack"]),
-            queued_item_ids=tuple(int(item) for item in payload.get("queued_item_ids", ())),
-            snapshot=_snapshot_from_dict(snapshot_payload),
-        )
-
-    def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
-        query = urllib.parse.urlencode({"since_seq": int(since_seq)})
-        payload = self._json(
-            "GET",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/events?{query}",
-        )
-        return tuple(_event_from_dict(item) for item in payload["events"])
-
-    def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
-        query = "" if since_version is None else "?" + urllib.parse.urlencode({"since_version": int(since_version)})
-        payload = self._json(
-            "GET",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/snapshot{query}",
-        )
-        snapshot = payload["snapshot"]
-        return None if snapshot is None else _snapshot_from_dict(snapshot)
-
-    async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
-        payload = await asyncio.to_thread(
-            self._json,
-            "POST",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/stop",
-            {"deadline": float(deadline)},
-        )
-        return _snapshot_from_dict(payload["snapshot"])
-
-    async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
-        payload = await asyncio.to_thread(
-            self._json,
-            "POST",
-            f"/api/live/sessions/{urllib.parse.quote(session_id, safe='')}/abort",
-            {"reason": reason},
-        )
-        return _snapshot_from_dict(payload["snapshot"])
-
-    def _json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-        data = None
-        headers = {"Accept": "application/json"}
-        if self.bearer_token:
-            headers["Authorization"] = f"Bearer {self.bearer_token}"
-        if payload is not None:
-            data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-            headers["Content-Type"] = "application/json"
-        request = urllib.request.Request(self.base_url + path, data=data, headers=headers, method=method)
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-                return _load_json_bytes(response.read())
-        except urllib.error.HTTPError as exc:
-            body = exc.read()
-            response_payload = _load_json_bytes(body) if body else {}
-            if exc.code == 404 and path.startswith("/api/live"):
-                raise ServiceReplayProviderConfigFailure("live service routes are disabled.") from exc
-            if isinstance(response_payload, dict) and isinstance(response_payload.get("failure"), dict):
-                raise _replay_failure_from_service(_failure_from_dict(response_payload["failure"])) from exc
-            detail = response_payload.get("detail") if isinstance(response_payload, dict) else str(exc)
-            if exc.code in {408, 429, 502, 503, 504}:
-                raise ServiceReplayTransportFailure(str(detail)) from exc
-            raise ServiceReplayIdentityCommitFailure(str(detail)) from exc
-        except (TimeoutError, OSError) as exc:
-            raise ServiceReplayTransportFailure(f"ambiguous HTTP live replay result: {exc}") from exc
-
-
 class InMemoryLiveReplayService:
     def __init__(self, runtime: LiveServiceRuntime):
         self.runtime = runtime
@@ -265,72 +158,6 @@ class InMemoryLiveReplayService:
 
     async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
         return await self.runtime.abort(session_id, reason)
-
-
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Replay 16 kHz mono PCM16 audio through an explicitly enabled live service runtime."
-    )
-    parser.add_argument("--base-url", required=True, help="Opt-in live service base URL.")
-    parser.add_argument("--audio", required=True, help="16 kHz mono PCM16 WAV input.")
-    parser.add_argument("--out-dir", required=True, help="Directory for replay artifacts.")
-    parser.add_argument("--pace", type=float, default=1.0, help="Replay pace multiplier.")
-    parser.add_argument("--max-pacing-lag", type=float, default=1.0, help="Maximum allowed pacing lag in seconds.")
-    parser.add_argument("--runs", type=int, default=1, help="Number of replay runs.")
-    parser.add_argument(
-        "--finalization-deadline",
-        type=float,
-        default=TERMINAL_FINALIZATION_DEADLINE_SECONDS,
-        help="Seconds to wait after stop for a running terminal pass to answer.",
-    )
-    parser.add_argument("--expect-revision", required=True, help="Expected service source revision.")
-    parser.add_argument("--expect-provider-hash", required=True, help="Expected provider manifest hash.")
-    parser.add_argument("--expect-config-hash", required=True, help="Expected combined configuration hash.")
-    parser.add_argument(
-        "--bearer-token-file",
-        help="Caller-owned file containing the live capture bearer for HTTP replay.",
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    try:
-        run_service_replay(
-            service=HttpLiveReplayService(
-                base_url=args.base_url,
-                bearer_token=_read_bearer_token_file(Path(args.bearer_token_file)) if args.bearer_token_file else None,
-            ),
-            audio_path=Path(args.audio),
-            out_dir=Path(args.out_dir),
-            pace=args.pace,
-            max_pacing_lag=args.max_pacing_lag,
-            runs=args.runs,
-            expect_revision=args.expect_revision,
-            expect_provider_hash=args.expect_provider_hash,
-            expect_config_hash=args.expect_config_hash,
-            finalization_deadline=args.finalization_deadline,
-        )
-    except ServiceReplayFailure as exc:
-        print(f"live service replay failed [{exc.failure_kind}]: {exc}", file=sys.stderr)
-        return exc.exit_code
-    except LiveServiceError as exc:
-        failure = exc.failure
-        print(f"live service replay failed [{failure.kind.value}]: {failure.message}", file=sys.stderr)
-        return _exit_code_for_service_failure(failure.kind)
-    except Exception as exc:
-        print(f"live service replay failed [integrity]: {exc}", file=sys.stderr)
-        return ServiceReplayFailure.exit_code
-    return 0
-
-
-def _read_bearer_token_file(path: Path) -> str:
-    token = path.read_text(encoding="utf-8").strip()
-    if not token:
-        raise ServiceReplayFailure("bearer token file is empty.")
-    if "\n" in token or "\r" in token:
-        raise ServiceReplayFailure("bearer token file must contain exactly one token.")
-    return token
 
 
 def _drain_service_events(
@@ -1008,16 +835,6 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _load_json_bytes(data: bytes) -> dict[str, Any]:
-    try:
-        payload = json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ServiceReplayTransportFailure("HTTP live replay returned non-JSON data.") from exc
-    if not isinstance(payload, dict):
-        raise ServiceReplayTransportFailure("HTTP live replay returned a non-object envelope.")
-    return payload
-
-
 def _replay_failure_from_service(failure: LiveServiceFailureRecord) -> ServiceReplayFailure:
     if failure.kind == LiveServiceFailureKind.PROVIDER_CONFIG:
         return ServiceReplayProviderConfigFailure(failure.message)
@@ -1168,7 +985,3 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(key): _jsonable(item) for key, item in value.items()}
     return value
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

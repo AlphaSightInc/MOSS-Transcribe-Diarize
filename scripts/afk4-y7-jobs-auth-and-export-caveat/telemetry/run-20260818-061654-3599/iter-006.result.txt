@@ -1,5 +1,0 @@
-Live Uvicorn/TLS evidence PASS: missing/wrong bearer 401×4; correct bearer 200×4.
-
-Committed `7c264ad` — `ralph: iteration 6 - prove job auth over uvicorn`.
-
-Evidence: [iteration-6-uvicorn-job-route-auth.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/3/MOSS-Transcribe-Diarize/evidence/phase1/y7-jobs-auth-and-export-caveat/iteration-6-uvicorn-job-route-auth.json). Remaining blocker: frontend bearer state needs scope for `App.tsx` and both panels.

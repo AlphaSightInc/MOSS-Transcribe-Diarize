@@ -1,7 +1,0 @@
-Iteration 3 committed: `106cd7a ralph: iteration 3 - guard job routes`.
-
-- Four named job routes guard via existing registry before upload admission.
-- Validated: auth 1 passed; upload guards 11 passed/2 skipped; no-token pairing path passed.
-- Remaining: frontend bearer handoff, export caveat, local-service evidence.
-- Unstaged loop telemetry only.
-

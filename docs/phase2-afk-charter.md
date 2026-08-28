@@ -447,6 +447,13 @@ synthetic system lane, failure-path, background-tab, fidelity, Live/File, and co
 the authenticated Account path. Superseded shared-token/view-token reattach behavior is tested absent,
 not preserved.
 
+For the settled visual-fidelity gate, the shared presentation primitive is the complete
+`TranscriptPane` DOM rectangle at the fixed 1440x900 and 1280x800 viewports; it retains the 2% total
+and 1% largest-connected-region limits against LiveTranscribe. The intentionally new Account
+File -> Live -> History, title/export, and capture-supervisor shell is instead governed by executable
+semantic, layout, mobile, background-capture, and accessibility browser contracts. Retired Phase-1
+mode/source/microphone controls are neither restored nor hidden behind a broad comparison mask.
+
 ## 10. Explicitly not gated or promised
 
 - Public exposure/open signup; horizontal/multi-process scale; Safari; Windows Chrome parity;

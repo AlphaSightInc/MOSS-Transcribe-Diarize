@@ -39,7 +39,6 @@ describe("MOSS session poller", () => {
     const onError = vi.fn();
     const poller = createMossSessionPoller({
       sessionId: "session-empty-text",
-      accessToken: "view-token",
       onError,
       dispatch: (event) => dispatched.push(event),
       fetch: vi.fn(async (input: RequestInfo | URL) => {
@@ -85,7 +84,6 @@ describe("MOSS session poller", () => {
     const onError = vi.fn();
     const poller = createMossSessionPoller({
       sessionId: "session-non-text",
-      accessToken: "view-token",
       onError,
       fetch: vi.fn(async (input: RequestInfo | URL) => {
         if (String(input).includes("/events")) return jsonResponse({ events: [] });
@@ -172,7 +170,6 @@ describe("MOSS session poller", () => {
     let poller!: MossSessionPoller;
     poller = createMossSessionPoller({
       sessionId: "session-7",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch,
       dispatch(event) {
         dispatched.push(event);
@@ -274,7 +271,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-7",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch
     });
 
@@ -320,7 +316,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-7",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch
     });
 
@@ -386,7 +381,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-7",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch,
       dispatch(event) {
         dispatched.push(event);
@@ -443,7 +437,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-stale-cursor",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch,
       onTerminal
     });
@@ -500,7 +493,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-flat-stale-cursor",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch,
       onTerminal
     });
@@ -560,7 +552,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-event-progress",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch
     });
 
@@ -613,7 +604,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-health",
-      accessToken: "view-token",
       fetch: fetcher as typeof fetch,
       dispatch: (event) => dispatched.push(event)
     });
@@ -628,59 +618,10 @@ describe("MOSS session poller", () => {
     });
   });
 
-  it("uses capture-owner authority once to recover a terminal snapshot after view revocation", async () => {
-    const dispatched: WsEvent[] = [];
-    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const authorization = new Headers(init?.headers).get("Authorization");
-      if (authorization === "Bearer capture-owner" && String(input).includes("/snapshot")) {
-        return jsonResponse({
-          snapshot: {
-            session_id: "session-terminal",
-            descriptor: { sample_rate: 16_000 },
-            session: {
-              status: "failed",
-              version: 5,
-              failure_reason: "shared audio lane failed",
-              label_revision_version: 0,
-              identity_snapshot: { canonical_speakers: [] },
-              committed: [],
-              provisional: null
-            }
-          },
-          unchanged: false,
-          capture_phase: "failed",
-          status_line: "Shared audio capture failed."
-        });
-      }
-      return jsonResponse({ detail: "invalid bearer authority" }, 401);
-    });
-    const onTerminal = vi.fn();
-    const poller = createMossSessionPoller({
-      sessionId: "session-terminal",
-      accessToken: "view-token",
-      terminalAccessToken: "capture-owner",
-      fetch: fetcher as typeof fetch,
-      dispatch: (event) => dispatched.push(event),
-      onTerminal
-    });
-
-    await poller.poll();
-
-    expect(onTerminal).toHaveBeenCalledWith("shared audio lane failed");
-    expect(dispatched.filter((event) => event.type === "session_state").at(-1)).toMatchObject({
-      status: "failed",
-      error: "shared audio lane failed"
-    });
-    expect(fetcher.mock.calls.some(([, init]) =>
-      new Headers(init?.headers).get("Authorization") === "Bearer capture-owner"
-    )).toBe(true);
-  });
-
   it.each([401, 403, 404, 409])("stops on terminal HTTP %i instead of scheduling a retry", async (status) => {
     const onTerminal = vi.fn();
     const poller = createMossSessionPoller({
       sessionId: "missing-session",
-      accessToken: "view-token",
       fetch: vi.fn(async () => jsonResponse({ detail: "polling ended" }, status)) as typeof fetch,
       onTerminal
     });
@@ -757,7 +698,6 @@ describe("MOSS session poller", () => {
     });
     const poller = createMossSessionPoller({
       sessionId: "session-finalizing",
-      authority: "account",
       fetch: fetcher as typeof fetch,
       dispatch(event) {
         if (event.type === "transcript_update") {
@@ -801,7 +741,6 @@ describe("MOSS session poller", () => {
     const onTerminal = vi.fn();
     const poller = createMossSessionPoller({
       sessionId: "session-persistence-fenced",
-      authority: "account",
       fetch: vi.fn(async (input: RequestInfo | URL) => {
         if (String(input).includes("/events")) return jsonResponse({ events: [] });
         return jsonResponse({

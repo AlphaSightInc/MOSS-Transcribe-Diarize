@@ -20,6 +20,56 @@ DEFAULT_PHASE2_FILE_WORK_ROOT = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "file-work"
 )
 LOGGER = logging.getLogger(__name__)
+UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS = 30.0
+UPLOAD_CAPACITY_RESERVE_BYTES = 512 * 1024 * 1024
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+class FileUploadRejected(RuntimeError):
+    """A typed ingress refusal made before an Account Meeting is created."""
+
+    def __init__(self, status_code: int, message: str):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class FileUploadTimeout(TimeoutError):
+    pass
+
+
+def admit_file_upload(request: Any, work_root: Path) -> int:
+    """Refuse unbounded or unstoreable bodies before consuming request bytes."""
+
+    raw_length = request.headers.get("content-length")
+    if raw_length is None or not raw_length.isdecimal():
+        raise FileUploadRejected(411, "Content-Length is required.")
+    content_length = int(raw_length)
+    required_free = 2 * content_length + UPLOAD_CAPACITY_RESERVE_BYTES
+    work_root.mkdir(parents=True, exist_ok=True)
+    if shutil.disk_usage(work_root).free < required_free:
+        raise FileUploadRejected(507, "Insufficient storage for upload.")
+    receive = request._receive
+
+    async def receive_with_idle_timeout():
+        try:
+            return await asyncio.wait_for(
+                receive(), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS
+            )
+        except (asyncio.TimeoutError, TimeoutError) as exc:
+            raise FileUploadTimeout("Upload receive timed out.") from exc
+
+    request._receive = receive_with_idle_timeout
+    return content_length
+
+
+async def _read_upload_chunk(upload: Any) -> bytes:
+    try:
+        return await asyncio.wait_for(
+            upload.read(UPLOAD_CHUNK_BYTES),
+            timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS,
+        )
+    except (asyncio.TimeoutError, TimeoutError) as exc:
+        raise FileUploadTimeout("Upload receive timed out.") from exc
 
 
 @dataclass(slots=True)
@@ -64,6 +114,10 @@ class FileMeetingTasks:
         self._fenced_owner_keys: set[tuple[str, int]] = set()
         self._fenced_meeting_ids: set[str] = set()
 
+    @property
+    def work_root(self) -> Path:
+        return self._work_root
+
     def clear_transient_work(self) -> None:
         """Remove only children of the dedicated, non-durable File work root."""
 
@@ -98,7 +152,7 @@ class FileMeetingTasks:
         staging_dir.mkdir(parents=True, exist_ok=False)
         try:
             with input_path.open("wb") as output:
-                while chunk := await upload.read(1024 * 1024):
+                while chunk := await _read_upload_chunk(upload):
                     output.write(chunk)
             handle = await workspace.create_meeting("file")
         except BaseException:

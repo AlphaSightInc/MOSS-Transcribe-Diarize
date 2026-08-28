@@ -1,105 +1,35 @@
-param(
-    [switch]$RefreshOnly,
-    [switch]$IncludeLive
-)
-
+param([switch]$RefreshOnly)
 $ErrorActionPreference = 'Stop'
 $taskName = 'MOSS Transcribe Diarize - Start and refresh LAN forwarding'
 $scriptPath = 'D:\Coding\MOSS-Transcribe-Diarize\ops\configure-windows-network.ps1'
-
-# One row per forwarded port. The batch row is what this script has always forwarded and is
-# never conditional: the plaintext batch service must keep working whatever the live service
-# does. The live service is a separate WSL unit on its own TLS port, so it is forwarded only
-# when a deployment asks for it with -IncludeLive.
-$forwards = @(
-    [pscustomobject]@{
-        Port        = 7860
-        RuleName    = 'MOSS-Transcribe-Diarize-Web'
-        DisplayName = 'MOSS Transcribe Diarize web app'
-        Services    = @('moss-vllm.service', 'moss-web.service')
-    }
-)
-if ($IncludeLive) {
-    $forwards += [pscustomobject]@{
-        Port        = 7861
-        RuleName    = 'MOSS-Transcribe-Diarize-Live'
-        DisplayName = 'MOSS Transcribe Diarize live web app (TLS)'
-        Services    = @('moss-live-web.service')
-    }
-}
+$port = 7861
+$ruleName = 'MOSS-Transcribe-Diarize-Account'
 
 $networkingMode = ((& wsl.exe -d Ubuntu -- wslinfo --networking-mode 2>$null) -join '').Trim()
-if (-not $networkingMode) {
-    # Older WSL releases predate `wslinfo`; their WSL 2 network is NAT.
-    $networkingMode = 'nat'
-}
+if (-not $networkingMode) { $networkingMode = 'nat' }
 $usesPortProxy = $networkingMode -ne 'mirrored'
-
 $wslAddress = $null
 if ($usesPortProxy) {
     for ($attempt = 1; $attempt -le 20 -and -not $wslAddress; $attempt++) {
-        $addressOutput = (
-            & wsl.exe -d Ubuntu -- sh -lc 'ip -4 -o addr show dev eth0 scope global' 2>$null
-        ) -join ' '
-        $wslAddress = [regex]::Match(
-            $addressOutput,
-            '(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])'
-        ).Value
-        if (-not $wslAddress) {
-            Start-Sleep -Seconds 2
-        }
+        $addressOutput = (& wsl.exe -d Ubuntu -- sh -lc 'ip -4 -o addr show dev eth0 scope global' 2>$null) -join ' '
+        $wslAddress = [regex]::Match($addressOutput, '(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])').Value
+        if (-not $wslAddress) { Start-Sleep -Seconds 2 }
     }
-    if (-not $wslAddress) {
-        throw 'Could not determine the Ubuntu WSL NAT IPv4 address.'
-    }
+    if (-not $wslAddress) { throw 'Could not determine the Ubuntu WSL NAT IPv4 address.' }
 }
-
-foreach ($forward in $forwards) {
-    $listenPort = $forward.Port
-    & netsh.exe interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=$listenPort 2>$null | Out-Null
-    if ($usesPortProxy) {
-        & netsh.exe interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$listenPort connectaddress=$wslAddress connectport=$listenPort | Out-Null
-    }
-
-    if (-not (Get-NetFirewallRule -Name $forward.RuleName -ErrorAction SilentlyContinue)) {
-        New-NetFirewallRule `
-            -Name $forward.RuleName `
-            -DisplayName $forward.DisplayName `
-            -Direction Inbound `
-            -Action Allow `
-            -Protocol TCP `
-            -LocalPort $listenPort `
-            -Profile Private | Out-Null
-    }
+& netsh.exe interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=$port 2>$null | Out-Null
+if ($usesPortProxy) {
+    & netsh.exe interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$port connectaddress=$wslAddress connectport=$port | Out-Null
 }
-
-$services = $forwards | ForEach-Object { $_.Services } | Select-Object -Unique
-& wsl.exe -d Ubuntu -- systemctl --user start @services
-
+if (-not (Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -Name $ruleName -DisplayName 'MOSS Account product (TLS)' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $port -Profile Private | Out-Null
+}
+& wsl.exe -d Ubuntu -- systemctl --user start moss-vllm.service moss-web.service
 if (-not $RefreshOnly) {
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-    $argumentList = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -RefreshOnly"
-    if ($IncludeLive) {
-        $argumentList += ' -IncludeLive'
-    }
-    $action = New-ScheduledTaskAction `
-        -Execute 'powershell.exe' `
-        -Argument $argumentList
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -RefreshOnly"
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $currentUser
     $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Highest
-    Register-ScheduledTask `
-        -TaskName $taskName `
-        -Action $action `
-        -Trigger $trigger `
-        -Principal $principal `
-        -Description 'Starts MOSS in WSL and refreshes the LAN port forward after sign-in.' `
-        -Force | Out-Null
+    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Description 'Starts MOSS and refreshes the TLS LAN forwarding.' -Force | Out-Null
 }
-
-foreach ($forward in $forwards) {
-    if ($usesPortProxy) {
-        Write-Output "NAT forwarding ready: 0.0.0.0:$($forward.Port) -> ${wslAddress}:$($forward.Port)"
-    } else {
-        Write-Output "Mirrored networking ready: WSL binds port $($forward.Port) directly"
-    }
-}
+Write-Output "MOSS Account TLS forwarding ready on port $port"

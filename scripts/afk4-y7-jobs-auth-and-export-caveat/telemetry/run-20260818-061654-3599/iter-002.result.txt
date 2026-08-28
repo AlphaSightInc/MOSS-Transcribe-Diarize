@@ -1,8 +1,0 @@
-Iteration 2 done; committed/pushed `fa8ea20`.
-
-- Added focused RED auth test for four `/api/jobs` routes.
-- Validation: expected fail; missing/wrong bearer = `200/400/404/404`, required `401`s.
-- Correct bearer control = `200/200/200/200`.
-- Next: add registry guards, preserve upload timeout/chunk behavior.
-- Untracked launcher telemetry remains untouched.
-

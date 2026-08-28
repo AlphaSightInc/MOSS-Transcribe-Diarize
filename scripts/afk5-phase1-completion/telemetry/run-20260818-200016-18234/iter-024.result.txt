@@ -1,8 +1,0 @@
-Iteration 24 committed: `a8f0860 ralph: iteration 24 - add tunnel matrix runner`.
-
-Added W2 runner + tests; live preflight passed `/health`, `/v1/models`, deployed bounds. Evidence: [preflight.json](/Users/gao/.treehouse/MOSS-Transcribe-Diarize-e7521b/1/MOSS-Transcribe-Diarize/evidence/phase1/w2-local-concurrency/iteration-24-remote-vllm-runner-preflight/preflight.json).
-
-Validated: 5 focused tests, contract validator, guardrails. Next: fresh 1/2/4/8 matrix run. G4/G5 remain unmeasured.
-
-Preserved monitor-owned uncommitted context/progress/telemetry updates.
-

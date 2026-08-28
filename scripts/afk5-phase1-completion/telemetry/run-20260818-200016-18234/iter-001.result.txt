@@ -1,8 +1,0 @@
-Iteration 1 done; tree clean.
-
-- W1 source fix committed: `c6c0316`.
-- Frontend: 113/113, typecheck, build passed.
-- Guard preflight passed.
-- W1 not product-landed: served bundle path is out of ticket scope.
-- W0 blocked: no `MOSS_VLLM_BASE_URL` or provisional manifest.
-

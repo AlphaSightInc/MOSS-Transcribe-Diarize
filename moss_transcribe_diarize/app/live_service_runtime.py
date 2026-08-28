@@ -41,12 +41,8 @@ from .live_session import (
     LiveSessionFailed,
     LiveSnapshot,
 )
-from .live_vector_journal import LiveVectorJournal
-
-
 LIVE_SERVICE_SCHEMA_VERSION = 1
 LIVE_PROTOCOL_VERSION = "moss-live-service.v1"
-_VECTOR_JOURNAL_LOG = logging.getLogger("moss_transcribe_diarize.live.vector_journal")
 _ROLLING_LOG = logging.getLogger("moss_transcribe_diarize.live.rolling")
 _TERMINAL_LOG = logging.getLogger("moss_transcribe_diarize.live.terminal")
 
@@ -545,8 +541,6 @@ class LiveServiceRuntime:
         session_id_factory: Callable[[], str] | None = None,
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
         _terminal_scheduler: _TerminalScheduler | None = None,
-        vector_journal: LiveVectorJournal | None = None,
-        wall_time: Callable[[], float] | None = None,
         monotonic_ns: Callable[[], int] | None = None,
     ):
         self.descriptor = descriptor
@@ -568,8 +562,6 @@ class LiveServiceRuntime:
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._terminal_scheduler = _terminal_scheduler or _ThreadTerminalScheduler()
-        self._vector_journal = vector_journal
-        self._wall_time = wall_time or time.time
         self._monotonic_ns = monotonic_ns or time.monotonic_ns
         self._sessions: dict[str, _RuntimeSession] = {}
         self._lock = threading.RLock()
@@ -589,7 +581,7 @@ class LiveServiceRuntime:
 
         The callback runs under the runtime lock and may run on an inference thread. It must
         only hand immutable state to its owning event loop; persistence belongs outside this
-        runtime so Phase 1's measured inference and capture machinery remain unchanged.
+        runtime so the measured inference and capture machinery remain unchanged.
         """
 
         with self._lock:
@@ -614,13 +606,9 @@ class LiveServiceRuntime:
         echo_mode: str | None = None,
         session_id: str | None = None,
     ) -> LiveServiceCreateResult:
-        # `echo_mode` is a T-06 browser-preflight concept (headphones vs speakers). No
-        # client that exists today sends it -- not the shipping macOS capture app
-        # (CaptureSecurity.postSession posts no body), not live_service_replay, not the
-        # replay integration harness. Requiring it whenever journaling is enabled turned
-        # every `POST /api/live/sessions` into a 400 in the default `--live` deployment,
-        # i.e. a total live-capture outage. Journaling an honest "unspecified" is strictly
-        # better than refusing the session: the row records what was actually known.
+        # `echo_mode` records the Account browser's headphones-vs-speakers preflight. Keep
+        # the runtime usable by retained in-memory replay and measurement callers that do
+        # not model a browser audio route; "unspecified" is their honest state.
         if echo_mode is None:
             echo_mode = "unspecified"
         elif not isinstance(echo_mode, str) or echo_mode not in {"headphones", "speakers"}:
@@ -914,11 +902,7 @@ class LiveServiceRuntime:
                 ).failure
                 self._fail(state, failure)
                 raise LiveServiceIntegrityFailure(failure.message, code=failure.code)
-        journal_event = self._append_vector_journal(state)
         with self._lock:
-            if journal_event is not None:
-                kind, payload = journal_event
-                self._record_event(state, kind, payload)
             self._record_event(state, "session_closed", {"accepted_samples": snapshot.session.accepted_samples})
             # ADR-0003 D3 still ends the meeting's audio with the meeting -- but "the
             # meeting" now includes its last listener, so the release moves behind the
@@ -928,40 +912,6 @@ class LiveServiceRuntime:
             if not self._begin_terminal_locked(state):
                 self._release_tape_locked(state)
             return self._snapshot(state)
-
-    def _append_vector_journal(
-        self,
-        state: _RuntimeSession,
-    ) -> tuple[str, dict[str, object]] | None:
-        if self._vector_journal is None:
-            return None
-        try:
-            result = self._vector_journal.append_session(
-                session_id=state.session_id,
-                echo_mode=state.echo_mode,
-                created_at=self._wall_time(),
-                observations=state.coordinator.journal_observations(),
-            )
-        except Exception as exc:
-            _VECTOR_JOURNAL_LOG.warning(
-                "vector journal append failed: session_id=%s reason=%s",
-                state.session_id,
-                exc.__class__.__name__,
-            )
-            return "vector_journal_failed", {"reason": exc.__class__.__name__}
-        for refusal in result.refusals:
-            _VECTOR_JOURNAL_LOG.warning(
-                "vector journal observation refused: session_id=%s speaker_label=%s reason=%s",
-                state.session_id,
-                refusal.speaker_label,
-                refusal.reason,
-            )
-        return "vector_journal_appended", {
-            "written": result.written,
-            "refusals": {
-                refusal.speaker_label: refusal.reason for refusal in result.refusals
-            },
-        }
 
     async def abort(
         self,
@@ -1669,7 +1619,7 @@ class LiveServiceRuntime:
         """Announce every window the converger planned, admitted or not (plan §7.4).
 
         A refused admission gets an event with `item_id` null and no timing entry: nothing
-        will ever complete it, so pairing it with a completion would make the accounting lie.
+        will ever complete it, so matching it with a completion would make the accounting lie.
         The counterpart property -- one completion per admitted window -- is what lets a soak
         read queue depth and stale/coalesced counts straight off the stream.
         """

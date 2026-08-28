@@ -8,6 +8,7 @@ import {
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
 import { resetSessionState, sessionTitle, transcript } from "../state/session";
+import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 
 const now = Date.now();
@@ -44,6 +45,7 @@ describe("MeetingHistory", () => {
     root.remove();
     resetSessionState();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("renders one Active group before terminal dates and filters locally", async () => {
@@ -118,6 +120,61 @@ describe("MeetingHistory", () => {
     expect(sessionTitle.value).toBe("Standup");
     expect(transcript.value[0].text).toBe("first words");
     expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it("opens Account history into the transcript pane and exports all three formats", async () => {
+    const completed = meeting({ id: "export-meeting", title: "Export source" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn()
+        .mockResolvedValueOnce(response({ meetings: [completed] }))
+        .mockResolvedValueOnce(response(completed))
+    );
+    const downloads: string[] = [];
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:account-export"),
+      revokeObjectURL: vi.fn()
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
+      downloads.push(this.download);
+    });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-28T12:00:00.000Z"));
+
+    await act(async () => {
+      render(
+        <div>
+          <App />
+          <MeetingHistory />
+        </div>,
+        root
+      );
+    });
+    await vi.waitFor(() =>
+      expect(root.querySelector('[data-open-meeting="export-meeting"]')).not.toBeNull()
+    );
+    await act(async () => {
+      root.querySelector<HTMLButtonElement>('[data-open-meeting="export-meeting"]')?.click();
+    });
+    await vi.waitFor(() =>
+      expect(root.querySelector("#tr-body")?.textContent).toContain("first words")
+    );
+
+    for (const label of ["Markdown (.md)", "Plain text (.txt)", "JSON (.json)"]) {
+      act(() => {
+        root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.click();
+      });
+      const item = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
+        .find((candidate) => candidate.textContent === label);
+      if (!item) throw new Error(`missing ${label} export`);
+      act(() => item.click());
+    }
+
+    expect(downloads).toHaveLength(3);
+    expect(downloads.map((name) => name.split(".").at(-1))).toEqual(["md", "txt", "json"]);
+    expect(downloads.every((name) => name.startsWith("transcript-export-meeting-"))).toBe(true);
   });
 
   it("renames durably and refresh repairs the selected record to another client's title", async () => {

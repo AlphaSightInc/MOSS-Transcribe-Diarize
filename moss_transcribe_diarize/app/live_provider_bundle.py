@@ -43,7 +43,6 @@ from .live_session import (
     PCM16_BYTES_PER_SAMPLE,
 )
 from .live_transcript_convergence import DEFAULT_ROLLING_GEOMETRY
-from .live_vector_journal import LiveVectorJournal
 from .speaker_identity import TierBAssetSpec, WeSpeakerResNet152LmAdapter
 
 
@@ -270,7 +269,6 @@ def build_live_runtime_factory(
     config: LiveProviderBundleConfig,
     runner: Any,
     *,
-    vector_journal: LiveVectorJournal | None = None,
     terminal_finalizer: Any | None = None,
 ) -> Callable[[], LiveServiceRuntime]:
     preflight = config.preflight()
@@ -327,7 +325,6 @@ def build_live_runtime_factory(
             # runner -- the manifest describes the live provider, not the file pipeline.
             # No finalizer, no terminal pass, and every meeting reads `not_started`.
             terminal_finalizer=terminal_finalizer,
-            vector_journal=vector_journal,
         )
 
     return factory

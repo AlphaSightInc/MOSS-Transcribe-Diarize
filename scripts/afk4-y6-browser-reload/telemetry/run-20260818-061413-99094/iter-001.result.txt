@@ -1,4 +1,0 @@
-Iteration 1 committed: `8285102 ralph: iteration 1 - audit reload scaffold`.
-
-Validated G7 probe imports under pyenv 3.12.12. Recorded that G7’s harness cannot certify shipped `ControlPanel` reload; next is actual-frontend bootstrap. Worktree clean.
-

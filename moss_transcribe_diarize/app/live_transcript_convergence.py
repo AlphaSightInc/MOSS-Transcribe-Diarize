@@ -614,7 +614,7 @@ class TerminalOutcome(str, Enum):
 
         Here rather than at the caller because `finalization_status` is a contract with
         readers and the mapping from "what happened" to "what a reader is told" must have
-        exactly one author -- the HTTP surface, the replay trace and the portal all read it.
+        exactly one author -- the HTTP surface, replay trace and Account browser all read it.
         `FINALIZED` maps to `running` on purpose: producing a proposal is not publishing it,
         and only `LiveSession.apply_text_revision` may say `final`.
         """

@@ -90,6 +90,23 @@ The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.
 
+Issue #21 completes the source-side half of that replacement. The Account application now owns
+the only browser UI, HTTP authority, and packaged commands (`mtd-phase2-web` and `mtd-admin`).
+The Live protocol keeps one shared transport implementation but only its Account adapter remains;
+the File and Live inference runners are constructed by a neutral composition module rather than a
+legacy web server. The old global Job manager, shared bearer, pairing/device/view grants, Phase-1
+quiesce marker, vector journal, native MOSSCapture client, alternate HTML pages, bearer HTTP replay,
+and plaintext launcher are deleted instead of wrapped. Static serving is an explicit Account asset
+allowlist, so build-only HTML cannot become a second product entry point.
+
+Before deleting the legacy upload path, its three applicable ingress invariants moved to the
+Account File route unchanged: a decimal `Content-Length` is required before body receive, free
+space must cover twice the declared body plus 512 MiB, and every request-body or upload-file read
+has a 30-second inactivity bound. Refusal creates neither a Meeting nor a staging directory.
+Phase-1 histories, Voiceprints, auth records, and jobs have no import or compatibility path; a new
+Account database remains empty until that Account creates Meetings. Historical plans and evidence
+remain records, not executable product or authority surfaces.
+
 ## Consequences
 
 - Each wave passes its own release gates plus the cumulative Account/isolation core.

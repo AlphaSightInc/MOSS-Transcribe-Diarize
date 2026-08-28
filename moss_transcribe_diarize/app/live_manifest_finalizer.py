@@ -2,7 +2,7 @@
 
 The deployed manifest is host-owned and provisional until a reviewed revision exists.
 Finalizing it means five things, and all five are mechanical: stamp the deployed source
-revision, retune the bounds the Mac client's wire contract needs, state the matcher
+revision, retune the bounds the browser capture wire contract needs, state the matcher
 thresholds the shipped identity policy is calibrated for, state its separate birth and
 enrollment floors, and regenerate the bundle config hashes. A hand-edited ``bounds_config`` fails the runtime's declared hash comparison at
 preflight, so the generated hashes are the only ones that admit.
@@ -60,8 +60,7 @@ def _contract_samples(seconds: float, name: str) -> int:
     return samples
 
 
-# The wire contract the Mac client implements (NativeLaneWireFormat.live) and the
-# retention headroom its outbox requires (CaptureFrameOutbox).
+# The wire contract browser capture implements and the retention headroom its outbox needs.
 LIVE_WIRE_FRAME_SECONDS = 0.5
 LIVE_MAX_WIRE_FRAME_SECONDS = 1.0
 LIVE_MIN_SILENCE_SECONDS = 0.5

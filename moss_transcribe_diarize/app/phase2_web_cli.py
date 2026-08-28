@@ -1,8 +1,7 @@
-"""The packaged Phase-2 HTTPS startup path.
+"""The packaged Account HTTPS startup path.
 
-Phase 1 keeps its own entry point until the cutover ticket.  This command is the complete
-Phase-2 process surface I12 installs: it builds only the Account app, binds its canonical SQLite
-database by default, and hands the configured certificate directly to Uvicorn.
+This command is the complete product process surface: it builds only the Account app,
+binds its canonical SQLite database, and hands the configured certificate to Uvicorn.
 """
 
 from __future__ import annotations
@@ -90,9 +89,9 @@ def _secret_from_file(path_text: str, *, flag: str) -> str:
 def _build_file_runner(args: argparse.Namespace):
     # Keep model imports out of argument/help and admin paths. The runner crosses into Phase 2
     # only as the owner-bound File-Meeting inference seam.
-    from .server import build_file_mode_runner
+    from .runner_composition import build_file_runner
 
-    return build_file_mode_runner(
+    return build_file_runner(
         model_path=Path(args.model).expanduser(),
         device=args.device,
         dtype=args.dtype,
@@ -101,9 +100,6 @@ def _build_file_runner(args: argparse.Namespace):
         vllm_model=args.vllm_model,
         vllm_api_key=args.vllm_api_key,
         vllm_timeout=args.vllm_timeout,
-        speaker_identity_tier_b=False,
-        speaker_identity_state=None,
-        speaker_identity_fixture=None,
     )
 
 
@@ -111,14 +107,31 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     if args.live_helper_lease_seconds <= 0:
         raise SystemExit("--live-helper-lease-seconds must be positive.")
     from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
-    from .web_cli import _LiveCliRunnerProxy, _live_terminal_finalizer
+    from .runner_composition import LazyLiveRunner, build_terminal_finalizer
 
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
+    live_runner = LazyLiveRunner(
+        model_path=args.model,
+        device=args.device,
+        dtype=args.dtype,
+        backend=args.backend,
+        vllm_base_url=args.vllm_base_url,
+        vllm_model=args.vllm_model,
+        vllm_api_key=args.vllm_api_key,
+        vllm_timeout=args.vllm_timeout,
+    )
     return build_live_runtime_factory(
         config,
-        _LiveCliRunnerProxy(args),
-        vector_journal=None,
-        terminal_finalizer=_live_terminal_finalizer(args, file_runner=file_runner),
+        live_runner,
+        terminal_finalizer=build_terminal_finalizer(
+            runner=file_runner,
+            prompt=args.prompt,
+            max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens,
+            decoding=args.decoding,
+            temperature=args.temperature,
+            max_length_cap=args.max_len if args.backend == "vllm" else None,
+        ),
     )
 
 

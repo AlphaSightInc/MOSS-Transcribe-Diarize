@@ -77,9 +77,6 @@ interface SnapshotRender {
 
 export interface MossPollerOptions {
   sessionId: string;
-  authority?: "bearer" | "account";
-  accessToken?: string;
-  terminalAccessToken?: string;
   mode?: SessionMode;
   baseUrl?: string;
   fetch?: typeof globalThis.fetch;
@@ -97,8 +94,8 @@ export interface MossSessionPoller {
 }
 
 /**
- * Polls MOSS's two independent cursors and translates only the five reachable Phase-1
- * reference events. Snapshot rendering is authoritative replacement; event rendering is
+ * Polls the Account Live Meeting's two independent cursors. Snapshot rendering is
+ * authoritative replacement; event rendering is
  * replay-deduped by sequence and supplies lifecycle/refinement notifications.
  */
 export function createMossSessionPoller(options: MossPollerOptions): MossSessionPoller {
@@ -151,53 +148,6 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
     }
   }
 
-  async function recoverOwnerTerminal(signal: AbortSignal): Promise<string | null> {
-    if (!options.terminalAccessToken && options.authority !== "account") return null;
-    const payload = await fetchJson(
-      fetcher,
-      endpoint("snapshot", snapshotVersion),
-      options.terminalAccessToken,
-      signal
-    );
-    const snapshot = parseSnapshot(payload);
-    if (!snapshot || !isTerminalSnapshot(snapshot)) return null;
-
-    const renderedSnapshot = renderSnapshot(
-      snapshot,
-      eventSequence,
-      true,
-      lastLabelRevisionVersion,
-      revisedSpanIds,
-      priorProvisional
-    );
-    dispatch({
-      type: "session_state",
-      session_id: snapshot.sessionId,
-      mode,
-      state: snapshot.status,
-      status: snapshot.status,
-      error: snapshot.failureReason,
-      status_line: snapshot.statusLine
-    });
-    dispatch(renderedSnapshot.event);
-    if (renderedSnapshot.relabelEvent) dispatch(renderedSnapshot.relabelEvent);
-    snapshotVersion = snapshot.version;
-    lastLabelRevisionVersion = snapshot.labelRevisionVersion;
-    priorProvisional = renderedSnapshot.provisional
-      ? {
-          generation: renderedSnapshot.provisional.generation,
-          items: renderedSnapshot.provisionalItems
-        }
-      : null;
-    for (const spanId of renderedSnapshot.revisedSpanIds) revisedSpanIds.add(spanId);
-    lastSessionState = {
-      sessionId: snapshot.sessionId,
-      status: snapshot.status,
-      failureReason: snapshot.failureReason
-    };
-    return terminalMessage(snapshot);
-  }
-
   async function poll(): Promise<void> {
     if (inFlight) {
       return;
@@ -214,8 +164,8 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
     inFlight = true;
     try {
       const [snapshotPayload, eventsPayload] = await Promise.all([
-        fetchJson(fetcher, endpoint("snapshot", snapshotVersion), options.accessToken, controller.signal),
-        fetchJson(fetcher, endpoint("events", eventSequence), options.accessToken, controller.signal)
+        fetchJson(fetcher, endpoint("snapshot", snapshotVersion), controller.signal),
+        fetchJson(fetcher, endpoint("events", eventSequence), controller.signal)
       ]);
 
       if (currentGeneration !== generation) {
@@ -354,18 +304,6 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       }
       const message = errorMessage(error);
       if (error instanceof PollHttpError && [401, 403, 404, 409].includes(error.status)) {
-        if (error.status === 401 || error.status === 403) {
-          try {
-            const terminalMessage = await recoverOwnerTerminal(controller.signal);
-            if (terminalMessage !== null) {
-              stop();
-              options.onTerminal?.(terminalMessage);
-              return;
-            }
-          } catch {
-            // Fall through to the scoped credential's terminal response.
-          }
-        }
         dispatch({
           type: "session_state",
           session_id: options.sessionId,
@@ -612,17 +550,13 @@ function speakerEntityIdFor(speaker: string, canonicalSpeakers: readonly string[
 async function fetchJson(
   fetcher: typeof globalThis.fetch,
   url: string,
-  accessToken: string | undefined,
   signal: AbortSignal
 ): Promise<unknown> {
-  const headers: Record<string, string> = {};
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   const response = await fetcher(url, {
     method: "GET",
     cache: "no-store",
     credentials: "same-origin",
-    signal,
-    headers
+    signal
   });
   let payload: unknown;
   try {

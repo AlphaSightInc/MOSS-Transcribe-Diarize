@@ -33,21 +33,12 @@ const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
 export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 
-interface ControlPanelProps {
-  authority?: "bearer" | "account";
-  captureBearer: string;
-  onCaptureBearerChange: (captureBearer: string) => void;
-}
-
-export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBearerChange }: ControlPanelProps) {
-  const accountAuthority = authority === "account";
+export function ControlPanel() {
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
   const [message, setMessage] = useState(
-    accountAuthority
-      ? "Enable the microphone, then share system audio to start a private Live Meeting."
-      : "Enter the capture bearer to configure both audio lanes."
+    "Enable the microphone, then share system audio to start a private Live Meeting."
   );
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
@@ -89,12 +80,10 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
   };
 
   const configureMicrophone = async () => {
-    if ((!accountAuthority && !captureBearer.trim()) || clientRef.current) return;
+    if (clientRef.current) return;
     transition("configuring");
     setMessage("Requesting microphone access...");
     const client = new CaptureClient({
-      authority,
-      captureBearer: accountAuthority ? undefined : captureBearer.trim(),
       helperVersion: HELPER_VERSION,
       onMeter: updateMeter,
       onPreflightStatus: setMessage,
@@ -161,15 +150,10 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
     try {
       const session = await client.createSession();
       saveSessionReattach(sessionReattachStorage(), {
-        sessionId: session.id,
-        authority,
-        viewToken: session.viewToken
+        sessionId: session.id
       });
       const poller = createMossSessionPoller({
         sessionId: session.id,
-        authority,
-        accessToken: session.viewToken ?? undefined,
-        terminalAccessToken: accountAuthority ? undefined : captureBearer.trim(),
         onError: setMessage,
         onTerminal(terminalMessage) {
           handleTerminal(terminalMessage, true);
@@ -214,14 +198,9 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
     }
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
-    onCaptureBearerChange("");
     resetSessionState();
     transition("idle");
-    setMessage(
-      accountAuthority
-        ? "Enable the microphone, then share system audio to start a private Live Meeting."
-        : "Enter the capture bearer to configure both audio lanes."
-    );
+    setMessage("Enable the microphone, then share system audio to start a private Live Meeting.");
   };
 
   useEffect(() => {
@@ -235,7 +214,6 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
           ? detail.meetingId.trim()
           : "";
       if (
-        !accountAuthority ||
         !meetingId ||
         clientRef.current !== null ||
         phaseRef.current === "active" ||
@@ -248,7 +226,6 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
       resetSessionState();
       const poller = createMossSessionPoller({
         sessionId: meetingId,
-        authority: "account",
         onError: setMessage,
         onTerminal(terminalMessage) {
           handleTerminal(terminalMessage, false);
@@ -262,11 +239,9 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
     document.addEventListener(LIVE_MEETING_OBSERVE_EVENT, observeHistoryMeeting);
 
     const saved = loadSessionReattach(sessionReattachStorage());
-    if (saved && (accountAuthority ? saved.authority === "account" : saved.authority !== "account")) {
+    if (saved) {
       const poller = createMossSessionPoller({
         sessionId: saved.sessionId,
-        authority,
-        accessToken: saved.viewToken ?? undefined,
         onError: setMessage,
         onTerminal(terminalMessage) {
           handleTerminal(terminalMessage, true);
@@ -298,25 +273,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
       data-observer-mode={reattached ? "read-only" : "none"}
     >
       <div className="label">Capture</div>
-      {accountAuthority ? (
-        <p className="capture-security-note">Bound to your signed-in Account; no capture key is needed.</p>
-      ) : (
-        <>
-          <label className="field-label" htmlFor="capture-bearer">Capture bearer</label>
-          <div className="field field--input-prompt">
-            <input
-              id="capture-bearer"
-              aria-label="Capture bearer"
-              type="password"
-              autoComplete="off"
-              value={captureBearer}
-              disabled={configured}
-              onInput={(event) => onCaptureBearerChange(event.currentTarget.value)}
-            />
-          </div>
-          <p className="capture-security-note">Memory only; never saved in browser storage.</p>
-        </>
-      )}
+      <p className="capture-security-note">Bound to your signed-in Account; no capture key is needed.</p>
 
       <label className="field-label" htmlFor="audio-route">Listening setup</label>
       <div className="field">
@@ -344,7 +301,6 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
         <button
           type="button"
           className="record-btn"
-          disabled={!accountAuthority && !captureBearer.trim()}
           onClick={() => void configureMicrophone()}
         >
           <span>Enable microphone</span>

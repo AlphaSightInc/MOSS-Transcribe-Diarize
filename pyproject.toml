@@ -32,11 +32,8 @@ dependencies = [
 ]
 
 [project.scripts]
-mtd-subtitle = "moss_transcribe_diarize.app.cli:main"
-mtd-subtitle-web = "moss_transcribe_diarize.app.web_cli:main"
 mtd-admin = "moss_transcribe_diarize.app.phase2_admin:main"
 mtd-phase2-web = "moss_transcribe_diarize.app.phase2_web_cli:main"
-mtd-phase1-quiesce = "moss_transcribe_diarize.app.phase1_quiesce_cli:main"
 
 [project.optional-dependencies]
 torch-runtime = [

@@ -8,16 +8,16 @@ re-deriving a transcript from the committed spans, which is what makes the plan'
 ("export and the visible transcript use the same terminal surface") checkable rather than
 aspirational.
 
-Two of these tests drive the real thing end to end: a real runtime with a scripted rolling
-witness produces the payload, and the portal page the service serves renders it in the T2
-tier's headless browser. The rest are the boundary conditions that payload cannot reach.
+The runtime-backed tests drive a scripted rolling witness into the exact effective-transcript
+payload consumed by the Account product; the remaining cases pin boundary conditions that
+payload cannot reach. Browser rendering and downloadable formats are exercised through the
+Account history/TranscriptPane integration suite.
 """
 
 from __future__ import annotations
 
 import unittest
 
-from test_live_portal import _run_node_probe
 from test_live_rolling_wiring import (
     ONE_WINDOW_FRAMES,
     _decoders,
@@ -31,7 +31,6 @@ from test_live_rolling_wiring import (
 # differ.
 MIXED_SURFACE_FRAMES = ONE_WINDOW_FRAMES + 8
 
-from moss_transcribe_diarize.app.live_portal import LIVE_PORTAL_HTML
 from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE, UNATTRIBUTED_SPEAKER
 from moss_transcribe_diarize.live_speaker_accuracy import hypothesis_from_live_snapshot
 from moss_transcribe_diarize.transcript_parser import parse_transcript
@@ -50,17 +49,6 @@ def export(payload: dict, *, duration_sec: float = 60.0, start_sample: int = 0):
     return hypothesis_from_live_snapshot(
         {"snapshot": payload}, corpus_start_sample=start_sample, corpus_duration_sec=duration_sec
     )
-
-
-def rendered_transcript(payload: dict) -> str:
-    """What the served portal puts in the transcript node for this snapshot."""
-
-    served = [
-        {"payload": {"snapshot": payload}, "ok": True, "status": 200},
-        {"payload": {"events": []}, "ok": True, "status": 200},
-    ]
-    probe = _run_node_probe(LIVE_PORTAL_HTML, "servedPolls", served)
-    return probe["transcriptAfterEachPoll"][-1]
 
 
 def snapshot_payload(
@@ -101,39 +89,6 @@ def commit(start: int, end: int, transcript: str, revised: str | None = None) ->
 
 
 class ExportIsTheVisibleSurfaceTest(unittest.TestCase):
-    def test_the_export_is_what_the_reader_saw(self):
-        """Plan §14 T3: export text equals visible effective text.
-
-        One meeting, two readers: the export reads the served snapshot, the portal page
-        renders the same one in the headless browser, and the screen is parsed back with the
-        production parser. Speaker, words and seconds must agree segment for segment --
-        anything else means the file and the screen disagree about a meeting that happened.
-        """
-
-        payload = served_snapshot(rolling=True, frames=MIXED_SURFACE_FRAMES)
-        self.assertGreater(payload["session"]["text_revision_version"], 0)
-        # Not a vacuous comparison: a surface of one authority could not tell a page that
-        # replaces its prefix from one that appends to it.
-        self.assertEqual(
-            {segment["authority"] for segment in payload["session"]["effective_transcript"]},
-            {"rolling", "provisional"},
-        )
-
-        exported = export(payload)
-        on_screen = [
-            item
-            for row in rendered_transcript(payload).split("\n\n")
-            for item in parse_transcript(row)
-        ]
-
-        self.assertEqual(len(exported), len(on_screen))
-        self.assertGreater(len(exported), 0)
-        for shown, written in zip(on_screen, exported):
-            self.assertEqual(written.speaker, shown.speaker)
-            self.assertEqual(written.text, shown.text)
-            self.assertAlmostEqual(written.start, shown.start, places=6)
-            self.assertAlmostEqual(written.end, shown.end, places=6)
-
     def test_the_export_publishes_the_revision_and_not_the_words_it_replaced(self):
         """A reader watched the words change; the file must not restore the old ones."""
 
