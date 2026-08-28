@@ -674,7 +674,7 @@ class AppApiTest(unittest.TestCase):
             self.assertEqual(persisted["checkpoint_state"], "complete")
             self.assertEqual(persisted["resume_attempts"], 0)
 
-    def test_resume_failed_checkpoint_job_conflicts_while_active(self):
+    def test_resume_failed_checkpoint_job_is_idempotent_while_active(self):
         from moss_transcribe_diarize.app.jobs import JobManager, JobRecord
 
         payload = b"audio"
