@@ -138,7 +138,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with the committed suites.  Falling below them means a test was
 # removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1033
+MINIMUM_PYTHON_TESTS = 1034
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
@@ -1061,7 +1061,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         for event in item["events"]:
             if not isinstance(event, dict):
                 return False
-            capacity_events.append(event)
+            capacity_events.append({"session_id": str(ordinal), **event})
             timestamp = event.get("runtime_monotonic_ns")
             if not isinstance(timestamp, int):
                 return False
@@ -1133,7 +1133,13 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         for ordinal, sequences in probe_sequences.items()
     )
     try:
-        inference = prestop_inference_projection(capacity_events)
+        accepted_audio_seconds = sum(
+            int(item["accepted_samples"]) for item in ordered_sessions
+        ) / 16_000
+        inference = prestop_inference_projection(
+            capacity_events,
+            accepted_audio_seconds=accepted_audio_seconds,
+        )
     except ValueError:
         return False
     rtf = float(inference["rtf"])

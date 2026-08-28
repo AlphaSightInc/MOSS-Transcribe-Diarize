@@ -19,8 +19,9 @@ projection, and campaign-bound overload backpressure.
 - **Minimum primitives:** `git_sha` at the output boundary; queued/started/processed lifecycle
   evidence during joint readiness; one already-revoked disposable session; 15/4/8/12/122 raw
   campaign units; actual isolated block/drain/archive/release/restore operations; and installed
-  `mtd-admin status` human plus JSON output through the one status allowlist. Each primitive has one
-  boundary and removing any one recreates its corresponding false pass.
+  `mtd-admin status` human plus JSON output through the one status allowlist. Pre-Stop inference is
+  keyed by Meeting plus item, includes canonical and rolling elapsed time, and divides by exact
+  accepted audio. Each primitive has one boundary and removing any one recreates its false pass.
 - **Invariants:** the valid candidate path reaches an exclusive attempt; absent contention is not
   fairness; G5 does not revoke G2's future peer; terminal evidence exposes raw unit denominators; a
   missing release cannot install; exact old bytes return after forced failure; direct UDS success
@@ -31,7 +32,9 @@ projection, and campaign-bound overload backpressure.
   probe is still valid; 15/4/8/12/122 are absent; a dangling release passes rehearsal; or operator
   raw state passes without both CLI surfaces. Later review adds: zero-from-start claims drain; a
   dirty checkout or changed admin/unit byte passes; Stop-tail work dilutes pre-Stop RTF; or a
-  detached two-session backpressure probe satisfies the eight-session overload campaign.
+  detached two-session backpressure probe satisfies the eight-session overload campaign. The last
+  falsifiers omit rolling decode cost and collide a Stop item with the same item number in another
+  Meeting.
 - **Tool decision:** call the production entrypoint and reducers because a model cannot establish a
   reachable false pass; use a temporary isolated host because filesystem install/restore truth
   cannot be measured in memory. Any observed falsifier rejects the production candidate.
@@ -113,6 +116,15 @@ transitions before snapshot. Canonical queue reason excludes only Stop-generated
 the eight-session reducer requires target/peer ordinals and refusal/progress/retry timestamps inside
 that same campaign interval. Zero initial work, dirty/mixed candidate bytes, Stop dilution, and a
 detached backpressure probe all fail.
+
+**RED under final inference review: 32/34 derived assertions passed.** The production reducer
+reported canonical 0.9 plus rolling 0.2 as 0.9, and a Stop item numbered zero in one Meeting erased
+the legitimate item zero in another Meeting, again reducing an actual 1.1 RTF to 0.9.
+
+**GREEN after session-scoped inference correction: 34/34 derived assertions passed.** Retained
+lifecycle evidence now includes rolling elapsed time. The reducer keys every canonical and rolling
+item by `(Meeting, item)`, excludes only that Meeting's Stop-tail work, sums both decode lanes, and
+divides by the exact accepted audio duration. Both known 1.1 cases now measure 1.1 and fail G4.
 
 The available development runtimes are not qualification candidates: CPython 3.10.19 and 3.12.12
 both report SQLite 3.50.4; CPython 3.14 reports 3.53.0; `pysqlite3==0.6.0` reports 3.51.1. The

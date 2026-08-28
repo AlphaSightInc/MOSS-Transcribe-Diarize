@@ -8,50 +8,85 @@ from typing import Any, Mapping, Sequence
 
 def prestop_inference_projection(
     events: Sequence[Mapping[str, Any]],
+    *,
+    accepted_audio_seconds: float,
 ) -> dict[str, int | float]:
-    """Reduce inference cost for canonical work admitted before Stop."""
+    """Reduce pre-Stop canonical and rolling compute over accepted audio."""
 
     def payload(event: Mapping[str, Any]) -> Mapping[str, Any]:
         nested = event.get("payload")
         return nested if isinstance(nested, Mapping) else event
 
+    def item_identity(event: Mapping[str, Any]) -> tuple[str, int]:
+        session_id = event.get("session_id")
+        item_id = payload(event).get("item_id")
+        if not isinstance(session_id, str) or not session_id or not isinstance(item_id, int):
+            raise ValueError("inference event lacks session-scoped item identity")
+        return session_id, item_id
+
+    if not math.isfinite(accepted_audio_seconds) or accepted_audio_seconds <= 0:
+        raise ValueError("accepted audio duration is invalid")
     stop_items = {
-        int(payload(event)["item_id"])
+        item_identity(event)
         for event in events
         if event.get("kind") == "canonical_queued"
         and payload(event).get("reason") == "stop"
-        and isinstance(payload(event).get("item_id"), int)
     }
-    decode_seconds = 0.0
-    audio_seconds = 0.0
-    processed_items = 0
+    rolling_admitted = {
+        item_identity(event)
+        for event in events
+        if event.get("kind") == "rolling_decode_queued"
+        and payload(event).get("admitted") is True
+    }
+    canonical_decode_seconds = 0.0
+    rolling_decode_seconds = 0.0
+    canonical_processed_items = 0
+    rolling_completed_items: set[tuple[str, int]] = set()
     for event in events:
-        if event.get("kind") != "canonical_processed":
+        kind = event.get("kind")
+        if kind not in {"canonical_processed", "rolling_decode_completed"}:
             continue
         item = payload(event)
-        item_id = item.get("item_id")
-        if not isinstance(item_id, int):
-            raise ValueError("canonical processed event lacks item identity")
-        if item_id in stop_items:
+        identity = item_identity(event)
+        if kind == "canonical_processed" and identity in stop_items:
+            continue
+        if kind == "canonical_processed":
+            try:
+                decode = float(item["canonical_decode_elapsed_sec"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError("canonical processed event lacks inference timing") from exc
+            if not math.isfinite(decode) or decode < 0:
+                raise ValueError("canonical processed inference timing is invalid")
+            canonical_decode_seconds += decode
+            canonical_processed_items += 1
+            continue
+        if identity not in rolling_admitted or identity in rolling_completed_items:
+            raise ValueError("rolling completion lacks one admitted session-scoped item")
+        rolling_completed_items.add(identity)
+        if "rolling_decode_elapsed_sec" not in item:
+            raise ValueError("rolling completion lacks inference timing")
+        elapsed = item["rolling_decode_elapsed_sec"]
+        if elapsed is None:
             continue
         try:
-            decode = float(item["canonical_decode_elapsed_sec"])
-            audio = float(item["frozen_span_duration_sec"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError("canonical processed event lacks inference timing") from exc
-        if not math.isfinite(decode) or decode < 0 or not math.isfinite(audio) or audio <= 0:
-            raise ValueError("canonical processed inference timing is invalid")
-        decode_seconds += decode
-        audio_seconds += audio
-        processed_items += 1
-    if processed_items == 0 or audio_seconds <= 0:
+            rolling_decode = float(elapsed)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("rolling completion inference timing is invalid") from exc
+        if not math.isfinite(rolling_decode) or rolling_decode < 0:
+            raise ValueError("rolling completion inference timing is invalid")
+        rolling_decode_seconds += rolling_decode
+    if canonical_processed_items == 0:
         raise ValueError("pre-Stop inference evidence is absent")
+    total_decode_seconds = canonical_decode_seconds + rolling_decode_seconds
     return {
-        "processed_items": processed_items,
+        "canonical_processed_items": canonical_processed_items,
+        "rolling_completed_items": len(rolling_completed_items),
         "stop_items": len(stop_items),
-        "decode_seconds": decode_seconds,
-        "audio_seconds": audio_seconds,
-        "rtf": decode_seconds / audio_seconds,
+        "canonical_decode_seconds": canonical_decode_seconds,
+        "rolling_decode_seconds": rolling_decode_seconds,
+        "decode_seconds": total_decode_seconds,
+        "accepted_audio_seconds": accepted_audio_seconds,
+        "rtf": total_decode_seconds / accepted_audio_seconds,
     }
 
 

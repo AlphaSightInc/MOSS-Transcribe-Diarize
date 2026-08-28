@@ -2167,7 +2167,13 @@ class FixedAccountCampaign:
         rss_samples.append(rss_after)
         cache_samples.append(_vllm_cache_use(self._text("vllm_metrics_url")))
         all_events = [event for output in outputs for event in output["events"]]  # type: ignore[index]
-        inference = prestop_inference_projection(all_events)
+        accepted_audio_seconds = sum(
+            int(output["accepted_samples"]) for output in outputs
+        ) / LIVE_SAMPLE_RATE
+        inference = prestop_inference_projection(
+            all_events,
+            accepted_audio_seconds=accepted_audio_seconds,
+        )
         rolling_pending: dict[str, set[int]] = defaultdict(set)
         refinement_depth = 0
         terminal_failures = 0
@@ -2292,6 +2298,9 @@ class FixedAccountCampaign:
                             "frozen_span_duration_sec": (
                                 event.get("payload") or {}
                             ).get("frozen_span_duration_sec"),
+                            "rolling_decode_elapsed_sec": (
+                                event.get("payload") or {}
+                            ).get("rolling_decode_elapsed_sec"),
                             "submitted": (event.get("payload") or {}).get("submitted"),
                             "admitted": (event.get("payload") or {}).get("admitted"),
                             "item_id": (event.get("payload") or {}).get("item_id"),

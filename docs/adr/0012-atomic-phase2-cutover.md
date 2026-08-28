@@ -137,7 +137,7 @@ inert beside the live Phase-1 checkout. It does not repoint the live checkout, c
 alone quiesces Phase 1, seals its large archive, activates that one pointer, and installs the
 web-only cutover unit while proving the running vLLM PID, argv, and activation timestamp unchanged.
 
-The retained qualification prototype derived PASS from 32/32 policy falsifiers and separately
+The retained qualification prototype derived PASS from 34/34 policy falsifiers and separately
 measured the Linux exact-runtime path: wrong SQLite refused before any database artifact; the
 private prefix reported 3.53.4; `aiosqlite==0.22.1` preserved WAL, foreign keys, `FULL`, schema v1,
 and restart truth; and a clean wheel's installed member projection matched its candidate wheel.
@@ -154,7 +154,9 @@ manifest binds the web, admin, and vLLM launchers plus both future-restart syste
 unit bytes must match. The rehearsal starts with five accepted work units across both runtime
 views, observes them unchanged immediately after the marker refuses a new admission, and performs
 five explicit continuation transitions to zero before snapshot. G4 now derives pre-Stop inference
-RTF only from canonical items not queued with `reason=stop`, and overload backpressure carries its
+RTF from session-scoped canonical and rolling decode elapsed time over exact accepted audio,
+excluding only canonical items queued for that Meeting with `reason=stop`; this prevents both
+omitted rolling cost and cross-Meeting item-number collisions. Overload backpressure carries its
 target/peer ordinals plus refusal/progress/retry times inside the same eight-session interval.
 Real Google OAuth, deployed four-session/600-second capacity, the 12-session frozen quality corpus,
 production TLS, and the production-origin pre-admission campaign remain unmeasured until their

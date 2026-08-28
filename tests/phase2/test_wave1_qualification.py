@@ -139,7 +139,7 @@ def _capacity_raw() -> dict[str, object]:
                         "kind": "canonical_processed",
                         "runtime_monotonic_ns": 20 + ordinal,
                         "item_id": ordinal,
-                        "canonical_decode_elapsed_sec": 0.9,
+                        "canonical_decode_elapsed_sec": 540.0,
                         "frozen_span_duration_sec": 1.0,
                     },
                     {
@@ -153,6 +153,7 @@ def _capacity_raw() -> dict[str, object]:
                         "runtime_monotonic_ns": 40 + ordinal,
                         "item_id": 1,
                         "outcome": "published",
+                        "rolling_decode_elapsed_sec": 0.0,
                     },
                 ],
             }
@@ -356,11 +357,30 @@ def test_capacity_rtf_excludes_stop_tail_and_overload_backpressure_is_campaign_b
     for session in diluted["session_observations"]:
         for event in session["events"]:
             if event["kind"] == "canonical_processed" and event["item_id"] < 100:
-                event["canonical_decode_elapsed_sec"] = 1.1
+                event["canonical_decode_elapsed_sec"] = 660.0
             elif event["kind"] == "canonical_processed":
                 event["canonical_decode_elapsed_sec"] = 0.0
     diluted["prestop_inference_rtf"] = 0.55
     assert acceptance._validate_capacity({"raw": diluted}) is False
+
+    rolling_omitted = copy.deepcopy(capacity)
+    for session in rolling_omitted["session_observations"]:
+        for event in session["events"]:
+            if event["kind"] == "rolling_decode_completed":
+                event["rolling_decode_elapsed_sec"] = 120.0
+    rolling_omitted["prestop_inference_rtf"] = 0.9
+    assert acceptance._validate_capacity({"raw": rolling_omitted}) is False
+
+    collided = copy.deepcopy(capacity)
+    for session in collided["session_observations"]:
+        ordinal = int(session["session_ordinal"])
+        for event in session["events"]:
+            if event["kind"] == "canonical_processed" and event["item_id"] < 100:
+                event["canonical_decode_elapsed_sec"] = 1020.0 if ordinal == 2 else 540.0
+            if ordinal == 1 and event.get("item_id") == 101:
+                event["item_id"] = 2
+    collided["prestop_inference_rtf"] = 0.9
+    assert acceptance._validate_capacity({"raw": collided}) is False
 
     overload = _overload_raw()
     assert acceptance._validate_overload({"raw": overload}) is True
@@ -370,6 +390,57 @@ def test_capacity_rtf_excludes_stop_tail_and_overload_backpressure_is_campaign_b
     overload = _overload_raw()
     overload["backpressure_observation"]["retry_monotonic_ns"] = 32_000_000_000
     assert acceptance._validate_overload({"raw": overload}) is False
+
+
+def test_prestop_rtf_includes_rolling_and_scopes_stop_items_to_meeting():
+    events = [
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_processed",
+            "payload": {"item_id": 1, "canonical_decode_elapsed_sec": 0.9},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "rolling_decode_queued",
+            "payload": {"item_id": 2, "admitted": True},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "rolling_decode_completed",
+            "payload": {"item_id": 2, "rolling_decode_elapsed_sec": 0.2},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_queued",
+            "payload": {"item_id": 0, "reason": "stop"},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_processed",
+            "payload": {"item_id": 0, "canonical_decode_elapsed_sec": 100.0},
+        },
+        {
+            "session_id": "meeting-b",
+            "kind": "canonical_processed",
+            "payload": {"item_id": 0, "canonical_decode_elapsed_sec": 1.1},
+        },
+    ]
+
+    projection = acceptance.prestop_inference_projection(
+        events,
+        accepted_audio_seconds=2.0,
+    )
+
+    assert projection == {
+        "canonical_processed_items": 2,
+        "rolling_completed_items": 1,
+        "stop_items": 1,
+        "canonical_decode_seconds": 2.0,
+        "rolling_decode_seconds": 0.2,
+        "decode_seconds": 2.2,
+        "accepted_audio_seconds": 2.0,
+        "rtf": 1.1,
+    }
 
 
 def test_campaign_backpressure_retries_exact_target_frame_after_same_campaign_peer():

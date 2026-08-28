@@ -360,7 +360,7 @@ def capacity_raw() -> dict[str, object]:
                         "kind": "canonical_processed",
                         "runtime_monotonic_ns": 20 + ordinal,
                         "item_id": ordinal,
-                        "canonical_decode_elapsed_sec": 0.9,
+                        "canonical_decode_elapsed_sec": 540.0,
                         "frozen_span_duration_sec": 1.0,
                     },
                     {
@@ -374,6 +374,7 @@ def capacity_raw() -> dict[str, object]:
                         "runtime_monotonic_ns": 40 + ordinal,
                         "item_id": 10 + ordinal,
                         "outcome": "published",
+                        "rolling_decode_elapsed_sec": 0.0,
                     },
                 ],
             }
@@ -467,7 +468,7 @@ def lifecycle_phase_false_pass() -> dict[str, object]:
         events = session["events"]  # type: ignore[index]
         for event in events:
             if event["kind"] == "canonical_processed":
-                event["canonical_decode_elapsed_sec"] = 1.1
+                event["canonical_decode_elapsed_sec"] = 660.0
         events.extend(
             (
                 {
@@ -513,6 +514,85 @@ def lifecycle_phase_false_pass() -> dict[str, object]:
         "prestop_rtf": 1.1,
         "combined_rtf": 0.55,
         "diluted_passed": acceptance._validate_capacity({"raw": raw}),
+    }
+
+
+def inference_projection_false_passes() -> dict[str, object]:
+    rolling_events = [
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_processed",
+            "payload": {
+                "item_id": 0,
+                "canonical_decode_elapsed_sec": 0.9,
+                "frozen_span_duration_sec": 1.0,
+            },
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "rolling_decode_queued",
+            "payload": {"item_id": 1, "admitted": True},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "rolling_decode_completed",
+            "payload": {
+                "item_id": 1,
+                "outcome": "applied",
+                "rolling_decode_elapsed_sec": 0.2,
+            },
+        },
+    ]
+    rolling = acceptance.prestop_inference_projection(
+        rolling_events,
+        accepted_audio_seconds=1.0,
+    )
+
+    collision_events = [
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_processed",
+            "payload": {
+                "item_id": 1,
+                "canonical_decode_elapsed_sec": 0.9,
+                "frozen_span_duration_sec": 1.0,
+            },
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_queued",
+            "payload": {"item_id": 0, "reason": "stop"},
+        },
+        {
+            "session_id": "meeting-a",
+            "kind": "canonical_processed",
+            "payload": {
+                "item_id": 0,
+                "canonical_decode_elapsed_sec": 0.0,
+                "frozen_span_duration_sec": 1.0,
+            },
+        },
+        {
+            "session_id": "meeting-b",
+            "kind": "canonical_processed",
+            "payload": {
+                "item_id": 0,
+                "canonical_decode_elapsed_sec": 1.3,
+                "frozen_span_duration_sec": 1.0,
+            },
+        },
+    ]
+    collision = acceptance.prestop_inference_projection(
+        collision_events,
+        accepted_audio_seconds=2.0,
+    )
+    return {
+        "rolling_actual_rtf": 1.1,
+        "rolling_observed_rtf": rolling["rtf"],
+        "rolling_false_passed": float(rolling["rtf"]) < 1.0,
+        "collision_actual_rtf": 1.1,
+        "collision_observed_rtf": collision["rtf"],
+        "collision_false_passed": float(collision["rtf"]) < 1.0,
     }
 
 
@@ -783,6 +863,7 @@ def main() -> int:
 
     fairness = fairness_false_pass()
     lifecycle_phase = lifecycle_phase_false_pass()
+    inference_projection = inference_projection_false_passes()
     overload_binding = detached_overload_backpressure_false_pass()
     session_boundaries = session_boundary_state()
     denominators = denominator_projection_state()
@@ -913,8 +994,8 @@ def main() -> int:
                 },
                 {
                     "name": "prestop_inference_projection",
-                    "boundary": "canonical queue reason separates work admitted by frames from Stop-tail work before RTF reduction",
-                    "irreducible": "without lifecycle phase, cheap Stop-tail work can dilute a failing pre-Stop RTF",
+                    "boundary": "session-scoped item identity separates Stop-tail work and sums canonical plus rolling decode over accepted audio",
+                    "irreducible": "without session scope and both compute lanes, one Meeting can erase another and omitted rolling cost can pass",
                 },
                 {
                     "name": "campaign_bound_backpressure",
@@ -943,7 +1024,7 @@ def main() -> int:
                 "cutover rehearsal rejects a missing candidate release and restores actual isolated host bytes",
                 "a dirty detached checkout or changed future launcher/unit byte cannot qualify",
                 "the rehearsal starts nonzero, rejects admission after block, and drains exactly the admitted units",
-                "only canonical work not queued for Stop contributes to the pre-Stop RTF",
+                "session-scoped canonical and rolling work admitted before Stop contributes to RTF over exact accepted audio",
                 "overload backpressure target and peer are members of the same eight-session interval",
                 "both mtd-admin status surfaces match the exact operator allowlist",
             ],
@@ -951,7 +1032,7 @@ def main() -> int:
                 "real OAuth, deployed campaigns, TLS, rollback host state, and production canary are externally unmeasured",
                 "the committed external campaigns remain unqualified until their real OAuth, host, and speech prerequisites are measured",
             ],
-            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, Stop-tail work dilutes pre-Stop RTF, detached backpressure satisfies overload, a valid peer is called revoked, 15/4/8/12/122 disappear, zero-from-start claims drain, a dirty checkout or mixed restart byte rehearses, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
+            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, Stop-tail work dilutes pre-Stop RTF, rolling decode is omitted, a Stop item erases another Meeting's same-numbered item, detached backpressure satisfies overload, a valid peer is called revoked, 15/4/8/12/122 disappear, zero-from-start claims drain, a dirty checkout or mixed restart byte rehearses, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
             "tool_decisions": [
                 {
                     "tool": "state-reducer prototype",
@@ -990,8 +1071,8 @@ def main() -> int:
                 },
                 {
                     "tool": "production capacity reducers",
-                    "necessary": "RTF phase and overload membership are properties of retained lifecycle arrays, not producer summary booleans",
-                    "decision_change": "accepting Stop dilution or a detached backpressure probe rejects the raw evidence shape",
+                    "necessary": "RTF phase, both compute lanes, Meeting identity, and overload membership are properties of retained lifecycle arrays, not producer summary booleans",
+                    "decision_change": "accepting Stop dilution, omitted rolling cost, cross-Meeting item collision, or detached backpressure rejects the raw evidence shape",
                 },
             ],
         },
@@ -1009,6 +1090,7 @@ def main() -> int:
         "candidate_output_entry": output_entry,
         "capacity_fairness": fairness,
         "capacity_lifecycle_phase": lifecycle_phase,
+        "prestop_inference_projection": inference_projection,
         "overload_backpressure_binding": overload_binding,
         "session_boundaries": session_boundaries,
         "campaign_denominators": denominators,
@@ -1051,6 +1133,8 @@ def main() -> int:
         fairness == {"baseline_passed": True, "absent_fairness_passed": False},
         lifecycle_phase
         == {"prestop_rtf": 1.1, "combined_rtf": 0.55, "diluted_passed": False},
+        inference_projection["rolling_false_passed"] is False,
+        inference_projection["collision_false_passed"] is False,
         overload_binding
         == {
             "campaign_sessions": 8,
