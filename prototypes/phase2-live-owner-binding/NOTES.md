@@ -3,7 +3,8 @@
 ## Contract
 
 - **Question:** can the originating MOSS Sign-in session control capture while every request first
-  resolves its enabled Account and then enters an Account-partitioned in-memory Live registry?
+  resolves its enabled Account and then enters an Account-partitioned in-memory Live registry; and
+  can that authority/publication adapter share one transport implementation with the legacy adapter?
 - **Minimum state:** owner-bound Meeting handle, originating Sign-in session locator, transient Live
   snapshot/events, terminal state. The registry stores state but grants no authority.
 - **Invariant:** every request resolves the current session plus enabled Account from SQLite;
@@ -16,11 +17,14 @@
 - **Assumption:** one Sign-in session is one Access client; sibling tabs sharing its cookie are not a
   distinct client. This is settled by T-19 and ADR-0007, not introduced here.
 - **Hypothesis:** this state is sufficient; no bearer, view token, client Account identity, durable
-  grant, or global durable Meeting lookup is needed.
+  grant, or global durable Meeting lookup is needed. The only transport seam needs five operations:
+  authorize, create, snapshot, events, and publication. Frame decoding, v2 lane state, mixer, tape,
+  heartbeat, Stop, abort, errors, and capture-state release do not vary.
 - **Falsifier:** any printed path permits observer/foreign mutation or foreign read, performs a
   Meeting/transcript read or write during polling, accepts a late result after revoke, loses the
   committed prefix, resumes after interruption, or exposes closed/final words before their atomic
-  terminal commit.
+  terminal commit. The shared-seam hypothesis is also false if legacy and Phase 2 produce different
+  frame/Stop/error results, or if Phase 2 exposes a held publication.
 
 ## One command
 
@@ -34,6 +38,13 @@ PYTHONDONTWRITEBYTECODE=1 uv run --frozen --extra dev python prototypes/phase2-l
 `MeetingHandle`, generation fence, SQLite trace callback, and a real runtime-thread to event-loop
 handoff feeding one serialized per-Meeting publication worker.
 
+- A prototype shared transport drove legacy and Phase-2 adapters through create, accepted frame,
+  duplicate-frame conflict, snapshot/events, and Stop. Both adapters returned the same frame `200`,
+  stable `v2_out_of_order_frame` `409`, and Stop `200`, then converged on closed version 2 with the
+  same three public events. With each Phase-2 publication held, raw advanced `0→1→2` while
+  durable/public stayed `0→0` then `1→1`; snapshot/events exposed only the prior durable state.
+  Releasing each commit advanced durable/public together. The five-method seam is therefore
+  sufficient; protocol and five-registry lifecycle belong behind the shared transport module.
 - With raw revision/event high-water already at `3/12` and its database commit held, four polls saw
   only durable/public revision `1`, event high-water `10`; SQL was 4 auth reads, 0 content reads,
   0 writes.

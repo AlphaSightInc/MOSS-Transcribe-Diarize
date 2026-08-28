@@ -42,11 +42,20 @@ view token, pairing/device grant, or compatibility mode.
   an Account-partitioned in-memory registry carrying the original Meeting handle. The originating
   Sign-in session alone mutates; another same-Account session observes; foreign identifiers never
   reach runtime state. The registry stores state but grants no authority.
+- The extended probe accepts one deep Live transport module with two real adapters. Legacy access
+  and Phase-2 Account ownership vary only at five hooks: authorize, create, snapshot, events, and
+  publication. The module owns frame parsing, v2 lane registries, mixing, tape, heartbeat, Stop,
+  abort, error mapping, and capture-state release once. Both adapters produced identical accepted
+  frame, out-of-order conflict, and Stop outcomes; held Phase-2 commits kept old snapshot/events
+  public until durable release. A second route/protocol implementation is rejected.
 - The signed-in workspace loads the existing two-lane Chrome capture client in Account-authority
   mode. It sends only the opaque Meeting ID plus the HttpOnly Sign-in cookie: no browser Account ID,
   shared bearer, view token, or durable capture grant is created. Reload retains observer reattach by
   Meeting ID, while the server arms the existing helper lease at creation so a lost first heartbeat
   or later heartbeat interrupts the original capture.
+- `/` composes File, Live, then History in one document scroller. The embedded Live app keeps its
+  viewport-height working area but does not own or hide the page scroll; real headless Chrome at
+  desktop and mobile viewports must scroll History into view in that order.
 - The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
   acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
   2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five

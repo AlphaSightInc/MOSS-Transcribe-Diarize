@@ -5,7 +5,7 @@ import base64
 import binascii
 import time
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, Protocol
 
 from starlette.requests import Request
 
@@ -50,8 +50,10 @@ from .live_mixer import (
 )
 from .live_service_runtime import (
     LiveServiceError,
+    LiveServiceEvent,
     LiveServiceFailureKind,
     LiveServiceRuntime,
+    LiveServiceSnapshot,
 )
 from .live_session import (
     AudioFrame,
@@ -69,16 +71,177 @@ from .live_v2_session import (
 )
 
 
+@dataclass(frozen=True, slots=True)
+class LiveTransportCreated:
+    """Authority-specific creation result consumed by the shared transport."""
+
+    session_id: str
+    authority: object
+    status_code: int
+    response_fields: Mapping[str, object]
+    arm_helper_lease: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class LiveTransportSnapshotView:
+    """One adapter's public projection plus fields owned by that projection."""
+
+    visible: LiveServiceSnapshot | None
+    current: LiveServiceSnapshot | None
+    fields: Mapping[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class LiveTransportEventView:
+    events: tuple[LiveServiceEvent, ...]
+    fields: Mapping[str, object]
+
+
+class LiveTransportAdapter(Protocol):
+    """The only authority/publication facts allowed outside the shared transport."""
+
+    async def authorize(
+        self,
+        request: Request,
+        operation: str,
+        session_id: str | None,
+    ) -> object: ...
+
+    async def create(
+        self,
+        payload: Mapping[str, object],
+        authority: object,
+    ) -> LiveTransportCreated: ...
+
+    def snapshot(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_version: int | None,
+    ) -> LiveTransportSnapshotView: ...
+
+    def events(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_seq: int,
+    ) -> LiveTransportEventView: ...
+
+    async def publication(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        wait_for_durability: bool,
+    ) -> LiveServiceSnapshot | None: ...
+
+
+class _LegacyLiveTransportAdapter:
+    """Legacy bearer/pairing authority over the raw runtime publication."""
+
+    def __init__(self, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
+        self.runtime = runtime
+        self.access = access
+
+    async def authorize(
+        self,
+        request: Request,
+        operation: str,
+        session_id: str | None,
+    ) -> object:
+        return self.access.authorize(
+            _peer_from_request(request),
+            None if operation == "descriptor" else _bearer_from_request(request),
+            operation,
+            session_id,
+            now=_request_now(),
+        )
+
+    async def create(
+        self,
+        payload: Mapping[str, object],
+        authority: object,
+    ) -> LiveTransportCreated:
+        decision = authority
+        principal = getattr(decision, "principal", None)
+        if not isinstance(principal, CapturePrincipal):
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=403, detail="capture authority is required.")
+        created = self.runtime.create(echo_mode=payload.get("echo_mode"))
+        view = self.access.bind_session(principal, created.session_id, now=_request_now())
+        return LiveTransportCreated(
+            session_id=created.session_id,
+            authority=decision,
+            status_code=200,
+            response_fields={
+                "owner_device_id": view.owner_device_id,
+                "view_token": view.view_token,
+                "view_expires_at": view.expires_at,
+            },
+        )
+
+    def snapshot(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_version: int | None,
+    ) -> LiveTransportSnapshotView:
+        return LiveTransportSnapshotView(
+            visible=self.runtime.snapshot(session_id, since_version=since_version),
+            current=self.runtime.snapshot(session_id),
+            fields={},
+        )
+
+    def events(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_seq: int,
+    ) -> LiveTransportEventView:
+        events, observed_monotonic_ns = self.runtime._events_with_observation(
+            session_id,
+            since_seq=since_seq,
+        )
+        return LiveTransportEventView(
+            events=events,
+            fields={"runtime_observed_monotonic_ns": observed_monotonic_ns},
+        )
+
+    async def publication(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        wait_for_durability: bool,
+    ) -> LiveServiceSnapshot | None:
+        return self.runtime.snapshot(session_id)
+
+
 def attach_live_routes(
     app,
     runtime: LiveServiceRuntime,
-    access: LiveAccessRegistry,
+    access: LiveAccessRegistry | None,
     *,
     live_helper_lease_seconds: float,
     tape_store: LiveSessionTapeStore | None = None,
+    transport_adapter: LiveTransportAdapter | None = None,
 ) -> None:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
+
+    if (access is None) == (transport_adapter is None):
+        raise ValueError("provide exactly one legacy access registry or transport adapter.")
+    adapter: LiveTransportAdapter = (
+        _LegacyLiveTransportAdapter(runtime, access)
+        if transport_adapter is None and access is not None
+        else transport_adapter
+    )
+    assert adapter is not None
 
     raw_v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
@@ -113,7 +276,11 @@ def attach_live_routes(
     app.state.live_helper_presence = helper_presence
     app.state.live_helper_failures = helper_failures
 
-    def terminal_conflict_response(session_id: str, exc: Exception):
+    async def terminal_conflict_response(
+        authority: object,
+        session_id: str,
+        exc: Exception,
+    ):
         """Keep terminal 409s as readable, typed transport failures.
 
         Runtime terminal failures already have the canonical code, message, and detail on
@@ -122,7 +289,12 @@ def attach_live_routes(
         session has no runtime failure record, so retain the same envelope shape with a
         stable terminal code and the route's existing server-authored detail.
         """
-        snapshot = _snapshot_payload(runtime, session_id)
+        published = await adapter.publication(
+            authority,
+            session_id,
+            wait_for_durability=False,
+        )
+        snapshot = None if published is None else published.to_dict()
         terminal_failure = snapshot.get("terminal_failure") if snapshot is not None else None
         if isinstance(terminal_failure, Mapping):
             failure = dict(terminal_failure)
@@ -168,22 +340,17 @@ def attach_live_routes(
     # View authority is derived from the runtime's own session status, not mirrored from
     # it: whatever ends the session - clean stop, abort, helper lease expiry, a failed
     # stop that never reaches an explicit release - revokes the view on the next request.
-    access.bind_session_lifecycle(_session_status)
+    if access is not None:
+        access.bind_session_lifecycle(_session_status)
 
     @app.get("/api/live/descriptor")
-    def live_descriptor(
+    async def live_descriptor(
         request: Request,
         client_min_protocol_version: int | None = None,
         client_max_protocol_version: int | None = None,
     ):
         try:
-            access.authorize(
-                _peer_from_request(request),
-                None,
-                "descriptor",
-                None,
-                now=_request_now(),
-            )
+            await adapter.authorize(request, "descriptor", None)
             return _descriptor_payload(
                 runtime,
                 client_min_protocol_version=client_min_protocol_version,
@@ -197,16 +364,16 @@ def attach_live_routes(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    @app.post("/api/live/pairing-codes")
     def issue_live_pairing(request: Request):
+        assert access is not None
         try:
             grant = access.issue_pairing(_peer_from_request(request), now=_request_now())
             return {"pairing_payload": grant.pairing_payload, "expires_at": grant.expires_at}
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    @app.post("/api/live/pairings")
     async def exchange_live_pairing(request: Request):
+        assert access is not None
         try:
             payload = await request.json()
             if not isinstance(payload, dict):
@@ -227,52 +394,61 @@ def attach_live_routes(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    if access is not None:
+        app.add_api_route(
+            "/api/live/pairing-codes",
+            issue_live_pairing,
+            methods=["POST"],
+        )
+        app.add_api_route(
+            "/api/live/pairings",
+            exchange_live_pairing,
+            methods=["POST"],
+        )
+
     @app.post("/api/live/sessions")
     async def create_live_session(request: Request):
         try:
-            decision = access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "create",
-                None,
-                now=_request_now(),
-            )
-            if not isinstance(decision.principal, CapturePrincipal):
-                raise HTTPException(status_code=403, detail="capture authority is required.")
+            authority = await adapter.authorize(request, "create", None)
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         payload = await _optional_json(request)
         try:
-            created = runtime.create(echo_mode=payload.get("echo_mode"))
+            created = await adapter.create(payload, authority)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except LiveAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         try:
-            view = access.bind_session(decision.principal, created.session_id, now=_request_now())
             v2_sessions.create(created.session_id)
             v2_mixers.create(created.session_id)
             tapes.create(created.session_id)
+            if created.arm_helper_lease:
+                helper_failures.arm(created.session_id)
         except Exception:
-            access.release_session(created.session_id)
+            if access is not None:
+                access.release_session(created.session_id)
             raise
-        return {
+        published = await adapter.publication(
+            created.authority,
+            created.session_id,
+            wait_for_durability=False,
+        )
+        if published is None:
+            raise HTTPException(status_code=500, detail="Live session publication failed.")
+        response = {
             "id": created.session_id,
-            "owner_device_id": view.owner_device_id,
-            "view_token": view.view_token,
-            "view_expires_at": view.expires_at,
-            "descriptor": created.descriptor.to_dict(),
-            "snapshot": created.snapshot.to_dict(),
+            **created.response_fields,
+            "descriptor": runtime.descriptor.to_dict(),
+            "snapshot": published.to_dict(),
         }
+        return JSONResponse(response, status_code=created.status_code)
 
     @app.post("/api/live/sessions/{session_id}/frames")
     async def accept_live_frame(session_id: str, request: Request):
+        authority: object | None = None
         try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "frame",
-                session_id,
-                now=_request_now(),
-            )
+            authority = await adapter.authorize(request, "frame", session_id)
             payload = await request.json()
             frame = _frame_from_payload(payload)
             if frame.v2_frame is None:
@@ -280,7 +456,6 @@ def attach_live_routes(
                 result = _TransportAcceptResult(
                     ack=accepted.ack,
                     queued_item_ids=accepted.queued_item_ids,
-                    snapshot_version=accepted.snapshot.session.version,
                 )
             else:
                 snapshot = runtime.snapshot(session_id)
@@ -306,12 +481,16 @@ def attach_live_routes(
                 result = _TransportAcceptResult(
                     ack=ack,
                     queued_item_ids=() if mixed is None else mixed.queued_item_ids,
-                    snapshot_version=snapshot.session.version,
                 )
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return {
                 "ack": _jsonable(_ack_for_transport(result.ack, lane=frame.lane)),
                 "queued_item_ids": list(result.queued_item_ids),
-                "snapshot_version": result.snapshot_version,
+                "snapshot_version": 0 if published is None else published.session.version,
             }
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -329,55 +508,83 @@ def attach_live_routes(
             elif isinstance(exc, LiveV2LaneCapacityError):
                 capture_observations.observe_backpressure_rejection(session_id, exc.lane)
             status, conflict = live_v2_ingress_failure_response(exc)
-            conflict["snapshot"] = _snapshot_payload(runtime, session_id)
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
+            conflict["snapshot"] = None if published is None else published.to_dict()
             conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
             return JSONResponse(conflict, status_code=status)
         except (InferenceArbiterBackpressure, LiveSessionBackpressure) as exc:
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return JSONResponse(
-                {"detail": str(exc), "snapshot": _snapshot_payload(runtime, session_id)},
+                {
+                    "detail": str(exc),
+                    "snapshot": None if published is None else published.to_dict(),
+                },
                 status_code=429,
             )
         except LiveSessionClosed as exc:
-            return terminal_conflict_response(session_id, exc)
+            return await terminal_conflict_response(authority, session_id, exc)
         except LiveV2SessionTerminalError as exc:
-            return terminal_conflict_response(session_id, exc)
+            return await terminal_conflict_response(authority, session_id, exc)
         except ValueError as exc:
             status_code = 409 if str(exc).startswith("expected frame sequence") else 400
             raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         except LiveServiceError as exc:
             status_code = _failure_status(exc)
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return JSONResponse(
-                {"detail": str(exc), "failure": exc.failure.to_dict(), "snapshot": _snapshot_payload(runtime, session_id)},
+                {
+                    "detail": str(exc),
+                    "failure": exc.failure.to_dict(),
+                    "snapshot": None if published is None else published.to_dict(),
+                },
                 status_code=status_code,
             )
 
     @app.post("/api/live/sessions/{session_id}/heartbeat")
     async def accept_live_helper_heartbeat(session_id: str, request: Request):
-        return await _accept_live_helper_heartbeat(
-            request,
-            session_id,
-            access=access,
-            helper_presence=helper_presence,
-            helper_failures=helper_failures,
-        )
+        try:
+            await adapter.authorize(request, "heartbeat", session_id)
+            heartbeat = HelperHeartbeat.from_dict(await request.json())
+            presence = helper_presence.observe(session_id, heartbeat)
+            await helper_failures.observe(session_id, presence)
+            return JSONResponse({"helper_presence": presence.to_dict()})
+        except KeyError as exc:
+            return JSONResponse({"detail": str(exc)}, status_code=404)
+        except LiveAccessError as exc:
+            return JSONResponse({"detail": str(exc)}, status_code=exc.status_code)
+        except HelperPresenceConflict as exc:
+            return JSONResponse({"detail": str(exc)}, status_code=409)
+        except ValueError as exc:
+            return JSONResponse({"detail": str(exc)}, status_code=400)
 
     @app.get("/api/live/sessions/{session_id}/snapshot")
-    def live_snapshot(request: Request, session_id: str, since_version: int | None = None):
+    async def live_snapshot(request: Request, session_id: str, since_version: int | None = None):
         try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "snapshot",
-                session_id,
-                now=_request_now(),
-            )
-            return _snapshot_response(
-                runtime,
-                v2_sessions,
-                capture_observations,
-                helper_presence,
+            authority = await adapter.authorize(request, "snapshot", session_id)
+            view = adapter.snapshot(
+                authority,
                 session_id,
                 since_version=since_version,
+            )
+            return _transport_snapshot_response(
+                runtime=runtime,
+                view=view,
+                v2_sessions=v2_sessions,
+                capture_observations=capture_observations,
+                helper_presence=helper_presence,
+                session_id=session_id,
             )
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
@@ -385,16 +592,11 @@ def attach_live_routes(
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.get("/api/live/sessions/{session_id}/events")
-    def live_events(request: Request, session_id: str, since_seq: int = 0):
+    async def live_events(request: Request, session_id: str, since_seq: int = 0):
         try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "events",
-                session_id,
-                now=_request_now(),
-            )
-            events, observed_monotonic_ns = runtime._events_with_observation(
+            authority = await adapter.authorize(request, "events", session_id)
+            view = adapter.events(
+                authority,
                 session_id,
                 since_seq=since_seq,
             )
@@ -405,21 +607,16 @@ def attach_live_routes(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {
-            "events": [event.to_dict() for event in events],
-            "runtime_observed_monotonic_ns": observed_monotonic_ns,
+            "events": [event.to_dict() for event in view.events],
+            **view.fields,
         }
 
     @app.post("/api/live/sessions/{session_id}/stop")
     async def stop_live_session(session_id: str, request: Request):
         release_v2_on_error = False
+        authority: object | None = None
         try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "stop",
-                session_id,
-                now=_request_now(),
-            )
+            authority = await adapter.authorize(request, "stop", session_id)
             payload = await _optional_json(request)
             deadline = float(payload.get("deadline", 0.0))
             loop = asyncio.get_running_loop()
@@ -449,33 +646,57 @@ def attach_live_routes(
                     await asyncio.sleep(0)
                 if v2_snapshot.status == "closing":
                     status, failure = live_v2_unconsumed_frames_response()
-                    failure["snapshot"] = _snapshot_payload(runtime, session_id)
+                    published = await adapter.publication(
+                        authority,
+                        session_id,
+                        wait_for_durability=False,
+                    )
+                    failure["snapshot"] = None if published is None else published.to_dict()
                     failure["v2_session"] = v2_snapshot.to_dict()
                     return JSONResponse(failure, status_code=status)
                 if v2_snapshot.status == "failed":
-                    aborted = await runtime.abort(
+                    await runtime.abort(
                         session_id,
                         v2_snapshot.terminal_reason or "v2 capture failed",
                     )
-                    v2_sessions.release(session_id)
-                    v2_mixers.release(session_id)
-                    tapes.release(session_id)
-                    helper_failures.release(session_id)
-                    helper_presence.release(session_id)
+                    _release_live_capture_state(
+                        session_id,
+                        v2_sessions=v2_sessions,
+                        v2_mixers=v2_mixers,
+                        tapes=tapes,
+                        helper_failures=helper_failures,
+                        helper_presence=helper_presence,
+                    )
+                    published = await adapter.publication(
+                        authority,
+                        session_id,
+                        wait_for_durability=True,
+                    )
                     status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
-                    failure["snapshot"] = aborted.to_dict()
+                    failure["snapshot"] = None if published is None else published.to_dict()
                     failure["v2_session"] = v2_snapshot.to_dict()
                     return JSONResponse(failure, status_code=status)
                 release_v2_on_error = True
             deadline = max(0.0, end_time - loop.time())
             stopped = await runtime.stop(session_id, deadline)
-            v2_sessions.release(session_id)
-            v2_mixers.release(session_id)
-            tapes.release(session_id)
-            helper_failures.release(session_id)
-            helper_presence.release(session_id)
+            _release_live_capture_state(
+                session_id,
+                v2_sessions=v2_sessions,
+                v2_mixers=v2_mixers,
+                tapes=tapes,
+                helper_failures=helper_failures,
+                helper_presence=helper_presence,
+            )
             release_v2_on_error = False
-            response = {"snapshot": stopped.to_dict()}
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=True,
+            )
+            response = {
+                "snapshot": None if published is None else published.to_dict(),
+                "raw_terminal_status": stopped.session.status,
+            }
             if v2_snapshot is not None:
                 response["v2_session"] = v2_snapshot.to_dict()
             return response
@@ -484,60 +705,84 @@ def attach_live_routes(
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except TimeoutError as exc:
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return JSONResponse(
-                {"detail": str(exc), "snapshot": _snapshot_payload(runtime, session_id)},
+                {
+                    "detail": str(exc),
+                    "snapshot": None if published is None else published.to_dict(),
+                },
                 status_code=409,
             )
         except LiveSessionBackpressure as exc:
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return JSONResponse(
                 {
                     "detail": str(exc),
                     "failure": {"code": "v2_stop_backpressure"},
-                    "snapshot": _snapshot_payload(runtime, session_id),
+                    "snapshot": None if published is None else published.to_dict(),
                     "v2_session": _v2_snapshot_payload(v2_sessions, session_id),
                 },
                 status_code=429,
             )
         except (LiveSessionClosed, LiveSessionFailed) as exc:
-            return terminal_conflict_response(session_id, exc)
+            return await terminal_conflict_response(authority, session_id, exc)
         except LiveV2SessionTerminalError as exc:
-            return terminal_conflict_response(session_id, exc)
+            return await terminal_conflict_response(authority, session_id, exc)
         except LiveMixIntegrityError as exc:
             status, failure = live_v2_mix_failure_response(exc)
-            failure["snapshot"] = _snapshot_payload(runtime, session_id)
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
+            failure["snapshot"] = None if published is None else published.to_dict()
             failure["v2_session"] = _v2_snapshot_payload(v2_sessions, session_id)
             if isinstance(exc, LiveMixSourceMissingError):
                 v2_mixers.release(session_id)
                 tapes.release(session_id)
             return JSONResponse(failure, status_code=status)
         except LiveServiceError as exc:
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=False,
+            )
             return JSONResponse(
-                {"detail": str(exc), "failure": exc.failure.to_dict(), "snapshot": _snapshot_payload(runtime, session_id)},
+                {
+                    "detail": str(exc),
+                    "failure": exc.failure.to_dict(),
+                    "snapshot": None if published is None else published.to_dict(),
+                },
                 status_code=_failure_status(exc),
             )
         except (TypeError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         finally:
             if release_v2_on_error:
-                v2_sessions.release(session_id)
-                v2_mixers.release(session_id)
-                tapes.release(session_id)
-                helper_failures.release(session_id)
-                helper_presence.release(session_id)
+                _release_live_capture_state(
+                    session_id,
+                    v2_sessions=v2_sessions,
+                    v2_mixers=v2_mixers,
+                    tapes=tapes,
+                    helper_failures=helper_failures,
+                    helper_presence=helper_presence,
+                )
 
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):
         try:
-            access.authorize(
-                _peer_from_request(request),
-                _bearer_from_request(request),
-                "abort",
-                session_id,
-                now=_request_now(),
-            )
+            authority = await adapter.authorize(request, "abort", session_id)
             payload = await _optional_json(request)
             reason = str(payload.get("reason") or "aborted")
-            snapshot = await runtime.abort(session_id, reason)
+            await runtime.abort(session_id, reason)
             try:
                 v2_session = v2_sessions.get(session_id)
             except KeyError:
@@ -547,19 +792,27 @@ def attach_live_routes(
                     v2_session.abort(reason)
                 except LiveV2SessionTerminalError:
                     pass
-                v2_sessions.release(session_id)
-                v2_mixers.release(session_id)
-                tapes.release(session_id)
-            helper_failures.release(session_id)
-            helper_presence.release(session_id)
-            return {"snapshot": snapshot.to_dict()}
+            _release_live_capture_state(
+                session_id,
+                v2_sessions=v2_sessions,
+                v2_mixers=v2_mixers,
+                tapes=tapes,
+                helper_failures=helper_failures,
+                helper_presence=helper_presence,
+            )
+            published = await adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=True,
+            )
+            return {"snapshot": None if published is None else published.to_dict()}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    @app.delete("/api/live/sessions/{session_id}/view")
     def revoke_live_view(request: Request, session_id: str):
+        assert access is not None
         try:
             revoked = access.revoke_view(_peer_from_request(request), session_id, now=_request_now())
         except LiveAccessError as exc:
@@ -568,8 +821,8 @@ def attach_live_routes(
             raise HTTPException(status_code=404, detail="no live view authority for this session.")
         return {"session_id": session_id, "view_revoked": True}
 
-    @app.delete("/api/live/devices/{device_id}")
     async def revoke_live_device(request: Request, device_id: str):
+        assert access is not None
         try:
             revoked = access.revoke_device(_peer_from_request(request), device_id, now=_request_now())
         except LiveAccessError as exc:
@@ -583,13 +836,28 @@ def attach_live_routes(
                 v2_sessions.get(session_id).abort("device revoked")
             except (KeyError, LiveV2SessionTerminalError):
                 pass
-            v2_sessions.release(session_id)
-            v2_mixers.release(session_id)
-            tapes.release(session_id)
-            helper_failures.release(session_id)
-            helper_presence.release(session_id)
+            _release_live_capture_state(
+                session_id,
+                v2_sessions=v2_sessions,
+                v2_mixers=v2_mixers,
+                tapes=tapes,
+                helper_failures=helper_failures,
+                helper_presence=helper_presence,
+            )
             access.release_session(session_id)
         return {"device_id": revoked.device_id, "session_ids": list(revoked.session_ids)}
+
+    if access is not None:
+        app.add_api_route(
+            "/api/live/sessions/{session_id}/view",
+            revoke_live_view,
+            methods=["DELETE"],
+        )
+        app.add_api_route(
+            "/api/live/devices/{device_id}",
+            revoke_live_device,
+            methods=["DELETE"],
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -603,7 +871,6 @@ class _TransportFrame:
 class _TransportAcceptResult:
     ack: FrameAck | LiveV2Ack
     queued_item_ids: tuple[int, ...]
-    snapshot_version: int
 
 
 def _tape_mixed(
@@ -627,6 +894,30 @@ def _tape_mixed(
         sample_count=mixed.frame.sample_count,
         sample_rate=mixed.frame.sample_rate,
     )
+
+
+def _release_live_capture_state(
+    session_id: str,
+    *,
+    v2_sessions: Any,
+    v2_mixers: Any,
+    tapes: Any,
+    helper_failures: Any,
+    helper_presence: Any,
+) -> None:
+    """Release the five capture registries as one shared lifecycle operation."""
+
+    for release in (
+        v2_sessions.release,
+        v2_mixers.release,
+        tapes.release,
+        helper_failures.release,
+        helper_presence.release,
+    ):
+        try:
+            release(session_id)
+        except KeyError:
+            pass
 
 
 async def _optional_json(request) -> dict[str, Any]:
@@ -727,38 +1018,6 @@ def _bearer_from_request(request: Request) -> str | None:
     return token
 
 
-async def _accept_live_helper_heartbeat(
-    request: Request,
-    session_id: str,
-    *,
-    access: LiveAccessRegistry,
-    helper_presence: HelperPresenceRegistry,
-    helper_failures: LiveHelperFailureCoordinator,
-):
-    from fastapi.responses import JSONResponse
-
-    try:
-        access.authorize(
-            _peer_from_request(request),
-            _bearer_from_request(request),
-            "heartbeat",
-            session_id,
-            now=_request_now(),
-        )
-        heartbeat = HelperHeartbeat.from_dict(await request.json())
-        snapshot = helper_presence.observe(session_id, heartbeat)
-        await helper_failures.observe(session_id, snapshot)
-        return JSONResponse({"helper_presence": snapshot.to_dict()})
-    except KeyError as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=404)
-    except LiveAccessError as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=exc.status_code)
-    except HelperPresenceConflict as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=409)
-    except ValueError as exc:
-        return JSONResponse({"detail": str(exc)}, status_code=400)
-
-
 def _request_now() -> float:
     return time.time()
 
@@ -777,14 +1036,14 @@ def _ack_for_transport(ack, *, lane: LiveLane | None) -> Any:
     )
 
 
-def _snapshot_response(
+def _transport_snapshot_response(
+    *,
     runtime: LiveServiceRuntime,
+    view: LiveTransportSnapshotView,
     v2_sessions: "_ObservedLiveV2SessionRegistry",
     capture_observations: LiveCaptureObservationRegistry,
     helper_presence: HelperPresenceRegistry,
     session_id: str,
-    *,
-    since_version: int | None = None,
 ) -> dict[str, Any]:
     # The capture judgment is read from the session as it *is*, then the caller's cursor is
     # applied to the transported snapshot. Deriving the terminal reason from the cursor-gated
@@ -793,17 +1052,16 @@ def _snapshot_response(
     # helper presence, a cursor-suppressed snapshot left the projection with no facts at all
     # and it answered "starting" / "Waiting for audio capture to start." for a session that
     # had already died. One terminal read followed by silence is not a readable reason.
-    current = runtime.snapshot(session_id)
-    snapshot = runtime.snapshot(session_id, since_version=since_version)
-    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(current)
+    terminal_session_status, terminal_lane_failures = _terminal_capture_facts(view.current)
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
     observations = _capture_observation_snapshot(capture_observations, session_id)
     return {
-        "snapshot": None if snapshot is None else snapshot.to_dict(),
-        "unchanged": snapshot is None,
+        "snapshot": None if view.visible is None else view.visible.to_dict(),
+        "unchanged": view.visible is None,
         "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
+        **view.fields,
         **project_live_capture_status(
             presence,
             v2_session=v2_session,
@@ -840,14 +1098,6 @@ def _terminal_capture_facts(
     if snapshot.session.status in {"closed", "aborted", "failed"}:
         return snapshot.session.status, None
     return None, None
-
-
-def _snapshot_payload(runtime: LiveServiceRuntime, session_id: str) -> dict[str, Any] | None:
-    try:
-        snapshot = runtime.snapshot(session_id)
-    except KeyError:
-        return None
-    return None if snapshot is None else snapshot.to_dict()
 
 
 def _v2_snapshot_payload(

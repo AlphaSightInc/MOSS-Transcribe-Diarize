@@ -9,66 +9,24 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import Any, Mapping
 
 from starlette.requests import Request
 
 from moss_transcribe_diarize.live_surface import published_speaker_label
 
-from .live_arbiter import InferenceArbiterBackpressure
-from .live_capture_status import (
-    BROWSER_MICROPHONE_SILENT_STATUS_LINE,
-    LiveCaptureHealthPolicy,
-    LiveCaptureObservationRegistry,
-    project_live_capture_status,
-)
-from .live_helper_failure import LiveHelperFailureCoordinator
-from .live_helper_presence import HelperHeartbeat, HelperPresenceConflict, HelperPresenceRegistry
-from .live_ingest import (
-    LiveV2EpochDiscontinuityRequiredError,
-    LiveV2LaneCapacityError,
-    LiveV2StaleDeviceEpochError,
-)
-from .live_lane_contract import (
-    LiveV2ObsoleteClientError,
-    LiveV2OutOfOrderFrameError,
-    LiveV2PrunedReplayError,
-)
-from .live_mixer import (
-    LiveCompatibilityMixerRegistry,
-    LiveMixIntegrityError,
-    LiveMixSourceMissingError,
-)
 from .live_service_runtime import (
     LIVE_TERMINAL_SESSION_STATUSES,
-    LiveServiceError,
     LiveServiceEvent,
     LiveServiceRuntime,
     LiveServiceSnapshot,
 )
-from .live_session import LiveSessionBackpressure, LiveSessionClosed, LiveSessionFailed
-from .live_tape import LiveSessionTapeRecorder
 from .live_transport import (
-    _ObservedLiveV2SessionRegistry,
-    _TransportAcceptResult,
-    _ack_for_transport,
-    _capture_observation_snapshot,
-    _descriptor_payload,
-    _failure_status,
-    _frame_from_payload,
-    _jsonable,
-    _optional_json,
-    _tape_mixed,
-    _terminal_capture_facts,
-    _v2_snapshot,
-    _v2_snapshot_payload,
-    live_v2_ingress_failure_response,
-    live_v2_mix_failure_response,
-    live_v2_obsolete_client_response,
-    live_v2_terminal_failure_response,
-    live_v2_unconsumed_frames_response,
+    LiveTransportCreated,
+    LiveTransportEventView,
+    LiveTransportSnapshotView,
+    attach_live_routes,
 )
-from .live_v2_session import LiveV2SessionRegistry, LiveV2SessionTerminalError
 from .phase2 import Account, AccountRevoked
 
 
@@ -331,7 +289,6 @@ class Phase2LiveMeetings:
         if binding.capture_fenced:
             return
         binding.capture_fenced = True
-        binding.persistence_failure = reason
         terminal_snapshot = None
         terminal_events: tuple[LiveServiceEvent, ...] = ()
         try:
@@ -362,8 +319,132 @@ class Phase2LiveMeetings:
             binding.public_events = binding.public_events + new_terminal_events
             if new_terminal_events:
                 binding.public_event_high_water = new_terminal_events[-1].seq
+        # Publish the failure flag only after the durable/public terminal projection is ready;
+        # otherwise a concurrent poll can observe the reason beside the old active snapshot.
+        binding.persistence_failure = reason
         async with binding.changed:
             binding.changed.notify_all()
+
+
+@dataclass(frozen=True, slots=True)
+class _Phase2CreateAuthority:
+    account: Account
+    origin_session: str
+    workspace: Any
+
+
+class _Phase2LiveTransportAdapter:
+    """Account authority and durable publication at the shared Live transport seam."""
+
+    _MUTATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
+
+    def __init__(self, live: Phase2LiveMeetings, require_account: Any) -> None:
+        self.live = live
+        self.require_account = require_account
+
+    async def authorize(
+        self,
+        request: Request,
+        operation: str,
+        session_id: str | None,
+    ) -> object:
+        from fastapi import HTTPException
+
+        account = await self.require_account(request)
+        sign_in_session = request.cookies.get("__Host-moss_session")
+        if operation == "descriptor":
+            return account
+        if operation == "create":
+            if not sign_in_session:
+                raise HTTPException(status_code=401, detail="Sign in required.")
+            return _Phase2CreateAuthority(
+                account=account,
+                origin_session=sign_in_session,
+                workspace=request.app.state.phase2_store.workspace(account),
+            )
+        if session_id is None:
+            raise ValueError("session_id is required after Live Meeting creation.")
+        try:
+            return self.live.open(
+                account,
+                sign_in_session or "",
+                session_id,
+                mutation=operation in self._MUTATIONS,
+            )
+        except LiveMeetingNotFound as exc:
+            raise HTTPException(status_code=404, detail="Live Meeting not found.") from exc
+        except LiveMeetingReadOnly as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except LiveMeetingTerminal as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    async def create(
+        self,
+        payload: Mapping[str, object],
+        authority: object,
+    ) -> LiveTransportCreated:
+        if not isinstance(authority, _Phase2CreateAuthority):
+            raise TypeError("Phase-2 Live creation requires Account authority.")
+        binding = await self.live.create(
+            account=authority.account,
+            workspace=authority.workspace,
+            origin_session=authority.origin_session,
+            echo_mode=payload.get("echo_mode"),
+        )
+        return LiveTransportCreated(
+            session_id=binding.handle.meeting_id,
+            authority=binding,
+            status_code=201,
+            response_fields={},
+            arm_helper_lease=True,
+        )
+
+    def snapshot(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_version: int | None,
+    ) -> LiveTransportSnapshotView:
+        binding = self._binding(authority)
+        return LiveTransportSnapshotView(
+            visible=self.live.snapshot(binding, since_version=since_version),
+            current=binding.public_snapshot,
+            fields={
+                "meeting_transcript_version": binding.durable_version,
+                "persistence_failure": binding.persistence_failure,
+            },
+        )
+
+    def events(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        since_seq: int,
+    ) -> LiveTransportEventView:
+        return LiveTransportEventView(
+            events=self.live.events(self._binding(authority), since_seq),
+            fields={},
+        )
+
+    async def publication(
+        self,
+        authority: object,
+        session_id: str,
+        *,
+        wait_for_durability: bool,
+    ) -> LiveServiceSnapshot | None:
+        binding = self._binding(authority)
+        if wait_for_durability:
+            binding = await self.live.sync_and_flush(session_id)
+        return binding.public_snapshot
+
+    @staticmethod
+    def _binding(authority: object) -> _LiveBinding:
+        if not isinstance(authority, _LiveBinding):
+            raise TypeError("Phase-2 Live publication requires a Meeting binding.")
+        return authority
 
 
 def attach_phase2_live_routes(
@@ -373,396 +454,16 @@ def attach_phase2_live_routes(
     require_account: Any,
     live_helper_lease_seconds: float,
 ) -> None:
-    """Attach only Account-cookie Live routes; no bearer/pairing/view authority exists."""
+    """Attach Account authority to the one shared Live transport implementation."""
 
-    from fastapi import HTTPException
-    from fastapi.responses import JSONResponse
-
-    if live_helper_lease_seconds <= 0:
-        raise ValueError("live_helper_lease_seconds must be positive.")
-    runtime = live.runtime
-    raw_v2_sessions = LiveV2SessionRegistry(
-        max_retained_samples=runtime.descriptor.bounds.max_retained_samples
-    )
-    capture_observations = LiveCaptureObservationRegistry()
-    v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
-    v2_mixers = LiveCompatibilityMixerRegistry(
-        max_output_samples=runtime.descriptor.bounds.max_frame_samples
-    )
-    tapes = LiveSessionTapeRecorder(None)
-    helper_presence = HelperPresenceRegistry()
-    helper_failures = LiveHelperFailureCoordinator(
-        live_helper_lease_seconds=live_helper_lease_seconds,
-        v2_sessions=v2_sessions,
-        v2_mixers=v2_mixers,
-        tapes=tapes,
-        helper_presence=helper_presence,
-        access=None,
-        abort_mono=runtime.abort,
-    )
     app.state.phase2_live = live
-    app.state.live_v2_sessions = v2_sessions
-    app.state.live_capture_observations = capture_observations
-    app.state.live_v2_mixers = v2_mixers
-    app.state.live_tapes = tapes
-    app.state.live_helper_presence = helper_presence
-    app.state.live_helper_failures = helper_failures
-    tapes.reap()
-
-    async def authorize(request: Request, meeting_id: str, *, mutation: bool) -> _LiveBinding:
-        account = await require_account(request)
-        session_id = request.cookies.get("__Host-moss_session")
-        try:
-            return live.open(account, session_id or "", meeting_id, mutation=mutation)
-        except LiveMeetingNotFound as exc:
-            raise HTTPException(status_code=404, detail="Live Meeting not found.") from exc
-        except LiveMeetingReadOnly as exc:
-            raise HTTPException(status_code=403, detail=str(exc)) from exc
-        except LiveMeetingTerminal as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-    @app.get("/api/live/descriptor")
-    async def live_descriptor(
-        request: Request,
-        client_min_protocol_version: int | None = None,
-        client_max_protocol_version: int | None = None,
-    ):
-        await require_account(request)
-        try:
-            return _descriptor_payload(
-                runtime,
-                client_min_protocol_version=client_min_protocol_version,
-                client_max_protocol_version=client_max_protocol_version,
-            )
-        except LiveV2ObsoleteClientError as exc:
-            status, payload = live_v2_obsolete_client_response(exc)
-            return JSONResponse(payload, status_code=status)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @app.post("/api/live/sessions", status_code=201)
-    async def create_live_session(request: Request):
-        account = await require_account(request)
-        payload = await _optional_json(request)
-        session_id = request.cookies.get("__Host-moss_session")
-        if not session_id:
-            raise HTTPException(status_code=401, detail="Sign in required.")
-        try:
-            binding = await live.create(
-                account=account,
-                workspace=request.app.state.phase2_store.workspace(account),
-                origin_session=session_id,
-                echo_mode=payload.get("echo_mode"),
-            )
-            v2_sessions.create(binding.handle.meeting_id)
-            v2_mixers.create(binding.handle.meeting_id)
-            tapes.create(binding.handle.meeting_id)
-            helper_failures.arm(binding.handle.meeting_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        snapshot = binding.public_snapshot
-        if snapshot is None:
-            raise HTTPException(status_code=500, detail="Live Meeting publication failed.")
-        return {
-            "id": binding.handle.meeting_id,
-            "descriptor": runtime.descriptor.to_dict(),
-            "snapshot": snapshot.to_dict(),
-        }
-
-    @app.post("/api/live/sessions/{meeting_id}/frames")
-    async def accept_live_frame(meeting_id: str, request: Request):
-        binding = await authorize(request, meeting_id, mutation=True)
-        try:
-            payload = await request.json()
-            frame = _frame_from_payload(payload)
-            if frame.v2_frame is None:
-                accepted = runtime.accept_frame(meeting_id, frame.audio_frame)
-                result = _TransportAcceptResult(
-                    ack=accepted.ack,
-                    queued_item_ids=accepted.queued_item_ids,
-                    snapshot_version=(
-                        0
-                        if binding.public_snapshot is None
-                        else binding.public_snapshot.session.version
-                    ),
-                )
-            else:
-                raw = runtime.snapshot(meeting_id)
-                if raw is None:
-                    raise KeyError(meeting_id)
-                if raw.session.status != "active":
-                    raise LiveSessionClosed(f"live session is {raw.session.status}.")
-                v2_session = v2_sessions.get(meeting_id)
-                ack = v2_session.accept(frame.v2_frame)
-                capture_observations.observe_accepted(meeting_id, frame.v2_frame)
-                tapes.append_lane_frame(meeting_id, frame.v2_frame)
-                mixed = v2_mixers.get(meeting_id).admit_available(
-                    meeting_id,
-                    v2_session,
-                    runtime,
-                    final=False,
-                    retryable_backpressure=True,
-                )
-                _tape_mixed(tapes, meeting_id, mixed)
-                result = _TransportAcceptResult(
-                    ack=ack,
-                    queued_item_ids=() if mixed is None else mixed.queued_item_ids,
-                    snapshot_version=(
-                        0
-                        if binding.public_snapshot is None
-                        else binding.public_snapshot.session.version
-                    ),
-                )
-            return {
-                "ack": _jsonable(_ack_for_transport(result.ack, lane=frame.lane)),
-                "queued_item_ids": list(result.queued_item_ids),
-                "snapshot_version": result.snapshot_version,
-            }
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail="Live Meeting not found.") from exc
-        except (
-            LiveV2EpochDiscontinuityRequiredError,
-            LiveV2LaneCapacityError,
-            LiveV2OutOfOrderFrameError,
-            LiveV2PrunedReplayError,
-            LiveV2StaleDeviceEpochError,
-        ) as exc:
-            if isinstance(exc, LiveV2OutOfOrderFrameError):
-                capture_observations.observe_sequence_rejection(meeting_id, exc.lane)
-            elif isinstance(exc, LiveV2LaneCapacityError):
-                capture_observations.observe_backpressure_rejection(meeting_id, exc.lane)
-            status, conflict = live_v2_ingress_failure_response(exc)
-            conflict["snapshot"] = _public_snapshot_payload(binding)
-            conflict["v2_session"] = _v2_snapshot_payload(v2_sessions, meeting_id)
-            return JSONResponse(conflict, status_code=status)
-        except (InferenceArbiterBackpressure, LiveSessionBackpressure) as exc:
-            return JSONResponse(
-                {"detail": str(exc), "snapshot": _public_snapshot_payload(binding)},
-                status_code=429,
-            )
-        except (LiveSessionClosed, LiveV2SessionTerminalError) as exc:
-            return JSONResponse(
-                {"detail": str(exc), "snapshot": _public_snapshot_payload(binding)},
-                status_code=409,
-            )
-        except ValueError as exc:
-            status_code = 409 if str(exc).startswith("expected frame sequence") else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-        except LiveServiceError as exc:
-            return JSONResponse(
-                {
-                    "detail": str(exc),
-                    "failure": exc.failure.to_dict(),
-                    "snapshot": _public_snapshot_payload(binding),
-                },
-                status_code=_failure_status(exc),
-            )
-
-    @app.post("/api/live/sessions/{meeting_id}/heartbeat")
-    async def accept_live_helper_heartbeat(meeting_id: str, request: Request):
-        await authorize(request, meeting_id, mutation=True)
-        try:
-            heartbeat = HelperHeartbeat.from_dict(await request.json())
-            presence = helper_presence.observe(meeting_id, heartbeat)
-            await helper_failures.observe(meeting_id, presence)
-            return {"helper_presence": presence.to_dict()}
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail="Live Meeting not found.") from exc
-        except HelperPresenceConflict as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @app.get("/api/live/sessions/{meeting_id}/snapshot")
-    async def live_snapshot(
-        meeting_id: str,
-        request: Request,
-        since_version: int | None = None,
-    ):
-        binding = await authorize(request, meeting_id, mutation=False)
-        public = live.snapshot(binding, since_version=since_version)
-        current = binding.public_snapshot
-        terminal_status, terminal_lane_failures = _terminal_capture_facts(current)
-        presence = helper_presence.snapshot(meeting_id)
-        v2_session = _v2_snapshot(v2_sessions, meeting_id)
-        observations = _capture_observation_snapshot(capture_observations, meeting_id)
-        return {
-            "snapshot": None if public is None else public.to_dict(),
-            "unchanged": public is None,
-            "v2_session": None if v2_session is None else v2_session.to_dict(),
-            "helper_presence": None if presence is None else presence.to_dict(),
-            "meeting_transcript_version": _meeting_transcript_version(binding),
-            "persistence_failure": binding.persistence_failure,
-            **project_live_capture_status(
-                presence,
-                v2_session=v2_session,
-                observations=observations,
-                policy=LiveCaptureHealthPolicy(
-                    frame_samples=runtime.descriptor.frame_samples,
-                    sample_rate=runtime.descriptor.sample_rate,
-                ),
-                terminal_session_status=terminal_status,
-                terminal_lane_failures=terminal_lane_failures,
-            ).to_dict(),
-        }
-
-    @app.get("/api/live/sessions/{meeting_id}/events")
-    async def live_events(meeting_id: str, request: Request, since_seq: int = 0):
-        binding = await authorize(request, meeting_id, mutation=False)
-        try:
-            events = live.events(binding, since_seq)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return {"events": [event.to_dict() for event in events]}
-
-    @app.post("/api/live/sessions/{meeting_id}/stop")
-    async def stop_live_session(meeting_id: str, request: Request):
-        binding = await authorize(request, meeting_id, mutation=True)
-        release_v2_on_error = False
-        try:
-            payload = await _optional_json(request)
-            deadline = float(payload.get("deadline", 0.0))
-            loop = asyncio.get_running_loop()
-            end_time = loop.time() + max(0.0, deadline)
-            try:
-                v2_session = v2_sessions.get(meeting_id)
-            except KeyError:
-                v2_session = None
-            v2_snapshot = None
-            if v2_session is not None:
-                v2_snapshot = await v2_session.stop(0.0)
-                while v2_snapshot.status == "closing":
-                    mixed = v2_mixers.get(meeting_id).admit_available(
-                        meeting_id, v2_session, runtime, final=True
-                    )
-                    _tape_mixed(tapes, meeting_id, mixed)
-                    v2_snapshot = await v2_session.stop(0.0)
-                    if v2_snapshot.status != "closing" or mixed is None:
-                        break
-                    if loop.time() >= end_time:
-                        break
-                    await asyncio.sleep(0)
-                if v2_snapshot.status == "closing":
-                    status, failure = live_v2_unconsumed_frames_response()
-                    failure["snapshot"] = _public_snapshot_payload(binding)
-                    failure["v2_session"] = v2_snapshot.to_dict()
-                    return JSONResponse(failure, status_code=status)
-                if v2_snapshot.status == "failed":
-                    await runtime.abort(
-                        meeting_id, v2_snapshot.terminal_reason or "v2 capture failed"
-                    )
-                    _release_capture_state(
-                        meeting_id,
-                        v2_sessions,
-                        v2_mixers,
-                        tapes,
-                        helper_failures,
-                        helper_presence,
-                    )
-                    await live.sync_and_flush(meeting_id)
-                    status, failure = live_v2_terminal_failure_response(
-                        v2_snapshot.terminal_reason
-                    )
-                    failure["snapshot"] = _public_snapshot_payload(binding)
-                    failure["v2_session"] = v2_snapshot.to_dict()
-                    return JSONResponse(failure, status_code=status)
-                release_v2_on_error = True
-            stopped = await runtime.stop(meeting_id, max(0.0, end_time - loop.time()))
-            _release_capture_state(
-                meeting_id,
-                v2_sessions,
-                v2_mixers,
-                tapes,
-                helper_failures,
-                helper_presence,
-            )
-            release_v2_on_error = False
-            binding = await live.sync_and_flush(meeting_id)
-            response: dict[str, object] = {
-                "snapshot": _public_snapshot_payload(binding),
-                "raw_terminal_status": stopped.session.status,
-            }
-            if v2_snapshot is not None:
-                response["v2_session"] = v2_snapshot.to_dict()
-            return response
-        except TimeoutError as exc:
-            return JSONResponse(
-                {"detail": str(exc), "snapshot": _public_snapshot_payload(binding)},
-                status_code=409,
-            )
-        except LiveSessionBackpressure as exc:
-            return JSONResponse(
-                {
-                    "detail": str(exc),
-                    "failure": {"code": "v2_stop_backpressure"},
-                    "snapshot": _public_snapshot_payload(binding),
-                    "v2_session": _v2_snapshot_payload(v2_sessions, meeting_id),
-                },
-                status_code=429,
-            )
-        except (LiveSessionClosed, LiveSessionFailed, LiveV2SessionTerminalError) as exc:
-            return JSONResponse(
-                {"detail": str(exc), "snapshot": _public_snapshot_payload(binding)},
-                status_code=409,
-            )
-        except LiveMixIntegrityError as exc:
-            status, failure = live_v2_mix_failure_response(exc)
-            failure["snapshot"] = _public_snapshot_payload(binding)
-            failure["v2_session"] = _v2_snapshot_payload(v2_sessions, meeting_id)
-            if isinstance(exc, LiveMixSourceMissingError):
-                v2_mixers.release(meeting_id)
-                tapes.release(meeting_id)
-            return JSONResponse(failure, status_code=status)
-        except LiveServiceError as exc:
-            return JSONResponse(
-                {
-                    "detail": str(exc),
-                    "failure": exc.failure.to_dict(),
-                    "snapshot": _public_snapshot_payload(binding),
-                },
-                status_code=_failure_status(exc),
-            )
-        except (TypeError, ValueError) as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        finally:
-            if release_v2_on_error:
-                _release_capture_state(
-                    meeting_id,
-                    v2_sessions,
-                    v2_mixers,
-                    tapes,
-                    helper_failures,
-                    helper_presence,
-                )
-
-    @app.post("/api/live/sessions/{meeting_id}/abort")
-    async def abort_live_session(meeting_id: str, request: Request):
-        binding = await authorize(request, meeting_id, mutation=True)
-        payload = await _optional_json(request)
-        reason = str(payload.get("reason") or "aborted")
-        try:
-            await runtime.abort(meeting_id, reason)
-            try:
-                v2_session = v2_sessions.get(meeting_id)
-            except KeyError:
-                v2_session = None
-            if v2_session is not None:
-                try:
-                    v2_session.abort(reason)
-                except LiveV2SessionTerminalError:
-                    pass
-            _release_capture_state(
-                meeting_id,
-                v2_sessions,
-                v2_mixers,
-                tapes,
-                helper_failures,
-                helper_presence,
-            )
-            binding = await live.sync_and_flush(meeting_id)
-            return {"snapshot": _public_snapshot_payload(binding)}
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail="Live Meeting not found.") from exc
+    attach_live_routes(
+        app,
+        live.runtime,
+        None,
+        live_helper_lease_seconds=live_helper_lease_seconds,
+        transport_adapter=_Phase2LiveTransportAdapter(live, require_account),
+    )
 
 
 def _transcript_document(snapshot: LiveServiceSnapshot) -> dict[str, object]:
@@ -817,10 +518,6 @@ def _terminal_finalization_not_started(
     )
 
 
-def _meeting_transcript_version(binding: _LiveBinding) -> int:
-    return binding.durable_version
-
-
 def _durable_terminal_projection(
     binding: _LiveBinding,
     terminal: LiveServiceSnapshot,
@@ -852,31 +549,6 @@ def _durable_terminal_projection(
         pending_work_items=0,
         terminal_failure=terminal.terminal_failure,
     )
-
-
-def _public_snapshot_payload(binding: _LiveBinding) -> dict[str, Any] | None:
-    return None if binding.public_snapshot is None else binding.public_snapshot.to_dict()
-
-
-def _release_capture_state(
-    meeting_id: str,
-    v2_sessions: Any,
-    v2_mixers: Any,
-    tapes: Any,
-    helper_failures: Any,
-    helper_presence: Any,
-) -> None:
-    for release in (
-        v2_sessions.release,
-        v2_mixers.release,
-        tapes.release,
-        helper_failures.release,
-        helper_presence.release,
-    ):
-        try:
-            release(meeting_id)
-        except KeyError:
-            pass
 
 
 __all__ = ["Phase2LiveMeetings", "attach_phase2_live_routes"]

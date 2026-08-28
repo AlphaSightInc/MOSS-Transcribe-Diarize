@@ -177,6 +177,34 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* The signed-in workspace composes File, Live, then History in one document scroller. */
+body.phase2-workspace {
+  overflow: auto;
+}
+
+.phase2-workspace [data-workspace="account"] {
+  display: grid;
+  gap: 24px;
+}
+
+.phase2-workspace [data-workspace-section] {
+  min-width: 0;
+  scroll-margin-block: 16px;
+}
+
+.phase2-workspace-heading {
+  margin: 0 18px 10px;
+  font-family: var(--f-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.phase2-workspace [data-live-capture="account"] .app {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 button,
 input,
 select,

@@ -1206,21 +1206,24 @@ def _workspace_html(
         else ""
     )
     live_body = (
-        '<section data-live-capture="account"><div id="app"></div></section>'
+        '<section data-workspace-section="live" data-live-capture="account">'
+        '<h2 class="phase2-workspace-heading">Live transcription</h2><div id="app"></div></section>'
         '<script type="module" src="/static/app.js"></script>'
         if live_enabled
         else ""
     )
     return f"""<!doctype html>
 <html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title>{live_head}</head>
-<body><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
+<body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
-{live_body}
+<section data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
 <form data-file-upload=\"form\"><input name=\"file\" type=\"file\" multiple>
 <label>Media URLs, one per line<textarea name=\"urls\"></textarea></label>
-<button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p>
-<section data-history=\"list\">{empty}{history}</section>
+<button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p></section>
+{live_body}
+<section data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
+<section data-history=\"list\">{empty}{history}</section></section>
 <pre data-meeting-view></pre></section></main>
 <script>
 const uploadForm = document.querySelector('[data-file-upload="form"]');

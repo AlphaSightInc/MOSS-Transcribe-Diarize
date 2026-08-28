@@ -11,7 +11,7 @@ import json
 import sqlite3
 import tempfile
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +25,234 @@ from moss_transcribe_diarize.app.phase2 import (
 
 READ_OPERATIONS = frozenset({"snapshot", "events"})
 MUTATION_OPERATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
+
+
+@dataclass(frozen=True)
+class AdapterCreation:
+    session_id: str
+    status_code: int
+
+
+@dataclass
+class AdapterState:
+    name: str
+    create_status: int
+    raw_version: int = 0
+    durable_version: int = 0
+    public_version: int = 0
+    public_status: str = "active"
+    accepted_sequences: list[int] = field(default_factory=list)
+    public_events: list[str] = field(default_factory=lambda: ["created"])
+    held_publication: tuple[int, str, str] | None = None
+    authorized_operations: list[str] = field(default_factory=list)
+
+
+class LegacyTransportAdapterProbe:
+    """Prototype adapter: legacy authority publishes raw runtime state immediately."""
+
+    def __init__(self) -> None:
+        self.state = AdapterState("legacy", 200)
+
+    async def authorize(self, operation: str, session_id: str | None) -> AdapterState:
+        self.state.authorized_operations.append(operation)
+        return self.state
+
+    async def create(self) -> AdapterCreation:
+        return AdapterCreation("probe-session", self.state.create_status)
+
+    def snapshot(self) -> dict[str, object]:
+        return {
+            "status": self.state.public_status,
+            "version": self.state.public_version,
+        }
+
+    def events(self) -> tuple[str, ...]:
+        return tuple(self.state.public_events)
+
+    async def publication(self, version: int, status: str, event: str) -> None:
+        self.state.raw_version = version
+        self.state.durable_version = version
+        self.state.public_version = version
+        self.state.public_status = status
+        self.state.public_events.append(event)
+
+
+class Phase2TransportAdapterProbe(LegacyTransportAdapterProbe):
+    """Prototype adapter: owner-bound publication waits for its durable commit."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.state = AdapterState("phase2", 201)
+
+    async def publication(self, version: int, status: str, event: str) -> None:
+        self.state.raw_version = version
+        self.state.held_publication = (version, status, event)
+
+    def release_durable_publication(self) -> None:
+        held = self.state.held_publication
+        assert held is not None
+        version, status, event = held
+        self.state.durable_version = version
+        self.state.public_version = version
+        self.state.public_status = status
+        self.state.public_events.append(event)
+        self.state.held_publication = None
+
+
+class SharedTransportProbe:
+    """One frame/Stop/error implementation exercised through either adapter."""
+
+    def __init__(self, adapter: LegacyTransportAdapterProbe) -> None:
+        self.adapter = adapter
+        self.expected_sequence = 0
+        self.session_id: str | None = None
+
+    async def create(self) -> AdapterCreation:
+        await self.adapter.authorize("create", None)
+        created = await self.adapter.create()
+        self.session_id = created.session_id
+        return created
+
+    async def frame(self, sequence: int) -> dict[str, object]:
+        assert self.session_id is not None
+        await self.adapter.authorize("frame", self.session_id)
+        if sequence != self.expected_sequence:
+            return {
+                "status": 409,
+                "failure": "v2_out_of_order_frame",
+                "expected": self.expected_sequence,
+                "received": sequence,
+            }
+        self.adapter.state.accepted_sequences.append(sequence)
+        self.expected_sequence += 1
+        version = self.adapter.state.raw_version + 1
+        await self.adapter.publication(version, "active", "frame_accepted")
+        return {"status": 200, "sequence": sequence}
+
+    async def stop(self) -> dict[str, object]:
+        assert self.session_id is not None
+        await self.adapter.authorize("stop", self.session_id)
+        version = self.adapter.state.raw_version + 1
+        await self.adapter.publication(version, "closed", "stopped")
+        return {"status": 200}
+
+    async def snapshot(self) -> dict[str, object]:
+        assert self.session_id is not None
+        await self.adapter.authorize("snapshot", self.session_id)
+        return self.adapter.snapshot()
+
+    async def events(self) -> tuple[str, ...]:
+        assert self.session_id is not None
+        await self.adapter.authorize("events", self.session_id)
+        return self.adapter.events()
+
+
+def _adapter_state(adapter: LegacyTransportAdapterProbe) -> dict[str, object]:
+    state = adapter.state
+    return {
+        "name": state.name,
+        "versions": {
+            "raw": state.raw_version,
+            "durable": state.durable_version,
+            "public": state.public_version,
+        },
+        "public_status": state.public_status,
+        "accepted_sequences": list(state.accepted_sequences),
+        "public_events": list(state.public_events),
+        "publication_held": state.held_publication is not None,
+        "authorized_operations": list(state.authorized_operations),
+    }
+
+
+async def run_shared_transport_adapter_probe() -> None:
+    legacy_adapter = LegacyTransportAdapterProbe()
+    phase2_adapter = Phase2TransportAdapterProbe()
+    legacy = SharedTransportProbe(legacy_adapter)
+    phase2 = SharedTransportProbe(phase2_adapter)
+
+    legacy_created = await legacy.create()
+    phase2_created = await phase2.create()
+    assert (legacy_created.status_code, phase2_created.status_code) == (200, 201)
+
+    legacy_frame = await legacy.frame(0)
+    phase2_frame = await phase2.frame(0)
+    assert legacy_frame == phase2_frame == {"status": 200, "sequence": 0}
+    phase2_held_frame = {
+        "snapshot": await phase2.snapshot(),
+        "events": list(await phase2.events()),
+        "state": _adapter_state(phase2_adapter),
+    }
+    assert phase2_held_frame["snapshot"] == {"status": "active", "version": 0}
+    assert phase2_held_frame["events"] == ["created"]
+    assert phase2_held_frame["state"]["versions"] == {
+        "raw": 1,
+        "durable": 0,
+        "public": 0,
+    }
+
+    phase2_adapter.release_durable_publication()
+    assert await phase2.snapshot() == {"status": "active", "version": 1}
+    legacy_error = await legacy.frame(0)
+    phase2_error = await phase2.frame(0)
+    assert legacy_error == phase2_error == {
+        "status": 409,
+        "failure": "v2_out_of_order_frame",
+        "expected": 1,
+        "received": 0,
+    }
+
+    legacy_stop = await legacy.stop()
+    phase2_stop = await phase2.stop()
+    assert legacy_stop == phase2_stop == {"status": 200}
+    phase2_held_stop = {
+        "snapshot": await phase2.snapshot(),
+        "events": list(await phase2.events()),
+        "state": _adapter_state(phase2_adapter),
+    }
+    assert phase2_held_stop["snapshot"] == {"status": "active", "version": 1}
+    assert phase2_held_stop["events"] == ["created", "frame_accepted"]
+    assert phase2_held_stop["state"]["versions"] == {
+        "raw": 2,
+        "durable": 1,
+        "public": 1,
+    }
+
+    phase2_adapter.release_durable_publication()
+    legacy_final = {
+        "snapshot": await legacy.snapshot(),
+        "events": list(await legacy.events()),
+        "state": _adapter_state(legacy_adapter),
+    }
+    phase2_final = {
+        "snapshot": await phase2.snapshot(),
+        "events": list(await phase2.events()),
+        "state": _adapter_state(phase2_adapter),
+    }
+    assert legacy_final["snapshot"] == phase2_final["snapshot"] == {
+        "status": "closed",
+        "version": 2,
+    }
+    assert legacy_final["events"] == phase2_final["events"] == [
+        "created",
+        "frame_accepted",
+        "stopped",
+    ]
+    print(
+        json.dumps(
+            {
+                "action": "shared_transport_adapter_seam",
+                "interface": ["authorize", "create", "snapshot", "events", "publication"],
+                "shared_frame": legacy_frame,
+                "shared_error": legacy_error,
+                "shared_stop": legacy_stop,
+                "phase2_frame_commit_held": phase2_held_frame,
+                "phase2_stop_commit_held": phase2_held_stop,
+                "legacy_final": legacy_final,
+                "phase2_final": phase2_final,
+            },
+            sort_keys=True,
+        )
+    )
 
 
 @dataclass
@@ -409,6 +637,7 @@ def show(action: str, binding: LiveBinding, sql: SqlCounts, **outcome: object) -
 
 
 async def run() -> None:
+    await run_shared_transport_adapter_probe()
     with tempfile.TemporaryDirectory(prefix="mtd-phase2-live-owner-prototype-") as directory:
         database = Path(directory) / "prototype.sqlite3"
         store = await Phase2Store.open(database)
@@ -904,7 +1133,7 @@ async def run() -> None:
             )
         )
         print(
-            "VERDICT: PASS — serialized bridge exposes only durable revisions; finalizer completion gates atomic terminal publication; revoke and shutdown fence late work"
+            "VERDICT: PASS — one shared transport preserves legacy/Phase-2 frame, Stop, and error semantics; Phase-2 publication waits for durability; finalizer completion, revoke, and shutdown fence late work"
         )
 
 

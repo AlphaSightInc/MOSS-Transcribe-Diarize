@@ -319,6 +319,10 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
         assert 'data-live-capture="account"' in workspace.text
         assert '<meta name="moss-authority" content="account">' in workspace.text
         assert "Capture bearer" not in workspace.text
+        assert client.post("/api/live/pairing-codes").status_code == 404
+        assert client.post("/api/live/pairings").status_code == 404
+        assert client.delete("/api/live/sessions/unknown/view").status_code == 404
+        assert client.delete("/api/live/devices/unknown").status_code == 404
         created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
         assert created.status_code == 201
         assert set(created.json()) == {"id", "descriptor", "snapshot"}
