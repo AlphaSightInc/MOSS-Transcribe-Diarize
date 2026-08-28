@@ -373,8 +373,11 @@ def capacity_raw() -> dict[str, object]:
                         "kind": "rolling_decode_completed",
                         "runtime_monotonic_ns": 40 + ordinal,
                         "item_id": 10 + ordinal,
-                        "outcome": "published",
+                        "outcome": "applied",
                         "rolling_decode_elapsed_sec": 0.0,
+                        "decode_failure": None,
+                        "windows_failed": 0,
+                        "stale_completions": 0,
                     },
                 ],
             }
@@ -540,6 +543,9 @@ def inference_projection_false_passes() -> dict[str, object]:
                 "item_id": 1,
                 "outcome": "applied",
                 "rolling_decode_elapsed_sec": 0.2,
+                "decode_failure": None,
+                "windows_failed": 0,
+                "stale_completions": 0,
             },
         },
     ]
@@ -581,11 +587,64 @@ def inference_projection_false_passes() -> dict[str, object]:
                 "frozen_span_duration_sec": 1.0,
             },
         },
+        {
+            "session_id": "meeting-b",
+            "kind": "rolling_decode_queued",
+            "payload": {"item_id": 2, "admitted": True},
+        },
+        {
+            "session_id": "meeting-b",
+            "kind": "rolling_decode_completed",
+            "payload": {
+                "item_id": 2,
+                "outcome": "no_proposal",
+                "rolling_decode_elapsed_sec": 0.0,
+                "decode_failure": None,
+                "windows_failed": 0,
+                "stale_completions": 0,
+            },
+        },
     ]
     collision = acceptance.prestop_inference_projection(
         collision_events,
         accepted_audio_seconds=2.0,
     )
+    healthy_rolling = copy.deepcopy(rolling_events)
+    healthy_rolling[0]["payload"]["canonical_decode_elapsed_sec"] = 0.7
+    healthy_rolling[2]["payload"].update(
+        {
+            "outcome": "no_proposal",
+            "decode_failure": None,
+            "windows_failed": 0,
+            "stale_completions": 0,
+        }
+    )
+    def falsely_passes(events: list[dict[str, object]]) -> bool:
+        try:
+            measured = acceptance.prestop_inference_projection(
+                events,
+                accepted_audio_seconds=1.0,
+            )
+        except ValueError:
+            return False
+        return float(measured["rtf"]) < 1.0
+
+    missing_completion_false_passed = falsely_passes(healthy_rolling[:-1])
+    none_elapsed_events = copy.deepcopy(healthy_rolling)
+    none_elapsed_events[-1]["payload"]["rolling_decode_elapsed_sec"] = None
+    none_elapsed_false_passed = falsely_passes(none_elapsed_events)
+    failed_events = copy.deepcopy(healthy_rolling)
+    failed_events[-1]["payload"].update(
+        {
+            "decode_failure": "provider_failed",
+            "windows_failed": 1,
+            "stale_completions": 1,
+        }
+    )
+    failed_completion_false_passed = falsely_passes(failed_events)
+    duplicate_events = copy.deepcopy(healthy_rolling)
+    duplicate_events.insert(2, copy.deepcopy(duplicate_events[1]))
+    duplicate_admission_false_passed = falsely_passes(duplicate_events)
     return {
         "rolling_actual_rtf": 1.1,
         "rolling_observed_rtf": rolling["rtf"],
@@ -593,6 +652,10 @@ def inference_projection_false_passes() -> dict[str, object]:
         "collision_actual_rtf": 1.1,
         "collision_observed_rtf": collision["rtf"],
         "collision_false_passed": float(collision["rtf"]) < 1.0,
+        "missing_completion_false_passed": missing_completion_false_passed,
+        "none_elapsed_false_passed": none_elapsed_false_passed,
+        "failed_completion_false_passed": failed_completion_false_passed,
+        "duplicate_admission_false_passed": duplicate_admission_false_passed,
     }
 
 
@@ -994,8 +1057,8 @@ def main() -> int:
                 },
                 {
                     "name": "prestop_inference_projection",
-                    "boundary": "session-scoped item identity separates Stop-tail work and sums canonical plus rolling decode over accepted audio",
-                    "irreducible": "without session scope and both compute lanes, one Meeting can erase another and omitted rolling cost can pass",
+                    "boundary": "session-scoped items require one healthy terminal completion per admitted rolling window before canonical plus rolling decode is reduced over accepted audio",
+                    "irreducible": "without identity, exact terminal accounting, and both compute lanes, one Meeting can erase another or missing and failed rolling work can pass",
                 },
                 {
                     "name": "campaign_bound_backpressure",
@@ -1025,6 +1088,7 @@ def main() -> int:
                 "a dirty detached checkout or changed future launcher/unit byte cannot qualify",
                 "the rehearsal starts nonzero, rejects admission after block, and drains exactly the admitted units",
                 "session-scoped canonical and rolling work admitted before Stop contributes to RTF over exact accepted audio",
+                "every admitted rolling item has one healthy completion with measured elapsed time and zero failure counters",
                 "overload backpressure target and peer are members of the same eight-session interval",
                 "both mtd-admin status surfaces match the exact operator allowlist",
             ],
@@ -1032,7 +1096,7 @@ def main() -> int:
                 "real OAuth, deployed campaigns, TLS, rollback host state, and production canary are externally unmeasured",
                 "the committed external campaigns remain unqualified until their real OAuth, host, and speech prerequisites are measured",
             ],
-            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, Stop-tail work dilutes pre-Stop RTF, rolling decode is omitted, a Stop item erases another Meeting's same-numbered item, detached backpressure satisfies overload, a valid peer is called revoked, 15/4/8/12/122 disappear, zero-from-start claims drain, a dirty checkout or mixed restart byte rehearses, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
+            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, Stop-tail work dilutes pre-Stop RTF, rolling decode is omitted, a Stop item erases another Meeting's same-numbered item, an admitted rolling item lacks one measured healthy completion, detached backpressure satisfies overload, a valid peer is called revoked, 15/4/8/12/122 disappear, zero-from-start claims drain, a dirty checkout or mixed restart byte rehearses, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
             "tool_decisions": [
                 {
                     "tool": "state-reducer prototype",
@@ -1071,8 +1135,8 @@ def main() -> int:
                 },
                 {
                     "tool": "production capacity reducers",
-                    "necessary": "RTF phase, both compute lanes, Meeting identity, and overload membership are properties of retained lifecycle arrays, not producer summary booleans",
-                    "decision_change": "accepting Stop dilution, omitted rolling cost, cross-Meeting item collision, or detached backpressure rejects the raw evidence shape",
+                    "necessary": "RTF phase, both compute lanes, Meeting identity, rolling completion health, and overload membership are properties of retained lifecycle arrays, not producer summary booleans",
+                    "decision_change": "accepting Stop dilution, omitted or incomplete rolling work, rolling failure counters, cross-Meeting item collision, or detached backpressure rejects the raw evidence shape",
                 },
             ],
         },
@@ -1135,6 +1199,10 @@ def main() -> int:
         == {"prestop_rtf": 1.1, "combined_rtf": 0.55, "diluted_passed": False},
         inference_projection["rolling_false_passed"] is False,
         inference_projection["collision_false_passed"] is False,
+        inference_projection["missing_completion_false_passed"] is False,
+        inference_projection["none_elapsed_false_passed"] is False,
+        inference_projection["failed_completion_false_passed"] is False,
+        inference_projection["duplicate_admission_false_passed"] is False,
         overload_binding
         == {
             "campaign_sessions": 8,

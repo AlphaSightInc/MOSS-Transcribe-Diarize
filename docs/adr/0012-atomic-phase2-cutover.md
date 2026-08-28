@@ -137,7 +137,7 @@ inert beside the live Phase-1 checkout. It does not repoint the live checkout, c
 alone quiesces Phase 1, seals its large archive, activates that one pointer, and installs the
 web-only cutover unit while proving the running vLLM PID, argv, and activation timestamp unchanged.
 
-The retained qualification prototype derived PASS from 34/34 policy falsifiers and separately
+The retained qualification prototype derived PASS from 38/38 policy falsifiers and separately
 measured the Linux exact-runtime path: wrong SQLite refused before any database artifact; the
 private prefix reported 3.53.4; `aiosqlite==0.22.1` preserved WAL, foreign keys, `FULL`, schema v1,
 and restart truth; and a clean wheel's installed member projection matched its candidate wheel.
@@ -156,8 +156,10 @@ views, observes them unchanged immediately after the marker refuses a new admiss
 five explicit continuation transitions to zero before snapshot. G4 now derives pre-Stop inference
 RTF from session-scoped canonical and rolling decode elapsed time over exact accepted audio,
 excluding only canonical items queued for that Meeting with `reason=stop`; this prevents both
-omitted rolling cost and cross-Meeting item-number collisions. Overload backpressure carries its
-target/peer ordinals plus refusal/progress/retry times inside the same eight-session interval.
+omitted rolling cost and cross-Meeting item-number collisions. Every admitted rolling item must
+also have one same-Meeting healthy terminal completion with measured elapsed time, no decode
+failure, and zero failed/stale counters. Overload backpressure carries its target/peer ordinals
+plus refusal/progress/retry times inside the same eight-session interval.
 Real Google OAuth, deployed four-session/600-second capacity, the 12-session frozen quality corpus,
 production TLS, and the production-origin pre-admission campaign remain unmeasured until their
 external prerequisites exist. Synthetic reducer fixtures cannot close them.

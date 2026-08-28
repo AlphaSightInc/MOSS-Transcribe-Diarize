@@ -1040,7 +1040,6 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     refinement_pending: dict[int, set[int]] = {}
     refinement_depth = 0
     terminal_failures = 0
-    stale_failed = 0
     for item in ordered_sessions:
         if not isinstance(item, dict) or not isinstance(item.get("events"), list):
             return False
@@ -1092,8 +1091,6 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             if not isinstance(item_id, int):
                 return False
             refinement_pending[ordinal].discard(item_id)
-            if event.get("outcome") in {"stale", "failed"}:
-                stale_failed += 1
 
     fairness = canonical_lifecycle_fairness(
         canonical_events,
@@ -1169,7 +1166,6 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         and sequence_gaps == 0
         and dropped_commits == 0
         and terminal_failures == 0
-        and stale_failed == 0
         and marker_failures == 0
         and all(
             backpressure.get(key) is True

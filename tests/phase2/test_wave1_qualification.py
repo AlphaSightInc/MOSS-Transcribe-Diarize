@@ -152,8 +152,11 @@ def _capacity_raw() -> dict[str, object]:
                         "kind": "rolling_decode_completed",
                         "runtime_monotonic_ns": 40 + ordinal,
                         "item_id": 1,
-                        "outcome": "published",
+                        "outcome": "applied",
                         "rolling_decode_elapsed_sec": 0.0,
+                        "decode_failure": None,
+                        "windows_failed": 0,
+                        "stale_completions": 0,
                     },
                 ],
             }
@@ -371,6 +374,43 @@ def test_capacity_rtf_excludes_stop_tail_and_overload_backpressure_is_campaign_b
     rolling_omitted["prestop_inference_rtf"] = 0.9
     assert acceptance._validate_capacity({"raw": rolling_omitted}) is False
 
+    missing_completions = copy.deepcopy(capacity)
+    for session in missing_completions["session_observations"]:
+        session["events"] = [
+            event
+            for event in session["events"]
+            if event["kind"] != "rolling_decode_completed"
+        ]
+    assert acceptance._validate_capacity({"raw": missing_completions}) is False
+
+    missing_elapsed = copy.deepcopy(capacity)
+    for session in missing_elapsed["session_observations"]:
+        for event in session["events"]:
+            if event["kind"] == "rolling_decode_completed":
+                event["rolling_decode_elapsed_sec"] = None
+    assert acceptance._validate_capacity({"raw": missing_elapsed}) is False
+
+    failed_rolling = copy.deepcopy(capacity)
+    for session in failed_rolling["session_observations"]:
+        for event in session["events"]:
+            if event["kind"] == "rolling_decode_completed":
+                event["decode_failure"] = "provider_failed"
+                event["windows_failed"] = 1
+                event["stale_completions"] = 1
+    assert acceptance._validate_capacity({"raw": failed_rolling}) is False
+
+    duplicate_admission = copy.deepcopy(capacity)
+    duplicate_admission["session_observations"][0]["events"].append(
+        copy.deepcopy(
+            next(
+                event
+                for event in duplicate_admission["session_observations"][0]["events"]
+                if event["kind"] == "rolling_decode_queued"
+            )
+        )
+    )
+    assert acceptance._validate_capacity({"raw": duplicate_admission}) is False
+
     collided = copy.deepcopy(capacity)
     for session in collided["session_observations"]:
         ordinal = int(session["session_ordinal"])
@@ -407,7 +447,14 @@ def test_prestop_rtf_includes_rolling_and_scopes_stop_items_to_meeting():
         {
             "session_id": "meeting-a",
             "kind": "rolling_decode_completed",
-            "payload": {"item_id": 2, "rolling_decode_elapsed_sec": 0.2},
+            "payload": {
+                "item_id": 2,
+                "outcome": "no_proposal",
+                "rolling_decode_elapsed_sec": 0.2,
+                "decode_failure": None,
+                "windows_failed": 0,
+                "stale_completions": 0,
+            },
         },
         {
             "session_id": "meeting-a",

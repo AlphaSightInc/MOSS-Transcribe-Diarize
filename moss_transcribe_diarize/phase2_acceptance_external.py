@@ -2177,7 +2177,6 @@ class FixedAccountCampaign:
         rolling_pending: dict[str, set[int]] = defaultdict(set)
         refinement_depth = 0
         terminal_failures = 0
-        stale_failed = 0
         lifecycle = sorted(
             (
                 event
@@ -2210,8 +2209,6 @@ class FixedAccountCampaign:
                 item_id = payload.get("item_id")
                 if isinstance(item_id, int):
                     rolling_pending[session_id].discard(item_id)
-                if payload.get("outcome") in {"stale", "failed"}:
-                    stale_failed += 1
             elif kind == "terminal_finalization_failed":
                 terminal_failures += 1
         accepted_expected = int(duration_seconds * LIVE_SAMPLE_RATE)
@@ -2301,6 +2298,15 @@ class FixedAccountCampaign:
                             "rolling_decode_elapsed_sec": (
                                 event.get("payload") or {}
                             ).get("rolling_decode_elapsed_sec"),
+                            "decode_failure": (event.get("payload") or {}).get(
+                                "decode_failure"
+                            ),
+                            "windows_failed": (event.get("payload") or {}).get(
+                                "windows_failed"
+                            ),
+                            "stale_completions": (event.get("payload") or {}).get(
+                                "stale_completions"
+                            ),
                             "submitted": (event.get("payload") or {}).get("submitted"),
                             "admitted": (event.get("payload") or {}).get("admitted"),
                             "item_id": (event.get("payload") or {}).get("item_id"),

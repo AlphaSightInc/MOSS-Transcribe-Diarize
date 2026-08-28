@@ -32,12 +32,15 @@ def prestop_inference_projection(
         if event.get("kind") == "canonical_queued"
         and payload(event).get("reason") == "stop"
     }
-    rolling_admitted = {
+    rolling_admission_events = [
         item_identity(event)
         for event in events
         if event.get("kind") == "rolling_decode_queued"
         and payload(event).get("admitted") is True
-    }
+    ]
+    rolling_admitted = set(rolling_admission_events)
+    if len(rolling_admitted) != len(rolling_admission_events):
+        raise ValueError("rolling item was admitted more than once")
     canonical_decode_seconds = 0.0
     rolling_decode_seconds = 0.0
     canonical_processed_items = 0
@@ -63,11 +66,19 @@ def prestop_inference_projection(
         if identity not in rolling_admitted or identity in rolling_completed_items:
             raise ValueError("rolling completion lacks one admitted session-scoped item")
         rolling_completed_items.add(identity)
+        if item.get("outcome") not in {"applied", "refused", "no_proposal"}:
+            raise ValueError("rolling completion has a non-healthy terminal outcome")
+        if item.get("decode_failure") is not None:
+            raise ValueError("rolling completion reports a decode failure")
+        for counter in ("windows_failed", "stale_completions"):
+            value = item.get(counter)
+            if not isinstance(value, int) or isinstance(value, bool) or value != 0:
+                raise ValueError(f"rolling completion has invalid {counter}")
         if "rolling_decode_elapsed_sec" not in item:
             raise ValueError("rolling completion lacks inference timing")
         elapsed = item["rolling_decode_elapsed_sec"]
         if elapsed is None:
-            continue
+            raise ValueError("rolling completion did not measure inference timing")
         try:
             rolling_decode = float(elapsed)
         except (TypeError, ValueError) as exc:
@@ -75,8 +86,10 @@ def prestop_inference_projection(
         if not math.isfinite(rolling_decode) or rolling_decode < 0:
             raise ValueError("rolling completion inference timing is invalid")
         rolling_decode_seconds += rolling_decode
-    if canonical_processed_items == 0:
+    if canonical_processed_items == 0 or not rolling_admitted:
         raise ValueError("pre-Stop inference evidence is absent")
+    if rolling_completed_items != rolling_admitted:
+        raise ValueError("rolling admitted/completed accounting is incomplete")
     total_decode_seconds = canonical_decode_seconds + rolling_decode_seconds
     return {
         "canonical_processed_items": canonical_processed_items,

@@ -34,7 +34,8 @@ projection, and campaign-bound overload backpressure.
   dirty checkout or changed admin/unit byte passes; Stop-tail work dilutes pre-Stop RTF; or a
   detached two-session backpressure probe satisfies the eight-session overload campaign. The last
   falsifiers omit rolling decode cost and collide a Stop item with the same item number in another
-  Meeting.
+  Meeting. The final accounting falsifiers remove every admitted completion, replace measured
+  elapsed time with `None`, and retain nonzero decode/window/stale failure truth.
 - **Tool decision:** call the production entrypoint and reducers because a model cannot establish a
   reachable false pass; use a temporary isolated host because filesystem install/restore truth
   cannot be measured in memory. Any observed falsifier rejects the production candidate.
@@ -125,6 +126,16 @@ the legitimate item zero in another Meeting, again reducing an actual 1.1 RTF to
 lifecycle evidence now includes rolling elapsed time. The reducer keys every canonical and rolling
 item by `(Meeting, item)`, excludes only that Meeting's Stop-tail work, sums both decode lanes, and
 divides by the exact accepted audio duration. Both known 1.1 cases now measure 1.1 and fail G4.
+
+**RED under rolling-accounting review: 34/37 derived assertions passed.** An admitted rolling item
+with no completion, a completion with no elapsed measurement, and a completion carrying
+`decode_failure`, `windows_failed=1`, and `stale_completions=1` all still qualified.
+
+**GREEN after exact terminal accounting: 38/38 derived assertions passed.** Every admitted rolling
+item must now close exactly once in the same Meeting with a runtime-native healthy outcome,
+measured nonnegative elapsed time, `decode_failure=None`, and zero failed/stale counters. The raw
+campaign projection retains these fields; missing, unmeasured, failed, stale, duplicate, or
+unadmitted completions refuse G4.
 
 The available development runtimes are not qualification candidates: CPython 3.10.19 and 3.12.12
 both report SQLite 3.50.4; CPython 3.14 reports 3.53.0; `pysqlite3==0.6.0` reports 3.51.1. The
