@@ -813,6 +813,16 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
             "/etc/moss/cert.pem",
             "--tls-keyfile",
             "/etc/moss/key.pem",
+            "--prompt",
+            "deployed prompt",
+            "--max-len",
+            "16384",
+            "--max-new-tokens",
+            "12000",
+            "--decoding",
+            "greedy",
+            "--temperature",
+            "1.0",
         ]
     )
 
@@ -823,6 +833,13 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "oauth_cookie_secret": "test-oauth-secret",
         "file_runner": file_runner,
         "file_work_root": phase2_web_cli.DEFAULT_PHASE2_FILE_WORK_ROOT,
+        "file_inference_options": {
+            "prompt": "deployed prompt",
+            "max_length": 16384,
+            "max_new_tokens": 12000,
+            "decoding": "greedy",
+            "temperature": 1.0,
+        },
     }
     assert seen["uvicorn"] == {
         "app": app,

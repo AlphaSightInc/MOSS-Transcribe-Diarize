@@ -849,10 +849,12 @@ def create_phase2_app(
     @asynccontextmanager
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
-        await store.recover_active_meetings()
-        app.state.phase2_store = store
-        app.state.phase2_file_tasks = file_tasks
         try:
+            await store.recover_active_meetings()
+            if file_tasks is not None:
+                file_tasks.clear_transient_work()
+            app.state.phase2_store = store
+            app.state.phase2_file_tasks = file_tasks
             yield
         finally:
             if file_tasks is not None:

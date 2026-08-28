@@ -38,7 +38,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--vllm-timeout", type=float, default=600.0)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--dtype", default="bf16")
-    parser.add_argument("--file-work-root", default=str(DEFAULT_PHASE2_FILE_WORK_ROOT))
+    parser.add_argument(
+        "--file-work-root",
+        default=str(DEFAULT_PHASE2_FILE_WORK_ROOT),
+        help="Dedicated transient directory named file-work.",
+    )
+    parser.add_argument("--prompt")
+    parser.add_argument("--max-len", type=int, default=131072)
+    parser.add_argument("--max-new-tokens", type=int, default=2048)
+    parser.add_argument("--decoding", choices=["greedy", "sample"], default="greedy")
+    parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7861)
     return parser.parse_args(argv)
@@ -97,6 +106,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         ),
         file_runner=file_runner,
         file_work_root=Path(args.file_work_root).expanduser(),
+        file_inference_options={
+            "prompt": args.prompt,
+            "max_length": args.max_len,
+            "max_new_tokens": args.max_new_tokens,
+            "decoding": args.decoding,
+            "temperature": args.temperature,
+        },
     )
     uvicorn.run(
         app,

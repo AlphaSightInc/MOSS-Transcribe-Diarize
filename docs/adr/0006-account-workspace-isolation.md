@@ -32,3 +32,8 @@ view token, pairing/device grant, or compatibility mode.
   background seam: an application-owned strong-reference set retains coroutines that carry their
   original owner-bound Meeting handle. Browser detachment does not cancel accepted work, and a
   revoked handle cannot commit; no job identity or global Meeting lookup is introduced.
+- The extended probe rejects cancel-and-delete shutdown: cancellation does not stop `to_thread`.
+  The accepted seam shields and retains that runner task, fences its commit, waits for synchronous
+  inference to quiesce, and only then removes source work and closes persistence. Startup first
+  interrupts durable active Meetings, then removes children of the dedicated transient `file-work`
+  root before admission. Cleanup failures are retrieved and logged without content.

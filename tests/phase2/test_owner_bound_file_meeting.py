@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import sqlite3
 import threading
 import time
@@ -8,7 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
+import pytest
 
+from moss_transcribe_diarize.app import phase2_file
 from moss_transcribe_diarize.app.phase2 import (
     GoogleIdentity,
     Phase2Store,
@@ -34,10 +37,12 @@ class ControlledRunner:
         self.started = threading.Event()
         self.release = threading.Event()
         self.inputs: list[tuple[str, bytes]] = []
+        self.options: list[dict[str, object]] = []
 
     def transcribe(self, input_path: str | Path, **kwargs: object):
         path = Path(input_path)
         self.inputs.append((path.name, path.read_bytes()))
+        self.options.append(dict(kwargs))
         self.started.set()
         assert self.release.wait(timeout=5), "test did not release controlled inference"
         if self.failure is not None:
@@ -93,7 +98,7 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     runner = ControlledRunner()
-    app = make_app(database, runner, tmp_path / "work")
+    app = make_app(database, runner, tmp_path / "file-work")
 
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["sub-a"])
@@ -137,14 +142,14 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
     finally:
         connection.close()
     assert runner.inputs == [("input.wav", b"owner-audio")]
-    assert list((tmp_path / "work").glob("**/*")) == []
+    assert list((tmp_path / "file-work").glob("**/*")) == []
 
 
 def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     runner = ControlledRunner(failure=RuntimeError("provider unavailable"))
-    app = make_app(database, runner, tmp_path / "work")
+    app = make_app(database, runner, tmp_path / "file-work")
 
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["sub-a"])
@@ -169,7 +174,7 @@ def test_revocation_fences_late_file_result_commit(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     runner = ControlledRunner()
-    app = make_app(database, runner, tmp_path / "work")
+    app = make_app(database, runner, tmp_path / "file-work")
 
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["sub-a"])
@@ -243,3 +248,205 @@ def test_each_owner_bound_commit_versions_and_restart_retains_last_document(tmp_
         assert version == 2
     finally:
         connection.close()
+
+
+def test_shutdown_waits_for_sync_runner_before_source_cleanup_and_fences_commit(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    runner = ControlledRunner()
+    app = make_app(database, runner, work_root)
+    client = TestClient(app, base_url="https://moss.test")
+    client.__enter__()
+    session(client, sessions["sub-a"])
+    accepted = client.post(
+        "/api/meetings/file",
+        files={"file": ("meeting.wav", b"shutdown-input", "audio/wav")},
+    )
+    meeting_id = accepted.json()["id"]
+    assert runner.started.wait(timeout=2)
+    source = next(work_root.glob("*/input.wav"))
+
+    shutdown_error: list[BaseException] = []
+
+    def shutdown() -> None:
+        try:
+            client.__exit__(None, None, None)
+        except BaseException as exc:  # pragma: no cover - asserted empty below.
+            shutdown_error.append(exc)
+
+    shutdown_thread = threading.Thread(target=shutdown)
+    shutdown_thread.start()
+    time.sleep(0.05)
+    assert shutdown_thread.is_alive()
+    assert source.exists()
+    assert app.state.phase2_file_tasks._tasks
+
+    runner.release.set()
+    shutdown_thread.join(timeout=5)
+    assert not shutdown_thread.is_alive()
+    assert shutdown_error == []
+    assert not source.exists()
+    assert app.state.phase2_file_tasks._tasks == set()
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("active",)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == (0,)
+    finally:
+        connection.close()
+
+    restarted = make_app(database, ControlledRunner(), work_root)
+    with TestClient(restarted, base_url="https://moss.test") as after_restart:
+        session(after_restart, sessions["sub-a-second"])
+        meeting = after_restart.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["transcript"] is None
+
+
+def test_startup_removes_transient_crash_orphan_after_durable_recovery(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    orphan = work_root / "crash-orphan" / "input.wav"
+    orphan.parent.mkdir(parents=True)
+    orphan.write_bytes(b"private transient source")
+
+    async def create_active() -> str:
+        store = await Phase2Store.open(database)
+        try:
+            account = await store.account_for_session(sessions["sub-a"])
+            assert account is not None
+            return (await store.workspace(account).create_meeting("file")).meeting_id
+        finally:
+            await store.close()
+
+    meeting_id = asyncio.run(create_active())
+    app = make_app(database, ControlledRunner(), work_root)
+    with TestClient(app, base_url="https://moss.test") as client:
+        assert not orphan.exists()
+        assert list(work_root.iterdir()) == []
+        session(client, sessions["sub-a"])
+        assert client.get(f"/api/meetings/{meeting_id}").json()["status"] == "interrupted"
+
+
+def test_startup_cleanup_failure_blocks_admission_logs_no_content_and_closes_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    database = tmp_path / "moss.sqlite3"
+    asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    orphan = work_root / "private-orphan" / "input.wav"
+    orphan.parent.mkdir(parents=True)
+    orphan.write_bytes(b"sentinel private source")
+    store_closed = threading.Event()
+    original_close = Phase2Store.close
+
+    async def tracked_close(store: Phase2Store) -> None:
+        store_closed.set()
+        await original_close(store)
+
+    def fail_remove(path: str | Path) -> None:
+        raise OSError("sentinel private source must not enter logs")
+
+    monkeypatch.setattr(Phase2Store, "close", tracked_close)
+    monkeypatch.setattr(phase2_file.shutil, "rmtree", fail_remove)
+    app = make_app(database, ControlledRunner(), work_root)
+    with caplog.at_level(logging.ERROR, logger="moss_transcribe_diarize.app.phase2_file"):
+        with pytest.raises(RuntimeError, match="Transient File work cleanup failed"):
+            with TestClient(app, base_url="https://moss.test"):
+                raise AssertionError("startup cleanup failure must prevent admission")
+
+    assert store_closed.is_set()
+    assert orphan.exists()
+    assert "Transient File work cleanup failed." in caplog.text
+    assert "sentinel private source" not in caplog.text
+
+
+def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    runner = ControlledRunner()
+    app = make_app(database, runner, work_root)
+    original_rmtree = phase2_file.shutil.rmtree
+
+    with TestClient(app, base_url="https://moss.test") as client, caplog.at_level(
+        logging.ERROR, logger="moss_transcribe_diarize.app.phase2_file"
+    ):
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"retained-on-failure", "audio/wav")},
+        )
+        meeting_id = accepted.json()["id"]
+        assert runner.started.wait(timeout=2)
+        source = next(work_root.glob("*/input.wav"))
+
+        def fail_remove(path: str | Path) -> None:
+            if Path(path) == source.parent:
+                raise OSError("secret path must not enter logs")
+            original_rmtree(path)
+
+        monkeypatch.setattr(phase2_file.shutil, "rmtree", fail_remove)
+        runner.release.set()
+        meeting = await_terminal(client, meeting_id, "failed")
+        deadline = time.monotonic() + 5
+        while app.state.phase2_file_tasks._tasks and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert app.state.phase2_file_tasks._tasks == set()
+        assert meeting["transcript"] is None
+        assert source.exists()
+        assert "File Meeting background task failed." in caplog.text
+        assert "secret path" not in caplog.text
+        monkeypatch.setattr(phase2_file.shutil, "rmtree", original_rmtree)
+
+    original_rmtree(work_root)
+
+
+def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    runner.release.set()
+    app = create_phase2_app(
+        database_path=database,
+        oidc=NeverOidc(),
+        oauth_cookie_secret="test-cookie-secret",
+        file_runner=runner,
+        file_work_root=tmp_path / "file-work",
+        file_inference_options={
+            "prompt": "deployed prompt",
+            "max_length": 16384,
+            "max_new_tokens": 12000,
+            "decoding": "greedy",
+            "temperature": 1.0,
+        },
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"configured", "audio/wav")},
+        ).json()["id"]
+        await_terminal(client, meeting_id, "completed")
+
+    assert runner.options == [
+        {
+            "prompt": "deployed prompt",
+            "max_length": 16384,
+            "max_new_tokens": 12000,
+            "decoding": "greedy",
+        }
+    ]
