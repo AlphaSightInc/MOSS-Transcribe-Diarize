@@ -170,7 +170,8 @@ or restore one interrupted nonterminal attempt. Both forward targets block the e
 observe both old runtime views at zero, stop the old web units, seal one complete snapshot, activate
 the manifested immutable release, swap only manifested unit/profile bytes, preserve the running
 vLLM PID/start/argv, start the Account web unit, and run the same-SHA #22 Wave-1 campaign. The
-`restored` target then deliberately enters the same whole-restore primitive used by canary failure;
+`restored` target then deliberately enters the same whole-restore primitive immediately after
+qualification, without requiring the attended G7 browser.
 `preadmission` leaves the candidate running but exposes no admission operation and is reachable only
 after the candidate-owned attended collector directly observes both fixed production-origin Chrome
 scenarios and reports `G7 PASS`. It accepts host prerequisites, never a caller-authored pass report.
@@ -180,18 +181,26 @@ and append-and-fsync journal; they do not depend on the staging source still exi
 state is moved to an attempt-owned quarantine before old bytes are restored. Snapshot uncertainty
 keeps the creation marker present and both web products stopped.
 
+Every forward or restore command holds one nonblocking mode-`0600` host lock under the fixed ext4
+state directory. Attempts overlapping candidate state refuse before effects. Each restore effect is
+idempotent and journaled, so a process exit during restore remains replayable rather than becoming a
+terminal `SAFE_STOPPED`; archive or journal uncertainty remains fail-closed.
+
 The snapshot inventory is explicit and nonoverlapping: the old checkout contains both Phase-1 runs
 trees; separate roots name the provider manifest, auth state, shared token, TLS certificate/key,
 vector journal, cold generic GPU runtime, and model. Candidate state and the automatically captured
 unit/profile/pointer mutation targets cannot overlap those roots. A missing required source refuses
 before the marker or any service changes.
 
-`prototypes/phase2-cutover/` derived `PASS` from 61/61 assertions. It measured the nine-root
-nonoverlapping inventory, a successful
-preadmission terminal, a successful canary followed by planned whole restore, a known canary
-failure with exact restore and candidate quarantine, exact restore after seven durable mutation
-boundaries, unchanged vLLM identity, `SAFE_STOPPED` after archive corruption, and rejection of both
-absent and deterministic-rehearsal G7 evidence at the preadmission boundary. The production collector
+The first adversarial extension of `prototypes/phase2-cutover/` measured `RED` at 60/66 assertions:
+attempt-local locks, an attempt nested in candidate state, a tenth snapshot role, an interrupted
+restore, an attended-browser dependency on the restored target, and an arbitrary HTTPS origin all
+violated the contract. The corrected prototype derived `PASS` from 77/77 assertions. It measured one
+fixed host lock, exact nine-role nonoverlapping inventory, pre-effect attempt/state refusal, replay
+after each of five restore effects, a successful preadmission terminal, Wave-1 followed by planned
+whole restore without G7, exact restore after seven forward mutation boundaries, unchanged vLLM
+identity, `SAFE_STOPPED` after archive corruption, exact production-origin identity, and rejection
+of absent or deterministic-rehearsal G7 evidence at the preadmission boundary. The production collector
 owns the two real scenarios: microphone plus meeting-tab shared audio, then microphone plus
 entire-screen System Audio. It observes display surface/audio track, both meters, exact browser frame
 posts, distinct finalized speakers, clean Stop, owner MP3, running source revision, and browser

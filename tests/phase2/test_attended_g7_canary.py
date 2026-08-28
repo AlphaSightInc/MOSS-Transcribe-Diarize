@@ -117,7 +117,7 @@ def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_eviden
             {
                 "measurements": {
                     "pre_admission": {
-                        "https_origin": "https://moss.example",
+                        "https_origin": g7.G7_PRODUCTION_ORIGIN,
                         "chrome_binary": str(chrome),
                         "allowed_google_browser_profile": str(browser_profile),
                         "caller_authored_result": "ignored",
@@ -155,7 +155,7 @@ def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_eviden
         def __exit__(self, *_args):
             pass
 
-    monkeypatch.setattr(g7, "sync_playwright", Manager)
+    monkeypatch.setattr(g7, "_playwright_manager", Manager)
     monkeypatch.setattr(
         g7,
         "_run_scenario",
@@ -170,7 +170,7 @@ def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_eviden
     )
     assert evidence["source"] == g7.G7_EVIDENCE_SOURCE
     assert evidence["candidate"] == _candidate()
-    assert evidence["origin"] == "https://moss.example"
+    assert evidence["origin"] == g7.G7_PRODUCTION_ORIGIN
     assert {row["id"] for row in evidence["scenarios"]} == set(g7.G7_SCENARIOS)
     assert "caller_authored_result" not in evidence
 
@@ -182,3 +182,46 @@ def test_attended_runner_refuses_noninteractive_or_incomplete_prerequisites(monk
     monkeypatch.setattr(g7.sys.stdin, "isatty", lambda: False)
     with pytest.raises(g7.AttendedCanaryError, match="interactive terminal"):
         g7.run_attended_g7_canary(acceptance_profile=profile, candidate=_candidate())
+
+
+@pytest.mark.parametrize(
+    "origin",
+    (
+        "https://not-production.invalid:444",
+        "https://ga0-alienware-rtx4070ti.tailnet.aisight.us",
+        "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:444",
+    ),
+)
+def test_attended_evidence_rejects_every_wrong_production_host_or_port(
+    origin, monkeypatch, tmp_path
+):
+    payload = {
+        "schema": g7.G7_EVIDENCE_SCHEMA,
+        "source": g7.G7_EVIDENCE_SOURCE,
+        "production_origin": True,
+        "operator_attended": True,
+        "admitted": False,
+        "origin": origin,
+        "candidate": _candidate(),
+        "chrome_version": "Chrome/real",
+        "scenarios": [
+            _scenario(scenario, surface)
+            for scenario, surface in g7.G7_SCENARIOS.items()
+        ],
+    }
+    with pytest.raises(g7.AttendedCanaryError, match="identity"):
+        g7.validate_attended_g7(payload, candidate=_candidate())
+
+    profile = tmp_path / "acceptance.json"
+    profile.write_text(
+        json.dumps(
+            {"measurements": {"pre_admission": {"https_origin": origin}}}
+        ),
+        encoding="utf-8",
+    )
+    profile.chmod(0o600)
+    monkeypatch.setattr(g7.sys.stdin, "isatty", lambda: True)
+    with pytest.raises(g7.AttendedCanaryError, match="exact production HTTPS origin"):
+        g7.run_attended_g7_canary(
+            acceptance_profile=profile, candidate=_candidate()
+        )

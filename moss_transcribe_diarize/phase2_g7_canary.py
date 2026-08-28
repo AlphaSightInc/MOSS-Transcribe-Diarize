@@ -13,14 +13,16 @@ import subprocess
 import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
-from playwright.sync_api import BrowserContext, Page, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import BrowserContext, Page
 
 
 G7_EVIDENCE_SCHEMA = "moss-phase2-attended-g7.v1"
 G7_EVIDENCE_SOURCE = "candidate-owned-production-browser"
+G7_PRODUCTION_ORIGIN = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861"
 G7_SCENARIOS = {
     "microphone_meeting_tab": "browser",
     "microphone_entire_screen": "monitor",
@@ -40,6 +42,16 @@ FRAME_KEYS = {
 
 class AttendedCanaryError(RuntimeError):
     """The production-origin attended observation did not establish G7."""
+
+
+def _playwright_manager() -> Any:
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise AttendedCanaryError(
+            "attended G7 requires the acceptance Playwright dependency"
+        ) from exc
+    return sync_playwright()
 
 
 def _required_text(payload: Mapping[str, object], key: str) -> str:
@@ -314,8 +326,7 @@ def validate_attended_g7(
         or payload.get("production_origin") is not True
         or payload.get("operator_attended") is not True
         or payload.get("admitted") is not False
-        or not isinstance(payload.get("origin"), str)
-        or not str(payload.get("origin")).startswith("https://")
+        or payload.get("origin") != G7_PRODUCTION_ORIGIN
         or not isinstance(identity, Mapping)
         or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
         or not isinstance(payload.get("chrome_version"), str)
@@ -391,8 +402,8 @@ def run_attended_g7_canary(
         raise AttendedCanaryError("attended G7 requires an interactive terminal")
     config = _load_pre_admission_profile(acceptance_profile)
     origin = _required_text(config, "https_origin").rstrip("/")
-    if not origin.startswith("https://"):
-        raise AttendedCanaryError("attended G7 requires the production HTTPS origin")
+    if origin != G7_PRODUCTION_ORIGIN:
+        raise AttendedCanaryError("attended G7 requires the exact production HTTPS origin")
     chrome = Path(_required_text(config, "chrome_binary")).expanduser().resolve()
     profile = Path(
         _required_text(config, "allowed_google_browser_profile")
@@ -401,7 +412,7 @@ def run_attended_g7_canary(
         raise AttendedCanaryError("attended Chrome prerequisites are unavailable")
 
     scenarios: list[dict[str, object]] = []
-    with sync_playwright() as playwright:
+    with _playwright_manager() as playwright:
         context = playwright.chromium.launch_persistent_context(
             str(profile), executable_path=str(chrome), headless=False
         )

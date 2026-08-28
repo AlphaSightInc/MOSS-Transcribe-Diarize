@@ -341,8 +341,8 @@ def load_cutover_profile(path: Path) -> CutoverProfile:
         for role, value in raw_snapshots.items()
         if isinstance(role, str) and role
     }
-    if set(snapshots) != set(raw_snapshots) or not REQUIRED_SNAPSHOT_ROLES <= set(snapshots):
-        raise CutoverRefused("Phase-1 snapshot roles are incomplete")
+    if set(snapshots) != set(raw_snapshots) or set(snapshots) != REQUIRED_SNAPSHOT_ROLES:
+        raise CutoverRefused("Phase-1 snapshot must contain exactly the settled roles")
     if _paths_overlap(tuple(snapshots.values())):
         raise CutoverRefused("Phase-1 snapshot paths must not overlap")
     if any(not path.exists() and not path.is_symlink() for path in snapshots.values()):
@@ -634,6 +634,7 @@ class SystemCutoverOps:
         temporary.unlink(missing_ok=True)
         temporary.symlink_to(artifacts.release)
         os.replace(temporary, self.activation)
+        _fsync_directory(self.activation.parent)
         self.unit_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         for name, source in artifacts.units.items():
@@ -744,8 +745,10 @@ class CutoverRun:
         self.ops = ops
         self.target_terminal = target_terminal
         self.journal = CutoverJournal(self.attempt / "journal.jsonl")
-        self.lock_file = self.attempt / ".lock"
         home = Path.home()
+        self.lock_file = (
+            home / ".local/state/moss-transcribe-diarize/phase2-cutover.lock"
+        )
         self.activation = home / ".local/share/moss-transcribe-diarize/account-current"
         self.unit_targets = {
             "moss-web.service": home / ".config/systemd/user/moss-web.service",
@@ -811,6 +814,9 @@ class CutoverRun:
         account_profile = _parse_env_file(profile.account_profile_source)
         _parse_env_file(profile.vllm_profile_source)
         state_paths = _candidate_state_paths(account_profile)
+        resolved_attempt = attempt.expanduser().resolve()
+        if _paths_overlap((resolved_attempt, *state_paths.values())):
+            raise CutoverRefused("cutover attempt overlaps candidate state")
         if _paths_overlap((*profile.snapshot_paths.values(), *state_paths.values())):
             raise CutoverRefused("Phase-1 snapshot and candidate state paths must not overlap")
         if not _candidate_roots_empty(state_paths):
@@ -825,7 +831,6 @@ class CutoverRun:
         )
         if profile.account_profile_source in target_paths or profile.vllm_profile_source in target_paths:
             raise CutoverRefused("candidate service profiles must be inert staged sources")
-        resolved_attempt = attempt.expanduser().resolve()
         if resolved_attempt.exists():
             raise CutoverRefused("cutover attempt already exists")
         resolved_attempt.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -902,8 +907,15 @@ class CutoverRun:
         )
 
     def _locked(self):
+        self.lock_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        os.chmod(self.lock_file.parent, 0o700)
         descriptor = os.open(self.lock_file, os.O_CREAT | os.O_RDWR, 0o600)
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.fchmod(descriptor, 0o600)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            os.close(descriptor)
+            raise CutoverRefused("another cutover attempt owns the host lock") from exc
         return os.fdopen(descriptor, "r+")
 
     @property
@@ -1143,18 +1155,6 @@ class CutoverRun:
                 self._validate_qualification(output)
                 if not self.ops.verify_vllm_unchanged(original):
                     raise RuntimeError("vLLM process changed during qualification")
-                self.journal.append("attended_g7_started", admitted=False)
-                attended = self.ops.run_attended_g7(candidate=self.candidate)
-                validate_attended_g7(attended, candidate=self.candidate)
-                _write_once(self.attempt / "attended-g7.json", attended)
-                self.journal.append(
-                    "attended_g7_complete",
-                    evidence="attended-g7.json",
-                    g7="PASS" if self.target_terminal == "preadmission" else "UNCLAIMED",
-                    admitted=False,
-                )
-                if not self.ops.verify_vllm_unchanged(original):
-                    raise RuntimeError("vLLM process changed during attended canary")
                 if self.target_terminal == "restored":
                     self.journal.append(
                         "planned_restore",
@@ -1164,9 +1164,21 @@ class CutoverRun:
                     )
                     return self._restore_locked(
                         original=original,
-                        cause="planned_post_canary_restore",
+                        cause="planned_post_qualification_restore",
                         error=None,
                     )
+                self.journal.append("attended_g7_started", admitted=False)
+                attended = self.ops.run_attended_g7(candidate=self.candidate)
+                validate_attended_g7(attended, candidate=self.candidate)
+                _write_once(self.attempt / "attended-g7.json", attended)
+                self.journal.append(
+                    "attended_g7_complete",
+                    evidence="attended-g7.json",
+                    g7="PASS",
+                    admitted=False,
+                )
+                if not self.ops.verify_vllm_unchanged(original):
+                    raise RuntimeError("vLLM process changed during attended canary")
                 result = CutoverResult(
                     "preadmission", str(self.attempt), self.candidate_sha, g7="PASS"
                 )
@@ -1198,8 +1210,6 @@ class CutoverRun:
                 raise CutoverRefused("cutover attempt has no durable state")
             if phase in TERMINAL_PHASES:
                 raise CutoverRefused("terminal cutover attempt cannot be restored")
-            if phase == "restore_started":
-                return self._safe_stopped("prior_restore_interrupted")
             original_payload = json.loads(
                 (self.attempt / "original-state.json").read_text(encoding="utf-8")
             )
@@ -1264,12 +1274,15 @@ class CutoverRun:
             if not isinstance(role, str) or not isinstance(source_value, str) or not isinstance(existed, bool):
                 raise CutoverUnsafe("Phase-1 snapshot source manifest is malformed")
             target = Path(source_value)
+            target_was_present = target.exists() or target.is_symlink()
             _remove_path(target)
             if existed:
                 restored = extraction / "roots" / role
                 if not restored.exists() and not restored.is_symlink():
                     raise CutoverUnsafe("Phase-1 snapshot member is absent")
                 _copy_restored(restored, target)
+            elif target_was_present:
+                _fsync_directory(target.parent)
         shutil.rmtree(extraction)
 
     def _restore_locked(
@@ -1282,11 +1295,16 @@ class CutoverRun:
         self.journal.append("restore_started", cause=cause)
         try:
             self.ops.stop_candidate()
+            self.journal.append("restore_candidate_stopped")
             if (self.attempt / "snapshot-manifest.json").exists():
                 self._quarantine_candidate_state()
+                self.journal.append("restore_candidate_quarantined")
                 self._restore_snapshot()
+                self.journal.append("restore_snapshot_applied")
             self.ops.start_phase1(original)
+            self.journal.append("restore_phase1_started")
             self.ops.disable_phase1_block()
+            self.journal.append("restore_block_removed")
             if not self.ops.verify_vllm_unchanged(original):
                 raise CutoverUnsafe("vLLM process changed during cutover or restore")
             if not self._all_restored_open(self.ops.runtime_statuses()):

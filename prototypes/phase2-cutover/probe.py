@@ -9,6 +9,7 @@ import os
 import shutil
 import tarfile
 import tempfile
+import fcntl
 from pathlib import Path
 
 
@@ -20,6 +21,27 @@ MUTATIONS = (
     "activated",
     "units_swapped",
     "candidate_started",
+)
+EXACT_PRODUCTION_ORIGIN = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861"
+REQUIRED_SNAPSHOT_ROLES = frozenset(
+    {
+        "phase1_checkout",
+        "phase1_provider_manifest",
+        "phase1_auth_state",
+        "phase1_shared_token",
+        "phase1_tls_cert",
+        "phase1_tls_key",
+        "phase1_vector_journal",
+        "phase1_gpu_venv",
+        "phase1_model",
+    }
+)
+RESTORE_EFFECTS = (
+    "candidate_stopped",
+    "candidate_quarantined",
+    "snapshot_restored",
+    "phase1_started",
+    "block_removed",
 )
 
 
@@ -78,6 +100,33 @@ def snapshot_projection(host: "Host") -> dict[str, object]:
         else:
             rows[role] = ("file", path.read_bytes())
     return rows
+
+
+def paths_overlap(paths: tuple[Path, ...]) -> bool:
+    resolved = tuple(path.resolve(strict=False) for path in paths)
+    return any(
+        left == right or left in right.parents or right in left.parents
+        for index, left in enumerate(resolved)
+        for right in resolved[index + 1 :]
+    )
+
+
+def measure_global_lock(root: Path) -> dict[str, object]:
+    lock = root / "host-state/phase2-cutover.lock"
+    lock.parent.mkdir(mode=0o700)
+    first = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    second = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    second_refused = False
+    try:
+        fcntl.flock(first, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(second, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            second_refused = True
+    finally:
+        os.close(second)
+        os.close(first)
+    return {"path": str(lock), "second_concurrent_attempt_refused": second_refused}
 
 
 class Host:
@@ -164,17 +213,33 @@ def archive_old(host: Host) -> tuple[Path, str, list[str]]:
     return snapshot, digest, members
 
 
-def restore(host: Host, *, corrupt: bool = False) -> str:
+def restore(
+    host: Host,
+    *,
+    corrupt: bool = False,
+    crash_after: str | None = None,
+) -> str:
     events = read_events(host.journal)
     if events[-1]["phase"] in {"restored", "preadmission", "SAFE_STOPPED"}:
         raise ValueError("terminal attempt cannot be restored")
+    if events[-1]["phase"] != "restore_started":
+        append_event(host.journal, "restore_started")
     snapshot = host.attempt / "phase1.tar"
     if not snapshot.exists():
         # Before snapshot publication, only the marker and old-process lifecycle can
         # have changed; no host byte has been replaced yet.
-        host.marker.unlink(missing_ok=True)
-        host.phase1_running = True
         host.account_running = False
+        append_event(host.journal, "candidate_stopped")
+        if crash_after == "candidate_stopped":
+            raise InjectedCrash("candidate_stopped")
+        host.phase1_running = True
+        append_event(host.journal, "phase1_started")
+        if crash_after == "phase1_started":
+            raise InjectedCrash("phase1_started")
+        host.marker.unlink(missing_ok=True)
+        append_event(host.journal, "block_removed")
+        if crash_after == "block_removed":
+            raise InjectedCrash("block_removed")
         append_event(host.journal, "restored", candidate_quarantined=False)
         return "restored"
     manifest = json.loads((host.attempt / "snapshot.json").read_text())
@@ -185,9 +250,16 @@ def restore(host: Host, *, corrupt: bool = False) -> str:
         host.account_running = False
         append_event(host.journal, "SAFE_STOPPED", reason="snapshot_digest_mismatch")
         return "SAFE_STOPPED"
+    host.account_running = False
+    append_event(host.journal, "candidate_stopped")
+    if crash_after == "candidate_stopped":
+        raise InjectedCrash("candidate_stopped")
     quarantine = host.attempt / "candidate-quarantine"
     if host.candidate_roots.exists():
         host.candidate_roots.rename(quarantine)
+    append_event(host.journal, "candidate_quarantined")
+    if crash_after == "candidate_quarantined":
+        raise InjectedCrash("candidate_quarantined")
     if host.current.exists() or host.current.is_symlink():
         host.current.unlink()
     for path in host.snapshot_roots.values():
@@ -206,9 +278,17 @@ def restore(host: Host, *, corrupt: bool = False) -> str:
             raise ValueError("snapshot member escapes the restore root")
         archive.extractall(host.root)
     host.current.symlink_to(host.old)
-    host.marker.unlink(missing_ok=True)
+    append_event(host.journal, "snapshot_restored")
+    if crash_after == "snapshot_restored":
+        raise InjectedCrash("snapshot_restored")
     host.phase1_running = True
-    host.account_running = False
+    append_event(host.journal, "phase1_started")
+    if crash_after == "phase1_started":
+        raise InjectedCrash("phase1_started")
+    host.marker.unlink(missing_ok=True)
+    append_event(host.journal, "block_removed")
+    if crash_after == "block_removed":
+        raise InjectedCrash("block_removed")
     append_event(host.journal, "restored", candidate_quarantined=quarantine.exists())
     return "restored"
 
@@ -283,6 +363,9 @@ def run(
         append_event(host.journal, "canary_failed", g7="UNCLAIMED")
         return restore(host)
     append_event(host.journal, "qualification_complete", g7="UNCLAIMED")
+    if terminal == "restored":
+        append_event(host.journal, "planned_restore", g7="UNCLAIMED")
+        return restore(host)
     if attended_evidence not in {"production_browser", "deterministic_rehearsal"}:
         append_event(host.journal, "attended_g7_unmeasured", g7="UNCLAIMED")
         return restore(host)
@@ -295,9 +378,6 @@ def run(
         source=attended_evidence,
         g7="PASS" if attended_evidence == "production_browser" else "UNCLAIMED",
     )
-    if terminal == "restored":
-        append_event(host.journal, "planned_restore", g7="UNCLAIMED")
-        return restore(host)
     append_event(host.journal, "preadmission", g7="PASS", admitted_accounts=0)
     return "preadmission"
 
@@ -307,6 +387,7 @@ def main() -> int:
         "structural_question": "Can one forward cutover and one incomplete-attempt restore make every crash boundary truthful without opening admission?",
         "hypothesis": "An fsynced phase journal, one complete snapshot, and one activation pointer are sufficient; uncertainty must remain blocked and stopped.",
         "minimum_primitives": [
+            {"name": "host_cutover_lock", "boundary": "serializes every forward and restore attempt on one cooperating host", "irreducible": "attempt-local locks cannot prevent two different attempts from mutating the same units and authority"},
             {"name": "phase_journal", "boundary": "orders only durable host mutations", "irreducible": "recovery otherwise cannot distinguish planned from completed effects"},
             {"name": "phase1_block_and_two_view_drain", "boundary": "old-image admission and outstanding work only", "irreducible": "stop alone loses accepted work and an in-process count misses the sibling service"},
             {"name": "complete_snapshot", "boundary": "the nonoverlapping checkout, provider/auth/token/TLS/vector, GPU-runtime, model, unit, and profile roots", "irreducible": "omitting one root or nesting roots permits mixed authentication, runtime, or service state"},
@@ -315,15 +396,18 @@ def main() -> int:
             {"name": "explicit_terminal_target", "boundary": "chooses only full-canary restore or preadmission", "irreducible": "an implicit success target cannot deliberately rehearse the whole rollback"},
             {"name": "candidate_owned_attended_canary", "boundary": "observes real production-origin microphone plus meeting-tab and entire-screen Chrome capture", "irreducible": "Wave-1 qualification or a profile-authored pass report cannot establish attended browser behavior"},
         ],
-        "invariants": ["only candidate-owned production-browser evidence can end preadmission with G7 PASS", "deterministic rehearsal evidence remains G7 UNCLAIMED", "vLLM PID/start/argv never change", "candidate admission remains empty", "all snapshot roots are explicit and nonoverlapping", "known failures restore whole old state", "uncertain restore keeps creation blocked and services stopped"],
+        "invariants": ["one fixed host lock excludes every concurrent forward or restore attempt", "only the exact committed production origin can end preadmission with G7 PASS", "restored runs Wave-1 then planned whole restore without requiring G7", "a crash during any restore effect remains replayable", "vLLM PID/start/argv never change", "candidate admission remains empty", "the snapshot role set is exact and all snapshot, candidate-state, and attempt roots are nonoverlapping", "known failures restore whole old state", "uncertain snapshot identity keeps creation blocked and services stopped"],
         "assumptions_unknowns": ["real OAuth, trusted TLS, Chrome microphone/tab/screen, and the remote host remain UNMEASURED in this prototype", "the production command must obtain attended evidence directly rather than consume a caller-authored report"],
-        "falsifier": "any required old authority/runtime/model root is absent or nested, any crash cannot restore exactly, any corrupt archive reopens a service, a candidate root is discarded rather than quarantined, absent/synthetic G7 evidence reaches preadmission, or preadmission admits an Account",
+        "falsifier": "two distinct attempts mutate concurrently; any required old authority/runtime/model root is absent, extra, or overlaps attempt/candidate state; any forward or restore-effect crash cannot restore exactly; restored requires G7; a wrong host/port reaches G7; a corrupt archive reopens a service; candidate state is discarded instead of quarantined; or preadmission admits an Account",
         "tool_decision": [
             {"experiment": "actual filesystem journal/archive/pointer crash matrix", "necessity": "labels cannot expose partial mutation", "decision_change": "any non-restorable boundary requires a different ordering or primitive"},
             {"experiment": "corrupt archive restore", "necessity": "tests the only uncertainty outcome", "decision_change": "any service restart rejects SAFE_STOPPED handling"},
             {"experiment": "successful canary followed by planned whole restore", "necessity": "proves restored is a deliberate terminal rather than a disguised canary failure", "decision_change": "any skipped canary or mixed old state rejects the terminal-target seam"},
             {"experiment": "explicit nonoverlapping old-image inventory", "necessity": "a checkout-only archive cannot restore external authority or the cold GPU runtime/model", "decision_change": "any missing or nested root rejects snapshot construction before host mutation"},
             {"experiment": "absent versus deterministic versus production-browser attended evidence", "necessity": "Wave-1 success does not measure the attended Chrome canary", "decision_change": "if missing or synthetic evidence reaches preadmission, reject the terminal policy"},
+            {"experiment": "two independent nonblocking file-lock claims", "necessity": "attempt directories do not share exclusion state", "decision_change": "if both claims succeed, move ownership to one fixed host path"},
+            {"experiment": "crash after each restore effect followed by the same restore command", "necessity": "restore_started alone does not prove replayability", "decision_change": "any mixed or nonretryable result requires a different restore ordering"},
+            {"experiment": "wrong-host/port and restored-without-browser states", "necessity": "HTTPS alone does not identify production and rollback rehearsal does not measure G7", "decision_change": "any wrong origin or browser dependency rejects the terminal branch"},
         ],
         "one_command": "PYTHONDONTWRITEBYTECODE=1 bash prototypes/phase2-cutover/run.sh",
     }
@@ -331,6 +415,9 @@ def main() -> int:
     assertions: list[bool] = []
     with tempfile.TemporaryDirectory(prefix="moss-cutover-probe-") as directory:
         root = Path(directory)
+        results["global_lock"] = measure_global_lock(root)
+        assertions.append(results["global_lock"]["second_concurrent_attempt_refused"] is True)
+
         success = Host(root / "success")
         before_vllm = dict(success.vllm)
         inventory_paths = tuple(success.snapshot_roots.values())
@@ -344,6 +431,22 @@ def main() -> int:
             "nonoverlapping": inventory_nonoverlap,
         }
         assertions.extend((len(success.snapshot_roots) == 9, inventory_nonoverlap))
+        extra_inventory = {**success.snapshot_roots, "unruled_extra": root / "extra"}
+        exact_inventory_accepted = set(extra_inventory) == REQUIRED_SNAPSHOT_ROLES
+        results["exact_snapshot_roles"] = {
+            "configured": sorted(extra_inventory),
+            "accepted_by_exact_rule": exact_inventory_accepted,
+        }
+        assertions.append(not exact_inventory_accepted)
+
+        nested_attempt = success.candidate_roots / "attempt"
+        overlap_rejected = paths_overlap((nested_attempt, success.candidate_roots))
+        results["attempt_state_overlap"] = {
+            "attempt": str(nested_attempt),
+            "candidate_state": str(success.candidate_roots),
+            "rejected_before_effects": overlap_rejected,
+        }
+        assertions.append(overlap_rejected)
         results["success"] = {"terminal": run(success), "state": success.state(), "events": read_events(success.journal)}
         success_events = read_events(success.journal)
         assertions.extend((results["success"]["terminal"] == "preadmission", success_events[-1]["g7"] == "PASS", success.vllm == before_vllm, success.marker.exists(), not success.phase1_running, success.account_running))
@@ -354,7 +457,7 @@ def main() -> int:
         planned_terminal = run(
             planned,
             terminal="restored",
-            attended_evidence="deterministic_rehearsal",
+            attended_evidence="absent",
         )
         planned_events = read_events(planned.journal)
         results["planned_restore"] = {
@@ -363,6 +466,11 @@ def main() -> int:
             "events": planned_events,
         }
         planned_phases = [row["phase"] for row in planned_events]
+        planned_restore_measured = (
+            "planned_restore" in planned_phases
+            and planned_phases.index("qualification_complete")
+            < planned_phases.index("planned_restore")
+        )
         assertions.extend(
             (
                 planned_terminal == "restored",
@@ -371,14 +479,55 @@ def main() -> int:
                 not planned.account_running,
                 not planned.marker.exists(),
                 planned.vllm == planned_vllm,
-                planned_phases.index("qualification_complete")
-                < planned_phases.index("planned_restore"),
-                next(
-                    row for row in planned_events if row["phase"] == "attended_g7_complete"
-                )["g7"]
-                == "UNCLAIMED",
+                planned_restore_measured,
+                "attended_g7_started" not in planned_phases,
             )
         )
+
+        restore_interrupted = Host(root / "restore-interrupted")
+        try:
+            run(restore_interrupted, crash_after="candidate_started")
+        except InjectedCrash:
+            append_event(restore_interrupted.journal, "restore_started")
+        replay_terminal = restore(restore_interrupted)
+        results["restore_crash_replay"] = {
+            "last_phase": read_events(restore_interrupted.journal)[-1]["phase"],
+            "replay_terminal": replay_terminal,
+        }
+        assertions.extend(
+            (
+                replay_terminal == "restored",
+                snapshot_projection(restore_interrupted)
+                == restore_interrupted.original_projection,
+            )
+        )
+
+        restore_crash_rows = []
+        for phase in RESTORE_EFFECTS:
+            interrupted = Host(root / f"restore-crash-{phase}")
+            original = dict(interrupted.original_projection)
+            try:
+                run(interrupted, crash_after="candidate_started")
+            except InjectedCrash:
+                try:
+                    restore(interrupted, crash_after=phase)
+                except InjectedCrash:
+                    terminal = restore(interrupted)
+            restored_exact = snapshot_projection(interrupted) == original
+            restore_crash_rows.append(
+                {"phase": phase, "terminal": terminal, "restored": restored_exact}
+            )
+            assertions.extend((terminal == "restored", restored_exact))
+        results["restore_effect_crash_matrix"] = restore_crash_rows
+
+        arbitrary_origin = "https://not-production.invalid:444"
+        exact_origin_accepted = arbitrary_origin == EXACT_PRODUCTION_ORIGIN
+        results["production_origin"] = {
+            "required": EXACT_PRODUCTION_ORIGIN,
+            "observed": arbitrary_origin,
+            "accepted_by_exact_rule": exact_origin_accepted,
+        }
+        assertions.append(not exact_origin_accepted)
 
         missing_g7 = Host(root / "missing-g7")
         missing_original = dict(missing_g7.original_projection)

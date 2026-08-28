@@ -63,8 +63,9 @@ owns the command:
   --attempt /absolute/incomplete/attempt
 ```
 
-`restored` runs the complete same-SHA canary and then proves whole rollback while keeping G7
-`UNCLAIMED`. `preadmission` additionally requires the command's own attended headful-Chrome
+`restored` runs the complete same-SHA Wave-1 qualification and then proves whole rollback without
+running the attended browser collector; G7 remains `UNCLAIMED`. `preadmission` additionally
+requires the command's own attended headful-Chrome
 collector: real microphone plus meeting-tab shared audio, then real microphone plus entire-screen
 System Audio. It seals content-free source/meter/frame/speaker/Stop/audio observations and returns
 `G7 PASS`; absent or synthetic evidence restores Phase 1. There is no admit, resume, retry, skip, or
@@ -80,7 +81,7 @@ ops/install-services.sh
 ```
 
 The installer fails closed unless both ext4 profiles are mode `0600` and `account-current`
-resolves to a release containing all three reviewed launchers. It writes only
+resolves to a release containing all four reviewed launchers. It writes only
 `moss-vllm.service` and `moss-web.service`; `systemctl start` does not restart an already-running
 vLLM process. Issue #23 must preserve the vLLM PID, arguments, and active timestamp while
 activating only the Account web runtime.

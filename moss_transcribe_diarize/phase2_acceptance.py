@@ -116,7 +116,15 @@ REQUIRED_PYTHON_TEST_FILES = (
 REQUIRED_PYTHON_TEST_CASES = (
     "tests.phase2.test_attended_g7_canary.test_attended_meter_checkpoint_accepts_delayed_signal_and_refuses_all_zero",
     "tests.phase2.test_attended_g7_canary.test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence",
+    "tests.phase2.test_attended_g7_canary.test_attended_evidence_rejects_every_wrong_production_host_or_port",
+    "tests.phase2.test_atomic_cutover.test_activation_pointer_replace_is_fsynced_before_install_returns",
+    "tests.phase2.test_atomic_cutover.test_attempt_nested_in_candidate_state_is_refused_before_creating_parent",
+    "tests.phase2.test_atomic_cutover.test_distinct_forward_attempts_share_one_host_cutover_lock",
     "tests.phase2.test_atomic_cutover.test_missing_or_synthetic_attended_g7_restores_without_preadmission",
+    "tests.phase2.test_atomic_cutover.test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attended_g7",
+    "tests.phase2.test_atomic_cutover.test_restore_fsyncs_parent_after_deleting_originally_absent_activation",
+    "tests.phase2.test_atomic_cutover.test_restore_replays_after_process_exit_during_restore_effects",
+    "tests.phase2.test_atomic_cutover.test_snapshot_inventory_refuses_an_unruled_extra_role_before_effects",
     "tests.phase2.test_google_account_workspace.test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission",
     "tests.phase2.test_google_account_workspace.test_unverified_or_disallowed_callback_leaves_no_account_or_session",
     "tests.phase2.test_google_account_workspace.test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation",
@@ -141,9 +149,9 @@ REQUIRED_FRONTEND_TEST_FILES = (
     "frontend/src/lib/transcriptModel.test.ts",
     "frontend/src/lib/transcriptSearch.test.ts",
 )
-# These baselines are raised with the committed suites.  Falling below them means a test was
-# removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1053
+# These baselines are raised with each committed load-bearing suite.  Falling below them means a
+# test was removed or ceased collection.
+MINIMUM_PYTHON_TESTS = 1062
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {

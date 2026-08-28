@@ -3,11 +3,11 @@
 ## Question and hypothesis
 
 Can one forward cutover plus one incomplete-attempt restore make every reachable crash boundary
-truthful without admitting an Account? The hypothesis is that seven primitives suffice: an
-append-and-fsync phase journal, the existing Phase-1 marker plus both runtime drain views, one
-complete snapshot, one immutable release pointer, three exact terminal outcomes, and an explicit
-`restored|preadmission` target that cannot admit an Account, plus one candidate-owned attended
-browser observation that cannot be replaced by a profile-authored report.
+truthful without admitting an Account? The hypothesis is that eight primitives suffice: one fixed
+host cutover lock, an append-and-fsync phase journal, the existing Phase-1 marker plus both runtime
+drain views, one complete snapshot, one immutable release pointer, three exact terminal outcomes,
+an explicit `restored|preadmission` target that cannot admit an Account, and one candidate-owned
+attended browser observation that cannot be replaced by a profile-authored report.
 
 ## One command
 
@@ -21,13 +21,26 @@ and a derived assertion denominator. It exits nonzero if any assertion fails.
 ## Falsifier
 
 Reject the design if a crash after any durable mutation cannot restore the original tree exactly;
-if a corrupt archive reopens either product; if the vLLM process identity changes; if candidate
-state is discarded instead of quarantined; or if a pre-admission terminal state has admitted an
-Account.
+if two cutovers mutate one host concurrently; if the snapshot roles are missing or extra; if an
+attempt overlaps candidate state; if a corrupt archive reopens either product; if the vLLM process
+identity changes; if candidate state is discarded instead of quarantined; if a wrong origin passes
+G7; or if a pre-admission terminal state has admitted an Account.
 
 ## Verdict
 
-**PASS, 61/61 assertions.** The probe measured nine explicit nonoverlapping old-image roots
+The first adversarial extension measured **RED, 60/66 assertions** against the original model.
+It exposed six reachable states: two attempts held different attempt-local locks; an attempt nested
+inside candidate state was accepted; a tenth unruled snapshot root passed the subset check; a
+crash after `restore_started` became non-replayable `SAFE_STOPPED`; `restored` required an absent
+attended browser and therefore never recorded `planned_restore`; and an arbitrary HTTPS host/port
+was labeled production. These failures select one fixed host lock, exact root equality and
+pre-effect overlap rejection, idempotent restore replay, the Wave-1-to-planned-restore branch, and
+one committed production origin. No retry framework or second cutover state machine is needed.
+
+**PASS, 77/77 assertions.** The corrected probe measured one fixed host lock rejecting a second
+attempt, exact nine-role equality, attempt/candidate-state nonoverlap, replay to exact old state
+after each of five restore effects, Wave-1 followed by planned restore without G7, exact
+production-origin rejection, and nine explicit nonoverlapping old-image roots
 (checkout including both runs trees, provider manifest, auth state, shared token, TLS pair, vector
 journal, cold GPU runtime, and model), a successful pre-admission state, a successful
 canary followed by a deliberate whole restore, a known canary

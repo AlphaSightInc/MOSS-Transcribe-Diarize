@@ -6,10 +6,12 @@ import os
 import shutil
 import subprocess
 import stat
+import threading
 from pathlib import Path
 
 import pytest
 
+from moss_transcribe_diarize import phase2_cutover as cutover
 from moss_transcribe_diarize.app import phase2_cutover_cli
 from moss_transcribe_diarize.app.phase2_cutover_cli import parse_args
 from moss_transcribe_diarize.phase2_cutover import (
@@ -21,11 +23,15 @@ from moss_transcribe_diarize.phase2_cutover import (
     CutoverRun,
     CutoverUnsafe,
     OriginalState,
+    SystemCutoverOps,
+    load_cutover_profile,
 )
+from moss_transcribe_diarize.installed_candidate import validated_candidate_artifacts
 from moss_transcribe_diarize.phase2_g7_canary import (
     AttendedCanaryError,
     G7_EVIDENCE_SCHEMA,
     G7_EVIDENCE_SOURCE,
+    G7_PRODUCTION_ORIGIN,
     validate_attended_g7,
 )
 
@@ -254,7 +260,7 @@ def _attended_evidence(candidate, *, source=G7_EVIDENCE_SOURCE):
         "production_origin": True,
         "operator_attended": True,
         "admitted": False,
-        "origin": "https://moss.example",
+        "origin": G7_PRODUCTION_ORIGIN,
         "candidate": {
             key: candidate[key] for key in ("git_sha", "git_tree", "uv_lock_sha256")
         },
@@ -283,6 +289,7 @@ class FakeCutoverOps:
         self.phase1_running = True
         self.candidate_running = False
         self.safe_stopped = False
+        self.attended_calls = 0
         self.vllm = {"active": True, "enabled": True, "pid": 42, "started": "123", "argv": ["python", "-m", "vllm"]}
         self.status_calls = 0
 
@@ -358,6 +365,7 @@ class FakeCutoverOps:
         return output
 
     def run_attended_g7(self, *, candidate):
+        self.attended_calls += 1
         if self.attended_fails:
             raise AttendedCanaryError("injected attended prerequisite absence")
         return _attended_evidence(candidate, source=self.attended_source)
@@ -405,6 +413,91 @@ def test_cutover_success_requires_attended_g7_before_preadmission(monkeypatch, t
     )
     with pytest.raises(CutoverRefused, match="terminal"):
         CutoverRun.open_incomplete(attempt=attempt, ops=ops).restore()
+
+
+def test_activation_pointer_replace_is_fsynced_before_install_returns(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    profile = load_cutover_profile(fixture["profile"])
+    artifacts = validated_candidate_artifacts(fixture["candidate"])
+    ops = SystemCutoverOps(profile=profile, artifacts=artifacts, account_profile={})
+    monkeypatch.setattr(ops, "_systemctl", lambda *_args, **_kwargs: None)
+    fsynced: list[Path] = []
+    monkeypatch.setattr(cutover, "_fsync_directory", fsynced.append)
+
+    ops.install_candidate(artifacts)
+
+    assert ops.activation.resolve() == fixture["release"].resolve()
+    assert ops.activation.parent in fsynced
+
+
+def test_restore_fsyncs_parent_after_deleting_originally_absent_activation(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(cutover.time, "sleep", lambda _: None)
+    activation = (
+        fixture["home"]
+        / ".local/share/moss-transcribe-diarize/account-current"
+    )
+    fsynced: list[Path] = []
+    monkeypatch.setattr(cutover, "_fsync_directory", fsynced.append)
+
+    result = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=tmp_path / "attempt",
+        terminal="preadmission",
+        ops=FakeCutoverOps(fixture, qualification_fails=True),
+    ).run()
+
+    assert result.terminal == "restored"
+    assert not activation.exists() and not activation.is_symlink()
+    assert activation.parent in fsynced
+
+
+def test_distinct_forward_attempts_share_one_host_cutover_lock(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    entered = threading.Event()
+    release = threading.Event()
+    failures: list[BaseException] = []
+
+    class HeldOps(FakeCutoverOps):
+        def capture_original_state(self):
+            entered.set()
+            assert release.wait(timeout=5)
+            return super().capture_original_state()
+
+    first = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=tmp_path / "first-attempt",
+        terminal="restored",
+        ops=HeldOps(fixture),
+    )
+    second = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=tmp_path / "second-attempt",
+        terminal="restored",
+        ops=FakeCutoverOps(fixture),
+    )
+
+    def run_first() -> None:
+        try:
+            first.run()
+        except BaseException as exc:
+            failures.append(exc)
+
+    worker = threading.Thread(target=run_first)
+    worker.start()
+    assert entered.wait(timeout=5)
+    try:
+        with pytest.raises(CutoverRefused, match="another cutover"):
+            second.run()
+    finally:
+        release.set()
+        worker.join(timeout=5)
+    assert not worker.is_alive()
+    assert not failures
 
 
 def test_known_qualification_failure_restores_whole_old_state_and_quarantines_candidate(monkeypatch, tmp_path):
@@ -485,7 +578,9 @@ def test_attended_g7_reducer_rejects_each_load_bearing_observation(monkeypatch, 
             validate_attended_g7(payload, candidate=candidate)
 
 
-def test_planned_restored_terminal_runs_canary_then_whole_restore(monkeypatch, tmp_path):
+def test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attended_g7(
+    monkeypatch, tmp_path
+):
     fixture = _cutover_fixture(monkeypatch, tmp_path)
     ops = FakeCutoverOps(fixture)
     monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
@@ -499,6 +594,9 @@ def test_planned_restored_terminal_runs_canary_then_whole_restore(monkeypatch, t
     phases = [row["phase"] for row in CutoverJournal(attempt / "journal.jsonl").read()]
     assert result.terminal == "restored" and result.error is None
     assert phases.index("qualification_started") < phases.index("planned_restore")
+    assert not any(phase.startswith("attended_g7") for phase in phases)
+    assert ops.attended_calls == 0
+    assert not (attempt / "attended-g7.json").exists()
     assert phases[-1] == "restored"
     assert ops.phase1_running is True and ops.candidate_running is False
     assert not fixture["marker"].exists()
@@ -524,7 +622,10 @@ def test_snapshot_inventory_refuses_nested_or_missing_sources_before_effects(
     fixture = _cutover_fixture(monkeypatch, tmp_path)
     payload = json.loads(fixture["profile"].read_text())
     snapshots = payload["phase1"]["snapshot_paths"]
-    snapshots["nested_runs"] = str(fixture["snapshot_paths"]["phase1_checkout"] / "runs")
+    vector_journal = snapshots["phase1_vector_journal"]
+    snapshots["phase1_vector_journal"] = str(
+        fixture["snapshot_paths"]["phase1_checkout"] / "runs"
+    )
     _write_private(fixture["profile"], payload)
     with pytest.raises(CutoverRefused, match="must not overlap"):
         CutoverRun.prepare(
@@ -535,7 +636,7 @@ def test_snapshot_inventory_refuses_nested_or_missing_sources_before_effects(
     assert not fixture["marker"].exists()
     assert not (tmp_path / "overlap-attempt").exists()
 
-    snapshots.pop("nested_runs")
+    snapshots["phase1_vector_journal"] = vector_journal
     missing = Path(snapshots["phase1_auth_state"])
     missing.unlink()
     _write_private(fixture["profile"], payload)
@@ -546,6 +647,43 @@ def test_snapshot_inventory_refuses_nested_or_missing_sources_before_effects(
             terminal="restored",
         )
     assert not (tmp_path / "missing-attempt").exists()
+
+
+def test_snapshot_inventory_refuses_an_unruled_extra_role_before_effects(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    payload = json.loads(fixture["profile"].read_text())
+    extra = tmp_path / "unruled-extra"
+    extra.write_text("not part of the settled Phase-1 image", encoding="utf-8")
+    payload["phase1"]["snapshot_paths"]["unruled_extra"] = str(extra)
+    _write_private(fixture["profile"], payload)
+
+    with pytest.raises(CutoverRefused, match="exactly the settled roles"):
+        CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=tmp_path / "extra-role-attempt",
+            terminal="restored",
+        )
+    assert not fixture["marker"].exists()
+    assert not (tmp_path / "extra-role-attempt").exists()
+
+
+def test_attempt_nested_in_candidate_state_is_refused_before_creating_parent(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    candidate_state = fixture["state"] / "file-work"
+    attempt = candidate_state / "cutover-attempt"
+
+    with pytest.raises(CutoverRefused, match="attempt overlaps candidate state"):
+        CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=attempt,
+            terminal="restored",
+        )
+    assert not candidate_state.exists()
+    assert not fixture["marker"].exists()
 
 
 def test_process_crash_restore_needs_only_attempt_owned_evidence(monkeypatch, tmp_path):
@@ -574,6 +712,52 @@ def test_process_crash_restore_needs_only_attempt_owned_evidence(monkeypatch, tm
     restored = CutoverRun.open_incomplete(attempt=attempt, ops=recovery).restore()
     assert restored.terminal == "restored"
     assert not fixture["marker"].exists()
+
+
+def test_restore_replays_after_process_exit_during_restore_effects(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    before = {str(path): (path / "state").read_bytes() for path in fixture["old_paths"]}
+    monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
+    attempt = tmp_path / "attempt"
+
+    forward = os.fork()
+    if forward == 0:
+        CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=attempt,
+            terminal="preadmission",
+            ops=FakeCutoverOps(fixture, crash=True),
+        ).run()
+        os._exit(99)
+    _, forward_status = os.waitpid(forward, 0)
+    assert os.waitstatus_to_exitcode(forward_status) == 23
+
+    class ExitDuringRestore(FakeCutoverOps):
+        def start_phase1(self, _original):
+            os._exit(31)
+
+    restoring = os.fork()
+    if restoring == 0:
+        CutoverRun.open_incomplete(
+            attempt=attempt, ops=ExitDuringRestore(fixture)
+        ).restore()
+        os._exit(99)
+    _, restore_status = os.waitpid(restoring, 0)
+    assert os.waitstatus_to_exitcode(restore_status) == 31
+    assert CutoverJournal(attempt / "journal.jsonl").last_phase() not in {
+        "restored",
+        "preadmission",
+        "SAFE_STOPPED",
+    }
+
+    result = CutoverRun.open_incomplete(
+        attempt=attempt, ops=FakeCutoverOps(fixture)
+    ).restore()
+    assert result.terminal == "restored"
+    assert not fixture["marker"].exists()
+    assert {
+        str(path): (path / "state").read_bytes() for path in fixture["old_paths"]
+    } == before
 
 
 def test_corrupt_archive_safe_stops(monkeypatch, tmp_path):

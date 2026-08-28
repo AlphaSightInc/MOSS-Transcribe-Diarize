@@ -462,3 +462,44 @@ def test_account_frontend_has_one_generated_location_and_is_installed_in_wheel(
     )
     assert cutover_smoke.returncode == 0, cutover_smoke.stderr
     assert "{run,restore}" in cutover_smoke.stdout
+
+    base_venv = tmp_path / "base-cutover-venv"
+    base_created = subprocess.run(
+        [sys.executable, "-m", "venv", str(base_venv)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert base_created.returncode == 0, base_created.stderr
+    base_installed = subprocess.run(
+        [str(base_venv / "bin" / "pip"), "install", "--no-deps", str(wheel)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert base_installed.returncode == 0, base_installed.stderr
+    base_import = subprocess.run(
+        [
+            str(base_venv / "bin" / "python"),
+            "-c",
+            (
+                "from moss_transcribe_diarize.phase2_g7_canary import "
+                "validate_attended_g7; "
+                "from moss_transcribe_diarize.app.phase2_cutover_cli import main"
+            ),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert base_import.returncode == 0, base_import.stderr
+    base_help = subprocess.run(
+        [str(base_venv / "bin" / "mtd-phase2-cutover"), "--help"],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert base_help.returncode == 0, base_help.stderr
+    assert "{run,restore}" in base_help.stdout
