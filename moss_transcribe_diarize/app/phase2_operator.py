@@ -122,6 +122,11 @@ _EVENT_KEYS = frozenset(
         "recording",
         "stopped",
         "failed",
+        "healthy_lanes",
+        "degraded_lanes",
+        "failed_lanes",
+        "inactive_lanes",
+        "unknown_lanes",
         "available_count",
         "available_bytes",
         "partial_count",
@@ -955,6 +960,11 @@ def _validate_event_scope(event: Mapping[str, object]) -> None:
             "recording",
             "stopped",
             "failed",
+            "healthy_lanes",
+            "degraded_lanes",
+            "failed_lanes",
+            "inactive_lanes",
+            "unknown_lanes",
         },
         "backpressure": {"backpressured_meetings"},
         "artifact_state": {
@@ -1004,12 +1014,25 @@ def _safe_live_error(raw: Mapping[str, object]) -> dict[str, object] | None:
     if isinstance(persistence, str) and persistence:
         return {
             "subsystem": "persistence",
-            "code": persistence,
+            "code": _canonical_live_persistence_error(persistence),
             "severity": "error",
             "terminal": False,
             "retryable": True,
         }
     return None
+
+
+def _canonical_live_persistence_error(reason: str) -> str:
+    known = {
+        "Account revoked by operator": "meeting_authority_revoked",
+        "service shutdown": "service_shutdown",
+    }
+    mapped = known.get(reason)
+    if mapped is not None:
+        return mapped
+    if len(reason) <= 80 and re.fullmatch(r"[a-z][a-z0-9_]*", reason) is not None:
+        return reason
+    return "live_persistence_failed"
 
 
 def _edge_state(status: Mapping[str, object]) -> dict[str, object]:
@@ -1025,6 +1048,14 @@ def _edge_state(status: Mapping[str, object]) -> dict[str, object]:
         for row in meetings
         if _mapping(row)["mode"] == "live"
     )
+    lane_health = Counter(
+        _lane_health_class(_string(_mapping(lane), "health"))
+        for row in meetings
+        if _mapping(row)["mode"] == "live"
+        for lane in _mapping(
+            _mapping(_mapping(row)["capture"])["lanes"]
+        ).values()
+    )
     return {
         "readiness": status["readiness"],
         "accounts": {
@@ -1037,8 +1068,20 @@ def _edge_state(status: Mapping[str, object]) -> dict[str, object]:
         },
         "queues": capacity["queues"],
         "capture": {
-            name: live_phases[name]
-            for name in ("starting", "awaiting_audio", "recording", "stopped", "failed")
+            **{
+                name: live_phases[name]
+                for name in (
+                    "starting",
+                    "awaiting_audio",
+                    "recording",
+                    "stopped",
+                    "failed",
+                )
+            },
+            **{
+                f"{name}_lanes": lane_health[name]
+                for name in ("healthy", "degraded", "failed", "inactive", "unknown")
+            },
         },
         "backpressure": {
             "backpressured_meetings": capacity["backpressured_meetings"]
@@ -1046,6 +1089,18 @@ def _edge_state(status: Mapping[str, object]) -> dict[str, object]:
         "audio": storage["audio"],
         "latest_error": status["latest_error"],
     }
+
+
+def _lane_health_class(health: str) -> str:
+    if health in {"active", "capturing"}:
+        return "healthy"
+    if health in {"degraded", "recovering"}:
+        return "degraded"
+    if health == "failed":
+        return "failed"
+    if health in {"starting", "stopped"}:
+        return "inactive"
+    return "unknown"
 
 
 def _event_context(key: str, value: object) -> Mapping[str, object]:

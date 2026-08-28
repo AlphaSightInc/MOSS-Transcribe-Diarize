@@ -25,6 +25,18 @@ only meaningful edges. Its first observation emits readiness and establishes a c
 baseline; restart does not fabricate historical Account or Meeting events. A private 64-event
 recent buffer bounds process memory and is not exposed as status or persisted as an audit log.
 
+Capture-health edges contain fixed aggregate phase counts plus fixed healthy, degraded, failed,
+inactive, and unknown lane counts. Those categories let a lane health transition emit even when
+the Meeting's aggregate capture phase does not change, without adding a Meeting or Account key to
+the journal. `active`/`capturing` are healthy; `degraded`/`recovering` are degraded; `failed` is
+failed; `starting`/`stopped` are inactive; future safe tokens are unknown.
+
+Live persistence reasons cross a canonical reduction before the safe-error serializer:
+`Account revoked by operator` becomes `meeting_authority_revoked`, `service shutdown` becomes
+`service_shutdown`, existing safe tokens remain unchanged, and any other prose becomes
+`live_persistence_failed`. Thus lifecycle failure cannot make the status operation fail or copy
+exception prose into status/journal output.
+
 SQLite supplies Account, active Meeting, artifact metadata, and logical counts in one protected
 read. Live supplies exact queue/capture/backpressure facts. File Meeting tasks supply their
 process-local `queued`/`running` phase. Physical SQLite/WAL sizes and filesystem free bytes are
@@ -33,9 +45,11 @@ measured from the service's configured roots; paths never cross the projection.
 ## Evidence
 
 `prototypes/phase2-operator-status/probe.py` is the one-command policy probe. Its recorded PASS in
-`NOTES.md` proves no-op deduplication, restart-baseline truth, sentinel exclusion, and a fixed
-64-event bound through the absorbed production reducer. The largest measured event was 324 bytes;
-the full private buffer remained below 20,736 serialized bytes.
+`NOTES.md` proves no-op deduplication, restart-baseline truth, non-vacuous sentinel exclusion,
+same-phase lane-health detection, canonical lifecycle-error projection, and a fixed 64-event bound
+through the absorbed production reducer. Removing each of the four required transition families
+independently made the probe exit 1. The largest event across all emitted families was 433 bytes;
+the full private buffer remained below 27,712 serialized bytes.
 
 ## Consequences
 

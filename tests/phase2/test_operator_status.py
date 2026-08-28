@@ -25,6 +25,7 @@ from moss_transcribe_diarize.app.phase2_control import (
     Phase2ControlServer,
 )
 from moss_transcribe_diarize.app.phase2_file import FileMeetingTasks
+from moss_transcribe_diarize.app.phase2_lifecycle import AccountLifecycleSettlementError
 from moss_transcribe_diarize.app.phase2_operator import (
     OPERATOR_EVENT_SCHEMA,
     OPERATOR_JOURNAL_LIMIT,
@@ -34,6 +35,7 @@ from moss_transcribe_diarize.app.phase2_operator import (
     render_operator_status,
     serialize_operator_payload,
 )
+from moss_transcribe_diarize.app.live_lane_contract import LiveLane
 
 
 FIXED_NOW = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
@@ -98,6 +100,74 @@ class _MutableStore:
 
     async def operator_snapshot(self) -> dict[str, object]:
         return json.loads(json.dumps(self.payload))
+
+
+class _FakePresence:
+    def snapshot(self, meeting_id: str) -> object:
+        del meeting_id
+        return SimpleNamespace(
+            state="capturing",
+            lanes={
+                lane.value: SimpleNamespace(state="capturing", failure_code=None)
+                for lane in LiveLane
+            },
+        )
+
+
+class _FakeV2Sessions:
+    def __init__(self) -> None:
+        self.health = {lane: "active" for lane in LiveLane}
+
+    def get(self, meeting_id: str) -> "_FakeV2Sessions":
+        del meeting_id
+        return self
+
+    def snapshot(self) -> object:
+        return SimpleNamespace(
+            status="active",
+            lanes={
+                lane: SimpleNamespace(
+                    health=health,
+                    accepted_samples=160,
+                    failure_code=("browser_track_ended" if health == "failed" else None),
+                )
+                for lane, health in self.health.items()
+            },
+        )
+
+
+def _active_live_source() -> dict[str, object]:
+    return {
+        "accounts": [
+            {
+                "email": "person@example.com",
+                "display_name": "Person",
+                "enabled": 1,
+                "sign_in_sessions": 1,
+                "active_live": 1,
+                "active_file": 0,
+                "meetings": 1,
+                "transcripts": 0,
+                "voiceprints": 0,
+                "final_summaries": 0,
+                "audio_available_count": 0,
+                "audio_available_bytes": 0,
+                "audio_partial_count": 0,
+                "audio_partial_bytes": 0,
+                "audio_unavailable_count": 0,
+            }
+        ],
+        "active_meetings": [
+            {
+                "email": "person@example.com",
+                "meeting_id": "active-live-id",
+                "mode": "live",
+                "status": "active",
+                "created_at_ms": int(FIXED_NOW.timestamp() * 1000),
+            }
+        ],
+        "audio": [],
+    }
 
 
 async def _seed_content_store(database: Path) -> tuple[Phase2Store, str, str]:
@@ -300,6 +370,62 @@ def test_transition_journal_deduplicates_bounds_and_restarts_without_history(
     asyncio.run(exercise())
 
 
+def test_same_phase_lane_failure_emits_bounded_capture_health_edge(tmp_path: Path):
+    async def exercise() -> None:
+        store = _MutableStore()
+        store.payload = _active_live_source()
+        live = _FakeLive(
+            {
+                "active-live-id": {
+                    "session_status": "active",
+                    "pending_canonical": 0,
+                    "pending_limit": 4,
+                    "persistence_failure": None,
+                    "terminal_error": None,
+                }
+            }
+        )
+        v2 = _FakeV2Sessions()
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            v2_sessions=v2,
+            helper_presence=_FakePresence(),
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+        await operator.start()
+        before = await operator.snapshot()
+        assert before["active_meetings"][0]["capture"]["phase"] == "recording"
+        before_events = len(journal.lines)
+
+        v2.health[LiveLane.MICROPHONE] = "failed"
+        after = await operator.snapshot()
+        assert after["active_meetings"][0]["capture"]["phase"] == "recording"
+        events = [json.loads(line) for line in journal.lines[before_events:]]
+        assert [event["code"] for event in events] == ["capture_health_changed"]
+        assert events[0]["context"] == {
+            "starting": 0,
+            "awaiting_audio": 0,
+            "recording": 1,
+            "stopped": 0,
+            "failed": 0,
+            "healthy_lanes": 1,
+            "degraded_lanes": 0,
+            "failed_lanes": 1,
+            "inactive_lanes": 0,
+            "unknown_lanes": 0,
+        }
+        assert "active-live-id" not in journal.lines[-1]
+        assert "person@example.com" not in journal.lines[-1]
+
+    asyncio.run(exercise())
+
+
 def test_allowlist_serializer_rejects_content_fields_and_human_uses_same_projection():
     with pytest.raises(OperatorProjectionError, match="title"):
         serialize_operator_payload(
@@ -392,6 +518,134 @@ def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: P
         finally:
             await server.stop()
             await operator.stop()
+
+    asyncio.run(exercise())
+
+
+def test_failed_active_live_revoke_keeps_uds_status_and_shutdown_snapshot_safe(
+    tmp_path: Path,
+):
+    async def exercise() -> None:
+        socket = Path("/tmp") / f"moss-i19-live-failure-{os.getpid()}-{time.time_ns()}.sock"
+        store = _MutableStore()
+        store.payload = _active_live_source()
+        live = _FakeLive(
+            {
+                "active-live-id": {
+                    "session_status": "active",
+                    "pending_canonical": 0,
+                    "pending_limit": 4,
+                    "persistence_failure": None,
+                    "terminal_error": None,
+                    "transcript": "transcript-sentinel",
+                    "source_url": "https://source.invalid/sentinel",
+                }
+            }
+        )
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+
+        class FailedRevokeLifecycle:
+            async def revoke_account(self, email: str) -> bool:
+                assert email == "person@example.com"
+                live.meetings["active-live-id"]["persistence_failure"] = (
+                    "Account revoked by operator"
+                )
+                raise AccountLifecycleSettlementError(
+                    "raw failure transcript-sentinel"
+                )
+
+        await operator.start()
+        server = Phase2ControlServer(socket, FailedRevokeLifecycle(), operator)
+        await server.start()
+        try:
+            with pytest.raises(Phase2ControlError, match="account_settlement_failed"):
+                await request_control(socket, "accounts.revoke", "person@example.com")
+            status = await request_control(socket, "status")
+            assert status["active_meetings"][0]["safe_error"] == {
+                "subsystem": "persistence",
+                "code": "meeting_authority_revoked",
+                "severity": "error",
+                "terminal": False,
+                "retryable": True,
+            }
+            assert status["latest_error"]["code"] == "meeting_authority_revoked"
+        finally:
+            await server.stop()
+
+        await operator.stop()
+        final_status = await operator.snapshot()
+        assert final_status["readiness"] == "stopping"
+        assert final_status["latest_error"]["code"] == "meeting_authority_revoked"
+        serialized = json.dumps(final_status, sort_keys=True) + "\n" + "\n".join(
+            journal.lines
+        )
+        for forbidden in (
+            "Account revoked by operator",
+            "raw failure transcript-sentinel",
+            "transcript-sentinel",
+            "https://source.invalid/sentinel",
+            "person@example.com",
+            "active-live-id",
+        ):
+            if forbidden == "person@example.com" or forbidden == "active-live-id":
+                assert forbidden not in "\n".join(journal.lines)
+            else:
+                assert forbidden not in serialized
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize(
+    ("reason", "expected"),
+    [
+        ("service shutdown", "service_shutdown"),
+        ("unsupported prose transcript-sentinel", "live_persistence_failed"),
+    ],
+)
+def test_lifecycle_persistence_prose_maps_to_safe_error_token(
+    tmp_path: Path,
+    reason: str,
+    expected: str,
+):
+    async def exercise() -> None:
+        store = _MutableStore()
+        store.payload = _active_live_source()
+        live = _FakeLive(
+            {
+                "active-live-id": {
+                    "session_status": "active",
+                    "pending_canonical": 0,
+                    "pending_limit": 4,
+                    "persistence_failure": reason,
+                    "terminal_error": None,
+                }
+            }
+        )
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+        await operator.start()
+        await operator.stop()
+        status = await operator.snapshot()
+        assert status["latest_error"]["code"] == expected
+        emitted = json.dumps(status, sort_keys=True) + "\n" + "\n".join(journal.lines)
+        assert reason not in emitted
 
     asyncio.run(exercise())
 
