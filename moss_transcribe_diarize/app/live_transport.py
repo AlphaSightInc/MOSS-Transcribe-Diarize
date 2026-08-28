@@ -137,6 +137,18 @@ class LiveTransportAdapter(Protocol):
         wait_for_durability: bool,
     ) -> LiveServiceSnapshot | None: ...
 
+    def begin_stop(self, session_id: str) -> object | None: ...
+
+    async def stop(
+        self,
+        authority: object,
+        session_id: str,
+        deadline: float,
+        intent: object | None,
+    ) -> LiveServiceSnapshot: ...
+
+    def abandon_stop(self, intent: object | None) -> None: ...
+
 
 class _LegacyLiveTransportAdapter:
     """Legacy bearer/pairing authority over the raw runtime publication."""
@@ -220,6 +232,23 @@ class _LegacyLiveTransportAdapter:
         wait_for_durability: bool,
     ) -> LiveServiceSnapshot | None:
         return self.runtime.snapshot(session_id)
+
+    async def stop(
+        self,
+        authority: object,
+        session_id: str,
+        deadline: float,
+        intent: object | None,
+    ) -> LiveServiceSnapshot:
+        del authority, intent
+        return await self.runtime.stop(session_id, deadline)
+
+    def begin_stop(self, session_id: str) -> object | None:
+        del session_id
+        return None
+
+    def abandon_stop(self, intent: object | None) -> None:
+        del intent
 
 
 def attach_live_routes(
@@ -613,6 +642,7 @@ def attach_live_routes(
 
     @app.post("/api/live/sessions/{session_id}/stop")
     async def stop_live_session(session_id: str, request: Request):
+        stop_intent = adapter.begin_stop(session_id)
         release_v2_on_error = False
         authority: object | None = None
         try:
@@ -678,7 +708,7 @@ def attach_live_routes(
                     return JSONResponse(failure, status_code=status)
                 release_v2_on_error = True
             deadline = max(0.0, end_time - loop.time())
-            stopped = await runtime.stop(session_id, deadline)
+            stopped = await adapter.stop(authority, session_id, deadline, stop_intent)
             _release_live_capture_state(
                 session_id,
                 v2_sessions=v2_sessions,
@@ -766,6 +796,7 @@ def attach_live_routes(
         except (TypeError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         finally:
+            adapter.abandon_stop(stop_intent)
             if release_v2_on_error:
                 _release_live_capture_state(
                     session_id,

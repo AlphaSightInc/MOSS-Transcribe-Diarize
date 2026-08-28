@@ -11,6 +11,7 @@ import time
 import wave
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 import pytest
@@ -36,6 +37,7 @@ from moss_transcribe_diarize.app.live_session import (
     FrozenSpan,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
+    LiveSessionClosed,
 )
 from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
 from moss_transcribe_diarize.app.phase2 import (
@@ -642,6 +644,82 @@ def test_stop_tail_persistence_failure_fences_pending_finalizer_on_last_durable_
         meeting_after = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting_after == meeting
         assert "undurable terminal words" not in json.dumps(meeting_after)
+
+
+def test_raw_stop_latch_shares_only_the_inflight_attempt():
+    first_snapshot = object()
+
+    class Runtime:
+        def __init__(self):
+            self.calls = 0
+            self.entered = asyncio.Event()
+            self.release = asyncio.Event()
+
+        async def stop(self, session_id, deadline):
+            del session_id, deadline
+            self.calls += 1
+            if self.calls == 1:
+                self.entered.set()
+                await self.release.wait()
+                return first_snapshot
+            raise LiveSessionClosed("already closed")
+
+    async def scenario():
+        runtime = Runtime()
+        live = Phase2LiveMeetings(runtime, audio_archive=None, audio_stages=None)
+        binding = SimpleNamespace(raw_stop_attempt=None, handle=SimpleNamespace(meeting_id="m"))
+        live._bindings["m"] = binding
+
+        first_intent = live.begin_stop("m")
+        first = asyncio.create_task(live.stop(binding, 1.0, first_intent))
+        await runtime.entered.wait()
+        concurrent_intent = live.begin_stop("m")
+        concurrent = asyncio.create_task(live.stop(binding, 1.0, concurrent_intent))
+        runtime.release.set()
+        assert await asyncio.gather(first, concurrent) == [first_snapshot, first_snapshot]
+        assert runtime.calls == 1
+        assert binding.raw_stop_attempt is None
+
+        sequential_intent = live.begin_stop("m")
+        with pytest.raises(LiveSessionClosed, match="already closed"):
+            await live.stop(binding, 1.0, sequential_intent)
+        assert runtime.calls == 2
+        assert binding.raw_stop_attempt is None
+
+    asyncio.run(scenario())
+
+
+def test_raw_stop_latch_clears_after_timeout_so_retry_reaches_runtime():
+    retried_snapshot = object()
+
+    class Runtime:
+        def __init__(self):
+            self.calls = 0
+
+        async def stop(self, session_id, deadline):
+            del session_id, deadline
+            self.calls += 1
+            if self.calls == 1:
+                raise TimeoutError("first Stop timed out")
+            return retried_snapshot
+
+    async def scenario():
+        runtime = Runtime()
+        live = Phase2LiveMeetings(runtime, audio_archive=None, audio_stages=None)
+        binding = SimpleNamespace(raw_stop_attempt=None, handle=SimpleNamespace(meeting_id="m"))
+        live._bindings["m"] = binding
+
+        first_intent = live.begin_stop("m")
+        with pytest.raises(TimeoutError, match="first Stop timed out"):
+            await live.stop(binding, 0.0, first_intent)
+        assert binding.raw_stop_attempt is None
+
+        retry_intent = live.begin_stop("m")
+        assert await live.stop(binding, 1.0, retry_intent) is retried_snapshot
+        assert runtime.calls == 2
+        assert binding.raw_stop_attempt is None
+
+    asyncio.run(scenario())
 
 
 def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(

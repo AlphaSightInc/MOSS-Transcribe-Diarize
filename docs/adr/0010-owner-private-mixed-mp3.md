@@ -93,3 +93,10 @@ it does not rename or re-encode the MP3.
   revoked terminal exit therefore applies the same guarded state-only reconciliation before public
   terminal truth: the measured boundary ended interrupted/partial with identical `audio.mp3` bytes
   and metadata. Issue #18 owns moving revocation ordering before generation fencing.
+- A Stop request and a queued transcript persistence failure can become runnable together. Python
+  3.10 measured the failure first while raw capture was still active; Python 3.12 measured raw Stop
+  first. The shared transport therefore opens one adapter-owned Stop intent at endpoint entry and
+  the Phase-2 publication fence waits for that raw outcome. Accepted Stop consistently returns only
+  after interrupted/partial durability and raw cleanup; a genuine raw Stop failure remains a
+  conflict. The latch exists only in flight: concurrent callers share it, while a later sequential
+  Stop or a retry after timeout reaches the runtime's existing semantics.

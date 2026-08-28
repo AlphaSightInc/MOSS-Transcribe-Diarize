@@ -26,3 +26,14 @@ It calls the production archive/Meeting handle on a disposable stereo WAV and 15
 source, measures the shared mix, exact MP3, hierarchy fsync order, post-replace survivor, size-
 mismatch discard/survivor/unobservable outcomes, and both metadata retries. Printed JSON includes
 every structural-contract field and complete artifact/metadata state. All files remain temporary.
+
+The Stop/persistence ordering falsifier runs the same production HTTP path under both supported
+Python scheduling behaviors:
+
+```bash
+for python_version in 3.10 3.12; do uv run --python "$python_version" --frozen --extra dev python prototypes/streaming-diarization/audio-retention-format/stop_tail_order_probe.py; done
+```
+
+It prints the rejected no-latch result, the production intent-latch result, complete durable/public
+Meeting state, and the in-flight-only concurrent/sequential/timeout lifecycle. All databases and
+audio artifacts remain temporary.

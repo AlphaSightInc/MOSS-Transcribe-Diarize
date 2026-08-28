@@ -53,6 +53,16 @@ class _RawPublication:
 
 
 @dataclass(slots=True)
+class _RawStopAttempt:
+    """One accepted transport Stop and the raw runtime outcome it must win before fencing."""
+
+    completed: asyncio.Event = field(default_factory=asyncio.Event)
+    snapshot: LiveServiceSnapshot | None = None
+    error: BaseException | None = None
+    started: bool = False
+
+
+@dataclass(slots=True)
 class _LiveBinding:
     owner_key: tuple[str, int]
     origin_session: str
@@ -70,8 +80,16 @@ class _LiveBinding:
     worker: asyncio.Task[None] | None = None
     authority_cleanup_task: asyncio.Task[None] | None = None
     unrecorded_cleanup_required: bool = False
+    raw_stop_attempt: _RawStopAttempt | None = None
     terminal_settlement_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
+
+
+@dataclass(frozen=True, slots=True)
+class _RawStopIntent:
+    binding: _LiveBinding
+    attempt: _RawStopAttempt
+    owner: bool
 
 
 class Phase2LiveMeetings:
@@ -213,6 +231,64 @@ class Phase2LiveMeetings:
                 or (binding.capture_fenced and binding.persistence_failure is not None)
             )
         return binding
+
+    def begin_stop(self, meeting_id: str) -> _RawStopIntent | None:
+        """Latch endpoint entry before account lookup yields to queued publication."""
+
+        binding = self._bindings.get(meeting_id)
+        if binding is None:
+            return None
+        attempt = binding.raw_stop_attempt
+        owner = attempt is None
+        if attempt is None:
+            attempt = _RawStopAttempt()
+            binding.raw_stop_attempt = attempt
+        return _RawStopIntent(binding=binding, attempt=attempt, owner=owner)
+
+    def abandon_stop(self, intent: _RawStopIntent | None) -> None:
+        if intent is None or not intent.owner:
+            return
+        attempt = intent.attempt
+        if attempt.started or attempt.completed.is_set():
+            return
+        attempt.completed.set()
+        if intent.binding.raw_stop_attempt is attempt:
+            intent.binding.raw_stop_attempt = None
+
+    async def stop(
+        self,
+        binding: _LiveBinding,
+        deadline: float,
+        intent: _RawStopIntent | None,
+    ) -> LiveServiceSnapshot:
+        """Let an accepted raw Stop settle before a concurrent persistence fence."""
+
+        attempt = None if intent is None else intent.attempt
+        if attempt is None or intent.binding is not binding:
+            attempt = binding.raw_stop_attempt
+        if attempt is None:
+            attempt = _RawStopAttempt()
+            binding.raw_stop_attempt = attempt
+        if not attempt.started:
+            attempt.started = True
+            try:
+                attempt.snapshot = await self.runtime.stop(
+                    binding.handle.meeting_id,
+                    deadline,
+                )
+            except BaseException as exc:
+                attempt.error = exc
+                raise
+            finally:
+                attempt.completed.set()
+                if binding.raw_stop_attempt is attempt:
+                    binding.raw_stop_attempt = None
+        else:
+            await attempt.completed.wait()
+            if attempt.error is not None:
+                raise attempt.error
+        assert attempt.snapshot is not None
+        return attempt.snapshot
 
     async def wait_for_terminal(self, binding: _LiveBinding) -> None:
         async with binding.changed:
@@ -642,6 +718,9 @@ class Phase2LiveMeetings:
     async def _fence(self, binding: _LiveBinding, reason: str) -> None:
         if binding.terminal_persisted:
             return
+        stop_attempt = binding.raw_stop_attempt
+        if stop_attempt is not None and not stop_attempt.completed.is_set():
+            await stop_attempt.completed.wait()
         recover = binding.capture_fenced
         binding.capture_fenced = True
         try:
@@ -789,6 +868,26 @@ class _Phase2LiveTransportAdapter:
             binding = await self.live.sync_and_flush(session_id)
             await self.live.wait_for_terminal(binding)
         return binding.public_snapshot
+
+    async def stop(
+        self,
+        authority: object,
+        session_id: str,
+        deadline: float,
+        intent: object | None,
+    ) -> LiveServiceSnapshot:
+        del session_id
+        if intent is not None and not isinstance(intent, _RawStopIntent):
+            raise TypeError("Phase-2 Live Stop requires its transport intent.")
+        return await self.live.stop(self._binding(authority), deadline, intent)
+
+    def begin_stop(self, session_id: str) -> object | None:
+        return self.live.begin_stop(session_id)
+
+    def abandon_stop(self, intent: object | None) -> None:
+        if intent is not None and not isinstance(intent, _RawStopIntent):
+            raise TypeError("Phase-2 Live Stop requires its transport intent.")
+        self.live.abandon_stop(intent)
 
     @staticmethod
     def _binding(authority: object) -> _LiveBinding:

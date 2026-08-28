@@ -177,6 +177,19 @@ path reuses the same system-guarded state transition before public settlement, p
 interrupted/partial while preserving the `audio.mp3` path, all seven metadata fields, and exact
 bytes; it neither re-encodes nor renames the file. Because all AccountRevoked terminal exits compose
 through that one method, the same invariant covers finish, recovery, and shutdown paths.
+
+The supported-runtime Stop-order probe then exposed one scheduler-dependent boundary. With the
+intent latch removed, Python 3.10.19 ran a queued transcript commit failure while the raw session
+was still active and returned `409`; durable recovery later reached interrupted/partial. Python
+3.12.12 happened to close raw capture first and returned `200`. The production fix adds one
+adapter-owned, in-flight-only Stop attempt at endpoint entry, before account lookup or request-body
+parsing can yield. A concurrent persistence fence waits for that raw outcome. The same Python 3.10
+falsifier then returned `200`, projected closed plus terminal failure, preserved the last durable
+transcript, ended interrupted/partial, and left no raw PCM; Python 3.12 remained identical. Two
+concurrent Stop callers shared exactly one runtime call. The latch then cleared: a sequential Stop
+reached the runtime's existing closed conflict, and a first timeout did not prevent a later retry.
+This is request/outcome arbitration, not a delay, retry loop, or Python-version branch.
+
 If both attempts fail after revocation already made SQLite terminal,
 startup selects canonical interrupted Live rows regardless of whether the Account has since been
 re-allowed, then derives the fixed owner path; it never searches the filesystem. It removes
