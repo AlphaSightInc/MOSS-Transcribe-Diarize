@@ -84,3 +84,7 @@ attempted exactly `available, available`, and committed unavailable zero times. 
 one causal reconciliation, not a general retry layer: only production discard success permits
 unavailable; surviving known-valid bytes permit one exact available retry; another failure leaves
 the Meeting failed without audio metadata. An MP3 and durable unavailable never coexist.
+When both unlink and the subsequent existence probe were forced to raise `OSError`, production
+discard returned typed `MeetingAudioCleanupError`, retained the artifact, and made unavailable
+ineligible. This uncertainty is therefore handled by the same controlled failure boundary rather
+than leaking a raw filesystem exception or changing metadata.

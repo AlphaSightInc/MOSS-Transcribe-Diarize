@@ -712,6 +712,52 @@ def test_size_mismatch_reconciliation_never_marks_surviving_mp3_unavailable(
         assert not path.exists()
 
 
+def test_unobservable_size_mismatch_returns_controlled_503_without_state_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    audio_root = tmp_path / "meetings"
+    app = make_app(database, tmp_path / "file-work", audio_root)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        ).json()["id"]
+        meeting = await_terminal(client, meeting_id, "completed")
+        path = audio_root / meeting["audio"]["relative_path"]
+        path.write_bytes(path.read_bytes() + b"size mismatch")
+        real_unlink = Path.unlink
+        real_stat = Path.stat
+
+        def fail_canonical_unlink(
+            candidate: Path,
+            *args: object,
+            **kwargs: object,
+        ) -> None:
+            if candidate == path:
+                raise OSError("forced mismatched MP3 unlink failure")
+            real_unlink(candidate, *args, **kwargs)
+
+        def fail_canonical_stat(candidate: Path, *args: object, **kwargs: object):
+            if candidate == path:
+                raise OSError("forced existence uncertainty")
+            return real_stat(candidate, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+        monkeypatch.setattr(Path, "stat", fail_canonical_stat)
+        response = client.get(f"/api/meetings/{meeting_id}/audio/download")
+        reconciled = client.get(f"/api/meetings/{meeting_id}").json()
+
+    monkeypatch.undo()
+    assert response.status_code == 503
+    assert reconciled["audio"]["state"] == "available"
+    assert path.exists()
+
+
 def test_new_archive_hierarchy_is_fsynced_before_available_metadata(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

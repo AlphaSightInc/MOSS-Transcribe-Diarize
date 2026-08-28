@@ -384,6 +384,34 @@ def main() -> None:
             "unavailable_eligible": False,
         }
 
+        mismatch_unknown = archive.publish("account-a", "meeting-mismatch-unknown", mix)
+        mismatch_unknown.path.write_bytes(mismatch_unknown.path.read_bytes() + b"size mismatch")
+        original_stat = Path.stat
+
+        def fail_selected_stat(path: Path, *args: object, **kwargs: object):
+            if path == mismatch_unknown.path:
+                raise OSError("forced existence uncertainty")
+            return original_stat(path, *args, **kwargs)
+
+        unknown_exception = None
+        with (
+            patch.object(Path, "unlink", fail_unlink_for(mismatch_unknown.path)),
+            patch.object(Path, "stat", fail_selected_stat),
+        ):
+            try:
+                archive.discard_stored(
+                    "account-a",
+                    "meeting-mismatch-unknown",
+                    mismatch_unknown.relative_path,
+                )
+            except Exception as exc:
+                unknown_exception = type(exc).__name__
+        state["size_mismatch_unobservable"] = {
+            "exception_type": unknown_exception,
+            "artifact_survives_after_probe": mismatch_unknown.path.exists(),
+            "unavailable_eligible": False,
+        }
+
         state["metadata_cleanup_reconciliation"] = {
             "retry_succeeds": asyncio.run(
                 metadata_reconciliation(

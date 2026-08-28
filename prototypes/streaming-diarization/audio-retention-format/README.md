@@ -24,5 +24,5 @@ uv run --frozen python prototypes/streaming-diarization/audio-retention-format/p
 
 It calls the production archive/Meeting handle on a disposable stereo WAV and 151-second two-stream
 source, measures the shared mix, exact MP3, hierarchy fsync order, post-replace survivor, size-
-mismatch discard, and both metadata-retry outcomes. Printed JSON includes every structural-contract
-field and complete artifact/metadata state. All files remain temporary.
+mismatch discard/survivor/unobservable outcomes, and both metadata retries. Printed JSON includes
+every structural-contract field and complete artifact/metadata state. All files remain temporary.

@@ -41,4 +41,6 @@ prefix as partial; audio failure never fails or deletes the transcript.
   Only its success permits durable unavailable. If the known-valid MP3 survives, retry that exact
   available metadata once; success is available, and another failure propagates without audio
   metadata. Size mismatch follows the same discard rule. Durable unavailable never coexists with a
-  surviving MP3; authority loss fences all reconciliation.
+  surviving MP3. If existence itself cannot be observed, discard raises typed cleanup uncertainty,
+  the download surface returns a controlled failure, and metadata does not change. Authority loss
+  fences all reconciliation.

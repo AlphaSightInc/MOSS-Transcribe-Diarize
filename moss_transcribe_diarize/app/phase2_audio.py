@@ -242,6 +242,10 @@ class MeetingAudioArchive:
             path.stat()
         except FileNotFoundError:
             return False
+        except OSError as exc:
+            raise MeetingAudioCleanupError(
+                "Meeting audio artifact existence cannot be verified."
+            ) from exc
         return True
 
     def _probe(self, path: Path) -> dict[str, int]:
