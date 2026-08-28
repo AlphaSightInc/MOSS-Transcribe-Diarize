@@ -36,6 +36,10 @@ authority last only after a zero-active-row assertion. The Live fence cancels on
 SQLite transcript commit, whose transaction rollback is atomic; idle and terminal-settlement
 workers receive a queued exit and are joined before authority changes. A failed revoke never
 reopens that uncertain generation; startup recovery plus a fresh command is the retry boundary.
+Once accepted, Account revoke is a lifecycle-owned task rather than socket-handler work. The
+handler awaits it through a cancellation shield; product lifespan joins it after control transport
+stops and before Live, File, or SQLite shutdown. Client or handler loss can therefore discard only
+the response, not already-fenced settlement.
 
 `mtd-admin` sends one bounded, content-free command to the running product's mode-`0600` Unix socket.
 The socket adapter owns no policy and never opens SQLite. There is no second daemon, TCP listener,
@@ -84,4 +88,8 @@ Meeting completion, worker join, and authority disable. Production reproduced th
 audio boundary through the shared Live adapter.
 Production tests reproduced transient and persistent unregistered Live-create cleanup, restart
 retry, File audio at the publish/finish boundary, the final zero-active assertion, and the same
-synchronous publication fence.
+synchronous publication fence. Cancellation of a held Unix handler during product shutdown left
+the service-owned revoke alive: held Live audio published exactly once and removed raw state, while
+a held File runner retained its registry/input until return; lifespan joined both before authority
+disable and work-owner/Store shutdown. A held transcript commit rolled back, and interrupted revoke
+persisted the exact prior durable document rather than the newer fenced raw snapshot.

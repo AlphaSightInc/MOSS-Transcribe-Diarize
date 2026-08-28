@@ -1776,6 +1776,7 @@ def create_phase2_app(
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
         control_server = None
+        lifecycle = None
         try:
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
@@ -1810,6 +1811,8 @@ def create_phase2_app(
         finally:
             if control_server is not None:
                 await control_server.stop()
+            if lifecycle is not None:
+                await lifecycle.shutdown()
             if phase2_live is not None:
                 await phase2_live.shutdown()
             if file_tasks is not None:

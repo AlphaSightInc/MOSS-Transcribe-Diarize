@@ -28,7 +28,10 @@ and a verdict derived from the load-bearing values. It exits nonzero on rejectio
    increment, and session deletion after asserting zero active rows. Splitting this
    transaction would expose partial authority truth; terminalizing residual rows inside it
    would bypass their audio/cleanup owners and make uncertainty unreachable.
-4. One **service-owned Unix control command**. It transports host intent into the
+4. One **service-owned revoke settlement task**, from the first Account fence through final
+   durable authority mutation. The lifecycle holds it strongly and product lifespan joins it.
+   A cancellable socket handler cannot own filesystem threads, File cleanup, or terminal truth.
+5. One **Unix control transport**. It transports host intent into the
    process but owns no policy. A direct-DB client cannot observe or drain in-process work;
    TCP, a daemon, or an admin webpage adds no required behavior.
 
@@ -46,6 +49,10 @@ registration; close and drain; settle through existing owners; mutate durable au
 - Terminal audio publication is joined, never cancelled, before durable authority changes.
 - Only an in-flight SQLite transcript commit is cancelled because its transaction rollback is
   the atomic boundary; idle and terminal workers receive a queued exit and are joined.
+- Client, handler, and control-server cancellation cannot cancel accepted Account settlement;
+  product lifespan joins it before Live, File, or Store shutdown.
+- Account-revoke interruption persists the last durable transcript document. A raw snapshot may
+  choose the maximal audio prefix, but fenced raw text never becomes durable.
 - Interruption changes verified complete audio to `partial` by state only before terminal status.
 - Cleanup uncertainty leaves the Meeting active and durable Account authority unchanged.
 - Reallow creates fresh authority; stale handles and late work cannot commit.
@@ -68,13 +75,15 @@ revoke leaves owned work active after verified cleanup; late/stale work commits;
 artifact stays `available`; cleanup uncertainty becomes terminal or disables authority; a queued
 publication commits after the synchronous fence; reallow retains the generation; or another
 Account changes. Also reject it if held terminal audio is cancelled/orphaned or Account authority
-changes before its publication worker joins.
+changes before its publication worker joins; handler cancellation abandons Live/File cleanup; or
+raw text from a cancelled transcript transaction appears in the interrupted document.
 
 ## Tool decisions
 
 - The asyncio interleaving probe is necessary because admission-versus-drain and phase-aware
   publication shutdown are the new policies. A missed registration, leaked count, cancelled
-  terminal-audio operation, or authority mutation before worker join rejects the composition.
+  terminal-audio operation, cancelled service settlement, fenced transcript, or authority mutation
+  before worker join rejects the composition.
 - Production `Phase2Store` and `MeetingHandle` are necessary because session, generation,
   transcript, audio, and cross-Account truth are SQLite behavior. Any stale commit or wrong
   Account mutation rejects the ordering.
@@ -102,9 +111,15 @@ changes before its publication worker joins.
 - both Live bindings were synchronously result-fenced before a held first settlement failed, and
   the second queued publication committed no durable revision;
 - an idle worker exited by queue without cancellation; a held SQLite transcript commit was
-  cancelled and rolled back with no durable version; held terminal audio remained running while
-  revoke waited, then published exactly once and completed the Meeting before worker join and
-  authority disable (`fence → audio → Meeting → join → authority`);
+  cancelled and rolled back with no durable version, and Account interruption retained the exact
+  prior durable document rather than the fenced raw words;
+- cancelling the control handler left service-owned revoke settlement alive; lifespan join waited
+  while held terminal audio remained running, then observed exactly one publication, raw-stage
+  removal, Meeting completion, worker join, and authority disable
+  (`fence → audio → raw removal → Meeting → join → authority`);
+- the same handler cancellation with a held File runner retained its registry entry and `input.wav`
+  until runner return, then removed both, interrupted the Meeting, and disabled authority before
+  lifespan join returned;
 - Account revoke rejected late and stale-handle commits, incremented generation `0 → 1`,
   permitted one fresh Meeting, and left the other Account active.
 
@@ -129,6 +144,11 @@ Focused production tests measured the prototype's unmodeled boundaries:
 - the Live fence cancels only an in-flight SQLite transcript commit, whose transaction rollback is
   atomic; idle and terminal-settlement workers receive a queued exit and are joined, so terminal
   filesystem publication cannot be orphaned while queued/in-flight revisions remain fenced;
+- accepted Account revoke is a lifecycle-owned task shielded from the Unix handler and held until
+  completion; lifespan joins it before Live/File shutdown or SQLite close, covering held terminal
+  audio and held synchronous File runners without a second scheduler or retry framework;
+- Account revoke supplies the last durable transcript document to interrupted settlement; the raw
+  runtime snapshot remains available only for maximal accepted audio-prefix recovery;
 - File interruption and fixed File/Live recovery share one guarded state-only audio downgrade;
   metadata and canonical MP3 bytes remain identical while completeness becomes `partial`;
 - transient unregistered Live-create cleanup is recovered by the same revoke command; persistent
@@ -139,8 +159,8 @@ Focused production tests measured the prototype's unmodeled boundaries:
   binding fenced and the Account durably enabled for explicit startup recovery;
 - a cancelled logout reopens its session gate; a failed revoke keeps its Account-generation gate
   closed, and restart plus a fresh command completes the durable generation fence;
-- the Unix socket is single-owner, `0600`, content-free, removed on shutdown, and cancels held
-  handlers without leaking a lifecycle task;
+- the Unix socket is single-owner, `0600`, content-free, and removed on shutdown; it may cancel a
+  held handler, but cannot cancel the lifecycle-owned settlement that lifespan then joins;
 - an Account `401` stops browser polling and closes local capture tracks/helper state without retry.
 
 The one-command probe itself now owns `Phase2Store` with exception-safe close. A stale earlier run

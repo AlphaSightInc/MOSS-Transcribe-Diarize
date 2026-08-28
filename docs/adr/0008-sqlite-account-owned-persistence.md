@@ -33,12 +33,19 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
   authority transaction never terminalizes them blindly.
   Therefore no process-owned worker loses its captured handle between cleanup and durable terminal
   truth, while every late old-generation mutation fails after the transaction.
+- An accepted Account revoke is strongly owned by the lifecycle, shielded from its control handler,
+  and joined by product lifespan before Live/File owners and this connection close. Handler
+  cancellation may lose its response but cannot abandon a fenced Meeting, synchronous runner, or
+  terminal filesystem operation.
 - The same mutation lock also bounds every request-facing read on the one connection. SQLite exposes
   a connection's own uncommitted writes, so an unlocked read could otherwise observe terminal status
   before the transcript upsert in the same transaction. Internal SELECTs already inside a mutation
   remain direct and never reacquire the lock. The Live probe held exactly that between-write state:
   snapshot, list, and authentication reads all waited; rollback exposed only
   `active`/version 1/prefix, while commit exposed only `completed`/version 2/final document.
+- Account-revoke interruption always supplies the binding's last durable document to the atomic
+  terminal mutation. Its raw snapshot may still bound the maximal accepted audio prefix, but raw
+  text from a cancelled SQLite commit cannot become a new durable transcript version.
 - Crash recovery preserves the last committed transcript and recoverable audio prefix, changes
   active Meetings to `interrupted`, and never resumes capture.
 - Account-scoped recovery reuses those same File/Live owner paths before revoke. Verified complete

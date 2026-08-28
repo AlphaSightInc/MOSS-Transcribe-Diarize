@@ -264,7 +264,11 @@ class Phase2LiveMeetings:
         worker = binding.worker
         if binding.publication_fenced and worker is not None:
             await asyncio.gather(worker, return_exceptions=True)
-        await self._fence(binding, reason)
+        await self._fence(
+            binding,
+            reason,
+            document_override=binding.durable_document,
+        )
         control.release(binding.handle.meeting_id)
         if not binding.terminal_persisted:
             raise RuntimeError("Live Meeting interruption did not become durable.")
@@ -777,7 +781,13 @@ class Phase2LiveMeetings:
         assert failure is not None
         raise failure
 
-    async def _fence(self, binding: _LiveBinding, reason: str) -> None:
+    async def _fence(
+        self,
+        binding: _LiveBinding,
+        reason: str,
+        *,
+        document_override: dict[str, object] | None = None,
+    ) -> None:
         if binding.terminal_persisted:
             return
         stop_attempt = binding.raw_stop_attempt
@@ -809,9 +819,13 @@ class Phase2LiveMeetings:
             recover=recover,
             project_public=True,
             document_override=(
-                binding.durable_document
-                if effective_reason == "transcript_persistence_failed"
-                else None
+                document_override
+                if document_override is not None
+                else (
+                    binding.durable_document
+                    if effective_reason == "transcript_persistence_failed"
+                    else None
+                )
             ),
         )
 

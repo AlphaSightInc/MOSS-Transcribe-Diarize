@@ -20,6 +20,7 @@ from moss_transcribe_diarize.app.phase2 import (
     create_phase2_app,
 )
 from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
+from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
 
 
 class NeverOidc:
@@ -238,6 +239,84 @@ def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: 
     finally:
         connection.close()
     assert (status, transcript_count, audio_state) == ("interrupted", 0, "unavailable")
+
+
+def test_control_shutdown_joins_service_owned_file_revoke_and_runner(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-file-stop-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(database, runner, work_root, control_socket=socket)
+    client = TestClient(app, base_url="https://moss.test")
+    client.__enter__()
+    session(client, sessions["sub-a"])
+    meeting_id = client.post(
+        "/api/meetings/file",
+        files={"file": ("meeting.wav", b"held-shutdown", "audio/wav")},
+    ).json()["id"]
+    assert runner.started.wait(timeout=2)
+    source = next(work_root.glob("*/input.wav"))
+    outcome: dict[str, object] = {}
+
+    def revoke() -> None:
+        try:
+            outcome["result"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+        except BaseException as exc:
+            outcome["error"] = exc
+
+    revoke_thread = threading.Thread(target=revoke)
+    revoke_thread.start()
+    deadline = time.monotonic() + 2
+    owner_key = ("sub-a", 0)
+    while owner_key not in app.state.phase2_file_tasks._fenced_owner_keys:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Account File tasks were not fenced")
+        time.sleep(0.01)
+
+    shutdown_errors: list[BaseException] = []
+
+    def shutdown() -> None:
+        try:
+            client.__exit__(None, None, None)
+        except BaseException as exc:  # pragma: no cover - asserted empty below.
+            shutdown_errors.append(exc)
+
+    shutdown_thread = threading.Thread(target=shutdown)
+    shutdown_thread.start()
+    time.sleep(0.05)
+    assert shutdown_thread.is_alive()
+    assert source.is_file()
+    assert meeting_id in app.state.phase2_file_tasks._tasks
+
+    runner.release.set()
+    revoke_thread.join(timeout=5)
+    shutdown_thread.join(timeout=5)
+    assert not revoke_thread.is_alive()
+    assert not shutdown_thread.is_alive()
+    assert shutdown_errors == []
+    assert isinstance(outcome.get("error"), Phase2ControlError)
+    assert not source.exists()
+    assert app.state.phase2_file_tasks._tasks == {}
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("interrupted",)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("unavailable",)
+        assert connection.execute(
+            "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+        ).fetchone() == (0, 1)
+    finally:
+        connection.close()
     assert list(work_root.glob("**/*")) == []
 
 

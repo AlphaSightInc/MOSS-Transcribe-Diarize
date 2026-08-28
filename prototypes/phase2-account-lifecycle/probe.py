@@ -223,6 +223,8 @@ async def publication_worker_policy_probe() -> dict[str, object]:
     transcript_release = asyncio.Event()
     transcript_versions: list[int] = []
     transcript_rolled_back = False
+    durable_document = {"segments": [{"text": "durable prefix"}]}
+    raw_document = {"segments": [{"text": "fenced raw words"}]}
 
     async def transcript_worker() -> None:
         nonlocal transcript_rolled_back
@@ -238,17 +240,20 @@ async def publication_worker_policy_probe() -> dict[str, object]:
     await transcript_entered.wait()
     transcript.cancel()
     await asyncio.gather(transcript, return_exceptions=True)
+    interrupted_document = durable_document
 
     terminal_entered = asyncio.Event()
     terminal_release = asyncio.Event()
     terminal_state: dict[str, object] = {
         "account_enabled": True,
         "audio_state": "staging",
+        "audio_recorded": False,
         "meeting_status": "active",
         "publication_fenced": False,
         "publication_phase": "terminal_settlement",
         "publish_count": 0,
         "raw_status": "closed",
+        "raw_stage_present": True,
     }
     order: list[str] = []
 
@@ -257,7 +262,10 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         await terminal_release.wait()
         terminal_state["publish_count"] = 1
         terminal_state["audio_state"] = "available"
+        terminal_state["audio_recorded"] = True
         order.append("audio_published")
+        terminal_state["raw_stage_present"] = False
+        order.append("raw_discarded")
         terminal_state["meeting_status"] = "completed"
         order.append("meeting_completed")
         terminal_state["publication_phase"] = "idle"
@@ -273,26 +281,47 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         terminal_state["account_enabled"] = False
         order.append("authority_disabled")
 
-    revoke = asyncio.create_task(revoke_after_join())
+    service_revoke = asyncio.create_task(revoke_after_join())
+
+    async def transport_handler() -> None:
+        await asyncio.shield(service_revoke)
+
+    handler = asyncio.create_task(transport_handler())
+    await asyncio.sleep(0)
+    handler.cancel()
+    await asyncio.gather(handler, return_exceptions=True)
+
+    async def lifecycle_shutdown() -> None:
+        await asyncio.gather(service_revoke)
+
+    shutdown = asyncio.create_task(lifecycle_shutdown())
     await asyncio.sleep(0)
     held = {
         "account_enabled": terminal_state["account_enabled"],
+        "audio_recorded": terminal_state["audio_recorded"],
         "audio_state": terminal_state["audio_state"],
+        "handler_cancelled": handler.cancelled(),
+        "lifecycle_shutdown_waiting": not shutdown.done(),
         "meeting_status": terminal_state["meeting_status"],
         "publication_fenced": terminal_state["publication_fenced"],
         "publication_phase": terminal_state["publication_phase"],
         "raw_status": terminal_state["raw_status"],
-        "revoke_waiting": not revoke.done(),
+        "raw_stage_present": terminal_state["raw_stage_present"],
+        "service_revoke_cancelled": service_revoke.cancelled(),
+        "service_revoke_waiting": not service_revoke.done(),
         "worker_cancelled": terminal.cancelled(),
         "worker_done": terminal.done(),
     }
     terminal_release.set()
-    await revoke
+    await shutdown
     settled = dict(terminal_state)
     settled.update(
         {
             "order": order,
-            "revoke_done": revoke.done(),
+            "handler_cancelled": handler.cancelled(),
+            "lifecycle_shutdown_done": shutdown.done(),
+            "service_revoke_cancelled": service_revoke.cancelled(),
+            "service_revoke_done": service_revoke.done(),
             "worker_cancelled": terminal.cancelled(),
             "worker_done": terminal.done(),
         }
@@ -306,14 +335,99 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         },
         "transcript_commit": {
             "cancelled": transcript.cancelled(),
+            "durable_document_after_revoke": interrupted_document,
+            "durable_document_before_fence": durable_document,
             "durable_versions": transcript_versions,
+            "raw_document_at_fence": raw_document,
             "rollback_observed": transcript_rolled_back,
+            "terminal_status": "interrupted",
         },
         "terminal_audio": {
             "held": held,
             "settled": settled,
         },
     }
+
+
+async def service_owned_file_probe() -> dict[str, object]:
+    """Measure handler cancellation while a fenced File runner remains held."""
+
+    runner_entered = asyncio.Event()
+    runner_release = asyncio.Event()
+    state: dict[str, object] = {
+        "account_enabled": True,
+        "input_present": True,
+        "meeting_status": "active",
+        "registry_entry": True,
+        "runner_done": False,
+    }
+
+    async def runner() -> None:
+        runner_entered.set()
+        await runner_release.wait()
+        state["runner_done"] = True
+
+    runner_task = asyncio.create_task(runner())
+    await runner_entered.wait()
+
+    async def file_task() -> None:
+        try:
+            await asyncio.shield(runner_task)
+        except asyncio.CancelledError:
+            await runner_task
+            state["input_present"] = False
+            state["registry_entry"] = False
+            raise
+
+    owned_file = asyncio.create_task(file_task())
+    await asyncio.sleep(0)
+
+    async def revoke_settlement() -> None:
+        owned_file.cancel()
+        await asyncio.gather(owned_file, return_exceptions=True)
+        state["meeting_status"] = "interrupted"
+        state["account_enabled"] = False
+
+    service_revoke = asyncio.create_task(revoke_settlement())
+
+    async def transport_handler() -> None:
+        await asyncio.shield(service_revoke)
+
+    handler = asyncio.create_task(transport_handler())
+    await asyncio.sleep(0)
+    handler.cancel()
+    await asyncio.gather(handler, return_exceptions=True)
+
+    async def lifecycle_shutdown() -> None:
+        await asyncio.gather(service_revoke)
+
+    shutdown = asyncio.create_task(lifecycle_shutdown())
+    await asyncio.sleep(0)
+    held = dict(state)
+    held.update(
+        {
+            "file_task_cancelled": owned_file.cancelled(),
+            "file_task_done": owned_file.done(),
+            "handler_cancelled": handler.cancelled(),
+            "lifecycle_shutdown_waiting": not shutdown.done(),
+            "service_revoke_cancelled": service_revoke.cancelled(),
+            "service_revoke_waiting": not service_revoke.done(),
+        }
+    )
+    runner_release.set()
+    await shutdown
+    settled = dict(state)
+    settled.update(
+        {
+            "file_task_cancelled": owned_file.cancelled(),
+            "file_task_done": owned_file.done(),
+            "handler_cancelled": handler.cancelled(),
+            "lifecycle_shutdown_done": shutdown.done(),
+            "service_revoke_cancelled": service_revoke.cancelled(),
+            "service_revoke_done": service_revoke.done(),
+        }
+    )
+    return {"held": held, "settled": settled}
 
 
 @dataclass
@@ -580,12 +694,23 @@ async def main() -> None:
                 ),
             },
             {
+                "primitive": "service-owned revoke settlement task",
+                "boundary": (
+                    "one accepted Account revoke from fence installation through final authority "
+                    "mutation, held strongly and joined by product lifespan"
+                ),
+                "irreducible": (
+                    "a cancellable socket handler cannot own filesystem threads, File cleanup, "
+                    "or durable terminal truth"
+                ),
+            },
+            {
                 "primitive": "final SQLite authority transaction",
                 "boundary": "Account row and all sessions after a zero-active-row assertion",
                 "irreducible": "it is the durable generation fence for every captured handle",
             },
             {
-                "primitive": "service-owned Unix control command",
+                "primitive": "Unix control transport",
                 "boundary": "host-local command transport only; it owns no lifecycle policy",
                 "irreducible": "an external process cannot safely coordinate in-process work",
             },
@@ -600,6 +725,9 @@ async def main() -> None:
             "a synchronous Live result fence precedes every settlement await",
             "terminal audio publication is joined, never cancelled, before authority changes",
             "only a SQLite transcript commit is cancelled because rollback is its atomic boundary",
+            "handler or client cancellation cannot cancel an accepted Account settlement",
+            "product lifespan joins accepted revoke settlement before Live, File, or Store shutdown",
+            "Account interruption persists the last durable transcript, never fenced raw words",
             "old handles never revive after reallow and other Accounts never mutate",
         ],
         "assumptions_unknowns": [
@@ -612,7 +740,8 @@ async def main() -> None:
             "logout failure revokes authority; revoke leaves active owned work; late/stale work "
             "commits; complete audio stays available after interruption; cleanup uncertainty "
             "becomes terminal; terminal audio is orphaned or cancelled; authority changes before "
-            "its worker joins; reallow reuses the old generation; or another Account changes."
+            "its worker joins; handler cancellation abandons Live/File cleanup; fenced raw words "
+            "become durable; reallow reuses the old generation; or another Account changes."
         ),
         "tool_decisions": [
             {
@@ -623,7 +752,8 @@ async def main() -> None:
                 ),
                 "decision_change": (
                     "any missed registration, leaked count, cancelled terminal audio, or authority "
-                    "mutation before worker join rejects the lifecycle composition"
+                    "mutation before worker join rejects the lifecycle composition; any cancelled "
+                    "service settlement or fenced transcript rejects its ownership/truth boundary"
                 ),
             },
             {
@@ -644,6 +774,7 @@ async def main() -> None:
             "gate": await gate_probe(),
             "publication_fence": await publication_fence_probe(),
             "publication_worker_policy": await publication_worker_policy_probe(),
+            "service_owned_file": await service_owned_file_probe(),
             "ordering": await ordering_probe(Path(temporary) / "phase2.sqlite3"),
         }
     gate = state["gate"]
@@ -653,6 +784,7 @@ async def main() -> None:
     idle_exit = publication_worker_policy["idle_exit"]
     transcript_commit = publication_worker_policy["transcript_commit"]
     terminal_audio = publication_worker_policy["terminal_audio"]
+    service_owned_file = state["service_owned_file"]
     audio_boundary = ordering["audio_boundary"]
     preserved_audio = dict(audio_boundary["expected_metadata"])
     preserved_audio["state"] = "partial"
@@ -689,29 +821,48 @@ async def main() -> None:
         and transcript_commit
         == {
             "cancelled": True,
+            "durable_document_after_revoke": {
+                "segments": [{"text": "durable prefix"}]
+            },
+            "durable_document_before_fence": {
+                "segments": [{"text": "durable prefix"}]
+            },
             "durable_versions": [],
+            "raw_document_at_fence": {
+                "segments": [{"text": "fenced raw words"}]
+            },
             "rollback_observed": True,
+            "terminal_status": "interrupted",
         }
         and terminal_audio["held"]
         == {
             "account_enabled": True,
+            "audio_recorded": False,
             "audio_state": "staging",
+            "handler_cancelled": True,
+            "lifecycle_shutdown_waiting": True,
             "meeting_status": "active",
             "publication_fenced": True,
             "publication_phase": "terminal_settlement",
             "raw_status": "closed",
-            "revoke_waiting": True,
+            "raw_stage_present": True,
+            "service_revoke_cancelled": False,
+            "service_revoke_waiting": True,
             "worker_cancelled": False,
             "worker_done": False,
         }
         and terminal_audio["settled"]
         == {
             "account_enabled": False,
+            "audio_recorded": True,
             "audio_state": "available",
+            "handler_cancelled": True,
+            "lifecycle_shutdown_done": True,
             "meeting_status": "completed",
             "order": [
                 "fence",
                 "audio_published",
+                "raw_discarded",
                 "meeting_completed",
                 "worker_joined",
                 "authority_disabled",
@@ -720,9 +871,39 @@ async def main() -> None:
             "publication_phase": "idle",
             "publish_count": 1,
             "raw_status": "closed",
-            "revoke_done": True,
+            "raw_stage_present": False,
+            "service_revoke_cancelled": False,
+            "service_revoke_done": True,
             "worker_cancelled": False,
             "worker_done": True,
+        }
+        and service_owned_file["held"]
+        == {
+            "account_enabled": True,
+            "file_task_cancelled": False,
+            "file_task_done": False,
+            "handler_cancelled": True,
+            "input_present": True,
+            "lifecycle_shutdown_waiting": True,
+            "meeting_status": "active",
+            "registry_entry": True,
+            "runner_done": False,
+            "service_revoke_cancelled": False,
+            "service_revoke_waiting": True,
+        }
+        and service_owned_file["settled"]
+        == {
+            "account_enabled": False,
+            "file_task_cancelled": True,
+            "file_task_done": True,
+            "handler_cancelled": True,
+            "input_present": False,
+            "lifecycle_shutdown_done": True,
+            "meeting_status": "interrupted",
+            "registry_entry": False,
+            "runner_done": True,
+            "service_revoke_cancelled": False,
+            "service_revoke_done": True,
         }
         and ordering["revoke"]["late_commit"] == "AccountRevoked"
         and ordering["revoke"]["old_sessions_valid"] == [False, False]
@@ -742,6 +923,7 @@ async def main() -> None:
                 "unregistered_recovery": ordering["unregistered_recovery"],
                 "publication_fence": publication_fence,
                 "publication_worker_policy": publication_worker_policy,
+                "service_owned_file": service_owned_file,
                 "revoke": ordering["revoke"],
                 "other_account": ordering["other_account"],
             },

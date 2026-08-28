@@ -85,6 +85,7 @@ class AccountLifecycle:
         self._live_control: Any | None = None
         self._session_gates: dict[str, _DrainGate] = {}
         self._account_gates: dict[tuple[str, int], _DrainGate] = {}
+        self._revoke_tasks: set[asyncio.Task[bool]] = set()
         self._registry_lock = asyncio.Lock()
 
     def bind_live_control(self, control: Any) -> None:
@@ -150,6 +151,24 @@ class AccountLifecycle:
             await account_gate.leave()
 
     async def revoke_account(self, email: str) -> bool:
+        """Claim Account settlement as service work before transport can be cancelled."""
+
+        task = asyncio.create_task(
+            self._revoke_account(email),
+            name=f"phase2-account-revoke-{normalize_email(email)}",
+        )
+        self._revoke_tasks.add(task)
+        task.add_done_callback(self._revoke_done)
+        return await asyncio.shield(task)
+
+    async def shutdown(self) -> None:
+        """Join accepted revoke settlement before work owners or SQLite are stopped."""
+
+        tasks = tuple(self._revoke_tasks)
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _revoke_account(self, email: str) -> bool:
         """Quiesce owned process work, then durably fence the Account generation."""
 
         target = await self._store.account_revoke_target(email)
@@ -188,6 +207,13 @@ class AccountLifecycle:
             raise AccountLifecycleSettlementError(
                 "Account work could not reach durable terminal truth."
             ) from exc
+
+    def _revoke_done(self, task: asyncio.Task[bool]) -> None:
+        self._revoke_tasks.discard(task)
+        if task.cancelled():
+            return
+        # A cancelled client/handler no longer awaits the service-owned result.
+        task.exception()
 
     async def allow_account(self, email: str) -> dict[str, object]:
         normalized = normalize_email(email)

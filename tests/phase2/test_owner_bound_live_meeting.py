@@ -1082,6 +1082,85 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
     assert statuses[second] == "interrupted"
 
 
+def test_successful_revoke_drops_held_raw_revision_and_keeps_durable_prefix(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-durable-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(
+        database,
+        control_socket=socket,
+        speech=(True, False, True, False),
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        before = client.get(f"/api/meetings/{meeting_id}").json()["transcript"]
+        binding = app.state.phase2_live._bindings[meeting_id]
+        original_commit = binding.handle.commit_transcript
+        commit_started = threading.Event()
+        release_commit = threading.Event()
+
+        async def held_commit(document, *, terminal=False):
+            commit_started.set()
+            assert await asyncio.to_thread(release_commit.wait, 5)
+            return await original_commit(document, terminal=terminal)
+
+        binding.handle.commit_transcript = held_commit
+        feed_two_lane_pairs(client, meeting_id, range(3, 6))
+        assert commit_started.wait(timeout=2)
+        raw = app.state.phase2_live.runtime.snapshot(meeting_id)
+        assert raw is not None
+        assert len(raw.session.effective_transcript) > len(before["segments"])
+        outcome: dict[str, object] = {}
+
+        def revoke() -> None:
+            try:
+                outcome["result"] = asyncio.run(
+                    execute_admin(socket, "revoke", "a@example.com")
+                )
+            except Exception as exc:  # pragma: no cover - asserted below.
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        deadline = time.monotonic() + 2
+        while not binding.publication_fenced:
+            if time.monotonic() >= deadline:
+                raise AssertionError("Account result fence was not installed")
+            time.sleep(0.01)
+        release_commit.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"email": "a@example.com", "revoked": True},
+        }
+
+    connection = sqlite3.connect(database)
+    try:
+        status, version, document = connection.execute(
+            """
+            SELECT m.status, t.version, t.document_json
+            FROM meetings m
+            JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (meeting_id,),
+        ).fetchone()
+        audio_state = connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0]
+    finally:
+        connection.close()
+    assert (status, version, json.loads(document)) == ("interrupted", 1, before)
+    assert audio_state in {"partial", "unavailable"}
+
+
 def test_control_revoke_returns_after_durable_interrupt_and_fresh_generation(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     socket = Path("/tmp") / f"moss-i18-{os.getpid()}-{time.time_ns()}.sock"
@@ -1712,6 +1791,111 @@ def test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling(
     assert sorted(
         path.name for path in retained.parent.iterdir() if path.suffix == ".mp3"
     ) == ["audio.mp3"]
+
+
+def test_control_shutdown_joins_service_owned_revoke_and_terminal_audio(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-shutdown-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+    client = TestClient(app, base_url="https://moss.test")
+    client.__enter__()
+    session(client, sessions["a"])
+    meeting_id = client.post("/api/live/sessions").json()["id"]
+    feed_two_lane_span(client, meeting_id)
+    binding = app.state.phase2_live._bindings[meeting_id]
+    stages = app.state.phase2_live.audio_stages
+    stage_path = stages.path("sub-a", meeting_id)
+    archive = app.state.phase2_audio_archive
+    original_publish = archive.publish_live_prefix
+    publish_started = threading.Event()
+    release_publish = threading.Event()
+    publish_count = 0
+    outcomes: dict[str, object] = {}
+
+    def held_publish(*args, **kwargs):
+        nonlocal publish_count
+        publish_count += 1
+        publish_started.set()
+        assert release_publish.wait(timeout=5)
+        return original_publish(*args, **kwargs)
+
+    archive.publish_live_prefix = held_publish
+
+    def stop_meeting() -> None:
+        try:
+            outcomes["stop"] = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+        except BaseException as exc:  # pragma: no cover - asserted below.
+            outcomes["stop_error"] = exc
+
+    def revoke() -> None:
+        try:
+            outcomes["revoke"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+        except BaseException as exc:
+            outcomes["revoke_error"] = exc
+
+    stop_thread = threading.Thread(target=stop_meeting)
+    stop_thread.start()
+    assert publish_started.wait(timeout=2)
+    revoke_thread = threading.Thread(target=revoke)
+    revoke_thread.start()
+    deadline = time.monotonic() + 2
+    while not binding.publication_fenced:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Account result fence was not installed")
+        time.sleep(0.01)
+
+    shutdown_errors: list[BaseException] = []
+
+    def shutdown() -> None:
+        try:
+            client.__exit__(None, None, None)
+        except BaseException as exc:  # pragma: no cover - asserted empty below.
+            shutdown_errors.append(exc)
+
+    shutdown_thread = threading.Thread(target=shutdown)
+    shutdown_thread.start()
+    time.sleep(0.05)
+    assert shutdown_thread.is_alive()
+    assert stage_path.is_file()
+    assert binding.worker is not None and not binding.worker.cancelled()
+
+    release_publish.set()
+    stop_thread.join(timeout=5)
+    revoke_thread.join(timeout=5)
+    shutdown_thread.join(timeout=5)
+    assert not stop_thread.is_alive()
+    assert not revoke_thread.is_alive()
+    assert not shutdown_thread.is_alive()
+    assert shutdown_errors == []
+    assert "stop_error" not in outcomes
+    assert outcomes["stop"].status_code == 200
+    assert isinstance(outcomes.get("revoke_error"), Phase2ControlError)
+    assert publish_count == 1
+    assert not stage_path.exists()
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("completed",)
+        assert connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("available",)
+        assert connection.execute(
+            "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+        ).fetchone() == (0, 1)
+    finally:
+        connection.close()
+    meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
+    assert sorted(path.name for path in meeting_dir.glob("*.mp3")) == ["audio.mp3"]
 
 
 def test_failed_terminal_can_only_retain_partial_audio(tmp_path: Path):

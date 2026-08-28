@@ -100,7 +100,10 @@ authority in a zero-active-row transaction. Persistent cleanup uncertainty leave
 and the Account durably enabled for startup retry rather than making raw or MP3 truth unreachable.
 The publication fence cancels only a rollback-safe SQLite transcript commit. A terminal audio
 publication performs filesystem I/O and therefore is never cancelled: revoke joins it, observes its
-one terminal/audio result, and changes Account authority only afterward.
+one terminal/audio result, and changes Account authority only afterward. The accepted revoke itself
+is lifecycle-owned and shielded from the Unix handler; product lifespan joins it before Live/File
+shutdown and Store close. A measured handler-cancellation boundary produced one MP3, removed the
+raw stage, completed the Meeting, and only then disabled authority—never a second recovery publish.
 - A Stop request and a queued transcript persistence failure can become runnable together. Python
   3.10 measured the failure first while raw capture was still active; Python 3.12 measured raw Stop
   first. The shared transport therefore opens one adapter-owned Stop intent at endpoint entry and
