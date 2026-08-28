@@ -60,10 +60,21 @@ view token, pairing/device grant, or compatibility mode.
   observer returns to idle. The helper lease interrupts the original capture after a lost first
   heartbeat or later heartbeat.
 - `/` composes File, Live, then History in one document scroller. The embedded Live app keeps its
-  viewport-height working area but does not own or hide the page scroll. Real headless Chrome loads
-  the production bundle at desktop and mobile viewports, scrolls History into view in that order,
-  opens an active history Meeting, renders its polled transcript, exposes only Detach, and proves no
-  observer reattach record was stored.
+  viewport-height working area but does not own or hide the page scroll. Real headless Chrome opens
+  the TLS app and production bundle in isolated desktop/mobile profiles with distinct Sign-in
+  sessions for one Account. Both retain that order, render one active Meeting read-only, and
+  converge an owner rename after refresh. Reload keeps the durable title but returns the observer
+  to idle capture controls with no capture resume or observer reattach record.
+- The shared-history probe in `prototypes/phase2-shared-history/` accepts one owner-list projection:
+  a single newest-first Active section precedes terminal Today, Yesterday, and Earlier groups, each
+  newest-first with opaque Meeting ID as the deterministic tie-break. Search, local-day grouping,
+  and selection reconciliation are derived page state and grant no authority. Owner-written rename
+  crosses only the existing Meeting handle, persists `manual` title provenance, survives restart,
+  and converges another same-Account client on refresh. The browser accepts only the latest requested
+  list completion; a successful local rename advances the same generation so an older in-flight list
+  cannot restore stale truth. A foreign Account cannot open that handle
+  and changes zero owner rows. The existing Live observer remains the only active-history polling
+  path; a history repository, durable cursor, or second capture interface is rejected.
 - The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
   acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
   2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five

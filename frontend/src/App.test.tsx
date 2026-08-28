@@ -36,6 +36,7 @@ async function countSourceTree(root: string): Promise<{ files: number; lines: nu
 describe("App shell", () => {
   afterEach(() => {
     document.body.replaceChildren();
+    document.head.querySelectorAll('meta[name="moss-authority"]').forEach((node) => node.remove());
   });
 
   it("renders the phase-one shell with an inert collapsed rail", () => {
@@ -75,6 +76,21 @@ describe("App shell", () => {
 
     expect(root.querySelector('[data-mode="file"]')).not.toBeNull();
     expect(root.querySelector('input[type="file"]')).not.toBeNull();
+  });
+
+  it("leaves Account history to the shared workspace surface", () => {
+    const authority = document.createElement("meta");
+    authority.name = "moss-authority";
+    authority.content = "account";
+    document.head.append(authority);
+    const root = document.createElement("div");
+    document.body.append(root);
+
+    render(<App />, root);
+
+    expect(root.querySelector('[data-authority="account"]')).not.toBeNull();
+    expect(root.querySelector(".history-panel")).toBeNull();
+    expect([...root.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(["Live"]);
   });
 
   it("retains the in-memory bearer when switching from Live to File", async () => {

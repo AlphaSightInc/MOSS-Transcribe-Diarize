@@ -105,6 +105,7 @@ class Meeting:
     title: str | None
     status: str
     created_at_ms: int
+    title_source: str = "automatic"
     transcript: dict[str, object] | None = None
     transcript_version: int = 0
     audio: MeetingAudio | None = None
@@ -114,6 +115,7 @@ class Meeting:
             "id": self.meeting_id,
             "mode": self.mode,
             "title": self.title,
+            "title_source": self.title_source,
             "status": self.status,
             "created_at_ms": self.created_at_ms,
             "transcript": self.transcript,
@@ -329,6 +331,8 @@ class Phase2Store:
                 meeting_id TEXT NOT NULL,
                 mode TEXT NOT NULL,
                 title TEXT,
+                title_source TEXT NOT NULL DEFAULT 'automatic'
+                    CHECK(title_source IN ('automatic', 'manual')),
                 status TEXT NOT NULL,
                 created_at_ms INTEGER NOT NULL,
                 updated_at_ms INTEGER NOT NULL,
@@ -753,7 +757,8 @@ class Phase2Store:
         async with self._external_read():
             cursor = await self._connection.execute(
                 """
-                SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                SELECT m.meeting_id, m.mode, m.title, m.title_source,
+                       m.status, m.created_at_ms,
                        t.document_json, t.version AS transcript_version,
                        ma.state AS audio_state, ma.relative_path AS audio_relative_path,
                        ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
@@ -767,7 +772,8 @@ class Phase2Store:
                 LEFT JOIN meeting_audio ma
                     ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
                 WHERE m.account_id = ?
-                ORDER BY m.created_at_ms DESC, m.meeting_id DESC
+                ORDER BY CASE WHEN m.status = 'active' THEN 0 ELSE 1 END,
+                         m.created_at_ms DESC, m.meeting_id DESC
                 """,
                 (authority_generation, account_id),
             )
@@ -788,8 +794,11 @@ class Phase2Store:
         async with self._mutation():
             cursor = await self._connection.execute(
                 """
-                INSERT INTO meetings(account_id, meeting_id, mode, title, status, created_at_ms, updated_at_ms)
-                SELECT account_id, ?, ?, NULL, 'active', ?, ?
+                INSERT INTO meetings(
+                    account_id, meeting_id, mode, title, title_source,
+                    status, created_at_ms, updated_at_ms
+                )
+                SELECT account_id, ?, ?, NULL, 'automatic', 'active', ?, ?
                 FROM accounts
                 WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
                 """,
@@ -832,7 +841,8 @@ class Phase2Store:
         async with self._external_read():
             cursor = await self._connection.execute(
                 """
-                SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                SELECT m.meeting_id, m.mode, m.title, m.title_source,
+                       m.status, m.created_at_ms,
                        t.document_json, t.version AS transcript_version,
                        ma.state AS audio_state, ma.relative_path AS audio_relative_path,
                        ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
@@ -854,6 +864,41 @@ class Phase2Store:
         if row is None:  # A handle is never permitted to escape its Account query.
             raise KeyError(meeting_id)
         return _meeting_from_row(row)
+
+    async def _rename_meeting(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        title: str,
+    ) -> str:
+        normalized = title.strip()
+        if not normalized:
+            raise ValueError("Meeting title must not be empty.")
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meetings
+                SET title = ?, title_source = 'manual', updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ?
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (
+                    normalized,
+                    now,
+                    account_id,
+                    meeting_id,
+                    account_id,
+                    authority_generation,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+        return normalized
 
     async def _commit_transcript(
         self,
@@ -1146,6 +1191,14 @@ class MeetingHandle:
             self._account_id,
             self._authority_generation,
             self.meeting_id,
+        )
+
+    async def rename(self, title: str) -> str:
+        return await self._store._rename_meeting(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            title,
         )
 
     async def commit_transcript(
@@ -1641,6 +1694,22 @@ def create_phase2_app(
             raise HTTPException(status_code=404, detail="Meeting not found.")
         return (await handle.snapshot()).to_dict()
 
+    @app.put("/api/meetings/{meeting_id}/title")
+    async def rename_meeting(meeting_id: str, request: Request):
+        account = await require_account(request)
+        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
+        if handle is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
+        try:
+            payload = await request.json()
+            title = payload.get("title") if isinstance(payload, dict) else None
+            if not isinstance(title, str):
+                raise ValueError("Meeting title is required.")
+            normalized = await handle.rename(title)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"id": meeting_id, "title": normalized, "title_source": "manual"}
+
     @app.get("/api/meetings/{meeting_id}/audio/download")
     async def download_meeting_audio(meeting_id: str, request: Request):
         account = await require_account(request)
@@ -1703,6 +1772,7 @@ def _meeting_from_row(row: Any) -> Meeting:
         title=row["title"],
         status=row["status"],
         created_at_ms=int(row["created_at_ms"]),
+        title_source=row["title_source"],
         transcript=None if document_json is None else json.loads(document_json),
         transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
         audio=_meeting_audio_from_row(row),
@@ -1743,7 +1813,7 @@ def _signed_out_html(state: str) -> str:
     else:
         message = "Sign in to open your private Account workspace."
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title></head>
 <body><main data-auth-state=\"{state}\"><h1>MOSS</h1><p>{message}</p>
 <a data-action=\"google-sign-in\" href=\"/auth/google\">Sign in with Google</a></main></body></html>"""
 
@@ -1770,7 +1840,7 @@ def _workspace_html(
         else ""
     )
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title>{live_head}</head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title>{live_head}</head>
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
@@ -1780,12 +1850,11 @@ def _workspace_html(
 <button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p></section>
 {live_body}
 <section data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
-<section data-history=\"list\">{empty}{history}</section></section>
-<pre data-meeting-view></pre></section></main>
+<div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
+</section></main>
 <script>
 const uploadForm = document.querySelector('[data-file-upload="form"]');
 const uploadStatus = document.querySelector('[data-file-upload="status"]');
-const meetingView = document.querySelector('[data-meeting-view]');
 async function submitItem(path, options) {{
   try {{
     return (await fetch(path, options)).ok;
@@ -1816,22 +1885,6 @@ uploadForm.addEventListener('submit', async (event) => {{
   uploadStatus.textContent = `${{accepted}} accepted; ${{failed}} rejected. Accepted work continues on the server.`;
   if (accepted > 0) location.reload();
 }});
-for (const button of document.querySelectorAll('[data-open-meeting]')) {{
-  button.addEventListener('click', async () => {{
-    const response = await fetch(`/api/meetings/${{button.dataset.openMeeting}}`);
-    if (!response.ok) {{
-      meetingView.textContent = 'Meeting unavailable.';
-      return;
-    }}
-    const meeting = await response.json();
-    meetingView.textContent = JSON.stringify(meeting, null, 2);
-    if (meeting.mode === 'live' && meeting.status === 'active' && meeting.id === button.dataset.openMeeting) {{
-      document.dispatchEvent(new CustomEvent('moss:observe-live-meeting', {{
-        detail: {{meetingId: meeting.id}},
-      }}));
-    }}
-  }});
-}}
 </script></body></html>"""
 
 

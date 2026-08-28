@@ -389,6 +389,10 @@ def test_schema_v1_contains_exact_ownership_tables_and_settings(tmp_path: Path):
                 "voiceprint_samples",
                 "llm_artifacts",
             }
+            cursor = await store._connection.execute("PRAGMA table_info(meetings)")
+            meeting_columns = {row[1] for row in await cursor.fetchall()}
+            await cursor.close()
+            assert "title_source" in meeting_columns
             settings = await store.sqlite_settings()
             assert settings == {"journal_mode": "wal", "foreign_keys": 1, "synchronous": 2}
         finally:
