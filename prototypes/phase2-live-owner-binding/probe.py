@@ -27,6 +27,120 @@ READ_OPERATIONS = frozenset({"snapshot", "events"})
 MUTATION_OPERATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
 
 
+def print_contract() -> None:
+    """Print the design contract before any transition evidence."""
+
+    print(
+        json.dumps(
+            {
+                "action": "structural_contract",
+                "question": (
+                    "Can current Sign-in authority plus an owner-bound Meeting handle support "
+                    "owner-only capture, same-Account observation, and durable-before-public "
+                    "Live revisions through one shared transport?"
+                ),
+                "hypothesis": (
+                    "Seven bounded primitives are sufficient; no bearer, view token, client "
+                    "Account identity, global Meeting lookup, auth cache, or duplicate transport "
+                    "is needed."
+                ),
+                "minimum_primitives": [
+                    {
+                        "name": "current_sign_in_session_resolution",
+                        "boundary": "one request: SQLite session to enabled Account generation",
+                        "irreducible_because": "removal or caching would bypass revocation/isolation",
+                    },
+                    {
+                        "name": "owner_bound_meeting_handle",
+                        "boundary": "one durable capability captures Account, generation, Meeting",
+                        "irreducible_because": "a bare Meeting lookup permits authority rebinding",
+                    },
+                    {
+                        "name": "account_partitioned_transient_live_binding",
+                        "boundary": "active-process runtime, lease, public state; grants no authority",
+                        "irreducible_because": "250ms observation needs memory without content SQL",
+                    },
+                    {
+                        "name": "shared_live_transport",
+                        "boundary": "all invariant capture protocol outside five adapter hooks",
+                        "irreducible_because": "per-authority transports duplicate identical behavior",
+                    },
+                    {
+                        "name": "serialized_durability_bridge",
+                        "boundary": "raw callback to durable commit to public high-water",
+                        "irreducible_because": "parallel/direct publication exposes undurable order",
+                    },
+                    {
+                        "name": "existing_store_lock_for_external_reads",
+                        "boundary": "same SQLite connection; external reads lock, internal reads do not",
+                        "irreducible_because": "unlocked reads can observe an uncommitted multi-row tuple",
+                    },
+                    {
+                        "name": "page_local_controller_and_ephemeral_observer",
+                        "boundary": "one page; observer writes no control or reattach state",
+                        "irreducible_because": "one generic state grants control or resumes after reload",
+                    },
+                ],
+                "invariants": [
+                    "every request resolves current SQLite authority",
+                    "owner controls; same Account observes; foreign is 404; revoked is 401",
+                    "poll content is memory-backed and public never advances before durability",
+                    "terminal document and status commit atomically; interruption never resumes",
+                    "legacy and Phase2 share frame, Stop, error, and lifecycle semantics",
+                ],
+                "assumptions_unknowns": [
+                    "one Sign-in session is one settled Access client",
+                    "sibling tabs sharing that cookie are not distinct clients",
+                    "production load beyond the measured transitions is unmeasured",
+                ],
+                "falsifier": (
+                    "Any authority escape, content SQL during poll, mixed durable tuple, held "
+                    "publication leak, adapter protocol divergence, lost prefix, late publish, "
+                    "or capture resume rejects the design."
+                ),
+                "tool_decisions": [
+                    {
+                        "experiment": "browser_state_transitions",
+                        "necessary": "observe control, view, storage, and reload state directly",
+                        "reject_if": "observer controls/stores reattach or reload retains control",
+                    },
+                    {
+                        "experiment": "shared_transport_two_adapters",
+                        "necessary": "execute one protocol through both authority/publication shapes",
+                        "reject_if": "frame, conflict, Stop, events, terminal state diverge or held state leaks",
+                    },
+                    {
+                        "experiment": "production_store_sql_trace",
+                        "necessary": "count actual auth/content reads and writes on polling",
+                        "reject_if": "poll performs content SQL/write or revoked Account opens binding",
+                    },
+                    {
+                        "experiment": "held_and_rolled_back_store_mutation",
+                        "necessary": "make the within-transaction multi-row gap observable",
+                        "reject_if": "external read returns early or exposes mixed old/new state",
+                    },
+                    {
+                        "experiment": "runtime_thread_serial_commit_handoff",
+                        "necessary": "observe raw/durable/public/event order under concurrency",
+                        "reject_if": "public advances early, commit reorders, or late callback reaches closed loop",
+                    },
+                    {
+                        "experiment": "finalizer_revoke_shutdown_faults",
+                        "necessary": "exercise reachable fences while work is pending",
+                        "reject_if": "terminalizes early, loses prefix, accepts late work, or resumes",
+                    },
+                    {
+                        "experiment": "temporary_sqlite_and_controlled_gates",
+                        "necessary": "run real persistence/concurrency without retaining prototype data",
+                        "reject_if": "result depends on durable fixture state, sleeps, or production database",
+                    },
+                ],
+            },
+            sort_keys=True,
+        )
+    )
+
+
 @dataclass
 class BrowserObservationProbe:
     """Smallest page policy: history may attach a reader, never manufacture a controller."""
@@ -813,6 +927,7 @@ def show(action: str, binding: LiveBinding, sql: SqlCounts, **outcome: object) -
 
 
 async def run() -> None:
+    print_contract()
     run_browser_observation_policy_probe()
     await run_shared_transport_adapter_probe()
     with tempfile.TemporaryDirectory(prefix="mtd-phase2-live-owner-prototype-") as directory:

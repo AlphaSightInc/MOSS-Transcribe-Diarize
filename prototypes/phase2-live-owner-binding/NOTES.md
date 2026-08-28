@@ -5,8 +5,37 @@
 - **Question:** can the originating MOSS Sign-in session control capture while every request first
   resolves its enabled Account and then enters an Account-partitioned in-memory Live registry; and
   can that authority/publication adapter share one transport implementation with the legacy adapter?
-- **Minimum state:** owner-bound Meeting handle, originating Sign-in session locator, transient Live
-  snapshot/events, terminal state. The registry stores state but grants no authority.
+- **Minimum primitives:**
+  - **Current Sign-in-session resolution.** Its boundary is one request: the cookie resolves from
+    SQLite to one currently enabled Account and authority generation before any Live lookup. It
+    cannot be removed or cached in the Live registry because then revocation and Account isolation
+    would no longer govern every request.
+  - **Owner-bound Meeting handle.** Its boundary is durable mutation: Account ID, authority
+    generation, and Meeting ID are captured together and callers can never rebind one component.
+    It cannot be replaced by a bare/global Meeting lookup without restoring caller-selected
+    authority.
+  - **Account-partitioned transient Live binding.** Its boundary is active-process observation: it
+    holds the originating Sign-in-session locator, runtime, public snapshot/events, high-water
+    marks, and helper lease in memory, but grants no authority and creates no durable grant. It is
+    irreducible because 250 ms observation cannot read durable Meeting/transcript content and still
+    needs one place to coordinate the active capture lifecycle.
+  - **Shared Live transport.** Its boundary is the invariant protocol: frame decoding, v2 lane
+    registries, mixer, tape, heartbeat, Stop, abort, error mapping, and capture-state release. Only
+    authorize/create and snapshot/events/publication hooks cross the adapter seam. It cannot be
+    split per authority model without duplicating protocol behavior that does not vary.
+  - **Per-binding serialized durability bridge.** Its boundary is publication: runtime-thread raw
+    revisions enter one event-loop queue, commit through the captured Meeting handle, and only then
+    advance public snapshot/events. It cannot be removed or parallelized because a poll could then
+    expose undurable or out-of-order text/event state.
+  - **Existing store mutation lock shared by external reads.** Its boundary is one SQLite
+    connection: request-facing reads take the lock; SELECTs already inside a mutation do not. It
+    cannot be omitted because same-connection reads can observe a multi-row transaction before
+    commit, and it cannot be broadened to internal reads without lock reentrancy.
+  - **Page-local capture controller plus ephemeral history observer.** Its boundary is browser page
+    state: only the page that created capture owns mutation controls; history-open attaches a reader
+    without writing reattach storage, while reload discards control. It cannot collapse into one
+    generic viewer/controller state without either granting observer control or silently resuming
+    capture after reload.
 - **Invariant:** every request resolves the current session plus enabled Account from SQLite;
   same-Account observers read but do not mutate; another Account gets `404`; the 250 ms poll path may
   read only authentication rows and reads no Meeting/transcript content or writes; revocation returns
@@ -30,6 +59,40 @@
   committed prefix, resumes after interruption, or exposes closed/final words before their atomic
   terminal commit. The shared-seam hypothesis is also false if legacy and Phase 2 produce different
   frame/Stop/error results, or if Phase 2 exposes a held publication.
+
+## Tool and experiment decisions
+
+Each probe exists because source inspection alone cannot establish the corresponding runtime
+ordering. The stated reachable result changes the decision; no result is collected only as a proxy.
+
+- **Browser page-state transition probe:** necessary to expose controller, observer, and storage
+  state before and after history-open/reload. Reject the page-state primitive if an observer gains
+  mutation authority or writes reattach storage, or if reload retains capture control.
+- **Shared-transport two-adapter probe:** necessary to execute the same protocol implementation
+  through both real authority/publication shapes. Reject the five-hook seam, or deepen it only with
+  the newly varying behavior, if frame acceptance, duplicate-frame error, Stop, event sequence, or
+  terminal snapshot differs between adapters; reject durable-before-public if a held Phase-2
+  publication becomes visible.
+- **Production `Phase2Store` plus SQLite trace callback:** necessary to count the actual SQL on the
+  authorization/poll path instead of inferring I/O from code. Reject memory-backed 250 ms polling if
+  any repeated poll reads Meeting/transcript content or writes; reject request-time authority if a
+  revoked/disabled Account still opens a binding.
+- **Held/rolled-back production store mutation:** necessary to make the otherwise brief gap between
+  Meeting status update and transcript upsert observable. Reject the existing-lock design and choose
+  a different connection/transaction boundary if snapshot, list, or Account reads return before the
+  transaction ends or expose a mixed old/new tuple.
+- **Real runtime-thread to event-loop handoff with held serialized commits:** necessary to observe
+  raw, durable, public, and event high-water state while work is concurrent. Reject the bridge if
+  polling advances before commit, commits reorder, a database failure mutates public text, or a late
+  callback reaches a closed event loop.
+- **Finalizer/revocation/shutdown fault transitions:** necessary because their accepted-prefix and
+  callback fences are reachable only while work is pending. Reject the terminal policy if
+  closed/`running` completes the Meeting early, final words are non-atomic, revocation accepts a late
+  commit, interruption loses the durable prefix or resumes capture, or shutdown publishes late work.
+- **Temporary SQLite database and controlled in-memory gates:** necessary to run real store and
+  concurrency semantics without retaining prototype authority/data. A result that depends on state
+  surviving the temporary directory, wall-clock sleeps, or a production database rejects the
+  prototype as non-reproducible evidence.
 
 ## One command
 
