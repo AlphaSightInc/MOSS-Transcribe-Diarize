@@ -28,3 +28,7 @@ view token, pairing/device grant, or compatibility mode.
 - Operator status remains Operational metadata only; machine authority does not grant content access.
 - The acceptance harness tests the workspace interface and every public route with two Accounts;
   code review alone cannot establish isolation.
+- The owner-task probe in `prototypes/phase2-owner-bound-file-task/` accepts the smallest reliable
+  background seam: an application-owned strong-reference set retains coroutines that carry their
+  original owner-bound Meeting handle. Browser detachment does not cancel accepted work, and a
+  revoked handle cannot commit; no job identity or global Meeting lookup is introduced.

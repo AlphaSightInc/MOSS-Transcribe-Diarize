@@ -532,7 +532,7 @@ def test_account_workspace_hides_foreign_meeting_and_all_unauthenticated_content
     ) as b, TestClient(app, base_url="https://moss.test") as anonymous:
         created = sign_in(a, "a")
         assert created.status_code == 303
-        meeting = a.post("/api/meetings", json={"mode": "file"})
+        meeting = a.post("/api/meetings", json={"mode": "live"})
         assert meeting.status_code == 201
         meeting_id = meeting.json()["id"]
         assert sign_in(b, "b").status_code == 303
@@ -779,6 +779,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
     oauth_secret.write_text("test-oauth-secret\n", encoding="utf-8")
     seen: dict[str, object] = {}
     oidc = object()
+    file_runner = object()
     app = object()
 
     monkeypatch.setattr(
@@ -786,6 +787,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "configured",
         lambda **kwargs: seen.setdefault("oidc", kwargs) and oidc,
     )
+    monkeypatch.setattr(phase2_web_cli, "_build_file_runner", lambda args: file_runner)
 
     def fake_create_app(**kwargs: object):
         seen["app"] = kwargs
@@ -819,6 +821,8 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "database_path": DEFAULT_PHASE2_DATABASE_PATH,
         "oidc": oidc,
         "oauth_cookie_secret": "test-oauth-secret",
+        "file_runner": file_runner,
+        "file_work_root": phase2_web_cli.DEFAULT_PHASE2_FILE_WORK_ROOT,
     }
     assert seen["uvicorn"] == {
         "app": app,

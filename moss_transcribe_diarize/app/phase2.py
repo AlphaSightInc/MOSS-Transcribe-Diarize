@@ -7,6 +7,8 @@ the only authority Phase 2 permits: a verified Google identity opens one Account
 from __future__ import annotations
 
 import asyncio
+import html
+import json
 import secrets
 import time
 from contextlib import asynccontextmanager
@@ -64,6 +66,8 @@ class Meeting:
     title: str | None
     status: str
     created_at_ms: int
+    transcript: dict[str, object] | None = None
+    transcript_version: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -72,6 +76,8 @@ class Meeting:
             "title": self.title,
             "status": self.status,
             "created_at_ms": self.created_at_ms,
+            "transcript": self.transcript,
+            "transcript_version": self.transcript_version,
         }
 
 
@@ -565,10 +571,13 @@ class Phase2Store:
     async def _list_meetings(self, account_id: str, authority_generation: int) -> list[Meeting]:
         cursor = await self._connection.execute(
             """
-            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
+            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                   t.document_json, t.version AS transcript_version
             FROM meetings m
             JOIN accounts a ON a.account_id = m.account_id
                 AND a.enabled = 1 AND a.authority_generation = ?
+            LEFT JOIN meeting_transcripts t
+                ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
             WHERE m.account_id = ?
             ORDER BY m.created_at_ms DESC, m.meeting_id DESC
             """,
@@ -633,10 +642,13 @@ class Phase2Store:
     ) -> Meeting:
         cursor = await self._connection.execute(
             """
-            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms
+            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                   t.document_json, t.version AS transcript_version
             FROM meetings m
             JOIN accounts a ON a.account_id = m.account_id
                 AND a.enabled = 1 AND a.authority_generation = ?
+            LEFT JOIN meeting_transcripts t
+                ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
             WHERE m.account_id = ? AND m.meeting_id = ?
             """,
             (authority_generation, account_id, meeting_id),
@@ -646,6 +658,88 @@ class Phase2Store:
         if row is None:  # A handle is never permitted to escape its Account query.
             raise KeyError(meeting_id)
         return _meeting_from_row(row)
+
+    async def _commit_transcript(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        document: Mapping[str, object],
+        *,
+        terminal: bool,
+    ) -> int:
+        document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meetings
+                SET status = ?, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (
+                    "completed" if terminal else "active",
+                    now,
+                    account_id,
+                    meeting_id,
+                    account_id,
+                    authority_generation,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+            await self._connection.execute(
+                """
+                INSERT INTO meeting_transcripts(
+                    account_id, meeting_id, document_json, version, updated_at_ms
+                ) VALUES (?, ?, ?, 1, ?)
+                ON CONFLICT(account_id, meeting_id) DO UPDATE SET
+                    document_json = excluded.document_json,
+                    version = meeting_transcripts.version + 1,
+                    updated_at_ms = excluded.updated_at_ms
+                """,
+                (account_id, meeting_id, document_json, now),
+            )
+            version_cursor = await self._connection.execute(
+                """
+                SELECT version FROM meeting_transcripts
+                WHERE account_id = ? AND meeting_id = ?
+                """,
+                (account_id, meeting_id),
+            )
+            row = await version_cursor.fetchone()
+            await version_cursor.close()
+            return int(row["version"])
+
+    async def _finish_meeting(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        status: str,
+    ) -> None:
+        if status not in {"completed", "failed", "interrupted"}:
+            raise ValueError("Meeting terminal status is invalid.")
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meetings
+                SET status = ?, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (status, now, account_id, meeting_id, account_id, authority_generation),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
 
 
 class AccountWorkspace:
@@ -698,12 +792,37 @@ class MeetingHandle:
             self.meeting_id,
         )
 
+    async def commit_transcript(
+        self,
+        document: Mapping[str, object],
+        *,
+        terminal: bool = False,
+    ) -> int:
+        return await self._store._commit_transcript(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            document,
+            terminal=terminal,
+        )
+
+    async def finish(self, status: str) -> None:
+        await self._store._finish_meeting(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            status,
+        )
+
 
 def create_phase2_app(
     *,
     database_path: str | Path,
     oidc: GoogleOidc,
     oauth_cookie_secret: str,
+    file_runner: Any | None = None,
+    file_work_root: str | Path | None = None,
+    file_inference_options: Mapping[str, object] | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -717,14 +836,27 @@ def create_phase2_app(
     if not oauth_cookie_secret:
         raise ValueError("oauth_cookie_secret is required.")
 
+    file_tasks = None
+    if file_runner is not None:
+        from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT, FileMeetingTasks
+
+        file_tasks = FileMeetingTasks(
+            file_runner,
+            file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT,
+            **dict(file_inference_options or {}),
+        )
+
     @asynccontextmanager
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
         await store.recover_active_meetings()
         app.state.phase2_store = store
+        app.state.phase2_file_tasks = file_tasks
         try:
             yield
         finally:
+            if file_tasks is not None:
+                await file_tasks.stop()
             await store.close()
 
     app = FastAPI(title="MOSS", lifespan=lifespan)
@@ -847,12 +979,34 @@ def create_phase2_app(
         try:
             payload = await request.json()
             mode = payload["mode"] if isinstance(payload, dict) else None
-            if not isinstance(mode, str):
-                raise ValueError("mode must be live or file.")
+            if mode != "live":
+                raise ValueError("File Meetings require an accepted upload.")
             handle = await request.app.state.phase2_store.workspace(account).create_meeting(mode)
             return (await handle.snapshot()).to_dict()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/meetings/file", status_code=201)
+    async def create_file_meeting(request: Request):
+        account = await require_account(request)
+        if request.app.state.phase2_file_tasks is None:
+            raise HTTPException(status_code=503, detail="File transcription is unavailable.")
+        try:
+            form = await request.form()
+            upload = form.get("file")
+            if upload is None or not hasattr(upload, "read"):
+                raise ValueError("Missing upload file.")
+            handle = await request.app.state.phase2_file_tasks.accept(
+                request.app.state.phase2_store.workspace(account),
+                upload,
+            )
+            return (await handle.snapshot()).to_dict()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except AccountRevoked:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Upload could not be accepted.") from exc
 
     @app.get("/api/meetings/{meeting_id}")
     async def open_meeting(meeting_id: str, request: Request):
@@ -877,12 +1031,15 @@ def _now_ms() -> int:
 
 
 def _meeting_from_row(row: Any) -> Meeting:
+    document_json = row["document_json"]
     return Meeting(
         meeting_id=row["meeting_id"],
         mode=row["mode"],
         title=row["title"],
         status=row["status"],
         created_at_ms=int(row["created_at_ms"]),
+        transcript=None if document_json is None else json.loads(document_json),
+        transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
     )
 
 
@@ -902,9 +1059,37 @@ def _signed_out_html(state: str) -> str:
 
 
 def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
+    history = "".join(
+        "<article data-meeting-card><button type=\"button\" data-open-meeting=\""
+        f"{html.escape(meeting.meeting_id)}\">{html.escape(meeting.title or meeting.mode.title() + ' meeting')}"
+        f" — {html.escape(meeting.status)}</button></article>"
+        for meeting in meetings
+    )
     empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
     return f"""<!doctype html>
 <html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
-<body><main data-auth-state=\"signed-in\"><header><span data-account-email>{account.email}</span>
+<body><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
-<section data-workspace=\"account\"><h1>Your meetings</h1>{empty}</section></main></body></html>"""
+<section data-workspace=\"account\"><h1>Your meetings</h1>
+<form data-file-upload=\"form\"><input name=\"file\" type=\"file\" required>
+<button type=\"submit\">Transcribe file</button></form><p data-file-upload=\"status\"></p>
+<section data-history=\"list\">{empty}{history}</section>
+<pre data-meeting-view></pre></section></main>
+<script>
+const uploadForm = document.querySelector('[data-file-upload="form"]');
+const uploadStatus = document.querySelector('[data-file-upload="status"]');
+const meetingView = document.querySelector('[data-meeting-view]');
+uploadForm.addEventListener('submit', async (event) => {{
+  event.preventDefault();
+  uploadStatus.textContent = 'Uploading…';
+  const response = await fetch('/api/meetings/file', {{method: 'POST', body: new FormData(uploadForm)}});
+  uploadStatus.textContent = response.ok ? 'Accepted. Transcription continues on the server.' : 'Upload failed.';
+  if (response.ok) location.reload();
+}});
+for (const button of document.querySelectorAll('[data-open-meeting]')) {{
+  button.addEventListener('click', async () => {{
+    const response = await fetch(`/api/meetings/${{button.dataset.openMeeting}}`);
+    meetingView.textContent = response.ok ? JSON.stringify(await response.json(), null, 2) : 'Meeting unavailable.';
+  }});
+}}
+</script></body></html>"""
