@@ -40,9 +40,15 @@ view token, pairing/device grant, or compatibility mode.
 - The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
   acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
   2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five
-  redirects. Known YouTube hosts use pinned `yt-dlp[default]` with `--no-playlist` semantics and
+  redirects. Redirect responses are manually streamed and closed unread; every next Location is
+  revalidated as HTTP(S), avoiding HTTPX automatic redirect-body buffering. Known YouTube hosts use
+  pinned `yt-dlp[default]` with `--no-playlist` semantics and
   explicit `bestaudio/best` stdout: Python enforces the strict byte ceiling while draining one
-  `input.media`. The downloader runs in its own process group, which oversize, timeout, and cancel
-  terminate before removing partial output. Direct HTML is rejected. The acquired path enters the
+  `input.media`. The downloader runs in its own process group. An explicitly retained cleanup task
+  absorbs repeated cancellation only until that group is quiescent, then removes partial output and
+  propagates cancellation; acquisition-owner completion therefore implies no live downloader or
+  orphaned cleanup task. Total deadlines use Python 3.10-compatible `asyncio.wait_for`. Direct HTML is
+  rejected. The acquired path enters the
   same owner-carrying File task, while each item remains an independent Meeting and no batch
-  identity exists. yt-dlp's manifest `--max-filesize` and parent-only kill were measured-rejected.
+  identity exists. yt-dlp's manifest `--max-filesize`, parent-only kill, anonymous shielded cleanup,
+  and automatic redirects were measured-rejected.

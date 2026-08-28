@@ -20,6 +20,7 @@ URL_ACQUISITION_TIMEOUT_SECONDS = 3_900.0
 URL_NETWORK_TIMEOUT_SECONDS = 30.0
 URL_MAX_REDIRECTS = 5
 YOUTUBE_HOSTS = frozenset({"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"})
+HTTP_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
 
 class UrlAcquisitionRejected(ValueError):
@@ -67,30 +68,65 @@ class UrlMediaAcquirer:
         return await self._acquire_http(source_url, directory)
 
     async def _acquire_http(self, source_url: str, directory: Path) -> Path:
+        try:
+            return await asyncio.wait_for(
+                self._stream_http(source_url, directory),
+                timeout=self._total_timeout_seconds,
+            )
+        except UrlAcquisitionRejected:
+            raise
+        except asyncio.TimeoutError as exc:
+            raise UrlAcquisitionRejected("URL acquisition timed out.") from exc
+        except httpx.HTTPError as exc:
+            raise UrlAcquisitionRejected("URL media could not be acquired.") from exc
+
+    async def _stream_http(self, source_url: str, directory: Path) -> Path:
         timeout = httpx.Timeout(self._network_timeout_seconds)
         destination: Path | None = None
         try:
-            async with asyncio.timeout(self._total_timeout_seconds):
-                async with httpx.AsyncClient(
-                    follow_redirects=True,
-                    max_redirects=self._max_redirects,
-                    timeout=timeout,
-                    transport=self._http_transport,
-                ) as client:
-                    async with client.stream("GET", source_url) as response:
+            async with httpx.AsyncClient(
+                follow_redirects=False,
+                timeout=timeout,
+                transport=self._http_transport,
+            ) as client:
+                current_url = source_url
+                redirects_followed = 0
+                while True:
+                    async with client.stream("GET", current_url) as response:
+                        if response.status_code in HTTP_REDIRECT_STATUSES:
+                            if redirects_followed >= self._max_redirects:
+                                raise UrlAcquisitionRejected("URL media could not be acquired.")
+                            location = response.headers.get("location")
+                            if location is None:
+                                raise UrlAcquisitionRejected("URL media could not be acquired.")
+                            try:
+                                current_url = validate_http_url(str(response.url.join(location)))
+                            except (ValueError, httpx.InvalidURL) as exc:
+                                raise UrlAcquisitionRejected(
+                                    "URL redirected outside HTTP(S)."
+                                ) from exc
+                            redirects_followed += 1
+                            continue
+
                         response.raise_for_status()
-                        if response.url.scheme.lower() not in {"http", "https"}:
-                            raise UrlAcquisitionRejected("URL redirected outside HTTP(S).")
-                        media_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+                        media_type = (
+                            response.headers.get("content-type", "").split(";", 1)[0].lower()
+                        )
                         if media_type in {"text/html", "application/xhtml+xml"}:
                             raise UrlAcquisitionRejected(
                                 "The URL returned a web page instead of direct media."
                             )
-                        declared_size = self._declared_size(response.headers.get("content-length"))
+                        declared_size = self._declared_size(
+                            response.headers.get("content-length")
+                        )
                         if declared_size is not None and declared_size > self._max_bytes:
-                            raise UrlAcquisitionRejected("URL media exceeds the acquisition size limit.")
+                            raise UrlAcquisitionRejected(
+                                "URL media exceeds the acquisition size limit."
+                            )
 
-                        destination = directory / f"input{self._suffix(response.url.path, media_type)}"
+                        destination = directory / (
+                            f"input{self._suffix(response.url.path, media_type)}"
+                        )
                         received = 0
                         with destination.open("wb") as output:
                             async for chunk in response.aiter_bytes():
@@ -100,23 +136,12 @@ class UrlMediaAcquirer:
                                         "URL media exceeds the acquisition size limit."
                                     )
                                 output.write(chunk)
-        except UrlAcquisitionRejected:
+                        if received == 0:
+                            raise UrlAcquisitionRejected("URL media was empty.")
+                        return destination
+        except BaseException:
             self._remove_partial(destination)
             raise
-        except TimeoutError as exc:
-            self._remove_partial(destination)
-            raise UrlAcquisitionRejected("URL acquisition timed out.") from exc
-        except asyncio.CancelledError:
-            self._remove_partial(destination)
-            raise
-        except httpx.HTTPError as exc:
-            self._remove_partial(destination)
-            raise UrlAcquisitionRejected("URL media could not be acquired.") from exc
-
-        if destination.stat().st_size == 0:
-            self._remove_partial(destination)
-            raise UrlAcquisitionRejected("URL media was empty.")
-        return destination
 
     async def _acquire_youtube(self, source_url: str, directory: Path) -> Path:
         destination = directory / "input.media"
@@ -145,55 +170,86 @@ class UrlMediaAcquirer:
             start_new_session=True,
         )
         try:
-            received = 0
-            assert process.stdout is not None
-            async with asyncio.timeout(self._total_timeout_seconds):
-                with destination.open("wb") as output:
-                    while chunk := await process.stdout.read(64 * 1024):
-                        received += len(chunk)
-                        if received > self._max_bytes:
-                            raise UrlAcquisitionRejected(
-                                "URL media exceeds the acquisition size limit."
-                            )
-                        output.write(chunk)
-                return_code = await process.wait()
+            return_code = await asyncio.wait_for(
+                self._drain_youtube(process, destination),
+                timeout=self._total_timeout_seconds,
+            )
         except UrlAcquisitionRejected:
-            await asyncio.shield(self._stop_process_group(process))
-            self._remove_partial(destination)
+            if await self._quiesce_youtube(process, destination):
+                raise asyncio.CancelledError
             raise
-        except TimeoutError as exc:
-            await asyncio.shield(self._stop_process_group(process))
-            self._remove_partial(destination)
+        except asyncio.TimeoutError as exc:
+            if await self._quiesce_youtube(process, destination):
+                raise asyncio.CancelledError from exc
             raise UrlAcquisitionRejected("URL acquisition timed out.") from exc
         except asyncio.CancelledError:
-            await asyncio.shield(self._stop_process_group(process))
-            self._remove_partial(destination)
+            await self._quiesce_youtube(process, destination)
             raise
         if return_code != 0:
-            await self._stop_process_group(process)
-            self._remove_partial(destination)
+            if await self._quiesce_youtube(process, destination):
+                raise asyncio.CancelledError
             raise UrlAcquisitionRejected("URL media could not be acquired.")
         if destination.stat().st_size == 0:
             self._remove_partial(destination)
             raise UrlAcquisitionRejected("URL media could not be acquired.")
         return destination
 
+    async def _drain_youtube(
+        self,
+        process: asyncio.subprocess.Process,
+        destination: Path,
+    ) -> int:
+        received = 0
+        assert process.stdout is not None
+        with destination.open("wb") as output:
+            while chunk := await process.stdout.read(64 * 1024):
+                received += len(chunk)
+                if received > self._max_bytes:
+                    raise UrlAcquisitionRejected(
+                        "URL media exceeds the acquisition size limit."
+                    )
+                output.write(chunk)
+        return await process.wait()
+
+    async def _quiesce_youtube(
+        self,
+        process: asyncio.subprocess.Process,
+        destination: Path,
+    ) -> bool:
+        try:
+            return await self._stop_process_group_quiescent(process)
+        finally:
+            self._remove_partial(destination)
+
+    async def _stop_process_group_quiescent(
+        self,
+        process: asyncio.subprocess.Process,
+    ) -> bool:
+        cleanup_task = asyncio.create_task(self._stop_process_group(process))
+        cancelled_during_cleanup = False
+        while True:
+            try:
+                await asyncio.shield(cleanup_task)
+                return cancelled_during_cleanup
+            except asyncio.CancelledError:
+                cancelled_during_cleanup = True
+
     @staticmethod
     async def _stop_process_group(process: asyncio.subprocess.Process) -> None:
+        wait_task = asyncio.create_task(process.wait())
         try:
             os.killpg(process.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
         try:
-            await asyncio.wait_for(asyncio.shield(process.wait()), timeout=0.25)
-        except TimeoutError:
+            await asyncio.wait_for(asyncio.shield(wait_task), timeout=0.25)
+        except asyncio.TimeoutError:
             pass
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-        if process.returncode is None:
-            await process.wait()
+        await wait_task
 
     @staticmethod
     def _remove_partial(path: Path | None) -> None:

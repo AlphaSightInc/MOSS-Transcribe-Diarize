@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 import sqlite3
 import subprocess
@@ -331,6 +332,86 @@ def test_direct_http_cancel_removes_partial_output(tmp_path: Path):
     asyncio.run(exercise())
 
 
+def test_redirect_bodies_are_closed_unread_and_locations_are_revalidated(tmp_path: Path):
+    state = {"bytes_consumed": 0, "closed": False}
+
+    class CountingRedirectStream(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            state["bytes_consumed"] += 9
+            yield b"123456789"
+
+        async def aclose(self) -> None:
+            state["closed"] = True
+
+    async def transport(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/redirect-body":
+            return httpx.Response(
+                302,
+                headers={
+                    "Content-Length": "9",
+                    "Location": "https://media.test/final.wav",
+                },
+                stream=CountingRedirectStream(),
+            )
+        if request.url.path == "/bad-scheme":
+            return httpx.Response(302, headers={"Location": "file:///tmp/media.wav"})
+        if request.url.path.startswith("/loop/"):
+            step = int(request.url.path.rsplit("/", 1)[1])
+            return httpx.Response(302, headers={"Location": f"/loop/{step + 1}"})
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "audio/wav"},
+            content=b"media",
+        )
+
+    async def exercise() -> None:
+        acquirer = UrlMediaAcquirer(
+            max_bytes=8,
+            max_redirects=1,
+            http_transport=httpx.MockTransport(transport),
+        )
+        output = await acquirer.acquire(
+            "https://media.test/redirect-body", tmp_path / "redirect-body"
+        )
+        assert output.read_bytes() == b"media"
+        assert state == {"bytes_consumed": 0, "closed": True}
+        for path in ("bad-scheme", "loop/0"):
+            with pytest.raises(UrlAcquisitionRejected):
+                await acquirer.acquire(
+                    f"https://media.test/{path}", tmp_path / path.replace("/", "-")
+                )
+
+    asyncio.run(exercise())
+
+
+def test_url_acquisition_does_not_require_asyncio_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    fake_yt_dlp = tmp_path / "compatible_yt_dlp.py"
+    fake_yt_dlp.write_text("import sys\nsys.stdout.buffer.write(b'youtube')\n", encoding="utf-8")
+    monkeypatch.delattr(asyncio, "timeout")
+
+    async def exercise() -> None:
+        direct = UrlMediaAcquirer(
+            http_transport=httpx.MockTransport(
+                lambda _: httpx.Response(
+                    200,
+                    headers={"Content-Type": "audio/wav"},
+                    content=b"media",
+                )
+            )
+        )
+        assert (await direct.acquire("https://media.test/audio", tmp_path / "direct")).exists()
+        youtube = UrlMediaAcquirer(
+            yt_dlp_command=(sys.executable, str(fake_yt_dlp)),
+        )
+        assert (
+            await youtube.acquire("https://youtu.be/fixture", tmp_path / "youtube")
+        ).exists()
+
+    asyncio.run(exercise())
+
+
 def test_youtube_uses_one_item_yt_dlp_without_false_exit_101(tmp_path: Path):
     fake_yt_dlp = tmp_path / "fake_yt_dlp.py"
     recorded_args = tmp_path / "arguments.txt"
@@ -436,4 +517,50 @@ def test_youtube_cancel_kills_descendant_and_removes_partial(tmp_path: Path):
     asyncio.run(cancel())
     time.sleep(0.4)
     assert not descendant_marker.exists()
+    assert list(output_root.iterdir()) == []
+
+
+def test_repeated_cancel_waits_for_downloader_cleanup_quiescence(tmp_path: Path):
+    pid_file = tmp_path / "downloader.pid"
+    fake_yt_dlp = tmp_path / "shutdown_race_yt_dlp.py"
+    fake_yt_dlp.write_text(
+        "import os, signal, sys, time\n"
+        "from pathlib import Path\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        f"Path({str(pid_file)!r}).write_text(str(os.getpid()))\n"
+        "sys.stdout.buffer.write(b'partial')\n"
+        "sys.stdout.buffer.flush()\n"
+        "time.sleep(10)\n",
+        encoding="utf-8",
+    )
+    output_root = tmp_path / "youtube"
+    acquirer = UrlMediaAcquirer(
+        total_timeout_seconds=10,
+        yt_dlp_command=(sys.executable, str(fake_yt_dlp)),
+    )
+
+    async def cancel_twice() -> int:
+        task = asyncio.create_task(
+            acquirer.acquire("https://youtu.be/fixture", output_root)
+        )
+        while not pid_file.exists():
+            await asyncio.sleep(0.005)
+        task.cancel()
+        await asyncio.sleep(0.01)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=1)
+        pending_cleanup = [
+            pending
+            for pending in asyncio.all_tasks()
+            if not pending.done()
+            and "_stop_process_group"
+            in getattr(pending.get_coro(), "__qualname__", "")
+        ]
+        assert pending_cleanup == []
+        return int(pid_file.read_text())
+
+    pid = asyncio.run(cancel_twice())
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
     assert list(output_root.iterdir()) == []

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import tempfile
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+import httpx
 
 from moss_transcribe_diarize.app.phase2_url import UrlAcquisitionRejected, UrlMediaAcquirer
 
@@ -71,9 +74,68 @@ async def rejected(acquirer: UrlMediaAcquirer, url: str, root: Path) -> str:
     raise AssertionError("probe expected acquisition rejection")
 
 
+def process_is_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def pending_process_cleanup_tasks() -> int:
+    return sum(
+        1
+        for task in asyncio.all_tasks()
+        if not task.done()
+        and "_stop_process_group" in getattr(task.get_coro(), "__qualname__", "")
+    )
+
+
+class CountingRedirectStream(httpx.AsyncByteStream):
+    def __init__(self, state: dict[str, object]) -> None:
+        self._state = state
+
+    async def __aiter__(self):
+        self._state["bytes_consumed"] = int(self._state["bytes_consumed"]) + 9
+        yield b"123456789"
+
+    async def aclose(self) -> None:
+        self._state["closed"] = True
+
+
 async def probe(base_url: str, root: Path) -> dict[str, object]:
     direct = UrlMediaAcquirer(max_bytes=8, total_timeout_seconds=1, max_redirects=5)
     accepted = await direct.acquire(f"{base_url}/ok.wav", root / "accepted")
+    redirect_state: dict[str, object] = {
+        "declared_bytes": 9,
+        "bytes_consumed": 0,
+        "closed": False,
+    }
+
+    async def redirect_transport(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/redirect-body":
+            return httpx.Response(
+                302,
+                headers={
+                    "Content-Length": "9",
+                    "Location": "https://media.test/final.wav",
+                },
+                stream=CountingRedirectStream(redirect_state),
+            )
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "audio/wav"},
+            content=b"media",
+        )
+
+    redirect_acquirer = UrlMediaAcquirer(
+        max_bytes=8,
+        max_redirects=5,
+        http_transport=httpx.MockTransport(redirect_transport),
+    )
+    redirect_path = await redirect_acquirer.acquire(
+        "https://media.test/redirect-body", root / "redirect-body"
+    )
     direct_cancel_task = asyncio.create_task(
         direct.acquire(f"{base_url}/cancel.wav", root / "direct-cancel")
     )
@@ -139,6 +201,48 @@ async def probe(base_url: str, root: Path) -> dict[str, object]:
     timeout_reason = await rejected(timeout, "https://youtu.be/fixture", root / "timeout")
     await asyncio.sleep(0.4)
 
+    shutdown_pid = root / "shutdown-race.pid"
+    shutdown_yt_dlp = root / "shutdown_race_yt_dlp.py"
+    shutdown_yt_dlp.write_text(
+        "import os, signal, sys, time\n"
+        "from pathlib import Path\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        f"Path({str(shutdown_pid)!r}).write_text(str(os.getpid()))\n"
+        "sys.stdout.buffer.write(b'partial')\n"
+        "sys.stdout.buffer.flush()\n"
+        "time.sleep(10)\n",
+        encoding="utf-8",
+    )
+    shutdown_acquirer = UrlMediaAcquirer(
+        max_bytes=8,
+        total_timeout_seconds=10,
+        yt_dlp_command=(sys.executable, str(shutdown_yt_dlp)),
+    )
+    shutdown_task = asyncio.create_task(
+        shutdown_acquirer.acquire("https://youtu.be/shutdown", root / "shutdown-race")
+    )
+    while not shutdown_pid.exists():
+        await asyncio.sleep(0.005)
+    shutdown_process_pid = int(shutdown_pid.read_text())
+    shutdown_task.cancel()
+    await asyncio.sleep(0.01)
+    shutdown_task.cancel()
+    shutdown_cancelled = False
+    try:
+        await asyncio.wait_for(shutdown_task, timeout=1)
+    except asyncio.CancelledError:
+        shutdown_cancelled = True
+    shutdown_race_state = {
+        "cancellation_propagated": shutdown_cancelled,
+        "owner_done": shutdown_task.done(),
+        "process_alive_at_owner_completion": process_is_alive(shutdown_process_pid),
+        "unowned_cleanup_tasks": pending_process_cleanup_tasks(),
+        "remaining_files": sorted(
+            path.name for path in (root / "shutdown-race").iterdir()
+        ),
+    }
+    await asyncio.sleep(0.4)
+
     cancel_marker = root / "cancel-descendant-survived"
     cancel_yt_dlp = root / "cancel_yt_dlp.py"
     cancel_yt_dlp.write_text(
@@ -182,6 +286,10 @@ async def probe(base_url: str, root: Path) -> dict[str, object]:
                 path.name for path in (root / "direct-cancel").iterdir()
             ),
         },
+        "oversize_redirect_body": {
+            **redirect_state,
+            "accepted_final_bytes": redirect_path.read_bytes().decode("ascii"),
+        },
         "html": await rejected(direct, f"{base_url}/page", root / "html"),
         "redirects": await rejected(direct, f"{base_url}/redirect/5", root / "redirects"),
         "youtube": {
@@ -202,6 +310,7 @@ async def probe(base_url: str, root: Path) -> dict[str, object]:
             "descendant_survived_parent_kill": cancel_marker.exists(),
             "remaining_files": sorted(path.name for path in (root / "cancel").iterdir()),
         },
+        "youtube_shutdown_race": shutdown_race_state,
     }
 
 

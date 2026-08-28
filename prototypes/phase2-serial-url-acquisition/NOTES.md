@@ -7,12 +7,13 @@
 - **Minimum primitives:** one validated URL, one transient source directory, one byte/time/redirect
   bound, and one acquired media path. Meeting ownership and inference remain outside this seam.
 - **Invariants:** HTTP(S) only; YouTube uses yt-dlp; direct HTML is not media; declared and streamed
-  bytes share one strict 2 GiB ceiling; one item produces at most one media path; timeout/cancel/
-  oversize kills the entire downloader process group and removes partial output.
+  bytes share one strict 2 GiB ceiling; redirect bodies are closed unread and every Location is
+  revalidated; one item produces at most one media path; timeout/cancel/oversize kills the entire
+  downloader process group, awaits cleanup quiescence, and removes partial output.
 - **Unknowns:** real-site/provider availability is unmeasured here and remains a deployed #22 gate.
 - **Falsifier:** any oversize/HTML/redirect/timeout case yields a usable path, known YouTube goes
-  through direct HTTP, an emitted byte beyond the ceiling reaches disk, or a downloader descendant
-  survives termination.
+  through direct HTTP, an emitted byte beyond the ceiling reaches disk, a redirect body is consumed,
+  or an acquisition owner completes while its downloader/cleanup task survives.
 - **Tool decision:** a loopback HTTP fixture plus fake yt-dlp output and descendant processes
   exercise the production acquirer deterministically; no external provider is needed to decide the
   local policy.
@@ -31,6 +32,12 @@ YouTube-streamed-size, and process-timeout cases rejected 6/6. Both rejected You
 zero files; timeout killed the fake downloader descendant (`descendant_survived_parent_kill=false`).
 Explicit cancellation propagated 2/2 across direct HTTP and YouTube, left zero partial files, and
 killed the YouTube downloader descendant.
+An oversized redirect declared and exposed 9 bytes against an 8-byte fixture ceiling; the accepted
+manual redirect loop consumed 0 redirect-body bytes, closed the response, revalidated its Location,
+and acquired exactly the 5-byte final media. Under two cancellations during the 250 ms TERM grace,
+the acquisition owner completed only after the SIGTERM-resistant downloader was dead, with zero
+unowned cleanup tasks and zero partial files. The same one-command prototype passed under CPython
+3.10 with `httpx==0.28.1`.
 The accepted paths contained exactly the fixture bytes. Production may use the same seam with
 2 GiB, 30 s network-inactivity, 3,900 s total-time, and five-redirect bounds.
 
@@ -49,3 +56,11 @@ exceed `--max-filesize`, and a spawned descendant survived parent kill. The acce
 `--max-filesize` only as an early advisory rejection, streams explicit `bestaudio/best` through
 stdout to an exact Python byte counter, and runs yt-dlp in a new process session so the whole group
 is terminated on oversize, timeout, or cancellation.
+
+Two later fixed-SHA probes rejected implicit library ownership. HTTPX automatic redirects consumed
+all 9 bytes of an oversized redirect body before the 5-byte final media; the accepted loop streams
+each response manually, closes redirects unread, and validates each next HTTP(S) URL. Shielding an
+anonymous process-cleanup coroutine let a second cancellation complete its owner while the process,
+partial file, and one unowned cleanup task remained. The accepted design explicitly retains that
+task, absorbs repeated cancellation only until process-group quiescence, removes the partial, then
+propagates cancellation. Python 3.10-compatible `asyncio.wait_for` supplies both total deadlines.
