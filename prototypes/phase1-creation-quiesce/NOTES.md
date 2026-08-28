@@ -13,22 +13,27 @@
   directory whose transaction constructor fails before returning. It is part of the existing
   admission boundary, not another counter; finalization status is existing Live runtime truth, not
   another lifecycle policy. The same ownership applies to a rerun directory until copy, hash,
-  record publication, and queue registration have all succeeded.
+  record publication, and queue registration have all succeeded. Live raw creation remains owned
+  until authority binding and helper registration succeed; resume/render state remains old until
+  its candidate durable state and worker registration can succeed.
 - **Invariants:** a quiesced marker rejects Live create, job create, rerun, resume, and render; it
   does not reject existing frames, heartbeat, snapshot, events, Stop, abort, reads, or downloads;
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
-- **Assumptions/unknowns:** the retained probe uses two concurrent real `server.create_app` process
-  views plus isolated production upload-cancellation and terminal-runtime falsifiers. It exercises
-  the absorbed marker, admission, route, runtime-status, and job implementations with fake
-  inference. Actual 4070 Ti filesystem and deployed unit behavior remain unmeasured until the
-  reviewed prerequisite is deliberately deployed.
+- **Assumptions/unknowns:** the retained probe spawns two independent operating-system processes,
+  each with a real `server.create_app` and gate, plus isolated production failure falsifiers. It
+  exercises the absorbed marker, admission, route, runtime-status, Live, and job implementations
+  with fake inference. Actual 4070 Ti filesystem and deployed unit behavior remain unmeasured until
+  the reviewed prerequisite is deliberately deployed.
 - **Falsifier:** after both processes report `quiesced`, entrant count zero, and active/queued zero,
   any newly registered work disproves this design. Invisible pre-admitted upload work or a blocked
   existing continuation also disproves it. A closed/running terminal pass reported as zero or a
   cancelled upload releasing its entrant before removing its transaction also disproves it.
   A staging-file constructor failure returning while its new job directory remains also disproves
   it. A pre-admitted rerun failing after a partial copy must likewise leave no new directory,
-  registry entry, or queue entry.
+  registry entry, or queue entry. A Live bind refusal, resume save failure, or render save failure
+  must leave no active undisclosed capture and no memory/disk/worker contradiction after entrant
+  zero. Separate process PIDs must converge on marker enable/restart/disable while entrant counts
+  remain local.
 - **Tool decision:** a two-instance logic probe is necessary because a long upload crossing marker
   enable is the reachable race that distinguishes a marker alone from marker plus entrant count.
   Cancelling the production upload coroutine after transaction creation is necessary because only
@@ -42,6 +47,10 @@
   Failing a real partial rerun copy after marker enable is necessary because it distinguishes
   admission ordering from `create_job_from_file` ownership; any residual directory rejects the
   existing pre-return boundary.
+  A concurrent Live revoke and injected resume/render saves are necessary because success tests
+  cannot expose pre-registration mutation. Spawned process IPC is necessary because two app
+  objects in one interpreter cannot prove cross-process marker visibility; PID-distinct runtime
+  reports change the decision by rejecting the former proxy evidence.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -72,14 +81,25 @@ The extended command exited `FAIL` before production was changed:
   write copied `real` before raising. HTTP returned `400` with entrant `0`, unchanged registry and
   queue, but an extra partial job directory remained. The probe exited nonzero with
   `preadmitted_rerun_failure_cleanup_ordered=false` while every prior predicate stayed green.
+- Concurrent device revoke after raw Live creation made binding return `403`; admission fell to
+  zero while the undisclosed raw session remained active. A new device retry then produced two
+  active sessions, and aborting the disclosed retry still left one.
+- Resume save failure returned `400` with disk still `failed`, but memory already `queued`, queue
+  empty, and retry unable to enqueue because it saw the false active status. Render save failure
+  returned `400` with disk `waiting_review`, memory `rendering`, no thread, and retry refused `503`.
+  The probe exited nonzero on all six failure/retry predicates.
+- The former same-process proxy was replaced: distinct child PIDs independently reported open,
+  shared quiesced state, local entrant `1/0`, quiescence after process replacement, and reopen after
+  disable. These two new predicates passed before product correction.
 
 These states are reachable cutover false-zero/orphan failures. The corrections only deepen the
-existing drain/admission meanings: Live drain includes running terminal finalization, and a File
-creation admission ends after every non-returned transaction or job directory has been removed.
+existing drain/admission meanings: Live drain includes running terminal finalization; undisclosed
+raw Live creation is aborted before admission closes; File creation owns every non-returned path;
+and resume/render publish a copied candidate only after its durable transition succeeds.
 
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 32/32 predicates on Python 3.10.19 and 3.12.12 on
+**Accepted.** The command derived `PASS` from 40/40 predicates on Python 3.10.19 and 3.12.12 on
 2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
@@ -107,6 +127,15 @@ creation admission ends after every non-returned transaction or job directory ha
 - A rerun pre-admitted at entrant `1`, marker enable changed its state to `quiesced`, then a real
   partial copy wrote `real` and raised. Cleanup removed the new directory while entrant remained
   `1`; HTTP returned `400` with entrant `0`, unchanged registry/queue, and only the source job dir.
+- Concurrent revoke at raw Live authority binding returned `403`, but the owned raw session became
+  `aborted` while admission remained `1`; after return active Live was `0`, no capture/helper
+  registry disclosed it, and a fresh-device retry created and drained exactly one session.
+- Injected resume and render saves each returned `400` with entrant `1` at failure, then entrant
+  `0` with byte-for-byte old durable and in-memory state, no queued worker/thread, and zero active
+  work. Retrying each operation registered exactly one worker and drained to terminal truth.
+- Spawned child processes had distinct PIDs and converged on shared marker enable; one process's
+  entrant stayed invisible to the other's local count. Replacing a child preserved `quiesced`, and
+  disabling the marker reopened both surviving process views.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

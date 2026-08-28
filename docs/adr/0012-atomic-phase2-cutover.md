@@ -43,9 +43,11 @@ reopening the old deployment. All three commands use the same Linux-home marker 
 
 ## Measured prerequisite verdict
 
-`prototypes/phase1-creation-quiesce/` derived `PASS` from 32/32 predicates on Python 3.10.19 and
-3.12.12 against two concurrent production `create_app` process views, plus isolated production
-upload-cancellation and terminal-runtime falsifiers. It held an upload across enable, kept it
+`prototypes/phase1-creation-quiesce/` derived `PASS` from 40/40 predicates on Python 3.10.19 and
+3.12.12. It spawned two distinct operating-system processes with production `create_app` runtime
+views over the same marker, plus isolated production registration, upload-cancellation, and
+terminal-runtime falsifiers. Distinct PIDs converged across enable, process replacement, and
+disable while each entrant count remained process-local. It held an upload across enable, kept it
 visible as one entrant until registration, rejected all five creation routes with typed retryable
 503 responses, exercised existing frame/heartbeat/snapshot/events/download/Stop/abort, proved
 exact drain status in both processes, preserved quiescence across restart, reopened on double
@@ -64,6 +66,11 @@ The rerun falsifier pre-admitted before marker enable, wrote a real partial copy
 `quiesced/entrant=1`, and raised. `create_job_from_file` now owns all effects through copy, hash,
 record save, and enqueue return; failure removes transient registry state and the new directory
 before HTTP returns, without changing the source job or queue.
+The final registration falsifiers revoked a Live device between raw creation and authority bind,
+and injected durable save failures into resume and render. Raw Live ownership now aborts and joins
+the undisclosed session before admission closes. Resume and render mutate a copied candidate,
+persist it, and only then publish it to the process registry and worker/thread; save failure leaves
+the exact prior memory and disk state with no worker, and a later retry registers once and drains.
 The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.

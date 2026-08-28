@@ -6,16 +6,18 @@ One command:
     PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
       prototypes/phase1-creation-quiesce/probe.py
 
-The probe runs two concurrent production ``create_app`` process views through the absorbed
-admission semantics, plus isolated production upload-cancellation and terminal-runtime
-falsifiers. The first recorded verdict preceded production; this retained bench now prevents the
-measured state ordering from drifting.
+The probe spawns two independent operating-system processes, each with a production
+``create_app`` runtime-status view over the shared marker, and runs isolated production
+registration, upload-cancellation, and terminal-runtime falsifiers. The first recorded verdict
+preceded production; this retained bench now prevents the measured state ordering from drifting.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import multiprocessing
+import os
 import shutil
 import sys
 import tempfile
@@ -99,6 +101,7 @@ from moss_transcribe_diarize.app.model_runner import TranscriptionResult  # noqa
 from moss_transcribe_diarize.app.live_service_runtime import (  # noqa: E402
     active_live_session_count,
 )
+from moss_transcribe_diarize.app.live_auth import LivePeer  # noqa: E402
 from moss_transcribe_diarize.app.phase1_creation_quiesce import (  # noqa: E402
     PHASE1_CREATION_GATE_UNAVAILABLE,
     PHASE1_CREATION_QUIESCED,
@@ -112,6 +115,8 @@ class ProbeRunner:
     model_path = "phase1-quiesce-probe"
     device_name = "cpu"
     dtype_name = "float32"
+    window_seconds = 150.0
+    stride_seconds = 120.0
 
     def __init__(self) -> None:
         self._call_count = 0
@@ -195,6 +200,135 @@ def emit(states: list[dict[str, Any]], label: str, **state: Any) -> None:
     record = {"label": label, **state}
     states.append(record)
     print(json.dumps(record, sort_keys=True))
+
+
+def _phase1_process_worker(marker: str, runs_dir: str, connection: Any) -> None:
+    """One spawned production app/gate view; parent supplies only test coordination."""
+
+    gate = Phase1CreationGate(Path(marker))
+    app, wrapped = make_batch_app(Path(runs_dir), gate, ProbeRunner())
+    client = TestClient(wrapped)
+    admission = None
+    connection.send({"pid": os.getpid(), "runtime": client.get("/api/runtime").json()["phase1_creation"]})
+    try:
+        while True:
+            command = connection.recv()
+            if command == "status":
+                connection.send(
+                    {
+                        "pid": os.getpid(),
+                        "runtime": client.get("/api/runtime").json()["phase1_creation"],
+                    }
+                )
+            elif command == "enter":
+                admission = gate.enter()
+                connection.send(
+                    {
+                        "pid": os.getpid(),
+                        "runtime": client.get("/api/runtime").json()["phase1_creation"],
+                    }
+                )
+            elif command == "release":
+                assert admission is not None
+                admission.close()
+                admission = None
+                connection.send(
+                    {
+                        "pid": os.getpid(),
+                        "runtime": client.get("/api/runtime").json()["phase1_creation"],
+                    }
+                )
+            elif command == "exit":
+                connection.send({"pid": os.getpid(), "closed": True})
+                return
+            else:
+                raise AssertionError(f"unknown process command: {command}")
+    finally:
+        if admission is not None:
+            admission.close()
+        connection.close()
+
+
+def _process_command(connection: Any, command: str) -> dict[str, Any]:
+    connection.send(command)
+    if not connection.poll(15):
+        raise AssertionError(f"spawned process did not answer {command!r}")
+    return connection.recv()
+
+
+def two_os_process_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Prove the marker/reboot truth across two genuinely separate Python processes."""
+
+    context = multiprocessing.get_context("spawn")
+
+    def start(name: str):
+        parent, child = context.Pipe()
+        process = context.Process(
+            target=_phase1_process_worker,
+            args=(str(marker), str(root / name), child),
+            name=f"moss-phase1-prototype-{name}",
+        )
+        process.start()
+        child.close()
+        if not parent.poll(15):
+            process.terminate()
+            process.join(timeout=5)
+            raise AssertionError(f"spawned process {name!r} did not start")
+        return process, parent, parent.recv()
+
+    first, first_connection, first_initial = start("process-a")
+    second, second_connection, second_initial = start("process-b")
+    replacement = None
+    replacement_connection = None
+    try:
+        first_held = _process_command(first_connection, "enter")
+        second_while_first_held = _process_command(second_connection, "status")
+        enable_phase1_creation_quiesce(marker)
+        first_quiesced = _process_command(first_connection, "status")
+        second_quiesced = _process_command(second_connection, "status")
+        first_released = _process_command(first_connection, "release")
+        _process_command(second_connection, "exit")
+        second.join(timeout=10)
+        replacement, replacement_connection, replacement_initial = start("process-b-restart")
+        disable_phase1_creation_quiesce(marker)
+        first_reopened = _process_command(first_connection, "status")
+        replacement_reopened = _process_command(replacement_connection, "status")
+        replacement_held = _process_command(replacement_connection, "enter")
+        replacement_released = _process_command(replacement_connection, "release")
+        return {
+            "parent_pid": os.getpid(),
+            "first_initial": first_initial,
+            "second_initial": second_initial,
+            "first_held": first_held,
+            "second_while_first_held": second_while_first_held,
+            "first_quiesced": first_quiesced,
+            "second_quiesced": second_quiesced,
+            "first_released": first_released,
+            "second_exitcode": second.exitcode,
+            "replacement_initial": replacement_initial,
+            "first_reopened": first_reopened,
+            "replacement_reopened": replacement_reopened,
+            "replacement_held": replacement_held,
+            "replacement_released": replacement_released,
+        }
+    finally:
+        for process, connection in (
+            (first, first_connection),
+            (second, second_connection),
+            (replacement, replacement_connection),
+        ):
+            if process is None or connection is None:
+                continue
+            if process.is_alive():
+                try:
+                    _process_command(connection, "exit")
+                except (BrokenPipeError, EOFError):
+                    pass
+                process.join(timeout=10)
+            connection.close()
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=5)
 
 
 def cancelled_upload_state(root: Path, marker: Path) -> dict[str, Any]:
@@ -449,6 +583,269 @@ def rerun_copy_failure_state(root: Path, marker: Path) -> dict[str, Any]:
     return result
 
 
+def live_bind_failure_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Revoke after raw create but before access binding, then inspect undisclosed work."""
+
+    gate = Phase1CreationGate(marker)
+    app, wrapped = make_live_app(root, gate)
+    local = TestClient(
+        wrapped,
+        base_url="http://127.0.0.1",
+        client=("127.0.0.1", 50000),
+    )
+    remote = TestClient(
+        wrapped,
+        base_url="https://moss.test",
+        client=("192.168.68.20", 50001),
+    )
+
+    def pair(device_id: str) -> dict[str, str]:
+        grant = local.post("/api/live/pairing-codes")
+        grant.raise_for_status()
+        paired = remote.post(
+            "/api/live/pairings",
+            json={
+                "device_id": device_id,
+                "pairing_payload": grant.json()["pairing_payload"],
+            },
+        )
+        paired.raise_for_status()
+        return {"Authorization": f"Bearer {paired.json()['device_token']}"}
+
+    headers = pair("bind-failure-device")
+    access = app.state.live_access_registry
+    original_bind = access.bind_session
+    bind_observations: list[dict[str, Any]] = []
+
+    def revoke_then_bind(principal: Any, session_id: str, now: float):
+        bind_observations.append(
+            {
+                "session_id": session_id,
+                "entrants": gate.snapshot().entrants,
+                "raw_status": app.state.live_runtime.snapshot(session_id).session.status,
+                "active_live": live_active_count(app),
+            }
+        )
+        access.revoke_device(
+            LivePeer("127.0.0.1", "http"), principal.device_id, now=now
+        )
+        return original_bind(principal, session_id, now)
+
+    access.bind_session = revoke_then_bind
+    try:
+        failed = remote.post("/api/live/sessions", headers=headers)
+    finally:
+        access.bind_session = original_bind
+    leaked_id = bind_observations[0]["session_id"]
+    raw_after = app.state.live_runtime.snapshot(leaked_id).to_dict()
+    try:
+        app.state.live_v2_sessions.get(leaked_id)
+        v2_registered = True
+    except KeyError:
+        v2_registered = False
+    after_failure = {
+        "status": failed.status_code,
+        "gate": gate.snapshot().to_dict(),
+        "active_live": live_active_count(app),
+        "raw": raw_after,
+        "access_bound": leaked_id in access._sessions,
+        "v2_registered": v2_registered,
+        "helper_lease": leaked_id in app.state.live_helper_failures._sessions,
+    }
+
+    retry_headers = pair("bind-retry-device")
+    retried = remote.post("/api/live/sessions", headers=retry_headers)
+    retry_id = retried.json().get("id") if retried.status_code == 200 else None
+    retry_active = live_active_count(app)
+    if retry_id is not None:
+        remote.post(
+            f"/api/live/sessions/{retry_id}/abort",
+            headers=retry_headers,
+            json={"reason": "prototype retry cleanup"},
+        )
+    result = {
+        "bind_observations": bind_observations,
+        "after_failure": after_failure,
+        "retry": {
+            "status": retried.status_code,
+            "session_id": retry_id,
+            "active_before_abort": retry_active,
+            "active_after_abort": live_active_count(app),
+        },
+    }
+    if raw_after["session"]["status"] == "active":
+        asyncio.run(app.state.live_runtime.abort(leaked_id, "prototype leaked-create cleanup"))
+    return result
+
+
+def resume_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Fail durable resume publication and compare memory, disk, queue, retry, and drain."""
+
+    gate = Phase1CreationGate(marker)
+    app, wrapped = make_batch_app(root, gate, ProbeRunner())
+    client = TestClient(wrapped)
+    created = client.post(
+        "/api/jobs", files={"file": ("resume.wav", b"resume-source", "audio/wav")}
+    )
+    created.raise_for_status()
+    job_id = created.json()["id"]
+    wait_job(client, job_id)
+    job = app.state.manager.get_job(job_id)
+    job.status = "failed"
+    job.progress = 0.5
+    job.error = "prototype prior failure"
+    job.resume_attempts = 2
+    job.checkpoint_state = "partial"
+    app.state.manager._save_job(job)
+    before_memory = job.to_dict()
+    before_disk = json.loads(job.job_path.read_text(encoding="utf-8"))
+    before_queue = app.state.manager._queue.qsize()
+    save_observations: list[dict[str, Any]] = []
+    original_save = app.state.manager._save_job
+
+    def fail_queued_save(candidate: Any) -> None:
+        if candidate.id == job_id and candidate.status == "queued":
+            save_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "candidate": candidate.to_dict(),
+                    "registry": app.state.manager.get_job(job_id).to_dict(),
+                    "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+                }
+            )
+            raise OSError("prototype resume save failure")
+        original_save(candidate)
+
+    app.state.manager._save_job = fail_queued_save
+    try:
+        failed = client.post(f"/api/jobs/{job_id}/resume")
+    finally:
+        app.state.manager._save_job = original_save
+    after_failure = {
+        "status": failed.status_code,
+        "gate": gate.snapshot().to_dict(),
+        "memory": app.state.manager.get_job(job_id).to_dict(),
+        "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+    }
+    retried = client.post(f"/api/jobs/{job_id}/resume")
+    retry_body = retried.json()
+    try:
+        retry_terminal = wait_job(client, job_id)
+    except AssertionError:
+        retry_terminal = client.get(f"/api/jobs/{job_id}").json()
+    return {
+        "before": {"memory": before_memory, "disk": before_disk, "queue": before_queue},
+        "save_observations": save_observations,
+        "after_failure": after_failure,
+        "retry": {
+            "status": retried.status_code,
+            "body": retry_body,
+            "terminal": retry_terminal,
+            "activity": app.state.manager.activity_counts(),
+        },
+    }
+
+
+def render_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Fail durable rendering publication before thread start, then retry and drain."""
+
+    gate = Phase1CreationGate(marker)
+    app, wrapped = make_batch_app(root, gate, ProbeRunner())
+    client = TestClient(wrapped)
+    created = client.post(
+        "/api/jobs", files={"file": ("render.wav", b"render-source", "audio/wav")}
+    )
+    created.raise_for_status()
+    job_id = created.json()["id"]
+    wait_job(client, job_id)
+    job = app.state.manager.get_job(job_id)
+    before_memory = job.to_dict()
+    before_disk = json.loads(job.job_path.read_text(encoding="utf-8"))
+    save_observations: list[dict[str, Any]] = []
+    captured_threads: list[Any] = []
+    starts: list[str] = []
+    original_save = app.state.manager._save_job
+    original_detect = jobs_module.detect_ffmpeg
+    original_probe = jobs_module.probe_video_size
+    original_burn = jobs_module.burn_ass_subtitles
+    original_threading = jobs_module.threading
+
+    class AvailableFfmpeg:
+        available = True
+
+    class HeldThread:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self._thread = threading.Thread(*args, **kwargs)
+
+        def start(self) -> None:
+            starts.append(self._thread.name)
+            captured_threads.append(self)
+
+        def run(self) -> None:
+            self._thread.run()
+
+    class ThreadFactory:
+        Thread = HeldThread
+
+    def fail_rendering_save(candidate: Any) -> None:
+        if candidate.id == job_id and candidate.status == "rendering":
+            save_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "candidate": candidate.to_dict(),
+                    "registry": app.state.manager.get_job(job_id).to_dict(),
+                    "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+                }
+            )
+            raise OSError("prototype rendering save failure")
+        original_save(candidate)
+
+    jobs_module.detect_ffmpeg = lambda: AvailableFfmpeg()
+    jobs_module.probe_video_size = lambda _path: (1280, 720)
+    jobs_module.burn_ass_subtitles = (
+        lambda _input, _ass, output: Path(output).write_bytes(b"prototype-render")
+    )
+    jobs_module.threading = ThreadFactory()
+    app.state.manager._save_job = fail_rendering_save
+    try:
+        failed = client.post(f"/api/jobs/{job_id}/render", json={})
+        after_failure = {
+            "status": failed.status_code,
+            "gate": gate.snapshot().to_dict(),
+            "memory": app.state.manager.get_job(job_id).to_dict(),
+            "disk": json.loads(job.job_path.read_text(encoding="utf-8")),
+            "starts": list(starts),
+            "activity": app.state.manager.activity_counts(),
+        }
+        app.state.manager._save_job = original_save
+        retried = client.post(f"/api/jobs/{job_id}/render", json={})
+        retry_active = app.state.manager.activity_counts()
+        for held_thread in captured_threads:
+            held_thread.run()
+        retry_terminal = app.state.manager.get_job(job_id).to_dict()
+        retry_activity = app.state.manager.activity_counts()
+    finally:
+        app.state.manager._save_job = original_save
+        jobs_module.detect_ffmpeg = original_detect
+        jobs_module.probe_video_size = original_probe
+        jobs_module.burn_ass_subtitles = original_burn
+        jobs_module.threading = original_threading
+    return {
+        "before": {"memory": before_memory, "disk": before_disk},
+        "save_observations": save_observations,
+        "after_failure": after_failure,
+        "retry": {
+            "status": retried.status_code,
+            "active": retry_active,
+            "thread_starts": list(starts),
+            "terminal": retry_terminal,
+            "activity": retry_activity,
+        },
+    }
+
+
 def terminal_finalization_state(root: Path, marker: Path) -> dict[str, Any]:
     """Hold the real terminal pass and read the production runtime status surface."""
 
@@ -494,6 +891,45 @@ def main() -> int:
     checks: dict[str, bool] = {}
     with tempfile.TemporaryDirectory(prefix="moss-phase1-quiesce-prototype-") as temporary:
         root = Path(temporary)
+        os_processes = two_os_process_state(
+            root / "os-process-runs", root / "os-process-state" / "marker"
+        )
+        open_zero = {
+            "state": "open",
+            "entrants": 0,
+            "active_jobs": 0,
+            "queued_jobs": 0,
+            "active_live_sessions": 0,
+        }
+        quiesced_zero = {**open_zero, "state": "quiesced"}
+        checks["two_real_os_processes_converge"] = (
+            len(
+                {
+                    os_processes["parent_pid"],
+                    os_processes["first_initial"]["pid"],
+                    os_processes["second_initial"]["pid"],
+                    os_processes["replacement_initial"]["pid"],
+                }
+            )
+            == 4
+            and os_processes["first_initial"]["runtime"] == open_zero
+            and os_processes["second_initial"]["runtime"] == open_zero
+            and os_processes["second_quiesced"]["runtime"] == quiesced_zero
+            and os_processes["replacement_initial"]["runtime"] == quiesced_zero
+            and os_processes["first_reopened"]["runtime"] == open_zero
+            and os_processes["replacement_reopened"]["runtime"] == open_zero
+            and os_processes["second_exitcode"] == 0
+        )
+        checks["os_process_entrants_are_local_and_visible"] = (
+            os_processes["first_held"]["runtime"]["entrants"] == 1
+            and os_processes["second_while_first_held"]["runtime"]["entrants"] == 0
+            and os_processes["first_quiesced"]["runtime"]["entrants"] == 1
+            and os_processes["first_released"]["runtime"] == quiesced_zero
+            and os_processes["replacement_held"]["runtime"]["entrants"] == 1
+            and os_processes["replacement_released"]["runtime"] == open_zero
+        )
+        emit(states, "two_real_os_processes", **os_processes)
+
         marker = root / "host-state" / "phase1-creation-quiesced"
         batch_gate = Phase1CreationGate(marker)
         live_gate = Phase1CreationGate(marker)
@@ -551,6 +987,73 @@ def main() -> int:
             and rerun_failure["after"]["job_dirs"] == rerun_failure["before_job_dirs"]
         )
         emit(states, "preadmitted_rerun_copy_failure", **rerun_failure)
+
+        live_bind_failure = live_bind_failure_state(
+            root / "live-bind-failure", root / "live-bind-failure-state" / "marker"
+        )
+        checks["live_bind_failure_aborts_before_admission_closes"] = (
+            live_bind_failure["bind_observations"][0]["entrants"] == 1
+            and live_bind_failure["bind_observations"][0]["raw_status"] == "active"
+            and live_bind_failure["after_failure"]["status"] == 403
+            and live_bind_failure["after_failure"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and live_bind_failure["after_failure"]["active_live"] == 0
+            and live_bind_failure["after_failure"]["raw"]["session"]["status"] != "active"
+            and not live_bind_failure["after_failure"]["access_bound"]
+            and not live_bind_failure["after_failure"]["v2_registered"]
+            and not live_bind_failure["after_failure"]["helper_lease"]
+        )
+        checks["live_bind_failure_retry_drains"] = (
+            live_bind_failure["retry"]["status"] == 200
+            and live_bind_failure["retry"]["active_before_abort"] == 1
+            and live_bind_failure["retry"]["active_after_abort"] == 0
+        )
+        emit(states, "live_bind_failure", **live_bind_failure)
+
+        resume_failure = resume_save_failure_state(
+            root / "resume-save-failure", root / "resume-save-failure-state" / "marker"
+        )
+        checks["resume_save_failure_restores_exact_truth"] = (
+            resume_failure["save_observations"][0]["entrants"] == 1
+            and resume_failure["after_failure"]["status"] == 400
+            and resume_failure["after_failure"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and resume_failure["after_failure"]["memory"]
+            == resume_failure["before"]["memory"]
+            and resume_failure["after_failure"]["disk"] == resume_failure["before"]["disk"]
+            and resume_failure["after_failure"]["queue"] == resume_failure["before"]["queue"]
+            and resume_failure["after_failure"]["activity"] == {"queued": 0, "active": 0}
+        )
+        checks["resume_after_failure_retries_and_drains"] = (
+            resume_failure["retry"]["status"] == 200
+            and resume_failure["retry"]["body"]["resume_attempts"] == 3
+            and resume_failure["retry"]["terminal"]["status"] == "waiting_review"
+            and resume_failure["retry"]["activity"] == {"queued": 0, "active": 0}
+        )
+        emit(states, "resume_save_failure", **resume_failure)
+
+        render_failure = render_save_failure_state(
+            root / "render-save-failure", root / "render-save-failure-state" / "marker"
+        )
+        checks["render_save_failure_restores_exact_truth"] = (
+            render_failure["save_observations"][0]["entrants"] == 1
+            and render_failure["after_failure"]["status"] == 400
+            and render_failure["after_failure"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and render_failure["after_failure"]["memory"]
+            == render_failure["before"]["memory"]
+            and render_failure["after_failure"]["disk"] == render_failure["before"]["disk"]
+            and render_failure["after_failure"]["starts"] == []
+            and render_failure["after_failure"]["activity"] == {"queued": 0, "active": 0}
+        )
+        checks["render_after_failure_retries_and_drains"] = (
+            render_failure["retry"]["status"] == 200
+            and render_failure["retry"]["active"] == {"queued": 0, "active": 1}
+            and len(render_failure["retry"]["thread_starts"]) == 1
+            and render_failure["retry"]["terminal"]["status"] == "done"
+            and render_failure["retry"]["activity"] == {"queued": 0, "active": 0}
+        )
+        emit(states, "render_save_failure", **render_failure)
 
         cancelled = cancelled_upload_state(
             root / "cancelled-upload-runs", root / "cancelled-upload-state" / "marker"
@@ -911,7 +1414,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 32
+    verdict = all(checks.values()) and len(checks) == 40
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (
@@ -926,7 +1429,8 @@ def main() -> int:
             "Any admitted work after quiesced plus entrants zero, invisible pre-admitted work, "
             "an existing continuation blocked by the gate, terminal work hidden as drained, "
             "cancellation releasing admission before its upload transaction is removed, or a "
-            "constructor/rerun failure leaving its newly owned job directory behind."
+            "create/resume/render failure leaving undisclosed or contradictory work after "
+            "admission reports zero."
         ),
         "checks": checks,
         "states": states,

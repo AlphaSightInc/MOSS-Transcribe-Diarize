@@ -8,7 +8,7 @@ import shutil
 import threading
 import time
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -422,15 +422,22 @@ class JobManager:
         if not Path(job.input_path).exists():
             raise FileNotFoundError(str(job.input_path))
 
-        job.resume_attempts += 1
-        job.status = "queued"
-        job.progress = min(job.progress, 0.84)
-        job.error = None
-        job.checkpoint_state = "ready"
-        job.updated_at = time.time()
-        self._save_job(job)
-        self._queue.put(job.id)
-        return job
+        candidate = replace(job)
+        candidate.resume_attempts += 1
+        candidate.status = "queued"
+        candidate.progress = min(candidate.progress, 0.84)
+        candidate.error = None
+        candidate.checkpoint_state = "ready"
+        candidate.updated_at = time.time()
+        self._save_job(candidate)
+        self._jobs[candidate.id] = candidate
+        try:
+            self._queue.put(candidate.id)
+        except BaseException:
+            self._jobs[job.id] = job
+            self._save_job(job)
+            raise
+        return candidate
 
     def list_jobs(self) -> list[JobRecord]:
         return sorted(self._jobs.values(), key=lambda job: job.updated_at, reverse=True)
@@ -494,24 +501,26 @@ class JobManager:
             raise RuntimeError("No subtitle segments are available for this job.")
         segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
         style = SubtitleStyle.from_dict(style_payload)
-        self._set_status(job, "rendering", 0.97, error=None)
+        candidate = replace(job)
         thread = threading.Thread(
             target=self._render_job,
-            args=(job.id, segments, style),
-            name=f"mtd-render-{job.id}",
+            args=(candidate.id, segments, style),
+            name=f"mtd-render-{candidate.id}",
             daemon=True,
         )
+        self._set_status(candidate, "rendering", 0.97, error=None)
+        self._jobs[candidate.id] = candidate
         try:
             thread.start()
         except Exception as exc:
             self._set_status(
-                job,
+                candidate,
                 "waiting_review",
                 0.95,
                 error=f"Render did not start: {exc}",
             )
             raise
-        return job
+        return candidate
 
     def download_path(self, job_id: str, kind: str) -> Path:
         job = self.get_job(job_id)

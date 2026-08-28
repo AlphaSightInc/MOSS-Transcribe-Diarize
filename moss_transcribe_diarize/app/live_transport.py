@@ -228,7 +228,17 @@ class _LegacyLiveTransportAdapter:
 
             raise HTTPException(status_code=403, detail="capture authority is required.")
         created = self.runtime.create(echo_mode=payload.get("echo_mode"))
-        view = self.access.bind_session(principal, created.session_id, now=_request_now())
+        try:
+            view = self.access.bind_session(principal, created.session_id, now=_request_now())
+        except BaseException:
+            # Raw creation is not a disclosed Live session until authority binds. Keep
+            # Phase-1 creation admission held while the owned raw work is joined.
+            await self.runtime.abort(
+                created.session_id,
+                "Live session authority binding failed.",
+            )
+            self.access.release_session(created.session_id)
+            raise
         return LiveTransportCreated(
             session_id=created.session_id,
             authority=decision,
@@ -640,9 +650,23 @@ def attach_live_routes(
                 tapes.create(created.session_id)
                 if created.arm_helper_lease:
                     helper_failures.arm(created.session_id)
-            except Exception:
+            except BaseException:
                 if access is not None:
-                    access.release_session(created.session_id)
+                    try:
+                        await runtime.abort(
+                            created.session_id,
+                            "Live session capture registration failed.",
+                        )
+                    finally:
+                        access.release_session(created.session_id)
+                        _release_live_capture_state(
+                            created.session_id,
+                            v2_sessions=v2_sessions,
+                            v2_mixers=v2_mixers,
+                            tapes=tapes,
+                            helper_failures=helper_failures,
+                            helper_presence=helper_presence,
+                        )
                 raise
             published = await adapter.publication(
                 created.authority,

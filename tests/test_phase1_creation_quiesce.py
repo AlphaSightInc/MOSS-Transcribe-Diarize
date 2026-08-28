@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import asyncio
 import json
+import multiprocessing
+import os
 import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from moss_transcribe_diarize.app import server
 from moss_transcribe_diarize.app import jobs as jobs_module
+from moss_transcribe_diarize.app.live_auth import LivePeer
 from moss_transcribe_diarize.app.live_service_runtime import active_live_session_count
 from moss_transcribe_diarize.app.phase1_creation_quiesce import (
     PHASE1_CREATION_GATE_UNAVAILABLE,
@@ -22,7 +26,7 @@ from moss_transcribe_diarize.app.phase1_creation_quiesce import (
     enable_phase1_creation_quiesce,
 )
 from moss_transcribe_diarize.app.phase1_quiesce_cli import main as quiesce_cli_main
-from test_app_api import NoopRunner
+from test_app_api import CheckpointRecordingRunner, NoopRunner
 from test_live_api import (
     LIVE_AUTH_FINGERPRINT,
     frame_payload,
@@ -94,6 +98,82 @@ def _assert_quiesced(response) -> None:
     }
 
 
+def _phase1_process_status_worker(marker: str, runs_dir: str, connection: Any) -> None:
+    """One real process-local runtime status view over the shared host marker."""
+
+    gate = Phase1CreationGate(Path(marker))
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=Path(runs_dir),
+        file_mode_runner=NoopRunner(),
+        phase1_creation_gate=gate,
+    )
+    client = TestClient(app)
+    admission = None
+    connection.send(
+        {"pid": os.getpid(), "status": client.get("/api/runtime").json()["phase1_creation"]}
+    )
+    try:
+        while True:
+            command = connection.recv()
+            if command == "enter":
+                admission = gate.enter()
+            elif command == "release":
+                assert admission is not None
+                admission.close()
+                admission = None
+            elif command == "exit":
+                connection.send({"pid": os.getpid(), "closed": True})
+                return
+            elif command != "status":
+                raise AssertionError(f"unknown command: {command}")
+            connection.send(
+                {
+                    "pid": os.getpid(),
+                    "status": client.get("/api/runtime").json()["phase1_creation"],
+                }
+            )
+    finally:
+        if admission is not None:
+            admission.close()
+        connection.close()
+
+
+def _process_status_command(connection: Any, command: str) -> dict[str, Any]:
+    connection.send(command)
+    assert connection.poll(15), f"spawned process did not answer {command!r}"
+    return connection.recv()
+
+
+def _start_phase1_status_process(context: Any, marker: Path, runs_dir: Path):
+    parent, child = context.Pipe()
+    process = context.Process(
+        target=_phase1_process_status_worker,
+        args=(str(marker), str(runs_dir), child),
+        name=f"moss-phase1-test-{runs_dir.name}",
+    )
+    process.start()
+    child.close()
+    if not parent.poll(15):
+        process.terminate()
+        process.join(timeout=5)
+        raise AssertionError(f"spawned process {runs_dir.name!r} did not start")
+    return process, parent, parent.recv()
+
+
+def _stop_phase1_status_process(process: Any, connection: Any) -> None:
+    if process.is_alive():
+        try:
+            _process_status_command(connection, "exit")
+        except (BrokenPipeError, EOFError):
+            pass
+        process.join(timeout=10)
+    connection.close()
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=5)
+
+
 def test_marker_and_counted_admission_are_durable_private_and_fail_closed(
     tmp_path: Path,
 ) -> None:
@@ -135,6 +215,73 @@ def test_marker_and_counted_admission_are_durable_private_and_fail_closed(
         broken_gate.enter()
     assert unavailable.value.code == PHASE1_CREATION_GATE_UNAVAILABLE
     assert broken_gate.snapshot().entrants == 0
+
+
+def test_distinct_os_processes_share_marker_but_report_local_admission(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "host-state" / "phase1-creation-quiesced"
+    context = multiprocessing.get_context("spawn")
+    first, first_connection, first_initial = _start_phase1_status_process(
+        context, marker, tmp_path / "first-runs"
+    )
+    second, second_connection, second_initial = _start_phase1_status_process(
+        context, marker, tmp_path / "second-runs"
+    )
+    replacement = None
+    replacement_connection = None
+    try:
+        assert len({os.getpid(), first_initial["pid"], second_initial["pid"]}) == 3
+        assert first_initial["status"]["state"] == "open"
+        assert second_initial["status"]["state"] == "open"
+
+        first_held = _process_status_command(first_connection, "enter")
+        second_while_held = _process_status_command(second_connection, "status")
+        assert first_held["status"]["entrants"] == 1
+        assert second_while_held["status"]["entrants"] == 0
+
+        enable_phase1_creation_quiesce(marker)
+        assert _process_status_command(first_connection, "status")["status"] == {
+            "state": "quiesced",
+            "entrants": 1,
+            "active_jobs": 0,
+            "queued_jobs": 0,
+            "active_live_sessions": 0,
+        }
+        assert _process_status_command(second_connection, "status")["status"] == {
+            "state": "quiesced",
+            "entrants": 0,
+            "active_jobs": 0,
+            "queued_jobs": 0,
+            "active_live_sessions": 0,
+        }
+        assert _process_status_command(first_connection, "release")["status"]["entrants"] == 0
+
+        _stop_phase1_status_process(second, second_connection)
+        replacement, replacement_connection, replacement_initial = (
+            _start_phase1_status_process(
+                context, marker, tmp_path / "replacement-runs"
+            )
+        )
+        assert replacement_initial["pid"] not in {
+            os.getpid(),
+            first_initial["pid"],
+            second_initial["pid"],
+        }
+        assert replacement_initial["status"]["state"] == "quiesced"
+
+        disable_phase1_creation_quiesce(marker)
+        assert _process_status_command(first_connection, "status")["status"]["state"] == "open"
+        assert (
+            _process_status_command(replacement_connection, "status")["status"]["state"]
+            == "open"
+        )
+    finally:
+        _stop_phase1_status_process(first, first_connection)
+        if second.is_alive():
+            _stop_phase1_status_process(second, second_connection)
+        if replacement is not None and replacement_connection is not None:
+            _stop_phase1_status_process(replacement, replacement_connection)
 
 
 def test_operator_command_is_idempotent_and_reports_only_host_state(
@@ -492,6 +639,228 @@ def test_two_phase1_processes_quiesce_new_work_and_drain_existing_work(
     )
     assert reopened.status_code == 200
     _wait_for_job(restarted, reopened.json()["id"])
+
+
+def test_live_bind_refusal_aborts_owned_raw_session_before_admission_closes(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "state" / "phase1-creation-quiesced"
+    gate = Phase1CreationGate(marker)
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=NoopRunner(),
+        live_enabled=True,
+        live_runtime_factory=lambda: make_live_runtime(
+            max_retained_samples=16,
+            session_ids=("bind-failure", "bind-retry"),
+        ),
+        live_auth_state_path=tmp_path / "live-auth.json",
+        live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+        live_helper_lease_seconds=30.0,
+        phase1_creation_gate=gate,
+    )
+    local, remote, headers = _pair_live_clients(app)
+    access = app.state.live_access_registry
+    original_bind = access.bind_session
+    observed: list[dict[str, object]] = []
+
+    def revoke_then_bind(principal, session_id: str, now: float):
+        observed.append(
+            {
+                "session_id": session_id,
+                "entrants": gate.snapshot().entrants,
+                "raw_status": app.state.live_runtime.snapshot(session_id).session.status,
+                "active_live": active_live_session_count(app.state.live_runtime),
+            }
+        )
+        access.revoke_device(
+            LivePeer("127.0.0.1", "http"), principal.device_id, now=now
+        )
+        return original_bind(principal, session_id, now)
+
+    access.bind_session = revoke_then_bind
+    try:
+        refused = remote.post("/api/live/sessions", headers=headers)
+    finally:
+        access.bind_session = original_bind
+
+    assert refused.status_code == 403
+    assert observed == [
+        {
+            "session_id": "bind-failure",
+            "entrants": 1,
+            "raw_status": "active",
+            "active_live": 1,
+        }
+    ]
+    assert gate.snapshot().to_dict() == {"state": "open", "entrants": 0}
+    assert app.state.live_runtime.snapshot("bind-failure").session.status == "aborted"
+    assert active_live_session_count(app.state.live_runtime) == 0
+    assert "bind-failure" not in access._sessions
+    assert not app.state.live_v2_sessions.contains("bind-failure")
+    assert "bind-failure" not in app.state.live_helper_failures._sessions
+
+    grant = local.post("/api/live/pairing-codes")
+    retry_pairing = remote.post(
+        "/api/live/pairings",
+        json={
+            "device_id": "quiesce-retry-device",
+            "pairing_payload": grant.json()["pairing_payload"],
+        },
+    )
+    retry_headers = {
+        "Authorization": f"Bearer {retry_pairing.json()['device_token']}"
+    }
+    retried = remote.post("/api/live/sessions", headers=retry_headers)
+    assert retried.status_code == 200
+    assert active_live_session_count(app.state.live_runtime) == 1
+    assert remote.post(
+        "/api/live/sessions/bind-retry/abort",
+        headers=retry_headers,
+        json={"reason": "test cleanup"},
+    ).status_code == 200
+    assert active_live_session_count(app.state.live_runtime) == 0
+
+
+def test_resume_save_failure_restores_old_truth_before_admission_closes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = Phase1CreationGate(tmp_path / "state" / "phase1-creation-quiesced")
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=CheckpointRecordingRunner(),
+        phase1_creation_gate=gate,
+    )
+    client = TestClient(app)
+    created = client.post(
+        "/api/jobs", files={"file": ("resume.wav", b"resume", "audio/wav")}
+    )
+    job_id = created.json()["id"]
+    _wait_for_job(client, job_id)
+    job = app.state.manager.get_job(job_id)
+    job.status = "failed"
+    job.progress = 0.5
+    job.error = "prior failure"
+    job.resume_attempts = 2
+    job.checkpoint_state = "partial"
+    app.state.manager._save_job(job)
+    before = job.to_dict()
+    save_observed: list[dict[str, object]] = []
+    original_save = app.state.manager._save_job
+
+    def fail_candidate(candidate) -> None:
+        if candidate.id == job_id and candidate.status == "queued":
+            save_observed.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "registry_status": app.state.manager.get_job(job_id).status,
+                }
+            )
+            raise OSError("test resume save failure")
+        original_save(candidate)
+
+    monkeypatch.setattr(app.state.manager, "_save_job", fail_candidate)
+    failed = client.post(f"/api/jobs/{job_id}/resume")
+    assert failed.status_code == 400
+    assert save_observed == [{"entrants": 1, "registry_status": "failed"}]
+    assert gate.snapshot().entrants == 0
+    assert app.state.manager.get_job(job_id).to_dict() == before
+    assert json.loads(job.job_path.read_text(encoding="utf-8")) == before
+    assert app.state.manager._queue.qsize() == 0
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+    monkeypatch.setattr(app.state.manager, "_save_job", original_save)
+    retried = client.post(f"/api/jobs/{job_id}/resume")
+    assert retried.status_code == 200
+    assert retried.json()["resume_attempts"] == 3
+    terminal = _wait_for_job(client, job_id)
+    assert terminal["status"] == "waiting_review"
+    assert terminal["resume_attempts"] == 3
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+
+def test_render_save_failure_restores_old_truth_before_thread_registration(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = Phase1CreationGate(tmp_path / "state" / "phase1-creation-quiesced")
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=NoopRunner(),
+        phase1_creation_gate=gate,
+    )
+    client = TestClient(app)
+    created = client.post(
+        "/api/jobs", files={"file": ("render.wav", b"render", "audio/wav")}
+    )
+    job_id = created.json()["id"]
+    _wait_for_job(client, job_id)
+    job = app.state.manager.get_job(job_id)
+    before = job.to_dict()
+
+    class AvailableFfmpeg:
+        available = True
+
+    held_threads: list[object] = []
+
+    class HeldThread:
+        def __init__(self, *args, **kwargs) -> None:
+            self._thread = threading.Thread(*args, **kwargs)
+
+        def start(self) -> None:
+            held_threads.append(self)
+
+        def run(self) -> None:
+            self._thread.run()
+
+    class ThreadFactory:
+        Thread = HeldThread
+
+    monkeypatch.setattr(jobs_module, "threading", ThreadFactory())
+    monkeypatch.setattr(jobs_module, "detect_ffmpeg", lambda: AvailableFfmpeg())
+    monkeypatch.setattr(jobs_module, "probe_video_size", lambda _path: (1280, 720))
+    monkeypatch.setattr(
+        jobs_module,
+        "burn_ass_subtitles",
+        lambda _input, _ass, output: Path(output).write_bytes(b"rendered"),
+    )
+    original_save = app.state.manager._save_job
+    save_observed: list[dict[str, object]] = []
+
+    def fail_candidate(candidate) -> None:
+        if candidate.id == job_id and candidate.status == "rendering":
+            save_observed.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "registry_status": app.state.manager.get_job(job_id).status,
+                }
+            )
+            raise OSError("test render save failure")
+        original_save(candidate)
+
+    monkeypatch.setattr(app.state.manager, "_save_job", fail_candidate)
+    failed = client.post(f"/api/jobs/{job_id}/render", json={})
+    assert failed.status_code == 400
+    assert save_observed == [{"entrants": 1, "registry_status": "waiting_review"}]
+    assert gate.snapshot().entrants == 0
+    assert app.state.manager.get_job(job_id).to_dict() == before
+    assert json.loads(job.job_path.read_text(encoding="utf-8")) == before
+    assert held_threads == []
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+    monkeypatch.setattr(app.state.manager, "_save_job", original_save)
+    retried = client.post(f"/api/jobs/{job_id}/render", json={})
+    assert retried.status_code == 200
+    assert retried.json()["status"] == "rendering"
+    assert len(held_threads) == 1
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 1}
+    held_threads[0].run()
+    assert client.get(f"/api/jobs/{job_id}").json()["status"] == "done"
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
 
 
 def test_preadmitted_render_is_durably_active_before_its_thread_runs(
