@@ -823,6 +823,7 @@ def create_phase2_app(
     file_runner: Any | None = None,
     file_work_root: str | Path | None = None,
     file_inference_options: Mapping[str, object] | None = None,
+    url_acquirer: Any | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -839,11 +840,13 @@ def create_phase2_app(
     file_tasks = None
     if file_runner is not None:
         from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT, FileMeetingTasks
+        from .phase2_url import UrlMediaAcquirer
 
         file_tasks = FileMeetingTasks(
             file_runner,
             file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT,
             **dict(file_inference_options or {}),
+            url_acquirer=url_acquirer or UrlMediaAcquirer(),
         )
 
     @asynccontextmanager
@@ -1010,6 +1013,28 @@ def create_phase2_app(
         except Exception as exc:
             raise HTTPException(status_code=500, detail="Upload could not be accepted.") from exc
 
+    @app.post("/api/meetings/url", status_code=201)
+    async def create_url_meeting(request: Request):
+        account = await require_account(request)
+        if request.app.state.phase2_file_tasks is None:
+            raise HTTPException(status_code=503, detail="File transcription is unavailable.")
+        try:
+            payload = await request.json()
+            source_url = payload.get("url") if isinstance(payload, dict) else None
+            if not isinstance(source_url, str):
+                raise ValueError("Missing media URL.")
+            handle = await request.app.state.phase2_file_tasks.accept_url(
+                request.app.state.phase2_store.workspace(account),
+                source_url,
+            )
+            return (await handle.snapshot()).to_dict()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except AccountRevoked:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="URL could not be accepted.") from exc
+
     @app.get("/api/meetings/{meeting_id}")
     async def open_meeting(meeting_id: str, request: Request):
         account = await require_account(request)
@@ -1073,20 +1098,44 @@ def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
 <body><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
-<form data-file-upload=\"form\"><input name=\"file\" type=\"file\" required>
-<button type=\"submit\">Transcribe file</button></form><p data-file-upload=\"status\"></p>
+<form data-file-upload=\"form\"><input name=\"file\" type=\"file\" multiple>
+<label>Media URLs, one per line<textarea name=\"urls\"></textarea></label>
+<button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p>
 <section data-history=\"list\">{empty}{history}</section>
 <pre data-meeting-view></pre></section></main>
 <script>
 const uploadForm = document.querySelector('[data-file-upload="form"]');
 const uploadStatus = document.querySelector('[data-file-upload="status"]');
 const meetingView = document.querySelector('[data-meeting-view]');
+async function submitItem(path, options) {{
+  try {{
+    return (await fetch(path, options)).ok;
+  }} catch {{
+    return false;
+  }}
+}}
 uploadForm.addEventListener('submit', async (event) => {{
   event.preventDefault();
-  uploadStatus.textContent = 'Uploading…';
-  const response = await fetch('/api/meetings/file', {{method: 'POST', body: new FormData(uploadForm)}});
-  uploadStatus.textContent = response.ok ? 'Accepted. Transcription continues on the server.' : 'Upload failed.';
-  if (response.ok) location.reload();
+  const files = Array.from(uploadForm.elements.file.files);
+  const urls = uploadForm.elements.urls.value.split(/\\r?\\n/).map(value => value.trim()).filter(Boolean);
+  let accepted = 0;
+  let failed = 0;
+  for (const file of files) {{
+    uploadStatus.textContent = `Submitting ${{accepted + failed + 1}} of ${{files.length + urls.length}}…`;
+    const body = new FormData();
+    body.append('file', file, file.name);
+    (await submitItem('/api/meetings/file', {{method: 'POST', body}})) ? accepted++ : failed++;
+  }}
+  for (const url of urls) {{
+    uploadStatus.textContent = `Submitting ${{accepted + failed + 1}} of ${{files.length + urls.length}}…`;
+    (await submitItem('/api/meetings/url', {{
+      method: 'POST',
+      headers: {{'Content-Type': 'application/json'}},
+      body: JSON.stringify({{url}}),
+    }})) ? accepted++ : failed++;
+  }}
+  uploadStatus.textContent = `${{accepted}} accepted; ${{failed}} rejected. Accepted work continues on the server.`;
+  if (accepted > 0) location.reload();
 }});
 for (const button of document.querySelectorAll('[data-open-meeting]')) {{
   button.addEventListener('click', async () => {{

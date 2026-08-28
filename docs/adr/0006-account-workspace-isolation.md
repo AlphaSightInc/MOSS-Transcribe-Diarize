@@ -37,3 +37,12 @@ view token, pairing/device grant, or compatibility mode.
   inference to quiesce, and only then removes source work and closes persistence. Startup first
   interrupts durable active Meetings, then removes children of the dedicated transient `file-work`
   root before admission. Cleanup failures are retrieved and logged without content.
+- The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
+  acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
+  2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five
+  redirects. Known YouTube hosts use pinned `yt-dlp[default]` with `--no-playlist` semantics and
+  explicit `bestaudio/best` stdout: Python enforces the strict byte ceiling while draining one
+  `input.media`. The downloader runs in its own process group, which oversize, timeout, and cancel
+  terminate before removing partial output. Direct HTML is rejected. The acquired path enters the
+  same owner-carrying File task, while each item remains an independent Meeting and no batch
+  identity exists. yt-dlp's manifest `--max-filesize` and parent-only kill were measured-rejected.

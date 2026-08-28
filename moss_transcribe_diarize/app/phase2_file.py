@@ -12,6 +12,7 @@ from typing import Any
 from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
 from .phase2 import AccountRevoked
+from .phase2_url import validate_http_url
 
 
 DEFAULT_PHASE2_FILE_WORK_ROOT = (
@@ -37,6 +38,7 @@ class FileMeetingTasks:
         max_new_tokens: int | None = None,
         decoding: str | None = None,
         temperature: float | None = None,
+        url_acquirer: Any | None = None,
     ):
         self._runner = runner
         self._work_root = Path(work_root).expanduser()
@@ -47,6 +49,7 @@ class FileMeetingTasks:
         self._max_new_tokens = max_new_tokens
         self._decoding = decoding
         self._temperature = temperature if decoding == "sample" else None
+        self._url_acquirer = url_acquirer
         self._tasks: set[asyncio.Task[None]] = set()
 
     def clear_transient_work(self) -> None:
@@ -101,6 +104,30 @@ class FileMeetingTasks:
         await started.wait()
         return handle
 
+    async def accept_url(self, workspace: Any, source_url: str) -> Any:
+        """Create one File Meeting and retain its bounded URL acquisition server-side."""
+
+        source_url = validate_http_url(source_url)
+        if self._url_acquirer is None:
+            raise RuntimeError("URL acquisition is unavailable.")
+        self._work_root.mkdir(parents=True, exist_ok=True)
+        staging_dir = self._work_root / secrets.token_urlsafe(18)
+        staging_dir.mkdir(parents=True, exist_ok=False)
+        try:
+            handle = await workspace.create_meeting("file")
+        except BaseException:
+            self._remove_work_dir(staging_dir)
+            raise
+
+        started = asyncio.Event()
+        task = asyncio.create_task(
+            self._acquire_and_run(handle, source_url, staging_dir, started)
+        )
+        self._tasks.add(task)
+        task.add_done_callback(self._task_done)
+        await started.wait()
+        return handle
+
     async def stop(self) -> None:
         """Fence coroutine commits before the owning SQLite connection closes."""
 
@@ -128,6 +155,25 @@ class FileMeetingTasks:
             await handle.finish("failed")
         except AccountRevoked:
             pass
+
+    async def _acquire_and_run(
+        self,
+        handle: Any,
+        source_url: str,
+        staging_dir: Path,
+        started: asyncio.Event,
+    ) -> None:
+        started.set()
+        try:
+            input_path = await self._url_acquirer.acquire(source_url, staging_dir)
+        except asyncio.CancelledError:
+            self._remove_work_dir(staging_dir)
+            raise
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_work_dir(staging_dir)
+            return
+        await self._run(handle, input_path, asyncio.Event())
 
     async def _run(self, handle: Any, input_path: Path, started: asyncio.Event) -> None:
         options = {
