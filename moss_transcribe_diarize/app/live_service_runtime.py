@@ -1826,9 +1826,11 @@ def active_live_session_count(runtime: LiveServiceRuntime) -> int:
     """Content-free process-local drain truth without widening the runtime operation set."""
 
     with runtime._lock:
+        snapshots = (runtime._snapshot(state).session for state in runtime._sessions.values())
         return sum(
-            runtime._snapshot(state).session.status not in LIVE_TERMINAL_SESSION_STATUSES
-            for state in runtime._sessions.values()
+            snapshot.status not in LIVE_TERMINAL_SESSION_STATUSES
+            or snapshot.finalization_status == "running"
+            for snapshot in snapshots
         )
 
 

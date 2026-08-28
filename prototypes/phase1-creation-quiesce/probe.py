@@ -6,15 +6,17 @@ One command:
     PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
       prototypes/phase1-creation-quiesce/probe.py
 
-The probe runs two production ``create_app`` instances through the absorbed admission
-semantics. The first recorded verdict preceded production; this retained bench now prevents
-the measured state ordering from drifting.
+The probe runs two concurrent production ``create_app`` process views through the absorbed
+admission semantics, plus isolated production upload-cancellation and terminal-runtime
+falsifiers. The first recorded verdict preceded production; this retained bench now prevents the
+measured state ordering from drifting.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sys
 import tempfile
 import threading
@@ -26,6 +28,7 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "tests"))
 
 # The lean development environment intentionally has no torch.  The prototype exercises
@@ -81,6 +84,12 @@ from test_live_api import (  # noqa: E402
     frame_payload,
     helper_heartbeat_payload,
     make_live_runtime,
+)
+from test_live_terminal_lifecycle import (  # noqa: E402
+    _ManualTerminalScheduler,
+    _finalizer as terminal_finalizer,
+    _runtime as make_terminal_runtime,
+    _stop_after_a_meeting,
 )
 
 from moss_transcribe_diarize.app import server  # noqa: E402
@@ -188,6 +197,118 @@ def emit(states: list[dict[str, Any]], label: str, **state: Any) -> None:
     print(json.dumps(record, sort_keys=True))
 
 
+def cancelled_upload_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Cancel after upload transaction creation and expose cleanup ordering."""
+
+    gate = Phase1CreationGate(marker)
+    app, _wrapped = make_batch_app(root, gate, ProbeRunner())
+    endpoint = next(
+        route.endpoint
+        for route in app.routes
+        if route.path == "/api/jobs" and "POST" in (route.methods or set())
+    )
+    abort_observations: list[dict[str, Any]] = []
+    original_abort = jobs_module.UploadTransaction.abort
+
+    def observed_abort(upload: Any) -> None:
+        abort_observations.append(
+            {
+                "entrants": gate.snapshot().entrants,
+                "job_dir_exists": Path(upload.job.job_dir).exists(),
+                "staging_exists": Path(upload._tmp_path).exists(),
+            }
+        )
+        original_abort(upload)
+
+    jobs_module.UploadTransaction.abort = observed_abort
+
+    class HeldUpload:
+        filename = "cancelled.wav"
+
+        def __init__(self) -> None:
+            self.started: asyncio.Event | None = None
+
+        async def read(self, _size: int) -> bytes:
+            assert self.started is not None
+            self.started.set()
+            await asyncio.Event().wait()
+            raise AssertionError("cancelled upload read resumed")
+
+    async def exercise() -> dict[str, Any]:
+        upload = HeldUpload()
+        upload.started = asyncio.Event()
+        task = asyncio.create_task(endpoint(file=upload))
+        await upload.started.wait()
+        held_state = {
+            "gate": gate.snapshot().to_dict(),
+            "job_dirs": sorted(path.name for path in root.iterdir()),
+        }
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        return {
+            "held": held_state,
+            "after": {
+                "gate": gate.snapshot().to_dict(),
+                "job_dirs": sorted(path.name for path in root.iterdir()),
+            },
+            "abort_observations": abort_observations,
+        }
+
+    try:
+        result = asyncio.run(exercise())
+    finally:
+        jobs_module.UploadTransaction.abort = original_abort
+        # A deliberately failing pre-production probe still has to release its own scratch
+        # resources so TemporaryDirectory can finish and report the derived verdict.
+        for path in root.iterdir():
+            if path.is_dir():
+                shutil.rmtree(path)
+    return result
+
+
+def terminal_finalization_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Hold the real terminal pass and read the production runtime status surface."""
+
+    scheduler = _ManualTerminalScheduler()
+    runtime, _witness = make_terminal_runtime(
+        finalizer=terminal_finalizer(), scheduler=scheduler
+    )
+    session_id = _stop_after_a_meeting(runtime)
+    gate = Phase1CreationGate(marker)
+    enable_phase1_creation_quiesce(marker)
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=root,
+        file_mode_runner=ProbeRunner(),
+        live_enabled=True,
+        live_runtime_factory=lambda: runtime,
+        live_auth_state_path=root / "live-auth.json",
+        live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+        live_shared_token="prototype-token",
+        live_helper_lease_seconds=30.0,
+        phase1_creation_gate=gate,
+    )
+    client = TestClient(app)
+    during_snapshot = runtime.snapshot(session_id).to_dict()["session"]
+    during_runtime = client.get("/api/runtime").json()["phase1_creation"]
+    pending_before_release = scheduler.pending
+    released = scheduler.run_one()
+    after_snapshot = runtime.snapshot(session_id).to_dict()["session"]
+    after_runtime = client.get("/api/runtime").json()["phase1_creation"]
+    return {
+        "session_id": session_id,
+        "pending_before_release": pending_before_release,
+        "released": released,
+        "during_snapshot": during_snapshot,
+        "during_runtime": during_runtime,
+        "after_snapshot": after_snapshot,
+        "after_runtime": after_runtime,
+    }
+
+
 def main() -> int:
     states: list[dict[str, Any]] = []
     checks: dict[str, bool] = {}
@@ -199,6 +320,37 @@ def main() -> int:
         runner = ProbeRunner()
         batch_app, batch_wrapped = make_batch_app(root / "batch-runs", batch_gate, runner)
         live_app, live_wrapped = make_live_app(root / "live-runs", live_gate)
+
+        cancelled = cancelled_upload_state(
+            root / "cancelled-upload-runs", root / "cancelled-upload-state" / "marker"
+        )
+        checks["cancelled_upload_visible_before_cleanup"] = (
+            cancelled["held"]["gate"]["entrants"] == 1
+            and len(cancelled["held"]["job_dirs"]) == 1
+        )
+        checks["cancelled_upload_cleanup_ordered"] = (
+            cancelled["abort_observations"]
+            == [{"entrants": 1, "job_dir_exists": True, "staging_exists": True}]
+            and cancelled["after"]["gate"]["entrants"] == 0
+            and cancelled["after"]["job_dirs"] == []
+        )
+        emit(states, "cancelled_upload", **cancelled)
+
+        terminal = terminal_finalization_state(
+            root / "terminal-runs", root / "terminal-state" / "marker"
+        )
+        checks["terminal_finalization_counted"] = (
+            terminal["pending_before_release"] == 1
+            and terminal["during_snapshot"]["status"] == "closed"
+            and terminal["during_snapshot"]["finalization_status"] == "running"
+            and terminal["during_runtime"]["active_live_sessions"] == 1
+        )
+        checks["terminal_finalization_drained_after_release"] = (
+            terminal["released"]
+            and terminal["after_snapshot"]["finalization_status"] == "final"
+            and terminal["after_runtime"]["active_live_sessions"] == 0
+        )
+        emit(states, "held_terminal_finalization", **terminal)
 
         batch = TestClient(batch_wrapped)
         live_local = TestClient(
@@ -528,7 +680,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 24
+    verdict = all(checks.values()) and len(checks) == 28
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (
@@ -541,7 +693,8 @@ def main() -> int:
         ),
         "falsifier": (
             "Any admitted work after quiesced plus entrants zero, invisible pre-admitted work, "
-            "or an existing continuation blocked by the gate."
+            "an existing continuation blocked by the gate, terminal work hidden as drained, "
+            "or cancellation releasing admission before its upload transaction is removed."
         ),
         "checks": checks,
         "states": states,

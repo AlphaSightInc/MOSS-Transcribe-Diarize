@@ -28,10 +28,12 @@ The last Phase-1 deployment therefore carries one deliberately temporary prerequ
 product surface is deleted: a private, reboot-durable host marker shared by the batch and Live
 processes, composed with one process-local counted admission scope. The scope starts before a
 creation request can wait for its body and ends only after work is registered or its staging is
-cleaned. Marker existence rejects only new Live create and job create/rerun/resume/render; marker
-access uncertainty fails closed. Existing frame, heartbeat, read, download, Stop, abort, accepted
+cleaned, including coroutine cancellation. Marker existence rejects only new Live create and job
+create/rerun/resume/render; marker access uncertainty fails closed. Existing frame, heartbeat,
+read, download, Stop, abort, accepted
 jobs, and startup recovery remain outside the gate and drain normally. `/api/runtime` reports only
-the marker state, entrants, active/queued job counts, and active Live count. The marker is not an
+the marker state, entrants, active/queued job counts, and active Live count; a closed Live session
+remains active drain work while its real terminal finalizer is running. The marker is not an
 authority, database fact, proxy, or second service, and the Phase-2 replacement removes this
 legacy seam after old-deployment quiescence is proven.
 
@@ -41,15 +43,21 @@ reopening the old deployment. All three commands use the same Linux-home marker 
 
 ## Measured prerequisite verdict
 
-`prototypes/phase1-creation-quiesce/` derived `PASS` from 24/24 predicates against two production
-`create_app` instances and the absorbed production gate. It held an upload across enable, kept it
+`prototypes/phase1-creation-quiesce/` derived `PASS` from 28/28 predicates on Python 3.10.19 and
+3.12.12 against two concurrent production `create_app` process views, plus isolated production
+upload-cancellation and terminal-runtime falsifiers. It held an upload across enable, kept it
 visible as one entrant until registration, rejected all five creation routes with typed retryable
 503 responses, exercised existing frame/heartbeat/snapshot/events/download/Stop/abort, proved
 exact drain status in both processes, preserved quiescence across restart, reopened on double
 disable, and failed closed on marker uncertainty. A held render first falsified the old ordering:
 the thread was registered while the durable job still looked terminal, creating a false zero-drain
 window. The accepted ordering persists `rendering` before thread start and the same probe then saw
-and drained it. The one command and full printed states are in the prototype `NOTES.md`. This is
+and drained it. Review falsifiers then exposed two more false-zero paths: `closed/running` terminal
+work counted as zero, and `CancelledError` released an upload entrant while leaving its staging
+directory. The accepted correction counts existing `finalization_status=running` truth and aborts
+every non-committed upload in `finally`, before admission closes. The probe held the real terminal
+pass and cancelled the real upload coroutine, then observed exact `1` to `0` drain and no orphan.
+The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.
 

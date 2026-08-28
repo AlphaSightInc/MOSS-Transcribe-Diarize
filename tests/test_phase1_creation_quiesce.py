@@ -29,6 +29,12 @@ from test_live_api import (
     helper_heartbeat_payload,
     make_live_runtime,
 )
+from test_live_terminal_lifecycle import (
+    _ManualTerminalScheduler,
+    _finalizer as terminal_finalizer,
+    _runtime as make_terminal_runtime,
+    _stop_after_a_meeting,
+)
 
 
 def _wait_for_job(client: TestClient, job_id: str) -> dict[str, object]:
@@ -422,6 +428,111 @@ def test_preadmitted_render_is_durably_active_before_its_thread_runs(
     held_threads[0].run()
     assert client.get(f"/api/jobs/{job_id}").json()["status"] == "done"
     assert client.get("/api/runtime").json()["phase1_creation"]["active_jobs"] == 0
+
+
+def test_runtime_counts_closed_terminal_finalization_until_real_pass_finishes(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "state" / "phase1-creation-quiesced"
+    gate = Phase1CreationGate(marker)
+    scheduler = _ManualTerminalScheduler()
+    runtime, _witness = make_terminal_runtime(
+        finalizer=terminal_finalizer(), scheduler=scheduler
+    )
+    session_id = _stop_after_a_meeting(runtime)
+    enable_phase1_creation_quiesce(marker)
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=NoopRunner(),
+        live_enabled=True,
+        live_runtime_factory=lambda: runtime,
+        live_auth_state_path=tmp_path / "live-auth.json",
+        live_server_cert_sha256=LIVE_AUTH_FINGERPRINT,
+        live_helper_lease_seconds=30.0,
+        phase1_creation_gate=gate,
+    )
+    client = TestClient(app)
+
+    held = runtime.snapshot(session_id).session
+    assert held.status == "closed"
+    assert held.finalization_status == "running"
+    assert scheduler.pending == 1
+    assert client.get("/api/runtime").json()["phase1_creation"] == {
+        "state": "quiesced",
+        "entrants": 0,
+        "active_jobs": 0,
+        "queued_jobs": 0,
+        "active_live_sessions": 1,
+    }
+
+    assert scheduler.run_one()
+    assert runtime.snapshot(session_id).session.finalization_status == "final"
+    assert client.get("/api/runtime").json()["phase1_creation"]["active_live_sessions"] == 0
+
+
+def test_cancelled_upload_aborts_transaction_before_admission_releases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marker = tmp_path / "state" / "phase1-creation-quiesced"
+    gate = Phase1CreationGate(marker)
+    runs_dir = tmp_path / "runs"
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=runs_dir,
+        file_mode_runner=NoopRunner(),
+        phase1_creation_gate=gate,
+    )
+    endpoint = next(
+        route.endpoint
+        for route in app.routes
+        if route.path == "/api/jobs" and "POST" in (route.methods or set())
+    )
+    abort_observations: list[dict[str, object]] = []
+    original_abort = jobs_module.UploadTransaction.abort
+
+    def observed_abort(upload) -> None:
+        abort_observations.append(
+            {
+                "entrants": gate.snapshot().entrants,
+                "job_dir_exists": Path(upload.job.job_dir).exists(),
+                "staging_exists": Path(upload._tmp_path).exists(),
+            }
+        )
+        original_abort(upload)
+
+    monkeypatch.setattr(jobs_module.UploadTransaction, "abort", observed_abort)
+
+    class HeldUpload:
+        filename = "cancelled.wav"
+
+        def __init__(self) -> None:
+            self.started: asyncio.Event | None = None
+
+        async def read(self, _size: int) -> bytes:
+            assert self.started is not None
+            self.started.set()
+            await asyncio.Event().wait()
+            raise AssertionError("cancelled upload read resumed")
+
+    async def exercise() -> None:
+        upload = HeldUpload()
+        upload.started = asyncio.Event()
+        task = asyncio.create_task(endpoint(file=upload))
+        await upload.started.wait()
+        assert gate.snapshot().entrants == 1
+        assert len(list(runs_dir.iterdir())) == 1
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(exercise())
+    assert abort_observations == [
+        {"entrants": 1, "job_dir_exists": True, "staging_exists": True}
+    ]
+    assert gate.snapshot().entrants == 0
+    assert list(runs_dir.iterdir()) == []
 
 
 def test_marker_error_is_visible_and_creation_fails_closed(tmp_path: Path) -> None:

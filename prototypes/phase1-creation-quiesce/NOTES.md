@@ -6,21 +6,31 @@
   independent production Phase-1 app instances while already-admitted work remains operable and
   drains visibly?
 - **Minimum primitives:** marker existence is the cross-process/reboot fact; each process's entrant
-  count spans request entry through work registration; content-free active/queued counts establish
-  drain. The marker cannot count an upload already inside a process, and a count alone cannot cross
-  processes or reboot, so neither primitive can be removed.
+  count spans request entry through work registration or transaction cleanup; content-free
+  active/queued counts establish drain, including a closed Live session whose terminal finalizer is
+  still running. The marker cannot count an upload already inside a process, and a count alone
+  cannot cross processes or reboot, so neither primitive can be removed. Cleanup is part of the
+  existing admission boundary, not another counter; finalization status is existing Live runtime
+  truth, not another lifecycle policy.
 - **Invariants:** a quiesced marker rejects Live create, job create, rerun, resume, and render; it
   does not reject existing frames, heartbeat, snapshot, events, Stop, abort, reads, or downloads;
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
-- **Assumptions/unknowns:** the retained probe uses two real `server.create_app` instances and the
-  absorbed production marker, admission, route, runtime-status, and job implementations with fake
+- **Assumptions/unknowns:** the retained probe uses two concurrent real `server.create_app` process
+  views plus isolated production upload-cancellation and terminal-runtime falsifiers. It exercises
+  the absorbed marker, admission, route, runtime-status, and job implementations with fake
   inference. Actual 4070 Ti filesystem and deployed unit behavior remain unmeasured until the
   reviewed prerequisite is deliberately deployed.
 - **Falsifier:** after both processes report `quiesced`, entrant count zero, and active/queued zero,
   any newly registered work disproves this design. Invisible pre-admitted upload work or a blocked
-  existing continuation also disproves it.
+  existing continuation also disproves it. A closed/running terminal pass reported as zero or a
+  cancelled upload releasing its entrant before removing its transaction also disproves it.
 - **Tool decision:** a two-instance logic probe is necessary because a long upload crossing marker
   enable is the reachable race that distinguishes a marker alone from marker plus entrant count.
+  Cancelling the production upload coroutine after transaction creation is necessary because only
+  that path distinguishes `Exception` cleanup from `BaseException` cancellation; an orphan rejects
+  exception-only cleanup. Holding the real terminal finalizer is necessary because only its
+  `closed/running` interval distinguishes terminal HTTP status from completed drain work; a zero
+  count there rejects status-only counting.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -33,9 +43,25 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python \
 
 The command prints every load-bearing state and exits nonzero if any derived predicate fails.
 
+## Review falsification before correction
+
+The extended command exited `FAIL` before production was changed:
+
+- A real `TerminalTranscriptFinalizer` was held in the production manual scheduler. Its session
+  was `closed` with `finalization_status=running` and one pending pass, while `/api/runtime`
+  incorrectly reported `active_live_sessions=0`. Releasing the pass produced `final` and zero.
+- Cancelling the production upload coroutine after transaction creation showed entrant `1` and one
+  staging job directory while held. Cancellation then produced no `UploadTransaction.abort` call,
+  released the entrant to `0`, and left that directory behind.
+
+Both states are reachable cutover false-zero/orphan failures. The correction may therefore only
+deepen the two existing meanings: Live drain includes running terminal finalization, and upload
+admission ends after every non-committed transaction has been aborted.
+
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 24/24 predicates on 2026-08-28.
+**Accepted.** The command derived `PASS` from 28/28 predicates on Python 3.10.19 and 3.12.12 on
+2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
 - After durable enable, both gates reported `quiesced`; the held upload remained one entrant.
@@ -52,6 +78,10 @@ The command prints every load-bearing state and exits nonzero if any derived pre
   after worker release, queued/active jobs and active Live sessions were all exactly `0`.
 - Marker/parent modes were `0600`/`0700`; a new app/gate instance remained quiesced; double disable
   reopened creation; an unreadable marker location reported `error` and failed closed.
+- A held real terminal pass reported `closed/running`, pending `1`, and active Live `1`; after its
+  release it reported `final`, pending `0`, and active Live `0`.
+- A cancelled upload called `abort` while its admission entrant was still `1` and its staging path
+  still existed; only after cleanup did the entrant become `0`, with no job directory remaining.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

@@ -331,6 +331,7 @@ def create_app(
             )
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        committed = False
         try:
             while True:
                 chunk = await _read_upload_chunk(file)
@@ -338,13 +339,19 @@ def create_app(
                     break
                 upload.write(chunk)
             job = upload.commit_and_enqueue()
+            committed = True
             return job.to_dict()
         except _UploadReceiveIdleTimeout as exc:
-            upload.abort()
             raise HTTPException(status_code=408, detail=str(exc)) from exc
         except Exception as exc:
-            upload.abort()
             raise HTTPException(status_code=500, detail=str(exc)) from exc
+        finally:
+            if not committed:
+                # ``asyncio.CancelledError`` is a ``BaseException`` on supported Python,
+                # so exception-only cleanup leaves its upload transaction behind.  The
+                # admission scope surrounds this call: abort therefore finishes before the
+                # entrant can fall to zero on every non-committed exit.
+                upload.abort()
 
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str, request: Request):
