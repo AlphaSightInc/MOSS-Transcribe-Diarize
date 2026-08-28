@@ -50,3 +50,10 @@ dev = ["pytest"]
 
 [tool.setuptools.packages.find]
 include = ["moss_transcribe_diarize*"]
+
+[tool.setuptools.package-data]
+"moss_transcribe_diarize.app" = [
+  "frontend_assets/*",
+  "frontend_assets/fonts/*",
+  "frontend_assets/worklets/*",
+]

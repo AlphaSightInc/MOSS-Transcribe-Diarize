@@ -7,8 +7,8 @@ export default defineConfig({
   root: __dirname,
   base: "/static/",
   build: {
-    outDir: path.resolve(__dirname, "../ProjectResources/Frontend"),
-    emptyOutDir: false,
+    outDir: path.resolve(__dirname, "../moss_transcribe_diarize/app/frontend_assets"),
+    emptyOutDir: true,
     target: "es2022",
     cssCodeSplit: false,
     sourcemap: true,

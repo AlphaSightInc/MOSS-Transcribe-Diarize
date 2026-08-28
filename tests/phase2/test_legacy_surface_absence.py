@@ -10,6 +10,7 @@ from moss_transcribe_diarize.app.phase2 import create_phase2_app
 
 
 ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_ASSETS = ROOT / "moss_transcribe_diarize" / "app" / "frontend_assets"
 RETIRED_MODULES = (
     "cli",
     "jobs",
@@ -125,12 +126,8 @@ def test_package_has_only_account_commands_and_no_retired_import_targets():
 
 
 def test_production_bundle_contains_no_retired_authority_or_job_fallback():
-    bundle = (ROOT / "ProjectResources" / "Frontend" / "app.js").read_text(
-        encoding="utf-8"
-    )
-    source_map = (ROOT / "ProjectResources" / "Frontend" / "app.js.map").read_text(
-        encoding="utf-8"
-    )
+    bundle = (FRONTEND_ASSETS / "app.js").read_text(encoding="utf-8")
+    source_map = (FRONTEND_ASSETS / "app.js.map").read_text(encoding="utf-8")
     assert _retired_hits(bundle) == ()
     assert _retired_hits(source_map) == ()
     assert _retired_hits("prefix captureBearer suffix") == ("captureBearer",)

@@ -6,13 +6,11 @@ import importlib
 import hashlib
 import json
 import tempfile
-import time
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 from moss_transcribe_diarize.app.windowed_transcription import WindowPlan
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
@@ -524,43 +522,3 @@ class PathNamedTierBEncoder:
         normalized = [(float(start), float(end)) for start, end in intervals]
         self.calls.append((key, normalized))
         return self.vectors[key]
-
-
-class IdentityMetadataRunner:
-    model_path = "fake-model"
-
-    def transcribe(self, audio_path, **kwargs):
-        return TranscriptionResult(
-            text="[0][S01]hello[1]",
-            prompt_len=10,
-            generated_tokens=5,
-            elapsed_sec=0.01,
-            model=self.model_path,
-            audio=str(audio_path),
-            decoding="greedy",
-            temperature=None,
-            identity_summary={
-                "schema_version": 2,
-                "accepted_edges": 1,
-                "false_accepted_edges": 0,
-                "fragmented_recurring_speakers": 0,
-            },
-            identity_resolution={
-                "schema_version": 2,
-                "summary": {
-                    "accepted_edges": 1,
-                    "false_accepted_edges": 0,
-                    "fragmented_recurring_speakers": 0,
-                },
-            },
-        )
-
-
-def wait_terminal(client, job_id: str) -> dict:
-    job = {}
-    for _ in range(80):
-        job = client.get(f"/api/jobs/{job_id}").json()
-        if job["status"] in {"waiting_review", "done", "failed", "cancelled"}:
-            return job
-        time.sleep(0.025)
-    raise AssertionError(f"job {job_id} did not finish: {job}")

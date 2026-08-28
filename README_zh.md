@@ -40,7 +40,7 @@ MOSS-Transcribe-Diarize 0.9B 是一个开源的 SOTA 端到端音频理解模型
   - [使用 SGLang Omni 部署](#使用-sglang-omni-部署)
   - [使用 vLLM 部署](#使用-vllm-部署)
   - [自定义 Prompt 与热词](#自定义-prompt-与热词)
-  - [字幕 Web 应用](#字幕-web-应用)
+  - [Account Web 产品](#account-web-产品)
 - [引用](#引用)
 - [Star 趋势](#star-趋势)
 
@@ -372,78 +372,28 @@ curl http://localhost:8000/v1/audio/transcriptions \
 请将音频转写为文本，每一段需以起始时间戳和说话人编号（[S01]、[S02]、[S03]…）开头，正文为对应的语音内容，并在段末标注结束时间戳，以清晰标明该段语音范围。热词提示：热词1, 热词2, 热词3
 ```
 
-更多 prompt 用例见 [examples/prompts.md](examples/prompts.md)。同一个 prompt 可传入 `build_transcription_messages`、`mtd-subtitle` 与 `mtd-subtitle-web`。
+更多 prompt 用例见 [examples/prompts.md](examples/prompts.md)。同一个 prompt 可传入 `build_transcription_messages` 或 Account 产品的 File、Live、URL 转写入口。
 
-### 字幕 Web 应用
+### Account Web 产品
 
-本工具包还内置了一个本地字幕工作流，支持上传、审阅、字幕导出，以及可选的 FFmpeg 压制（burn-in）：
+MOSS 只有一个经过身份验证的 Web 产品：
 
-```bash
-mtd-subtitle-web \
-  --model OpenMOSS-Team/MOSS-Transcribe-Diarize \
-  --host 127.0.0.1 \
-  --port 7860
-```
+- `mtd-phase2-web` 在 7861 端口运行 TLS Account 应用；`/` 是唯一 HTML 产品界面。
+- Google OpenID Connect 建立 Account；每个 Meeting、转写版本、音频 artifact 与说话人名称都绑定到该 Account。
+- 产品按 File、Live、History 顺序显示；File 与 URL Meeting 使用相同的推理组合和持久化 Meeting 档案。
+- 浏览器 Live capture 同时支持系统音频与麦克风两个通道。
+- `mtd-admin` 只通过权限为 0600 的主机本地 Unix socket 执行 Account allow/revoke 与无内容 operator status。
 
-打开 `http://127.0.0.1:7860`，上传音频/视频文件，审阅解析出的字幕分段，然后下载 JSON/SRT/ASS；若 `PATH` 中存在 `ffmpeg` 与 `ffprobe`，还可压制生成 MP4。
-
-`POST /api/jobs` 上传在 multipart 解析开始前要求有效且非负的
-`Content-Length`。缺失或格式错误会返回 HTTP 411；如果 runs 文件系统的可用空间少于声明大小的两份副本再加 512 MiB，服务会在读取请求体前返回 HTTP 507。
-接收阶段限制的是空闲时间而不是总上传时长：持续前进的分块上传可以超过 30 秒，但任一分块接收停滞 30 秒会返回 HTTP 408。
-
-已接收的上传会以有界分块写入任务目录内的临时输入文件，并在写入时计算字节数和 SHA-256。文件会先 flush 与 `fsync`，再通过原子 rename 成为正式输入，然后才发布 queued 任务。
-在提交前发生的读取、超时、写入、哈希或持久化失败，不会留下可见任务、队列项、`job.json`、部分输入、临时文件或任务目录。
-
-对于 vLLM 分窗任务，Web 应用会在任务目录下保存内部的任务本地检查点。若进程在一个或多个窗口提交后停止，启动恢复或
-`POST /api/jobs/{id}/resume` 会从第一个未提交窗口继续同一个任务。同一源文件和同一推理契约下，已提交窗口不会再次发送给模型。
-`POST /api/jobs/{id}/rerun` 仍会创建新任务，适用于 prompt、解码方式、token 限制或其他推理选项发生变化的情况。
-
-转写文本、JSON 分段、SRT、ASS 与说话人身份 artifact 会在 `postprocessing` 阶段暂存，只有完整集合校验通过后才发布。分段编辑和下载只在任务进入
-`waiting_review` 或 `done` 后可用。
-
-vLLM 文件模式分窗 runner 还包含可选的跨窗口说话人身份 Tier B provider。它默认关闭，也不会用于 live mode。基础安装不包含 provider 依赖或权重。只有在机器上已经具备批准的本地 ONNX 文件时，才安装可选 extra；该 extra 固定 `onnxruntime==1.23.2`，并保留现有 torch 与 torchaudio 下限：
+本产品不存在明文监听器、共享 bearer、pairing/device/view token、全局 job 命名空间、原生 capture 应用或独立字幕 Web/CLI 产品。生产命令需要显式配置 Account、TLS、存储、provider manifest 与 helper lease：
 
 ```bash
-uv pip install -e ".[speaker-identity]" --torch-backend=auto
+uv run mtd-phase2-web --help
+uv run mtd-admin --help
 ```
 
-固定的离线 provider 是 WeSpeaker ResNet152-LM，revision 为
-`4adba1525a6c9d5fff74b6df43a6ec97a86c4112`，asset 为
-`voxceleb_resnet152_LM.onnx`，SHA-256 为
-`5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8`，provider 为 `wespeaker_resnet152_lm`，frontend 为 `wespeaker-onnx-fbank-v1`，embedding 维度为 256，并且只使用 CPU ONNX Runtime。preflight 命令只读：它会校验既有 ONNX 路径的哈希，创建 ONNX Runtime `CPUExecutionProvider` session，并运行 fbank frontend，不会下载任何资产。启用服务前必须提供很小的 16-kHz mono WAV fixture，以验证已加载 provider 的实际 embedding 维度、确定性、归一化以及 CPU-only 行为。
+默认部署使用兼容 OpenAI 的 vLLM endpoint；本地 Hugging Face 推理可通过 `--backend hf` 使用。共享模型、分窗、字幕、Live diarization 与回放测量模块只是库，不是替代产品权限入口。
 
-```bash
-python -m moss_transcribe_diarize.speaker_identity_preflight \
-  --state-path /path/to/voxceleb_resnet152_LM.onnx \
-  --fixture tests/fixtures/idea_020_provider_smoke.wav \
-  --json
-```
-
-只有 preflight 成功后，才为本地字幕 Web 应用显式启用 Tier B：
-
-```bash
-mtd-subtitle-web \
-  --backend vllm \
-  --model OpenMOSS-Team/MOSS-Transcribe-Diarize \
-  --vllm-base-url http://127.0.0.1:8000/v1 \
-  --speaker-identity-tier-b \
-  --speaker-identity-state /path/to/voxceleb_resnet152_LM.onnx \
-  --speaker-identity-fixture tests/fixtures/idea_020_provider_smoke.wav
-```
-
-回滚方式是省略 `--speaker-identity-tier-b`，或设置
-`MOSS_SPEAKER_IDENTITY_TIER_B=0`。显式启用时，如果可选依赖、ONNX 路径、revision、哈希、frontend、维度、CPU provider、16-kHz mono 输入或 smoke preflight 与固定契约不匹配，任务会在准入前失败。部署环境变量只由 `ops/start-web.sh` 转换为这些显式 CLI 参数，启用值必须严格为 `0` 或 `1`。运行时 readback 会在 `speaker_identity` 暴露完全相同的 resolver 契约，vLLM checkpoint 会把同一对象持久化到 `contract.identity`。身份配置变化会在任何模型调用前拒绝 resume。
-
-这个本地默认关闭能力不表示已经具备部署可用性、延迟/RSS 结论、阈值校准、30 分钟结果或完整的说话人感知产品闭环。部署 remedy 和 quality 仍为 Missing，直到 operator 安装 provider ONNX 文件、在部署的 WSL 服务配置中启用它，并运行 post-handoff proof。
-
-批量处理：
-
-```bash
-mtd-subtitle /path/to/input.mp4 \
-  --model OpenMOSS-Team/MOSS-Transcribe-Diarize \
-  --out-dir runs/example \
-  --render
-```
+部署说明见 [LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md)。受追踪部署仅安装一个 TLS Web unit（`moss-web.service`）与 `moss-vllm.service`；可信证书配置和 attended host cutover 是独立的发布步骤。
 
 ### 默认关闭的实时回放
 

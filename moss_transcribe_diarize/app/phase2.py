@@ -1941,7 +1941,7 @@ def create_phase2_app(
         same_site="lax",
         https_only=True,
     )
-    frontend_dir = Path(__file__).resolve().parents[2] / "ProjectResources" / "Frontend"
+    frontend_dir = Path(__file__).resolve().parent / "frontend_assets"
     live_frontend_available = bool(
         phase2_live is not None
         and all(

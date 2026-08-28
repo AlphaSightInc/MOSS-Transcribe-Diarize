@@ -448,7 +448,10 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
     tmp_path: Path,
 ) -> None:
     chrome = _chrome()
-    assert (Path(__file__).resolve().parents[2] / "ProjectResources/Frontend/app.js").is_file()
+    assert (
+        Path(__file__).resolve().parents[2]
+        / "moss_transcribe_diarize/app/frontend_assets/app.js"
+    ).is_file()
     database = tmp_path / "moss.sqlite3"
     asyncio.run(_provision(database))
     app = create_phase2_app(
