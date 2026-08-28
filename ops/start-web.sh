@@ -5,6 +5,9 @@ PROJECT_DIR="/mnt/d/Coding/MOSS-Transcribe-Diarize"
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 VENV_DIR="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/venv"
 MODEL_DIR="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/model"
+# #31's temporary pre-cutover fact lives on the Linux ext4 home, not the /mnt/d checkout.
+# Both units run as this user, so this exact path is the one fact they share across reboot.
+PHASE1_CREATION_GATE_PATH="${LINUX_USER_DIR}/.local/state/moss-transcribe-diarize/phase1-creation-quiesced"
 
 # One adapter, two services. The batch service keeps the plaintext contract port and the
 # repository runs directory; the live service is the same script under a second unit that
@@ -144,6 +147,7 @@ web_args=(
   --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
   --vllm-timeout 1800 \
   --runs-dir "${runs_dir}" \
+  --phase1-creation-gate-path "${PHASE1_CREATION_GATE_PATH}" \
   --host 0.0.0.0 \
   --port "${web_port}" \
   --max-len "${MOSS_MAX_MODEL_LEN:-16384}" \

@@ -48,6 +48,11 @@ from .live_mixer import (
     LiveMixResult,
     LiveMixSourceMissingError,
 )
+from .phase1_creation_quiesce import (
+    Phase1CreationAdmission,
+    Phase1CreationGate,
+    Phase1CreationRefused,
+)
 from .live_service_runtime import (
     LiveServiceError,
     LiveServiceEvent,
@@ -171,12 +176,24 @@ class LiveTransportAdapter(Protocol):
     def release_stop(self, intent: object | None) -> None: ...
 
 
+@dataclass(frozen=True, slots=True)
+class _LegacyCreateAuthority:
+    decision: object
+    admission: Phase1CreationAdmission
+
+
 class _LegacyLiveTransportAdapter:
     """Legacy bearer/pairing authority over the raw runtime publication."""
 
-    def __init__(self, runtime: LiveServiceRuntime, access: LiveAccessRegistry) -> None:
+    def __init__(
+        self,
+        runtime: LiveServiceRuntime,
+        access: LiveAccessRegistry,
+        creation_gate: Phase1CreationGate | None,
+    ) -> None:
         self.runtime = runtime
         self.access = access
+        self.creation_gate = creation_gate
 
     async def authorize(
         self,
@@ -184,20 +201,27 @@ class _LegacyLiveTransportAdapter:
         operation: str,
         session_id: str | None,
     ) -> object:
-        return self.access.authorize(
+        decision = self.access.authorize(
             _peer_from_request(request),
             None if operation == "descriptor" else _bearer_from_request(request),
             operation,
             session_id,
             now=_request_now(),
         )
+        if operation != "create" or self.creation_gate is None:
+            return decision
+        return _LegacyCreateAuthority(decision, self.creation_gate.enter())
 
     async def create(
         self,
         payload: Mapping[str, object],
         authority: object,
     ) -> LiveTransportCreated:
-        decision = authority
+        decision = (
+            authority.decision
+            if isinstance(authority, _LegacyCreateAuthority)
+            else authority
+        )
         principal = getattr(decision, "principal", None)
         if not isinstance(principal, CapturePrincipal):
             from fastapi import HTTPException
@@ -217,7 +241,8 @@ class _LegacyLiveTransportAdapter:
         )
 
     async def release_create(self, authority: object) -> None:
-        del authority
+        if isinstance(authority, _LegacyCreateAuthority):
+            authority.admission.close()
 
     def validate_mutation(self, authority: object) -> None:
         del authority
@@ -410,6 +435,7 @@ def attach_live_routes(
     live_helper_lease_seconds: float,
     tape_store: LiveSessionTapeStore | None = None,
     transport_adapter: LiveTransportAdapter | None = None,
+    phase1_creation_gate: Phase1CreationGate | None = None,
 ) -> LiveTransportControl:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
@@ -417,7 +443,7 @@ def attach_live_routes(
     if (access is None) == (transport_adapter is None):
         raise ValueError("provide exactly one legacy access registry or transport adapter.")
     adapter: LiveTransportAdapter = (
-        _LegacyLiveTransportAdapter(runtime, access)
+        _LegacyLiveTransportAdapter(runtime, access, phase1_creation_gate)
         if transport_adapter is None and access is not None
         else transport_adapter
     )
@@ -601,6 +627,8 @@ def attach_live_routes(
         authority: object | None = None
         try:
             authority = await adapter.authorize(request, "create", None)
+        except Phase1CreationRefused as exc:
+            return JSONResponse(exc.response_body(), status_code=503)
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         try:

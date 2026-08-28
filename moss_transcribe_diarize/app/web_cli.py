@@ -8,6 +8,10 @@ from pathlib import Path
 from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
 
 from .cli import DEFAULT_MODEL
+from .phase1_creation_quiesce import (
+    Phase1CreationGate,
+    default_phase1_creation_marker,
+)
 from .server import build_file_mode_runner, create_app
 
 
@@ -93,6 +97,11 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--runs-dir", default="runs")
+    parser.add_argument(
+        "--phase1-creation-gate-path",
+        default=str(default_phase1_creation_marker()),
+        help="Shared host marker used to reject new Phase-1 work during cutover drain.",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
     parser.add_argument("--device", default="auto")
@@ -371,6 +380,7 @@ def main() -> None:
     live_startup = _live_startup_config(args)
     live_shared_token = _live_shared_token(args)
     live_tape_store = _live_tape_store(args)
+    phase1_creation_gate = Phase1CreationGate(args.phase1_creation_gate_path)
     app = create_app(
         model_path=Path(args.model).expanduser(),
         file_mode_runner=file_mode_runner,
@@ -397,6 +407,7 @@ def main() -> None:
         live_shared_token=live_shared_token,
         live_helper_lease_seconds=live_startup["live_helper_lease_seconds"],
         live_tape_store=live_tape_store,
+        phase1_creation_gate=phase1_creation_gate,
     )
     uvicorn.run(
         app,

@@ -1796,6 +1796,16 @@ def _exception_detail(exc: Exception, **extra: Any) -> dict[str, Any]:
     return {"error_type": exc.__class__.__name__, **extra}
 
 
+def active_live_session_count(runtime: LiveServiceRuntime) -> int:
+    """Content-free process-local drain truth without widening the runtime operation set."""
+
+    with runtime._lock:
+        return sum(
+            runtime._snapshot(state).session.status not in LIVE_TERMINAL_SESSION_STATUSES
+            for state in runtime._sessions.values()
+        )
+
+
 def _failure_message(exc: Exception) -> str:
     """The exception's message, or its type when it carries none.
 

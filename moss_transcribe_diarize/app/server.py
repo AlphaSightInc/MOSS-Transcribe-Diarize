@@ -2,6 +2,7 @@ import asyncio
 import json
 import shutil
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Callable
 
@@ -13,10 +14,11 @@ from .live_session import LIVE_SAMPLE_RATE
 from .live_auth import LiveAccessError, LiveAccessRegistry, LivePeer
 from .live_helper_failure import LiveHelperLeaseConfigError
 from .live_portal import attach_live_portal
-from .live_service_runtime import LiveServiceRuntime
+from .live_service_runtime import LiveServiceRuntime, active_live_session_count
 from .live_tape import LiveSessionTapeStore
 from .live_transport import attach_live_routes
 from .model_runner import ModelRunner
+from .phase1_creation_quiesce import Phase1CreationGate, Phase1CreationRefused
 from .speaker_identity import (
     IdentityResolver,
     IdentityResolverConfig,
@@ -108,6 +110,7 @@ def create_app(
     # purpose: a free deployed parameter is stated by the deployment, and until one states
     # it this argument stays None and the service is the one every gate was measured on.
     live_tape_store: LiveSessionTapeStore | None = None,
+    phase1_creation_gate: Phase1CreationGate | None = None,
 ):
     try:
         from fastapi import FastAPI, HTTPException, Request
@@ -117,6 +120,18 @@ def create_app(
         raise RuntimeError("Install fastapi, uvicorn, and python-multipart to run the local web app.") from exc
 
     app = FastAPI(title="MOSS Subtitle Studio")
+
+    @app.exception_handler(Phase1CreationRefused)
+    async def phase1_creation_refused(_request: Request, exc: Phase1CreationRefused):
+        return JSONResponse(exc.response_body(), status_code=503)
+
+    def phase1_creation_admission():
+        return (
+            nullcontext()
+            if phase1_creation_gate is None
+            else phase1_creation_gate.enter()
+        )
+
     # StaticFiles(check_dir=True) raises RuntimeError at *construction* time, before any
     # route is registered -- so an absent ProjectResources/ took down /studio, /live and
     # every /api/** route, not just the frontend. pyproject ships no package-data and no
@@ -179,6 +194,7 @@ def create_app(
                 live_access_registry,
                 live_helper_lease_seconds=live_helper_lease_seconds,
                 tape_store=live_tape_store,
+                phase1_creation_gate=phase1_creation_gate,
             )
         except LiveHelperLeaseConfigError as exc:
             raise ValueError(str(exc)) from exc
@@ -212,6 +228,18 @@ def create_app(
 
     @app.get("/api/runtime")
     def runtime():
+        creation = None
+        if phase1_creation_gate is not None:
+            gate_snapshot = phase1_creation_gate.snapshot()
+            job_counts = manager.activity_counts()
+            creation = {
+                **gate_snapshot.to_dict(),
+                "active_jobs": job_counts["active"],
+                "queued_jobs": job_counts["queued"],
+                "active_live_sessions": (
+                    0 if live_runtime is None else active_live_session_count(live_runtime)
+                ),
+            }
         return {
             "ffmpeg": detect_ffmpeg().to_dict(),
             "model": _runner_runtime_info(manager.model_runner),
@@ -233,6 +261,7 @@ def create_app(
                 if live_enabled
                 else {}
             ),
+            **({"phase1_creation": creation} if creation is not None else {}),
         }
 
     @app.get("/api/jobs")
@@ -250,35 +279,36 @@ def create_app(
         decoding: Any = None,
         temperature: Any = None,
     ):
-        if request is not None:
-            _authorize_job_request(request, live_access_registry)
-            _admit_upload_request(request, manager.runs_dir)
-            try:
-                _install_receive_idle_timeout(request)
-                form = await request.form()
-                file = form.get("file")
-                if file is None or not hasattr(file, "read"):
-                    raise ValueError("Missing upload file.")
-                prompt = form.get("prompt")
-                max_new_tokens = form.get("max_new_tokens")
-                max_len = form.get("max_len")
-                decoding = form.get("decoding")
-                temperature = form.get("temperature")
-            except _UploadReceiveIdleTimeout as exc:
-                raise HTTPException(status_code=408, detail=str(exc)) from exc
-            except ValueError as exc:
-                raise HTTPException(status_code=400, detail=str(exc)) from exc
-        if file is None or not hasattr(file, "read"):
-            raise HTTPException(status_code=400, detail="Missing upload file.")
-        return await _create_job_from_upload(
-            manager,
-            file,
-            prompt=_optional_form_text(prompt),
-            max_new_tokens=_optional_form_int(max_new_tokens),
-            max_len=_optional_form_int(max_len),
-            decoding=_optional_form_text(decoding),
-            temperature=_optional_form_float(temperature),
-        )
+        with phase1_creation_admission():
+            if request is not None:
+                _authorize_job_request(request, live_access_registry)
+                _admit_upload_request(request, manager.runs_dir)
+                try:
+                    _install_receive_idle_timeout(request)
+                    form = await request.form()
+                    file = form.get("file")
+                    if file is None or not hasattr(file, "read"):
+                        raise ValueError("Missing upload file.")
+                    prompt = form.get("prompt")
+                    max_new_tokens = form.get("max_new_tokens")
+                    max_len = form.get("max_len")
+                    decoding = form.get("decoding")
+                    temperature = form.get("temperature")
+                except _UploadReceiveIdleTimeout as exc:
+                    raise HTTPException(status_code=408, detail=str(exc)) from exc
+                except ValueError as exc:
+                    raise HTTPException(status_code=400, detail=str(exc)) from exc
+            if file is None or not hasattr(file, "read"):
+                raise HTTPException(status_code=400, detail="Missing upload file.")
+            return await _create_job_from_upload(
+                manager,
+                file,
+                prompt=_optional_form_text(prompt),
+                max_new_tokens=_optional_form_int(max_new_tokens),
+                max_len=_optional_form_int(max_len),
+                decoding=_optional_form_text(decoding),
+                temperature=_optional_form_float(temperature),
+            )
 
     async def _create_job_from_upload(
         manager: JobManager,
@@ -337,40 +367,42 @@ def create_app(
 
     @app.post("/api/jobs/{job_id}/rerun")
     async def rerun_job(job_id: str, request: Request):
-        try:
+        with phase1_creation_admission():
             try:
-                payload = await request.json()
-            except Exception:
-                payload = {}
-            payload = payload if isinstance(payload, dict) else {}
-            job = manager.rerun_job(
-                job_id,
-                prompt=payload.get("prompt"),
-                max_length=_payload_value(payload, "max_len", "max_length"),
-                max_new_tokens=payload.get("max_new_tokens"),
-                decoding=payload.get("decoding"),
-                temperature=payload.get("temperature"),
-            )
-            return job.to_dict()
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail="Media file is missing.") from exc
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+                try:
+                    payload = await request.json()
+                except Exception:
+                    payload = {}
+                payload = payload if isinstance(payload, dict) else {}
+                job = manager.rerun_job(
+                    job_id,
+                    prompt=payload.get("prompt"),
+                    max_length=_payload_value(payload, "max_len", "max_length"),
+                    max_new_tokens=payload.get("max_new_tokens"),
+                    decoding=payload.get("decoding"),
+                    temperature=payload.get("temperature"),
+                )
+                return job.to_dict()
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=404, detail="Media file is missing.") from exc
+            except Exception as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/api/jobs/{job_id}/resume")
     def resume_job(job_id: str):
-        try:
-            return manager.resume_job(job_id).to_dict()
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail="Media file is missing.") from exc
-        except RuntimeError as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        with phase1_creation_admission():
+            try:
+                return manager.resume_job(job_id).to_dict()
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=404, detail="Media file is missing.") from exc
+            except RuntimeError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            except Exception as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/jobs/{job_id}/media")
     def media(job_id: str):
@@ -412,19 +444,23 @@ def create_app(
 
     @app.post("/api/jobs/{job_id}/render")
     async def render(job_id: str, request: Request):
-        try:
+        with phase1_creation_admission():
             try:
-                payload = await request.json()
-            except Exception:
-                payload = {}
-            job = manager.render(job_id, payload.get("style") if isinstance(payload, dict) else None)
-            return job.to_dict()
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except RuntimeError as exc:
-            return JSONResponse({"detail": str(exc)}, status_code=503)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+                try:
+                    payload = await request.json()
+                except Exception:
+                    payload = {}
+                job = manager.render(
+                    job_id,
+                    payload.get("style") if isinstance(payload, dict) else None,
+                )
+                return job.to_dict()
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except RuntimeError as exc:
+                return JSONResponse({"detail": str(exc)}, status_code=503)
+            except Exception as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/jobs/{job_id}/download")
     def download(job_id: str, kind: str):

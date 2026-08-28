@@ -7,7 +7,8 @@ the two services therefore cannot be one process, and the property that matters 
 that adding the second one leaves the first byte-for-byte alone.
 
 Covered:
-  * `ops/start-web.sh` produces the recorded batch argv when the live profile is absent, and
+  * `ops/start-web.sh` gives both processes the one temporary Phase-1 creation-quiesce marker,
+    otherwise preserves the recorded batch argv when the live profile is absent, and produces
     the full live argv from `ops/moss-live.env.example` verbatim.
   * every live variable is required, and the port/runs-dir relations that keep the two
     services apart are refused rather than deployed.
@@ -45,9 +46,8 @@ TIMEOUT = 60.0
 # all agree on.
 DEPLOYMENT_ROOT = "/mnt/d/Coding/MOSS-Transcribe-Diarize"
 
-# The batch invocation, recorded from `ops/start-web.sh` before the live service existed. This
-# list is the contract the PRD's "batch service unharmed" clause rests on: the adapter must
-# still produce exactly this argv when no live profile is loaded.
+# The batch invocation recorded before the live service, plus #31's one temporary shared marker.
+# Every other argument remains the contract the PRD's "batch service unharmed" clause rests on.
 BATCH_ARGV = [
     "--backend", "vllm",
     "--model", "{state}/model",
@@ -55,6 +55,7 @@ BATCH_ARGV = [
     "--vllm-model", "OpenMOSS-Team/MOSS-Transcribe-Diarize",
     "--vllm-timeout", "1800",
     "--runs-dir", f"{DEPLOYMENT_ROOT}/runs",
+    "--phase1-creation-gate-path", "{state_home}/phase1-creation-quiesced",
     "--host", "0.0.0.0",
     "--port", "7860",
     "--max-len", "16384",
@@ -136,11 +137,12 @@ def argv_of(completed: subprocess.CompletedProcess[str]) -> list[str]:
 
 def expected_batch_argv(home: Path) -> list[str]:
     state = home / ".local/share/moss-transcribe-diarize"
-    return [item.format(state=state) for item in BATCH_ARGV]
+    state_home = home / ".local/state/moss-transcribe-diarize"
+    return [item.format(state=state, state_home=state_home) for item in BATCH_ARGV]
 
 
-def test_batch_profile_reproduces_the_recorded_plaintext_invocation(home: Path) -> None:
-    """The committed batch environment still yields the pre-live argv, exactly."""
+def test_batch_profile_adds_only_the_shared_gate_to_the_plaintext_invocation(home: Path) -> None:
+    """The committed batch environment yields the recorded argv plus #31's one marker."""
     result = run_adapter(home, BATCH_ENV)
     assert argv_of(result) == expected_batch_argv(home)
     assert not [arg for arg in argv_of(result) if arg.startswith("--live")]
@@ -436,6 +438,18 @@ def cli_args(monkeypatch: pytest.MonkeyPatch, *argv: str):
 
     monkeypatch.setattr("sys.argv", ["mtd-subtitle-web", *argv])
     return web_cli, web_cli.parse_args()
+
+
+def test_cli_defaults_to_the_private_linux_home_creation_marker(monkeypatch) -> None:
+    _web_cli, args = cli_args(monkeypatch)
+    marker = Path(args.phase1_creation_gate_path)
+    assert marker.is_absolute()
+    assert marker.parts[-4:] == (
+        ".local",
+        "state",
+        "moss-transcribe-diarize",
+        "phase1-creation-quiesced",
+    )
 
 
 def test_the_cli_reads_the_shared_token_from_one_line_only(

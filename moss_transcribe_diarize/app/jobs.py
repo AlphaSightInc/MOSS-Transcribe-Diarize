@@ -419,6 +419,17 @@ class JobManager:
     def list_jobs(self) -> list[JobRecord]:
         return sorted(self._jobs.values(), key=lambda job: job.updated_at, reverse=True)
 
+    def activity_counts(self) -> dict[str, int]:
+        """Content-free process-local drain truth for the Phase-1 cutover."""
+
+        jobs = tuple(self._jobs.copy().values())
+        return {
+            "queued": sum(job.status == "queued" for job in jobs),
+            "active": sum(
+                job.status in ACTIVE_STATES and job.status != "queued" for job in jobs
+            ),
+        }
+
     def get_job(self, job_id: str) -> JobRecord:
         try:
             return self._jobs[job_id]
@@ -465,12 +476,25 @@ class JobManager:
             raise RuntimeError("ffmpeg and ffprobe are not available on PATH.")
         if not job.segments_path.exists():
             raise RuntimeError("No subtitle segments are available for this job.")
-        threading.Thread(
+        segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
+        style = SubtitleStyle.from_dict(style_payload)
+        self._set_status(job, "rendering", 0.97, error=None)
+        thread = threading.Thread(
             target=self._render_job,
-            args=(job.id, SubtitleStyle.from_dict(style_payload)),
+            args=(job.id, segments, style),
             name=f"mtd-render-{job.id}",
             daemon=True,
-        ).start()
+        )
+        try:
+            thread.start()
+        except Exception as exc:
+            self._set_status(
+                job,
+                "waiting_review",
+                0.95,
+                error=f"Render did not start: {exc}",
+            )
+            raise
         return job
 
     def download_path(self, job_id: str, kind: str) -> Path:
@@ -586,12 +610,15 @@ class JobManager:
             self._set_status(job, "failed", 1.0, error=str(exc))
             self._progress_save_times.pop(job.id, None)
 
-    def _render_job(self, job_id: str, style: SubtitleStyle) -> None:
+    def _render_job(
+        self,
+        job_id: str,
+        segments: list[SubtitleSegment],
+        style: SubtitleStyle,
+    ) -> None:
         job = self.get_job(job_id)
         with self._render_lock:
             try:
-                segments = [SubtitleSegment.from_dict(item) for item in self.list_segments(job.id)]
-                self._set_status(job, "rendering", 0.97, error=None)
                 width, height = probe_video_size(job.input_path)
                 write_text(job.ass_path, export_ass(segments, style=style, video_width=width, video_height=height))
                 burn_ass_subtitles(job.input_path, job.ass_path, job.output_path)
