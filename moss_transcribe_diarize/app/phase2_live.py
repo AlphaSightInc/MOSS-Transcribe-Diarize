@@ -74,8 +74,16 @@ class _LiveBinding:
 class Phase2LiveMeetings:
     """Account-partitioned transient registry plus durable publication bridge."""
 
-    def __init__(self, runtime: LiveServiceRuntime):
+    def __init__(
+        self,
+        runtime: LiveServiceRuntime,
+        *,
+        audio_archive: Any,
+        audio_stages: Any,
+    ):
         self.runtime = runtime
+        self.audio_archive = audio_archive
+        self.audio_stages = audio_stages
         self._bindings: dict[str, _LiveBinding] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
         self._accepting_publications = False
@@ -87,13 +95,9 @@ class Phase2LiveMeetings:
         self.runtime._bind_publication_observer(self._publication_observer)
 
     async def shutdown(self) -> None:
-        for meeting_id, binding in tuple(self._bindings.items()):
+        for binding in tuple(self._bindings.values()):
             if not binding.terminal_persisted and not binding.capture_fenced:
-                try:
-                    await self.runtime.abort(meeting_id, "service shutdown")
-                    await self.sync_and_flush(meeting_id)
-                except Exception:
-                    binding.capture_fenced = True
+                await self._fence(binding, "service shutdown")
         self.runtime._unbind_publication_observer(self._publication_observer)
         self._accepting_publications = False
         self._loop = None
@@ -114,6 +118,20 @@ class Phase2LiveMeetings:
         echo_mode: str | None,
     ) -> _LiveBinding:
         handle = await workspace.create_meeting("live")
+        try:
+            # This single pre-capture fsync uses the same measured local stage seam as
+            # frame appends and cannot outlive a cancelled creation task in a worker.
+            self.audio_stages.reserve(account.account_id, handle.meeting_id)
+        except BaseException:
+            try:
+                self.audio_stages.discard(account.account_id, handle.meeting_id)
+            except Exception:
+                pass
+            try:
+                await handle.finish("failed")
+            except Exception:
+                pass
+            raise
         binding = _LiveBinding(
             owner_key=(account.account_id, account.authority_generation),
             origin_session=origin_session,
@@ -132,6 +150,14 @@ class Phase2LiveMeetings:
             binding.queue.put_nowait(None)
             if binding.worker is not None:
                 await binding.worker
+            try:
+                await asyncio.to_thread(
+                    self.audio_stages.discard,
+                    account.account_id,
+                    handle.meeting_id,
+                )
+            except Exception:
+                pass
             try:
                 await handle.finish("failed")
             except Exception:
@@ -176,9 +202,17 @@ class Phase2LiveMeetings:
         target = -1 if not events else events[-1].seq
         async with binding.changed:
             await binding.changed.wait_for(
-                lambda: binding.public_event_high_water >= target or binding.capture_fenced
+                lambda: binding.public_event_high_water >= target
+                or (binding.capture_fenced and binding.persistence_failure is not None)
             )
         return binding
+
+    async def wait_for_terminal(self, binding: _LiveBinding) -> None:
+        async with binding.changed:
+            await binding.changed.wait_for(
+                lambda: binding.terminal_persisted
+                or (binding.capture_fenced and binding.persistence_failure is not None)
+            )
 
     def snapshot(
         self,
@@ -261,13 +295,26 @@ class Phase2LiveMeetings:
                 document_changed = document != binding.durable_document
                 if terminal is not None and not binding.terminal_persisted:
                     if document_changed:
-                        binding.durable_version = await binding.handle.finish_with_transcript(
-                            document,
-                            terminal,
-                        )
+                        binding.durable_version = await binding.handle.commit_transcript(document)
                         binding.durable_document = document
-                    else:
-                        await binding.handle.finish(terminal)
+                    try:
+                        await self._settle_audio(
+                            binding,
+                            publication.snapshot,
+                            interrupted=terminal == "interrupted",
+                        )
+                    except AccountRevoked:
+                        await self._fence(binding, "meeting_authority_revoked")
+                        continue
+                    except Exception:
+                        await self._terminal_recovery_failed(
+                            binding,
+                            "audio_terminal_recovery_failed",
+                            publication.snapshot,
+                            publication.events,
+                        )
+                        continue
+                    await binding.handle.finish(terminal)
                     binding.terminal_persisted = True
                 elif document_changed:
                     binding.durable_version = await binding.handle.commit_transcript(document)
@@ -285,29 +332,150 @@ class Phase2LiveMeetings:
             async with binding.changed:
                 binding.changed.notify_all()
 
+    async def _settle_audio(
+        self,
+        binding: _LiveBinding,
+        snapshot: LiveServiceSnapshot,
+        *,
+        interrupted: bool,
+    ) -> None:
+        account_id = binding.owner_key[0]
+        prefix = await asyncio.to_thread(
+            self.audio_stages.prefix,
+            account_id,
+            binding.handle.meeting_id,
+            expected_samples=snapshot.session.accepted_samples,
+        )
+        if prefix is None:
+            await binding.handle.record_audio_unavailable()
+        else:
+            await binding.handle.publish_audio(
+                self.audio_archive,
+                prefix.path,
+                partial=interrupted or not prefix.complete,
+                raw_pcm=True,
+            )
+        await asyncio.to_thread(
+            self.audio_stages.discard,
+            account_id,
+            binding.handle.meeting_id,
+        )
+
+    async def _terminal_recovery_failed(
+        self,
+        binding: _LiveBinding,
+        reason: str,
+        terminal_snapshot: LiveServiceSnapshot,
+        terminal_events: tuple[LiveServiceEvent, ...],
+    ) -> None:
+        binding.capture_fenced = True
+        authority_revoked = False
+        try:
+            await binding.handle.recover_interrupted_audio(
+                self.audio_archive,
+                self.audio_stages,
+            )
+        except AccountRevoked:
+            authority_revoked = True
+            await self._discard_stage_after_authority_loss(binding)
+        except Exception:
+            # Metadata remains whatever the owner-bound archive last proved. Meeting
+            # terminality is independent of a still-unavailable storage boundary.
+            pass
+        durable_interruption = authority_revoked
+        if not authority_revoked:
+            try:
+                await binding.handle.finish("interrupted")
+                durable_interruption = True
+            except AccountRevoked:
+                await self._discard_stage_after_authority_loss(binding)
+                binding.terminal_persisted = True
+                durable_interruption = True
+            except Exception:
+                pass
+        if durable_interruption:
+            binding.terminal_persisted = True
+            # The terminal transcript was committed before audio settlement began, so
+            # this exact runtime publication is now safe to expose in full.
+            binding.public_snapshot = terminal_snapshot
+            binding.public_events = terminal_events
+            binding.public_event_high_water = (
+                -1 if not terminal_events else terminal_events[-1].seq
+            )
+        binding.persistence_failure = reason
+        async with binding.changed:
+            binding.changed.notify_all()
+
+    async def _discard_stage_after_authority_loss(self, binding: _LiveBinding) -> None:
+        try:
+            await asyncio.to_thread(
+                self.audio_stages.discard,
+                binding.owner_key[0],
+                binding.handle.meeting_id,
+            )
+        except Exception:
+            # Authority is already terminal in SQLite. Cleanup cannot create audio
+            # metadata or regain authority, and the public failure remains explicit.
+            pass
+
     async def _fence(self, binding: _LiveBinding, reason: str) -> None:
         if binding.capture_fenced:
             return
         binding.capture_fenced = True
-        terminal_snapshot = None
+        try:
+            terminal_snapshot = self.runtime.snapshot(binding.handle.meeting_id)
+        except Exception:
+            terminal_snapshot = None
         terminal_events: tuple[LiveServiceEvent, ...] = ()
         try:
-            terminal_snapshot = await self.runtime.abort(binding.handle.meeting_id, reason)
+            aborted = await self.runtime.abort(binding.handle.meeting_id, reason)
+            terminal_snapshot = aborted
+        except Exception:
+            pass
+        try:
             terminal_events = self.runtime.events(binding.handle.meeting_id)
         except Exception:
             pass
         durable_interruption = False
         try:
+            if terminal_snapshot is not None:
+                await self._settle_audio(
+                    binding,
+                    terminal_snapshot,
+                    interrupted=True,
+                )
             await binding.handle.finish("interrupted")
             binding.terminal_persisted = True
             durable_interruption = True
         except AccountRevoked:
             # Account revocation atomically interrupts all active Meetings before the
             # captured handle's generation fence rejects this redundant finish.
+            await self._discard_stage_after_authority_loss(binding)
             binding.terminal_persisted = True
             durable_interruption = True
         except Exception:
-            pass
+            try:
+                await binding.handle.recover_interrupted_audio(
+                    self.audio_archive,
+                    self.audio_stages,
+                )
+            except AccountRevoked:
+                await self._discard_stage_after_authority_loss(binding)
+                binding.terminal_persisted = True
+                durable_interruption = True
+            except Exception:
+                pass
+            if not durable_interruption:
+                try:
+                    await binding.handle.finish("interrupted")
+                    binding.terminal_persisted = True
+                    durable_interruption = True
+                except AccountRevoked:
+                    await self._discard_stage_after_authority_loss(binding)
+                    binding.terminal_persisted = True
+                    durable_interruption = True
+                except Exception:
+                    pass
         if durable_interruption and terminal_snapshot is not None:
             binding.public_snapshot = _durable_terminal_projection(binding, terminal_snapshot)
             new_terminal_events = tuple(
@@ -438,6 +606,7 @@ class _Phase2LiveTransportAdapter:
         binding = self._binding(authority)
         if wait_for_durability:
             binding = await self.live.sync_and_flush(session_id)
+            await self.live.wait_for_terminal(binding)
         return binding.public_snapshot
 
     @staticmethod
@@ -462,6 +631,7 @@ def attach_phase2_live_routes(
         live.runtime,
         None,
         live_helper_lease_seconds=live_helper_lease_seconds,
+        tape_store=live.audio_stages,
         transport_adapter=_Phase2LiveTransportAdapter(live, require_account),
     )
 

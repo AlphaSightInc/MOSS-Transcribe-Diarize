@@ -22,6 +22,14 @@ Meeting directories with `0700` directories and `0600` files. Clean Stop reaches
 `partial`, or `unavailable` before completion returns. Crash recovery publishes the maximal usable
 prefix as partial; audio failure never fails or deletes the transcript.
 
+Live capture tees only the exact runtime-accepted 16 kHz mono PCM16 mix into one fixed,
+owner-derived stage. Every accepted append is fsynced and the existing `max_tape_bytes` bound is
+the stage bound. Hitting the bound or a write failure never ends transcription, but permanently
+makes complete audio ineligible: a positive prefix becomes partial and zero complete samples become
+unavailable. Normal Stop commits the terminal transcript, settles MP3 metadata, verifies raw-stage
+cleanup, and only then finishes the Meeting. Startup never resumes capture; it enumerates canonical
+active Live Meeting rows and recovers each fixed owner path without filesystem search.
+
 ## Consequences
 
 - History offers complete download, partial download, or unavailable; there is no embedded player.
@@ -44,3 +52,15 @@ prefix as partial; audio failure never fails or deletes the transcript.
   surviving MP3. If existence itself cannot be observed, discard raises typed cleanup uncertainty,
   the download surface returns a controlled failure, and metadata does not change. Authority loss
   fences all reconciliation.
+- `live_recovery_probe.py` measured 1,920,000 staged bytes byte-exact across 120 fsynced appends;
+  median/p95/max append latency was 0.048/0.080/0.117 ms versus the existing 500 ms cadence. A
+  16,001-byte torn stage recovered 16,000 bytes; one sample produced a playable partial MP3; zero
+  produced unavailable; a refused stage creation produced no raw path and did not stop capture.
+  Fresh production Store/archive objects recovered process loss after Meeting-row creation,
+  transcript, MP3 publication, metadata, stage cleanup, and Meeting finish. The pre-stage boundary
+  had no directory and became interrupted/unavailable; every later active boundary retained the
+  transcript, reconciled file/metadata truth, removed raw PCM, and ended interrupted. A fully
+  finished boundary remained completed. A transient terminal cleanup failure retries that same
+  owner-bound recovery operation and must still end the authorized Meeting durably terminal.
+  Revocation cannot mutate audio metadata, but it still removes the fixed raw stage and unrecorded
+  artifact.

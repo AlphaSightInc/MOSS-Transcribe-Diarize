@@ -7,6 +7,7 @@ import os
 import secrets
 import shutil
 import subprocess
+import threading
 import wave
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +37,193 @@ class MeetingAudioCleanupError(RuntimeError):
 
 class MeetingAudioArtifactSurvives(MeetingAudioCleanupError):
     """The canonical MP3 still exists after a discard attempt."""
+
+
+@dataclass(frozen=True, slots=True)
+class LiveMeetingAudioPrefix:
+    """The complete PCM16 samples recoverable from one fixed Live stage path."""
+
+    path: Path
+    sample_count: int
+    complete: bool
+
+
+class _LiveMeetingAudioStage:
+    """One bounded mixed-only PCM stage at the existing Live tape-recorder seam."""
+
+    def __init__(self, path: Path, max_bytes: int, *, create: bool = True) -> None:
+        self.path = path
+        self.max_bytes = max_bytes
+        self.degraded = not create
+        self._lock = threading.RLock()
+        self._fd: int | None = None
+        if not create:
+            return
+        try:
+            self._fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            os.fchmod(self._fd, 0o600)
+            os.fsync(self._fd)
+        except BaseException:
+            if self._fd is not None:
+                os.close(self._fd)
+                self._fd = None
+            raise
+
+    def append_lane_frame(self, _: Any) -> None:
+        """Raw microphone and system lanes are intentionally not retained."""
+
+    def append_mixed(
+        self,
+        *,
+        pcm: bytes,
+        start_timestamp_ns: int,
+        sample_count: int,
+        sample_rate: int,
+    ) -> None:
+        del start_timestamp_ns
+        with self._lock:
+            if self.degraded or self._fd is None:
+                return
+            if (
+                sample_rate != 16_000
+                or sample_count <= 0
+                or len(pcm) != sample_count * 2
+            ):
+                self.degraded = True
+                return
+            try:
+                if os.fstat(self._fd).st_size + len(pcm) > self.max_bytes:
+                    self.degraded = True
+                    return
+                remaining = memoryview(pcm)
+                while remaining:
+                    written = os.write(self._fd, remaining)
+                    remaining = remaining[written:]
+                os.fsync(self._fd)
+            except OSError:
+                self.degraded = True
+
+    def close(self) -> None:
+        with self._lock:
+            if self._fd is not None:
+                os.close(self._fd)
+                self._fd = None
+
+
+class LiveMeetingAudioStages:
+    """Owner-derived Live mixed-PCM staging; durable MP3 truth stays in the archive."""
+
+    def __init__(self, archive: "MeetingAudioArchive", *, max_bytes: int) -> None:
+        if max_bytes <= 0:
+            raise ValueError("Live Meeting audio staging requires a positive byte bound.")
+        self.archive = archive
+        self.max_bytes = max_bytes
+        self._stages: dict[str, _LiveMeetingAudioStage] = {}
+        self._owners: dict[str, str] = {}
+        self._sealed: dict[str, bool] = {}
+        self._lock = threading.RLock()
+
+    def reserve(self, account_id: str, meeting_id: str) -> None:
+        with self._lock:
+            if meeting_id in self._owners:
+                raise ValueError("Live Meeting audio stage already exists.")
+            path = self.path(account_id, meeting_id)
+            stage: _LiveMeetingAudioStage | None = None
+            try:
+                for directory in (self.archive.root, path.parent.parent, path.parent):
+                    self.archive._ensure_private_directory(directory)
+                stage = _LiveMeetingAudioStage(path, self.max_bytes)
+                self.archive._fsync_directory(path.parent)
+            except OSError as cause:
+                if stage is not None:
+                    stage.close()
+                try:
+                    if self.archive._path_exists(path.parent):
+                        self.archive._discard_path(path)
+                except MeetingAudioCleanupError as cleanup_error:
+                    raise cleanup_error from cause
+                stage = _LiveMeetingAudioStage(path, self.max_bytes, create=False)
+            self._owners[meeting_id] = account_id
+            self._stages[meeting_id] = stage
+
+    def create(self, meeting_id: str) -> _LiveMeetingAudioStage:
+        with self._lock:
+            try:
+                return self._stages[meeting_id]
+            except KeyError as exc:
+                raise KeyError(meeting_id) from exc
+
+    def get(self, meeting_id: str) -> _LiveMeetingAudioStage | None:
+        with self._lock:
+            return self._stages.get(meeting_id)
+
+    def release(self, meeting_id: str) -> _LiveMeetingAudioStage | None:
+        with self._lock:
+            stage = self._stages.pop(meeting_id, None)
+        if stage is not None:
+            stage.close()
+            with self._lock:
+                self._sealed[meeting_id] = stage.degraded
+        return stage
+
+    def reap(self, *, active_session_ids: Any = ()) -> tuple[str, ...]:
+        del active_session_ids
+        # Startup recovery is driven only by canonical active Live Meeting rows.
+        return ()
+
+    def prefix(
+        self,
+        account_id: str,
+        meeting_id: str,
+        *,
+        expected_samples: int | None,
+    ) -> LiveMeetingAudioPrefix | None:
+        self.release(meeting_id)
+        path = self.path(account_id, meeting_id)
+        try:
+            byte_count = path.stat().st_size
+        except FileNotFoundError:
+            return None
+        except OSError as exc:
+            raise MeetingAudioCleanupError(
+                "Live Meeting stage existence cannot be verified."
+            ) from exc
+        usable_bytes = byte_count - (byte_count % 2)
+        if usable_bytes != byte_count:
+            try:
+                with path.open("r+b") as stage:
+                    stage.truncate(usable_bytes)
+                    stage.flush()
+                    os.fsync(stage.fileno())
+            except OSError as exc:
+                raise MeetingAudioCleanupError(
+                    "Live Meeting torn stage could not be durably truncated."
+                ) from exc
+        if usable_bytes <= 0:
+            return None
+        with self._lock:
+            degraded = self._sealed.get(meeting_id, expected_samples is None)
+        return LiveMeetingAudioPrefix(
+            path=path,
+            sample_count=usable_bytes // 2,
+            complete=(
+                expected_samples is not None
+                and usable_bytes == expected_samples * 2
+                and not degraded
+            ),
+        )
+
+    def discard(self, account_id: str, meeting_id: str) -> None:
+        self.release(meeting_id)
+        path = self.path(account_id, meeting_id)
+        if self.archive._path_exists(path.parent):
+            self.archive._discard_path(path)
+        with self._lock:
+            self._owners.pop(meeting_id, None)
+            self._sealed.pop(meeting_id, None)
+
+    def path(self, account_id: str, meeting_id: str) -> Path:
+        return self.archive.root / account_id / meeting_id / ".live-mix.pcm"
 
 
 class MeetingAudioArchive:
@@ -106,24 +294,61 @@ class MeetingAudioArchive:
         meeting_id: str,
         source_path: str | Path,
     ) -> PublishedMeetingAudio:
+        return self._publish(
+            account_id,
+            meeting_id,
+            Path(source_path),
+            partial=False,
+            raw_pcm=False,
+        )
+
+    def publish_live_prefix(
+        self,
+        account_id: str,
+        meeting_id: str,
+        source_path: str | Path,
+        *,
+        partial: bool,
+    ) -> PublishedMeetingAudio:
+        return self._publish(
+            account_id,
+            meeting_id,
+            Path(source_path),
+            partial=partial,
+            raw_pcm=True,
+        )
+
+    def _publish(
+        self,
+        account_id: str,
+        meeting_id: str,
+        source_path: Path,
+        *,
+        partial: bool,
+        raw_pcm: bool,
+    ) -> PublishedMeetingAudio:
         if not self._ffmpeg or not self._ffprobe:
             raise RuntimeError("Meeting audio encoding is unavailable.")
         meeting_dir = self.root / account_id / meeting_id
         for directory in (self.root, meeting_dir.parent, meeting_dir):
             self._ensure_private_directory(directory)
         staged = meeting_dir / f".audio-{secrets.token_urlsafe(12)}.mp3"
-        final = meeting_dir / "audio.mp3"
+        final = meeting_dir / ("audio.partial.mp3" if partial else "audio.mp3")
         replaced = False
         try:
-            subprocess.run(
+            command = [
+                self._ffmpeg,
+                "-nostdin",
+                "-v",
+                "error",
+                "-y",
+            ]
+            if raw_pcm:
+                command.extend(["-f", "s16le", "-ar", "16000", "-ac", "1"])
+            command.extend(
                 [
-                    self._ffmpeg,
-                    "-nostdin",
-                    "-v",
-                    "error",
-                    "-y",
                     "-i",
-                    str(Path(source_path)),
+                    str(source_path),
                     "-map",
                     "0:a:0",
                     "-vn",
@@ -140,7 +365,10 @@ class MeetingAudioArchive:
                     "-f",
                     "mp3",
                     str(staged),
-                ],
+                ]
+            )
+            subprocess.run(
+                command,
                 check=True,
                 capture_output=True,
             )
@@ -178,6 +406,17 @@ class MeetingAudioArchive:
         if path is None:
             raise MeetingAudioCleanupError("Meeting audio path is not canonical.")
         self._discard_path(path)
+
+    def discard_unrecorded(self, account_id: str, meeting_id: str) -> None:
+        """Remove only the two canonical MP3 paths when no metadata grants either truth."""
+
+        meeting_dir = self.root / account_id / meeting_id
+        if not self._path_exists(meeting_dir):
+            # A Meeting that crashed between its SQLite row and stage reservation has no
+            # directory entry capable of containing either canonical artifact.
+            return
+        for path in (meeting_dir / "audio.mp3", meeting_dir / "audio.partial.mp3"):
+            self._discard_path(path)
 
     def resolve(
         self,

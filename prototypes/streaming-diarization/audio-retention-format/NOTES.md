@@ -88,3 +88,56 @@ When both unlink and the subsequent existence probe were forced to raise `OSErro
 discard returned typed `MeetingAudioCleanupError`, retained the artifact, and made unavailable
 ineligible. This uncertainty is therefore handled by the same controlled failure boundary rather
 than leaking a raw filesystem exception or changing metadata.
+
+## Live mixed-prefix staging and recovery
+
+Measured 2026-08-28 with:
+
+```bash
+uv run --frozen python prototypes/streaming-diarization/audio-retention-format/live_recovery_probe.py
+```
+
+The throwaway probe tested the smallest Live extension: one owner-derived mixed PCM stage, the
+already-declared `max_tape_bytes` bound, production `MeetingAudioArchive`, and one owner-bound
+terminal recovery operation. It printed the structural question, irreducible primitives,
+invariants, assumptions/unknowns, falsifier, tool decision, and every outcome.
+
+Across 120 half-second accepted-mix appends, the recovered 1,920,000 bytes were byte-exact. Each
+append called `fsync`; the production-stager replay measured 0.048 ms median, 0.080 ms Type-1 p95,
+and 0.117 ms maximum,
+all below the existing 500 ms ingress cadence. These MacStudio timings justify the synchronous
+append seam but do not promise production-host latency. A two-frame bound accepted exactly two of
+three frames and preserved that prefix. An odd 16,001-byte crash tail recovered the last complete
+16,000-byte PCM16 prefix and encoded to a playable 500 ms MP3. One complete PCM16 sample encoded to
+a playable 3 ms partial MP3 through production's raw-prefix publication seam; zero samples yielded
+unavailable. A forced stage-directory refusal created no raw path, left the no-op stage degraded,
+and allowed capture to continue toward an unavailable terminal outcome. No additional
+minimum-duration threshold or capture-ending storage policy is therefore necessary or supported.
+
+The corrected terminal-order probe discarded every in-memory Python object at process loss and
+reopened a fresh production `Phase2Store`, `MeetingAudioArchive`, and
+`LiveMeetingAudioStages` from only SQLite plus canonical owner paths. It exercised loss after
+Meeting-row creation, transcript, MP3 publish, metadata, stage cleanup, and Meeting finish. The
+pre-stage boundary had no Meeting directory and recovered interrupted/unavailable without
+inventing one. A pre-metadata orphan MP3 was first discarded through production's verified-absence
+seam, then the durable stage was published as partial. Loss after durable available metadata
+retained that valid complete artifact, removed the stage, and interrupted the still-active Meeting;
+the fully finished boundary remained completed/available. Every boundary preserved transcript
+truth and left no raw stage. Recovery never searched the filesystem or resumed capture.
+
+The accepted ordering is final transcript, MP3 publication and metadata, verified stage cleanup,
+then Meeting status. A process loss before the final status repeats recovery from the canonical
+active record. Staging degradation never fails capture, but permanently makes complete ineligible:
+normal Stop publishes the bounded positive prefix as partial, or unavailable when no complete
+PCM16 sample exists. It may never silently claim complete after the declared bound or a write
+failure. The absorbed probe now calls the production stager, archive, Store, and recovery seams
+directly.
+
+The production-focused suite then passed 19/19 Live ownership and recovery cases. In particular,
+a transient failure after available MP3 metadata but before stage cleanup was retried through the
+same owner-bound recovery operation: available metadata/file truth survived, the raw stage was
+removed on the second attempt, and the Meeting durably ended interrupted instead of remaining
+active. Account-authority loss likewise removed the fixed raw stage and unrecorded MP3 while the
+revocation transaction's interrupted Meeting remained authoritative. Terminal-recovery failure is
+therefore an explicit public failure, but it is not permission to leave an owner-authorized durable
+Meeting active.

@@ -526,8 +526,38 @@ class Phase2Store:
                 )
             return True
 
-    async def recover_active_meetings(self) -> None:
+    async def recover_active_meetings(
+        self,
+        *,
+        audio_archive: Any | None = None,
+        live_audio_stages: Any | None = None,
+    ) -> None:
         """The product process never resumes capture that was active before startup."""
+
+        if (audio_archive is None) != (live_audio_stages is None):
+            raise ValueError("Live audio startup recovery requires archive and stages together.")
+        if audio_archive is not None:
+            async with self._external_read():
+                cursor = await self._connection.execute(
+                    """
+                    SELECT m.account_id, m.meeting_id, a.authority_generation
+                    FROM meetings m
+                    JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+                    WHERE m.mode = 'live' AND m.status = 'active'
+                    ORDER BY m.created_at_ms, m.meeting_id
+                    """
+                )
+                rows = await cursor.fetchall()
+                await cursor.close()
+            for row in rows:
+                handle = MeetingHandle(
+                    self,
+                    row["account_id"],
+                    int(row["authority_generation"]),
+                    row["meeting_id"],
+                )
+                await handle.recover_interrupted_audio(audio_archive, live_audio_stages)
+                await handle.finish("interrupted")
 
         now = _now_ms()
         async with self._mutation():
@@ -1078,14 +1108,30 @@ class MeetingHandle:
             status,
         )
 
-    async def publish_audio(self, archive: Any, source_path: str | Path) -> MeetingAudio:
+    async def publish_audio(
+        self,
+        archive: Any,
+        source_path: str | Path,
+        *,
+        partial: bool = False,
+        raw_pcm: bool = False,
+    ) -> MeetingAudio:
         try:
-            publication = await asyncio.to_thread(
-                archive.publish,
-                self._account_id,
-                self.meeting_id,
-                source_path,
-            )
+            if raw_pcm:
+                publication = await asyncio.to_thread(
+                    archive.publish_live_prefix,
+                    self._account_id,
+                    self.meeting_id,
+                    source_path,
+                    partial=partial,
+                )
+            else:
+                publication = await asyncio.to_thread(
+                    archive.publish,
+                    self._account_id,
+                    self.meeting_id,
+                    source_path,
+                )
         except MeetingAudioCleanupError:
             raise
         except Exception:
@@ -1099,7 +1145,7 @@ class MeetingHandle:
             return audio
 
         audio = MeetingAudio(
-            state="available",
+            state="partial" if partial else "available",
             relative_path=publication.relative_path,
             byte_count=publication.byte_count,
             duration_ms=publication.duration_ms,
@@ -1147,6 +1193,49 @@ class MeetingHandle:
                 pass
             raise
         return audio
+
+    async def recover_interrupted_audio(self, archive: Any, stages: Any) -> MeetingAudio:
+        """Settle one canonical active Live record without filesystem search or resume."""
+
+        existing = await self.audio()
+        if existing is not None and existing.state in {"available", "partial"}:
+            if self.resolve_audio(archive, existing) is None:
+                await asyncio.to_thread(self.discard_audio, archive, existing)
+                await self.mark_audio_unavailable()
+                existing = _unavailable_meeting_audio()
+            await asyncio.to_thread(stages.discard, self._account_id, self.meeting_id)
+            return existing
+        if existing is not None and existing.state == "unavailable":
+            await asyncio.to_thread(
+                archive.discard_unrecorded,
+                self._account_id,
+                self.meeting_id,
+            )
+            await asyncio.to_thread(stages.discard, self._account_id, self.meeting_id)
+            return existing
+
+        await asyncio.to_thread(
+            archive.discard_unrecorded,
+            self._account_id,
+            self.meeting_id,
+        )
+        prefix = await asyncio.to_thread(
+            stages.prefix,
+            self._account_id,
+            self.meeting_id,
+            expected_samples=None,
+        )
+        if prefix is None:
+            recovered = await self.record_audio_unavailable()
+        else:
+            recovered = await self.publish_audio(
+                archive,
+                prefix.path,
+                partial=True,
+                raw_pcm=True,
+            )
+        await asyncio.to_thread(stages.discard, self._account_id, self.meeting_id)
+        return recovered
 
     async def record_audio_unavailable(self) -> MeetingAudio:
         audio = _unavailable_meeting_audio()
@@ -1225,7 +1314,7 @@ def create_phase2_app(
     if not oauth_cookie_secret:
         raise ValueError("oauth_cookie_secret is required.")
 
-    from .phase2_audio import MeetingAudioArchive
+    from .phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
     from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
 
     resolved_work_root = Path(file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT).expanduser()
@@ -1253,7 +1342,19 @@ def create_phase2_app(
             )
         from .phase2_live import Phase2LiveMeetings
 
-        phase2_live = Phase2LiveMeetings(live_runtime_factory())
+        live_runtime = live_runtime_factory()
+        max_tape_bytes = live_runtime.descriptor.bounds.max_tape_bytes
+        if max_tape_bytes is None:
+            raise ValueError("Phase-2 Live audio requires bounds_config.max_tape_bytes.")
+        live_audio_stages = LiveMeetingAudioStages(
+            audio_archive,
+            max_bytes=max_tape_bytes,
+        )
+        phase2_live = Phase2LiveMeetings(
+            live_runtime,
+            audio_archive=audio_archive,
+            audio_stages=live_audio_stages,
+        )
     elif live_helper_lease_seconds is not None:
         raise ValueError("live_runtime_factory is required when a Live helper lease is set.")
 
@@ -1261,7 +1362,12 @@ def create_phase2_app(
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
         try:
-            await store.recover_active_meetings()
+            await store.recover_active_meetings(
+                audio_archive=audio_archive if phase2_live is not None else None,
+                live_audio_stages=(
+                    None if phase2_live is None else phase2_live.audio_stages
+                ),
+            )
             if file_tasks is not None:
                 file_tasks.clear_transient_work()
             app.state.phase2_store = store
