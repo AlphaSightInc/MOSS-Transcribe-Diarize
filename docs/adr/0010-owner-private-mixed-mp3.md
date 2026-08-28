@@ -99,4 +99,7 @@ it does not rename or re-encode the MP3.
   the Phase-2 publication fence waits for that raw outcome. Accepted Stop consistently returns only
   after interrupted/partial durability and raw cleanup; a genuine raw Stop failure remains a
   conflict. The latch exists only in flight: concurrent callers share it, while a later sequential
-  Stop or a retry after timeout reaches the runtime's existing semantics.
+  Stop or a retry after timeout reaches the runtime's existing semantics. Route entry grants no
+  authority or mutation. Each entrant owns one release claim, not the shared attempt: a rejected
+  anonymous/foreign request cannot clear a joined owner, all rejected claims clear an unstarted
+  attempt, and after an authorized start only the raw runtime outcome clears attempt identity.

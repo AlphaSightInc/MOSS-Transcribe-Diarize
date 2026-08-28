@@ -188,7 +188,16 @@ falsifier then returned `200`, projected closed plus terminal failure, preserved
 transcript, ended interrupted/partial, and left no raw PCM; Python 3.12 remained identical. Two
 concurrent Stop callers shared exactly one runtime call. The latch then cleared: a sequential Stop
 reached the runtime's existing closed conflict, and a first timeout did not prevent a later retry.
-This is request/outcome arbitration, not a delay, retry loop, or Python-version branch.
+Formal review then falsified a single owner bit at the pre-authorization boundary: a foreign first
+entrant owned the shared attempt, an authorized owner joined it, and the foreign `404` cleared the
+latch before the owner could start raw Stop. The minimum reducer replaces ownership with an entrant
+count. Every route-finally releases exactly one claim; duplicate release is a no-op. One foreign or
+anonymous rejection retains a joined owner claim, all rejected claims clear an unstarted attempt,
+and once any authorized caller starts raw Stop only its runtime outcome clears attempt identity.
+Held-auth production HTTP regressions measured anonymous-first and foreign-first `401/404` with
+zero raw mutation, then owner `200`; the concurrent fence observed raw `closed`, and both cases
+ended interrupted/partial with no raw PCM. This is request/outcome arbitration, not authority, a
+delay, a retry loop, or a Python-version branch.
 
 If both attempts fail after revocation already made SQLite terminal,
 startup selects canonical interrupted Live rows regardless of whether the Account has since been

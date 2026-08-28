@@ -147,7 +147,7 @@ class LiveTransportAdapter(Protocol):
         intent: object | None,
     ) -> LiveServiceSnapshot: ...
 
-    def abandon_stop(self, intent: object | None) -> None: ...
+    def release_stop(self, intent: object | None) -> None: ...
 
 
 class _LegacyLiveTransportAdapter:
@@ -247,7 +247,7 @@ class _LegacyLiveTransportAdapter:
         del session_id
         return None
 
-    def abandon_stop(self, intent: object | None) -> None:
+    def release_stop(self, intent: object | None) -> None:
         del intent
 
 
@@ -796,7 +796,7 @@ def attach_live_routes(
         except (TypeError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         finally:
-            adapter.abandon_stop(stop_intent)
+            adapter.release_stop(stop_intent)
             if release_v2_on_error:
                 _release_live_capture_state(
                     session_id,

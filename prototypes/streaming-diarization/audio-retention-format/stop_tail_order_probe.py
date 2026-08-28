@@ -10,6 +10,7 @@ import sqlite3
 import sys
 import tempfile
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -164,19 +165,37 @@ async def stop_attempt_lifetime() -> dict[str, object]:
     concurrent = asyncio.create_task(live.stop(binding, 1.0, concurrent_intent))
     runtime.release.set()
     concurrent_results = await asyncio.gather(first, concurrent)
+    live.release_stop(first_intent)
+    live.release_stop(concurrent_intent)
 
     sequential_error = None
+    sequential_intent = live.begin_stop("m")
     try:
-        await live.stop(binding, 1.0, live.begin_stop("m"))
+        await live.stop(binding, 1.0, sequential_intent)
     except LiveSessionClosed as exc:
         sequential_error = str(exc)
+    live.release_stop(sequential_intent)
 
     timeout_error = None
+    timeout_intent = live.begin_stop("m")
     try:
-        await live.stop(binding, 0.0, live.begin_stop("m"))
+        await live.stop(binding, 0.0, timeout_intent)
     except TimeoutError as exc:
         timeout_error = str(exc)
-    retried = await live.stop(binding, 1.0, live.begin_stop("m"))
+    live.release_stop(timeout_intent)
+    retry_intent = live.begin_stop("m")
+    retried = await live.stop(binding, 1.0, retry_intent)
+    live.release_stop(retry_intent)
+
+    anonymous = live.begin_stop("m")
+    foreign = live.begin_stop("m")
+    assert anonymous is not None and foreign is not None
+    all_rejected_attempt = anonymous.attempt
+    live.release_stop(anonymous)
+    retained_after_one_rejection = binding.raw_stop_attempt is all_rejected_attempt
+    live.release_stop(anonymous)
+    duplicate_release_entrants = all_rejected_attempt.entrants
+    live.release_stop(foreign)
     return {
         "concurrent_shared_snapshot": concurrent_results == [first_snapshot, first_snapshot],
         "calls_after_concurrent": 1,
@@ -185,6 +204,108 @@ async def stop_attempt_lifetime() -> dict[str, object]:
         "retry_result": retried,
         "total_runtime_calls": runtime.calls,
         "latch_cleared": binding.raw_stop_attempt is None,
+        "all_unauthorized": {
+            "retained_after_one_rejection": retained_after_one_rejection,
+            "duplicate_release_entrants": duplicate_release_entrants,
+            "cleared_after_last_rejection": binding.raw_stop_attempt is None,
+        },
+    }
+
+
+def preauth_claim_prototype() -> dict[str, object]:
+    """Compare the rejected owner bit with the minimum entrant-count reducer."""
+
+    @dataclass
+    class RejectedClaim:
+        attempt: object
+        owner: bool
+
+    rejected_attempt = object()
+    rejected_current: object | None = rejected_attempt
+    rejected_foreign = RejectedClaim(rejected_attempt, owner=True)
+    rejected_owner = RejectedClaim(rejected_attempt, owner=False)
+    if rejected_foreign.owner:
+        rejected_current = None
+
+    @dataclass
+    class Attempt:
+        entrants: int = 0
+        started: bool = False
+        cleared: bool = False
+
+    @dataclass
+    class Claim:
+        attempt: Attempt
+        released: bool = False
+
+    class Claims:
+        def __init__(self) -> None:
+            self.current: Attempt | None = None
+
+        def begin(self) -> Claim:
+            if self.current is None:
+                self.current = Attempt()
+            self.current.entrants += 1
+            return Claim(self.current)
+
+        def release(self, claim: Claim) -> None:
+            if claim.released:
+                return
+            claim.released = True
+            claim.attempt.entrants -= 1
+            if claim.attempt.entrants == 0 and not claim.attempt.started:
+                claim.attempt.cleared = True
+                if self.current is claim.attempt:
+                    self.current = None
+
+        def start(self, claim: Claim) -> None:
+            claim.attempt.started = True
+
+        def complete(self, claim: Claim) -> None:
+            claim.attempt.cleared = True
+            if self.current is claim.attempt:
+                self.current = None
+
+    joined = Claims()
+    foreign = joined.begin()
+    owner = joined.begin()
+    joined.release(foreign)
+    joined_after_foreign_release = {
+        "entrants": owner.attempt.entrants,
+        "started": owner.attempt.started,
+        "identity_retained": joined.current is owner.attempt,
+    }
+    joined.start(owner)
+    joined.release(owner)
+    joined_after_owner_release = {
+        "entrants": owner.attempt.entrants,
+        "started": owner.attempt.started,
+        "identity_retained_until_runtime_outcome": joined.current is owner.attempt,
+    }
+    joined.complete(owner)
+
+    all_rejected = Claims()
+    anonymous = all_rejected.begin()
+    foreign_only = all_rejected.begin()
+    all_rejected.release(anonymous)
+    all_rejected.release(foreign_only)
+
+    return {
+        "rejected_owner_bit": {
+            "foreign_claim_owned_attempt": rejected_foreign.owner,
+            "authorized_join_owned_attempt": rejected_owner.owner,
+            "identity_cleared_by_foreign_release": rejected_current is None,
+        },
+        "entrant_count_candidate": {
+            "joined_after_foreign_release": joined_after_foreign_release,
+            "joined_after_owner_release": joined_after_owner_release,
+            "cleared_by_runtime_outcome": joined.current is None,
+            "all_unauthorized_release_clears": all_rejected.current is None,
+            "duplicate_release_is_noop": (
+                all_rejected.release(foreign_only) is None
+                and foreign_only.attempt.entrants == 0
+            ),
+        },
     }
 
 
@@ -193,16 +314,20 @@ def main() -> None:
         root = Path(temporary)
         output = {
             "structural_question": (
-                "Which durable/public terminal event wins when an accepted Stop and "
-                "Stop-tail transcript persistence failure overlap?"
+                "How can concurrent pre-authorization Stop entrants share one scheduling "
+                "intent without one rejected entrant cancelling an authorized Stop outcome?"
             ),
             "minimum_primitives": [
-                "raw capture terminal transition",
-                "serialized durable publication worker",
-                "persistence-failure fence",
-                "one terminal Meeting projection",
+                "route-entry intent latch: the only boundary before authorization yields",
+                "entrant count: the only fact distinguishing one rejected request from all requests",
+                "started raw Stop: authority-bound conversion from intent to mutation",
+                "single raw outcome: releases the persistence fence and clears attempt identity",
             ],
             "invariants": [
+                "route entry grants no account authority and performs no mutation",
+                "each request releases exactly one entrant claim",
+                "only zero entrants on an unstarted attempt may abandon it",
+                "after any authorized start only the raw runtime outcome clears the attempt",
                 "accepted Stop returns 200 after terminal durability",
                 "last durable transcript prefix survives persistence failure",
                 "Meeting ends interrupted with partial or unavailable audio",
@@ -210,17 +335,20 @@ def main() -> None:
                 "Python task wake order cannot change the public result",
             ],
             "assumptions_unknowns": [
-                "task wake order differs across supported Python runtimes",
-                "unmeasured until this probe: raw session status at failing commit",
+                "Python task wake order differs and must not become product policy",
+                "a route-entry intent remains scheduling state only until owner-bound adapter.stop",
             ],
             "falsifier": (
-                "either supported Python returns a different Stop status, returns before "
-                "terminal durability, loses the last durable prefix, or retains raw PCM"
+                "a foreign, anonymous, or cancelled entrant clears a joined authorized Stop; "
+                "all rejected entrants leak; concurrent owners duplicate raw Stop; timeout blocks retry; "
+                "or either Python returns before terminal durability or retains raw PCM"
             ),
             "tool_decision": (
-                "use the production HTTP/runtime/publication/archive path; compare the "
-                "current schedule with only a prototype-local closing-publication barrier"
+                "use a minimal entrant-count reducer to select claim semantics, then the production "
+                "route-entry in-flight intent latch and HTTP/runtime/publication/archive path to "
+                "falsify authorization, scheduling, durability, and cleanup boundaries"
             ),
+            "preauth_claims": preauth_claim_prototype(),
             "cases": [
                 run_case(root, disable_intent_latch=True),
                 run_case(root, disable_intent_latch=False),

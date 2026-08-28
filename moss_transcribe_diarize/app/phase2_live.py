@@ -54,12 +54,13 @@ class _RawPublication:
 
 @dataclass(slots=True)
 class _RawStopAttempt:
-    """One accepted transport Stop and the raw runtime outcome it must win before fencing."""
+    """One authority-neutral route intent and the raw Stop outcome it may become."""
 
     completed: asyncio.Event = field(default_factory=asyncio.Event)
     snapshot: LiveServiceSnapshot | None = None
     error: BaseException | None = None
     started: bool = False
+    entrants: int = 0
 
 
 @dataclass(slots=True)
@@ -85,11 +86,11 @@ class _LiveBinding:
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _RawStopIntent:
     binding: _LiveBinding
     attempt: _RawStopAttempt
-    owner: bool
+    released: bool = False
 
 
 class Phase2LiveMeetings:
@@ -233,27 +234,29 @@ class Phase2LiveMeetings:
         return binding
 
     def begin_stop(self, meeting_id: str) -> _RawStopIntent | None:
-        """Latch endpoint entry before account lookup yields to queued publication."""
+        """Latch scheduling before account lookup yields; grant no authority or mutation."""
 
         binding = self._bindings.get(meeting_id)
         if binding is None:
             return None
         attempt = binding.raw_stop_attempt
-        owner = attempt is None
         if attempt is None:
             attempt = _RawStopAttempt()
             binding.raw_stop_attempt = attempt
-        return _RawStopIntent(binding=binding, attempt=attempt, owner=owner)
+        attempt.entrants += 1
+        return _RawStopIntent(binding=binding, attempt=attempt)
 
-    def abandon_stop(self, intent: _RawStopIntent | None) -> None:
-        if intent is None or not intent.owner:
+    def release_stop(self, intent: _RawStopIntent | None) -> None:
+        if intent is None or intent.released:
             return
+        intent.released = True
         attempt = intent.attempt
-        if attempt.started or attempt.completed.is_set():
-            return
-        attempt.completed.set()
-        if intent.binding.raw_stop_attempt is attempt:
-            intent.binding.raw_stop_attempt = None
+        attempt.entrants -= 1
+        assert attempt.entrants >= 0
+        if attempt.entrants == 0 and not attempt.started and not attempt.completed.is_set():
+            attempt.completed.set()
+            if intent.binding.raw_stop_attempt is attempt:
+                intent.binding.raw_stop_attempt = None
 
     async def stop(
         self,
@@ -884,10 +887,10 @@ class _Phase2LiveTransportAdapter:
     def begin_stop(self, session_id: str) -> object | None:
         return self.live.begin_stop(session_id)
 
-    def abandon_stop(self, intent: object | None) -> None:
+    def release_stop(self, intent: object | None) -> None:
         if intent is not None and not isinstance(intent, _RawStopIntent):
             raise TypeError("Phase-2 Live Stop requires its transport intent.")
-        self.live.abandon_stop(intent)
+        self.live.release_stop(intent)
 
     @staticmethod
     def _binding(authority: object) -> _LiveBinding:

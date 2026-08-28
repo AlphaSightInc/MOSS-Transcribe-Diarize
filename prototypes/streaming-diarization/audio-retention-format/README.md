@@ -35,5 +35,6 @@ for python_version in 3.10 3.12; do uv run --python "$python_version" --frozen -
 ```
 
 It prints the rejected no-latch result, the production intent-latch result, complete durable/public
-Meeting state, and the in-flight-only concurrent/sequential/timeout lifecycle. All databases and
-audio artifacts remain temporary.
+Meeting state, the rejected owner-bit versus entrant-count claim reducer, and the in-flight-only
+concurrent/unauthorized/sequential/timeout lifecycle. All databases and audio artifacts remain
+temporary.

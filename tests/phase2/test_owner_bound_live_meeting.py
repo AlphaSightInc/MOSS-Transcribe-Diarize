@@ -670,19 +670,32 @@ def test_raw_stop_latch_shares_only_the_inflight_attempt():
         binding = SimpleNamespace(raw_stop_attempt=None, handle=SimpleNamespace(meeting_id="m"))
         live._bindings["m"] = binding
 
+        foreign_intent = live.begin_stop("m")
         first_intent = live.begin_stop("m")
+        assert foreign_intent is not None and first_intent is not None
+        assert foreign_intent.attempt is first_intent.attempt
+        live.release_stop(foreign_intent)
+        assert binding.raw_stop_attempt is first_intent.attempt
+        assert first_intent.attempt.entrants == 1
+
         first = asyncio.create_task(live.stop(binding, 1.0, first_intent))
         await runtime.entered.wait()
         concurrent_intent = live.begin_stop("m")
+        assert concurrent_intent is not None
         concurrent = asyncio.create_task(live.stop(binding, 1.0, concurrent_intent))
         runtime.release.set()
         assert await asyncio.gather(first, concurrent) == [first_snapshot, first_snapshot]
         assert runtime.calls == 1
         assert binding.raw_stop_attempt is None
+        live.release_stop(first_intent)
+        live.release_stop(concurrent_intent)
+        assert first_intent.attempt.entrants == 0
 
         sequential_intent = live.begin_stop("m")
+        assert sequential_intent is not None
         with pytest.raises(LiveSessionClosed, match="already closed"):
             await live.stop(binding, 1.0, sequential_intent)
+        live.release_stop(sequential_intent)
         assert runtime.calls == 2
         assert binding.raw_stop_attempt is None
 
@@ -710,16 +723,192 @@ def test_raw_stop_latch_clears_after_timeout_so_retry_reaches_runtime():
         live._bindings["m"] = binding
 
         first_intent = live.begin_stop("m")
+        assert first_intent is not None
         with pytest.raises(TimeoutError, match="first Stop timed out"):
             await live.stop(binding, 0.0, first_intent)
+        live.release_stop(first_intent)
         assert binding.raw_stop_attempt is None
 
         retry_intent = live.begin_stop("m")
+        assert retry_intent is not None
         assert await live.stop(binding, 1.0, retry_intent) is retried_snapshot
+        live.release_stop(retry_intent)
         assert runtime.calls == 2
         assert binding.raw_stop_attempt is None
 
     asyncio.run(scenario())
+
+
+def test_raw_stop_latch_all_unauthorized_entrants_release_once():
+    live = Phase2LiveMeetings(object(), audio_archive=None, audio_stages=None)
+    binding = SimpleNamespace(raw_stop_attempt=None)
+    live._bindings["m"] = binding
+
+    anonymous = live.begin_stop("m")
+    foreign = live.begin_stop("m")
+    assert anonymous is not None and foreign is not None
+    attempt = anonymous.attempt
+    assert foreign.attempt is attempt and attempt.entrants == 2
+
+    live.release_stop(anonymous)
+    live.release_stop(anonymous)
+    assert attempt.entrants == 1
+    assert binding.raw_stop_attempt is attempt
+    live.release_stop(foreign)
+    assert attempt.entrants == 0
+    assert attempt.completed.is_set()
+    assert binding.raw_stop_attempt is None
+
+
+def test_raw_stop_latch_cancelled_entrant_releases_only_its_claim():
+    live = Phase2LiveMeetings(object(), audio_archive=None, audio_stages=None)
+    binding = SimpleNamespace(raw_stop_attempt=None)
+    live._bindings["m"] = binding
+
+    cancelled = live.begin_stop("m")
+    owner = live.begin_stop("m")
+    assert cancelled is not None and owner is not None
+    live.release_stop(cancelled)
+    assert owner.attempt.entrants == 1
+    assert binding.raw_stop_attempt is owner.attempt
+    live.release_stop(owner)
+    assert binding.raw_stop_attempt is None
+
+
+@pytest.mark.parametrize(
+    ("entrant_key", "rejection_status"),
+    ((None, 401), ("b", 404)),
+    ids=("anonymous-first", "foreign-first"),
+)
+def test_pre_auth_stop_entrant_cannot_clear_joined_owner_attempt(
+    tmp_path: Path,
+    entrant_key: str | None,
+    rejection_status: int,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        store = app.state.phase2_store
+        runtime = app.state.phase2_live.runtime
+
+        entrant_session = None if entrant_key is None else sessions[entrant_key]
+        entrant_auth_entered = threading.Event()
+        release_entrant_auth = threading.Event()
+        owner_auth_entered = threading.Event()
+        release_owner_auth = threading.Event()
+        raw_stop_entered = threading.Event()
+        release_raw_stop = threading.Event()
+        fence_started = threading.Event()
+        original_account_for_session = store.account_for_session
+        original_runtime_stop = runtime.stop
+        original_runtime_abort = runtime.abort
+        abort_raw_statuses: list[str] = []
+        outcomes: dict[str, object] = {}
+
+        async def held_account_for_session(session_id):
+            if session_id == entrant_session:
+                entrant_auth_entered.set()
+                await asyncio.to_thread(release_entrant_auth.wait)
+            elif session_id == sessions["a"]:
+                owner_auth_entered.set()
+                await asyncio.to_thread(release_owner_auth.wait)
+            return await original_account_for_session(session_id)
+
+        async def held_runtime_stop(session_id, deadline):
+            raw_stop_entered.set()
+            await asyncio.to_thread(release_raw_stop.wait)
+            return await original_runtime_stop(session_id, deadline)
+
+        async def observed_runtime_abort(session_id, reason, *, detail=None):
+            snapshot = runtime.snapshot(session_id)
+            assert snapshot is not None
+            abort_raw_statuses.append(snapshot.session.status)
+            return await original_runtime_abort(session_id, reason, detail=detail)
+
+        store.account_for_session = held_account_for_session
+        runtime.stop = held_runtime_stop
+        runtime.abort = observed_runtime_abort
+        client.cookies.clear()
+
+        def stop_request(name: str, session_id: str | None) -> None:
+            headers = {} if session_id is None else {
+                "cookie": f"{SESSION_COOKIE}={session_id}"
+            }
+            try:
+                outcomes[name] = client.post(
+                    f"/api/live/sessions/{meeting_id}/stop",
+                    json={"deadline": 2.0},
+                    headers=headers,
+                )
+            except BaseException as exc:  # pragma: no cover - assertion reports thread error.
+                outcomes[f"{name}_error"] = exc
+
+        entrant_thread = threading.Thread(
+            target=stop_request,
+            args=("entrant", entrant_session),
+        )
+        entrant_thread.start()
+        assert entrant_auth_entered.wait(timeout=2)
+
+        owner_thread = threading.Thread(
+            target=stop_request,
+            args=("owner", sessions["a"]),
+        )
+        owner_thread.start()
+        assert owner_auth_entered.wait(timeout=2)
+
+        release_entrant_auth.set()
+        entrant_thread.join(timeout=2)
+        assert not entrant_thread.is_alive()
+        assert "entrant_error" not in outcomes
+        assert outcomes["entrant"].status_code == rejection_status
+        attempt = binding.raw_stop_attempt
+        assert attempt is not None and attempt.entrants == 1 and not attempt.started
+
+        def fence_meeting() -> None:
+            fence_started.set()
+            try:
+                client.portal.call(
+                    app.state.phase2_live._fence,
+                    binding,
+                    "transcript_persistence_failed",
+                )
+            except BaseException as exc:  # pragma: no cover - assertion reports thread error.
+                outcomes["fence_error"] = exc
+
+        fence_thread = threading.Thread(target=fence_meeting)
+        fence_thread.start()
+        assert fence_started.wait(timeout=2)
+        release_owner_auth.set()
+        assert raw_stop_entered.wait(timeout=2)
+        time.sleep(0.01)
+        assert fence_thread.is_alive()
+        assert abort_raw_statuses == []
+
+        release_raw_stop.set()
+        owner_thread.join(timeout=5)
+        fence_thread.join(timeout=5)
+        assert not owner_thread.is_alive() and not fence_thread.is_alive()
+        assert "owner_error" not in outcomes and "fence_error" not in outcomes
+        assert outcomes["owner"].status_code == 200
+        assert abort_raw_statuses == ["closed"]
+        assert binding.raw_stop_attempt is None
+        meeting = client.get(
+            f"/api/meetings/{meeting_id}",
+            headers={"cookie": f"{SESSION_COOKIE}={sessions['a']}"},
+        ).json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["audio"]["state"] == "partial"
+        assert not (
+            database.parent / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+        ).exists()
 
 
 def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(
