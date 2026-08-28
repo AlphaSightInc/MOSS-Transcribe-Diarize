@@ -12,7 +12,7 @@ import json
 import secrets
 import time
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, AsyncIterator, Mapping, Protocol
 
@@ -583,6 +583,11 @@ class Phase2Store:
                             row["account_id"],
                             row["meeting_id"],
                         )
+                    elif row["audio_state"] == "available":
+                        await self._downgrade_interrupted_live_audio_to_partial(
+                            row["account_id"],
+                            row["meeting_id"],
+                        )
                 else:
                     await asyncio.to_thread(
                         audio_archive.discard_unrecorded,
@@ -698,6 +703,31 @@ class Phase2Store:
                     channels = NULL, bit_rate_bps = NULL, updated_at_ms = ?
                 WHERE account_id = ? AND meeting_id = ?
                   AND state IN ('available', 'partial')
+                  AND EXISTS (
+                    SELECT 1 FROM meetings
+                    WHERE account_id = ? AND meeting_id = ?
+                      AND mode = 'live' AND status = 'interrupted'
+                  )
+                """,
+                (now, account_id, meeting_id, account_id, meeting_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("Interrupted Live Meeting audio truth changed during recovery.")
+
+    async def _downgrade_interrupted_live_audio_to_partial(
+        self,
+        account_id: str,
+        meeting_id: str,
+    ) -> None:
+        """Keep verified MP3 metadata while making interrupted completeness truthful."""
+
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meeting_audio
+                SET state = 'partial', updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND state = 'available'
                   AND EXISTS (
                     SELECT 1 FROM meetings
                     WHERE account_id = ? AND meeting_id = ?
@@ -1206,6 +1236,42 @@ class Phase2Store:
             if cursor.rowcount != 1:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")
 
+    async def _downgrade_meeting_audio_to_partial(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+    ) -> None:
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meeting_audio
+                SET state = 'partial', updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND state = 'available'
+                  AND EXISTS (
+                    SELECT 1 FROM meetings
+                    WHERE account_id = ? AND meeting_id = ?
+                      AND mode = 'live' AND status = 'active'
+                  )
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (
+                    now,
+                    account_id,
+                    meeting_id,
+                    account_id,
+                    meeting_id,
+                    account_id,
+                    authority_generation,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+
 
 class AccountWorkspace:
     """The only public persistence authority opened by a valid MOSS session."""
@@ -1400,6 +1466,13 @@ class MeetingHandle:
                 await asyncio.to_thread(self.discard_audio, archive, existing)
                 await self.mark_audio_unavailable()
                 existing = _unavailable_meeting_audio()
+            elif existing.state == "available":
+                await self._store._downgrade_meeting_audio_to_partial(
+                    self._account_id,
+                    self._authority_generation,
+                    self.meeting_id,
+                )
+                existing = replace(existing, state="partial")
             await asyncio.to_thread(stages.discard, self._account_id, self.meeting_id)
             return existing
         if existing is not None and existing.state == "unavailable":

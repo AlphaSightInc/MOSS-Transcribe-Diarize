@@ -16,10 +16,11 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
-from moss_transcribe_diarize.app.phase2 import GoogleIdentity, Phase2Store
+from moss_transcribe_diarize.app.phase2 import AccountRevoked, GoogleIdentity, Phase2Store
 from moss_transcribe_diarize.app.phase2_audio import (
     LiveMeetingAudioStages,
     MeetingAudioArchive,
+    MeetingAudioCleanupError,
 )
 from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
@@ -89,6 +90,30 @@ class _HeldCountingArchive(MeetingAudioArchive):
             source_path,
             partial=partial,
         )
+
+
+class _RevokedPublicationArchive(MeetingAudioArchive):
+    """Refuse publication cleanup, then model transient or persistent recovery."""
+
+    def __init__(self, root: Path, *, recovery_failures: int | None) -> None:
+        super().__init__(root)
+        self.recovery_failures = recovery_failures
+        self.publication_cleanup_attempts = 0
+        self.recovery_cleanup_attempts = 0
+
+    def discard(self, publication) -> None:
+        del publication
+        self.publication_cleanup_attempts += 1
+        raise MeetingAudioCleanupError("prototype revoked publication cleanup refusal")
+
+    def discard_unrecorded(self, account_id: str, meeting_id: str) -> None:
+        self.recovery_cleanup_attempts += 1
+        if (
+            self.recovery_failures is None
+            or self.recovery_cleanup_attempts <= self.recovery_failures
+        ):
+            raise MeetingAudioCleanupError("prototype revoked recovery cleanup refusal")
+        super().discard_unrecorded(account_id, meeting_id)
 
 
 def pcm_tone(samples: int, frequency: float = 880.0) -> bytes:
@@ -346,6 +371,7 @@ async def _cleanup_failure_probe(work: Path, pcm: bytes) -> dict[str, object]:
             durable_document={"segments": [{"id": "seg_0001", "text": "durable transcript"}]},
             durable_version=1,
             authority_cleanup_task=None,
+            unrecorded_cleanup_required=False,
             terminal_settlement_lock=asyncio.Lock(),
             changed=asyncio.Condition(),
         )
@@ -389,6 +415,115 @@ async def _cleanup_failure_probe(work: Path, pcm: bytes) -> dict[str, object]:
         except Exception:
             pass
         await store.close()
+
+
+async def _revoked_publication_cleanup_case(
+    work: Path,
+    pcm: bytes,
+    *,
+    recovery_failures: int | None,
+) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    archive = _RevokedPublicationArchive(
+        work / "meetings",
+        recovery_failures=recovery_failures,
+    )
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    meeting_id = ""
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, _ = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        meeting_id = handle.meeting_id
+        stages.reserve(account.account_id, meeting_id)
+        stage = stages.create(meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+        prefix = stages.prefix(
+            account.account_id,
+            meeting_id,
+            expected_samples=len(pcm) // 2,
+        )
+        assert prefix is not None
+
+        original_commit = store._commit_meeting_audio
+
+        async def revoke_before_metadata(*args, **kwargs):
+            assert await store.revoke_email("a@example.com")
+            return await original_commit(*args, **kwargs)
+
+        store._commit_meeting_audio = revoke_before_metadata
+        publication_result = "unexpected-success"
+        try:
+            await handle.publish_audio(
+                archive,
+                prefix.path,
+                partial=False,
+                raw_pcm=True,
+            )
+        except AccountRevoked:
+            publication_result = "authority-revoked"
+
+        binding = SimpleNamespace(
+            owner_key=(account.account_id, account.authority_generation),
+            handle=handle,
+            authority_cleanup_task=None,
+            unrecorded_cleanup_required=False,
+        )
+        live = Phase2LiveMeetings(
+            object(),
+            audio_archive=archive,
+            audio_stages=stages,
+        )
+        cleanup_verified = await live._discard_stage_after_authority_loss(
+            binding,
+            discard_unrecorded=True,
+        )
+        meeting_dir = archive.root / account.account_id / meeting_id
+        return {
+            "publication_result": publication_result,
+            "publication_cleanup_attempts": archive.publication_cleanup_attempts,
+            "recovery_cleanup_attempts": archive.recovery_cleanup_attempts,
+            "cleanup_verified": cleanup_verified,
+            "orphan_mp3_exists": (meeting_dir / "audio.mp3").exists(),
+            "raw_stage_exists": stages.path(account.account_id, meeting_id).exists(),
+        }
+    finally:
+        if meeting_id:
+            try:
+                MeetingAudioArchive.discard_unrecorded(archive, "account-a", meeting_id)
+            except Exception:
+                pass
+            try:
+                stages.discard("account-a", meeting_id)
+            except Exception:
+                pass
+        await store.close()
+
+
+async def _revoked_publication_cleanup_probe(
+    work: Path,
+    pcm: bytes,
+) -> dict[str, object]:
+    return {
+        "transient": await _revoked_publication_cleanup_case(
+            work / "transient",
+            pcm,
+            recovery_failures=1,
+        ),
+        "persistent": await _revoked_publication_cleanup_case(
+            work / "persistent",
+            pcm,
+            recovery_failures=None,
+        ),
+    }
 
 
 async def _missing_interrupted_artifact_probe(work: Path, pcm: bytes) -> dict[str, object]:
@@ -813,13 +948,16 @@ def main() -> None:
         state = {
             "structural_question": (
                 "Can one bounded fsynced mixed-PCM stage preserve exactly the accepted Live "
-                "transcription mix and recover truthful complete/partial/unavailable audio?"
+                "transcription mix and settle truthful complete/partial/unavailable audio when "
+                "completion, interruption, and Account revocation race publication?"
             ),
             "minimum_primitives": [
                 "one owner-derived mixed PCM stage path",
                 "one existing max_tape_bytes bound",
                 "one existing MeetingAudioArchive publication truth seam",
                 "one owner-bound terminal recovery operation",
+                "one metadata-preserving available-to-partial state transition",
+                "one remembered fixed-path cleanup obligation after authority loss",
             ],
             "invariants": [
                 "only the exact runtime-accepted mixed bytes enter staging",
@@ -827,7 +965,9 @@ def main() -> None:
                 "recovery uses only a canonical Live Meeting record and its fixed owner path",
                 "a torn suffix is excluded at the last complete PCM16 sample",
                 "transcript durability is independent of audio outcome",
-                "terminal success follows transcript, MP3 metadata, stage cleanup, then Meeting status",
+                "only completed Stop may retain available; interruption keeps verified bytes as partial",
+                "unrecorded MP3 and raw stage cleanup must be verified before terminal settlement",
+                "MP3 metadata, stage cleanup, and atomic transcript/status precede public terminal truth",
             ],
             "assumptions_unknowns": [
                 "single-process local filesystem; power-loss durability is delegated to fsync",
@@ -841,7 +981,7 @@ def main() -> None:
             "tool_decision": (
                 "Use real fsync plus production MeetingAudioArchive/FFmpeg/ffprobe; simulate process "
                 "loss at every terminal ordering edge and inject cleanup refusal because each "
-                "result changes whether Meeting terminality is eligible."
+                "result changes audio state or whether Meeting terminality is eligible."
             ),
             "normal_stage": {
                 "frames": 120,
@@ -877,6 +1017,12 @@ def main() -> None:
             "terminal_crash_boundaries": crash_order_probe(root / "ordering", frame_pcm),
             "cleanup_failure_ordering": asyncio.run(
                 _cleanup_failure_probe(root / "cleanup-failure", frame_pcm)
+            ),
+            "revoked_publication_cleanup": asyncio.run(
+                _revoked_publication_cleanup_probe(
+                    root / "revoked-publication-cleanup",
+                    frame_pcm,
+                )
             ),
             "missing_interrupted_artifact": asyncio.run(
                 _missing_interrupted_artifact_probe(
@@ -923,7 +1069,7 @@ def main() -> None:
                 "persistent_authority_valid": {
                     "cleanup_attempts": 1,
                     "meeting_status": "active",
-                    "audio_state": "available",
+                    "audio_state": "partial",
                     "stage_exists": True,
                     "terminal_persisted": False,
                     "failure_explicit": "audio_terminal_recovery_failed",
@@ -932,6 +1078,24 @@ def main() -> None:
                     "cleanup_attempts": 2,
                     "cleanup_verified": True,
                     "stage_exists": False,
+                },
+            }
+            and state["revoked_publication_cleanup"] == {
+                "transient": {
+                    "publication_result": "authority-revoked",
+                    "publication_cleanup_attempts": 1,
+                    "recovery_cleanup_attempts": 2,
+                    "cleanup_verified": True,
+                    "orphan_mp3_exists": False,
+                    "raw_stage_exists": False,
+                },
+                "persistent": {
+                    "publication_result": "authority-revoked",
+                    "publication_cleanup_attempts": 1,
+                    "recovery_cleanup_attempts": 2,
+                    "cleanup_verified": False,
+                    "orphan_mp3_exists": True,
+                    "raw_stage_exists": True,
                 },
             }
             and state["missing_interrupted_artifact"] == {
@@ -987,6 +1151,17 @@ def main() -> None:
                 "audio_state": "unavailable",
                 "transcript": "durable file transcript",
                 "staged_exists": False,
+            }
+            and {
+                item["crash_after"]: item["audio_state_after_recovery"]
+                for item in state["terminal_crash_boundaries"]
+            } == {
+                "meeting_create": "unavailable",
+                "transcript": "partial",
+                "mp3_publish": "partial",
+                "metadata": "partial",
+                "stage_cleanup": "partial",
+                "meeting_finish": "available",
             }
         ) else "FAIL"
         print(json.dumps(state, indent=2, sort_keys=True))

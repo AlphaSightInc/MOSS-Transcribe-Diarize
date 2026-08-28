@@ -69,6 +69,7 @@ class _LiveBinding:
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
     authority_cleanup_task: asyncio.Task[None] | None = None
+    unrecorded_cleanup_required: bool = False
     terminal_settlement_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
 
@@ -398,6 +399,7 @@ class Phase2LiveMeetings:
                     reason or "meeting_authority_revoked",
                     terminal_snapshot,
                     terminal_events,
+                    discard_unrecorded=True,
                 )
                 return
             except Exception:
@@ -507,9 +509,14 @@ class Phase2LiveMeetings:
         reason: str,
         terminal_snapshot: LiveServiceSnapshot | None,
         terminal_events: tuple[LiveServiceEvent, ...],
+        *,
+        discard_unrecorded: bool = False,
     ) -> None:
         binding.capture_fenced = True
-        if not await self._discard_stage_after_authority_loss(binding):
+        if not await self._discard_stage_after_authority_loss(
+            binding,
+            discard_unrecorded=discard_unrecorded,
+        ):
             await self._publish_settlement_failure(binding, reason)
             return
         await self._publish_terminal_locked(
@@ -576,20 +583,29 @@ class Phase2LiveMeetings:
             recover=True,
         )
 
-    async def _discard_stage_after_authority_loss(self, binding: _LiveBinding) -> bool:
+    async def _discard_stage_after_authority_loss(
+        self,
+        binding: _LiveBinding,
+        *,
+        discard_unrecorded: bool = False,
+    ) -> bool:
+        if discard_unrecorded:
+            binding.unrecorded_cleanup_required = True
         cleanup = binding.authority_cleanup_task
         if cleanup is None:
             cleanup = asyncio.create_task(
                 asyncio.to_thread(
-                    self._discard_revoked_stage,
+                    self._discard_revoked_artifacts,
                     binding.owner_key[0],
                     binding.handle.meeting_id,
+                    binding.unrecorded_cleanup_required,
                 ),
                 name=f"phase2-live-revoked-cleanup-{binding.handle.meeting_id}",
             )
             binding.authority_cleanup_task = cleanup
         try:
             await asyncio.shield(cleanup)
+            binding.unrecorded_cleanup_required = False
             return True
         except asyncio.CancelledError:
             # The task remains owned by the binding; shutdown will await the same work.
@@ -600,10 +616,17 @@ class Phase2LiveMeetings:
             if cleanup.done() and binding.authority_cleanup_task is cleanup:
                 binding.authority_cleanup_task = None
 
-    def _discard_revoked_stage(self, account_id: str, meeting_id: str) -> None:
+    def _discard_revoked_artifacts(
+        self,
+        account_id: str,
+        meeting_id: str,
+        discard_unrecorded: bool,
+    ) -> None:
         failure: Exception | None = None
         for _ in range(2):
             try:
+                if discard_unrecorded:
+                    self.audio_archive.discard_unrecorded(account_id, meeting_id)
                 self.audio_stages.discard(account_id, meeting_id)
                 return
             except Exception as exc:

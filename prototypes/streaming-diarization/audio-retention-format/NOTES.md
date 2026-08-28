@@ -121,9 +121,10 @@ Meeting-row creation, transcript, MP3 publish, metadata, stage cleanup, and Meet
 pre-stage boundary had no Meeting directory and recovered interrupted/unavailable without
 inventing one. A pre-metadata orphan MP3 was first discarded through production's verified-absence
 seam, then the durable stage was published as partial. Loss after durable available metadata
-retained that valid complete artifact, removed the stage, and interrupted the still-active Meeting;
-the fully finished boundary remained completed/available. Every boundary preserved transcript
-truth and left no raw stage. Recovery never searched the filesystem or resumed capture.
+retained the identical canonical artifact and metadata, downgraded only its state to partial,
+removed the stage, and interrupted the still-active Meeting; the fully finished boundary remained
+completed/available. Every boundary preserved transcript truth and left no raw stage. Recovery
+never searched the filesystem or resumed capture.
 
 The accepted ordering is MP3 publication and metadata, verified stage cleanup, one atomic final
 transcript-plus-Meeting-status transaction when the transcript changed (or status-only finish when
@@ -150,18 +151,26 @@ simulated crash with that file plus a durable Live PCM stage restarted to exactl
 falsified for File mode: an active File row with a durable transcript and staged MP3 restarted
 interrupted/unavailable, preserved the transcript, removed the stage, and retained no MP3.
 
-The production-focused suite then passed 28/28 Live ownership and recovery cases. In particular,
+The production-focused suite then passed 30/30 Live ownership and recovery cases. In particular,
 a transient failure after available MP3 metadata but before stage cleanup was retried through the
-same owner-bound recovery operation: available metadata/file truth survived, the raw stage was
-removed on the second attempt, and the Meeting durably ended interrupted instead of remaining
-active. The adversarial persistent form rejected the earlier policy: it had marked the Meeting
+same owner-bound recovery operation: the raw stage was removed on the second attempt; the identical
+relative path, bytes, duration, format, sample rate, channels, and bit rate survived; only state
+changed from available to partial before the Meeting durably ended interrupted. Startup measured
+the same state-only result without rename or re-encode. The adversarial persistent form rejected
+the earlier policy: it had marked the Meeting
 interrupted while raw PCM survived, making startup recovery ineligible. The production-backed
-probe now leaves that Meeting active, keeps its available MP3 metadata truthful, and exposes the
+probe now leaves that Meeting active, keeps its partial MP3 metadata truthful, and exposes the
 terminal-recovery failure; startup later verifies raw absence before interrupting it.
 
 Account-authority loss gets one binding-owned, cancellation-shielded cleanup task with exactly one
 causal retry, not an open-ended retry framework. A forced first failure succeeded on attempt two
-and removed the fixed stage. If both attempts fail after revocation already made SQLite terminal,
+and removed the fixed stage. A second falsifier revoked authority after canonical MP3 replacement
+but before metadata: the rejected implementation swallowed the publication cleanup failure,
+removed only raw PCM, and declared cleanup verified while the unrecorded MP3 survived. The accepted
+binding remembers that both fixed paths require cleanup. Its transient case removed both on recovery
+attempt two; its persistent case made four attempts across settlement plus shutdown, retained the
+MP3 and raw stage for later canonical recovery, and never marked in-memory terminal settlement.
+If both attempts fail after revocation already made SQLite terminal,
 startup selects canonical interrupted Live rows regardless of whether the Account has since been
 re-allowed, then derives the fixed owner path; it never searches the filesystem. It removes
 unrecorded MP3 only when metadata grants neither available nor partial truth, then verifies

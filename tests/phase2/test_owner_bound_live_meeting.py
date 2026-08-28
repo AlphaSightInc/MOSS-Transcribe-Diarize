@@ -988,9 +988,13 @@ def test_transient_live_stage_cleanup_failure_recovers_truth_and_finishes_interr
         session(client, sessions["a"])
         meeting_id = client.post("/api/live/sessions").json()["id"]
         feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
         stages = app.state.phase2_live.audio_stages
         original_discard = stages.discard
+        store = app.state.phase2_store
+        original_downgrade = store._downgrade_meeting_audio_to_partial
         attempts = 0
+        downgrade_observation: dict[str, object] = {}
 
         def fail_once(account_id: str, target_meeting_id: str) -> None:
             nonlocal attempts
@@ -1000,6 +1004,21 @@ def test_transient_live_stage_cleanup_failure_recovers_truth_and_finishes_interr
             original_discard(account_id, target_meeting_id)
 
         stages.discard = fail_once
+
+        async def observe_downgrade(*args, **kwargs):
+            before = await binding.handle.snapshot()
+            assert before.audio is not None and before.audio.relative_path is not None
+            retained = tmp_path / "meetings" / before.audio.relative_path
+            downgrade_observation["before"] = before.audio.to_dict()
+            downgrade_observation["bytes_before"] = retained.read_bytes()
+            result = await original_downgrade(*args, **kwargs)
+            after = await binding.handle.snapshot()
+            assert after.audio is not None
+            downgrade_observation["after"] = after.audio.to_dict()
+            downgrade_observation["bytes_after"] = retained.read_bytes()
+            return result
+
+        store._downgrade_meeting_audio_to_partial = observe_downgrade
         stopped = client.post(
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
@@ -1010,9 +1029,17 @@ def test_transient_live_stage_cleanup_failure_recovers_truth_and_finishes_interr
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "interrupted"
         assert meeting["transcript"]["segments"][0]["text"] == "owner live words"
-        assert meeting["audio"]["state"] == "available"
+        assert meeting["audio"]["state"] == "partial"
         meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
         assert (meeting_dir / "audio.mp3").is_file()
+        before_audio = downgrade_observation["before"]
+        after_audio = downgrade_observation["after"]
+        assert before_audio["state"] == "available"
+        assert after_audio["state"] == "partial"
+        assert {key: value for key, value in before_audio.items() if key != "state"} == {
+            key: value for key, value in after_audio.items() if key != "state"
+        }
+        assert downgrade_observation["bytes_before"] == downgrade_observation["bytes_after"]
         assert not (meeting_dir / ".live-mix.pcm").exists()
         assert attempts == 2
 
@@ -1048,7 +1075,7 @@ def test_persistent_live_stage_cleanup_failure_stays_active_until_startup_recove
         assert failed["persistence_failure"] == "audio_terminal_recovery_failed"
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "active"
-        assert meeting["audio"]["state"] == "available"
+        assert meeting["audio"]["state"] == "partial"
         assert binding.terminal_persisted is False
         stage_path = tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
         assert stage_path.is_file()
@@ -1059,7 +1086,7 @@ def test_persistent_live_stage_cleanup_failure_stays_active_until_startup_recove
         session(client, sessions["a"])
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "interrupted"
-        assert meeting["audio"]["state"] == "available"
+        assert meeting["audio"]["state"] == "partial"
         assert not stage_path.exists()
 
 
@@ -1069,7 +1096,7 @@ def test_persistent_live_stage_cleanup_failure_stays_active_until_startup_recove
         ("zero", "unavailable", None),
         ("torn", "partial", "audio.partial.mp3"),
         ("orphan", "partial", "audio.partial.mp3"),
-        ("metadata", "available", "audio.mp3"),
+        ("metadata", "partial", "audio.mp3"),
         ("missing", "unavailable", None),
     ),
 )
@@ -1084,6 +1111,23 @@ def test_restart_recovers_only_canonical_active_live_stage_and_reconciles_artifa
     session_id, meeting_id = asyncio.run(
         prepare_crashed_live_meeting(database, audio_root, scenario)
     )
+    metadata_before = None
+    bytes_before = None
+    if scenario == "metadata":
+        connection = sqlite3.connect(database)
+        try:
+            metadata_before = connection.execute(
+                """
+                SELECT relative_path, byte_count, duration_ms, format,
+                       sample_rate_hz, channels, bit_rate_bps
+                FROM meeting_audio WHERE meeting_id = ?
+                """,
+                (meeting_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        assert metadata_before is not None
+        bytes_before = (audio_root / metadata_before[0]).read_bytes()
     app = make_app(database)
 
     with TestClient(app, base_url="https://moss.test") as client:
@@ -1100,6 +1144,20 @@ def test_restart_recovers_only_canonical_active_live_stage_and_reconciles_artifa
             downloaded = client.get(f"/api/meetings/{meeting_id}/audio/download")
             assert downloaded.status_code == 200
             assert downloaded.content == (meeting_dir / expected_name).read_bytes()
+            if scenario == "metadata":
+                assert tuple(
+                    meeting["audio"][key]
+                    for key in (
+                        "relative_path",
+                        "byte_count",
+                        "duration_ms",
+                        "format",
+                        "sample_rate_hz",
+                        "channels",
+                        "bit_rate_bps",
+                    )
+                ) == metadata_before
+                assert downloaded.content == bytes_before
         else:
             assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 404
 
@@ -1430,6 +1488,103 @@ def test_account_revoke_fences_a_queued_revision_and_returns_401(tmp_path: Path)
     meeting_dir = database.parent / "meetings" / "sub-a" / meeting_id
     assert not (meeting_dir / ".live-mix.pcm").exists()
     assert not tuple(meeting_dir.glob("*.mp3"))
+
+
+@pytest.mark.parametrize(
+    ("recovery_failures", "cleanup_verified"),
+    ((1, True), (None, False)),
+)
+def test_revoke_after_mp3_publish_cleans_or_fences_unrecorded_artifact(
+    tmp_path: Path,
+    recovery_failures: int | None,
+    cleanup_verified: bool,
+):
+    class RefusingRevokedCleanup(MeetingAudioArchive):
+        def __init__(self, root: Path) -> None:
+            super().__init__(root)
+            self.publication_cleanup_attempts = 0
+            self.recovery_cleanup_attempts = 0
+
+        def discard(self, publication) -> None:
+            del publication
+            self.publication_cleanup_attempts += 1
+            raise MeetingAudioCleanupError("injected publication cleanup refusal")
+
+        def discard_unrecorded(self, account_id: str, target_meeting_id: str) -> None:
+            self.recovery_cleanup_attempts += 1
+            if (
+                recovery_failures is None
+                or self.recovery_cleanup_attempts <= recovery_failures
+            ):
+                raise MeetingAudioCleanupError("injected revoked recovery cleanup refusal")
+            super().discard_unrecorded(account_id, target_meeting_id)
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    archive = RefusingRevokedCleanup(tmp_path / "meetings")
+    app = make_app(database, audio_archive=archive)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        store = app.state.phase2_store
+        original_commit = store._commit_meeting_audio
+        revoked = False
+
+        async def revoke_before_metadata(*args, **kwargs):
+            nonlocal revoked
+            if not revoked:
+                revoked = True
+                assert await store.revoke_email("a@example.com") is True
+            return await original_commit(*args, **kwargs)
+
+        store._commit_meeting_audio = revoke_before_metadata
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
+        assert archive.publication_cleanup_attempts == 1
+        assert archive.recovery_cleanup_attempts == 2
+        assert binding.terminal_persisted is cleanup_verified
+        assert (meeting_dir / "audio.mp3").exists() is not cleanup_verified
+        assert (meeting_dir / ".live-mix.pcm").exists() is not cleanup_verified
+        if cleanup_verified:
+            assert binding.unrecorded_cleanup_required is False
+        else:
+            assert binding.unrecorded_cleanup_required is True
+            assert binding.persistence_failure == "meeting_authority_revoked"
+
+        connection = sqlite3.connect(database)
+        try:
+            status = connection.execute(
+                "SELECT status FROM meetings WHERE meeting_id = ?",
+                (meeting_id,),
+            ).fetchone()[0]
+            audio_rows = connection.execute(
+                "SELECT COUNT(*) FROM meeting_audio WHERE meeting_id = ?",
+                (meeting_id,),
+            ).fetchone()[0]
+        finally:
+            connection.close()
+        assert status == "interrupted"
+        assert audio_rows == 0
+
+    if cleanup_verified:
+        assert binding.terminal_persisted is True
+        assert not (meeting_dir / "audio.mp3").exists()
+        assert not (meeting_dir / ".live-mix.pcm").exists()
+    else:
+        # Shutdown retries the same remembered unrecorded-artifact obligation; a
+        # persistent refusal still cannot make terminal settlement eligible.
+        assert archive.recovery_cleanup_attempts >= 4
+        assert binding.terminal_persisted is False
+        assert binding.unrecorded_cleanup_required is True
+        assert (meeting_dir / "audio.mp3").is_file()
+        assert (meeting_dir / ".live-mix.pcm").is_file()
 
 
 def test_revoked_live_stage_cleanup_failure_is_reconciled_from_canonical_row_on_startup(

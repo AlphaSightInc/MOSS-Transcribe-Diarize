@@ -30,7 +30,10 @@ unavailable. Normal Stop settles MP3 metadata, verifies raw-stage cleanup, atomi
 final transcript and terminal Meeting status when the document changed (or finishes status-only
 when it did not), and only then updates the public projection. One per-binding settlement lock is
 shared by publication, fencing, shutdown, and in-service recovery. Startup never resumes capture;
-it enumerates canonical active rows and recovers fixed owner paths without filesystem search.
+it enumerates canonical active rows and recovers fixed owner paths without filesystem search. If
+interruption follows verified complete publication but precedes terminal Meeting truth, one guarded
+state-only mutation retains the identical canonical path, bytes, duration, and format as `partial`;
+it does not rename or re-encode the MP3.
 
 ## Consequences
 
@@ -79,5 +82,11 @@ it enumerates canonical active rows and recovers fixed owner paths without files
   making raw PCM unreachable. MP3 pre-publication uses one deterministic `.audio.staged.mp3` path;
   Live and File startup recovery remove it through canonical owner paths before preserving verified
   metadata or recording unavailable. Only normal completed settlement may retain complete audio;
-  failed/interrupted/crash outcomes are partial or unavailable. Issue #18 owns moving revocation
-  ordering before generation fencing.
+  failed/interrupted/crash outcomes are partial or unavailable. The probe rejected interrupted
+  `available`: active and already-interrupted recovery now downgrade a verified artifact to
+  metadata-identical `partial` before terminal settlement, while uncertainty still blocks rather
+  than changing truth. If Account revocation lands after MP3 replacement but before metadata, the
+  binding remembers that the fixed unrecorded MP3 and raw stage both require cleanup. A transient
+  refusal removed both on attempt two; persistent refusal remained explicitly unsettled across
+  shutdown retry instead of declaring terminal settlement over an orphan. Issue #18 owns moving
+  revocation ordering before generation fencing.
