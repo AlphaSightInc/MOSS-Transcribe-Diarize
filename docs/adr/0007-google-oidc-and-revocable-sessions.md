@@ -32,9 +32,10 @@ and retains the cookie/session. Accepted File/URL work is Account-owned and cont
 revoke closes and drains the Account-generation gate, synchronously fences every Live binding and
 File task before awaiting any one settlement, quiesces transcript/audio work while captured handles
 remain valid, recovers any residual active row through its fixed File/Live owner path, and disables
-authority last only after a zero-active-row assertion. The Live fence cancels only an in-flight
-SQLite transcript commit, whose transaction rollback is atomic; idle and terminal-settlement
-workers receive a queued exit and are joined before authority changes. A failed revoke never
+authority last only after a zero-active-row assertion. The Live fence blocks new publication
+admission, marks still-queued work to skip, sends a cooperative exit, and joins the worker. Any
+SQLite mutation or thread-backed operation admitted before the fence finishes and synchronizes
+binding truth before interrupted terminal settlement and command return. A failed revoke never
 reopens that uncertain generation; startup recovery plus a fresh command is the retry boundary.
 Once accepted, Account revoke is a lifecycle-owned task rather than socket-handler work. The
 handler awaits it through a cancellation shield; product lifespan joins it after control transport
@@ -82,14 +83,16 @@ The corrected probe also makes PASS depend on the exact logout-controlled Meetin
 durable `completed` states, so a no-op Stop fails. It measured metadata-identical
 `available → partial` interruption, cleanup uncertainty remaining active/authorized until retry,
 and a queued second publication committing nothing while the first settlement was held and failed.
-The phase-policy probe also measured an idle queued exit without cancellation, a cancelled SQLite
-commit with rollback and no durable version, and held terminal audio publishing exactly once before
-Meeting completion, worker join, and authority disable. Production reproduced that held terminal
-audio boundary through the shared Live adapter.
+The publication probe held after a real SQLite COMMIT: the database exposed version 1 while binding
+memory still exposed version 0. Cooperative join let binding converge on version 1, skipped a second
+queued document, and interrupted the Meeting at the exact converged document/version. It also
+measured an idle queued exit and held terminal audio publishing exactly once before Meeting
+completion, worker join, and authority disable. Production reproduced both boundaries.
 Production tests reproduced transient and persistent unregistered Live-create cleanup, restart
 retry, File audio at the publish/finish boundary, the final zero-active assertion, and the same
 synchronous publication fence. Cancellation of a held Unix handler during product shutdown left
 the service-owned revoke alive: held Live audio published exactly once and removed raw state, while
 a held File runner retained its registry/input until return; lifespan joined both before authority
-disable and work-owner/Store shutdown. A held transcript commit rolled back, and interrupted revoke
-persisted the exact prior durable document rather than the newer fenced raw snapshot.
+disable and work-owner/Store shutdown. Production held after real COMMIT but before its coroutine
+resumed; revoke joined it, synchronized binding state, skipped a queued second publication, and
+persisted the exact converged transcript before returning.

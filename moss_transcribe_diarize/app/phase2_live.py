@@ -78,7 +78,6 @@ class _LiveBinding:
     terminal_persisted: bool = False
     authority_closing: bool = False
     publication_fenced: bool = False
-    publication_phase: str = "idle"
     capture_fenced: bool = False
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
@@ -239,17 +238,12 @@ class Phase2LiveMeetings:
         )
 
     def fence_account(self, owner_key: tuple[str, int]) -> tuple[_LiveBinding, ...]:
-        """Synchronously reject mutations and result commits before any settlement await."""
+        """Synchronously reject mutations/new publication admission, then queue worker exit."""
 
         bindings = self.bindings_for_account(owner_key)
         for binding in bindings:
             binding.authority_closing = True
             binding.publication_fenced = True
-            if (
-                binding.worker is not None
-                and binding.publication_phase == "transcript_commit"
-            ):
-                binding.worker.cancel()
             binding.queue.put_nowait(None)
         return bindings
 
@@ -259,7 +253,7 @@ class Phase2LiveMeetings:
         control: Any,
         reason: str,
     ) -> None:
-        """Join any accepted Stop, settle interrupted truth, then release shared capture state."""
+        """Join admitted publication, settle its durable document, then release capture."""
 
         worker = binding.worker
         if binding.publication_fenced and worker is not None:
@@ -435,23 +429,15 @@ class Phase2LiveMeetings:
                 )
                 document_changed = document != binding.durable_document
                 if terminal is not None:
-                    binding.publication_phase = "terminal_settlement"
-                    try:
-                        await self._settle_terminal(
-                            binding,
-                            publication.snapshot,
-                            publication.events,
-                            terminal,
-                        )
-                    finally:
-                        binding.publication_phase = "idle"
+                    await self._settle_terminal(
+                        binding,
+                        publication.snapshot,
+                        publication.events,
+                        terminal,
+                    )
                     continue
                 elif document_changed:
-                    binding.publication_phase = "transcript_commit"
-                    try:
-                        binding.durable_version = await binding.handle.commit_transcript(document)
-                    finally:
-                        binding.publication_phase = "idle"
+                    binding.durable_version = await binding.handle.commit_transcript(document)
                     binding.durable_document = document
             except AccountRevoked:
                 await self._fence(binding, "meeting_authority_revoked")

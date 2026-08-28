@@ -207,7 +207,7 @@ async def publication_fence_probe() -> dict[str, object]:
 
 
 async def publication_worker_policy_probe() -> dict[str, object]:
-    """Falsify phase-specific worker shutdown without filesystem or SQLite noise."""
+    """Falsify cooperative worker shutdown around thread-backed terminal work."""
 
     idle_queue: asyncio.Queue[None] = asyncio.Queue()
 
@@ -219,29 +219,6 @@ async def publication_worker_policy_probe() -> dict[str, object]:
     idle_queue.put_nowait(None)
     await idle
 
-    transcript_entered = asyncio.Event()
-    transcript_release = asyncio.Event()
-    transcript_versions: list[int] = []
-    transcript_rolled_back = False
-    durable_document = {"segments": [{"text": "durable prefix"}]}
-    raw_document = {"segments": [{"text": "fenced raw words"}]}
-
-    async def transcript_worker() -> None:
-        nonlocal transcript_rolled_back
-        transcript_entered.set()
-        try:
-            await transcript_release.wait()
-            transcript_versions.append(1)
-        except asyncio.CancelledError:
-            transcript_rolled_back = True
-            raise
-
-    transcript = asyncio.create_task(transcript_worker())
-    await transcript_entered.wait()
-    transcript.cancel()
-    await asyncio.gather(transcript, return_exceptions=True)
-    interrupted_document = durable_document
-
     terminal_entered = asyncio.Event()
     terminal_release = asyncio.Event()
     terminal_state: dict[str, object] = {
@@ -250,7 +227,6 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         "audio_recorded": False,
         "meeting_status": "active",
         "publication_fenced": False,
-        "publication_phase": "terminal_settlement",
         "publish_count": 0,
         "raw_status": "closed",
         "raw_stage_present": True,
@@ -268,7 +244,6 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         order.append("raw_discarded")
         terminal_state["meeting_status"] = "completed"
         order.append("meeting_completed")
-        terminal_state["publication_phase"] = "idle"
 
     terminal = asyncio.create_task(terminal_worker())
     await terminal_entered.wait()
@@ -304,7 +279,6 @@ async def publication_worker_policy_probe() -> dict[str, object]:
         "lifecycle_shutdown_waiting": not shutdown.done(),
         "meeting_status": terminal_state["meeting_status"],
         "publication_fenced": terminal_state["publication_fenced"],
-        "publication_phase": terminal_state["publication_phase"],
         "raw_status": terminal_state["raw_status"],
         "raw_stage_present": terminal_state["raw_stage_present"],
         "service_revoke_cancelled": service_revoke.cancelled(),
@@ -333,20 +307,122 @@ async def publication_worker_policy_probe() -> dict[str, object]:
             "done": idle.done(),
             "exit_signal": "queued",
         },
-        "transcript_commit": {
-            "cancelled": transcript.cancelled(),
-            "durable_document_after_revoke": interrupted_document,
-            "durable_document_before_fence": durable_document,
-            "durable_versions": transcript_versions,
-            "raw_document_at_fence": raw_document,
-            "rollback_observed": transcript_rolled_back,
-            "terminal_status": "interrupted",
-        },
         "terminal_audio": {
             "held": held,
             "settled": settled,
         },
     }
+
+
+async def committed_mutation_fence_probe(path: Path) -> dict[str, object]:
+    """Hold after real COMMIT; fence must join and converge before terminal truth."""
+
+    first_document = {"segments": [{"text": "accepted before fence"}]}
+    queued_document = {"segments": [{"text": "queued but never admitted"}]}
+    store = await Phase2Store.open(path)
+    try:
+        await store.allow_email(EMAIL)
+        admitted = await store.admit(GoogleIdentity("commit-owner", EMAIL, "Owner"))
+        assert admitted is not None
+        account, _ = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue()
+        commit_completed = asyncio.Event()
+        release_commit_result = asyncio.Event()
+        publication_fenced = False
+        durable_document: dict[str, object] = {"segments": []}
+        durable_version = 0
+        admitted_commits = 0
+        skipped_documents: list[dict[str, object]] = []
+
+        async def commit_then_pause(document: dict[str, object]) -> int:
+            version = await handle.commit_transcript(document)
+            commit_completed.set()
+            await release_commit_result.wait()
+            return version
+
+        async def worker() -> None:
+            nonlocal admitted_commits, durable_document, durable_version
+            while True:
+                publication = await queue.get()
+                if publication is None:
+                    return
+                if publication_fenced:
+                    skipped_documents.append(publication)
+                    continue
+                admitted_commits += 1
+                durable_version = await commit_then_pause(publication)
+                durable_document = publication
+
+        queue.put_nowait(first_document)
+        publication_worker = asyncio.create_task(worker())
+        await commit_completed.wait()
+        queue.put_nowait(queued_document)
+        publication_fenced = True
+        queue.put_nowait(None)
+
+        connection = sqlite3.connect(path)
+        try:
+            held_row = connection.execute(
+                """
+                SELECT m.status, t.version, t.document_json
+                FROM meetings m
+                JOIN meeting_transcripts t
+                  ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                WHERE m.meeting_id = ?
+                """,
+                (handle.meeting_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        assert held_row is not None
+        held = {
+            "admitted_commits": admitted_commits,
+            "binding_document": durable_document,
+            "binding_version": durable_version,
+            "db_document": json.loads(held_row[2]),
+            "db_status": held_row[0],
+            "db_version": held_row[1],
+            "publication_fenced": publication_fenced,
+            "queued_count": queue.qsize(),
+            "worker_cancelled": publication_worker.cancelled(),
+            "worker_done": publication_worker.done(),
+        }
+
+        release_commit_result.set()
+        await publication_worker
+        await handle.finish("interrupted")
+        connection = sqlite3.connect(path)
+        try:
+            final_row = connection.execute(
+                """
+                SELECT m.status, t.version, t.document_json
+                FROM meetings m
+                JOIN meeting_transcripts t
+                  ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                WHERE m.meeting_id = ?
+                """,
+                (handle.meeting_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        assert final_row is not None
+        return {
+            "held_after_real_commit": held,
+            "settled": {
+                "admitted_commits": admitted_commits,
+                "binding_document": durable_document,
+                "binding_version": durable_version,
+                "db_document": json.loads(final_row[2]),
+                "db_status": final_row[0],
+                "db_version": final_row[1],
+                "skipped_documents": skipped_documents,
+                "worker_cancelled": publication_worker.cancelled(),
+                "worker_done": publication_worker.done(),
+            },
+        }
+    finally:
+        await store.close()
 
 
 async def service_owned_file_probe() -> dict[str, object]:
@@ -685,12 +761,12 @@ async def main() -> None:
             {
                 "primitive": "existing owned-work controls",
                 "boundary": (
-                    "shared Live Stop, synchronous result fence, phase-aware publication "
-                    "worker shutdown, indexed File tasks, and fixed owner/mode recovery"
+                    "shared Live Stop, synchronous publication-admission fence, cooperative "
+                    "worker join, indexed File tasks, and fixed owner/mode recovery"
                 ),
                 "irreducible": (
-                    "only those owners can quiesce inference and settle audio truth; a generic "
-                    "worker cancel cannot distinguish rollback-safe SQLite from live filesystem I/O"
+                    "only those owners can quiesce inference and settle audio truth; cancelling "
+                    "an accepted mutation cannot prove whether SQLite COMMIT already became durable"
                 ),
             },
             {
@@ -723,11 +799,13 @@ async def main() -> None:
             "interruption downgrades verified complete audio by state only before terminal status",
             "cleanup uncertainty leaves Meeting active and durable Account authority unchanged",
             "a synchronous Live result fence precedes every settlement await",
-            "terminal audio publication is joined, never cancelled, before authority changes",
-            "only a SQLite transcript commit is cancelled because rollback is its atomic boundary",
+            "the fence blocks new publication admission and skips work still queued at the fence",
+            "an already-admitted SQLite mutation or thread-backed operation is joined, never cancelled",
+            "durable SQLite and binding document converge before interrupted terminal truth and return",
+            "terminal audio publication is joined before authority changes",
             "handler or client cancellation cannot cancel an accepted Account settlement",
             "product lifespan joins accepted revoke settlement before Live, File, or Store shutdown",
-            "Account interruption persists the last durable transcript, never fenced raw words",
+            "Account interruption persists the synchronized durable transcript, never still-queued raw words",
             "old handles never revive after reallow and other Accounts never mutate",
         ],
         "assumptions_unknowns": [
@@ -740,20 +818,20 @@ async def main() -> None:
             "logout failure revokes authority; revoke leaves active owned work; late/stale work "
             "commits; complete audio stays available after interruption; cleanup uncertainty "
             "becomes terminal; terminal audio is orphaned or cancelled; authority changes before "
-            "its worker joins; handler cancellation abandons Live/File cleanup; fenced raw words "
-            "become durable; reallow reuses the old generation; or another Account changes."
+            "its worker joins; handler cancellation abandons Live/File cleanup; a real COMMIT is "
+            "cancelled before binding convergence; queued post-fence text commits; reallow reuses "
+            "the old generation; or another Account changes."
         ),
         "tool_decisions": [
             {
                 "tool": "asyncio interleaving probe",
                 "necessary": (
-                    "the new uncertainties are admission-versus-drain ordering and phase-aware "
-                    "publication worker shutdown"
+                    "the new uncertainties are admission-versus-drain ordering and cooperative "
+                    "publication admission/worker shutdown"
                 ),
                 "decision_change": (
-                    "any missed registration, leaked count, cancelled terminal audio, or authority "
-                    "mutation before worker join rejects the lifecycle composition; any cancelled "
-                    "service settlement or fenced transcript rejects its ownership/truth boundary"
+                    "any missed registration, leaked count, cancelled accepted mutation, queued "
+                    "post-fence commit, or authority mutation before worker join rejects the design"
                 ),
             },
             {
@@ -774,6 +852,9 @@ async def main() -> None:
             "gate": await gate_probe(),
             "publication_fence": await publication_fence_probe(),
             "publication_worker_policy": await publication_worker_policy_probe(),
+            "committed_mutation_fence": await committed_mutation_fence_probe(
+                Path(temporary) / "committed.sqlite3"
+            ),
             "service_owned_file": await service_owned_file_probe(),
             "ordering": await ordering_probe(Path(temporary) / "phase2.sqlite3"),
         }
@@ -782,8 +863,8 @@ async def main() -> None:
     publication_fence = state["publication_fence"]
     publication_worker_policy = state["publication_worker_policy"]
     idle_exit = publication_worker_policy["idle_exit"]
-    transcript_commit = publication_worker_policy["transcript_commit"]
     terminal_audio = publication_worker_policy["terminal_audio"]
+    committed_mutation_fence = state["committed_mutation_fence"]
     service_owned_file = state["service_owned_file"]
     audio_boundary = ordering["audio_boundary"]
     preserved_audio = dict(audio_boundary["expected_metadata"])
@@ -818,21 +899,32 @@ async def main() -> None:
         == "injected first settlement failure"
         and idle_exit
         == {"cancelled": False, "done": True, "exit_signal": "queued"}
-        and transcript_commit
+        and committed_mutation_fence["held_after_real_commit"]
         == {
-            "cancelled": True,
-            "durable_document_after_revoke": {
-                "segments": [{"text": "durable prefix"}]
-            },
-            "durable_document_before_fence": {
-                "segments": [{"text": "durable prefix"}]
-            },
-            "durable_versions": [],
-            "raw_document_at_fence": {
-                "segments": [{"text": "fenced raw words"}]
-            },
-            "rollback_observed": True,
-            "terminal_status": "interrupted",
+            "admitted_commits": 1,
+            "binding_document": {"segments": []},
+            "binding_version": 0,
+            "db_document": {"segments": [{"text": "accepted before fence"}]},
+            "db_status": "active",
+            "db_version": 1,
+            "publication_fenced": True,
+            "queued_count": 2,
+            "worker_cancelled": False,
+            "worker_done": False,
+        }
+        and committed_mutation_fence["settled"]
+        == {
+            "admitted_commits": 1,
+            "binding_document": {"segments": [{"text": "accepted before fence"}]},
+            "binding_version": 1,
+            "db_document": {"segments": [{"text": "accepted before fence"}]},
+            "db_status": "interrupted",
+            "db_version": 1,
+            "skipped_documents": [
+                {"segments": [{"text": "queued but never admitted"}]}
+            ],
+            "worker_cancelled": False,
+            "worker_done": True,
         }
         and terminal_audio["held"]
         == {
@@ -843,7 +935,6 @@ async def main() -> None:
             "lifecycle_shutdown_waiting": True,
             "meeting_status": "active",
             "publication_fenced": True,
-            "publication_phase": "terminal_settlement",
             "raw_status": "closed",
             "raw_stage_present": True,
             "service_revoke_cancelled": False,
@@ -868,7 +959,6 @@ async def main() -> None:
                 "authority_disabled",
             ],
             "publication_fenced": True,
-            "publication_phase": "idle",
             "publish_count": 1,
             "raw_status": "closed",
             "raw_stage_present": False,
@@ -923,6 +1013,7 @@ async def main() -> None:
                 "unregistered_recovery": ordering["unregistered_recovery"],
                 "publication_fence": publication_fence,
                 "publication_worker_policy": publication_worker_policy,
+                "committed_mutation_fence": committed_mutation_fence,
                 "service_owned_file": service_owned_file,
                 "revoke": ordering["revoke"],
                 "other_account": ordering["other_account"],

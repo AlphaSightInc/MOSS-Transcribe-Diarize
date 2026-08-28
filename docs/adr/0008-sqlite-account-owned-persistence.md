@@ -43,9 +43,11 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
   remain direct and never reacquire the lock. The Live probe held exactly that between-write state:
   snapshot, list, and authentication reads all waited; rollback exposed only
   `active`/version 1/prefix, while commit exposed only `completed`/version 2/final document.
-- Account-revoke interruption always supplies the binding's last durable document to the atomic
-  terminal mutation. Its raw snapshot may still bound the maximal accepted audio prefix, but raw
-  text from a cancelled SQLite commit cannot become a new durable transcript version.
+- Account-revoke interruption joins the publication worker before reading its durable document.
+  A mutation admitted before the fence may already have committed even when its coroutine has not
+  resumed; it therefore finishes and synchronizes binding version/document. Still-queued work is
+  skipped. The atomic terminal mutation uses that exact converged document, while the raw snapshot
+  only bounds the maximal accepted audio prefix.
 - Crash recovery preserves the last committed transcript and recoverable audio prefix, changes
   active Meetings to `interrupted`, and never resumes capture.
 - Account-scoped recovery reuses those same File/Live owner paths before revoke. Verified complete

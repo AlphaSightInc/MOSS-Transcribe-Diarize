@@ -995,17 +995,17 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
         live = app.state.phase2_live
         second_binding = live._bindings[second]
         original_second_commit = second_binding.handle.commit_transcript
-        queued_commit_entered = threading.Event()
-        release_queued_commit = threading.Event()
+        admitted_commit_entered = threading.Event()
+        release_admitted_commit = threading.Event()
 
         async def held_second_commit(document, *, terminal=False):
-            queued_commit_entered.set()
-            assert await asyncio.to_thread(release_queued_commit.wait, 5)
+            admitted_commit_entered.set()
+            assert await asyncio.to_thread(release_admitted_commit.wait, 5)
             return await original_second_commit(document, terminal=terminal)
 
         second_binding.handle.commit_transcript = held_second_commit
         feed_two_lane_span(client, second)
-        assert queued_commit_entered.wait(timeout=2)
+        assert admitted_commit_entered.wait(timeout=2)
         original_interrupt = live.interrupt_binding
         first_settlement_entered = threading.Event()
         release_failure = threading.Event()
@@ -1038,7 +1038,7 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
         ).status_code == 409
         assert app.state.phase2_live._bindings[second].authority_closing is True
         assert second_binding.publication_fenced is True
-        release_queued_commit.set()
+        release_admitted_commit.set()
         deadline = time.monotonic() + 2
         while second_binding.worker is not None and not second_binding.worker.done():
             if time.monotonic() >= deadline:
@@ -1047,9 +1047,9 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
         connection = sqlite3.connect(database)
         try:
             assert connection.execute(
-                "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?",
+                "SELECT version FROM meeting_transcripts WHERE meeting_id = ?",
                 (second,),
-            ).fetchone() == (0,)
+            ).fetchone() == (1,)
         finally:
             connection.close()
         assert client.get("/api/auth/session").status_code == 200
@@ -1082,7 +1082,7 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
     assert statuses[second] == "interrupted"
 
 
-def test_successful_revoke_drops_held_raw_revision_and_keeps_durable_prefix(
+def test_revoke_joins_admitted_commit_and_skips_queued_second_publication(
     tmp_path: Path,
 ):
     database = tmp_path / "moss.sqlite3"
@@ -1097,25 +1097,27 @@ def test_successful_revoke_drops_held_raw_revision_and_keeps_durable_prefix(
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["a"])
         meeting_id = client.post("/api/live/sessions").json()["id"]
-        feed_two_lane_span(client, meeting_id)
-        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
-        before = client.get(f"/api/meetings/{meeting_id}").json()["transcript"]
         binding = app.state.phase2_live._bindings[meeting_id]
         original_commit = binding.handle.commit_transcript
         commit_started = threading.Event()
         release_commit = threading.Event()
+        admitted_document: dict[str, object] | None = None
 
         async def held_commit(document, *, terminal=False):
+            nonlocal admitted_document
+            admitted_document = document
             commit_started.set()
             assert await asyncio.to_thread(release_commit.wait, 5)
             return await original_commit(document, terminal=terminal)
 
         binding.handle.commit_transcript = held_commit
-        feed_two_lane_pairs(client, meeting_id, range(3, 6))
+        feed_two_lane_span(client, meeting_id)
         assert commit_started.wait(timeout=2)
+        assert admitted_document is not None
+        feed_two_lane_pairs(client, meeting_id, range(3, 6))
         raw = app.state.phase2_live.runtime.snapshot(meeting_id)
         assert raw is not None
-        assert len(raw.session.effective_transcript) > len(before["segments"])
+        assert len(raw.session.effective_transcript) > len(admitted_document["segments"])
         outcome: dict[str, object] = {}
 
         def revoke() -> None:
@@ -1133,6 +1135,7 @@ def test_successful_revoke_drops_held_raw_revision_and_keeps_durable_prefix(
             if time.monotonic() >= deadline:
                 raise AssertionError("Account result fence was not installed")
             time.sleep(0.01)
+        assert binding.worker is not None and not binding.worker.cancelled()
         release_commit.set()
         worker.join(timeout=5)
         assert not worker.is_alive()
@@ -1157,8 +1160,112 @@ def test_successful_revoke_drops_held_raw_revision_and_keeps_durable_prefix(
         ).fetchone()[0]
     finally:
         connection.close()
-    assert (status, version, json.loads(document)) == ("interrupted", 1, before)
+    assert (status, version, json.loads(document)) == (
+        "interrupted",
+        1,
+        admitted_document,
+    )
     assert audio_state in {"partial", "unavailable"}
+
+
+def test_revoke_joins_real_commit_before_binding_coroutine_resumes(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-commit-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        binding = app.state.phase2_live._bindings[meeting_id]
+        connection = app.state.phase2_store._connection
+        original_commit = connection.commit
+        original_target = app.state.phase2_store.account_revoke_target
+        real_commit_completed = threading.Event()
+        release_commit_result = threading.Event()
+        target_resolved = threading.Event()
+        release_target = threading.Event()
+        hold_once = True
+
+        async def commit_then_hold():
+            nonlocal hold_once
+            await original_commit()
+            if hold_once:
+                hold_once = False
+                real_commit_completed.set()
+                assert await asyncio.to_thread(release_commit_result.wait, 5)
+
+        async def resolve_target_then_hold(email):
+            target = await original_target(email)
+            target_resolved.set()
+            assert await asyncio.to_thread(release_target.wait, 5)
+            return target
+
+        connection.commit = commit_then_hold
+        app.state.phase2_store.account_revoke_target = resolve_target_then_hold
+        outcome: dict[str, object] = {}
+
+        def revoke() -> None:
+            try:
+                outcome["result"] = asyncio.run(
+                    execute_admin(socket, "revoke", "a@example.com")
+                )
+            except Exception as exc:  # pragma: no cover - asserted below.
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        assert target_resolved.wait(timeout=2)
+        feed_two_lane_span(client, meeting_id)
+        assert real_commit_completed.wait(timeout=2)
+        durable_connection = sqlite3.connect(database)
+        try:
+            held_version, held_document = durable_connection.execute(
+                """
+                SELECT version, document_json FROM meeting_transcripts
+                WHERE meeting_id = ?
+                """,
+                (meeting_id,),
+            ).fetchone()
+        finally:
+            durable_connection.close()
+        assert held_version == 1
+        assert binding.durable_version == 0
+        assert binding.durable_document == {"segments": []}
+        release_target.set()
+        deadline = time.monotonic() + 2
+        while not binding.publication_fenced:
+            if time.monotonic() >= deadline:
+                raise AssertionError("Account result fence was not installed")
+            time.sleep(0.01)
+        assert worker.is_alive()
+        assert binding.worker is not None and not binding.worker.cancelled()
+        release_commit_result.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"email": "a@example.com", "revoked": True},
+        }
+
+    durable_connection = sqlite3.connect(database)
+    try:
+        status, version, final_document = durable_connection.execute(
+            """
+            SELECT m.status, t.version, t.document_json
+            FROM meetings m
+            JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (meeting_id,),
+        ).fetchone()
+    finally:
+        durable_connection.close()
+    assert (status, version, json.loads(final_document)) == (
+        "interrupted",
+        1,
+        json.loads(held_document),
+    )
 
 
 def test_control_revoke_returns_after_durable_interrupt_and_fresh_generation(tmp_path: Path):
@@ -1753,7 +1860,6 @@ def test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling(
         stop_thread = threading.Thread(target=stop_meeting)
         stop_thread.start()
         assert publish_started.wait(timeout=2)
-        assert binding.publication_phase == "terminal_settlement"
         revoke_thread = threading.Thread(target=revoke)
         revoke_thread.start()
         deadline = time.monotonic() + 2
