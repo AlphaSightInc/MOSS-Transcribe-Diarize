@@ -1025,7 +1025,9 @@ def test_safe_stopped_is_not_published_when_marker_and_listener_stop_are_unverif
     assert not (attempt / "result.json").exists()
 
 
-def test_partial_journal_tail_safe_stops_incomplete_attempt(monkeypatch, tmp_path):
+def test_malformed_journal_physically_stops_without_publishing_a_terminal(
+    monkeypatch, tmp_path
+):
     fixture = _cutover_fixture(monkeypatch, tmp_path)
     monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
     attempt = tmp_path / "attempt"
@@ -1044,11 +1046,11 @@ def test_partial_journal_tail_safe_stops_incomplete_attempt(monkeypatch, tmp_pat
         stream.flush()
         os.fsync(stream.fileno())
     ops = FakeCutoverOps(fixture)
-    result = CutoverRun.open_incomplete(attempt=attempt, ops=ops).restore()
-    assert result.terminal == "SAFE_STOPPED"
+    with pytest.raises(CutoverUnsafe, match="journal"):
+        CutoverRun.open_incomplete(attempt=attempt, ops=ops).restore()
     assert ops.safe_stopped is True
     assert fixture["marker"].read_bytes() == PHASE1_MARKER_BYTES
-    assert json.loads((attempt / "result.json").read_text())["terminal"] == "SAFE_STOPPED"
+    assert not (attempt / "result.json").exists()
 
 
 def test_cli_has_only_new_run_and_incomplete_restore_operations():

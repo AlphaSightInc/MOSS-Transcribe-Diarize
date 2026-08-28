@@ -201,7 +201,7 @@ them while both old web units were live. The consolidated failure-boundary exten
 at 83/86: persistent journal failure stranded the candidate, unverified marker/listener state was
 reported as `SAFE_STOPPED`, and reconstructed files were not fsynced.
 
-The corrected prototype derived `PASS` from 86/86 assertions. It measured one
+The intermediate correction derived `PASS` from 86/86 assertions. It measured one
 fixed host lock, exact nine-role nonoverlapping inventory, pre-effect attempt/state refusal, replay
 after each of five restore effects, a successful preadmission terminal, Wave-1 followed by planned
 whole restore without G7, exact restore after seven forward mutation boundaries, unchanged vLLM
@@ -213,6 +213,9 @@ snapshot application and never stops or rewrites the live vLLM process/runtime. 
 independent of journal availability, but no durable terminal is claimed when the journal is
 unavailable. `SAFE_STOPPED` is published only after exact marker bytes and both unit/listener views are
 verified, and reconstructed regular files/directories are recursively fsynced before publication.
+The final terminal-authority falsifier measured `RED` at 88/90 when a partial journal tail created a
+standalone `result.json`; the corrected probe passed 90/90 by preserving physical blocking/stops but
+raising nonterminal restoration uncertainty with no result or terminal record.
 The production collector
 owns the two real scenarios: microphone plus meeting-tab shared audio, then microphone plus
 entire-screen System Audio. It observes display surface/audio track, both meters, exact browser frame

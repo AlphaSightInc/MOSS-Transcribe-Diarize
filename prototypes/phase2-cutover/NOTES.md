@@ -54,7 +54,13 @@ restored file or directory. These states select best-effort journal recording ar
 owned rollback effects, verified block/listener state before `SAFE_STOPPED`, and recursive fsync of
 newly restored regular files and directories before their parent rename and terminal publication.
 
-**PASS, 86/86 assertions.** The corrected probe measured one fixed host lock rejecting a second
+The terminal-authority extension measured **RED, 88/90 assertions**. A partial journal tail still
+performed the correct physical marker and web-unit stops, but then wrote a standalone `result.json`
+and returned `SAFE_STOPPED`. That result was a second authority with no readable append-only history.
+The corrected boundary preserves every achievable safety effect, then raises nonterminal restoration
+uncertainty and writes neither a terminal event nor a result projection.
+
+**PASS, 90/90 assertions.** The corrected probe measured one fixed host lock rejecting a second
 attempt, exact nine-role equality, attempt/candidate-state nonoverlap, replay to exact old state
 after each of five restore effects, Wave-1 followed by planned restore without G7, exact
 production-origin rejection, and nine explicit nonoverlapping old-image roots
@@ -71,6 +77,8 @@ start effect wrote no roots while either web unit was live. Persistent journal f
 durable phase at `candidate_started` but still completed exact physical rollback. When marker
 creation failed and one web listener remained active, the model returned
 `RESTORATION_UNCERTAIN` and published no `SAFE_STOPPED` terminal.
+With a partial journal tail and physically verified marker/stops, it likewise returned
+`RESTORATION_UNCERTAIN` and left `result.json` absent.
 
 Wave-1 success with absent attended evidence and a deterministic-rehearsal observation both restore
 the old image. Only the production-browser observation reaches `preadmission/G7 PASS`; a planned

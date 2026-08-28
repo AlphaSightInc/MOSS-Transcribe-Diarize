@@ -121,6 +121,7 @@ REQUIRED_PYTHON_TEST_CASES = (
     "tests.phase2.test_atomic_cutover.test_attempt_nested_in_candidate_state_is_refused_before_creating_parent",
     "tests.phase2.test_atomic_cutover.test_distinct_forward_attempts_share_one_host_cutover_lock",
     "tests.phase2.test_atomic_cutover.test_missing_or_synthetic_attended_g7_restores_without_preadmission",
+    "tests.phase2.test_atomic_cutover.test_malformed_journal_physically_stops_without_publishing_a_terminal",
     "tests.phase2.test_atomic_cutover.test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attended_g7",
     "tests.phase2.test_atomic_cutover.test_normal_restore_preserves_every_present_explicit_phase1_root",
     "tests.phase2.test_atomic_cutover.test_persistent_journal_failure_after_candidate_start_cannot_prevent_rollback",

@@ -1417,15 +1417,10 @@ class CutoverRun:
         )
         try:
             last_phase = self.journal.last_phase()
-        except CutoverUnsafe:
-            try:
-                _atomic_private_file(
-                    self.attempt / "result.json",
-                    (json.dumps(result_payload(result), sort_keys=True) + "\n").encode(),
-                )
-            except OSError:
-                pass
-            return result
+        except CutoverUnsafe as exc:
+            raise CutoverUnsafe(
+                "SAFE_STOPPED is physically verified but the cutover journal is unreadable"
+            ) from exc
         if last_phase != "SAFE_STOPPED":
             try:
                 self._publish_terminal(

@@ -274,7 +274,15 @@ def restore(
         except OSError:
             journal_failed = True
 
-    events = read_events(host.journal)
+    try:
+        events = read_events(host.journal)
+    except json.JSONDecodeError:
+        host.marker.write_bytes(b"moss-phase1-creation-quiesced-v1\n")
+        host.phase1_running = False
+        host.account_running = False
+        raise RestorationUncertain(
+            "physical safety is verified but the journal is unreadable"
+        )
     if events[-1]["phase"] in {"restored", "preadmission", "SAFE_STOPPED"}:
         raise ValueError("terminal attempt cannot be restored")
     if events[-1]["phase"] != "restore_started":
@@ -486,9 +494,9 @@ def main() -> int:
             {"name": "explicit_terminal_target", "boundary": "chooses only full-canary restore or preadmission", "irreducible": "an implicit success target cannot deliberately rehearse the whole rollback"},
             {"name": "candidate_owned_attended_canary", "boundary": "observes real production-origin microphone plus meeting-tab and entire-screen Chrome capture", "irreducible": "Wave-1 qualification or a profile-authored pass report cannot establish attended browser behavior"},
         ],
-        "invariants": ["one fixed host lock excludes every concurrent forward or restore attempt", "only the exact committed production origin can end preadmission with G7 PASS", "restored runs Wave-1 then planned whole restore without requiring G7", "a crash during any restore effect remains replayable", "rollback effects do not depend on journal availability", "SAFE_STOPPED is published only after exact marker and both listener stops are observed", "both old web units are stopped before snapshot application", "present explicit old roots are never rewritten", "missing explicit roots and automatic mutation targets restore from the sealed archive and are fsynced recursively before terminal", "vLLM PID/start/argv never change", "candidate admission remains empty", "the snapshot role set is exact and all snapshot, candidate-state, and attempt roots are nonoverlapping", "known failures restore whole old state", "uncertain snapshot identity keeps creation blocked and services stopped"],
+        "invariants": ["one fixed host lock excludes every concurrent forward or restore attempt", "only the exact committed production origin can end preadmission with G7 PASS", "restored runs Wave-1 then planned whole restore without requiring G7", "a crash during any restore effect remains replayable", "rollback effects do not depend on journal availability", "SAFE_STOPPED is published only after exact marker and both listener stops are observed", "a malformed or unreadable journal leaves physical blocking/stops but no terminal/result authority", "both old web units are stopped before snapshot application", "present explicit old roots are never rewritten", "missing explicit roots and automatic mutation targets restore from the sealed archive and are fsynced recursively before terminal", "vLLM PID/start/argv never change", "candidate admission remains empty", "the snapshot role set is exact and all snapshot, candidate-state, and attempt roots are nonoverlapping", "known failures restore whole old state", "uncertain snapshot identity keeps creation blocked and services stopped"],
         "assumptions_unknowns": ["real OAuth, trusted TLS, Chrome microphone/tab/screen, and the remote host remain UNMEASURED in this prototype", "the production command must obtain attended evidence directly rather than consume a caller-authored report"],
-        "falsifier": "two distinct attempts mutate concurrently; any required old authority/runtime/model root is absent, extra, or overlaps attempt/candidate state; a normal restore rewrites a present explicit root; a replay applies snapshot bytes while either old web unit is live; a missing explicit root is not repaired and fsynced; persistent journal failure prevents rollback; SAFE_STOPPED is published without the exact marker and inactive listeners; any forward or restore-effect crash cannot restore exactly; restored requires G7; a wrong host/port reaches G7; a corrupt archive reopens a service; candidate state is discarded instead of quarantined; or preadmission admits an Account",
+        "falsifier": "two distinct attempts mutate concurrently; any required old authority/runtime/model root is absent, extra, or overlaps attempt/candidate state; a normal restore rewrites a present explicit root; a replay applies snapshot bytes while either old web unit is live; a missing explicit root is not repaired and fsynced; persistent journal failure prevents rollback; SAFE_STOPPED is published without the exact marker and inactive listeners; a malformed journal produces a standalone result/terminal; any forward or restore-effect crash cannot restore exactly; restored requires G7; a wrong host/port reaches G7; a corrupt archive reopens a service; candidate state is discarded instead of quarantined; or preadmission admits an Account",
         "tool_decision": [
             {"experiment": "actual filesystem journal/archive/pointer crash matrix", "necessity": "labels cannot expose partial mutation", "decision_change": "any non-restorable boundary requires a different ordering or primitive"},
             {"experiment": "corrupt archive restore", "necessity": "tests the only uncertainty outcome", "decision_change": "any service restart rejects SAFE_STOPPED handling"},
@@ -501,6 +509,7 @@ def main() -> int:
             {"experiment": "write-instrumented normal restore and pre-journal start-effect crash replay", "necessity": "byte equality cannot reveal unsafe remove-and-copy of an unchanged live GPU/model root", "decision_change": "any present explicit-root write selects preservation plus web-stop-before-application"},
             {"experiment": "persistent journal failure after candidate start", "necessity": "a durable state log can fail independently of already-owned host effects", "decision_change": "a stranded candidate makes every journal append best-effort around rollback"},
             {"experiment": "marker failure plus one stuck listener at SAFE_STOPPED", "necessity": "a terminal label cannot prove its own traffic state", "decision_change": "any false terminal requires direct marker/unit/listener verification"},
+            {"experiment": "partial journal tail with physically verified block and stops", "necessity": "a standalone result would become a second terminal authority", "decision_change": "any result or terminal requires nonterminal restoration uncertainty instead"},
             {"experiment": "restored-tree fsync accounting", "necessity": "correct bytes in cache do not establish crash durability", "decision_change": "any unflushed regular file or directory requires recursive fsync before publication"},
         ],
         "one_command": "PYTHONDONTWRITEBYTECODE=1 bash prototypes/phase2-cutover/run.sh",
@@ -717,6 +726,34 @@ def main() -> int:
             "state": false_safe_stopped.state(),
         }
         assertions.append(terminal != "SAFE_STOPPED" or safe_stopped_verified)
+
+        malformed_journal = Host(root / "malformed-journal")
+        try:
+            run(malformed_journal, crash_after="candidate_started")
+        except InjectedCrash:
+            with malformed_journal.journal.open("ab") as stream:
+                stream.write(b'{"phase":')
+                stream.flush()
+                os.fsync(stream.fileno())
+            try:
+                terminal = restore(malformed_journal)
+            except RestorationUncertain:
+                terminal = "RESTORATION_UNCERTAIN"
+        malformed_result = malformed_journal.attempt / "result.json"
+        results["malformed_journal"] = {
+            "terminal": terminal,
+            "result_exists": malformed_result.exists(),
+            "marker": malformed_journal.marker.exists(),
+            "web_units": malformed_journal.phase1_web_units,
+        }
+        assertions.extend(
+            (
+                terminal == "RESTORATION_UNCERTAIN",
+                not malformed_result.exists(),
+                malformed_journal.marker.exists(),
+                not any(malformed_journal.phase1_web_units.values()),
+            )
+        )
 
         arbitrary_origin = "https://not-production.invalid:444"
         exact_origin_accepted = arbitrary_origin == EXACT_PRODUCTION_ORIGIN
