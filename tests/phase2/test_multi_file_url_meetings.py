@@ -389,7 +389,7 @@ def test_url_acquisition_does_not_require_asyncio_timeout(
 ):
     fake_yt_dlp = tmp_path / "compatible_yt_dlp.py"
     fake_yt_dlp.write_text("import sys\nsys.stdout.buffer.write(b'youtube')\n", encoding="utf-8")
-    monkeypatch.delattr(asyncio, "timeout")
+    monkeypatch.delattr(asyncio, "timeout", raising=False)
 
     async def exercise() -> None:
         direct = UrlMediaAcquirer(
