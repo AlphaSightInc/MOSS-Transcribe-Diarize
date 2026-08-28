@@ -37,5 +37,8 @@ prefix as partial; audio failure never fails or deletes the transcript.
   duration/bytes matched the artifact, directories were `0700`, the MP3 was `0600`, and it alone
   survived cleanup. Forced encoding failure left transcript truth unchanged and no source, staging,
   or output file. Transcript durability therefore precedes terminal encoding; available/unavailable
-  metadata precedes Meeting completion. A recoverable available-metadata failure removes its newly
-  published file and durably records unavailable; authority loss alone fences that fallback.
+  metadata precedes Meeting completion. After an available-metadata failure, an absent artifact
+  becomes durably unavailable. If removal fails and the known-valid MP3 survives, retry that exact
+  available metadata once; success is available, and another failure propagates without audio
+  metadata. Durable unavailable never coexists with a surviving MP3; authority loss fences all
+  reconciliation.

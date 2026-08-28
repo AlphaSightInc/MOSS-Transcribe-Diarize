@@ -160,6 +160,14 @@ class MeetingAudioArchive:
         if publication.path.parent.exists():
             self._fsync_directory(publication.path.parent)
 
+    @staticmethod
+    def artifact_exists(publication: PublishedMeetingAudio) -> bool:
+        try:
+            publication.path.stat()
+        except FileNotFoundError:
+            return False
+        return True
+
     def resolve(
         self,
         account_id: str,

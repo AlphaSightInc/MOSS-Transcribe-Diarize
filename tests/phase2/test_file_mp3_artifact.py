@@ -556,6 +556,62 @@ def test_available_metadata_commit_failure_removes_mp3_and_commits_unavailable(
         connection.close()
 
 
+@pytest.mark.parametrize("retry_available_succeeds", [True, False])
+def test_metadata_and_removal_failure_never_marks_surviving_mp3_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    retry_available_succeeds: bool,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    audio_root = tmp_path / "meetings"
+    app = make_app(database, work_root, audio_root)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        archive = app.state.phase2_audio_archive
+
+        def fail_removal(publication: PublishedMeetingAudio) -> None:
+            assert publication.path.exists()
+            raise OSError("forced removal failure")
+
+        monkeypatch.setattr(archive, "remove", fail_removal)
+        real_commit = app.state.phase2_store._commit_meeting_audio
+        commit_attempts: list[str] = []
+
+        async def fail_available_as_configured(*args: object, **kwargs: object) -> None:
+            audio = args[-1]
+            commit_attempts.append(audio.state)
+            if audio.state == "available" and (
+                len(commit_attempts) == 1 or not retry_available_succeeds
+            ):
+                raise RuntimeError("forced available metadata failure")
+            await real_commit(*args, **kwargs)
+
+        monkeypatch.setattr(
+            app.state.phase2_store,
+            "_commit_meeting_audio",
+            fail_available_as_configured,
+        )
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        ).json()["id"]
+        expected_status = "completed" if retry_available_succeeds else "failed"
+        meeting = await_terminal(client, meeting_id, expected_status)
+
+        assert meeting["transcript"]["segments"][0]["text"] == "durable transcript"
+        assert commit_attempts == ["available", "available"]
+        assert "unavailable" not in commit_attempts
+        if retry_available_succeeds:
+            assert meeting["audio"]["state"] == "available"
+        else:
+            assert meeting["audio"] is None
+        assert len(list(audio_root.glob("**/*.mp3"))) == 1
+        assert list(work_root.glob("**/*")) == []
+
+
 def test_post_replace_storage_failure_removes_uncommitted_mp3(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

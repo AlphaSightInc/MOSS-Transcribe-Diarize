@@ -229,11 +229,40 @@ def publish(
         raise
 
 
+def reconcile_failed_available_commit(
+    path: Path,
+    *,
+    retry_available_succeeds: bool,
+) -> dict[str, object]:
+    commits = ["available:failed"]
+    removal_error = None
+    try:
+        raise OSError("forced removal failure")
+    except OSError as exc:
+        removal_error = type(exc).__name__
+
+    if path.exists():
+        commits.append(
+            "available:committed" if retry_available_succeeds else "available:failed"
+        )
+        outcome = "available" if retry_available_succeeds else "propagated"
+    else:
+        commits.append("unavailable:committed")
+        outcome = "unavailable"
+    return {
+        "outcome": outcome,
+        "removal_error": removal_error,
+        "artifact_survives": path.exists(),
+        "commit_attempts": commits,
+        "unavailable_committed": "unavailable:committed" in commits,
+    }
+
+
 def main() -> None:
     state: dict[str, object] = {
         "question": (
             "Can one canonical transcription mix feed both 151-second window inference and "
-            "terminal private MP3 publication while failure preserves transcript truth?"
+            "terminal private MP3 publication while failure preserves transcript and artifact truth?"
         ),
         "hypothesis": (
             "One default-stream 16 kHz mono PCM WAV consumed by inference and libmp3lame "
@@ -241,8 +270,8 @@ def main() -> None:
         ),
         "falsifier": (
             "Different dominant frequencies at canonical mix, inference window, or retained MP3; "
-            "any format/privacy mismatch, surviving transient, or transcript change on failure "
-            "rejects the design."
+            "any format/privacy mismatch, surviving transient, transcript change on failure, or "
+            "unavailable metadata beside a surviving MP3 rejects the design."
         ),
         "ffmpeg": run("ffmpeg", "-version").splitlines()[0],
     }
@@ -350,6 +379,16 @@ def main() -> None:
             "windowed_inference_input_hz": inference_hz,
             "retained_mp3_hz": retained_hz,
             "all_consumers_match_canonical": canonical_hz == inference_hz == retained_hz,
+        }
+        state["metadata_cleanup_reconciliation"] = {
+            "surviving_artifact_retry_succeeds": reconcile_failed_available_commit(
+                retained_path,
+                retry_available_succeeds=True,
+            ),
+            "surviving_artifact_retry_fails": reconcile_failed_available_commit(
+                retained_path,
+                retry_available_succeeds=False,
+            ),
         }
 
         post_replace_reason = None

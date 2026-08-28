@@ -79,3 +79,13 @@ passed 3/3 consumers. The corrected policy is therefore one canonical working WA
 both direct/windowed inference and terminal encoding consume that exact one-stream artifact. If mix
 preparation fails, transcription may still consume the original source, but retained audio is
 explicitly `unavailable` rather than independently selecting another stream.
+
+The standards adversary then combined a failed `available` metadata commit with failed artifact
+removal. The extended probe measured both truthful surviving-file outcomes: a successful second
+commit of the same known-valid metadata produced `available`; a failed second commit propagated.
+Both retained the MP3 and committed `unavailable` zero times. Production tests reproduce both
+outcomes and also retain the earlier successful-removal case, which commits `unavailable` only
+after the path is absent. The accepted reconciliation is one causal retry, not a general retry
+layer: absent artifact means unavailable; surviving known-valid artifact means retry that exact
+available metadata once; another failure leaves the Meeting failed without audio metadata. An MP3
+and durable `unavailable` must never coexist.

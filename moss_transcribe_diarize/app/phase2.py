@@ -1041,6 +1041,14 @@ class MeetingHandle:
                 await asyncio.to_thread(archive.remove, publication)
             except Exception:
                 pass
+            if await asyncio.to_thread(archive.artifact_exists, publication):
+                await self._store._commit_meeting_audio(
+                    self._account_id,
+                    self._authority_generation,
+                    self.meeting_id,
+                    audio,
+                )
+                return audio
             unavailable = _unavailable_meeting_audio()
             await self._store._commit_meeting_audio(
                 self._account_id,
