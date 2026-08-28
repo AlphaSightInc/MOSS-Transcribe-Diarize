@@ -19,7 +19,10 @@
 - **Hypothesis:** this state is sufficient; no bearer, view token, client Account identity, durable
   grant, or global durable Meeting lookup is needed. The only transport seam needs five operations:
   authorize, create, snapshot, events, and publication. Frame decoding, v2 lane state, mixer, tape,
-  heartbeat, Stop, abort, errors, and capture-state release do not vary.
+  heartbeat, Stop, abort, errors, and capture-state release do not vary. In the browser, opening an
+  active history item needs only an ephemeral observer attachment: it writes no reattach storage and
+  enables no capture mutation. A page that originated capture keeps its existing controller; reload
+  removes that controller and may reattach only its stored read view.
 - **Falsifier:** any printed path permits observer/foreign mutation or foreign read, performs a
   Meeting/transcript read or write during polling, accepts a late result after revoke, loses the
   committed prefix, resumes after interruption, or exposes closed/final words before their atomic
@@ -45,6 +48,10 @@ handoff feeding one serialized per-Meeting publication worker.
   durable/public stayed `0→0` then `1→1`; snapshot/events exposed only the prior durable state.
   Releasing each commit advanced durable/public together. The five-method seam is therefore
   sufficient; protocol and five-registry lifecycle belong behind the shared transport module.
+- A history-open probe attached a fresh same-Account page as `viewing` with no mutation authority and
+  no session-storage write; reload returned that observer page to `idle`. The originating page kept
+  its existing controller when its history item opened, while reload removed control and restored
+  only the stored read view. No second capture or authority state is needed.
 - With raw revision/event high-water already at `3/12` and its database commit held, four polls saw
   only durable/public revision `1`, event high-water `10`; SQL was 4 auth reads, 0 content reads,
   0 writes.

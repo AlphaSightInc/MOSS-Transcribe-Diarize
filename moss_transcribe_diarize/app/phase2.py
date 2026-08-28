@@ -1079,19 +1079,6 @@ def create_phase2_app(
         meetings = await workspace.list_meetings()
         return {"meetings": [meeting.to_dict() for meeting in meetings]}
 
-    @app.post("/api/meetings", status_code=201)
-    async def create_meeting(request: Request):
-        account = await require_account(request)
-        try:
-            payload = await request.json()
-            mode = payload["mode"] if isinstance(payload, dict) else None
-            if mode != "live":
-                raise ValueError("File Meetings require an accepted upload.")
-            handle = await request.app.state.phase2_store.workspace(account).create_meeting(mode)
-            return (await handle.snapshot()).to_dict()
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
     @app.post("/api/meetings/file", status_code=201)
     async def create_file_meeting(request: Request):
         account = await require_account(request)
@@ -1262,7 +1249,17 @@ uploadForm.addEventListener('submit', async (event) => {{
 for (const button of document.querySelectorAll('[data-open-meeting]')) {{
   button.addEventListener('click', async () => {{
     const response = await fetch(`/api/meetings/${{button.dataset.openMeeting}}`);
-    meetingView.textContent = response.ok ? JSON.stringify(await response.json(), null, 2) : 'Meeting unavailable.';
+    if (!response.ok) {{
+      meetingView.textContent = 'Meeting unavailable.';
+      return;
+    }}
+    const meeting = await response.json();
+    meetingView.textContent = JSON.stringify(meeting, null, 2);
+    if (meeting.mode === 'live' && meeting.status === 'active' && meeting.id === button.dataset.openMeeting) {{
+      document.dispatchEvent(new CustomEvent('moss:observe-live-meeting', {{
+        detail: {{meetingId: meeting.id}},
+      }}));
+    }}
   }});
 }}
 </script></body></html>"""

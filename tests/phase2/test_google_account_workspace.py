@@ -106,6 +106,27 @@ def database_counts(database: Path) -> tuple[int, int]:
         connection.close()
 
 
+def seed_active_live_meeting(database: Path, account_id: str = "google-sub-a") -> dict[str, str]:
+    """Seed lifecycle state for Account tests without exposing a second product create path."""
+
+    meeting_id = f"seed-live-{time.time_ns()}"
+    now = int(time.time() * 1_000)
+    connection = sqlite3.connect(database)
+    try:
+        connection.execute(
+            """
+            INSERT INTO meetings(
+                account_id, meeting_id, mode, title, status, created_at_ms, updated_at_ms
+            ) VALUES (?, ?, 'live', NULL, 'active', ?, ?)
+            """,
+            (account_id, meeting_id, now, now),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    return {"id": meeting_id}
+
+
 def test_authlib_172_google_client_is_openid_only_and_uses_s256_pkce():
     import authlib
 
@@ -466,7 +487,7 @@ def test_sign_out_revokes_only_this_browser_and_restart_keeps_other_session(tmp_
         assert sign_in(first, "one").status_code == 303
         assert sign_in(second, "two").status_code == 303
         survivor_cookie = second.cookies.get(SESSION_COOKIE)
-        active = first.post("/api/meetings", json={"mode": "live"}).json()
+        active = seed_active_live_meeting(database)
         logout = first.post("/auth/logout", follow_redirects=False)
         assert logout.status_code == 303
         assert logout.headers["location"] == "/"
@@ -533,9 +554,7 @@ def test_account_workspace_hides_foreign_meeting_and_all_unauthenticated_content
     ) as b, TestClient(app, base_url="https://moss.test") as anonymous:
         created = sign_in(a, "a")
         assert created.status_code == 303
-        meeting = a.post("/api/meetings", json={"mode": "live"})
-        assert meeting.status_code == 201
-        meeting_id = meeting.json()["id"]
+        meeting_id = seed_active_live_meeting(database, "sub-a")["id"]
         assert sign_in(b, "b").status_code == 303
         assert b.get("/api/meetings").json() == {"meetings": []}
         assert b.get(f"/api/meetings/{meeting_id}").status_code == 404
@@ -557,7 +576,7 @@ def test_revoked_account_loses_every_session_and_meetings_are_interrupted(tmp_pa
     ) as second:
         sign_in(first, "one")
         sign_in(second, "two")
-        meeting = first.post("/api/meetings", json={"mode": "live"}).json()
+        meeting = seed_active_live_meeting(database)
         assert asyncio.run(execute(database, "revoke", "person@example.com")) == {
             "email": "person@example.com",
             "revoked": True,

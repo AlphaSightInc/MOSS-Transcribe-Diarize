@@ -104,7 +104,7 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
         session(client, sessions["sub-a"])
         workspace = client.get("/")
         assert 'data-file-upload="form"' in workspace.text
-        assert client.post("/api/meetings", json={"mode": "file"}).status_code == 400
+        assert client.post("/api/meetings", json={"mode": "file"}).status_code == 405
         assert client.post("/api/meetings/file", files={}).status_code == 400
         accepted = client.post(
             "/api/meetings/file",

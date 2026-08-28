@@ -27,6 +27,7 @@ type LaneMeters = Record<CaptureLane, number>;
 
 const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
+export const LIVE_MEETING_OBSERVE_EVENT = "moss:observe-live-meeting";
 
 interface ControlPanelProps {
   authority?: "bearer" | "account";
@@ -207,6 +208,43 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
   };
 
   useEffect(() => {
+    const observeHistoryMeeting = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const meetingId =
+        typeof detail === "object" &&
+        detail !== null &&
+        "meetingId" in detail &&
+        typeof detail.meetingId === "string"
+          ? detail.meetingId.trim()
+          : "";
+      if (
+        !accountAuthority ||
+        !meetingId ||
+        clientRef.current !== null ||
+        phaseRef.current === "active" ||
+        phaseRef.current === "stopping"
+      ) {
+        return;
+      }
+
+      pollerRef.current?.stop();
+      resetSessionState();
+      const poller = createMossSessionPoller({
+        sessionId: meetingId,
+        authority: "account",
+        onError: setMessage,
+        onTerminal(terminalMessage) {
+          transition("terminal");
+          setMessage(terminalMessage);
+        }
+      });
+      pollerRef.current = poller;
+      transition("viewing");
+      setMessage("Viewing this active Live Meeting read-only. Capture remains with its original browser.");
+      poller.start();
+    };
+    document.addEventListener(LIVE_MEETING_OBSERVE_EVENT, observeHistoryMeeting);
+
     const saved = loadSessionReattach(sessionReattachStorage());
     if (saved && (accountAuthority ? saved.authority === "account" : saved.authority !== "account")) {
       const poller = createMossSessionPoller({
@@ -227,6 +265,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
     }
 
     return () => {
+      document.removeEventListener(LIVE_MEETING_OBSERVE_EVENT, observeHistoryMeeting);
       pollerRef.current?.stop();
       void clientRef.current?.close().catch(() => undefined);
     };
@@ -238,7 +277,12 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
   const canReplace = phase === "ready" || phase === "active";
 
   return (
-    <section className="control-section capture-supervisor" data-mode="live" data-capture-phase={phase}>
+    <section
+      className="control-section capture-supervisor"
+      data-mode="live"
+      data-capture-phase={phase}
+      data-observer-mode={reattached ? "read-only" : "none"}
+    >
       <div className="label">Capture</div>
       {accountAuthority ? (
         <p className="capture-security-note">Bound to your signed-in Account; no capture key is needed.</p>
@@ -266,7 +310,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
           id="audio-route"
           aria-label="Listening setup"
           value={audioRoute}
-          disabled={phase === "stopping" || phase === "terminal"}
+          disabled={reattached || phase === "stopping" || phase === "terminal"}
           onChange={(event) => setAudioRoute(event.currentTarget.value as AudioRoute)}
         >
           <option value="speakers">Speakers</option>

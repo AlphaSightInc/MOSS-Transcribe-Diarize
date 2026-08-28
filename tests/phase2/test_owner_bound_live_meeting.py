@@ -323,6 +323,9 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
         assert client.post("/api/live/pairings").status_code == 404
         assert client.delete("/api/live/sessions/unknown/view").status_code == 404
         assert client.delete("/api/live/devices/unknown").status_code == 404
+        bypass = client.post("/api/meetings", json={"mode": "live"})
+        assert bypass.status_code == 405
+        assert client.get("/api/meetings").json() == {"meetings": []}
         created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
         assert created.status_code == 201
         assert set(created.json()) == {"id", "descriptor", "snapshot"}

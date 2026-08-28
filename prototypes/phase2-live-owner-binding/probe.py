@@ -27,6 +27,85 @@ READ_OPERATIONS = frozenset({"snapshot", "events"})
 MUTATION_OPERATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
 
 
+@dataclass
+class BrowserObservationProbe:
+    """Smallest page policy: history may attach a reader, never manufacture a controller."""
+
+    phase: str = "idle"
+    originated_capture_id: str | None = None
+    observed_meeting_id: str | None = None
+    session_storage_meeting_id: str | None = None
+
+    def originate_capture(self, meeting_id: str) -> None:
+        self.phase = "active"
+        self.originated_capture_id = meeting_id
+        self.observed_meeting_id = meeting_id
+        self.session_storage_meeting_id = meeting_id
+
+    def open_active_history(self, meeting_id: str) -> str:
+        if self.originated_capture_id is not None:
+            return "origin_control_preserved"
+        self.phase = "viewing"
+        self.observed_meeting_id = meeting_id
+        return "read_only_observer_attached"
+
+    def reload(self) -> None:
+        self.originated_capture_id = None
+        self.observed_meeting_id = self.session_storage_meeting_id
+        self.phase = "viewing" if self.observed_meeting_id is not None else "idle"
+
+    def state(self) -> dict[str, object]:
+        return {
+            "phase": self.phase,
+            "originated_capture_id": self.originated_capture_id,
+            "observed_meeting_id": self.observed_meeting_id,
+            "session_storage_meeting_id": self.session_storage_meeting_id,
+            "capture_mutation_enabled": self.originated_capture_id is not None,
+        }
+
+
+def run_browser_observation_policy_probe() -> None:
+    observer = BrowserObservationProbe()
+    observer_action = observer.open_active_history("meeting-live")
+    observer_before_reload = observer.state()
+    observer.reload()
+    observer_after_reload = observer.state()
+
+    origin = BrowserObservationProbe()
+    origin.originate_capture("meeting-live")
+    origin_action = origin.open_active_history("meeting-live")
+    origin_before_reload = origin.state()
+    origin.reload()
+    origin_after_reload = origin.state()
+
+    print(
+        json.dumps(
+            {
+                "action": "browser_history_observation_policy",
+                "observer": {
+                    "open": observer_action,
+                    "before_reload": observer_before_reload,
+                    "after_reload": observer_after_reload,
+                },
+                "origin": {
+                    "open": origin_action,
+                    "before_reload": origin_before_reload,
+                    "after_reload": origin_after_reload,
+                },
+            },
+            sort_keys=True,
+        )
+    )
+    assert observer_action == "read_only_observer_attached"
+    assert observer_before_reload["capture_mutation_enabled"] is False
+    assert observer_before_reload["session_storage_meeting_id"] is None
+    assert observer_after_reload["phase"] == "idle"
+    assert origin_action == "origin_control_preserved"
+    assert origin_before_reload["capture_mutation_enabled"] is True
+    assert origin_after_reload["phase"] == "viewing"
+    assert origin_after_reload["capture_mutation_enabled"] is False
+
+
 @dataclass(frozen=True)
 class AdapterCreation:
     session_id: str
@@ -637,6 +716,7 @@ def show(action: str, binding: LiveBinding, sql: SqlCounts, **outcome: object) -
 
 
 async def run() -> None:
+    run_browser_observation_policy_probe()
     await run_shared_transport_adapter_probe()
     with tempfile.TemporaryDirectory(prefix="mtd-phase2-live-owner-prototype-") as directory:
         database = Path(directory) / "prototype.sqlite3"

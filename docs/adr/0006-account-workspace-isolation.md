@@ -50,12 +50,20 @@ view token, pairing/device grant, or compatibility mode.
   public until durable release. A second route/protocol implementation is rejected.
 - The signed-in workspace loads the existing two-lane Chrome capture client in Account-authority
   mode. It sends only the opaque Meeting ID plus the HttpOnly Sign-in cookie: no browser Account ID,
-  shared bearer, view token, or durable capture grant is created. Reload retains observer reattach by
-  Meeting ID, while the server arms the existing helper lease at creation so a lost first heartbeat
-  or later heartbeat interrupts the original capture.
+  shared bearer, view token, or durable capture grant is created. `/api/live/sessions` is the only
+  product path that creates a Live Meeting; the generic Meeting collection is read-only, so no active
+  Live row can exist without its runtime binding and initial helper lease. An active Live history
+  action attaches the existing cookie-authorized snapshot/event poller as an ephemeral read-only
+  observer. It writes no reattach storage and exposes no frame, heartbeat, Stop, or abort control; a
+  page that originated capture keeps its controller. Reload removes capture control: only an
+  origin-page Meeting ID already held in tab-scoped storage may reattach as a reader, while a pure
+  observer returns to idle. The helper lease interrupts the original capture after a lost first
+  heartbeat or later heartbeat.
 - `/` composes File, Live, then History in one document scroller. The embedded Live app keeps its
-  viewport-height working area but does not own or hide the page scroll; real headless Chrome at
-  desktop and mobile viewports must scroll History into view in that order.
+  viewport-height working area but does not own or hide the page scroll. Real headless Chrome loads
+  the production bundle at desktop and mobile viewports, scrolls History into view in that order,
+  opens an active history Meeting, renders its polled transcript, exposes only Detach, and proves no
+  observer reattach record was stored.
 - The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
   acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
   2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five
