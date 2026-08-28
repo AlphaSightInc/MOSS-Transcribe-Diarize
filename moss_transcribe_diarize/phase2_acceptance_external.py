@@ -557,6 +557,12 @@ class FixedAccountCampaign:
                 "release_launcher_sha256": launcher_digests["mtd-account-web"],
                 "release_admin_launcher": str(artifacts.launchers["mtd-admin"]),
                 "release_admin_launcher_sha256": launcher_digests["mtd-admin"],
+                "release_cutover_launcher": str(
+                    artifacts.launchers["mtd-phase2-cutover"]
+                ),
+                "release_cutover_launcher_sha256": launcher_digests[
+                    "mtd-phase2-cutover"
+                ],
                 "release_vllm_launcher": str(artifacts.launchers["mtd-vllm"]),
                 "release_vllm_launcher_sha256": launcher_digests["mtd-vllm"],
                 "web_unit_sha256": hashlib.sha256(

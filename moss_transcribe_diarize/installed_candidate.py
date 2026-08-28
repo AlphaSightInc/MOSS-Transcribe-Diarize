@@ -37,6 +37,7 @@ def validated_candidate_artifacts(manifest: object) -> CandidateArtifacts:
         "release": "release",
         "mtd-account-web": "release_launcher",
         "mtd-admin": "release_admin_launcher",
+        "mtd-phase2-cutover": "release_cutover_launcher",
         "mtd-vllm": "release_vllm_launcher",
         "checkout": "qualification_checkout",
         "moss-web.service": "web_unit_path",
@@ -48,7 +49,10 @@ def validated_candidate_artifacts(manifest: object) -> CandidateArtifacts:
     paths = {name: Path(str(value)).resolve() for name, value in values.items()}
     release = paths["release"]
     checkout = paths["checkout"]
-    launchers = {name: paths[name] for name in ("mtd-account-web", "mtd-admin", "mtd-vllm")}
+    launchers = {
+        name: paths[name]
+        for name in ("mtd-account-web", "mtd-admin", "mtd-phase2-cutover", "mtd-vllm")
+    }
     units = {name: paths[name] for name in ("moss-web.service", "moss-vllm.service")}
     if (
         not release.is_dir()
@@ -61,6 +65,7 @@ def validated_candidate_artifacts(manifest: object) -> CandidateArtifacts:
     digest_fields = {
         "mtd-account-web": "release_launcher_sha256",
         "mtd-admin": "release_admin_launcher_sha256",
+        "mtd-phase2-cutover": "release_cutover_launcher_sha256",
         "mtd-vllm": "release_vllm_launcher_sha256",
         "moss-web.service": "web_unit_sha256",
         "moss-vllm.service": "vllm_unit_sha256",

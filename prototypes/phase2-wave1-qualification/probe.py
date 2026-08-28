@@ -123,9 +123,11 @@ def _cutover_inputs(
     (release / "bin").mkdir(parents=True)
     launcher = release / "bin/mtd-account-web"
     admin_launcher = release / "bin/mtd-admin"
+    cutover_launcher = release / "bin/mtd-phase2-cutover"
     vllm_launcher = release / "bin/mtd-vllm"
     launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     admin_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    cutover_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     vllm_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     checkout = root / "candidate-checkout"
     (checkout / "ops/systemd").mkdir(parents=True)
@@ -154,6 +156,10 @@ def _cutover_inputs(
                 "release_admin_launcher": str(admin_launcher),
                 "release_admin_launcher_sha256": hashlib.sha256(
                     admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_cutover_launcher": str(cutover_launcher),
+                "release_cutover_launcher_sha256": hashlib.sha256(
+                    cutover_launcher.read_bytes()
                 ).hexdigest(),
                 "release_vllm_launcher": str(vllm_launcher),
                 "release_vllm_launcher_sha256": hashlib.sha256(

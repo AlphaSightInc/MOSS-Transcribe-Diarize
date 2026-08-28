@@ -99,6 +99,7 @@ def test_package_has_only_account_commands_and_no_retired_import_targets():
     script_block = pyproject.split("[project.scripts]", 1)[1].split("[", 1)[0]
     assert script_block.strip().splitlines() == [
         'mtd-admin = "moss_transcribe_diarize.app.phase2_admin:main"',
+        'mtd-phase2-cutover = "moss_transcribe_diarize.app.phase2_cutover_cli:main"',
         'mtd-phase2-web = "moss_transcribe_diarize.app.phase2_web_cli:main"',
     ]
     for module in RETIRED_MODULES:

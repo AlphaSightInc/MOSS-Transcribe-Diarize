@@ -32,6 +32,7 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     stage_account = (OPS / "stage-account-candidate.sh").read_text(encoding="utf-8")
     account_launcher = (OPS / "account-web-launcher.sh").read_text(encoding="utf-8")
     admin_launcher = (OPS / "account-admin-launcher.sh").read_text(encoding="utf-8")
+    cutover_launcher = (OPS / "account-cutover-launcher.sh").read_text(encoding="utf-8")
     vllm_launcher = (OPS / "vllm-launcher.sh").read_text(encoding="utf-8")
     sqlite_build = (OPS / "build-account-sqlite.sh").read_text(encoding="utf-8")
     unit = (OPS / "systemd" / "moss-web.service").read_text(encoding="utf-8")
@@ -44,7 +45,10 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert 'exec "${ACCOUNT_CURRENT}/bin/mtd-account-web"' in start
     assert "bin/python\" -m moss_transcribe_diarize.app.phase2_web_cli" in account_launcher
     assert "bin/python\" -m moss_transcribe_diarize.app.phase2_admin" in admin_launcher
+    assert "bin/python\" -m moss_transcribe_diarize.app.phase2_cutover_cli" in cutover_launcher
+    assert "sqlite-3.53.4" in cutover_launcher and "LD_LIBRARY_PATH" in cutover_launcher
     assert 'account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin' in stage_account
+    assert 'account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover' in stage_account
     assert "sqlite-3.53.4" in account_launcher
     assert "LD_LIBRARY_PATH" in account_launcher
     assert "stage-account-candidate.sh" in install_wsl
@@ -62,6 +66,7 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "activation_state" in stage_account and "staged_inert" in stage_account
     assert "release_launcher_sha256" in stage_account
     assert "release_admin_launcher_sha256" in stage_account
+    assert "release_cutover_launcher_sha256" in stage_account
     assert "release_vllm_launcher_sha256" in stage_account
     assert "web_unit_sha256" in stage_account
     assert "vllm_unit_sha256" in stage_account
@@ -140,6 +145,7 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
         OPS / "stage-account-candidate.sh",
         OPS / "account-web-launcher.sh",
         OPS / "account-admin-launcher.sh",
+        OPS / "account-cutover-launcher.sh",
         OPS / "vllm-launcher.sh",
     ):
         parsed = subprocess.run(
@@ -161,6 +167,15 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
     assert helped.returncode == 0, helped.stderr
     assert "--google-client-id" in helped.stdout
     assert "--live-provider-manifest" in helped.stdout
+    cutover_help = subprocess.run(
+        ["uv", "run", "--frozen", "mtd-phase2-cutover", "--help"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert cutover_help.returncode == 0, cutover_help.stderr
+    assert "{run,restore}" in cutover_help.stdout
 
 
 def test_candidate_stage_traps_remove_owned_partials_and_allow_retry(tmp_path: Path):
@@ -438,3 +453,12 @@ def test_account_frontend_has_one_generated_location_and_is_installed_in_wheel(
     )
     assert command_smoke.returncode == 0, command_smoke.stderr
     assert "--live-provider-manifest" in command_smoke.stdout
+    cutover_smoke = subprocess.run(
+        [str(venv / "bin" / "mtd-phase2-cutover"), "--help"],
+        env={**os.environ, "PYTHONPATH": sysconfig.get_paths()["purelib"]},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert cutover_smoke.returncode == 0, cutover_smoke.stderr
+    assert "{run,restore}" in cutover_smoke.stdout

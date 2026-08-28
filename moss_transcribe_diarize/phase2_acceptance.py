@@ -97,6 +97,8 @@ DETERMINISTIC_COMMANDS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...]
 )
 
 REQUIRED_PYTHON_TEST_FILES = (
+    "tests/phase2/test_attended_g7_canary.py",
+    "tests/phase2/test_atomic_cutover.py",
     "tests/phase2/test_account_deployment_surface.py",
     "tests/phase2/test_account_file_ingress.py",
     "tests/phase2/test_file_mp3_artifact.py",
@@ -112,6 +114,9 @@ REQUIRED_PYTHON_TEST_FILES = (
     "tests/phase2/test_workspace_reachability.py",
 )
 REQUIRED_PYTHON_TEST_CASES = (
+    "tests.phase2.test_attended_g7_canary.test_attended_meter_checkpoint_accepts_delayed_signal_and_refuses_all_zero",
+    "tests.phase2.test_attended_g7_canary.test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence",
+    "tests.phase2.test_atomic_cutover.test_missing_or_synthetic_attended_g7_restores_without_preadmission",
     "tests.phase2.test_google_account_workspace.test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission",
     "tests.phase2.test_google_account_workspace.test_unverified_or_disallowed_callback_leaves_no_account_or_session",
     "tests.phase2.test_google_account_workspace.test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation",
@@ -138,7 +143,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with the committed suites.  Falling below them means a test was
 # removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1035
+MINIMUM_PYTHON_TESTS = 1053
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
@@ -1664,6 +1669,10 @@ def _validate_raw_predicate(
             == f"{manifest['release']}/bin/mtd-admin"
             and isinstance(manifest.get("release_admin_launcher_sha256"), str)
             and len(manifest["release_admin_launcher_sha256"]) == 64
+            and manifest.get("release_cutover_launcher")
+            == f"{manifest['release']}/bin/mtd-phase2-cutover"
+            and isinstance(manifest.get("release_cutover_launcher_sha256"), str)
+            and len(manifest["release_cutover_launcher_sha256"]) == 64
             and manifest.get("release_vllm_launcher")
             == f"{manifest['release']}/bin/mtd-vllm"
             and isinstance(manifest.get("release_vllm_launcher_sha256"), str)

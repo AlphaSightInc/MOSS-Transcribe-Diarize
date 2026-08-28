@@ -164,6 +164,41 @@ Real Google OAuth, deployed four-session/600-second capacity, the 12-session fro
 production TLS, and the production-origin pre-admission campaign remain unmeasured until their
 external prerequisites exist. Synthetic reducer fixtures cannot close them.
 
+Issue #23 adds one attended cutover state machine rather than a second deployment path. Its public
+command can start one new attempt with exactly one declared terminal, `restored` or `preadmission`,
+or restore one interrupted nonterminal attempt. Both forward targets block the exact #31 marker,
+observe both old runtime views at zero, stop the old web units, seal one complete snapshot, activate
+the manifested immutable release, swap only manifested unit/profile bytes, preserve the running
+vLLM PID/start/argv, start the Account web unit, and run the same-SHA #22 Wave-1 campaign. The
+`restored` target then deliberately enters the same whole-restore primitive used by canary failure;
+`preadmission` leaves the candidate running but exposes no admission operation and is reachable only
+after the candidate-owned attended collector directly observes both fixed production-origin Chrome
+scenarios and reports `G7 PASS`. It accepts host prerequisites, never a caller-authored pass report.
+Missing or synthetic evidence restores the whole old image. Interrupted attempts restore from their
+own stored profile, manifest, plan, snapshot,
+and append-and-fsync journal; they do not depend on the staging source still existing. Candidate
+state is moved to an attempt-owned quarantine before old bytes are restored. Snapshot uncertainty
+keeps the creation marker present and both web products stopped.
+
+The snapshot inventory is explicit and nonoverlapping: the old checkout contains both Phase-1 runs
+trees; separate roots name the provider manifest, auth state, shared token, TLS certificate/key,
+vector journal, cold generic GPU runtime, and model. Candidate state and the automatically captured
+unit/profile/pointer mutation targets cannot overlap those roots. A missing required source refuses
+before the marker or any service changes.
+
+`prototypes/phase2-cutover/` derived `PASS` from 61/61 assertions. It measured the nine-root
+nonoverlapping inventory, a successful
+preadmission terminal, a successful canary followed by planned whole restore, a known canary
+failure with exact restore and candidate quarantine, exact restore after seven durable mutation
+boundaries, unchanged vLLM identity, `SAFE_STOPPED` after archive corruption, and rejection of both
+absent and deterministic-rehearsal G7 evidence at the preadmission boundary. The production collector
+owns the two real scenarios: microphone plus meeting-tab shared audio, then microphone plus
+entire-screen System Audio. It observes display surface/audio track, both meters, exact browser frame
+posts, distinct finalized speakers, clean Stop, owner MP3, running source revision, and browser
+identity; the outer cutover attempt seals only this content-free projection. Real OAuth, trusted TLS,
+attended Chrome capture, and the remote host remain unmeasured locally; this source evidence does not
+claim G7 or deploy anything.
+
 ## Consequences
 
 - Each wave passes its own release gates plus the cumulative Account/isolation core.

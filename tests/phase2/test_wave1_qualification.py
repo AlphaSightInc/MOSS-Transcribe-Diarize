@@ -698,6 +698,8 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                 "release_launcher_sha256": "9" * 64,
                 "release_admin_launcher": "/srv/release/bin/mtd-admin",
                 "release_admin_launcher_sha256": "8" * 64,
+                "release_cutover_launcher": "/srv/release/bin/mtd-phase2-cutover",
+                "release_cutover_launcher_sha256": "4" * 64,
                 "release_vllm_launcher": "/srv/release/bin/mtd-vllm",
                 "release_vllm_launcher_sha256": "7" * 64,
                 "web_unit_sha256": "6" * 64,
@@ -1359,9 +1361,11 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     release_bin.mkdir(parents=True)
     launcher = release_bin / "mtd-account-web"
     admin_launcher = release_bin / "mtd-admin"
+    cutover_launcher = release_bin / "mtd-phase2-cutover"
     vllm_launcher = release_bin / "mtd-vllm"
     launcher.write_bytes(b"reviewed launcher\n")
     admin_launcher.write_bytes(b"reviewed admin\n")
+    cutover_launcher.write_bytes(b"reviewed cutover\n")
     vllm_launcher.write_bytes(b"reviewed vllm\n")
     (release_bin / "python").write_bytes(b"runtime\n")
     checkout = tmp_path / "checkout"
@@ -1410,6 +1414,10 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
                 "release_admin_launcher": str(admin_launcher),
                 "release_admin_launcher_sha256": hashlib.sha256(
                     admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_cutover_launcher": str(cutover_launcher),
+                "release_cutover_launcher_sha256": hashlib.sha256(
+                    cutover_launcher.read_bytes()
                 ).hexdigest(),
                 "release_vllm_launcher": str(vllm_launcher),
                 "release_vllm_launcher_sha256": hashlib.sha256(
@@ -2900,9 +2908,11 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
     (release / "bin").mkdir(parents=True)
     launcher = release / "bin/mtd-account-web"
     admin_launcher = release / "bin/mtd-admin"
+    cutover_launcher = release / "bin/mtd-phase2-cutover"
     vllm_launcher = release / "bin/mtd-vllm"
     launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     admin_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    cutover_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     vllm_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     checkout = tmp_path / "checkout"
     (checkout / "ops/systemd").mkdir(parents=True)
@@ -2924,6 +2934,10 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
                 "release_admin_launcher": str(admin_launcher),
                 "release_admin_launcher_sha256": hashlib.sha256(
                     admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_cutover_launcher": str(cutover_launcher),
+                "release_cutover_launcher_sha256": hashlib.sha256(
+                    cutover_launcher.read_bytes()
                 ).hexdigest(),
                 "release_vllm_launcher": str(vllm_launcher),
                 "release_vllm_launcher_sha256": hashlib.sha256(

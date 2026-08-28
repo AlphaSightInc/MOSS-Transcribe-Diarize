@@ -1,0 +1,35 @@
+{
+  "schema": "moss-phase2-cutover-profile.v1",
+  "candidate_manifest": "/home/USER/.local/share/moss-transcribe-diarize/candidate-manifests/CANDIDATE_SHA.json",
+  "phase1": {
+    "marker_path": "/home/USER/.local/state/moss-transcribe-diarize/phase1-creation-quiesced",
+    "runtime_views": [
+      {
+        "name": "batch",
+        "origin": "http://127.0.0.1:7860",
+        "ca_file": null
+      },
+      {
+        "name": "live",
+        "origin": "https://127.0.0.1:7861",
+        "ca_file": "/ABSOLUTE/PATH/TO/phase1-live-ca.crt"
+      }
+    ],
+    "snapshot_paths": {
+      "phase1_checkout": "/mnt/d/Coding/MOSS-Transcribe-Diarize",
+      "phase1_provider_manifest": "/home/USER/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
+      "phase1_auth_state": "/home/USER/.local/share/moss-transcribe-diarize/live/live-auth.json",
+      "phase1_shared_token": "/home/USER/.local/share/moss-transcribe-diarize/live/shared-token",
+      "phase1_tls_cert": "/home/USER/.local/share/moss-transcribe-diarize/live/live.crt",
+      "phase1_tls_key": "/home/USER/.local/share/moss-transcribe-diarize/live/live.key",
+      "phase1_vector_journal": "/home/USER/.local/share/moss-transcribe-diarize/live/speaker-vectors.jsonl",
+      "phase1_gpu_venv": "/home/USER/.local/share/moss-transcribe-diarize/venv",
+      "phase1_model": "/home/USER/.local/share/moss-transcribe-diarize/model"
+    }
+  },
+  "candidate": {
+    "account_profile_source": "/home/USER/.config/moss-transcribe-diarize/staged/moss-account.env",
+    "vllm_profile_source": "/home/USER/.config/moss-transcribe-diarize/staged/vllm.env",
+    "acceptance_profile": "/home/USER/.config/moss-transcribe-diarize/phase2-acceptance.json"
+  }
+}

@@ -33,6 +33,7 @@ dependencies = [
 
 [project.scripts]
 mtd-admin = "moss_transcribe_diarize.app.phase2_admin:main"
+mtd-phase2-cutover = "moss_transcribe_diarize.app.phase2_cutover_cli:main"
 mtd-phase2-web = "moss_transcribe_diarize.app.phase2_web_cli:main"
 
 [project.optional-dependencies]

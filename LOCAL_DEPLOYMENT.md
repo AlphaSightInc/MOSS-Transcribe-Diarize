@@ -45,8 +45,34 @@ checkout, and mode-0600 candidate manifest. It does **not** change the live chec
 
 Issue #22 rehearses cutover only in an isolated root. Issue #23 owns the attended production
 sequence: Phase-1 creation quiesce, drain-to-zero, one snapshot, atomic `account-current`
-activation, web-unit installation, same-SHA proof, canary, and whole rollback. Only after that
-activation boundary may the service installer run:
+activation, web-unit installation, same-SHA proof, canary, and whole rollback. The staged release
+owns the command:
+
+```bash
+/absolute/staged/release/bin/mtd-phase2-cutover run \
+  --profile /absolute/private/moss-cutover.json \
+  --attempt /absolute/new/attempt \
+  --terminal restored
+
+/absolute/staged/release/bin/mtd-phase2-cutover run \
+  --profile /absolute/private/moss-cutover.json \
+  --attempt /absolute/new/attempt \
+  --terminal preadmission
+
+/absolute/staged/release/bin/mtd-phase2-cutover restore \
+  --attempt /absolute/incomplete/attempt
+```
+
+`restored` runs the complete same-SHA canary and then proves whole rollback while keeping G7
+`UNCLAIMED`. `preadmission` additionally requires the command's own attended headful-Chrome
+collector: real microphone plus meeting-tab shared audio, then real microphone plus entire-screen
+System Audio. It seals content-free source/meter/frame/speaker/Stop/audio observations and returns
+`G7 PASS`; absent or synthetic evidence restores Phase 1. There is no admit, resume, retry, skip, or
+force command.
+Copy `ops/moss-cutover-profile.example.json` to an ext4 mode-`0600` path and replace every
+placeholder before either forward command.
+
+Only after that activation boundary may the service installer run:
 
 ```bash
 ops/install-services.sh --dry-run

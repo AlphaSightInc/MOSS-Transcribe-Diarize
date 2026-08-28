@@ -108,6 +108,7 @@ if [ ! -d "${RELEASE}" ]; then
   rm "${RELEASE_STAGE}/locked-requirements.txt"
   install -m 0555 "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
   install -m 0555 "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
+  install -m 0555 "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover"
   install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
     "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
@@ -136,6 +137,8 @@ cmp -s "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE}/bin/mtd-account-web
   die "Account web launcher differs from the detached candidate checkout"
 cmp -s "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE}/bin/mtd-admin" || \
   die "Account admin launcher differs from the detached candidate checkout"
+cmp -s "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE}/bin/mtd-phase2-cutover" || \
+  die "Account cutover launcher differs from the detached candidate checkout"
 cmp -s "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE}/bin/mtd-vllm" || \
   die "vLLM launcher differs from the detached candidate checkout"
 PYTHONDONTWRITEBYTECODE=1 LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
@@ -191,6 +194,10 @@ payload = {
     "release_admin_launcher": f"{release}/bin/mtd-admin",
     "release_admin_launcher_sha256": hashlib.sha256(
         pathlib.Path(release, "bin/mtd-admin").read_bytes()
+    ).hexdigest(),
+    "release_cutover_launcher": f"{release}/bin/mtd-phase2-cutover",
+    "release_cutover_launcher_sha256": hashlib.sha256(
+        pathlib.Path(release, "bin/mtd-phase2-cutover").read_bytes()
     ).hexdigest(),
     "release_vllm_launcher": f"{release}/bin/mtd-vllm",
     "release_vllm_launcher_sha256": hashlib.sha256(
