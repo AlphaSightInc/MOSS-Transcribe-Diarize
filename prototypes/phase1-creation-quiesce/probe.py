@@ -269,6 +269,77 @@ def cancelled_upload_state(root: Path, marker: Path) -> dict[str, Any]:
     return result
 
 
+def constructor_failure_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Fail the staging-file open after job-dir creation and expose cleanup ordering."""
+
+    gate = Phase1CreationGate(marker)
+    app, _wrapped = make_batch_app(root, gate, ProbeRunner())
+    endpoint = next(
+        route.endpoint
+        for route in app.routes
+        if route.path == "/api/jobs" and "POST" in (route.methods or set())
+    )
+    open_observations: list[dict[str, Any]] = []
+    cleanup_observations: list[dict[str, Any]] = []
+    original_open = Path.open
+    original_rmtree = jobs_module.shutil.rmtree
+
+    def fail_staging_open(path: Path, *args: Any, **kwargs: Any):
+        if path.name.endswith(".uploading"):
+            open_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "job_dir_exists": path.parent.exists(),
+                    "staging_exists": path.exists(),
+                }
+            )
+            raise OSError("prototype staging open failure")
+        return original_open(path, *args, **kwargs)
+
+    def observed_rmtree(path: Any, *args: Any, **kwargs: Any):
+        cleanup_observations.append(
+            {
+                "entrants": gate.snapshot().entrants,
+                "job_dir_exists": Path(path).exists(),
+            }
+        )
+        return original_rmtree(path, *args, **kwargs)
+
+    class UnreadUpload:
+        filename = "constructor-failure.wav"
+
+        async def read(self, _size: int) -> bytes:
+            raise AssertionError("constructor failure must precede body read")
+
+    async def exercise() -> dict[str, Any]:
+        error_status = None
+        try:
+            await endpoint(file=UnreadUpload())
+        except Exception as exc:
+            error_status = getattr(exc, "status_code", None)
+        return {
+            "error_status": error_status,
+            "after": {
+                "gate": gate.snapshot().to_dict(),
+                "job_dirs": sorted(path.name for path in root.iterdir()),
+            },
+        }
+
+    Path.open = fail_staging_open
+    jobs_module.shutil.rmtree = observed_rmtree
+    try:
+        result = asyncio.run(exercise())
+        result["open_observations"] = open_observations
+        result["cleanup_observations"] = cleanup_observations
+    finally:
+        Path.open = original_open
+        jobs_module.shutil.rmtree = original_rmtree
+        for path in root.iterdir():
+            if path.is_dir():
+                shutil.rmtree(path)
+    return result
+
+
 def terminal_finalization_state(root: Path, marker: Path) -> dict[str, Any]:
     """Hold the real terminal pass and read the production runtime status surface."""
 
@@ -320,6 +391,23 @@ def main() -> int:
         runner = ProbeRunner()
         batch_app, batch_wrapped = make_batch_app(root / "batch-runs", batch_gate, runner)
         live_app, live_wrapped = make_live_app(root / "live-runs", live_gate)
+
+        constructor_failure = constructor_failure_state(
+            root / "constructor-failure-runs",
+            root / "constructor-failure-state" / "marker",
+        )
+        checks["constructor_failure_visible_before_return"] = (
+            constructor_failure["error_status"] == 400
+            and constructor_failure["open_observations"]
+            == [{"entrants": 1, "job_dir_exists": True, "staging_exists": False}]
+        )
+        checks["constructor_failure_cleanup_ordered"] = (
+            constructor_failure["cleanup_observations"]
+            == [{"entrants": 1, "job_dir_exists": True}]
+            and constructor_failure["after"]["gate"]["entrants"] == 0
+            and constructor_failure["after"]["job_dirs"] == []
+        )
+        emit(states, "constructor_failure", **constructor_failure)
 
         cancelled = cancelled_upload_state(
             root / "cancelled-upload-runs", root / "cancelled-upload-state" / "marker"
@@ -680,7 +768,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 28
+    verdict = all(checks.values()) and len(checks) == 30
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (
@@ -694,7 +782,8 @@ def main() -> int:
         "falsifier": (
             "Any admitted work after quiesced plus entrants zero, invisible pre-admitted work, "
             "an existing continuation blocked by the gate, terminal work hidden as drained, "
-            "or cancellation releasing admission before its upload transaction is removed."
+            "cancellation releasing admission before its upload transaction is removed, or a "
+            "constructor failure leaving its pre-transaction job directory behind."
         ),
         "checks": checks,
         "states": states,

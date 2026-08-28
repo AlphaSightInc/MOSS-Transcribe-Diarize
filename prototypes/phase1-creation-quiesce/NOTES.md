@@ -9,9 +9,10 @@
   count spans request entry through work registration or transaction cleanup; content-free
   active/queued counts establish drain, including a closed Live session whose terminal finalizer is
   still running. The marker cannot count an upload already inside a process, and a count alone
-  cannot cross processes or reboot, so neither primitive can be removed. Cleanup is part of the
-  existing admission boundary, not another counter; finalization status is existing Live runtime
-  truth, not another lifecycle policy.
+  cannot cross processes or reboot, so neither primitive can be removed. Cleanup includes a job
+  directory whose transaction constructor fails before returning. It is part of the existing
+  admission boundary, not another counter; finalization status is existing Live runtime truth, not
+  another lifecycle policy.
 - **Invariants:** a quiesced marker rejects Live create, job create, rerun, resume, and render; it
   does not reject existing frames, heartbeat, snapshot, events, Stop, abort, reads, or downloads;
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
@@ -24,6 +25,8 @@
   any newly registered work disproves this design. Invisible pre-admitted upload work or a blocked
   existing continuation also disproves it. A closed/running terminal pass reported as zero or a
   cancelled upload releasing its entrant before removing its transaction also disproves it.
+  A staging-file constructor failure returning while its new job directory remains also disproves
+  it.
 - **Tool decision:** a two-instance logic probe is necessary because a long upload crossing marker
   enable is the reachable race that distinguishes a marker alone from marker plus entrant count.
   Cancelling the production upload coroutine after transaction creation is necessary because only
@@ -31,6 +34,9 @@
   exception-only cleanup. Holding the real terminal finalizer is necessary because only its
   `closed/running` interval distinguishes terminal HTTP status from completed drain work; a zero
   count there rejects status-only counting.
+  Failing the real staging-file open is necessary because it is the only reachable point after
+  directory creation but before the server owns an abortable transaction; a leftover directory
+  requires strong construction cleanup in `JobManager`, not another server transaction wrapper.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -53,14 +59,18 @@ The extended command exited `FAIL` before production was changed:
 - Cancelling the production upload coroutine after transaction creation showed entrant `1` and one
   staging job directory while held. Cancellation then produced no `UploadTransaction.abort` call,
   released the entrant to `0`, and left that directory behind.
+- Failing `.uploading` file open after job-directory creation returned typed HTTP `400`; the open
+  saw entrant `1`, but no cleanup ran, and the request returned with entrant `0` plus the orphan
+  directory. The extended probe exited nonzero with
+  `constructor_failure_cleanup_ordered=false` while every prior predicate stayed green.
 
-Both states are reachable cutover false-zero/orphan failures. The correction may therefore only
+These states are reachable cutover false-zero/orphan failures. The correction may therefore only
 deepen the two existing meanings: Live drain includes running terminal finalization, and upload
 admission ends after every non-committed transaction has been aborted.
 
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 28/28 predicates on Python 3.10.19 and 3.12.12 on
+**Accepted.** The command derived `PASS` from 30/30 predicates on Python 3.10.19 and 3.12.12 on
 2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
@@ -82,6 +92,9 @@ admission ends after every non-committed transaction has been aborted.
   release it reported `final`, pending `0`, and active Live `0`.
 - A cancelled upload called `abort` while its admission entrant was still `1` and its staging path
   still existed; only after cleanup did the entrant become `0`, with no job directory remaining.
+- A failed staging-file open saw its newly created job directory and entrant `1`; strong
+  construction cleanup removed that directory while the entrant was still `1`, then HTTP returned
+  `400` with entrant `0` and no filesystem material.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

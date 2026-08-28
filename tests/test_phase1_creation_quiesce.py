@@ -206,6 +206,55 @@ def test_two_phase1_processes_quiesce_new_work_and_drain_existing_work(
     assert batch_gate.snapshot().entrants == 0
     assert live_gate.snapshot().entrants == 0
 
+    constructor_open: list[dict[str, object]] = []
+    constructor_cleanup: list[dict[str, object]] = []
+    original_path_open = Path.open
+    original_rmtree = jobs_module.shutil.rmtree
+    batch_runs = tmp_path / "batch-runs"
+
+    def fail_staging_open(path: Path, *args, **kwargs):
+        if path.name.endswith(".uploading"):
+            constructor_open.append(
+                {
+                    "entrants": batch_gate.snapshot().entrants,
+                    "job_dir_exists": path.parent.exists(),
+                }
+            )
+            raise OSError("test staging open failure")
+        return original_path_open(path, *args, **kwargs)
+
+    def observed_rmtree(path, *args, **kwargs):
+        if Path(path).parent == batch_runs:
+            constructor_cleanup.append(
+                {
+                    "entrants": batch_gate.snapshot().entrants,
+                    "job_dir_exists": Path(path).exists(),
+                }
+            )
+        return original_rmtree(path, *args, **kwargs)
+
+    with monkeypatch.context() as construction:
+        construction.setattr(Path, "open", fail_staging_open)
+        construction.setattr(jobs_module.shutil, "rmtree", observed_rmtree)
+        constructor_failed = batch.post(
+            "/api/jobs",
+            files={"file": ("constructor-failure.wav", b"body", "audio/wav")},
+        )
+
+    assert constructor_failed.status_code == 400
+    assert constructor_open == [{"entrants": 1, "job_dir_exists": True}]
+    assert constructor_cleanup == [{"entrants": 1, "job_dir_exists": True}]
+    assert list(batch_runs.iterdir()) == []
+    expected_open_runtime = {
+        "state": "open",
+        "entrants": 0,
+        "active_jobs": 0,
+        "queued_jobs": 0,
+        "active_live_sessions": 0,
+    }
+    assert batch.get("/api/runtime").json()["phase1_creation"] == expected_open_runtime
+    assert live.get("/api/runtime").json()["phase1_creation"] == expected_open_runtime
+
     first = batch.post(
         "/api/jobs",
         files={"file": ("first.wav", b"first", "audio/wav")},

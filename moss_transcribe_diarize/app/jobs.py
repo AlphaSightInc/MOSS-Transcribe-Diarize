@@ -339,24 +339,33 @@ class JobManager:
         suffix = Path(filename).suffix or ".media"
         job_dir = self.runs_dir / job_id
         job_dir.mkdir(parents=True, exist_ok=False)
-        input_path = job_dir / f"input{suffix}"
-        job = JobRecord(
-            id=job_id,
-            status="queued",
-            progress=0.0,
-            media_name=filename,
-            input_path=str(input_path),
-            job_dir=str(job_dir),
-            inference_prompt=options["prompt"],
-            max_length=options["max_length"],
-            max_new_tokens=options["max_new_tokens"],
-            decoding=options["decoding"],
-            temperature=options["temperature"],
-            model=self.model_runner.model_path,
-            checkpoint_dir=str(job_dir / "checkpoint"),
-            checkpoint_state="pending",
-        )
-        return UploadTransaction(self, job, input_path.with_name(f"{input_path.name}.uploading"))
+        try:
+            input_path = job_dir / f"input{suffix}"
+            job = JobRecord(
+                id=job_id,
+                status="queued",
+                progress=0.0,
+                media_name=filename,
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt=options["prompt"],
+                max_length=options["max_length"],
+                max_new_tokens=options["max_new_tokens"],
+                decoding=options["decoding"],
+                temperature=options["temperature"],
+                model=self.model_runner.model_path,
+                checkpoint_dir=str(job_dir / "checkpoint"),
+                checkpoint_state="pending",
+            )
+            return UploadTransaction(
+                self, job, input_path.with_name(f"{input_path.name}.uploading")
+            )
+        except BaseException:
+            # Construction has not returned an abortable transaction, so this method still
+            # owns the directory it created. Restore the pre-call filesystem state before
+            # admission can close and expose a false-zero drain.
+            shutil.rmtree(job_dir)
+            raise
 
     def enqueue(self, job_id: str) -> None:
         self._ensure_source_metadata(self.get_job(job_id))

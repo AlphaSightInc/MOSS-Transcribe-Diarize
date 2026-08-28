@@ -4,6 +4,8 @@ import hashlib
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from moss_transcribe_diarize.app.jobs import JobManager
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 
@@ -68,3 +70,24 @@ def test_upload_transaction_abort_removes_unpublished_job_materials():
 
         assert job_id not in manager._jobs
         assert not job_dir.exists()
+
+
+def test_upload_transaction_constructor_failure_removes_owned_job_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manager = make_manager(tmp_path)
+    original_open = Path.open
+
+    def fail_staging_open(path: Path, *args, **kwargs):
+        if path.name.endswith(".uploading"):
+            assert path.parent.exists()
+            raise OSError("test staging open failure")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fail_staging_open)
+    with pytest.raises(OSError, match="test staging open failure"):
+        manager.create_upload_transaction("constructor-failure.wav")
+
+    assert manager.list_jobs() == []
+    assert list(tmp_path.iterdir()) == []
