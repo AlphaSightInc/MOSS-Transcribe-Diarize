@@ -181,16 +181,28 @@ class Host:
             "batch": {"entrants": 1, "active_live": 0, "active_jobs": 1, "queued_jobs": 1},
             "live": {"entrants": 0, "active_live": 2, "active_jobs": 0, "queued_jobs": 0},
         }
-        self.phase1_running = True
+        self.phase1_web_units = {"moss-web": True, "moss-live-web": True}
         self.account_running = False
+        self.restore_writes: list[dict[str, object]] = []
+        self.durable_restore_members: list[str] = []
         self.vllm = {"pid": 3107, "started": 9001, "argv": ("python", "-m", "vllm")}
         self.original_projection = snapshot_projection(self)
+
+    @property
+    def phase1_running(self) -> bool:
+        return all(self.phase1_web_units.values())
+
+    @phase1_running.setter
+    def phase1_running(self, running: bool) -> None:
+        for unit in self.phase1_web_units:
+            self.phase1_web_units[unit] = running
 
     def state(self) -> dict[str, object]:
         return {
             "marker": self.marker.exists(),
             "work": self.work,
             "phase1_running": self.phase1_running,
+            "phase1_web_units": self.phase1_web_units,
             "account_running": self.account_running,
             "current": str(self.current.resolve()),
             "vllm": self.vllm,
@@ -200,6 +212,34 @@ class Host:
 
 class InjectedCrash(RuntimeError):
     pass
+
+
+class RestorationUncertain(RuntimeError):
+    pass
+
+
+def fsync_restored_tree(host: Host, path: Path, *, role: str) -> None:
+    members = [path]
+    if path.is_dir() and not path.is_symlink():
+        members.extend(sorted(path.rglob("*")))
+    for member in members:
+        if member.is_file() and not member.is_symlink():
+            descriptor = os.open(member, os.O_RDONLY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+            relative = "." if member == path else member.relative_to(path).as_posix()
+            host.durable_restore_members.append(
+                role if relative == "." else f"{role}/{relative}"
+            )
+    for member in reversed(members):
+        if member.is_dir() and not member.is_symlink():
+            fsync_dir(member)
+            relative = "." if member == path else member.relative_to(path).as_posix()
+            host.durable_restore_members.append(
+                role if relative == "." else f"{role}/{relative}"
+            )
 
 
 def archive_old(host: Host) -> tuple[Path, str, list[str]]:
@@ -218,57 +258,80 @@ def restore(
     *,
     corrupt: bool = False,
     crash_after: str | None = None,
+    journal_available: bool = True,
+    safe_stop_marker_error: bool = False,
+    safe_stop_stuck_web: str | None = None,
 ) -> str:
+    journal_failed = False
+
+    def record(phase: str, **state: object) -> None:
+        nonlocal journal_failed
+        if not journal_available:
+            journal_failed = True
+            return
+        try:
+            append_event(host.journal, phase, **state)
+        except OSError:
+            journal_failed = True
+
     events = read_events(host.journal)
     if events[-1]["phase"] in {"restored", "preadmission", "SAFE_STOPPED"}:
         raise ValueError("terminal attempt cannot be restored")
     if events[-1]["phase"] != "restore_started":
-        append_event(host.journal, "restore_started")
+        record("restore_started")
     snapshot = host.attempt / "phase1.tar"
     if not snapshot.exists():
         # Before snapshot publication, only the marker and old-process lifecycle can
         # have changed; no host byte has been replaced yet.
         host.account_running = False
-        append_event(host.journal, "candidate_stopped")
+        record("candidate_stopped")
         if crash_after == "candidate_stopped":
             raise InjectedCrash("candidate_stopped")
         host.phase1_running = True
-        append_event(host.journal, "phase1_started")
+        record("phase1_started")
         if crash_after == "phase1_started":
             raise InjectedCrash("phase1_started")
         host.marker.unlink(missing_ok=True)
-        append_event(host.journal, "block_removed")
+        record("block_removed")
         if crash_after == "block_removed":
             raise InjectedCrash("block_removed")
-        append_event(host.journal, "restored", candidate_quarantined=False)
+        record("restored", candidate_quarantined=False)
         return "restored"
     manifest = json.loads((host.attempt / "snapshot.json").read_text())
     if corrupt:
         snapshot.write_bytes(b"corrupt")
     if hashlib.sha256(snapshot.read_bytes()).hexdigest() != manifest["archive_sha256"]:
+        if not host.marker.exists() and not safe_stop_marker_error:
+            host.marker.write_bytes(b"moss-phase1-creation-quiesced-v1\n")
         host.phase1_running = False
         host.account_running = False
-        append_event(host.journal, "SAFE_STOPPED", reason="snapshot_digest_mismatch")
+        if safe_stop_stuck_web is not None:
+            host.phase1_web_units[safe_stop_stuck_web] = True
+        safe_stopped_verified = (
+            host.marker.is_file()
+            and host.marker.read_bytes() == b"moss-phase1-creation-quiesced-v1\n"
+            and not any(host.phase1_web_units.values())
+            and not host.account_running
+        )
+        if not safe_stopped_verified:
+            raise RestorationUncertain("blocked and stopped state is unverified")
+        record("SAFE_STOPPED", reason="snapshot_digest_mismatch")
         return "SAFE_STOPPED"
     host.account_running = False
-    append_event(host.journal, "candidate_stopped")
+    record("candidate_stopped")
     if crash_after == "candidate_stopped":
         raise InjectedCrash("candidate_stopped")
+    host.phase1_running = False
     quarantine = host.attempt / "candidate-quarantine"
     if host.candidate_roots.exists():
         host.candidate_roots.rename(quarantine)
-    append_event(host.journal, "candidate_quarantined")
+    record("candidate_quarantined")
     if crash_after == "candidate_quarantined":
         raise InjectedCrash("candidate_quarantined")
-    if host.current.exists() or host.current.is_symlink():
-        host.current.unlink()
-    for path in host.snapshot_roots.values():
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink(missing_ok=True)
-    if host.units.exists():
-        shutil.rmtree(host.units)
+    extraction = host.attempt / ".restore-extraction"
+    if extraction.exists():
+        shutil.rmtree(extraction)
+    extraction.mkdir(mode=0o700)
     with tarfile.open(snapshot) as archive:
         members = archive.getmembers()
         if any(
@@ -276,20 +339,47 @@ def restore(
             for member in members
         ):
             raise ValueError("snapshot member escapes the restore root")
-        archive.extractall(host.root)
+        archive.extractall(extraction)
+    for role, path in host.snapshot_roots.items():
+        if path.exists() or path.is_symlink():
+            continue
+        host.restore_writes.append(
+            {
+                "role": role,
+                "moss_web_running": host.phase1_web_units["moss-web"],
+                "moss_live_web_running": host.phase1_web_units["moss-live-web"],
+            }
+        )
+        source = extraction / path.relative_to(host.root)
+        if source.is_dir():
+            shutil.copytree(source, path, symlinks=True)
+        elif source.is_symlink():
+            path.symlink_to(os.readlink(source))
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, path, follow_symlinks=False)
+        fsync_restored_tree(host, path, role=role)
+    if host.current.exists() or host.current.is_symlink():
+        host.current.unlink()
+    if host.units.exists():
+        shutil.rmtree(host.units)
+    shutil.copytree(extraction / "units", host.units, symlinks=True)
+    shutil.rmtree(extraction)
     host.current.symlink_to(host.old)
-    append_event(host.journal, "snapshot_restored")
+    record("snapshot_restored")
     if crash_after == "snapshot_restored":
         raise InjectedCrash("snapshot_restored")
     host.phase1_running = True
-    append_event(host.journal, "phase1_started")
+    if crash_after == "phase1_started_before_journal":
+        raise InjectedCrash("phase1_started_before_journal")
+    record("phase1_started")
     if crash_after == "phase1_started":
         raise InjectedCrash("phase1_started")
     host.marker.unlink(missing_ok=True)
-    append_event(host.journal, "block_removed")
+    record("block_removed")
     if crash_after == "block_removed":
         raise InjectedCrash("block_removed")
-    append_event(host.journal, "restored", candidate_quarantined=quarantine.exists())
+    record("restored", candidate_quarantined=quarantine.exists())
     return "restored"
 
 
@@ -388,17 +478,17 @@ def main() -> int:
         "hypothesis": "An fsynced phase journal, one complete snapshot, and one activation pointer are sufficient; uncertainty must remain blocked and stopped.",
         "minimum_primitives": [
             {"name": "host_cutover_lock", "boundary": "serializes every forward and restore attempt on one cooperating host", "irreducible": "attempt-local locks cannot prevent two different attempts from mutating the same units and authority"},
-            {"name": "phase_journal", "boundary": "orders only durable host mutations", "irreducible": "recovery otherwise cannot distinguish planned from completed effects"},
+            {"name": "phase_journal", "boundary": "orders durable host mutations when writable but never owns rollback effects", "irreducible": "recovery otherwise cannot distinguish planned from completed effects, while journal failure must not strand the candidate"},
             {"name": "phase1_block_and_two_view_drain", "boundary": "old-image admission and outstanding work only", "irreducible": "stop alone loses accepted work and an in-process count misses the sibling service"},
-            {"name": "complete_snapshot", "boundary": "the nonoverlapping checkout, provider/auth/token/TLS/vector, GPU-runtime, model, unit, and profile roots", "irreducible": "omitting one root or nesting roots permits mixed authentication, runtime, or service state"},
+            {"name": "complete_snapshot", "boundary": "preserves present explicit old roots, repairs a missing explicit root, and restores owned unit/profile/pointer mutation targets", "irreducible": "unconditional extraction rewrites live GPU/model bytes while omission cannot repair a missing old root"},
             {"name": "activation_pointer", "boundary": "selects exactly one immutable Account release", "irreducible": "copying a release creates partial activation"},
-            {"name": "terminal_outcome", "boundary": "restored, preadmission, or SAFE_STOPPED", "irreducible": "a generic success/failure code cannot state whether authority is open"},
+            {"name": "terminal_outcome", "boundary": "restored, preadmission, or verified blocked-and-inactive SAFE_STOPPED", "irreducible": "a generic success/failure code cannot state whether authority is open, and an unverified safe label is false authority"},
             {"name": "explicit_terminal_target", "boundary": "chooses only full-canary restore or preadmission", "irreducible": "an implicit success target cannot deliberately rehearse the whole rollback"},
             {"name": "candidate_owned_attended_canary", "boundary": "observes real production-origin microphone plus meeting-tab and entire-screen Chrome capture", "irreducible": "Wave-1 qualification or a profile-authored pass report cannot establish attended browser behavior"},
         ],
-        "invariants": ["one fixed host lock excludes every concurrent forward or restore attempt", "only the exact committed production origin can end preadmission with G7 PASS", "restored runs Wave-1 then planned whole restore without requiring G7", "a crash during any restore effect remains replayable", "vLLM PID/start/argv never change", "candidate admission remains empty", "the snapshot role set is exact and all snapshot, candidate-state, and attempt roots are nonoverlapping", "known failures restore whole old state", "uncertain snapshot identity keeps creation blocked and services stopped"],
+        "invariants": ["one fixed host lock excludes every concurrent forward or restore attempt", "only the exact committed production origin can end preadmission with G7 PASS", "restored runs Wave-1 then planned whole restore without requiring G7", "a crash during any restore effect remains replayable", "rollback effects do not depend on journal availability", "SAFE_STOPPED is published only after exact marker and both listener stops are observed", "both old web units are stopped before snapshot application", "present explicit old roots are never rewritten", "missing explicit roots and automatic mutation targets restore from the sealed archive and are fsynced recursively before terminal", "vLLM PID/start/argv never change", "candidate admission remains empty", "the snapshot role set is exact and all snapshot, candidate-state, and attempt roots are nonoverlapping", "known failures restore whole old state", "uncertain snapshot identity keeps creation blocked and services stopped"],
         "assumptions_unknowns": ["real OAuth, trusted TLS, Chrome microphone/tab/screen, and the remote host remain UNMEASURED in this prototype", "the production command must obtain attended evidence directly rather than consume a caller-authored report"],
-        "falsifier": "two distinct attempts mutate concurrently; any required old authority/runtime/model root is absent, extra, or overlaps attempt/candidate state; any forward or restore-effect crash cannot restore exactly; restored requires G7; a wrong host/port reaches G7; a corrupt archive reopens a service; candidate state is discarded instead of quarantined; or preadmission admits an Account",
+        "falsifier": "two distinct attempts mutate concurrently; any required old authority/runtime/model root is absent, extra, or overlaps attempt/candidate state; a normal restore rewrites a present explicit root; a replay applies snapshot bytes while either old web unit is live; a missing explicit root is not repaired and fsynced; persistent journal failure prevents rollback; SAFE_STOPPED is published without the exact marker and inactive listeners; any forward or restore-effect crash cannot restore exactly; restored requires G7; a wrong host/port reaches G7; a corrupt archive reopens a service; candidate state is discarded instead of quarantined; or preadmission admits an Account",
         "tool_decision": [
             {"experiment": "actual filesystem journal/archive/pointer crash matrix", "necessity": "labels cannot expose partial mutation", "decision_change": "any non-restorable boundary requires a different ordering or primitive"},
             {"experiment": "corrupt archive restore", "necessity": "tests the only uncertainty outcome", "decision_change": "any service restart rejects SAFE_STOPPED handling"},
@@ -408,6 +498,10 @@ def main() -> int:
             {"experiment": "two independent nonblocking file-lock claims", "necessity": "attempt directories do not share exclusion state", "decision_change": "if both claims succeed, move ownership to one fixed host path"},
             {"experiment": "crash after each restore effect followed by the same restore command", "necessity": "restore_started alone does not prove replayability", "decision_change": "any mixed or nonretryable result requires a different restore ordering"},
             {"experiment": "wrong-host/port and restored-without-browser states", "necessity": "HTTPS alone does not identify production and rollback rehearsal does not measure G7", "decision_change": "any wrong origin or browser dependency rejects the terminal branch"},
+            {"experiment": "write-instrumented normal restore and pre-journal start-effect crash replay", "necessity": "byte equality cannot reveal unsafe remove-and-copy of an unchanged live GPU/model root", "decision_change": "any present explicit-root write selects preservation plus web-stop-before-application"},
+            {"experiment": "persistent journal failure after candidate start", "necessity": "a durable state log can fail independently of already-owned host effects", "decision_change": "a stranded candidate makes every journal append best-effort around rollback"},
+            {"experiment": "marker failure plus one stuck listener at SAFE_STOPPED", "necessity": "a terminal label cannot prove its own traffic state", "decision_change": "any false terminal requires direct marker/unit/listener verification"},
+            {"experiment": "restored-tree fsync accounting", "necessity": "correct bytes in cache do not establish crash durability", "decision_change": "any unflushed regular file or directory requires recursive fsync before publication"},
         ],
         "one_command": "PYTHONDONTWRITEBYTECODE=1 bash prototypes/phase2-cutover/run.sh",
     }
@@ -475,6 +569,7 @@ def main() -> int:
             (
                 planned_terminal == "restored",
                 snapshot_projection(planned) == planned_original,
+                not planned.restore_writes,
                 planned.phase1_running,
                 not planned.account_running,
                 not planned.marker.exists(),
@@ -519,6 +614,109 @@ def main() -> int:
             )
             assertions.extend((terminal == "restored", restored_exact))
         results["restore_effect_crash_matrix"] = restore_crash_rows
+
+        start_effect_crash = Host(root / "restore-start-effect-crash")
+        try:
+            run(start_effect_crash, crash_after="candidate_started")
+        except InjectedCrash:
+            try:
+                restore(
+                    start_effect_crash,
+                    crash_after="phase1_started_before_journal",
+                )
+            except InjectedCrash:
+                terminal = restore(start_effect_crash)
+        writes_under_live_web = [
+            row
+            for row in start_effect_crash.restore_writes
+            if row["moss_web_running"] or row["moss_live_web_running"]
+        ]
+        results["restore_start_effect_replay"] = {
+            "terminal": terminal,
+            "writes": start_effect_crash.restore_writes,
+            "writes_under_live_web": writes_under_live_web,
+            "vllm": start_effect_crash.vllm,
+        }
+        assertions.extend(
+            (
+                terminal == "restored",
+                not writes_under_live_web,
+            )
+        )
+
+        missing_root = Host(root / "restore-missing-explicit-root")
+        try:
+            run(missing_root, crash_after="candidate_started")
+        except InjectedCrash:
+            shutil.rmtree(missing_root.snapshot_roots["phase1_model"])
+            terminal = restore(missing_root)
+        results["missing_explicit_root"] = {
+            "terminal": terminal,
+            "writes": missing_root.restore_writes,
+            "durable_members": missing_root.durable_restore_members,
+            "restored": snapshot_projection(missing_root)
+            == missing_root.original_projection,
+        }
+        assertions.extend(
+            (
+                terminal == "restored",
+                [row["role"] for row in missing_root.restore_writes]
+                == ["phase1_model"],
+                snapshot_projection(missing_root)
+                == missing_root.original_projection,
+                set(missing_root.durable_restore_members)
+                == {"phase1_model", "phase1_model/weights"},
+            )
+        )
+
+        journal_failure = Host(root / "persistent-journal-failure")
+        try:
+            run(journal_failure, crash_after="candidate_started")
+        except InjectedCrash:
+            try:
+                restore(journal_failure, journal_available=False)
+            except OSError:
+                pass
+        rollback_completed_without_journal = (
+            journal_failure.phase1_running
+            and not journal_failure.account_running
+            and snapshot_projection(journal_failure)
+            == journal_failure.original_projection
+        )
+        results["persistent_journal_failure"] = {
+            "rollback_completed": rollback_completed_without_journal,
+            "state": journal_failure.state(),
+            "last_durable_phase": read_events(journal_failure.journal)[-1]["phase"],
+        }
+        assertions.append(rollback_completed_without_journal)
+
+        false_safe_stopped = Host(root / "false-safe-stopped")
+        try:
+            run(false_safe_stopped, crash_after="candidate_started")
+        except InjectedCrash:
+            false_safe_stopped.marker.unlink()
+            try:
+                terminal = restore(
+                    false_safe_stopped,
+                    corrupt=True,
+                    safe_stop_marker_error=True,
+                    safe_stop_stuck_web="moss-live-web",
+                )
+            except RestorationUncertain:
+                terminal = "RESTORATION_UNCERTAIN"
+        safe_stopped_verified = (
+            false_safe_stopped.marker.is_file()
+            and false_safe_stopped.marker.read_bytes()
+            == b"moss-phase1-creation-quiesced-v1\n"
+            and not any(false_safe_stopped.phase1_web_units.values())
+            and not false_safe_stopped.account_running
+        )
+        results["safe_stopped_verification"] = {
+            "terminal": terminal,
+            "verified": safe_stopped_verified,
+            "state": false_safe_stopped.state(),
+        }
+        assertions.append(terminal != "SAFE_STOPPED" or safe_stopped_verified)
 
         arbitrary_origin = "https://not-production.invalid:444"
         exact_origin_accepted = arbitrary_origin == EXACT_PRODUCTION_ORIGIN

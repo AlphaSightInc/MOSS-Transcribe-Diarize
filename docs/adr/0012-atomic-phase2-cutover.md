@@ -195,12 +195,25 @@ before the marker or any service changes.
 The first adversarial extension of `prototypes/phase2-cutover/` measured `RED` at 60/66 assertions:
 attempt-local locks, an attempt nested in candidate state, a tenth snapshot role, an interrupted
 restore, an attended-browser dependency on the restored target, and an arbitrary HTTPS origin all
-violated the contract. The corrected prototype derived `PASS` from 77/77 assertions. It measured one
+violated the contract. The restore-ownership extension then measured `RED` at 78/80: normal restore
+rewrote all nine present old-image roots, and replay after an unjournaled web-start effect rewrote
+them while both old web units were live. The consolidated failure-boundary extension measured `RED`
+at 83/86: persistent journal failure stranded the candidate, unverified marker/listener state was
+reported as `SAFE_STOPPED`, and reconstructed files were not fsynced.
+
+The corrected prototype derived `PASS` from 86/86 assertions. It measured one
 fixed host lock, exact nine-role nonoverlapping inventory, pre-effect attempt/state refusal, replay
 after each of five restore effects, a successful preadmission terminal, Wave-1 followed by planned
 whole restore without G7, exact restore after seven forward mutation boundaries, unchanged vLLM
 identity, `SAFE_STOPPED` after archive corruption, exact production-origin identity, and rejection
-of absent or deterministic-rehearsal G7 evidence at the preadmission boundary. The production collector
+of absent or deterministic-rehearsal G7 evidence at the preadmission boundary. Normal restore now
+preserves every present explicit old-image root and reconstructs only a missing root; automatic
+unit/profile/pointer mutation targets remain restore-owned. Restore replay stops both web units before
+snapshot application and never stops or rewrites the live vLLM process/runtime. Physical rollback is
+independent of journal availability, but no durable terminal is claimed when the journal is
+unavailable. `SAFE_STOPPED` is published only after exact marker bytes and both unit/listener views are
+verified, and reconstructed regular files/directories are recursively fsynced before publication.
+The production collector
 owns the two real scenarios: microphone plus meeting-tab shared audio, then microphone plus
 entire-screen System Audio. It observes display surface/audio track, both meters, exact browser frame
 posts, distinct finalized speakers, clean Stop, owner MP3, running source revision, and browser

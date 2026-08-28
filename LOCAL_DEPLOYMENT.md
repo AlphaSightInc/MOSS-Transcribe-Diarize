@@ -110,3 +110,9 @@ Rollback restores the prior `account-current` pointer and unit/profile bytes, th
 the Account web process during the attended operation. The shared GPU/vLLM environment and
 running process remain untouched. The Account database and Meeting archive are forward-only
 product data and are not deleted by source rollback.
+
+The sealed Phase-1 roots are recovery evidence, not routinely rewritten rollback targets. Restore
+preserves every present explicit old-image root, reconstructs only a missing root, and always restores
+the automatically captured unit/profile/pointer targets. Replay stops both web units before applying
+snapshot bytes. `SAFE_STOPPED` is reported only after the creation marker and both unit/listener views
+are verified; journal or stop-state uncertainty remains an explicit nonterminal error.

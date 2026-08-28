@@ -36,9 +36,6 @@ RESULT_SCHEMA = "moss-phase2-cutover-result.v1"
 RESTORE_PLAN_SCHEMA = "moss-phase2-cutover-restore-plan.v1"
 PHASE1_MARKER_BYTES = b"moss-phase1-creation-quiesced-v1\n"
 TERMINAL_PHASES = frozenset({"restored", "preadmission", "SAFE_STOPPED"})
-MUTATED_AFTER_SNAPSHOT = frozenset(
-    {"activated", "units_profiles_swapped", "candidate_started", "qualification_started"}
-)
 PHASE1_UNITS = ("moss-web.service", "moss-live-web.service")
 VLLM_UNIT = "moss-vllm.service"
 CANDIDATE_WEB_UNIT = "moss-web.service"
@@ -144,8 +141,6 @@ class CutoverOps(Protocol):
 
     def start_candidate(self, artifacts: CandidateArtifacts) -> None: ...
 
-    def stop_candidate(self) -> None: ...
-
     def run_qualification(
         self,
         *,
@@ -162,7 +157,7 @@ class CutoverOps(Protocol):
 
     def verify_vllm_unchanged(self, original: OriginalState) -> bool: ...
 
-    def safe_stop(self) -> None: ...
+    def safe_stop(self) -> bool: ...
 
 
 def _write_all(descriptor: int, payload: bytes) -> None:
@@ -500,6 +495,27 @@ def _remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def _fsync_tree(path: Path) -> None:
+    members = [path]
+    if path.is_dir() and not path.is_symlink():
+        members.extend(sorted(path.rglob("*")))
+    directories: list[Path] = []
+    for member in members:
+        mode = member.lstat().st_mode
+        if stat.S_ISREG(mode):
+            descriptor = os.open(member, os.O_RDONLY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        elif stat.S_ISDIR(mode):
+            directories.append(member)
+    for directory in sorted(
+        directories, key=lambda item: len(item.parts), reverse=True
+    ):
+        _fsync_directory(directory)
+
+
 def _copy_restored(source: Path, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     stage = target.parent / f".{target.name}.moss-restore-stage"
@@ -510,6 +526,7 @@ def _copy_restored(source: Path, target: Path) -> None:
         shutil.copytree(source, stage, symlinks=True)
     else:
         shutil.copy2(source, stage, follow_symlinks=False)
+    _fsync_tree(stage)
     _remove_path(target)
     os.replace(stage, target)
     _fsync_directory(target.parent)
@@ -661,9 +678,6 @@ class SystemCutoverOps:
             if probe.connect_ex(("127.0.0.1", 7860)) == 0:
                 raise RuntimeError("retired plaintext port 7860 remains open")
 
-    def stop_candidate(self) -> None:
-        self._systemctl("stop", CANDIDATE_WEB_UNIT, check=False)
-
     def run_qualification(
         self,
         *,
@@ -717,8 +731,21 @@ class SystemCutoverOps:
     def verify_vllm_unchanged(self, original: OriginalState) -> bool:
         return self._unit_state(VLLM_UNIT) == dict(original.vllm)
 
-    def safe_stop(self) -> None:
-        self._systemctl("stop", *PHASE1_UNITS, check=False)
+    def safe_stop(self) -> bool:
+        stopped = self._systemctl("stop", *PHASE1_UNITS, check=False)
+        try:
+            units_inactive = all(
+                not bool(self._unit_state(unit)["active"]) for unit in PHASE1_UNITS
+            )
+            listeners_inactive = True
+            for port in (7860, 7861):
+                with socket.socket() as probe:
+                    probe.settimeout(0.2)
+                    if probe.connect_ex(("127.0.0.1", port)) == 0:
+                        listeners_inactive = False
+        except (OSError, ValueError):
+            return False
+        return stopped.returncode == 0 and units_inactive and listeners_inactive
 
 
 class CutoverRun:
@@ -1010,7 +1037,12 @@ class CutoverRun:
         stage = self.attempt / f".result.{phase}.json.stage"
         final = self.attempt / "result.json"
         _write_once(stage, result_payload(result))
-        self.journal.append(phase, **fields)
+        try:
+            self.journal.append(phase, **fields)
+        except BaseException:
+            stage.unlink(missing_ok=True)
+            _fsync_directory(self.attempt)
+            raise
         try:
             os.replace(stage, final)
             _fsync_directory(self.attempt)
@@ -1018,6 +1050,13 @@ class CutoverRun:
             # The fsynced terminal journal is authoritative.  A missing convenience
             # projection cannot change or roll back that host state.
             pass
+
+    def _record_restore_phase(self, phase: str, **fields: object) -> bool:
+        try:
+            self.journal.append(phase, **fields)
+        except (OSError, CutoverUnsafe):
+            return False
+        return True
 
     def _all_drained(self, statuses: Sequence[Mapping[str, object]]) -> bool:
         expected = {"batch", "live"}
@@ -1193,7 +1232,9 @@ class CutoverRun:
                 )
                 return result
             except BaseException as exc:
-                self.journal.append("failure_observed", error=type(exc).__name__)
+                self._record_restore_phase(
+                    "failure_observed", error=type(exc).__name__
+                )
                 return self._restore_locked(
                     original=original,
                     cause=type(exc).__name__,
@@ -1275,6 +1316,8 @@ class CutoverRun:
                 raise CutoverUnsafe("Phase-1 snapshot source manifest is malformed")
             target = Path(source_value)
             target_was_present = target.exists() or target.is_symlink()
+            if role in REQUIRED_SNAPSHOT_ROLES and target_was_present:
+                continue
             _remove_path(target)
             if existed:
                 restored = extraction / "roots" / role
@@ -1292,42 +1335,83 @@ class CutoverRun:
         cause: str,
         error: str | None,
     ) -> CutoverResult:
-        self.journal.append("restore_started", cause=cause)
+        journal_available = self._record_restore_phase(
+            "restore_started", cause=cause
+        )
         try:
-            self.ops.stop_candidate()
-            self.journal.append("restore_candidate_stopped")
+            self.ops.stop_phase1()
+            journal_available = (
+                self._record_restore_phase("restore_web_units_stopped")
+                and journal_available
+            )
             if (self.attempt / "snapshot-manifest.json").exists():
                 self._quarantine_candidate_state()
-                self.journal.append("restore_candidate_quarantined")
+                journal_available = (
+                    self._record_restore_phase("restore_candidate_quarantined")
+                    and journal_available
+                )
                 self._restore_snapshot()
-                self.journal.append("restore_snapshot_applied")
+                journal_available = (
+                    self._record_restore_phase("restore_snapshot_applied")
+                    and journal_available
+                )
             self.ops.start_phase1(original)
-            self.journal.append("restore_phase1_started")
+            journal_available = (
+                self._record_restore_phase("restore_phase1_started")
+                and journal_available
+            )
             self.ops.disable_phase1_block()
-            self.journal.append("restore_block_removed")
+            journal_available = (
+                self._record_restore_phase("restore_block_removed")
+                and journal_available
+            )
             if not self.ops.verify_vllm_unchanged(original):
                 raise CutoverUnsafe("vLLM process changed during cutover or restore")
             if not self._all_restored_open(self.ops.runtime_statuses()):
                 raise CutoverUnsafe("restored Phase-1 runtime views are not open and zero")
-            result = CutoverResult(
-                "restored", str(self.attempt), self.candidate_sha, error=error
+        except BaseException as exc:
+            return self._safe_stopped(type(exc).__name__)
+        if not journal_available:
+            raise CutoverUnsafe(
+                "Phase-1 restored but the cutover journal is unavailable"
             )
+        result = CutoverResult(
+            "restored", str(self.attempt), self.candidate_sha, error=error
+        )
+        try:
             self._publish_terminal(
                 result,
                 phase="restored",
                 fields={"cause": cause, "g7": "UNCLAIMED", "admitted": False},
             )
-            return result
-        except BaseException as exc:
-            return self._safe_stopped(type(exc).__name__)
+        except (OSError, CutoverUnsafe) as exc:
+            raise CutoverUnsafe(
+                "Phase-1 restored but the cutover journal is unavailable"
+            ) from exc
+        return result
 
     def _safe_stopped(self, reason: str) -> CutoverResult:
+        marker_error: BaseException | None = None
         try:
             self.ops.enable_phase1_block()
         except BaseException as exc:
-            reason = f"{reason}+{type(exc).__name__}"
-        finally:
-            self.ops.safe_stop()
+            marker_error = exc
+        try:
+            web_stop_verified = self.ops.safe_stop()
+        except BaseException:
+            web_stop_verified = False
+        try:
+            marker_verified = (
+                marker_error is None
+                and self.profile.phase1_marker.is_file()
+                and self.profile.phase1_marker.read_bytes() == PHASE1_MARKER_BYTES
+            )
+        except OSError:
+            marker_verified = False
+        if not marker_verified or not web_stop_verified:
+            raise CutoverUnsafe(
+                "SAFE_STOPPED state cannot be verified: marker and web listeners must be inactive"
+            )
         result = CutoverResult(
             "SAFE_STOPPED", str(self.attempt), self.candidate_sha, error=reason
         )
@@ -1343,9 +1427,18 @@ class CutoverRun:
                 pass
             return result
         if last_phase != "SAFE_STOPPED":
-            self._publish_terminal(
-                result,
-                phase="SAFE_STOPPED",
-                fields={"reason": reason, "g7": "UNCLAIMED", "admitted": False},
-            )
+            try:
+                self._publish_terminal(
+                    result,
+                    phase="SAFE_STOPPED",
+                    fields={
+                        "reason": reason,
+                        "g7": "UNCLAIMED",
+                        "admitted": False,
+                    },
+                )
+            except (OSError, CutoverUnsafe) as exc:
+                raise CutoverUnsafe(
+                    "SAFE_STOPPED is verified but its terminal record is unavailable"
+                ) from exc
         return result

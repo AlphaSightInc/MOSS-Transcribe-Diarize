@@ -122,9 +122,15 @@ REQUIRED_PYTHON_TEST_CASES = (
     "tests.phase2.test_atomic_cutover.test_distinct_forward_attempts_share_one_host_cutover_lock",
     "tests.phase2.test_atomic_cutover.test_missing_or_synthetic_attended_g7_restores_without_preadmission",
     "tests.phase2.test_atomic_cutover.test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attended_g7",
+    "tests.phase2.test_atomic_cutover.test_normal_restore_preserves_every_present_explicit_phase1_root",
+    "tests.phase2.test_atomic_cutover.test_persistent_journal_failure_after_candidate_start_cannot_prevent_rollback",
+    "tests.phase2.test_atomic_cutover.test_restore_repairs_only_an_explicit_root_that_is_missing",
     "tests.phase2.test_atomic_cutover.test_restore_fsyncs_parent_after_deleting_originally_absent_activation",
     "tests.phase2.test_atomic_cutover.test_restore_replays_after_process_exit_during_restore_effects",
+    "tests.phase2.test_atomic_cutover.test_restored_tree_fsyncs_regular_files_and_directories_before_rename",
+    "tests.phase2.test_atomic_cutover.test_safe_stopped_is_not_published_when_marker_and_listener_stop_are_unverified",
     "tests.phase2.test_atomic_cutover.test_snapshot_inventory_refuses_an_unruled_extra_role_before_effects",
+    "tests.phase2.test_atomic_cutover.test_system_safe_stop_requires_successful_stop_inactive_units_and_closed_listeners",
     "tests.phase2.test_google_account_workspace.test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission",
     "tests.phase2.test_google_account_workspace.test_unverified_or_disallowed_callback_leaves_no_account_or_session",
     "tests.phase2.test_google_account_workspace.test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation",
@@ -151,7 +157,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with each committed load-bearing suite.  Falling below them means a
 # test was removed or ceased collection.
-MINIMUM_PYTHON_TESTS = 1062
+MINIMUM_PYTHON_TESTS = 1068
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {

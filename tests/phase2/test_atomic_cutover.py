@@ -320,6 +320,7 @@ class FakeCutoverOps:
 
     def stop_phase1(self):
         self.phase1_running = False
+        self.candidate_running = False
 
     def start_phase1(self, _original):
         self.phase1_running = True
@@ -350,9 +351,6 @@ class FakeCutoverOps:
         state.mkdir(parents=True, exist_ok=True)
         (state / "phase2.sqlite3").write_bytes(b"schema-v1")
 
-    def stop_candidate(self):
-        self.candidate_running = False
-
     def run_qualification(self, *, artifacts, candidate_sha, attempt):
         if self.qualification_fails:
             raise RuntimeError("injected qualification failure")
@@ -377,6 +375,7 @@ class FakeCutoverOps:
         self.phase1_running = False
         self.candidate_running = False
         self.safe_stopped = True
+        return True
 
 
 def test_cutover_success_requires_attended_g7_before_preadmission(monkeypatch, tmp_path):
@@ -430,6 +429,96 @@ def test_activation_pointer_replace_is_fsynced_before_install_returns(
 
     assert ops.activation.resolve() == fixture["release"].resolve()
     assert ops.activation.parent in fsynced
+
+
+def test_system_safe_stop_requires_successful_stop_inactive_units_and_closed_listeners(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = SystemCutoverOps(
+        profile=load_cutover_profile(fixture["profile"]),
+        artifacts=None,
+        account_profile={},
+    )
+    stop_returncode = 0
+    stop_calls: list[tuple[str, ...]] = []
+
+    def systemctl(*args, **_kwargs):
+        if args[0] == "stop":
+            stop_calls.append(args)
+            return subprocess.CompletedProcess(args, stop_returncode, "", "")
+        if args[0] == "is-active":
+            return subprocess.CompletedProcess(args, 3, "inactive\n", "")
+        if args[0] == "is-enabled":
+            return subprocess.CompletedProcess(args, 1, "disabled\n", "")
+        return subprocess.CompletedProcess(
+            args, 0, "MainPID=0\nActiveEnterTimestampMonotonic=\n", ""
+        )
+
+    listener_open = False
+
+    class Probe:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def settimeout(self, _timeout):
+            pass
+
+        def connect_ex(self, _address):
+            return 0 if listener_open else 1
+
+    monkeypatch.setattr(ops, "_systemctl", systemctl)
+    monkeypatch.setattr(cutover.socket, "socket", Probe)
+
+    assert ops.safe_stop() is True
+    assert stop_calls[-1] == (
+        "stop",
+        "moss-web.service",
+        "moss-live-web.service",
+    )
+    listener_open = True
+    assert ops.safe_stop() is False
+    listener_open = False
+    stop_returncode = 1
+    assert ops.safe_stop() is False
+
+
+def test_restored_tree_fsyncs_regular_files_and_directories_before_rename(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    nested = source / "nested"
+    nested.mkdir(parents=True)
+    (nested / "state.bin").write_bytes(b"old durable state")
+    target = tmp_path / "target"
+    stage = tmp_path / ".target.moss-restore-stage"
+    opened: dict[int, Path] = {}
+    fsynced: list[Path] = []
+    real_open = cutover.os.open
+    real_fsync = cutover.os.fsync
+
+    def observe_open(path, flags, *args):
+        descriptor = real_open(path, flags, *args)
+        opened[descriptor] = Path(path)
+        return descriptor
+
+    def observe_fsync(descriptor):
+        if descriptor in opened:
+            fsynced.append(opened[descriptor])
+        return real_fsync(descriptor)
+
+    monkeypatch.setattr(cutover.os, "open", observe_open)
+    monkeypatch.setattr(cutover.os, "fsync", observe_fsync)
+
+    cutover._copy_restored(source, target)
+
+    assert stage / "nested/state.bin" in fsynced
+    assert stage / "nested" in fsynced
+    assert stage in fsynced
+    assert (target / "nested/state.bin").read_bytes() == b"old durable state"
 
 
 def test_restore_fsyncs_parent_after_deleting_originally_absent_activation(
@@ -527,6 +616,41 @@ def test_known_qualification_failure_restores_whole_old_state_and_quarantines_ca
     assert CutoverJournal(attempt / "journal.jsonl").last_phase() == "restored"
 
 
+def test_persistent_journal_failure_after_candidate_start_cannot_prevent_rollback(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    before = {str(path): (path / "state").read_bytes() for path in fixture["old_paths"]}
+    monkeypatch.setattr(cutover.time, "sleep", lambda _: None)
+    real_append = CutoverJournal.append
+    journal_failed = False
+
+    def fail_persistently_after_candidate_start(self, phase, **fields):
+        nonlocal journal_failed
+        if journal_failed:
+            raise OSError("injected persistent journal failure")
+        real_append(self, phase, **fields)
+        if phase == "candidate_started":
+            journal_failed = True
+
+    monkeypatch.setattr(CutoverJournal, "append", fail_persistently_after_candidate_start)
+    ops = FakeCutoverOps(fixture)
+
+    with pytest.raises(CutoverUnsafe, match="journal"):
+        CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=tmp_path / "attempt",
+            terminal="preadmission",
+            ops=ops,
+        ).run()
+
+    assert ops.phase1_running is True
+    assert ops.candidate_running is False
+    assert not fixture["marker"].exists()
+    assert {str(path): (path / "state").read_bytes() for path in fixture["old_paths"]} == before
+    assert CutoverJournal(tmp_path / "attempt/journal.jsonl").last_phase() == "candidate_started"
+
+
 @pytest.mark.parametrize(
     ("attended_fails", "source"),
     ((True, G7_EVIDENCE_SOURCE), (False, "deterministic-rehearsal")),
@@ -600,6 +724,63 @@ def test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attende
     assert phases[-1] == "restored"
     assert ops.phase1_running is True and ops.candidate_running is False
     assert not fixture["marker"].exists()
+
+
+def test_normal_restore_preserves_every_present_explicit_phase1_root(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(cutover.time, "sleep", lambda _: None)
+    explicit = {path.resolve() for path in fixture["snapshot_paths"].values()}
+    removed: list[Path] = []
+    copied: list[Path] = []
+    real_remove = cutover._remove_path
+    real_copy = cutover._copy_restored
+
+    def observe_remove(path: Path) -> None:
+        if path.resolve(strict=False) in explicit:
+            removed.append(path)
+        real_remove(path)
+
+    def observe_copy(source: Path, target: Path) -> None:
+        if target.resolve(strict=False) in explicit:
+            copied.append(target)
+        real_copy(source, target)
+
+    monkeypatch.setattr(cutover, "_remove_path", observe_remove)
+    monkeypatch.setattr(cutover, "_copy_restored", observe_copy)
+
+    result = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=tmp_path / "attempt",
+        terminal="restored",
+        ops=FakeCutoverOps(fixture),
+    ).run()
+
+    assert result.terminal == "restored"
+    assert removed == []
+    assert copied == []
+
+
+def test_restore_repairs_only_an_explicit_root_that_is_missing(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(cutover.time, "sleep", lambda _: None)
+    model = fixture["snapshot_paths"]["phase1_model"]
+
+    class MissingModelFailure(FakeCutoverOps):
+        def run_qualification(self, **_kwargs):
+            shutil.rmtree(model)
+            raise RuntimeError("injected failure after model loss")
+
+    result = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=tmp_path / "attempt",
+        terminal="preadmission",
+        ops=MissingModelFailure(fixture),
+    ).run()
+
+    assert result.terminal == "restored"
+    assert (model / "state").read_bytes() == b"model"
 
 
 def test_same_sha_qualification_mismatch_restores_without_preadmission(monkeypatch, tmp_path):
@@ -719,6 +900,17 @@ def test_restore_replays_after_process_exit_during_restore_effects(monkeypatch, 
     before = {str(path): (path / "state").read_bytes() for path in fixture["old_paths"]}
     monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
     attempt = tmp_path / "attempt"
+    web_state = tmp_path / "old-web-state"
+    unsafe_write = tmp_path / "snapshot-write-under-live-web"
+    web_state.write_text("stopped", encoding="utf-8")
+    real_copy = cutover._copy_restored
+
+    def observe_snapshot_application(source: Path, target: Path) -> None:
+        if web_state.read_text(encoding="utf-8") == "running":
+            unsafe_write.write_text(str(target), encoding="utf-8")
+        real_copy(source, target)
+
+    monkeypatch.setattr(cutover, "_copy_restored", observe_snapshot_application)
 
     forward = os.fork()
     if forward == 0:
@@ -732,8 +924,18 @@ def test_restore_replays_after_process_exit_during_restore_effects(monkeypatch, 
     _, forward_status = os.waitpid(forward, 0)
     assert os.waitstatus_to_exitcode(forward_status) == 23
 
-    class ExitDuringRestore(FakeCutoverOps):
+    class InstrumentedOps(FakeCutoverOps):
+        def stop_phase1(self):
+            super().stop_phase1()
+            web_state.write_text("stopped", encoding="utf-8")
+
+        def start_phase1(self, original):
+            super().start_phase1(original)
+            web_state.write_text("running", encoding="utf-8")
+
+    class ExitDuringRestore(InstrumentedOps):
         def start_phase1(self, _original):
+            super().start_phase1(_original)
             os._exit(31)
 
     restoring = os.fork()
@@ -751,9 +953,10 @@ def test_restore_replays_after_process_exit_during_restore_effects(monkeypatch, 
     }
 
     result = CutoverRun.open_incomplete(
-        attempt=attempt, ops=FakeCutoverOps(fixture)
+        attempt=attempt, ops=InstrumentedOps(fixture)
     ).restore()
     assert result.terminal == "restored"
+    assert not unsafe_write.exists()
     assert not fixture["marker"].exists()
     assert {
         str(path): (path / "state").read_bytes() for path in fixture["old_paths"]
@@ -781,6 +984,45 @@ def test_corrupt_archive_safe_stops(monkeypatch, tmp_path):
     assert unsafe.terminal == "SAFE_STOPPED"
     assert unsafe_ops.safe_stopped is True
     assert fixture["marker"].read_bytes() == PHASE1_MARKER_BYTES
+
+
+def test_safe_stopped_is_not_published_when_marker_and_listener_stop_are_unverified(
+    monkeypatch, tmp_path
+):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(cutover.time, "sleep", lambda _: None)
+    attempt = tmp_path / "attempt"
+    child = os.fork()
+    if child == 0:
+        CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=attempt,
+            terminal="preadmission",
+            ops=FakeCutoverOps(fixture, crash=True),
+        ).run()
+        os._exit(99)
+    os.waitpid(child, 0)
+    (attempt / "phase1-snapshot.tar").write_bytes(b"corrupt")
+    fixture["marker"].unlink()
+
+    class UnverifiedSafeStop(FakeCutoverOps):
+        def enable_phase1_block(self):
+            raise OSError("injected marker failure")
+
+        def safe_stop(self):
+            self.phase1_running = False
+            self.candidate_running = False
+            self.safe_stopped = True
+            return False
+
+    with pytest.raises(CutoverUnsafe, match="SAFE_STOPPED"):
+        CutoverRun.open_incomplete(
+            attempt=attempt, ops=UnverifiedSafeStop(fixture)
+        ).restore()
+
+    assert not fixture["marker"].exists()
+    assert CutoverJournal(attempt / "journal.jsonl").last_phase() != "SAFE_STOPPED"
+    assert not (attempt / "result.json").exists()
 
 
 def test_partial_journal_tail_safe_stops_incomplete_attempt(monkeypatch, tmp_path):
