@@ -143,7 +143,7 @@ def _runtime() -> LiveServiceRuntime:
             max_identity_speakers=2,
             max_events=128,
             hard_cap_samples=4_000,
-            max_tape_bytes=None,
+            max_tape_bytes=32_000,
         ),
         frame_samples=2,
     )
