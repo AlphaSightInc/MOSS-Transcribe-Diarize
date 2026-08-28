@@ -4,9 +4,34 @@
 
 Can one immutable candidate manifest and one write-once attempt bundle prove or refuse the
 cumulative Wave-1 core without manufacturing deployed or G7 evidence? The measured design needs
-seven irreducible primitives: immutable candidate identity, a write-once attempt bundle, pure gate
-predicates, collection only through already-authorized adapters, machine test denominators,
-distinct content boundaries, and the production archive oracle.
+thirteen irreducible primitives: immutable candidate identity, a write-once attempt bundle, pure
+gate predicates, collection only through already-authorized adapters, machine test denominators,
+distinct content boundaries, the production archive oracle, canonical output identity, measured
+fairness, one disposable revoked session, campaign-unit denominators, mechanical cutover rehearsal,
+and the installed operator CLI projection.
+
+### Review-falsifier experiment contract
+
+- **Structural question:** can the exact accepted command, G4 fairness, G5 revoked boundary,
+  external denominators, cutover rehearsal, and G6 operator surfaces pass only when their underlying
+  product state was exercised?
+- **Minimum primitives:** `git_sha` at the output boundary; queued/started/processed lifecycle
+  evidence during joint readiness; one already-revoked disposable session; 15/4/8/12/122 raw
+  campaign units; actual isolated block/drain/archive/release/restore operations; and installed
+  `mtd-admin status` human plus JSON output through the one status allowlist. Each primitive has one
+  boundary and removing any one recreates its corresponding false pass.
+- **Invariants:** the valid candidate path reaches an exclusive attempt; absent contention is not
+  fairness; G5 does not revoke G2's future peer; terminal evidence exposes raw unit denominators; a
+  missing release cannot install; exact old bytes return after forced failure; direct UDS success
+  cannot stand in for the required human and JSON CLI surfaces.
+- **Assumptions and unknowns:** real OAuth, deployed speech campaigns, production TLS, and attended
+  cutover remain externally unmeasured. The isolated rehearsal proves mechanics only and never G7.
+- **Falsifier:** `git_sha` raises before the bundle; no queued/started events pass G4; the G5 401
+  probe is still valid; 15/4/8/12/122 are absent; a dangling release passes rehearsal; or operator
+  raw state passes without both CLI surfaces.
+- **Tool decision:** call the production entrypoint and reducers because a model cannot establish a
+  reachable false pass; use a temporary isolated host because filesystem install/restore truth
+  cannot be measured in memory. Any observed falsifier rejects the production candidate.
 
 ### Crash-prefix oracle experiment contract
 
@@ -33,7 +58,19 @@ PYTHONDONTWRITEBYTECODE=1 bash prototypes/phase2-wave1-qualification/run.sh
 
 ## Measured verdict
 
-**PASS, 18/18 derived policy assertions plus the isolated Linux runtime falsifier.** The full printed state proves:
+**RED before correction: 18/25 derived assertions passed.** Exact production paths measured:
+
+- valid `git_sha` output raised `KeyError` before `AttemptBundle`;
+- four-session evidence with all queued/started lifecycle removed, `fairness_measured=false`, and
+  reported skew zero still passed;
+- G5 selected the still-valid `b_peer` and therefore observed `200`, not the required revoked `401`;
+- no terminal production projection exposed the 15 actions, 4/8 capacity sessions, or 12
+  sessions/122 windows;
+- a manifest naming a missing candidate release still reported a passing cutover rehearsal; and
+- G6 passed without exercising installed `mtd-admin status` human or JSON output.
+
+The prior **PASS, 18/18** base policy and isolated Linux runtime falsifier remain valid for the
+previously measured primitives. The full printed state also proves:
 
 - exact SQLite 3.53.4 plus clean/same-SHA/all-layer evidence can pass the cumulative core while G7
   remains explicitly unclaimed;
@@ -49,6 +86,15 @@ PYTHONDONTWRITEBYTECODE=1 bash prototypes/phase2-wave1-qualification/run.sh
 - two production `MeetingAudioArchive` publications of the same 50,731-sample PCM prefix were
   byte-identical (19,917 bytes each) with identical 3,171 ms metadata. Exact recovered bytes and
   metadata therefore replace the rejected 100 ms duration tolerance.
+
+**GREEN after correction: 25/25 derived assertions passed.** The exact command now reaches the
+exclusive attempt claim using `git_sha`; capacity rejects missing contended lifecycle events; G5
+uses its disposable revoked session; terminal evidence exposes 15/4/8/12/122 raw units; the
+isolated rehearsal verifies manifested release/launcher/unit bytes, executes a forced-failure
+restore, directly compares the whole old tree, and observes unchanged vLLM runtime bytes; and G6
+requires both installed `mtd-admin status` surfaces through the shared allowlist. Candidate staging
+executes SQLite construction and installs launchers from the detached candidate checkout. The
+running Account process must resolve through the manifested immutable release and active pointer.
 
 The available development runtimes are not qualification candidates: CPython 3.10.19 and 3.12.12
 both report SQLite 3.50.4; CPython 3.14 reports 3.53.0; `pysqlite3==0.6.0` reports 3.51.1. The

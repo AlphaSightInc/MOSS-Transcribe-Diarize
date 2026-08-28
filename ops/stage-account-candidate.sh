@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 . "${SCRIPT_DIR}/moss-ops-lib.sh"
 
 [ -f "${MOSS_CANDIDATE_WHEEL:-}" ] || die "MOSS_CANDIDATE_WHEEL must name a clean candidate wheel"
-require_cmd /usr/bin/python3.12 git getent uv
+require_cmd /usr/bin/python3.12 cmp git getent uv
 
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 RUNTIME_ROOT="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize"
@@ -73,7 +73,6 @@ CANDIDATE_RECORD="${CANDIDATE_IDENTITY[4]}"
 [ "$(git -C "${PROJECT_DIR}" rev-parse "${CANDIDATE_SHA}^{tree}")" = "${CANDIDATE_TREE}" ] || \
   die "candidate wheel tree is not present in this repository"
 
-"${SCRIPT_DIR}/build-account-sqlite.sh"
 RELEASE="${RELEASES_DIR}/${CANDIDATE_SHA}"
 CHECKOUT="${CHECKOUTS_DIR}/${CANDIDATE_SHA}"
 MANIFEST="${MANIFESTS_DIR}/${CANDIDATE_SHA}.json"
@@ -92,6 +91,10 @@ if [ ! -d "${CHECKOUT}/.git" ]; then
 fi
 [ "$(git -C "${CHECKOUT}" rev-parse HEAD)" = "${CANDIDATE_SHA}" ] || die "candidate checkout SHA mismatch"
 
+# The exact candidate owns the runtime builder too.  Never execute deployment
+# machinery from the invoking checkout after candidate identity is known.
+"${CHECKOUT}/ops/build-account-sqlite.sh"
+
 if [ ! -d "${RELEASE}" ]; then
   RELEASE_STAGE="$(mktemp -d "${RELEASES_DIR}/.${CANDIDATE_SHA}.stage.XXXXXX")"
   /usr/bin/python3.12 -m venv "${RELEASE_STAGE}"
@@ -101,9 +104,9 @@ if [ ! -d "${RELEASE}" ]; then
     -r "${RELEASE_STAGE}/locked-requirements.txt"
   "${RELEASE_STAGE}/bin/pip" install --no-deps "${MOSS_CANDIDATE_WHEEL}"
   rm "${RELEASE_STAGE}/locked-requirements.txt"
-  install -m 0555 "${SCRIPT_DIR}/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
-  install -m 0555 "${SCRIPT_DIR}/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
-  install -m 0555 "${SCRIPT_DIR}/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
+  install -m 0555 "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
+  install -m 0555 "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
+  install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
     "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
 import json
@@ -127,6 +130,12 @@ PY
   mv "${RELEASE_STAGE}" "${RELEASE}"
   RELEASE_STAGE=""
 fi
+cmp -s "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE}/bin/mtd-account-web" || \
+  die "Account web launcher differs from the detached candidate checkout"
+cmp -s "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE}/bin/mtd-admin" || \
+  die "Account admin launcher differs from the detached candidate checkout"
+cmp -s "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE}/bin/mtd-vllm" || \
+  die "vLLM launcher differs from the detached candidate checkout"
 PYTHONDONTWRITEBYTECODE=1 LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
   "${RELEASE}/bin/python" - "${CANDIDATE_SHA}" <<'PY'
 import sqlite3
@@ -174,6 +183,9 @@ payload = {
     "sqlite_prefix": sqlite_prefix,
     "release": release,
     "release_launcher": f"{release}/bin/mtd-account-web",
+    "release_launcher_sha256": hashlib.sha256(
+        pathlib.Path(release, "bin/mtd-account-web").read_bytes()
+    ).hexdigest(),
     "qualification_checkout": checkout,
     "qualification_command": f"cd {checkout} && PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/phase2-acceptance/run.py",
     "web_unit_path": f"{checkout}/ops/systemd/moss-web.service",

@@ -16,10 +16,12 @@ browser -- HTTPS :7861 --> mtd-phase2-web -- HTTP loopback :8000 --> vLLM
                               +-- mode-0600 Unix control socket <-- mtd-admin
 ```
 
-## Host profile
+## Ext4 host profiles
 
-Copy `ops/moss-account.env.example` to the gitignored `ops/moss-account.env` and replace every
-placeholder. Required facts are:
+Create `%h/.config/moss-transcribe-diarize/moss-account.env` from
+`ops/moss-account.env.example` and `%h/.config/moss-transcribe-diarize/vllm.env` from
+`ops/moss-vllm.env.example`. Both files live on the Linux ext4 filesystem, are mode `0600`,
+and replace every placeholder. Required Account facts are:
 
 - Google client ID and a file containing the Google client secret;
 - a file containing the OAuth cookie secret;
@@ -30,17 +32,32 @@ placeholder. Required facts are:
 The server never stores Google passwords. Browser authority is the opaque Sign-in session
 cookie; the host-local admin command is authorized by the Unix socket filesystem mode.
 
-## Install without deploying a candidate
+## Stage without activating
 
 ```bash
 ops/install-wsl.sh
+MOSS_CANDIDATE_WHEEL=/absolute/path/to/reviewed.whl ops/stage-account-candidate.sh
+```
+
+Staging creates an immutable Account release, exact SQLite 3.53.4 runtime, detached candidate
+checkout, and mode-0600 candidate manifest. It does **not** change the live checkout,
+`account-current`, either systemd unit, or the shared GPU/vLLM environment.
+
+Issue #22 rehearses cutover only in an isolated root. Issue #23 owns the attended production
+sequence: Phase-1 creation quiesce, drain-to-zero, one snapshot, atomic `account-current`
+activation, web-unit installation, same-SHA proof, canary, and whole rollback. Only after that
+activation boundary may the service installer run:
+
+```bash
 ops/install-services.sh --dry-run
 ops/install-services.sh
 ```
 
-The installer writes only `moss-vllm.service` and `moss-web.service`. It does not restart an
-already-running changed service; attended cutover owns restart, same-SHA proof, canary, and
-rollback.
+The installer fails closed unless both ext4 profiles are mode `0600` and `account-current`
+resolves to a release containing all three reviewed launchers. It writes only
+`moss-vllm.service` and `moss-web.service`; `systemctl start` does not restart an already-running
+vLLM process. Issue #23 must preserve the vLLM PID, arguments, and active timestamp while
+activating only the Account web runtime.
 
 Windows WSL forwarding exposes only TLS port 7861:
 
@@ -62,6 +79,7 @@ Issue #23 owns attended cutover.
 
 ## Rollback boundary
 
-Rollback changes the installed source/environment/unit to the previously reviewed SHA, then
-restarts only during the attended operation. The Account database and Meeting archive are
-forward-only product data and are not deleted by source rollback.
+Rollback restores the prior `account-current` pointer and unit/profile bytes, then restarts only
+the Account web process during the attended operation. The shared GPU/vLLM environment and
+running process remain untouched. The Account database and Meeting archive are forward-only
+product data and are not deleted by source rollback.

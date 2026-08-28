@@ -28,6 +28,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .concurrency_evidence import canonical_lifecycle_fairness
 from .installed_candidate import installed_dependency_projection, record_projection_sha256
 from .app.phase2 import GOOGLE_CALLBACK_URL
 
@@ -134,7 +135,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with the committed suites.  Falling below them means a test was
 # removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1027
+MINIMUM_PYTHON_TESTS = 1031
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
@@ -1076,21 +1077,18 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             elif kind == "terminal_finalization_failed":
                 terminal_failures += 1
 
-    pending: dict[int, int] = {ordinal: 0 for ordinal in range(1, 5)}
-    dispatched: dict[int, int] = {ordinal: 0 for ordinal in range(1, 5)}
-    dispatch_skew = 0
+    canonical_events: list[dict[str, object]] = []
     for _timestamp, ordinal, event in sorted(lifecycle, key=lambda item: item[0]):
         kind = event.get("kind")
-        if kind == "canonical_queued":
-            pending[ordinal] += 1
-        elif kind == "canonical_started":
-            contenders = [key for key, count in pending.items() if count > 0]
-            pending[ordinal] = max(0, pending[ordinal] - 1)
-            dispatched[ordinal] += 1
-            if len(contenders) >= 2:
-                values = [dispatched[key] for key in contenders]
-                dispatch_skew = max(dispatch_skew, max(values) - min(values))
-        elif kind == "rolling_decode_queued" and event.get("admitted") is True:
+        if kind in {"canonical_queued", "canonical_started", "canonical_processed"}:
+            canonical_events.append(
+                {
+                    "session_id": str(ordinal),
+                    "kind": kind,
+                    "payload": {key: value for key, value in event.items() if key != "kind"},
+                }
+            )
+        if kind == "rolling_decode_queued" and event.get("admitted") is True:
             item_id = event.get("item_id")
             if not isinstance(item_id, int):
                 return False
@@ -1103,6 +1101,13 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             refinement_pending[ordinal].discard(item_id)
             if event.get("outcome") in {"stale", "failed"}:
                 stale_failed += 1
+
+    fairness = canonical_lifecycle_fairness(
+        canonical_events,
+        {str(ordinal) for ordinal in range(1, 5)},
+        maximum_skew=1,
+    )
+    dispatch_skew = int(fairness["maximum_contended_pair_dispatch_skew"])
 
     try:
         wrong_ordinals = {
@@ -1149,6 +1154,8 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         and continuous_probes
         and cross_deliveries == 0
         and max_p95 <= 10.0
+        and fairness.get("applicability") == "measured"
+        and fairness.get("passes") is True
         and dispatch_skew <= 1
         and rtf < 1
         and refinement_depth <= 1
@@ -1166,6 +1173,8 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             for key in ("observed_429", "peer_progress", "same_sequence_retry")
         )
         and int(raw.get("dispatch_skew", -1)) == dispatch_skew
+        and raw.get("fairness_measured") is True
+        and raw.get("fairness_observation") == fairness
         and math.isclose(float(raw.get("prestop_inference_rtf", math.inf)), rtf)
         and int(raw.get("refinement_queue_depth", -1)) == refinement_depth
         and math.isclose(float(raw.get("vllm_gpu_cache_use", math.inf)), cache_peak)
@@ -1205,8 +1214,6 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         ):
             return False
         expected_samples = int(requested * 16_000)
-        pending = {ordinal: 0 for ordinal in range(1, 9)}
-        dispatched = {ordinal: 0 for ordinal in range(1, 9)}
         lifecycle: list[tuple[int, int, Mapping[str, object]]] = []
         sequence_gaps = isolation_failures = 0
         for item in ordered:
@@ -1229,17 +1236,28 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
                 ):
                     return False
                 lifecycle.append((int(event["runtime_monotonic_ns"]), ordinal, event))
-        dispatch_skew = 0
+        canonical_events: list[dict[str, object]] = []
         for _timestamp, ordinal, event in sorted(lifecycle, key=lambda item: item[0]):
-            if event.get("kind") == "canonical_queued":
-                pending[ordinal] += 1
-            elif event.get("kind") == "canonical_started":
-                contenders = [key for key, count in pending.items() if count > 0]
-                pending[ordinal] = max(0, pending[ordinal] - 1)
-                dispatched[ordinal] += 1
-                if len(contenders) >= 2:
-                    values = [dispatched[key] for key in contenders]
-                    dispatch_skew = max(dispatch_skew, max(values) - min(values))
+            if event.get("kind") in {
+                "canonical_queued",
+                "canonical_started",
+                "canonical_processed",
+            }:
+                canonical_events.append(
+                    {
+                        "session_id": str(ordinal),
+                        "kind": event.get("kind"),
+                        "payload": {
+                            key: value for key, value in event.items() if key != "kind"
+                        },
+                    }
+                )
+        fairness = canonical_lifecycle_fairness(
+            canonical_events,
+            {str(ordinal) for ordinal in range(1, 9)},
+            maximum_skew=1,
+        )
+        dispatch_skew = int(fairness["maximum_contended_pair_dispatch_skew"])
         probe_sequences = {
             ordinal: sorted(
                 int(item["sequence"])
@@ -1263,6 +1281,8 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         and sequence_gaps == 0
         and isolation_failures == 0
         and probes_complete
+        and fairness.get("applicability") == "measured"
+        and fairness.get("passes") is True
         and dispatch_skew <= 1
         and all(
             backpressure.get(key) is True
@@ -1272,7 +1292,11 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         and raw.get("cross_account_sentinel_deliveries") == 0
         and raw.get("isolation_failures") == 0
         and raw.get("fairness_failures") == 0
+        and raw.get("fairness_measured") is True
+        and raw.get("fairness_observation") == fairness
     )
+
+
 def _validate_quality(predicate: Mapping[str, object]) -> bool:
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
@@ -1446,6 +1470,135 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
     return True
 
 
+def external_denominator_projection(
+    payload: Mapping[str, object] | None,
+) -> dict[str, dict[str, int]]:
+    """Derive load-bearing external campaign units from retained raw arrays."""
+
+    predicates = payload.get("predicates") if isinstance(payload, Mapping) else None
+    indexed = (
+        {
+            item.get("id"): item
+            for item in predicates
+            if isinstance(item, dict)
+        }
+        if isinstance(predicates, list)
+        else {}
+    )
+
+    def project(
+        predicate_id: str,
+        collected: int,
+        valid: bool,
+    ) -> dict[str, int]:
+        predicate = indexed.get(predicate_id)
+        counts = predicate.get("counts") if isinstance(predicate, dict) else None
+        executed = (
+            collected
+            if isinstance(counts, dict) and counts.get("executed") == 1
+            else 0
+        )
+        passed = collected if executed and valid else 0
+        return {
+            "collected": collected,
+            "executed": executed,
+            "passed": passed,
+            "failed": collected if executed and not valid else 0,
+            "skipped": 0,
+            "unmeasured": collected if not executed else 0,
+        }
+
+    cross = indexed.get("cross_owner_matrix")
+    cross_raw = cross.get("raw") if isinstance(cross, dict) else None
+    cross_cases = cross_raw.get("cases") if isinstance(cross_raw, dict) else None
+    cross_collected = len(cross_cases) if isinstance(cross_cases, list) else 0
+    cross_valid = bool(
+        isinstance(cross, dict)
+        and _predicate_passes(cross)
+        and _validate_raw_predicate(
+            "cross_owner_matrix",
+            cross,
+            candidate_sha="",
+            candidate_tree="",
+            uv_lock_sha256="",
+            fixtures={},
+            wheel_record_projection_sha256="",
+            dependency_projection_sha256="",
+        )
+    )
+
+    capacity = indexed.get("four_session_capacity")
+    capacity_raw = capacity.get("raw") if isinstance(capacity, dict) else None
+    capacity_sessions = (
+        capacity_raw.get("session_observations")
+        if isinstance(capacity_raw, dict)
+        else None
+    )
+    capacity_collected = (
+        len(capacity_sessions) if isinstance(capacity_sessions, list) else 0
+    )
+    capacity_valid = bool(
+        isinstance(capacity, dict)
+        and _predicate_passes(capacity)
+        and _validate_capacity(capacity)
+    )
+
+    overload = indexed.get("eight_session_overload")
+    overload_raw = overload.get("raw") if isinstance(overload, dict) else None
+    overload_sessions = (
+        overload_raw.get("session_observations")
+        if isinstance(overload_raw, dict)
+        else None
+    )
+    overload_collected = (
+        len(overload_sessions) if isinstance(overload_sessions, list) else 0
+    )
+    overload_valid = bool(
+        isinstance(overload, dict)
+        and _predicate_passes(overload)
+        and _validate_overload(overload)
+    )
+
+    quality = indexed.get("quality_corpus")
+    quality_raw = quality.get("raw") if isinstance(quality, dict) else None
+    quality_cases = quality_raw.get("per_case") if isinstance(quality_raw, dict) else None
+    quality_collected = len(quality_cases) if isinstance(quality_cases, list) else 0
+    try:
+        quality_windows = (
+            sum(
+                int(item["windows"])
+                for item in quality_cases
+                if isinstance(item, dict)
+            )
+            if isinstance(quality_cases, list)
+            else 0
+        )
+    except (KeyError, TypeError, ValueError):
+        quality_windows = 0
+    quality_valid = bool(
+        isinstance(quality, dict)
+        and _predicate_passes(quality)
+        and _validate_quality(quality)
+    )
+    return {
+        "cross_owner_actions": project(
+            "cross_owner_matrix", cross_collected, cross_valid
+        ),
+        "four_session_capacity": project(
+            "four_session_capacity", capacity_collected, capacity_valid
+        ),
+        "eight_session_overload": project(
+            "eight_session_overload", overload_collected, overload_valid
+        ),
+        "quality_sessions": project(
+            "quality_corpus", quality_collected, quality_valid
+        ),
+        "quality_windows": project(
+            "quality_corpus", quality_windows, quality_valid
+        ),
+    }
+
+
 def _zero_mapping(value: object) -> bool:
     return isinstance(value, dict) and bool(value) and all(item == 0 for item in value.values())
 
@@ -1466,6 +1619,7 @@ def _validate_raw_predicate(
         return False
     if predicate_id == "installed_candidate_identity":
         process = raw.get("process")
+        manifest = raw.get("manifest")
         descriptor = raw.get("descriptor")
         toolchain = raw.get("toolchain")
         accelerator = raw.get("accelerator")
@@ -1485,10 +1639,25 @@ def _validate_raw_predicate(
             and raw.get("sqlite_runtime") == REQUIRED_SQLITE
             and raw.get("aiosqlite") == "0.22.1"
             and raw.get("authlib") == "1.7.2"
+            and isinstance(manifest, dict)
+            and manifest.get("schema") == "moss-account-candidate.v1"
+            and manifest.get("activation_state") == "staged_inert"
+            and isinstance(manifest.get("release"), str)
+            and bool(manifest["release"])
+            and manifest.get("release_launcher")
+            == f"{manifest['release']}/bin/mtd-account-web"
+            and isinstance(manifest.get("release_launcher_sha256"), str)
+            and len(manifest["release_launcher_sha256"]) == 64
+            and manifest.get("active_pointer_resolves_to_release") is True
             and isinstance(process, dict)
             and isinstance(process.get("pid"), int)
             and process["pid"] > 0
-            and all(isinstance(process.get(key), str) and process[key] for key in ("cwd", "exe", "cmdline"))
+            and all(isinstance(process.get(key), str) and process[key] for key in ("cwd", "exe"))
+            and isinstance(process.get("argv"), list)
+            and len(process["argv"]) >= 3
+            and process["argv"][0] == f"{manifest['release']}/bin/python"
+            and process["argv"][1:3]
+            == ["-m", "moss_transcribe_diarize.app.phase2_web_cli"]
             and isinstance(descriptor, dict)
             and descriptor.get("source_revision") == candidate_sha
             and all(
@@ -1677,11 +1846,18 @@ def _validate_raw_predicate(
         )
     if predicate_id == "operator_control":
         interrupt = raw.get("interrupt_probe")
+        surfaces = raw.get("status_surfaces")
         return (
             raw.get("socket_mode") == "0600"
             and raw.get("tcp_admin_surfaces") == 0
             and raw.get("forbidden_content_matches") == 0
             and raw.get("count_mismatches") == 0
+            and isinstance(surfaces, dict)
+            and surfaces.get("json_exact_projection") is True
+            and surfaces.get("human_exact_projection") is True
+            and surfaces.get("json_stderr_bytes") == 0
+            and surfaces.get("human_stderr_bytes") == 0
+            and surfaces.get("forbidden_matches") == 0
             and isinstance(interrupt, dict)
             and interrupt.get("admitted_work_observed") is True
             and interrupt.get("command_interrupted") is True
@@ -1820,6 +1996,7 @@ def _cross_layer_identity_errors(
         "sqlite_runtime",
         "aiosqlite",
         "authlib",
+        "manifest",
         "toolchain",
         "accelerator",
         "tls",
@@ -1827,7 +2004,7 @@ def _cross_layer_identity_errors(
         "descriptor",
     )
     errors = [f"cross_layer_identity_mismatch:{field}" for field in fields if first.get(field) != second.get(field)]
-    for field in ("cwd", "exe", "cmdline"):
+    for field in ("cwd", "exe", "argv"):
         first_process = first.get("process")
         second_process = second.get("process")
         if not (
@@ -1897,6 +2074,10 @@ def _run_rehearsal(
     passed = (
         payload.get("production") is False
         and tuple(payload.get("steps", ())) == required
+        and payload.get("runtime_views") == 2
+        and payload.get("all_views_quiesced_and_zero") is True
+        and int(payload.get("snapshot_bytes", 0)) > 0
+        and payload.get("candidate_installed_and_verified") is True
         and payload.get("forced_failure_observed") is True
         and payload.get("original_restored") is True
         and payload.get("candidate_pointer_absent") is True
@@ -1944,7 +2125,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
     resolved_output = output.resolve()
     expected_parent = evidence_root / f"wave-{wave}"
     expected_name = re.compile(
-        rf"^[0-9]{{8}}T[0-9]{{6}}Z-{re.escape(str(source_identity['sha'])[:7])}$"
+        rf"^[0-9]{{8}}T[0-9]{{6}}Z-{re.escape(str(source_identity['git_sha'])[:7])}$"
     )
     if resolved_output.parent != expected_parent or not expected_name.fullmatch(
         resolved_output.name
@@ -2210,6 +2391,10 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                     item.name: item.denominators
                     for item in command_results
                     if item.denominators is not None
+                },
+                "external_campaigns": {
+                    "deployed": external_denominator_projection(deployed_report),
+                    "pre_admission": external_denominator_projection(pre_report),
                 },
             },
         }

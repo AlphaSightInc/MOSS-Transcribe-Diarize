@@ -137,10 +137,18 @@ inert beside the live Phase-1 checkout. It does not repoint the live checkout, c
 alone quiesces Phase 1, seals its large archive, activates that one pointer, and installs the
 web-only cutover unit while proving the running vLLM PID, argv, and activation timestamp unchanged.
 
-The retained qualification prototype derived PASS from 18/18 policy falsifiers and separately
+The retained qualification prototype derived PASS from 25/25 policy falsifiers and separately
 measured the Linux exact-runtime path: wrong SQLite refused before any database artifact; the
 private prefix reported 3.53.4; `aiosqlite==0.22.1` preserved WAL, foreign keys, `FULL`, schema v1,
 and restart truth; and a clean wheel's installed member projection matched its candidate wheel.
+The final review falsifiers additionally bind the legal output path to `git_sha`, reject capacity
+without measured contended queued/started/processed events, preserve a disposable revoked session
+for G5, expose the exact 15/4/8/12/122 campaign units, and require installed `mtd-admin` human and
+JSON status to cross the same allowlist. The cutover rehearsal now performs real isolated marker,
+two-view drain, archive, manifested-release/unit-byte verification, pointer activation, injected
+post-install failure, full-tree restore, and direct vLLM runtime-state comparison. Staging executes
+SQLite construction and copies launchers only from the detached candidate checkout; qualification
+binds the live web process to that manifested immutable release and active pointer.
 Real Google OAuth, deployed four-session/600-second capacity, the 12-session frozen quality corpus,
 production TLS, and the production-origin pre-admission campaign remain unmeasured until their
 external prerequisites exist. Synthetic reducer fixtures cannot close them.

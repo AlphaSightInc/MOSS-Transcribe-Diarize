@@ -18,11 +18,23 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-require_cmd systemctl install getent cmp
+require_cmd systemctl install getent cmp stat readlink
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 UNIT_DIR="${LINUX_USER_DIR}/.config/systemd/user"
-PROFILE="${SCRIPT_DIR}/moss-account.env"
-[ -f "${PROFILE}" ] || die "copy moss-account.env.example to moss-account.env and configure it"
+CONFIG_DIR="${LINUX_USER_DIR}/.config/moss-transcribe-diarize"
+ACCOUNT_PROFILE="${CONFIG_DIR}/moss-account.env"
+VLLM_PROFILE="${CONFIG_DIR}/vllm.env"
+ACCOUNT_CURRENT="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/account-current"
+
+for profile in "${ACCOUNT_PROFILE}" "${VLLM_PROFILE}"; do
+  [ -f "${profile}" ] || die "required ext4 service profile is missing: ${profile}"
+  [ "$(stat -c '%a' "${profile}")" = "600" ] || die "service profile must be mode 0600: ${profile}"
+done
+[ -L "${ACCOUNT_CURRENT}" ] || die "reviewed Account release is not activated: ${ACCOUNT_CURRENT}"
+ACTIVE_RELEASE="$(readlink -f "${ACCOUNT_CURRENT}")"
+for launcher in mtd-account-web mtd-admin mtd-vllm; do
+  [ -x "${ACTIVE_RELEASE}/bin/${launcher}" ] || die "active release launcher is missing: ${launcher}"
+done
 
 stamp="$(utc_stamp)"
 changing=""
@@ -46,6 +58,7 @@ plan "systemctl --user daemon-reload"
 plan "systemctl --user enable ${UNITS}"
 plan "systemctl --user start ${UNITS}"
 evidence unit_dir "${UNIT_DIR}"
+evidence active_release "${ACTIVE_RELEASE}"
 evidence web_listener "tls:7861"
 evidence restart_required "$( [ -n "${changing}" ] && echo "${changing}" || echo none )"
 dry_run && exit 0

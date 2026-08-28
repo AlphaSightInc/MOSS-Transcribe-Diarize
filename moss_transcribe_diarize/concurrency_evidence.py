@@ -1,0 +1,116 @@
+"""Pure canonical lifecycle evidence reduction shared by measurement and qualification."""
+
+from __future__ import annotations
+
+from typing import Any, Mapping, Sequence
+
+
+def canonical_lifecycle_fairness(
+    events: Sequence[Mapping[str, Any]],
+    session_ids: set[str],
+    *,
+    maximum_skew: int,
+) -> dict[str, Any]:
+    """Measure pairwise dispatch skew only while two sessions are jointly ready."""
+
+    queued_items = {session_id: set() for session_id in session_ids}
+    started_items = {session_id: set() for session_id in session_ids}
+    pair_counts: dict[tuple[str, str], dict[str, int]] = {}
+    maximum_observed_skew = 0
+    contended_pair_dispatch_observations = 0
+    lifecycle_counts = {
+        kind: 0
+        for kind in ("canonical_queued", "canonical_started", "canonical_processed")
+    }
+    errors: list[str] = []
+
+    def active_pairs() -> set[tuple[str, str]]:
+        ready = sorted(
+            session_id for session_id, items in queued_items.items() if items
+        )
+        return {
+            (left, right)
+            for index, left in enumerate(ready)
+            for right in ready[index + 1 :]
+        }
+
+    def reconcile_pairs() -> None:
+        active = active_pairs()
+        for pair in tuple(pair_counts):
+            if pair not in active:
+                del pair_counts[pair]
+        for pair in active:
+            pair_counts.setdefault(pair, {pair[0]: 0, pair[1]: 0})
+
+    for index, event in enumerate(events):
+        session_id = event.get("session_id")
+        kind = event.get("kind")
+        payload = event.get("payload")
+        if session_id not in session_ids:
+            continue
+        if kind not in lifecycle_counts:
+            errors.append(
+                f"event {index} has unsupported canonical lifecycle kind {kind!r}"
+            )
+            continue
+        lifecycle_counts[kind] += 1
+        if not isinstance(payload, dict) or not isinstance(payload.get("item_id"), int):
+            errors.append(f"event {index} lacks an integer canonical item_id")
+            continue
+        item_id = payload["item_id"]
+        if kind == "canonical_queued":
+            if item_id in queued_items[session_id] or item_id in started_items[session_id]:
+                errors.append(
+                    f"event {index} queues duplicate item {session_id}/{item_id}"
+                )
+                continue
+            queued_items[session_id].add(item_id)
+            reconcile_pairs()
+            continue
+        if kind == "canonical_started":
+            reconcile_pairs()
+            if item_id not in queued_items[session_id]:
+                errors.append(
+                    f"event {index} starts unqueued item {session_id}/{item_id}"
+                )
+                continue
+            for pair, counts in pair_counts.items():
+                if session_id not in pair:
+                    continue
+                contended_pair_dispatch_observations += 1
+                counts[session_id] += 1
+                maximum_observed_skew = max(
+                    maximum_observed_skew,
+                    abs(counts[pair[0]] - counts[pair[1]]),
+                )
+            queued_items[session_id].remove(item_id)
+            started_items[session_id].add(item_id)
+            reconcile_pairs()
+            continue
+        if item_id not in started_items[session_id]:
+            errors.append(
+                f"event {index} processes unstarted item {session_id}/{item_id}"
+            )
+
+    for kind, count in lifecycle_counts.items():
+        if count == 0:
+            errors.append(f"lifecycle evidence has no {kind} events")
+    if errors:
+        applicability = "invalid"
+        passes: bool | None = False
+    elif contended_pair_dispatch_observations == 0:
+        applicability = "not_applicable"
+        passes = None
+    else:
+        applicability = "measured"
+        passes = maximum_observed_skew <= maximum_skew
+    return {
+        "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+        "lifecycle_event_counts": lifecycle_counts,
+        "contended_pair_dispatch_observations": contended_pair_dispatch_observations,
+        "maximum_contended_pair_dispatch_skew": maximum_observed_skew,
+        "fairness_gate": maximum_skew,
+        "applicability": applicability,
+        "errors": errors,
+        "passes": passes,
+    }

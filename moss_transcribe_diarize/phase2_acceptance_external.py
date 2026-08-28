@@ -33,6 +33,8 @@ import httpx
 from .app.phase2 import SESSION_COOKIE
 from .app.phase2_audio import MeetingAudioArchive
 from .app.phase2_control import request_control
+from .app.phase2_operator import render_operator_status, serialize_operator_payload
+from .concurrency_evidence import canonical_lifecycle_fairness
 from .phase2_acceptance import (
     G1_CROSS_OWNER_MATRIX,
     G1_SENTINEL_SURFACES,
@@ -48,6 +50,49 @@ from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
 
 class ExternalMeasurementError(RuntimeError):
     """A fixed measurement ran but did not produce trustworthy product state."""
+
+
+def _admin_status_surfaces(
+    socket_path: Path,
+    expected: Mapping[str, object],
+    forbidden: list[bytes],
+) -> dict[str, object]:
+    admin = Path(sys.executable).parent / "mtd-admin"
+    if not admin.is_file() or not os.access(admin, os.X_OK):
+        raise ExternalMeasurementError("installed mtd-admin executable is unavailable")
+    base = (str(admin), "--socket", str(socket_path), "status")
+    human = subprocess.run(
+        base,
+        check=False,
+        capture_output=True,
+        timeout=30,
+    )
+    machine = subprocess.run(
+        (*base, "--json"),
+        check=False,
+        capture_output=True,
+        timeout=30,
+    )
+    if human.returncode or machine.returncode:
+        raise ExternalMeasurementError("installed mtd-admin status command failed")
+    try:
+        machine_payload = json.loads(machine.stdout)
+        allowlisted = serialize_operator_payload("status", machine_payload)
+    except (json.JSONDecodeError, ValueError, TypeError) as exc:
+        raise ExternalMeasurementError("mtd-admin JSON status is invalid") from exc
+    expected_projection = serialize_operator_payload("status", expected)
+    expected_human = (render_operator_status(expected_projection) + "\n").encode()
+    return {
+        "json_exact_projection": allowlisted == expected_projection,
+        "human_exact_projection": human.stdout == expected_human,
+        "json_stderr_bytes": len(machine.stderr),
+        "human_stderr_bytes": len(human.stderr),
+        "forbidden_matches": sum(
+            human.stdout.count(value) + machine.stdout.count(value)
+            for value in forbidden
+            if value
+        ),
+    }
 
 
 def _mode_600(path: Path, label: str) -> None:
@@ -302,8 +347,32 @@ class FixedAccountCampaign:
         manifest_path = Path(self._text("candidate_manifest")).expanduser()
         _mode_600(manifest_path, "candidate manifest")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if not isinstance(manifest, dict):
+        if (
+            not isinstance(manifest, dict)
+            or manifest.get("schema") != "moss-account-candidate.v1"
+            or manifest.get("activation_state") != "staged_inert"
+        ):
             raise ExternalMeasurementError("candidate manifest is not an object")
+        release_value = manifest.get("release")
+        launcher_value = manifest.get("release_launcher")
+        if not isinstance(release_value, str) or not isinstance(launcher_value, str):
+            raise ExternalMeasurementError("candidate release identity is absent")
+        release = Path(release_value).resolve()
+        launcher = Path(launcher_value).resolve()
+        active_pointer = (
+            Path.home() / ".local/share/moss-transcribe-diarize/account-current"
+        )
+        if (
+            not release.is_dir()
+            or launcher != release / "bin/mtd-account-web"
+            or not launcher.is_file()
+            or not active_pointer.is_symlink()
+            or active_pointer.resolve() != release
+        ):
+            raise ExternalMeasurementError("running Account release does not match the manifest")
+        launcher_sha = hashlib.sha256(launcher.read_bytes()).hexdigest()
+        if manifest.get("release_launcher_sha256") != launcher_sha:
+            raise ExternalMeasurementError("Account launcher differs from the candidate manifest")
         descriptor_payload, response = self.a.json("GET", "/api/live/descriptor", 200)
         descriptor = descriptor_payload.get("descriptor")
         if not isinstance(descriptor, dict):
@@ -324,13 +393,19 @@ class FixedAccountCampaign:
         try:
             cwd = os.readlink(proc / "cwd")
             exe = os.readlink(proc / "exe")
-            cmdline = " ".join(
+            argv = [
                 item.decode("utf-8", "replace")
                 for item in (proc / "cmdline").read_bytes().split(b"\0")
                 if item
-            )
+            ]
         except OSError as exc:
             raise ExternalMeasurementError("Account web process identity is unreadable") from exc
+        if (
+            len(argv) < 3
+            or Path(argv[0]).resolve() != (release / "bin/python").resolve()
+            or argv[1:3] != ["-m", "moss_transcribe_diarize.app.phase2_web_cli"]
+        ):
+            raise ExternalMeasurementError("Account web process is outside the manifested release")
         installed_record = manifest.get("installed_record")
         dependency = manifest.get("dependency_projection")
         config_hashes = descriptor.get("config_hashes")
@@ -370,9 +445,17 @@ class FixedAccountCampaign:
                 dependency.get("sha256") if isinstance(dependency, dict) else None
             ),
             "sqlite_runtime": manifest.get("sqlite_runtime"),
+            "manifest": {
+                "schema": manifest.get("schema"),
+                "activation_state": manifest.get("activation_state"),
+                "release": str(release),
+                "release_launcher": str(launcher),
+                "release_launcher_sha256": launcher_sha,
+                "active_pointer_resolves_to_release": True,
+            },
             "aiosqlite": self._dependency_version(dependency, "aiosqlite"),
             "authlib": self._dependency_version(dependency, "Authlib"),
-            "process": {"pid": pid, "cwd": cwd, "exe": exe, "cmdline": cmdline},
+            "process": {"pid": pid, "cwd": cwd, "exe": exe, "argv": argv},
             "toolchain": toolchain,
             "accelerator": accelerator,
             "tls": tls,
@@ -874,6 +957,11 @@ class FixedAccountCampaign:
             for value in files.values():
                 if isinstance(value, str):
                     forbidden.append(Path(value).expanduser().read_bytes().strip())
+        status_surfaces = _admin_status_surfaces(
+            self.operator_socket,
+            status_before,
+            forbidden,
+        )
         journal_path = Path(self._text("operator_journal")).expanduser()
         capacity = status_before.get("capacity")
         active = status_before.get("active_meetings")
@@ -1057,8 +1145,9 @@ class FixedAccountCampaign:
             "tcp_admin_surfaces": tcp_admin_surfaces,
             "forbidden_content_matches": sum(
                 status.count(value) + journal.count(value) for value in forbidden if value
-            ),
+            ) + int(status_surfaces["forbidden_matches"]),
             "count_mismatches": count_mismatches,
+            "status_surfaces": status_surfaces,
             "interrupt_probe": interrupt_probe,
         }
         self._artifact_json(
@@ -1436,7 +1525,7 @@ class FixedAccountCampaign:
             foreign = self.b.request("GET", f"/api/meetings/{meeting_id}/audio/download")
             if foreign.status_code != 404:
                 foreign_leaks += 1
-            if self.b_peer.request(
+            if self.revoked_probe.request(
                 "GET", f"/api/meetings/{meeting_id}/audio/download"
             ).status_code != 401:
                 revoked_failures += 1
@@ -1958,8 +2047,7 @@ class FixedAccountCampaign:
             ),
             key=lambda event: int((event.get("payload") or {}).get("runtime_monotonic_ns", 0)),
         )
-        concurrency = _load_concurrency_harness(Path(self._text("repo_root")).resolve())
-        fairness = concurrency._canonical_lifecycle_fairness(
+        fairness = canonical_lifecycle_fairness(
             lifecycle,
             {str(output["session_id"]) for output in outputs},
             maximum_skew=1,
@@ -2567,24 +2655,6 @@ def _load_surface_harness(repo: Path):
         spec.loader.exec_module(module)
     finally:
         ssl._create_default_https_context = original_context
-    return module
-
-
-def _load_concurrency_harness(repo: Path):
-    path = (
-        repo
-        / "prototypes"
-        / "streaming-diarization"
-        / "concurrency"
-        / "run_cpu_hf_local_measurement.py"
-    )
-    name = "moss_phase2_acceptance_concurrency_harness"
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ExternalMeasurementError("standing concurrency evaluator is unavailable")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
     return module
 
 

@@ -47,7 +47,8 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "sqlite-3.53.4" in account_launcher
     assert "LD_LIBRARY_PATH" in account_launcher
     assert "stage-account-candidate.sh" in install_wsl
-    assert "build-account-sqlite.sh" in stage_account
+    assert '"${CHECKOUT}/ops/build-account-sqlite.sh"' in stage_account
+    assert '"${SCRIPT_DIR}/build-account-sqlite.sh"' not in stage_account
     assert "/usr/bin/python3.12 -m venv" in stage_account
     assert "account-runtimes" in stage_account
     assert "candidate-checkouts" in stage_account
@@ -58,6 +59,9 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert 'pip" install --no-deps' in stage_account
     assert 'ln -s "${RELEASE}" "${CHECKOUT}/.venv"' in stage_account
     assert "activation_state" in stage_account and "staged_inert" in stage_account
+    assert "release_launcher_sha256" in stage_account
+    assert "web_unit_sha256" in stage_account
+    assert "vllm_unit_sha256" in stage_account
     assert "account-current" not in stage_account
     assert "${VENV_DIR}" not in stage_account
     assert "--editable \"${PROJECT_DIR}\"" in install_wsl  # GPU bootstrap only.
@@ -68,6 +72,11 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "MOSS_GOOGLE_CLIENT_SECRET_FILE" in account_launcher
     assert "MOSS_OAUTH_COOKIE_SECRET_FILE" in account_launcher
     assert "UNITS=\"moss-vllm.service moss-web.service\"" in install
+    assert ".config/moss-transcribe-diarize" in install
+    assert "service profile must be mode 0600" in install
+    assert "reviewed Account release is not activated" in install
+    assert "active release launcher is missing" in install
+    assert "ops/moss-account.env" not in install
     assert "moss-account.env" in unit
     assert "EnvironmentFile=%h/.config/moss-transcribe-diarize/vllm.env" in vllm_unit
     assert "account-current/bin/mtd-vllm" in vllm_unit

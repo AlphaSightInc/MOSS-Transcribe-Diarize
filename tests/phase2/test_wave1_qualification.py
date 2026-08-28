@@ -26,6 +26,7 @@ from moss_transcribe_diarize.phase2_acceptance_replay import AccountCookieLiveRe
 from moss_transcribe_diarize import phase2_acceptance_measure as measurement
 from moss_transcribe_diarize import phase2_acceptance_external as external
 from moss_transcribe_diarize import phase2_acceptance_browser as browser_measurement
+from moss_transcribe_diarize import phase2_cutover_rehearsal as cutover
 from moss_transcribe_diarize.phase2_acceptance_measure import measure_layer
 from moss_transcribe_diarize.installed_candidate import (
     installer_owned_empty_record,
@@ -106,14 +107,17 @@ def _capacity_raw() -> dict[str, object]:
                     {
                         "kind": "canonical_queued",
                         "runtime_monotonic_ns": ordinal,
+                        "item_id": ordinal,
                     },
                     {
                         "kind": "canonical_started",
                         "runtime_monotonic_ns": 10 + ordinal,
+                        "item_id": ordinal,
                     },
                     {
                         "kind": "canonical_processed",
                         "runtime_monotonic_ns": 20 + ordinal,
+                        "item_id": ordinal,
                         "canonical_decode_elapsed_sec": 0.9,
                         "frozen_span_duration_sec": 1.0,
                     },
@@ -132,6 +136,25 @@ def _capacity_raw() -> dict[str, object]:
                 ],
             }
         )
+    lifecycle = [
+        {
+            "session_id": str(session["session_ordinal"]),
+            "kind": event["kind"],
+            "payload": {key: value for key, value in event.items() if key != "kind"},
+        }
+        for session, event in sorted(
+            (
+                (session, event)
+                for session in sessions
+                for event in session["events"]
+                if str(event["kind"]).startswith("canonical_")
+            ),
+            key=lambda pair: pair[1]["runtime_monotonic_ns"],
+        )
+    ]
+    fairness = acceptance.canonical_lifecycle_fairness(
+        lifecycle, {"1", "2", "3", "4"}, maximum_skew=1
+    )
     return {
         "sessions": 4,
         "accounts": 2,
@@ -146,6 +169,8 @@ def _capacity_raw() -> dict[str, object]:
         "continuous_wrong_owner_probes": True,
         "transcript_lag_seconds": {f"s{index}": [1.0, 2.0] for index in range(4)},
         "dispatch_skew": 1,
+        "fairness_measured": True,
+        "fairness_observation": fairness,
         "prestop_inference_rtf": 0.9,
         "refinement_queue_depth": 1,
         "vllm_gpu_cache_use": 0.9,
@@ -188,8 +213,34 @@ def _overload_raw() -> dict[str, object]:
             }
         )
         for event in item["events"]:
-            event["runtime_monotonic_ns"] += ordinal * 100
+            offsets = {
+                "canonical_queued": 0,
+                "canonical_started": 100,
+                "canonical_processed": 200,
+                "rolling_decode_queued": 300,
+                "rolling_decode_completed": 400,
+            }
+            event["runtime_monotonic_ns"] = offsets[event["kind"]] + ordinal
         sessions.append(item)
+    lifecycle = [
+        {
+            "session_id": str(session["session_ordinal"]),
+            "kind": event["kind"],
+            "payload": {key: item for key, item in event.items() if key != "kind"},
+        }
+        for session, event in sorted(
+            (
+                (session, event)
+                for session in sessions
+                for event in session["events"]
+                if str(event["kind"]).startswith("canonical_")
+            ),
+            key=lambda pair: pair[1]["runtime_monotonic_ns"],
+        )
+    ]
+    fairness = acceptance.canonical_lifecycle_fairness(
+        lifecycle, {str(ordinal) for ordinal in range(1, 9)}, maximum_skew=1
+    )
     value.update(
         {
             "sessions": 8,
@@ -213,6 +264,9 @@ def _overload_raw() -> dict[str, object]:
             ],
             "isolation_failures": 0,
             "fairness_failures": 0,
+            "fairness_measured": True,
+            "fairness_observation": fairness,
+            "dispatch_skew": fairness["maximum_contended_pair_dispatch_skew"],
             "sequence_gaps": 0,
             "cross_account_sentinel_deliveries": 0,
         }
@@ -235,7 +289,8 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
             "sqlite_runtime": "3.53.4",
             "aiosqlite": "0.22.1",
             "authlib": "1.7.2",
-            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/srv/venv/python", "cmdline": "mtd-phase2-web"},
+            "manifest": {"schema": "moss-account-candidate.v1", "activation_state": "staged_inert", "release": "/srv/release", "release_launcher": "/srv/release/bin/mtd-account-web", "release_launcher_sha256": "9" * 64, "active_pointer_resolves_to_release": True},
+            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "argv": ["/srv/release/bin/python", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
             "toolchain": {name: "version" for name in ("chrome", "node", "npm", "ffmpeg", "ffprobe")},
             "accelerator": {"vllm": "1", "torch": "1", "cuda": "1"},
             "tls": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"},
@@ -354,7 +409,7 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
             },
         },
         "audio_durability_download": {"live_cases": 1, "file_cases": 1, "format_mismatches": 0, "durability_failures": 0, "cleanup_failures": 0, "owner_download_failures": 0, "foreign_leaks": 0, "unauthenticated_failures": 0, "revoked_failures": 0, "partial_download_failures": 0, "partial_or_unavailable_crash_cases": 1, "path_failures": 0, "permission_failures": 0, "out_of_band_reconciled": True, "ffprobe": [{"codec": "mp3"}, {"codec": "mp3"}, {"codec": "mp3"}]},
-        "operator_control": {"socket_mode": "0600", "tcp_admin_surfaces": 0, "forbidden_content_matches": 0, "count_mismatches": 0, "interrupt_probe": {"admitted_work_observed": True, "admitted_started": True, "command_interrupted": True, "durable_interrupted": True, "transcript_unchanged": True, "target_active_after": 0, "queue_depth_after": 0, "queued_item_started_events": 0, "admitted_item_processed_events": 0, "queued_item_discarded_events": 1, "audio_partial_playable": True, "late_frame_status": 409}},
+        "operator_control": {"socket_mode": "0600", "tcp_admin_surfaces": 0, "forbidden_content_matches": 0, "count_mismatches": 0, "status_surfaces": {"json_exact_projection": True, "human_exact_projection": True, "json_stderr_bytes": 0, "human_stderr_bytes": 0, "forbidden_matches": 0}, "interrupt_probe": {"admitted_work_observed": True, "admitted_started": True, "command_interrupted": True, "durable_interrupted": True, "transcript_unchanged": True, "target_active_after": 0, "queue_depth_after": 0, "queued_item_started_events": 0, "admitted_item_processed_events": 0, "queued_item_discarded_events": 1, "audio_partial_playable": True, "late_frame_status": 409}},
         "account_product_regression": {"suites": [{"collected": 1, "executed": 1, "passed": 1, "failed": 0, "skipped": 0, "unmeasured": 0} for _ in range(4)]},
         "transcript_pane_fidelity": {"viewports": [{"width": 1440, "height": 900, "total_difference": 0.02, "largest_connected_difference": 0.01}, {"width": 1280, "height": 800, "total_difference": 0.02, "largest_connected_difference": 0.01}], "reference_identity": {"head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70", "clean": True}},
     }
@@ -388,6 +443,41 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
 
     capacity = next(item for item in report["predicates"] if item["id"] == "four_session_capacity")
     capacity["raw"]["session_observations"][0]["lags"] = [10.000001]
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert "deployed:G4:four_session_capacity:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    capacity = next(
+        item for item in report["predicates"] if item["id"] == "four_session_capacity"
+    )
+    for session in capacity["raw"]["session_observations"]:
+        session["events"] = [
+            event
+            for event in session["events"]
+            if event["kind"] not in {"canonical_queued", "canonical_started"}
+        ]
+    capacity["raw"].update(
+        {
+            "fairness_measured": False,
+            "dispatch_skew": 0,
+            "fairness_observation": {
+                "applicability": "not_applicable",
+                "passes": None,
+                "contended_pair_dispatch_observations": 0,
+                "maximum_contended_pair_dispatch_skew": 0,
+            },
+        }
+    )
     outcomes, errors = acceptance.evaluate_external_report(
         report,
         layer="deployed",
@@ -516,6 +606,73 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     assert outcomes["G3"] is False
     assert outcomes["G4"] is False
     assert outcomes["G6"] is False
+
+
+def test_external_denominators_expose_exact_campaign_units_and_fail_units_together():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    projection = acceptance.external_denominator_projection(report)
+    assert {
+        name: values["collected"] for name, values in projection.items()
+    } == {
+        "cross_owner_actions": 15,
+        "four_session_capacity": 4,
+        "eight_session_overload": 8,
+        "quality_sessions": 12,
+        "quality_windows": 122,
+    }
+    assert all(values["passed"] == values["collected"] for values in projection.values())
+
+    capacity = next(
+        item for item in report["predicates"] if item["id"] == "four_session_capacity"
+    )
+    capacity["raw"]["fairness_measured"] = False
+    failed = acceptance.external_denominator_projection(report)
+    assert failed["four_session_capacity"] == {
+        "collected": 4,
+        "executed": 4,
+        "passed": 0,
+        "failed": 4,
+        "skipped": 0,
+        "unmeasured": 0,
+    }
+
+
+def test_cross_layer_identity_binds_manifested_release_and_process():
+    first = _report("deployed", "a" * 40, "b" * 64)
+    second = _report("pre_admission", "a" * 40, "b" * 64)
+    assert acceptance._cross_layer_identity_errors(first, second) == []
+    identity = next(
+        item
+        for item in second["predicates"]
+        if item["id"] == "installed_candidate_identity"
+    )
+    identity["raw"]["manifest"]["release"] = "/srv/other-release"
+    assert acceptance._cross_layer_identity_errors(first, second) == [
+        "cross_layer_identity_mismatch:manifest"
+    ]
+
+
+def test_exact_output_identity_reaches_exclusive_attempt_claim(monkeypatch, tmp_path: Path):
+    class ReachedAttemptClaim(RuntimeError):
+        pass
+
+    sha = "abcdef0" + "1" * 33
+    monkeypatch.setattr(
+        acceptance,
+        "discover_candidate",
+        lambda repo: {"git_sha": sha},
+    )
+    monkeypatch.setattr(
+        acceptance,
+        "AttemptBundle",
+        lambda path: (_ for _ in ()).throw(ReachedAttemptClaim(str(path))),
+    )
+    output = (
+        tmp_path
+        / "evidence/phase2/wave-1/20260828T120000Z-abcdef0"
+    )
+    with pytest.raises(ReachedAttemptClaim, match="20260828T120000Z-abcdef0"):
+        acceptance.run_acceptance(wave=1, output=output, repo=tmp_path)
 
 
 def test_owner_state_digest_detects_same_shape_content_mutation():
@@ -764,10 +921,22 @@ def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
 def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     monkeypatch, tmp_path: Path,
 ):
+    release = tmp_path / "release"
+    release_bin = release / "bin"
+    release_bin.mkdir(parents=True)
+    launcher = release_bin / "mtd-account-web"
+    launcher.write_bytes(b"reviewed launcher\n")
+    (release_bin / "python").write_bytes(b"runtime\n")
+    fake_home = tmp_path / "home"
+    pointer = fake_home / ".local/share/moss-transcribe-diarize/account-current"
+    pointer.parent.mkdir(parents=True)
+    pointer.symlink_to(release)
     manifest = tmp_path / "candidate.json"
     manifest.write_text(
         json.dumps(
             {
+                "schema": "moss-account-candidate.v1",
+                "activation_state": "staged_inert",
                 "git_sha": "a" * 40,
                 "git_tree": "b" * 40,
                 "uv_lock_sha256": "c" * 64,
@@ -785,6 +954,11 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
                     ],
                 },
                 "sqlite_runtime": "3.53.4",
+                "release": str(release),
+                "release_launcher": str(launcher),
+                "release_launcher_sha256": hashlib.sha256(
+                    launcher.read_bytes()
+                ).hexdigest(),
             }
         ),
         encoding="utf-8",
@@ -824,17 +998,30 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
         operator_socket=str(tmp_path / "operator.sock"),
     )
     campaign._clients["a"] = IdentityClient()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
     monkeypatch.setattr(
         external.subprocess,
         "run",
         lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="123\n"),
     )
-    monkeypatch.setattr(external.os, "readlink", lambda path: "/release/current")
+    original_readlink = os.readlink
+    monkeypatch.setattr(
+        external.os,
+        "readlink",
+        lambda path: (
+            "/release/current"
+            if str(path) in {"/proc/123/cwd", "/proc/123/exe"}
+            else original_readlink(path)
+        ),
+    )
     original_read_bytes = Path.read_bytes
 
     def read_bytes(path: Path) -> bytes:
         if str(path) == "/proc/123/cmdline":
-            return b"/release/bin/python\0-m\0moss\0"
+            return (
+                str(release_bin / "python").encode()
+                + b"\0-m\0moss_transcribe_diarize.app.phase2_web_cli\0"
+            )
         return original_read_bytes(path)
 
     monkeypatch.setattr(Path, "read_bytes", read_bytes)
@@ -849,8 +1036,21 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
         "pid": 123,
         "cwd": "/release/current",
         "exe": "/release/current",
-        "cmdline": "/release/bin/python -m moss",
+        "argv": [
+            str(release_bin / "python"),
+            "-m",
+            "moss_transcribe_diarize.app.phase2_web_cli",
+        ],
     }
+    pointer.unlink()
+    other_release = tmp_path / "other-release"
+    other_release.mkdir()
+    pointer.symlink_to(other_release)
+    with pytest.raises(
+        external.ExternalMeasurementError,
+        match="running Account release does not match",
+    ):
+        campaign.installed_candidate_identity()
     monkeypatch.setattr(
         external,
         "_control",
@@ -1703,7 +1903,7 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
     )
     campaign._meetings.update({"file": ["file"], "live": ["live"], "crash": ["crash"]})
     campaign._clients.update(
-        {"a": Owner(), "b": Denied(404), "b_peer": Denied(401)}
+        {"a": Owner(), "b": Denied(404), "revoked_probe": Denied(401)}
     )
     monkeypatch.setattr(
         campaign,
@@ -1847,6 +2047,17 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     campaign._clients["a"] = Owner()
     monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
     monkeypatch.setattr(external, "_control", control)
+    monkeypatch.setattr(
+        external,
+        "_admin_status_surfaces",
+        lambda socket, expected, forbidden: {
+            "json_exact_projection": True,
+            "human_exact_projection": True,
+            "json_stderr_bytes": 0,
+            "human_stderr_bytes": 0,
+            "forbidden_matches": 0,
+        },
+    )
     monkeypatch.setattr(external, "_wav_pcm", lambda path: b"\0\0" * 8_000)
     monkeypatch.setattr(external, "_probe_mp3", lambda content: {"codec": "mp3"})
     monkeypatch.setattr(
@@ -1866,6 +2077,60 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
         dependency_projection_sha256="e" * 64,
     ) is True
     assert Path("operator/content-free-counts.json") in campaign.safe_artifacts
+
+
+def test_admin_status_surfaces_execute_human_and_json_cli_and_reject_extra_field(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    expected = {"schema": "status.v1", "ok": 1}
+
+    def serialize(_kind: str, payload: dict[str, object]) -> dict[str, object]:
+        if set(payload) != {"schema", "ok"}:
+            raise ValueError("extra field")
+        return dict(payload)
+
+    monkeypatch.setattr(external, "serialize_operator_payload", serialize)
+    monkeypatch.setattr(
+        external,
+        "render_operator_status",
+        lambda payload: f"status={payload['ok']}",
+    )
+    calls: list[tuple[str, ...]] = []
+
+    def run(argv: tuple[str, ...], **_kwargs: object):
+        calls.append(tuple(argv))
+        if "--json" in argv:
+            return SimpleNamespace(
+                returncode=0,
+                stdout=json.dumps(expected).encode(),
+                stderr=b"",
+            )
+        return SimpleNamespace(returncode=0, stdout=b"status=1\n", stderr=b"")
+
+    monkeypatch.setattr(external.subprocess, "run", run)
+    surfaces = external._admin_status_surfaces(Path("/run/moss.sock"), expected, ())
+    assert surfaces == {
+        "json_exact_projection": True,
+        "human_exact_projection": True,
+        "json_stderr_bytes": 0,
+        "human_stderr_bytes": 0,
+        "forbidden_matches": 0,
+    }
+    assert len(calls) == 2
+    assert any("--json" in argv for argv in calls)
+
+    def extra_run(argv: tuple[str, ...], **_kwargs: object):
+        if "--json" in argv:
+            return SimpleNamespace(
+                returncode=0,
+                stdout=json.dumps({**expected, "title": "forbidden"}).encode(),
+                stderr=b"",
+            )
+        return SimpleNamespace(returncode=0, stdout=b"status=1\n", stderr=b"")
+
+    monkeypatch.setattr(external.subprocess, "run", extra_run)
+    with pytest.raises(external.ExternalMeasurementError, match="JSON status is invalid"):
+        external._admin_status_surfaces(Path("/run/moss.sock"), expected, ())
 
 
 def test_malformed_external_envelope_is_a_qualification_blocker(tmp_path: Path):
@@ -2150,13 +2415,27 @@ def acceptance_replay_frame():
 
 def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path):
     bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    release = tmp_path / "immutable-release"
+    (release / "bin").mkdir(parents=True)
+    launcher = release / "bin/mtd-account-web"
+    launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    web_unit = tmp_path / "moss-web.service"
+    vllm_unit = tmp_path / "moss-vllm.service"
+    web_unit.write_text("ExecStart=/candidate/bin/web\n", encoding="utf-8")
+    vllm_unit.write_text("ExecStart=/shared/bin/vllm\n", encoding="utf-8")
     candidate = tmp_path / "candidate.json"
     candidate.write_text(
         json.dumps(
             {
                 "schema": "moss-account-candidate.v1",
                 "activation_state": "staged_inert",
-                "release": str(tmp_path / "immutable-release"),
+                "release": str(release),
+                "release_launcher": str(launcher),
+                "release_launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
+                "web_unit_path": str(web_unit),
+                "web_unit_sha256": hashlib.sha256(web_unit.read_bytes()).hexdigest(),
+                "vllm_unit_path": str(vllm_unit),
+                "vllm_unit_sha256": hashlib.sha256(vllm_unit.read_bytes()).hexdigest(),
             }
         ),
         encoding="utf-8",
@@ -2177,3 +2456,35 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
     second_bundle.close()
     assert passed is True
     assert errors == []
+
+    missing_manifest = tmp_path / "missing-release.json"
+    missing_manifest.write_text(
+        json.dumps(
+            {
+                "schema": "moss-account-candidate.v1",
+                "activation_state": "staged_inert",
+                "release": str(tmp_path / "missing-release"),
+                "release_launcher": str(tmp_path / "missing-release/bin/mtd-account-web"),
+                "web_unit_path": str(web_unit),
+                "vllm_unit_path": str(vllm_unit),
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="release"):
+        cutover.rehearse(
+            original_fixture=ROOT / "tests/fixtures/phase2_cutover_original.json",
+            candidate_manifest=missing_manifest,
+        )
+
+    busy_fixture = tmp_path / "busy-phase1.json"
+    fixture_payload = json.loads(
+        (ROOT / "tests/fixtures/phase2_cutover_original.json").read_text()
+    )
+    fixture_payload["runtime_views"][0]["entrants"] = 1
+    busy_fixture.write_text(json.dumps(fixture_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="quiesced and drained"):
+        cutover.rehearse(
+            original_fixture=busy_fixture,
+            candidate_manifest=candidate,
+        )

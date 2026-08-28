@@ -1,9 +1,29 @@
 {
-  "active_jobs": 0,
-  "active_live": 0,
-  "creation_blocked": false,
-  "entrants": 0,
-  "queued_jobs": 0,
-  "schema": "moss-isolated-cutover-fixture.v1",
-  "service_identity": "phase1-rehearsal-control"
+  "runtime_views": [
+    {
+      "active_jobs": 0,
+      "active_live": 0,
+      "entrants": 0,
+      "name": "phase1-studio",
+      "queued_jobs": 0
+    },
+    {
+      "active_jobs": 0,
+      "active_live": 0,
+      "entrants": 0,
+      "name": "phase1-live",
+      "queued_jobs": 0
+    }
+  ],
+  "schema": "moss-isolated-cutover-fixture.v2",
+  "service_identity": "phase1-rehearsal-control",
+  "vllm_runtime_file": "runtime/vllm.json",
+  "snapshot_files": {
+    "profiles/moss.env": "MOSS_PHASE=1\n",
+    "runtime/vllm.json": "{\"pid\":9001,\"argv\":[\"vllm\",\"serve\"],\"active_enter_timestamp\":\"2026-08-28T00:00:00Z\"}\n",
+    "state/jobs/job-001.json": "{\"status\":\"completed\"}\n",
+    "state/transcripts/meeting-001.json": "{\"version\":1}\n",
+    "systemd/moss-web.service": "ExecStart=/phase1/bin/mtd-subtitle-web\n",
+    "systemd/moss-vllm.service": "ExecStart=/phase1/bin/vllm\n"
+  }
 }

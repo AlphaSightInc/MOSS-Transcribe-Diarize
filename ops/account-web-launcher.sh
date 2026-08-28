@@ -2,7 +2,7 @@
 # Relocatable, release-owned Account web launcher. The systemd unit supplies the 0600 host profile.
 set -euo pipefail
 
-SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 RUNTIME_DIR="$(cd "${SELF_DIR}/.." && pwd)"
 SQLITE_PREFIX="${HOME}/.local/share/moss-transcribe-diarize/sqlite-3.53.4"
 MODEL_DIR="${HOME}/.local/share/moss-transcribe-diarize/model"
