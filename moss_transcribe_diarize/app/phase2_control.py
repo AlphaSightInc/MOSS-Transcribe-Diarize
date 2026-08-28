@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import stat
 from pathlib import Path
@@ -16,6 +17,7 @@ DEFAULT_PHASE2_CONTROL_SOCKET_PATH = (
     DEFAULT_PHASE2_DATABASE_PATH.parent / "phase2-control.sock"
 )
 MAX_CONTROL_LINE_BYTES = 16 * 1024
+LOGGER = logging.getLogger(__name__)
 
 
 class Phase2ControlError(RuntimeError):
@@ -25,9 +27,10 @@ class Phase2ControlError(RuntimeError):
 class Phase2ControlServer:
     """Thin transport: lifecycle policy remains entirely in AccountLifecycle."""
 
-    def __init__(self, path: str | Path, lifecycle: Any) -> None:
+    def __init__(self, path: str | Path, lifecycle: Any, operator: Any | None = None) -> None:
         self._path = Path(path).expanduser()
         self._lifecycle = lifecycle
+        self._operator = operator
         self._server: asyncio.AbstractServer | None = None
         self._socket_identity: tuple[int, int] | None = None
         self._handlers: set[asyncio.Task[None]] = set()
@@ -125,16 +128,49 @@ class Phase2ControlServer:
             raise ValueError("invalid control request")
         command = request.get("command")
         email = request.get("email")
+        if command == "status" and email is None and self._operator is not None:
+            return await self._operator.snapshot()
         if command == "accounts.list" and email is None:
             return await self._lifecycle.list_accounts()
         if command == "accounts.allow" and isinstance(email, str):
-            return await self._lifecycle.allow_account(email)
+            try:
+                result = await self._lifecycle.allow_account(email)
+            except Exception as exc:
+                await self._observe_mutation(command, "failed", _error_code(exc))
+                raise
+            await self._observe_mutation(command, "succeeded", None)
+            return result
         if command == "accounts.revoke" and isinstance(email, str):
-            return {
-                "email": email.strip().lower(),
-                "revoked": await self._lifecycle.revoke_account(email),
-            }
+            try:
+                revoked = await self._lifecycle.revoke_account(email)
+            except Exception as exc:
+                await self._observe_mutation(command, "failed", _error_code(exc))
+                raise
+            await self._observe_mutation(
+                command,
+                "succeeded" if revoked else "no_change",
+                None,
+            )
+            return {"email": email.strip().lower(), "revoked": revoked}
         raise ValueError("invalid control request")
+
+    async def _observe_mutation(
+        self,
+        command: str,
+        outcome: str,
+        error: str | None,
+    ) -> None:
+        if self._operator is not None:
+            try:
+                await self._operator.snapshot(
+                    operator_mutation=command,
+                    mutation_outcome=outcome,
+                    mutation_error=error,
+                )
+            except Exception:
+                # Observability is not Account authority. A post-mutation projection failure
+                # cannot turn a committed allow/revoke into a false command failure.
+                LOGGER.error("Operator mutation observation failed.")
 
 
 async def request_control(

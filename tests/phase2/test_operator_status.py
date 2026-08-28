@@ -1,0 +1,604 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import stat
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+from fastapi.testclient import TestClient
+
+from moss_transcribe_diarize.app.phase2 import (
+    GoogleIdentity,
+    Phase2Store,
+    create_phase2_app,
+)
+from moss_transcribe_diarize.app.phase2_admin import main as admin_main
+from moss_transcribe_diarize.app.phase2_control import request_control
+from moss_transcribe_diarize.app.phase2_control import (
+    Phase2ControlError,
+    Phase2ControlServer,
+)
+from moss_transcribe_diarize.app.phase2_file import FileMeetingTasks
+from moss_transcribe_diarize.app.phase2_operator import (
+    OPERATOR_EVENT_SCHEMA,
+    OPERATOR_JOURNAL_LIMIT,
+    OPERATOR_STATUS_SCHEMA,
+    OperatorProjectionError,
+    Phase2OperatorStatus,
+    render_operator_status,
+    serialize_operator_payload,
+)
+
+
+FIXED_NOW = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
+FORBIDDEN_SENTINELS = (
+    "google-sub-sentinel",
+    "meeting-title-sentinel",
+    "transcript-sentinel",
+    "private/audio/sentinel.mp3",
+    "session-secret-sentinel",
+    "voiceprint-label-sentinel",
+    "voiceprint-vector-sentinel",
+    "prompt-sentinel",
+    "summary-sentinel",
+)
+
+
+class _NoOidc:
+    async def begin(self, request):  # pragma: no cover - status never invokes OIDC.
+        raise AssertionError(request)
+
+    async def complete(self, request):  # pragma: no cover - status never invokes OIDC.
+        raise AssertionError(request)
+
+
+class _Journal:
+    def __init__(self) -> None:
+        self.lines: list[str] = []
+
+    def info(self, line: str) -> None:
+        self.lines.append(line)
+
+
+class _FakeFiles:
+    def __init__(self, phases: dict[str, str] | None = None) -> None:
+        self.phases = phases or {}
+
+    def operator_snapshot(self) -> dict[str, str]:
+        return dict(self.phases)
+
+
+class _FakeLive:
+    def __init__(self, meetings: dict[str, dict[str, object]] | None = None) -> None:
+        self.meetings = meetings or {}
+        self.queues: dict[str, int | bool] = {
+            "batch": 0,
+            "live_canonical": 0,
+            "live_refinement": 0,
+            "live_provisional": 0,
+            "worker_busy": False,
+        }
+        self.runtime = SimpleNamespace(
+            descriptor=SimpleNamespace(frame_samples=160, sample_rate=16000)
+        )
+
+    def operator_snapshot(self) -> dict[str, object]:
+        return {"queues": dict(self.queues), "meetings": dict(self.meetings)}
+
+
+class _MutableStore:
+    def __init__(self) -> None:
+        self.payload = {"accounts": [], "active_meetings": [], "audio": []}
+
+    async def operator_snapshot(self) -> dict[str, object]:
+        return json.loads(json.dumps(self.payload))
+
+
+async def _seed_content_store(database: Path) -> tuple[Phase2Store, str, str]:
+    store = await Phase2Store.open(database)
+    await store.allow_email("person@example.com")
+    admitted = await store.admit(
+        GoogleIdentity(
+            account_id="google-sub-sentinel",
+            email="person@example.com",
+            display_name="Person",
+        )
+    )
+    assert admitted is not None
+    account, _ = admitted
+    workspace = store.workspace(account)
+    live = await workspace.create_meeting("live")
+    file = await workspace.create_meeting("file")
+    await live.rename("meeting-title-sentinel")
+    await live.commit_transcript(
+        {"segments": [{"speaker": "Speaker_1", "text": "transcript-sentinel"}]}
+    )
+    now_ms = int(FIXED_NOW.timestamp() * 1000)
+    async with store._mutation():
+        await store._connection.execute(
+            "INSERT INTO sign_in_sessions(session_id, account_id, created_at_ms) VALUES (?, ?, ?)",
+            ("session-secret-sentinel", account.account_id, now_ms),
+        )
+        await store._connection.execute(
+            """
+            INSERT INTO meeting_audio(
+                account_id, meeting_id, state, relative_path, byte_count, duration_ms,
+                format, sample_rate_hz, channels, bit_rate_bps, updated_at_ms
+            ) VALUES (?, ?, 'available', ?, 123, 1000, 'mp3', 16000, 1, 48000, ?)
+            """,
+            (account.account_id, file.meeting_id, "private/audio/sentinel.mp3", now_ms),
+        )
+        await store._connection.execute(
+            """
+            INSERT INTO voiceprints(
+                account_id, voiceprint_id, label, revision, created_at_ms, updated_at_ms
+            ) VALUES (?, 'voiceprint-id-sentinel', 'voiceprint-label-sentinel', 1, ?, ?)
+            """,
+            (account.account_id, now_ms, now_ms),
+        )
+        await store._connection.execute(
+            """
+            INSERT INTO voiceprint_samples(
+                account_id, voiceprint_id, sample_id, vector, source_meeting_id, created_at_ms
+            ) VALUES (?, 'voiceprint-id-sentinel', 'sample-sentinel', ?, ?, ?)
+            """,
+            (
+                account.account_id,
+                b"voiceprint-vector-sentinel",
+                live.meeting_id,
+                now_ms,
+            ),
+        )
+        await store._connection.execute(
+            """
+            INSERT INTO llm_artifacts(
+                account_id, meeting_id, artifact_id, kind, state, document_json,
+                provenance_json, created_at_ms, updated_at_ms
+            ) VALUES (?, ?, 'artifact-sentinel', 'final_summary', 'current', ?, ?, ?, ?)
+            """,
+            (
+                account.account_id,
+                live.meeting_id,
+                json.dumps({"summary": "summary-sentinel"}),
+                json.dumps({"prompt": "prompt-sentinel"}),
+                now_ms,
+                now_ms,
+            ),
+        )
+    return store, live.meeting_id, file.meeting_id
+
+
+def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: Path):
+    async def exercise() -> None:
+        database = tmp_path / "moss.sqlite3"
+        store, live_id, file_id = await _seed_content_store(database)
+        journal = _Journal()
+        live = _FakeLive(
+            {
+                live_id: {
+                    "session_status": "active",
+                    "pending_canonical": 2,
+                    "pending_limit": 4,
+                    "persistence_failure": None,
+                    "terminal_error": None,
+                }
+            }
+        )
+        live.queues["live_canonical"] = 2
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=database,
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles({file_id: "running"}),
+            now=lambda: FIXED_NOW,
+            monotonic_ns=lambda: 1_000_000_000,
+            journal_logger=journal,
+        )
+        try:
+            await operator.start()
+            status = await operator.snapshot()
+            assert status["schema"] == OPERATOR_STATUS_SCHEMA
+            assert status["capacity"] == {
+                "live": {"active": 1, "limit": 4},
+                "file": {"active": 1},
+                "inference_worker": "busy",
+                "queues": {
+                    "live_canonical": 2,
+                    "live_refinement": 0,
+                    "live_provisional": 0,
+                    "batch": 0,
+                },
+                "backpressured_meetings": 0,
+            }
+            account = status["accounts"][0]
+            assert account["email"] == "person@example.com"
+            assert account["sign_in_sessions"] == 2
+            assert account["active_meetings"] == {"live": 1, "file": 1}
+            assert account["logical"] == {
+                "meetings": 2,
+                "transcripts": 1,
+                "voiceprints": 1,
+                "final_summaries": 1,
+            }
+            assert account["audio"]["available"] == {"count": 1, "bytes": 123}
+            active = {row["meeting_id"]: row for row in status["active_meetings"]}
+            assert active[file_id]["work_phase"] == "running"
+            assert active[live_id]["capture"]["pending_canonical"] == {
+                "count": 2,
+                "limit": 4,
+            }
+            encoded = json.dumps(status, sort_keys=True)
+            journal_text = "\n".join(journal.lines)
+            for sentinel in FORBIDDEN_SENTINELS:
+                assert sentinel not in encoded
+                assert sentinel not in journal_text
+            assert "person@example.com" not in journal_text
+        finally:
+            await store.close()
+
+    asyncio.run(exercise())
+
+
+def test_transition_journal_deduplicates_bounds_and_restarts_without_history(
+    tmp_path: Path,
+):
+    async def exercise() -> None:
+        store = _MutableStore()
+        live = _FakeLive()
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+        await operator.start()
+        assert [json.loads(line)["code"] for line in journal.lines] == ["service_ready"]
+        await operator.snapshot()
+        assert len(journal.lines) == 1
+        live.queues["live_canonical"] = 1
+        await operator.snapshot(
+            operator_mutation="accounts.allow",
+            mutation_outcome="succeeded",
+        )
+        codes = [json.loads(line)["code"] for line in journal.lines]
+        assert codes[-2:] == ["queue_depth_changed", "operator_mutation"]
+        assert all("@" not in line and "meeting_id" not in line for line in journal.lines)
+
+        for index in range(OPERATOR_JOURNAL_LIMIT + 8):
+            live.queues["live_canonical"] = index % 2
+            await operator.snapshot()
+        assert len(operator._recent_events) == OPERATOR_JOURNAL_LIMIT
+
+        restarted_journal = _Journal()
+        restarted = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=live,
+            files=_FakeFiles(),
+            now=lambda: FIXED_NOW,
+            journal_logger=restarted_journal,
+        )
+        await restarted.start()
+        assert [json.loads(line)["code"] for line in restarted_journal.lines] == [
+            "service_ready"
+        ]
+        await restarted.stop()
+        assert json.loads(restarted_journal.lines[-1])["code"] == "readiness_changed"
+
+    asyncio.run(exercise())
+
+
+def test_allowlist_serializer_rejects_content_fields_and_human_uses_same_projection():
+    with pytest.raises(OperatorProjectionError, match="title"):
+        serialize_operator_payload(
+            "status",
+            {"schema": OPERATOR_STATUS_SCHEMA, "title": "forbidden"},
+        )
+    with pytest.raises(OperatorProjectionError, match="meeting_id"):
+        serialize_operator_payload(
+            "event",
+            {
+                "schema": OPERATOR_EVENT_SCHEMA,
+                "meeting_id": "forbidden",
+            },
+        )
+    with pytest.raises(OperatorProjectionError, match="context"):
+        serialize_operator_payload(
+            "event",
+            {
+                "schema": OPERATOR_EVENT_SCHEMA,
+                "sequence": 0,
+                "occurred_at_utc": "2026-08-28T12:00:00Z",
+                "kind": "operator_mutation",
+                "code": "operator_mutation",
+                "severity": "info",
+                "terminal": False,
+                "retryable": False,
+                "occurrence_count": 1,
+                "context": {
+                    "command": "accounts.allow",
+                    "outcome": "succeeded",
+                    "state": "summary sentinel",
+                },
+            },
+        )
+
+
+def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: Path):
+    class FailingLifecycle:
+        async def allow_account(self, email: str):
+            del email
+            raise ValueError("raw failure with transcript-sentinel")
+
+        async def list_accounts(self):
+            return []
+
+        async def revoke_account(self, email: str):  # pragma: no cover - wrong command.
+            del email
+            raise AssertionError
+
+    async def exercise() -> None:
+        socket = Path("/tmp") / f"moss-i19-failure-{os.getpid()}-{time.time_ns()}.sock"
+        journal = _Journal()
+        operator = Phase2OperatorStatus(
+            _MutableStore(),
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=None,
+            files=None,
+            now=lambda: FIXED_NOW,
+            journal_logger=journal,
+        )
+        await operator.start()
+        server = Phase2ControlServer(socket, FailingLifecycle(), operator)
+        await server.start()
+        try:
+            with pytest.raises(Phase2ControlError, match="invalid_request"):
+                await request_control(socket, "accounts.allow", "person@example.com")
+            status = await request_control(socket, "status")
+            assert status["latest_error"] == {
+                "occurred_at_utc": "2026-08-28T12:00:00.000Z",
+                "subsystem": "operator_control",
+                "code": "invalid_request",
+                "severity": "error",
+                "terminal": False,
+                "retryable": True,
+                "occurrence_count": 1,
+                "context": {"command": "accounts.allow"},
+            }
+            injected = json.loads(json.dumps(status))
+            injected["latest_error"]["context"]["state"] = "summary sentinel"
+            with pytest.raises(OperatorProjectionError, match="context"):
+                serialize_operator_payload("status", injected)
+            wrong_scope = json.loads(json.dumps(status))
+            wrong_scope["state"] = "ready"
+            with pytest.raises(OperatorProjectionError, match="status fields"):
+                serialize_operator_payload("status", wrong_scope)
+            serialized = json.dumps(status, sort_keys=True) + "\n" + "\n".join(journal.lines)
+            assert "transcript-sentinel" not in serialized
+            assert "person@example.com" not in "\n".join(journal.lines)
+        finally:
+            await server.stop()
+            await operator.stop()
+
+    asyncio.run(exercise())
+
+
+def test_post_mutation_observation_failure_does_not_rewrite_account_result(tmp_path: Path):
+    class Lifecycle:
+        async def allow_account(self, email: str):
+            return {"email": email, "enabled": True}
+
+    class FailedObservation:
+        async def snapshot(self, **kwargs: object):
+            del kwargs
+            raise RuntimeError("observability unavailable")
+
+    async def exercise() -> None:
+        socket = Path("/tmp") / f"moss-i19-observe-{os.getpid()}-{time.time_ns()}.sock"
+        server = Phase2ControlServer(socket, Lifecycle(), FailedObservation())
+        await server.start()
+        try:
+            assert await request_control(
+                socket,
+                "accounts.allow",
+                "person@example.com",
+            ) == {"email": "person@example.com", "enabled": True}
+        finally:
+            await server.stop()
+
+    asyncio.run(exercise())
+
+
+def test_status_uses_existing_private_socket_and_cli_human_json(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i19-{os.getpid()}-{time.time_ns()}.sock"
+    app = create_phase2_app(
+        database_path=database,
+        oidc=_NoOidc(),
+        oauth_cookie_secret="test-only-cookie-secret",
+        meeting_audio_root=tmp_path / "meetings",
+        control_socket_path=socket,
+    )
+    with TestClient(app, base_url="https://moss.test"):
+        assert stat.S_IMODE(socket.stat().st_mode) == 0o600
+        status = asyncio.run(request_control(socket, "status"))
+        assert status["schema"] == OPERATOR_STATUS_SCHEMA
+        assert status["readiness"] == "ready"
+        assert "Readiness: ready" in render_operator_status(status)
+
+        admin_main(["--socket", str(socket), "status", "--json"])
+        machine = json.loads(capsys.readouterr().out)
+        assert machine["schema"] == OPERATOR_STATUS_SCHEMA
+        admin_main(["--socket", str(socket), "status"])
+        human = capsys.readouterr().out
+        assert "Readiness: ready" in human
+        assert "Queues:" in human
+    assert not socket.exists()
+
+
+def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellation(
+    tmp_path: Path,
+):
+    async def provision(database: Path) -> None:
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("person@example.com")
+            assert await store.admit(
+                GoogleIdentity(
+                    account_id="account-a",
+                    email="person@example.com",
+                    display_name="Person",
+                )
+            ) is not None
+        finally:
+            await store.close()
+
+    database = tmp_path / "moss.sqlite3"
+    asyncio.run(provision(database))
+    socket = Path("/tmp") / f"moss-i19-shutdown-{os.getpid()}-{time.time_ns()}.sock"
+    app = create_phase2_app(
+        database_path=database,
+        oidc=_NoOidc(),
+        oauth_cookie_secret="test-only-cookie-secret",
+        meeting_audio_root=tmp_path / "meetings",
+        control_socket_path=socket,
+    )
+    entered = threading.Event()
+    release = threading.Event()
+    request_result: list[object] = []
+
+    with TestClient(app, base_url="https://moss.test"):
+        store = app.state.phase2_store
+        original_finalize = store.finalize_account_revoke
+
+        async def held_finalize(target):
+            entered.set()
+            assert await asyncio.to_thread(release.wait, 5)
+            return await original_finalize(target)
+
+        store.finalize_account_revoke = held_finalize
+
+        def request_revoke() -> None:
+            try:
+                request_result.append(
+                    asyncio.run(
+                        request_control(socket, "accounts.revoke", "person@example.com")
+                    )
+                )
+            except BaseException as exc:
+                request_result.append(exc)
+
+        requester = threading.Thread(target=request_revoke)
+        requester.start()
+        assert entered.wait(timeout=2)
+
+        def release_after_socket_removal() -> None:
+            deadline = time.monotonic() + 3
+            while socket.exists() and time.monotonic() < deadline:
+                time.sleep(0.005)
+            release.set()
+
+        releaser = threading.Thread(target=release_after_socket_removal)
+        releaser.start()
+
+    requester.join(timeout=2)
+    releaser.join(timeout=2)
+    assert len(request_result) == 1
+    assert isinstance(request_result[0], Phase2ControlError)
+    events = list(app.state.phase2_operator_status._recent_events)
+    authority = [event for event in events if event["kind"] == "account_authority"]
+    assert authority[-1]["context"] == {
+        "enabled_accounts": 0,
+        "sign_in_sessions": 0,
+    }
+    assert events[-1]["kind"] in {"readiness", "account_authority"}
+    assert any(
+        event["kind"] == "readiness" and event["context"] == {"state": "stopping"}
+        for event in events
+    )
+    assert "person@example.com" not in json.dumps(events, sort_keys=True)
+
+
+class _HeldAcquirer:
+    def __init__(self) -> None:
+        self.release = asyncio.Event()
+
+    async def acquire(self, source_url: str, staging_dir: Path) -> Path:
+        del source_url
+        await self.release.wait()
+        path = staging_dir / "input.media"
+        path.write_bytes(b"media")
+        return path
+
+
+class _HeldRunner:
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def transcribe(self, input_path: Path, **options: object):
+        del input_path, options
+        self.started.set()
+        assert self.release.wait(timeout=5)
+        return SimpleNamespace(text="[0][S01]words[1]")
+
+
+class _FileHandle:
+    meeting_id = "file-meeting-id"
+    owner_key = ("account-id", 0)
+
+    async def commit_transcript(self, document: object) -> None:
+        del document
+
+    async def record_audio_unavailable(self) -> None:
+        return None
+
+    async def finish(self, status: str) -> None:
+        del status
+
+
+class _Workspace:
+    async def create_meeting(self, mode: str) -> _FileHandle:
+        assert mode == "file"
+        return _FileHandle()
+
+
+def test_file_registry_reports_url_acquisition_queued_then_inference_running(tmp_path: Path):
+    async def exercise() -> None:
+        runner = _HeldRunner()
+        acquirer = _HeldAcquirer()
+        tasks = FileMeetingTasks(
+            runner,
+            tmp_path / "file-work",
+            url_acquirer=acquirer,
+        )
+        handle = await tasks.accept_url(_Workspace(), "https://example.com/audio.wav")
+        assert tasks.operator_snapshot() == {handle.meeting_id: "queued"}
+        acquirer.release.set()
+        assert await asyncio.to_thread(runner.started.wait, 2)
+        for _ in range(100):
+            if tasks.operator_snapshot().get(handle.meeting_id) == "running":
+                break
+            await asyncio.sleep(0.001)
+        assert tasks.operator_snapshot() == {handle.meeting_id: "running"}
+        runner.release.set()
+        await tasks.stop()
+        assert tasks.operator_snapshot() == {}
+
+    asyncio.run(exercise())

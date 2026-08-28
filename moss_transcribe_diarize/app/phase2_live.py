@@ -118,6 +118,35 @@ class Phase2LiveMeetings:
         self._accepting_publications = True
         self.runtime._bind_publication_observer(self._publication_observer)
 
+    def operator_snapshot(self) -> dict[str, object]:
+        """Project content-free transient Live facts without exposing raw transcript state."""
+
+        meetings: dict[str, dict[str, object]] = {}
+        for meeting_id, binding in self._bindings.items():
+            snapshot = binding.public_snapshot
+            terminal_failure = None if snapshot is None else snapshot.terminal_failure
+            meetings[meeting_id] = {
+                "session_status": None if snapshot is None else snapshot.session.status,
+                "pending_canonical": 0 if snapshot is None else snapshot.pending_work_items,
+                "pending_limit": self.runtime.descriptor.bounds.max_queue_depth,
+                "persistence_failure": binding.persistence_failure,
+                "terminal_error": (
+                    None
+                    if terminal_failure is None
+                    else {
+                        "subsystem": "live",
+                        "code": terminal_failure.code,
+                        "severity": "error",
+                        "terminal": True,
+                        "retryable": terminal_failure.retryable,
+                    }
+                ),
+            }
+        return {
+            "queues": self.runtime._operator_queue_snapshot(),
+            "meetings": meetings,
+        }
+
     async def shutdown(self) -> None:
         for binding in tuple(self._bindings.values()):
             if not binding.terminal_persisted:

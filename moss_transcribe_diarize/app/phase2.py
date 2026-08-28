@@ -488,6 +488,78 @@ class Phase2Store:
             await cursor.close()
         return [{"email": row["email"], "enabled": bool(row["enabled"])} for row in rows]
 
+    async def operator_snapshot(self) -> dict[str, object]:
+        """Read durable operator aggregates once; Account content never crosses this seam."""
+
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT a.email, a.display_name, a.enabled,
+                       (SELECT COUNT(*) FROM sign_in_sessions s
+                        WHERE s.account_id = a.account_id) AS sign_in_sessions,
+                       (SELECT COUNT(*) FROM meetings m
+                        WHERE m.account_id = a.account_id AND m.mode = 'live'
+                          AND m.status = 'active') AS active_live,
+                       (SELECT COUNT(*) FROM meetings m
+                        WHERE m.account_id = a.account_id AND m.mode = 'file'
+                          AND m.status = 'active') AS active_file,
+                       (SELECT COUNT(*) FROM meetings m
+                        WHERE m.account_id = a.account_id) AS meetings,
+                       (SELECT COUNT(*) FROM meeting_transcripts t
+                        WHERE t.account_id = a.account_id) AS transcripts,
+                       (SELECT COUNT(*) FROM voiceprints v
+                        WHERE v.account_id = a.account_id) AS voiceprints,
+                       (SELECT COUNT(*) FROM llm_artifacts l
+                        WHERE l.account_id = a.account_id
+                          AND l.kind = 'final_summary') AS final_summaries,
+                       (SELECT COUNT(*) FROM meeting_audio ma
+                        WHERE ma.account_id = a.account_id
+                          AND ma.state = 'available') AS audio_available_count,
+                       COALESCE((SELECT SUM(ma.byte_count) FROM meeting_audio ma
+                        WHERE ma.account_id = a.account_id
+                          AND ma.state = 'available'), 0) AS audio_available_bytes,
+                       (SELECT COUNT(*) FROM meeting_audio ma
+                        WHERE ma.account_id = a.account_id
+                          AND ma.state = 'partial') AS audio_partial_count,
+                       COALESCE((SELECT SUM(ma.byte_count) FROM meeting_audio ma
+                        WHERE ma.account_id = a.account_id
+                          AND ma.state = 'partial'), 0) AS audio_partial_bytes,
+                       (SELECT COUNT(*) FROM meeting_audio ma
+                        WHERE ma.account_id = a.account_id
+                          AND ma.state = 'unavailable') AS audio_unavailable_count
+                FROM accounts a
+                ORDER BY a.email
+                """
+            )
+            accounts = [dict(row) for row in await cursor.fetchall()]
+            await cursor.close()
+            cursor = await self._connection.execute(
+                """
+                SELECT a.email, m.meeting_id, m.mode, m.status,
+                       m.created_at_ms
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                WHERE m.status = 'active'
+                ORDER BY m.created_at_ms, m.meeting_id
+                """
+            )
+            active_meetings = [dict(row) for row in await cursor.fetchall()]
+            await cursor.close()
+            cursor = await self._connection.execute(
+                """
+                SELECT state, COUNT(*) AS count, COALESCE(SUM(byte_count), 0) AS bytes
+                FROM meeting_audio
+                GROUP BY state
+                """
+            )
+            audio = [dict(row) for row in await cursor.fetchall()]
+            await cursor.close()
+        return {
+            "accounts": accounts,
+            "active_meetings": active_meetings,
+            "audio": audio,
+        }
+
     async def revoke_email(self, email: str) -> bool:
         """Direct store primitive retained for offline recovery/tests, not the host CLI."""
 
@@ -1776,6 +1848,7 @@ def create_phase2_app(
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
         control_server = None
+        operator_status = None
         lifecycle = None
         try:
             await store.recover_active_meetings(
@@ -1803,8 +1876,29 @@ def create_phase2_app(
                 phase2_live.start()
             if control_socket_path is not None:
                 from .phase2_control import Phase2ControlServer
+                from .phase2_operator import Phase2OperatorStatus
 
-                control_server = Phase2ControlServer(control_socket_path, lifecycle)
+                operator_status = Phase2OperatorStatus(
+                    store,
+                    database_path=database_path,
+                    audio_root=audio_archive.root,
+                    live=phase2_live,
+                    files=file_tasks,
+                    v2_sessions=getattr(app.state, "live_v2_sessions", None),
+                    helper_presence=getattr(app.state, "live_helper_presence", None),
+                    capture_observations=getattr(
+                        app.state,
+                        "live_capture_observations",
+                        None,
+                    ),
+                )
+                await operator_status.start()
+                app.state.phase2_operator_status = operator_status
+                control_server = Phase2ControlServer(
+                    control_socket_path,
+                    lifecycle,
+                    operator_status,
+                )
                 await control_server.start()
                 app.state.phase2_control = control_server
             yield
@@ -1813,6 +1907,8 @@ def create_phase2_app(
                 await control_server.stop()
             if lifecycle is not None:
                 await lifecycle.shutdown()
+            if operator_status is not None:
+                await operator_status.stop()
             if phase2_live is not None:
                 await phase2_live.shutdown()
             if file_tasks is not None:

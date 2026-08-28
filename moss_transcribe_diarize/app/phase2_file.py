@@ -22,10 +22,11 @@ DEFAULT_PHASE2_FILE_WORK_ROOT = (
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _OwnedFileTask:
     handle: Any
     task: asyncio.Task[None]
+    phase: str = "queued"
 
 
 class FileMeetingTasks:
@@ -145,6 +146,15 @@ class FileMeetingTasks:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
+    def operator_snapshot(self) -> dict[str, str]:
+        """Return only process-owned File phases; Meeting ownership stays in SQLite."""
+
+        return {
+            meeting_id: entry.phase
+            for meeting_id, entry in self._tasks.items()
+            if entry.phase in {"queued", "running"}
+        }
+
     async def interrupt_account(self, owner_key: tuple[str, int]) -> tuple[str, ...]:
         """Quiesce this Account generation, then durably interrupt its active File rows."""
 
@@ -198,6 +208,13 @@ class FileMeetingTasks:
         meeting_id = handle.meeting_id
         self._tasks[meeting_id] = _OwnedFileTask(handle=handle, task=task)
         task.add_done_callback(lambda completed: self._task_done(meeting_id, completed))
+
+    def _set_phase(self, meeting_id: str, phase: str) -> None:
+        if phase not in {"queued", "running"}:
+            raise ValueError("File task phase must be queued or running.")
+        entry = self._tasks.get(meeting_id)
+        if entry is not None:
+            entry.phase = phase
 
     def _task_done(self, meeting_id: str, task: asyncio.Task[None]) -> None:
         entry = self._tasks.get(meeting_id)
@@ -254,6 +271,7 @@ class FileMeetingTasks:
         runner_task = asyncio.create_task(
             asyncio.to_thread(self._transcribe_from_one_mix, input_path, options)
         )
+        self._set_phase(handle.meeting_id, "running")
         started.set()
         try:
             await self._complete(handle, input_path, runner_task)
