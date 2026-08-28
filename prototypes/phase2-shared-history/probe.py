@@ -247,8 +247,10 @@ def main() -> None:
     rows = (
         MeetingRecord("active-new", "account-a", "live", None, "automatic", "active", NOW_MS - 1_000, "live now"),
         MeetingRecord("active-old", "account-a", "file", "Upload running", "automatic", "active", NOW_MS - 2 * DAY_MS, "upload"),
-        MeetingRecord("terminal-tie-z", "account-a", "file", "URL review", "automatic", "completed", NOW_MS - 2_000, "url sentinel"),
-        MeetingRecord("terminal-tie-a", "account-a", "file", "Upload review", "automatic", "failed", NOW_MS - 2_000, "upload failed"),
+        MeetingRecord("a-token", "account-a", "file", "URL review", "automatic", "completed", NOW_MS - 2_000, "url sentinel"),
+        MeetingRecord("_token", "account-a", "file", "Upload review", "automatic", "failed", NOW_MS - 2_000, "upload failed"),
+        MeetingRecord("Z-token", "account-a", "live", "Mixed case", "automatic", "completed", NOW_MS - 2_000, "mixed case"),
+        MeetingRecord("-token", "account-a", "live", "Hyphen", "automatic", "interrupted", NOW_MS - 2_000, "hyphen"),
         MeetingRecord("terminal-yesterday", "account-a", "live", "Yesterday live", "automatic", "interrupted", NOW_MS - DAY_MS, "prefix"),
         MeetingRecord("foreign", "account-b", "live", "foreign sentinel", "manual", "active", NOW_MS, "foreign text"),
     )
@@ -266,7 +268,7 @@ def main() -> None:
         "terminal-yesterday",
     ]
     assert client_a_groups[0].meeting_ids == ("active-new", "active-old")
-    assert client_a_groups[1].meeting_ids == ("terminal-tie-z", "terminal-tie-a")
+    assert client_a_groups[1].meeting_ids == ("a-token", "_token", "Z-token", "-token")
 
     search_groups = history_projection(client_a, query="URL SENTINEL")
     selected = reconcile_selection(client_a, "active-new")
@@ -277,7 +279,7 @@ def main() -> None:
         selected=selected,
         missing_selection=reconcile_selection(client_a, "foreign"),
     )
-    assert search_groups[0].meeting_ids == ("terminal-tie-z",)
+    assert search_groups[0].meeting_ids == ("a-token",)
     assert selected == "active-new"
     assert reconcile_selection(client_a, "foreign") is None
 
@@ -300,7 +302,7 @@ def main() -> None:
     assert new_york_bucket == "today"
 
     client_b_before = store.list_owner("account-a")
-    handle = store.open_owner("account-a", "terminal-tie-z")
+    handle = store.open_owner("account-a", "a-token")
     assert handle is not None
     renamed = handle.rename("  Customer URL review  ")
     client_a_after = store.list_owner("account-a")

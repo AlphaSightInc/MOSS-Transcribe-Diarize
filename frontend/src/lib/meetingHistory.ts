@@ -89,5 +89,9 @@ export function formatMeetingTimestamp(createdAtMs: number, now: Date = new Date
 function compareMeetings(left: Meeting, right: Meeting): number {
   const leftRank = left.status === "active" ? 0 : 1;
   const rightRank = right.status === "active" ? 0 : 1;
-  return leftRank - rightRank || right.created_at_ms - left.created_at_ms || right.id.localeCompare(left.id);
+  const ranked = leftRank - rightRank || right.created_at_ms - left.created_at_ms;
+  if (ranked !== 0 || left.id === right.id) return ranked;
+  // Meeting IDs use the ASCII base64url alphabet. Relational comparison preserves the same
+  // binary/code-point order as SQLite's default BINARY collation; localeCompare does not.
+  return left.id < right.id ? 1 : -1;
 }

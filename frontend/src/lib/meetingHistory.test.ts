@@ -30,8 +30,10 @@ describe("Meeting history projection", () => {
       meeting({ id: "terminal-new", status: "completed", created_at_ms: now.getTime() - 1_000 }),
       meeting({ id: "active-old", status: "active", created_at_ms: now.getTime() - 4 * 86_400_000 }),
       meeting({ id: "active-new", status: "active", created_at_ms: now.getTime() - 500 }),
-      meeting({ id: "tie-a", status: "failed", created_at_ms: now.getTime() - 2_000 }),
-      meeting({ id: "tie-z", status: "interrupted", created_at_ms: now.getTime() - 2_000 }),
+      meeting({ id: "a-token", status: "failed", created_at_ms: now.getTime() - 2_000 }),
+      meeting({ id: "_token", status: "interrupted", created_at_ms: now.getTime() - 2_000 }),
+      meeting({ id: "Z-token", status: "failed", created_at_ms: now.getTime() - 2_000 }),
+      meeting({ id: "-token", status: "interrupted", created_at_ms: now.getTime() - 2_000 }),
       meeting({ id: "yesterday", created_at_ms: new Date(2026, 7, 27, 9).getTime() }),
       meeting({ id: "earlier", created_at_ms: new Date(2026, 7, 20, 9).getTime() })
     ], now);
@@ -40,8 +42,10 @@ describe("Meeting history projection", () => {
     expect(groups[0].meetings.map(({ id }) => id)).toEqual(["active-new", "active-old"]);
     expect(groups[1].meetings.map(({ id }) => id)).toEqual([
       "terminal-new",
-      "tie-z",
-      "tie-a"
+      "a-token",
+      "_token",
+      "Z-token",
+      "-token"
     ]);
   });
 

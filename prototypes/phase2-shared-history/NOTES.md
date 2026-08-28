@@ -19,7 +19,8 @@ The smallest reference-compatible hierarchy is:
 The single Active section contains every active Meeting before any terminal Meeting, even when an
 active Meeting is older than today's terminal work. Terminal Meetings reuse the reference's three
 local-calendar date groups. Within every emitted group, `created_at_ms` descending is primary and
-opaque Meeting ID descending is the deterministic tie-break. Search filters title, mode, status,
+opaque Meeting ID descending under SQLite binary/ASCII code-point order is the deterministic
+tie-break; the probe attacks it with mixed-case, underscore, and hyphen base64url IDs. Search filters title, mode, status,
 and transcript text locally;
 selection is a locator retained across refresh only while it remains in the Account-owned list;
 the refreshed record replaces stale selected details. Neither grants authority. Day classification
