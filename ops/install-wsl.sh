@@ -19,10 +19,10 @@ fi
 echo "Installing uv-managed Python 3.12..."
 "${UV_BIN}" python install 3.12
 
-echo "Creating the isolated Python environment..."
+echo "Creating the isolated GPU environment..."
 "${UV_BIN}" venv --python 3.12 --managed-python --seed "${VENV_DIR}"
 
-echo "Installing the pinned vLLM backend and project..."
+echo "Installing the pinned vLLM backend and model composition..."
 "${UV_BIN}" pip install \
   --python "${VENV_DIR}/bin/python" \
   --upgrade vllm \
@@ -41,6 +41,7 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   sudo -n apt-get install -y ffmpeg
 fi
 
-echo "Environment ready: ${VENV_DIR}"
+echo "GPU environment ready: ${VENV_DIR}"
+echo "Stage a reviewed Account candidate separately with ops/stage-account-candidate.sh."
 "${VENV_DIR}/bin/python" --version
 "${UV_BIN}" --version

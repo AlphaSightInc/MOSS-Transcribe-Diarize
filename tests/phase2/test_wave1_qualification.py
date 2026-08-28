@@ -1,0 +1,2179 @@
+from __future__ import annotations
+
+import json
+import math
+import copy
+import base64
+import csv
+import hashlib
+import io
+import zipfile
+import os
+import stat
+from types import SimpleNamespace
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import pytest
+
+from moss_transcribe_diarize import phase2_acceptance as acceptance
+from moss_transcribe_diarize.phase2_acceptance_collect import (
+    RAW_SCHEMA,
+    collect_layer,
+    write_collected_report,
+)
+from moss_transcribe_diarize.phase2_acceptance_replay import AccountCookieLiveReplayService
+from moss_transcribe_diarize import phase2_acceptance_measure as measurement
+from moss_transcribe_diarize import phase2_acceptance_external as external
+from moss_transcribe_diarize import phase2_acceptance_browser as browser_measurement
+from moss_transcribe_diarize.phase2_acceptance_measure import measure_layer
+from moss_transcribe_diarize.installed_candidate import (
+    installer_owned_empty_record,
+    record_projection_sha256,
+)
+
+
+FIXTURES = {
+    "quality_corpus_manifest": "80fc15bd730f7aa44d8a69aa6e7e00aaf43ed54e2af8a03abc2c8934d7438d7c",
+    "concurrency_fixture": "d893248526fc29845817c06affb9d665d0cde6600e7a16c35945a695e8bb9aee",
+    "concurrency_preregistration": "b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52",
+}
+ROOT = Path(__file__).resolve().parents[2]
+
+
+class _Response:
+    def __init__(
+        self,
+        status_code: int,
+        payload: object | None = None,
+        *,
+        content: bytes | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self._payload = {} if payload is None else payload
+        self.content = (
+            json.dumps(self._payload, sort_keys=True).encode()
+            if content is None
+            else content
+        )
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload
+
+
+def _campaign(tmp_path: Path, **config: str) -> external.FixedAccountCampaign:
+    journal = tmp_path / "operator.jsonl"
+    journal.write_text("", encoding="utf-8")
+    values = {
+        "campaign_work_dir": str(tmp_path / "campaign"),
+        "operator_journal": str(journal),
+        **config,
+    }
+    return external.FixedAccountCampaign(candidate_sha="a" * 40, config=values)
+
+
+def _case() -> dict[str, object]:
+    return {
+        "cases": [{"id": "case-1", "executed": True, "passed": True}],
+        "counts": {
+            "collected": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "unmeasured": 0,
+        },
+    }
+
+
+def _capacity_raw() -> dict[str, object]:
+    sessions = []
+    for ordinal in range(1, 5):
+        sessions.append(
+            {
+                "session_ordinal": ordinal,
+                "account_ordinal": 1 if ordinal % 2 else 2,
+                "frames": 1200,
+                "lags": [1.0, 2.0],
+                "accepted_samples": 9_600_000,
+                "accounted_samples": 9_600_000,
+                "maximum_pending_work_items": 1,
+                "own_marker_present": True,
+                "foreign_markers_absent": True,
+                "events": [
+                    {
+                        "kind": "canonical_queued",
+                        "runtime_monotonic_ns": ordinal,
+                    },
+                    {
+                        "kind": "canonical_started",
+                        "runtime_monotonic_ns": 10 + ordinal,
+                    },
+                    {
+                        "kind": "canonical_processed",
+                        "runtime_monotonic_ns": 20 + ordinal,
+                        "canonical_decode_elapsed_sec": 0.9,
+                        "frozen_span_duration_sec": 1.0,
+                    },
+                    {
+                        "kind": "rolling_decode_queued",
+                        "runtime_monotonic_ns": 30 + ordinal,
+                        "admitted": True,
+                        "item_id": 1,
+                    },
+                    {
+                        "kind": "rolling_decode_completed",
+                        "runtime_monotonic_ns": 40 + ordinal,
+                        "item_id": 1,
+                        "outcome": "published",
+                    },
+                ],
+            }
+        )
+    return {
+        "sessions": 4,
+        "accounts": 2,
+        "requested_duration_seconds": 600,
+        "duration_seconds": 600,
+        "campaign_interval": {
+            "started_monotonic_ns": 1_000_000_000,
+            "finished_monotonic_ns": 601_000_000_000,
+        },
+        "real_human_speech": True,
+        "ingress_cadence_seconds": 0.5,
+        "continuous_wrong_owner_probes": True,
+        "transcript_lag_seconds": {f"s{index}": [1.0, 2.0] for index in range(4)},
+        "dispatch_skew": 1,
+        "prestop_inference_rtf": 0.9,
+        "refinement_queue_depth": 1,
+        "vllm_gpu_cache_use": 0.9,
+        "rss_growth_bytes": 4 * 1024**3,
+        "rss_samples": [0, 4 * 1024**3],
+        "vllm_gpu_cache_samples": [0.8, 0.9],
+        "session_observations": sessions,
+        "wrong_owner_observations": [
+            {
+                "session_ordinal": ordinal,
+                "sequence": sequence,
+                "status": 404,
+                "foreign_matches": 0,
+            }
+            for sequence in range(1200)
+            for ordinal in range(1, 5)
+        ],
+        "log_match_counts": {"oom": 0, "accelerator": 0},
+        "backpressure_observation": {
+            "observed_429": True,
+            "peer_progress": True,
+            "same_sequence_retry": True,
+        },
+    }
+
+
+def _overload_raw() -> dict[str, object]:
+    value = _capacity_raw()
+    template = value["session_observations"]
+    sessions = []
+    for ordinal in range(1, 9):
+        item = copy.deepcopy(template[(ordinal - 1) % 4])
+        item.update(
+            {
+                "session_ordinal": ordinal,
+                "account_ordinal": 1 if ordinal % 2 else 2,
+                "frames": 60,
+                "accepted_samples": 480_000,
+                "accounted_samples": 480_000,
+            }
+        )
+        for event in item["events"]:
+            event["runtime_monotonic_ns"] += ordinal * 100
+        sessions.append(item)
+    value.update(
+        {
+            "sessions": 8,
+            "accounts": 2,
+            "requested_duration_seconds": 30,
+            "duration_seconds": 30,
+            "campaign_interval": {
+                "started_monotonic_ns": 1_000_000_000,
+                "finished_monotonic_ns": 31_000_000_000,
+            },
+            "session_observations": sessions,
+            "wrong_owner_observations": [
+                {
+                    "session_ordinal": ordinal,
+                    "sequence": sequence,
+                    "status": 404,
+                    "foreign_matches": 0,
+                }
+                for sequence in range(60)
+                for ordinal in range(1, 9)
+            ],
+            "isolation_failures": 0,
+            "fairness_failures": 0,
+            "sequence_gaps": 0,
+            "cross_account_sentinel_deliveries": 0,
+        }
+    )
+    return value
+
+
+def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
+    values: dict[str, dict[str, object]] = {
+        "installed_candidate_identity": {
+            "candidate_sha": sha,
+            "candidate_tree": "c" * 40,
+            "uv_lock_sha256": "d" * 64,
+            "fixtures": FIXTURES,
+            "candidate_header_sha": sha,
+            "wheel_record_verified": True,
+            "wheel_record_entries_verified": 80,
+            "wheel_record_projection_sha256": "f" * 64,
+            "dependency_projection_sha256": "e" * 64,
+            "sqlite_runtime": "3.53.4",
+            "aiosqlite": "0.22.1",
+            "authlib": "1.7.2",
+            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/srv/venv/python", "cmdline": "mtd-phase2-web"},
+            "toolchain": {name: "version" for name in ("chrome", "node", "npm", "ffmpeg", "ffprobe")},
+            "accelerator": {"vllm": "1", "torch": "1", "cuda": "1"},
+            "tls": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"},
+            "input_fixtures": {"file": {"sha256": "1" * 64, "bytes": 100, "channels": 1, "sample_width_bytes": 2, "sample_rate_hz": 16000, "frames": 10}, "url": acceptance.QUALIFICATION_URL_FIXTURE},
+            "descriptor": {
+                "source_revision": sha,
+                "provider_name": "vllm",
+                "provider_revision": "1",
+                "provider_manifest_hash": "1" * 64,
+                "schema_version": 1,
+                "live_protocol_version": "moss-live-service.v2",
+                "sample_rate": 16000,
+                "frame_samples": 8000,
+                "bounds": {"max": 1},
+                "config_hashes": {
+                    "endpoint_config_hash": "2" * 64,
+                    "identity_config_hash": "3" * 64,
+                    "decoder_config_hash": "4" * 64,
+                    "combined_config_hash": "5" * 64,
+                },
+                "combined_config_hash": "5" * 64,
+            },
+        },
+        "zero_work_end": {"active_live": 0, "active_file": 0, "queue_depths": {"batch": 0, "live": 0}},
+        "cross_owner_matrix": {
+            "cases": [
+                {
+                    "id": case_id,
+                    "method": method,
+                    "route": route,
+                    "observed_status": status,
+                    "owner_state_unchanged": True,
+                    "owner_content_matches": 0,
+                }
+                for case_id, (method, route, status) in acceptance.G1_CROSS_OWNER_MATRIX.items()
+            ]
+        },
+        "sentinel_absence": {
+            "audio_sentinel_checks": [
+                {
+                    "owner_status": 200,
+                    "owner_identity_match": True,
+                    "foreign_status": 404,
+                    "foreign_artifact_bytes": 0,
+                }
+                for _ in range(2)
+            ],
+            "surfaces": [
+                {"id": surface, "searches": 2, "foreign_matches": 0}
+                for surface in sorted(acceptance.G1_SENTINEL_SURFACES)
+            ]
+        },
+        "same_account_convergence": {"clients": 2, "observations": 4, "mismatches": 0},
+        "real_google_oauth": {"provider": "google", "real_external_accounts": True, "allowed_completed": 1, "denied_completed": 1, "denied_accounts_created": 0, "tls_trusted_without_interstitial": True, "tls_identity": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"}, "browser_restart_session_survived": True, "history_survived_restart": True, "callback_url": acceptance.GOOGLE_CALLBACK_URL, "callback_observations": 2, "cookie_contract": {"cookie_secure": True, "cookie_http_only": True, "cookie_same_site": "Lax"}},
+        "revocation_lifecycle": {"cases": 4, "failures": 0, "late_commits": 0, "stale_authority_revived": 0, "durable_prefix_preserved": True, "partial_audio_playable": True},
+        "meeting_modes_history_restart": {"modes": ["live", "file", "multi_file", "url", "serial_batch"], "same_account_clients": 2, "history_mismatches": 0, "restart_failures": 0, "one_item_failure_isolated": True, "submissions": {"single_file": 1, "multi_file": 2, "url": 2, "serial_batch": 6, "browser_closed_after_accept": 1, "accepted_failure": 1, "input_boundary_rejection": 1}},
+        "crash_recovery": {"cases": 2, "nonempty_durable_prefix": True, "lost_commits": 0, "durable_document_mismatches": 0, "audio_prefix_failures": 0, "process_replaced": True, "resumed_capture": 0, "non_interrupted_active_rows": 0},
+        "four_session_capacity": _capacity_raw(),
+        "eight_session_overload": _overload_raw(),
+        "quality_corpus": {
+            "cases": 6,
+            "passes": 2,
+            "sessions": 12,
+            "windows": 122,
+            "duration_seconds": 1239.987,
+            "corpus_manifest_sha256": FIXTURES["quality_corpus_manifest"],
+            "input_identities": [
+                {
+                    "case_id": case_id,
+                    "checks": {
+                        "wav_sha256": True,
+                        "wav_bytes": True,
+                        "pcm_sha256": True,
+                        "samples": True,
+                        "reference_sha256": True,
+                    },
+                    "source_present": False,
+                    "source_audio_match": None,
+                    "source_reference_match": None,
+                }
+                for case_id in sorted(acceptance.QUALITY_CASE_IDS)
+            ],
+            "per_case": [
+                {
+                    "case_id": sorted(acceptance.QUALITY_CASE_IDS)[index % 6],
+                    "pass": index // 6 + 1,
+                    "session_id": f"session-{index}",
+                    "category": "speech",
+                    "duration_seconds": 1239.987 / 12,
+                    "windows": 11 if index < 2 else 10,
+                    "metrics": {
+                        surface: {
+                            "wer": {"immediate": 0.16, "settled": 0.14, "final": 0.09}[surface],
+                            "tbsa": 0.88,
+                            "der": 0.16,
+                            "content_recall": 0.93,
+                            "matched_word_speaker_accuracy": 0.92,
+                            "reference_speech_der": 0.13,
+                        }
+                        for surface in ("immediate", "settled", "final")
+                    },
+                }
+                for index in range(12)
+            ],
+            "per_category": {"speech": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13}},
+            "duration_weighted": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13},
+            "macro": {
+                "immediate_wer": 0.16,
+                "settled_wer": 0.14,
+                "recall": 0.93,
+                "time_speaker_attribution": 0.88,
+                "diarization_error_rate": 0.16,
+                "matched_speaker_accuracy": 0.92,
+                "reference_speech_der": 0.13,
+                "final_wer": 0.09,
+            },
+        },
+        "audio_durability_download": {"live_cases": 1, "file_cases": 1, "format_mismatches": 0, "durability_failures": 0, "cleanup_failures": 0, "owner_download_failures": 0, "foreign_leaks": 0, "unauthenticated_failures": 0, "revoked_failures": 0, "partial_download_failures": 0, "partial_or_unavailable_crash_cases": 1, "path_failures": 0, "permission_failures": 0, "out_of_band_reconciled": True, "ffprobe": [{"codec": "mp3"}, {"codec": "mp3"}, {"codec": "mp3"}]},
+        "operator_control": {"socket_mode": "0600", "tcp_admin_surfaces": 0, "forbidden_content_matches": 0, "count_mismatches": 0, "interrupt_probe": {"admitted_work_observed": True, "admitted_started": True, "command_interrupted": True, "durable_interrupted": True, "transcript_unchanged": True, "target_active_after": 0, "queue_depth_after": 0, "queued_item_started_events": 0, "admitted_item_processed_events": 0, "queued_item_discarded_events": 1, "audio_partial_playable": True, "late_frame_status": 409}},
+        "account_product_regression": {"suites": [{"collected": 1, "executed": 1, "passed": 1, "failed": 0, "skipped": 0, "unmeasured": 0} for _ in range(4)]},
+        "transcript_pane_fidelity": {"viewports": [{"width": 1440, "height": 900, "total_difference": 0.02, "largest_connected_difference": 0.01}, {"width": 1280, "height": 800, "total_difference": 0.02, "largest_connected_difference": 0.01}], "reference_identity": {"head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70", "clean": True}},
+    }
+    return values[predicate_id]
+
+
+def _report(layer: str, sha: str, wheel: str) -> dict[str, object]:
+    predicates = []
+    for gate, predicate_ids in acceptance.EXTERNAL_REQUIREMENTS[layer].items():
+        for predicate_id in predicate_ids:
+            predicates.append({"gate": gate, "id": predicate_id, **_case(), "raw": _raw(predicate_id, sha, wheel)})
+    return {"schema": acceptance.OBSERVATION_SCHEMA, "layer": layer, "candidate_sha": sha, "predicates": predicates}
+
+
+def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only():
+    sha = "a" * 40
+    wheel = "b" * 64
+    report = _report("deployed", sha, wheel)
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert all(outcomes.values())
+    assert errors == []
+
+    capacity = next(item for item in report["predicates"] if item["id"] == "four_session_capacity")
+    capacity["raw"]["session_observations"][0]["lags"] = [10.000001]
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert "deployed:G4:four_session_capacity:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    capacity = next(item for item in report["predicates"] if item["id"] == "four_session_capacity")
+    capacity["raw"]["session_observations"].pop()
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    quality["raw"]["macro"]["final_wer"] = math.nan
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert "deployed:G4:four_session_capacity:failed" in errors
+    assert "deployed:G4:quality_corpus:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    identity = next(item for item in report["predicates"] if item["id"] == "installed_candidate_identity")
+    identity["raw"]["candidate_tree"] = "e" * 40
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G0"] is False
+    assert "deployed:G0:installed_candidate_identity:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    matrix = next(item for item in report["predicates"] if item["id"] == "cross_owner_matrix")
+    matrix["raw"]["cases"][0]["owner_state_unchanged"] = False
+    sentinel = next(item for item in report["predicates"] if item["id"] == "sentinel_absence")
+    sentinel["raw"]["surfaces"].pop()
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G1"] is False
+    assert "deployed:G1:cross_owner_matrix:failed" in errors
+    assert "deployed:G1:sentinel_absence:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    quality["raw"]["per_case"][0]["metrics"]["final"]["wer"] = 1.0
+    overload = next(
+        item for item in report["predicates"] if item["id"] == "eight_session_overload"
+    )
+    overload["raw"]["wrong_owner_observations"].pop()
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert "deployed:G4:quality_corpus:failed" in errors
+    assert "deployed:G4:eight_session_overload:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    oauth = next(item for item in report["predicates"] if item["id"] == "real_google_oauth")
+    oauth["raw"]["callback_url"] = "https://other.example/auth/google/callback"
+    operator = next(item for item in report["predicates"] if item["id"] == "operator_control")
+    operator["raw"]["interrupt_probe"]["admitted_item_processed_events"] = 1
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G2"] is False
+    assert outcomes["G6"] is False
+    assert "deployed:G2:real_google_oauth:failed" in errors
+    assert "deployed:G6:operator_control:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    quality["raw"]["input_identities"][0]["checks"]["wav_sha256"] = False
+    crash = next(item for item in report["predicates"] if item["id"] == "crash_recovery")
+    crash["raw"]["audio_prefix_failures"] = 1
+    operator = next(item for item in report["predicates"] if item["id"] == "operator_control")
+    operator["raw"]["interrupt_probe"]["queued_item_discarded_events"] = 0
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G3"] is False
+    assert outcomes["G4"] is False
+    assert outcomes["G6"] is False
+
+
+def test_owner_state_digest_detects_same_shape_content_mutation():
+    before = {
+        "id": "meeting",
+        "mode": "live",
+        "status": "active",
+        "title": "alpha",
+        "title_source": "owner",
+        "created_at_ms": 1,
+        "updated_at_ms": 1,
+        "transcript": {"version": 1, "segments": [{"speaker": "Speaker_1", "text": "alpha"}]},
+        "audio": {"state": "partial", "byte_count": 100},
+    }
+    after = copy.deepcopy(before)
+    after["title"] = "bravo"
+    after["transcript"]["segments"][0]["text"] = "bravo"
+    assert external._owner_state_digest(before) != external._owner_state_digest(after)
+
+
+def test_candidate_owned_collector_derives_fresh_report_and_binds_raw_artifacts(tmp_path: Path):
+    sha = "a" * 40
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir(mode=0o700)
+    for gate, predicate_ids in acceptance.EXTERNAL_REQUIREMENTS["deployed"].items():
+        for predicate_id in predicate_ids:
+            payload = {
+                "schema": RAW_SCHEMA,
+                "layer": "deployed",
+                "candidate_sha": sha,
+                "gate": gate,
+                "id": predicate_id,
+                "samples": [{"id": f"{predicate_id}-1", "executed": True, "passed": True}],
+                "raw": _raw(predicate_id, sha, "unused"),
+            }
+            (raw_dir / f"deployed--{gate}--{predicate_id}.json").write_text(
+                json.dumps(payload), encoding="utf-8"
+            )
+    (raw_dir / "measurement-state.json").write_text(
+        json.dumps(
+            {
+                "schema": "moss-phase2-fixed-measurement.v1",
+                "layer": "deployed",
+                "candidate_sha": sha,
+                "campaign_artifacts": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = collect_layer(layer="deployed", candidate_sha=sha, raw_dir=raw_dir)
+    output = tmp_path / "report.json"
+    write_collected_report(report, output)
+    with pytest.raises(FileExistsError):
+        write_collected_report(report, output)
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    assert acceptance._capture_collector_artifacts(
+        report,
+        layer="deployed",
+        raw_dir=raw_dir,
+        bundle=bundle,
+        forbidden=(),
+    ) == []
+    bundle.close()
+    assert len(
+        tuple(
+            (tmp_path / "attempt" / "raw" / "deployed-collector").glob(
+                "deployed--*.json"
+            )
+        )
+    ) == sum(len(value) for value in acceptance.EXTERNAL_REQUIREMENTS["deployed"].values())
+    first = next(raw_dir.glob("deployed--*.json"))
+    duplicated = json.loads(first.read_text(encoding="utf-8"))
+    duplicated["samples"].append(dict(duplicated["samples"][0]))
+    first.write_text(json.dumps(duplicated), encoding="utf-8")
+    with pytest.raises(ValueError, match="raw sample is incomplete"):
+        collect_layer(layer="deployed", candidate_sha=sha, raw_dir=raw_dir)
+
+
+def test_fixed_measurement_creates_raw_itself_and_missing_prerequisites_are_unmeasured(
+    tmp_path: Path,
+):
+    raw_dir = tmp_path / "fresh-workspace" / "raw"
+    state = measure_layer(
+        layer="deployed",
+        candidate_sha="a" * 40,
+        config={},
+        raw_dir=raw_dir,
+    )
+    assert state["qualified"] is False
+    assert state["counts"] == {
+        "required": 16,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "unmeasured": 16,
+    }
+    report = collect_layer(
+        layer="deployed", candidate_sha="a" * 40, raw_dir=raw_dir
+    )
+    assert all(
+        predicate["counts"]["unmeasured"] == 1
+        and predicate["counts"]["executed"] == 0
+        for predicate in report["predicates"]
+    )
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha="a" * 40,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert not any(outcomes.values())
+    assert errors
+    with pytest.raises(FileExistsError):
+        measure_layer(
+            layer="deployed",
+            candidate_sha="a" * 40,
+            config={},
+            raw_dir=raw_dir,
+        )
+
+
+def test_fixed_measurement_runs_every_candidate_owned_producer_then_cleanup_and_zero(
+    monkeypatch, tmp_path: Path,
+):
+    calls: list[str] = []
+
+    class FakeCampaign:
+        def __init__(self, *, candidate_sha: str, config: object) -> None:
+            assert candidate_sha == "a" * 40
+            self.root = tmp_path / "campaign"
+            self.root.mkdir()
+            artifact = self.root / "safe" / "counts.json"
+            artifact.parent.mkdir()
+            artifact.write_text('{"count": 1}\n', encoding="utf-8")
+
+        @property
+        def artifact_root(self) -> Path:
+            return self.root
+
+        @property
+        def safe_artifacts(self) -> tuple[Path, ...]:
+            return (Path("safe/counts.json"),)
+
+        def cleanup(self) -> None:
+            calls.append("cleanup")
+
+        def close(self) -> None:
+            calls.append("close")
+
+        def __getattr__(self, name: str):
+            if name not in measurement.PREDICATE_FAMILY:
+                raise AttributeError(name)
+
+            def run() -> dict[str, object]:
+                calls.append(name)
+                return {"producer": name}
+
+            return run
+
+    monkeypatch.setattr(measurement, "FixedAccountCampaign", FakeCampaign)
+    config = {
+        prerequisite.key: "supplied"
+        for requirements in measurement.PREDICATE_PREREQUISITES.values()
+        for prerequisite in requirements
+    }
+    raw_dir = tmp_path / "attempt" / "raw"
+    state = measure_layer(
+        layer="deployed",
+        candidate_sha="a" * 40,
+        config=config,
+        raw_dir=raw_dir,
+    )
+    required = [
+        predicate_id
+        for gate, predicate_ids in acceptance.EXTERNAL_REQUIREMENTS["deployed"].items()
+        for predicate_id in predicate_ids
+        if predicate_id not in {"zero_work_end", "revocation_lifecycle"}
+    ]
+    required.extend(("revocation_lifecycle", "cleanup", "zero_work_end", "close"))
+    assert calls == required
+    assert state["qualified"] is True
+    assert state["counts"] == {
+        "required": 16,
+        "executed": 16,
+        "passed": 16,
+        "failed": 0,
+        "unmeasured": 0,
+    }
+    assert state["campaign_artifacts"] == ["safe/counts.json"]
+    copied = raw_dir / "artifacts" / "safe" / "counts.json"
+    assert copied.read_text(encoding="utf-8") == '{"count": 1}\n'
+    assert stat.S_IMODE(copied.stat().st_mode) == 0o600
+
+
+def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
+    monkeypatch, tmp_path: Path,
+):
+    calls: list[str] = []
+
+    class FailingCampaign:
+        safe_artifacts: tuple[Path, ...] = ()
+
+        def __init__(self, **_: object) -> None:
+            self.artifact_root = tmp_path / "campaign"
+
+        def cleanup(self) -> None:
+            calls.append("cleanup")
+
+        def close(self) -> None:
+            calls.append("close")
+
+        def __getattr__(self, name: str):
+            if name not in measurement.PREDICATE_FAMILY:
+                raise AttributeError(name)
+
+            def run() -> dict[str, object]:
+                calls.append(name)
+                if name == "operator_control":
+                    raise RuntimeError("injected producer failure")
+                return {"producer": name}
+
+            return run
+
+    monkeypatch.setattr(measurement, "FixedAccountCampaign", FailingCampaign)
+    config = {
+        prerequisite.key: "supplied"
+        for requirements in measurement.PREDICATE_PREREQUISITES.values()
+        for prerequisite in requirements
+    }
+    state = measure_layer(
+        layer="deployed",
+        candidate_sha="a" * 40,
+        config=config,
+        raw_dir=tmp_path / "attempt" / "raw",
+    )
+    assert state["qualified"] is False
+    assert state["counts"]["failed"] == 1
+    assert calls[-3:] == ["cleanup", "zero_work_end", "close"]
+
+
+def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
+    monkeypatch, tmp_path: Path,
+):
+    manifest = tmp_path / "candidate.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "git_sha": "a" * 40,
+                "git_tree": "b" * 40,
+                "uv_lock_sha256": "c" * 64,
+                "fixtures": FIXTURES,
+                "installed_record": {
+                    "record_verified": True,
+                    "record_entries_verified": 12,
+                },
+                "wheel_record_projection_sha256": "d" * 64,
+                "dependency_projection": {
+                    "sha256": "e" * 64,
+                    "packages": [
+                        {"name": "aiosqlite", "version": "0.22.1"},
+                        {"name": "Authlib", "version": "1.7.2"},
+                    ],
+                },
+                "sqlite_runtime": "3.53.4",
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest.chmod(0o600)
+    fixture = tmp_path / "fixture.wav"
+    fixture.write_bytes(b"fixture")
+    descriptor = {
+        "source_revision": "a" * 40,
+        "provider_name": "provider",
+        "provider_revision": "revision",
+        "provider_manifest_hash": "f" * 64,
+        "schema_version": "schema",
+        "live_protocol_version": "protocol",
+        "sample_rate": 16_000,
+        "frame_samples": 8_000,
+        "bounds": {"limit": 4},
+        "config_hashes": {"combined_config_hash": "1" * 64},
+    }
+
+    class IdentityClient:
+        def json(self, *_: object, **__: object):
+            return {"descriptor": descriptor}, _Response(
+                200, headers={"X-MOSS-Candidate-SHA": "a" * 40}
+            )
+
+        def close(self) -> None:
+            pass
+
+    campaign = _campaign(
+        tmp_path,
+        candidate_manifest=str(manifest),
+        url_fixture=acceptance.QUALIFICATION_URL_FIXTURE,
+        file_fixture=str(fixture),
+        chrome_binary=str(fixture),
+        https_origin="https://moss.example",
+        operator_socket=str(tmp_path / "operator.sock"),
+    )
+    campaign._clients["a"] = IdentityClient()
+    monkeypatch.setattr(
+        external.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="123\n"),
+    )
+    monkeypatch.setattr(external.os, "readlink", lambda path: "/release/current")
+    original_read_bytes = Path.read_bytes
+
+    def read_bytes(path: Path) -> bytes:
+        if str(path) == "/proc/123/cmdline":
+            return b"/release/bin/python\0-m\0moss\0"
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", read_bytes)
+    monkeypatch.setattr(external, "_file_fixture_identity", lambda path: {"sha256": "2" * 64})
+    monkeypatch.setattr(external, "_toolchain_identity", lambda path: {"chrome": "fixed"})
+    monkeypatch.setattr(external, "_accelerator_identity", lambda pid: {"vllm": "fixed"})
+    monkeypatch.setattr(external, "_tls_identity", lambda origin: {"trusted": True})
+    monkeypatch.setattr(external, "_unit_pid", lambda unit: 456)
+    identity = campaign.installed_candidate_identity()
+    assert identity["candidate_sha"] == "a" * 40
+    assert identity["process"] == {
+        "pid": 123,
+        "cwd": "/release/current",
+        "exe": "/release/current",
+        "cmdline": "/release/bin/python -m moss",
+    }
+    monkeypatch.setattr(
+        external,
+        "_control",
+        lambda *args, **kwargs: {
+            "capacity": {
+                "live": {"active": 0},
+                "file": {"active": 0},
+                "queues": {"live": 0, "batch": 0},
+            }
+        },
+    )
+    assert campaign.zero_work_end() == {
+        "active_live": 0,
+        "active_file": 0,
+        "queue_depths": {"live": 0, "batch": 0},
+    }
+
+
+def test_real_g1_and_g2_producers_cross_fixed_client_and_browser_seams(
+    monkeypatch, tmp_path: Path,
+):
+    sentinel = tmp_path / "a-sentinel"
+    sentinel.write_text("account-a-sentinel", encoding="utf-8")
+    owner_state = {
+        "id": "meeting-a",
+        "mode": "live",
+        "status": "active",
+        "title": "account-a-sentinel",
+        "title_source": "owner",
+        "created_at_ms": 1,
+        "updated_at_ms": 1,
+        "transcript": {"version": 0, "segments": []},
+        "audio": {"state": "unavailable"},
+    }
+
+    class Client:
+        def __init__(self, status: int) -> None:
+            self.status = status
+
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del method, expected, kwargs
+            if path.startswith("/api/meetings/meeting-a"):
+                return dict(owner_state), _Response(200, owner_state)
+            return {"meetings": []}, _Response(200, {"meetings": []})
+
+        def request(self, method: str, path: str, **kwargs: object):
+            del kwargs
+            if method == "POST" and path == "/auth/logout":
+                return _Response(303)
+            if method == "PUT" and path.endswith("/title"):
+                return _Response(200)
+            if self.status == 200:
+                payload = owner_state if "meeting-a" in path else {"meetings": []}
+                return _Response(200, payload)
+            return _Response(self.status)
+
+        def close(self) -> None:
+            pass
+
+    campaign = _campaign(
+        tmp_path,
+        https_origin="https://moss.example",
+        account_a_sentinel_file=str(sentinel),
+        operator_socket=str(tmp_path / "operator.sock"),
+    )
+    campaign._live["a"] = "meeting-a"
+    campaign._clients.update(
+        {
+            "a": Client(200),
+            "a_peer": Client(200),
+            "b": Client(404),
+            "revoked_probe": Client(401),
+        }
+    )
+    monkeypatch.setattr(external.httpx, "Client", lambda **kwargs: Client(401))
+    matrix = campaign.cross_owner_matrix()
+    assert [item["id"] for item in matrix["cases"]] == list(
+        acceptance.G1_CROSS_OWNER_MATRIX
+    )
+    assert all(item["owner_state_unchanged"] for item in matrix["cases"])
+    assert campaign.same_account_convergence() == {
+        "clients": 2,
+        "observations": 4,
+        "mismatches": 0,
+    }
+
+    oauth = _raw("real_google_oauth", "a" * 40, "unused")
+
+    class Browser:
+        def real_google_oauth(self, control):
+            assert control("status") == {"ok": True}
+            return oauth
+
+    campaign._browser = Browser()
+    monkeypatch.setattr(external, "_control", lambda *args, **kwargs: {"ok": True})
+    assert campaign.real_google_oauth() == oauth
+    assert Path("browser/oauth-counts.json") in campaign.safe_artifacts
+
+
+def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durable_prefix(
+    monkeypatch, tmp_path: Path,
+):
+    a_sentinel = tmp_path / "a-sentinel"
+    b_sentinel = tmp_path / "b-sentinel"
+    a_sentinel.write_text("alpha-sentinel", encoding="utf-8")
+    b_sentinel.write_text("bravo-sentinel", encoding="utf-8")
+    empty = tmp_path / "empty.log"
+    empty.write_text("", encoding="utf-8")
+    fixture = tmp_path / "fixture.wav"
+    fixture.write_bytes(b"fixture")
+    audio_bodies = {"audio-a": b"mp3-alpha", "audio-b": b"mp3-bravo"}
+
+    class Client:
+        def __init__(self, owner: str) -> None:
+            self.owner = owner
+            self.logged_out = False
+
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del method, expected, kwargs
+            if path.endswith("live-b"):
+                return {
+                    "id": "live-b",
+                    "status": "active",
+                    "transcript": {"version": 1, "segments": [{"text": "durable"}]},
+                }, _Response(200)
+            return {}, _Response(200)
+
+        def request(self, method: str, path: str, **kwargs: object):
+            del kwargs
+            if method == "POST" and path == "/auth/logout":
+                self.logged_out = True
+                return _Response(303)
+            if self.logged_out:
+                return _Response(401)
+            if "/audio/download" in path:
+                meeting_id = path.split("/")[3]
+                own = meeting_id == f"audio-{self.owner}"
+                return _Response(200, content=audio_bodies[meeting_id]) if own else _Response(404)
+            own = (
+                a_sentinel.read_bytes() + b" transcript-alpha"
+                if self.owner == "a"
+                else b_sentinel.read_bytes() + b" transcript-bravo"
+            )
+            return _Response(200, content=own)
+
+        def close(self) -> None:
+            pass
+
+    campaign = _campaign(
+        tmp_path,
+        account_a_sentinel_file=str(a_sentinel),
+        account_b_sentinel_file=str(b_sentinel),
+        account_a_cookie_file=str(empty),
+        account_b_cookie_file=str(empty),
+        operator_socket=str(tmp_path / "operator.sock"),
+        operator_journal=str(empty),
+        server_log=str(empty),
+        llm_prompt_log=str(empty),
+        file_fixture=str(fixture),
+        account_b_email="b@example.com",
+    )
+    clients = {name: Client(name[0]) for name in ("a", "a_peer", "b", "b_peer")}
+    campaign._clients.update(clients)
+    campaign._live.update({"a": "live-a", "b": "live-b"})
+    monkeypatch.setattr(
+        campaign,
+        "_seed_live_transcript",
+        lambda owner, meeting_id, clip: f"transcript-{owner}".encode(),
+    )
+    monkeypatch.setattr(
+        campaign,
+        "_seed_audio_sentinel",
+        lambda owner, clip: (
+            f"audio-{owner}",
+            hashlib.sha256(audio_bodies[f"audio-{owner}"]).digest(),
+        ),
+    )
+    monkeypatch.setattr(
+        campaign,
+        "_rendered_body",
+        lambda cookie, meeting_id: (
+            a_sentinel.read_bytes() + b" transcript-a"
+            if meeting_id == "live-a"
+            else b_sentinel.read_bytes() + b" transcript-b"
+        ),
+    )
+    monkeypatch.setattr(external, "_control", lambda *args, **kwargs: {"content": "none"})
+    sentinel = campaign.sentinel_absence()
+    assert len(sentinel["audio_sentinel_checks"]) == 2
+    assert all(item["foreign_matches"] == 0 for item in sentinel["surfaces"])
+
+    monkeypatch.setattr(
+        campaign,
+        "_submit_file_for",
+        lambda client, path: "peer-file" if client is clients["a_peer"] else "b-file",
+    )
+    monkeypatch.setattr(campaign, "_new_live_id", lambda owner: "live-b")
+    monkeypatch.setattr(campaign, "_seed_live_transcript", lambda *args: b"durable")
+    monkeypatch.setattr(
+        campaign,
+        "_await_meeting_terminal",
+        lambda meeting_id, timeout=1800: {"id": meeting_id, "status": "completed"},
+    )
+
+    def control(_socket: Path, command: str, email=None, **kwargs: object):
+        del email, kwargs
+        if command == "accounts.revoke":
+            clients["b"].logged_out = clients["b_peer"].logged_out = True
+            return {"revoked": True}
+        if command == "accounts.allow":
+            return {"allowed": True}
+        return {}
+
+    class Browser:
+        def fresh_sign_in_history(self, profile: str, ids: tuple[str, ...], **kwargs: object):
+            del profile, kwargs
+            return {
+                "signed_in": True,
+                "fresh_cookie_present": True,
+                "history": {meeting_id: True for meeting_id in ids},
+                "states": {
+                    "live-b": {
+                        "status": "interrupted",
+                        "audio_state": "partial",
+                        "transcript_version": 1,
+                    },
+                    "b-file": {"status": "interrupted"},
+                },
+                "durable_transcript_matches": True,
+                "partial_audio_playable": True,
+            }
+
+    campaign._browser = Browser()
+    monkeypatch.setattr(external, "_control", control)
+    revoked = campaign.revocation_lifecycle()
+    assert revoked["failures"] == 0
+    assert revoked["late_commits"] == 0
+    assert revoked["durable_prefix_preserved"] is True
+
+
+def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
+    monkeypatch, tmp_path: Path,
+):
+    fixture = tmp_path / "fixture.wav"
+    fixture.write_bytes(b"fixture")
+    ordered = [
+        {"path": "/api/meetings/file", "status": 201, "meeting_id": "file-1"},
+        {"path": "/api/meetings/file", "status": 201, "meeting_id": "file-2"},
+        {"path": "/api/meetings/url", "status": 201, "meeting_id": "url-1"},
+        {
+            "path": "/api/meetings/url",
+            "status": 201,
+            "meeting_id": "url-failed",
+            "input_kind": "accepted_failure",
+        },
+        {"path": "/api/meetings/url", "status": 400},
+        {"path": "/api/meetings/url", "status": 201, "meeting_id": "url-2"},
+    ]
+    meetings = [
+        {
+            "id": meeting_id,
+            "status": "failed" if meeting_id == "url-failed" else "completed",
+            "title": "fixture",
+            "transcript": {"version": 1, "segments": [{"text": "words"}]},
+            "audio": {"state": "available", "byte_count": 1},
+        }
+        for meeting_id in (
+            "file-1",
+            "file-2",
+            "url-1",
+            "url-failed",
+            "url-2",
+            "detached-file",
+            "live-a",
+        )
+    ]
+
+    class Client:
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del expected, kwargs
+            if method == "PUT":
+                renamed = {**meetings[0], "title": "Wave 1 durable owner title"}
+                meetings[0] = renamed
+                return renamed, _Response(200, renamed)
+            if path == "/api/meetings":
+                return {"meetings": copy.deepcopy(meetings)}, _Response(200)
+            return {}, _Response(200)
+
+        def request(self, method: str, path: str, **kwargs: object):
+            del kwargs
+            if method == "POST" and path.endswith("/stop"):
+                return _Response(200)
+            return _Response(200)
+
+        def close(self) -> None:
+            pass
+
+    class Browser:
+        def submit_file_url_batch(self, got_fixture: Path, url: str):
+            assert got_fixture == fixture
+            assert url == acceptance.QUALIFICATION_URL_FIXTURE
+            return {
+                "ordered": copy.deepcopy(ordered),
+                "detached": {"meeting_id": "detached-file"},
+            }
+
+        def product_regression(self, active_id: str, completed_id: str):
+            return {"active": active_id, "completed": completed_id, "suites": []}
+
+        def transcript_fidelity(self, meeting: object):
+            return {"meeting_present": bool(meeting), "viewports": []}
+
+    campaign = _campaign(
+        tmp_path,
+        file_fixture=str(fixture),
+        url_fixture=acceptance.QUALIFICATION_URL_FIXTURE,
+    )
+    campaign._live["a"] = "live-a"
+    campaign._clients.update({"a": Client(), "a_peer": Client()})
+    campaign._browser = Browser()
+    terminal = {item["id"]: item for item in meetings}
+    monkeypatch.setattr(
+        campaign,
+        "_await_meeting_terminal",
+        lambda meeting_id, timeout=1800: copy.deepcopy(terminal[meeting_id]),
+    )
+    monkeypatch.setattr(campaign, "_await_service", lambda timeout=60: None)
+    monkeypatch.setattr(
+        external.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=0),
+    )
+    result = campaign.meeting_modes_history_restart()
+    assert result["one_item_failure_isolated"] is True
+    assert result["submissions"] == {
+        "single_file": 1,
+        "multi_file": 2,
+        "url": 2,
+        "serial_batch": 6,
+        "browser_closed_after_accept": 1,
+        "accepted_failure": 1,
+        "input_boundary_rejection": 1,
+    }
+    base_load = _capacity_raw()
+    monkeypatch.setattr(
+        campaign,
+        "_run_live_load",
+        lambda *, sessions, duration_seconds: {
+            **copy.deepcopy(base_load if sessions == 4 else _overload_raw()),
+            "wrong_owner_probes": 1,
+            "marker_isolation_failures": 0,
+            "fairness_measured": True,
+        },
+    )
+    monkeypatch.setattr(
+        campaign,
+        "_backpressure_probe",
+        lambda: {"observed_429": True, "peer_progress": True, "same_sequence_retry": True},
+    )
+    assert campaign.four_session_capacity()["continuous_wrong_owner_probes"] is True
+    assert campaign.eight_session_overload()["sessions"] == 8
+    monkeypatch.setattr(campaign, "_new_live_id", lambda owner: "active-live")
+    monkeypatch.setattr(
+        campaign,
+        "_durable_transcript_meeting",
+        lambda: {"id": "completed", "transcript": {"segments": [{"text": "words"}]}},
+    )
+    assert campaign.account_product_regression()["active"] == "active-live"
+    assert campaign.transcript_pane_fidelity()["meeting_present"] is True
+    assert {
+        Path("browser/product-suite-counts.json"),
+        Path("browser/transcript-fidelity-metrics.json"),
+    }.issubset(set(campaign.safe_artifacts))
+
+
+def test_browser_batch_selector_executes_fixed_six_item_and_detached_contract(
+    monkeypatch, tmp_path: Path,
+):
+    fixture = tmp_path / "fixture.wav"
+    fixture.write_bytes(b"fixture")
+    cookie = tmp_path / "cookie"
+    cookie.write_text("cookie", encoding="utf-8")
+    cookie.chmod(0o600)
+    chrome = tmp_path / "chrome"
+    chrome.write_text("binary", encoding="utf-8")
+    origin = "https://moss.example"
+
+    class Request:
+        def __init__(self, path: str, payload: dict[str, object]) -> None:
+            self.url = origin + path
+            self.method = "POST"
+            self.post_data_json = payload
+
+    class Response:
+        def __init__(self, path: str, status: int, meeting_id: str | None, payload: dict[str, object]):
+            self.request = Request(path, payload)
+            self.status = status
+            self._body = {} if meeting_id is None else {"id": meeting_id}
+
+        def json(self):
+            return self._body
+
+    first = (
+        Response("/api/meetings/file", 201, "file-1", {}),
+        Response("/api/meetings/file", 201, "file-2", {}),
+        Response("/api/meetings/url", 201, "url-1", {"url": acceptance.QUALIFICATION_URL_FIXTURE}),
+        Response("/api/meetings/url", 201, "url-failed", {"url": browser_measurement.ACCEPTED_FAILURE_URL}),
+        Response("/api/meetings/url", 400, None, {"url": "not-a-supported-url"}),
+        Response("/api/meetings/url", 201, "url-2", {"url": acceptance.QUALIFICATION_URL_FIXTURE}),
+    )
+    detached = (Response("/api/meetings/file", 201, "detached", {}),)
+
+    class Locator:
+        def __init__(self, page: "Page", emit: bool = False) -> None:
+            self.page = page
+            self.emit = emit
+
+        def set_input_files(self, value: object) -> None:
+            del value
+
+        def fill(self, value: str) -> None:
+            assert browser_measurement.ACCEPTED_FAILURE_URL in value
+
+        def click(self) -> None:
+            if self.emit:
+                for response in self.page.responses:
+                    self.page.callback(response)
+
+    class Page:
+        def __init__(self, responses: tuple[Response, ...]) -> None:
+            self.responses = responses
+            self.callback = lambda response: None
+
+        def on(self, event: str, callback) -> None:
+            assert event == "response"
+            self.callback = callback
+
+        def locator(self, selector: str) -> Locator:
+            return Locator(self)
+
+        def get_by_role(self, role: str, *, name: str) -> Locator:
+            assert role == "button" and name == "Transcribe files and URLs"
+            return Locator(self, emit=True)
+
+        def wait_for_timeout(self, milliseconds: int) -> None:
+            del milliseconds
+
+    class Context:
+        def __init__(self, responses: tuple[Response, ...]) -> None:
+            self.page = Page(responses)
+
+        def new_page(self) -> Page:
+            return self.page
+
+        def close(self) -> None:
+            pass
+
+    class Browser:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def new_context(self, **kwargs: object) -> Context:
+            del kwargs
+            self.calls += 1
+            return Context(first if self.calls == 1 else detached)
+
+        def close(self) -> None:
+            pass
+
+    browser = Browser()
+
+    class Playwright:
+        chromium = SimpleNamespace(launch=lambda **kwargs: browser)
+
+    class Manager:
+        def __enter__(self):
+            return Playwright()
+
+        def __exit__(self, *args: object) -> None:
+            pass
+
+    monkeypatch.setattr(browser_measurement, "sync_playwright", lambda: Manager())
+    monkeypatch.setattr(browser_measurement, "_add_cookie", lambda *args, **kwargs: None)
+    monkeypatch.setattr(browser_measurement, "_wait_workspace", lambda *args, **kwargs: None)
+    campaign = browser_measurement.BrowserCampaign(
+        {
+            "https_origin": origin,
+            "chrome_binary": str(chrome),
+            "account_a_cookie_file": str(cookie),
+        },
+        repo=ROOT,
+        work=tmp_path / "work",
+    )
+    result = campaign.submit_file_url_batch(
+        fixture, acceptance.QUALIFICATION_URL_FIXTURE
+    )
+    assert [item["input_kind"] for item in result["ordered"]] == [
+        "file",
+        "file",
+        "url",
+        "accepted_failure",
+        "invalid",
+        "url",
+    ]
+    assert result["detached"] == {"status": 201, "meeting_id": "detached"}
+
+
+def test_real_crash_producer_compares_recovered_bytes_to_production_archive_oracle(
+    monkeypatch, tmp_path: Path,
+):
+    corpus = tmp_path / "corpus"
+    case = corpus / "case"
+    case.mkdir(parents=True)
+    (corpus / "corpus-manifest.json").write_text(
+        json.dumps({"cases": [{"case_id": "case"}]}), encoding="utf-8"
+    )
+    (case / "audio.wav").write_bytes(b"wav")
+    cookie = tmp_path / "cookie"
+    cookie.write_text("cookie", encoding="utf-8")
+    cookie.chmod(0o600)
+    restarted = False
+
+    class Archive:
+        def __init__(self, root: Path) -> None:
+            self.root = root
+
+        def publish_live_prefix(self, account: str, meeting: str, source: Path, *, partial: bool):
+            del account, meeting
+            assert partial is True and len(source.read_bytes()) == 16_000
+            path = self.root / "audio.partial.mp3"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"expected-mp3")
+            return SimpleNamespace(
+                path=path,
+                byte_count=len(b"expected-mp3"),
+                duration_ms=500,
+                format="mp3",
+                sample_rate_hz=16_000,
+                channels=1,
+                bit_rate_bps=48_000,
+            )
+
+    class Adapter:
+        def __init__(self, **kwargs: object) -> None:
+            del kwargs
+
+        def create(self):
+            return SimpleNamespace(
+                session_id="crash",
+                descriptor=SimpleNamespace(frame_samples=8_000),
+            )
+
+        def accept_frame(self, *args: object, **kwargs: object) -> None:
+            del args, kwargs
+
+        def snapshot(self, meeting_id: str):
+            del meeting_id
+            return SimpleNamespace(session=SimpleNamespace(accepted_samples=8_000))
+
+        @staticmethod
+        def _lane_payload(*args: object, **kwargs: object):
+            del args, kwargs
+            return {}
+
+    before = {
+        "id": "crash",
+        "status": "active",
+        "transcript": {"version": 1, "segments": [{"text": "durable"}]},
+        "audio": {"state": "unavailable"},
+    }
+    after = {
+        **before,
+        "status": "interrupted",
+        "audio": {
+            "state": "partial",
+            "relative_path": "account/crash/audio.partial.mp3",
+            "byte_count": len(b"expected-mp3"),
+            "duration_ms": 500,
+            "format": "mp3",
+            "sample_rate_hz": 16_000,
+            "channels": 1,
+            "bit_rate_bps": 48_000,
+        },
+    }
+
+    class Owner:
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del method, path, expected, kwargs
+            return copy.deepcopy(after if restarted else before), _Response(200)
+
+        def request(self, method: str, path: str, **kwargs: object):
+            del method, kwargs
+            if path.endswith("/audio/download"):
+                return _Response(200, content=b"expected-mp3")
+            if path.endswith("/frames"):
+                return _Response(409)
+            return _Response(200)
+
+        def close(self) -> None:
+            pass
+
+    campaign = _campaign(
+        tmp_path,
+        quality_corpus=str(corpus),
+        account_a_cookie_file=str(cookie),
+        https_origin="https://moss.example",
+    )
+    campaign._clients["a"] = Owner()
+    monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
+    monkeypatch.setattr(external, "MeetingAudioArchive", Archive)
+    monkeypatch.setattr(external, "_wav_pcm", lambda path: b"\1\0" * 16_000)
+    pids = iter((111, 222))
+    monkeypatch.setattr(external, "_unit_pid", lambda unit: next(pids))
+
+    def run(command: object, **kwargs: object):
+        nonlocal restarted
+        del kwargs
+        if "start" in command:
+            restarted = True
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(external.subprocess, "run", run)
+    monkeypatch.setattr(external.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(campaign, "_await_service", lambda timeout=60: None)
+    result = campaign.crash_recovery()
+    assert result["audio_prefix_failures"] == 0
+    assert result["durable_document_mismatches"] == 0
+    assert result["accepted_prefix_samples"] == 8_000
+    assert result["process_replaced"] is True
+
+
+def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_seam(
+    monkeypatch, tmp_path: Path,
+):
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    cases = []
+    for case_id in sorted(acceptance.QUALITY_CASE_IDS):
+        directory = corpus / case_id
+        directory.mkdir()
+        (directory / "audio.wav").write_bytes(b"wav")
+        (directory / "reference.jsonl").write_text("{}\n", encoding="utf-8")
+        cases.append({"case_id": case_id, "category": "speech"})
+    (corpus / "corpus-manifest.json").write_text(
+        json.dumps({"cases": cases}), encoding="utf-8"
+    )
+    cookies = []
+    for name in ("a", "b"):
+        path = tmp_path / f"{name}.cookie"
+        path.write_text(name, encoding="utf-8")
+        path.chmod(0o600)
+        cookies.append(path)
+
+    class Descriptor:
+        source_revision = "a" * 40
+        provider_manifest_hash = "b" * 64
+        config_hashes = SimpleNamespace(combined_config_hash="c" * 64)
+
+    class Adapter:
+        def __init__(self, **kwargs: object) -> None:
+            del kwargs
+
+        def descriptor(self):
+            return Descriptor()
+
+    class Capture:
+        def __init__(self, adapter: object, **kwargs: object) -> None:
+            del adapter, kwargs
+            snapshot = {"segments": []}
+            self.captures = {
+                "pre_stop_immediate": {"snapshot": snapshot},
+                "pre_stop_settled": {"snapshot": snapshot},
+                "post_stop_final": {"snapshot": snapshot},
+            }
+            self.stop_requested_monotonic_ns = 1
+
+    class Surface:
+        SurfaceCaptureService = Capture
+        Case = lambda self, case_id, directory, reference: SimpleNamespace(id=case_id)
+
+        @staticmethod
+        def transcript_rows(snapshot: object, duration: float):
+            del snapshot, duration
+            return []
+
+        @staticmethod
+        def score_surface(case: object, rows: object):
+            del case, rows
+            return {
+                "wer": 0.1,
+                "tbsa": 0.9,
+                "der": 0.1,
+                "content_recall": 0.95,
+                "matched_word_speaker_accuracy": 0.95,
+                "reference_speech_der": 0.1,
+            }
+
+        @staticmethod
+        def read_service_events(trace: Path):
+            del trace
+            return []
+
+        @staticmethod
+        def event_measurements(*args: object):
+            del args
+            return {"rolling_queue": {"windows": [1]}}
+
+    def replay(*, out_dir: Path, **kwargs: object) -> None:
+        del kwargs
+        trace = out_dir / "run-001" / "trace.jsonl"
+        trace.parent.mkdir(parents=True)
+        trace.write_text(
+            json.dumps({"kind": "session_created", "session_id": "private-id"}) + "\n",
+            encoding="utf-8",
+        )
+
+    campaign = _campaign(
+        tmp_path,
+        repo_root=str(ROOT),
+        quality_corpus=str(corpus),
+        account_a_cookie_file=str(cookies[0]),
+        account_b_cookie_file=str(cookies[1]),
+        https_origin="https://moss.example",
+    )
+    monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
+    monkeypatch.setattr(external, "_load_surface_harness", lambda repo: Surface())
+    monkeypatch.setattr(external, "run_service_replay", replay)
+    monkeypatch.setattr(external, "_wav_duration", lambda path: 1.0)
+    monkeypatch.setattr(
+        external,
+        "_verify_quality_inputs",
+        lambda **kwargs: [
+            {
+                "case_id": case_id,
+                "checks": {"wav_sha256": True},
+                "source_present": False,
+                "source_audio_match": None,
+                "source_reference_match": None,
+            }
+            for case_id in sorted(acceptance.QUALITY_CASE_IDS)
+        ],
+    )
+    result = campaign.quality_corpus()
+    assert result["cases"] == 6
+    assert result["passes"] == 2
+    assert result["sessions"] == 12
+    assert len(result["per_case"]) == 12
+    assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
+
+
+def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_artifact(
+    monkeypatch, tmp_path: Path,
+):
+    audio_root = tmp_path / "meetings"
+    audio_root.mkdir(mode=0o700)
+    payloads: dict[str, dict[str, object]] = {}
+    bodies: dict[str, bytes] = {}
+    for meeting_id, state in (("file", "available"), ("live", "available"), ("crash", "partial")):
+        directory = audio_root / "account" / meeting_id
+        directory.mkdir(mode=0o700, parents=True)
+        directory.parent.chmod(0o700)
+        directory.chmod(0o700)
+        name = "audio.partial.mp3" if state == "partial" else "audio.mp3"
+        path = directory / name
+        path.write_bytes(f"mp3-{meeting_id}".encode())
+        path.chmod(0o600)
+        bodies[meeting_id] = path.read_bytes()
+        payloads[meeting_id] = {
+            "id": meeting_id,
+            "status": "interrupted" if state == "partial" else "completed",
+            "audio": {
+                "state": state,
+                "relative_path": path.relative_to(audio_root).as_posix(),
+                "byte_count": len(bodies[meeting_id]),
+                "duration_ms": 1000,
+                "format": "mp3",
+                "sample_rate_hz": 16_000,
+                "channels": 1,
+                "bit_rate_bps": 48_000,
+            },
+        }
+    out_dir = audio_root / "account" / "out"
+    out_dir.mkdir(mode=0o700, parents=True)
+    out_dir.parent.chmod(0o700)
+    out_dir.chmod(0o700)
+    out_path = out_dir / "audio.mp3"
+    out_path.write_bytes(b"mp3-out")
+    out_path.chmod(0o600)
+    payloads["out"] = {
+        "id": "out",
+        "status": "completed",
+        "audio": {
+            "state": "available",
+            "relative_path": out_path.relative_to(audio_root).as_posix(),
+            "byte_count": len(b"mp3-out"),
+            "duration_ms": 1000,
+            "format": "mp3",
+            "sample_rate_hz": 16_000,
+            "channels": 1,
+            "bit_rate_bps": 48_000,
+        },
+    }
+
+    class Owner:
+        def request(self, method: str, path: str, **kwargs: object):
+            del method, kwargs
+            meeting_id = path.split("/")[3]
+            if meeting_id == "out" and not out_path.exists():
+                return _Response(404)
+            state = payloads[meeting_id]["audio"]["state"]
+            return _Response(
+                200,
+                content=bodies.get(meeting_id, b"mp3-out"),
+                headers={
+                    "content-disposition": (
+                        "attachment; filename=audio.partial.mp3"
+                        if state == "partial"
+                        else "attachment; filename=audio.mp3"
+                    )
+                },
+            )
+
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del method, expected, kwargs
+            meeting_id = path.split("/")[3]
+            if meeting_id == "out" and not out_path.exists():
+                payloads["out"] = {
+                    **payloads["out"],
+                    "audio": {"state": "unavailable"},
+                }
+            return copy.deepcopy(payloads[meeting_id]), _Response(200)
+
+        def close(self) -> None:
+            pass
+
+    class Denied(Owner):
+        def __init__(self, status: int) -> None:
+            self.status = status
+
+        def request(self, method: str, path: str, **kwargs: object):
+            return _Response(self.status)
+
+    fixture = tmp_path / "fixture.wav"
+    fixture.write_bytes(b"fixture")
+    campaign = _campaign(
+        tmp_path,
+        meeting_audio_root=str(audio_root),
+        https_origin="https://moss.example",
+        file_fixture=str(fixture),
+    )
+    campaign._meetings.update({"file": ["file"], "live": ["live"], "crash": ["crash"]})
+    campaign._clients.update(
+        {"a": Owner(), "b": Denied(404), "b_peer": Denied(401)}
+    )
+    monkeypatch.setattr(
+        campaign,
+        "_await_meeting_terminal",
+        lambda meeting_id, timeout=1800: copy.deepcopy(payloads[meeting_id]),
+    )
+    monkeypatch.setattr(campaign, "_submit_file", lambda fixture: "out")
+    monkeypatch.setattr(
+        external,
+        "_probe_mp3",
+        lambda content: {
+            "codec": "mp3",
+            "sample_rate_hz": 16_000,
+            "channels": 1,
+            "bit_rate_bps": 48_000,
+            "bytes": len(content),
+        },
+    )
+    monkeypatch.setattr(external.httpx, "get", lambda *args, **kwargs: _Response(401))
+    result = campaign.audio_durability_download()
+    assert all(
+        result[key] == 0
+        for key in (
+            "format_mismatches",
+            "durability_failures",
+            "cleanup_failures",
+            "owner_download_failures",
+            "foreign_leaks",
+            "unauthenticated_failures",
+            "revoked_failures",
+            "partial_download_failures",
+            "path_failures",
+            "permission_failures",
+        )
+    ), result
+    assert result["out_of_band_reconciled"] is True
+
+
+def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_result(
+    monkeypatch, tmp_path: Path,
+):
+    socket_path = tmp_path / "control.sock"
+    socket_path.write_text("", encoding="utf-8")
+    socket_path.chmod(0o600)
+    corpus = tmp_path / "corpus"
+    case = corpus / "case"
+    case.mkdir(parents=True)
+    (corpus / "corpus-manifest.json").write_text(
+        json.dumps({"cases": [{"case_id": "case"}]}), encoding="utf-8"
+    )
+    (case / "audio.wav").write_bytes(b"wav")
+    cookie = tmp_path / "cookie"
+    cookie.write_text("cookie", encoding="utf-8")
+    cookie.chmod(0o600)
+    class Adapter:
+        def __init__(self, **kwargs: object) -> None:
+            del kwargs
+
+        def create(self):
+            return SimpleNamespace(
+                session_id="meeting",
+                descriptor=SimpleNamespace(frame_samples=8_000),
+            )
+
+        def accept_frame(self, *args: object, **kwargs: object) -> None:
+            del args, kwargs
+
+        def events(self, meeting_id: str):
+            del meeting_id
+            return (
+                SimpleNamespace(kind="canonical_queued", payload={"item_id": 1}),
+                SimpleNamespace(kind="canonical_started", payload={"item_id": 1}),
+                SimpleNamespace(kind="canonical_queued", payload={"item_id": 2}),
+                SimpleNamespace(kind="canonical_discarded", payload={"item_id": 2}),
+            )
+
+        @staticmethod
+        def _lane_payload(*args: object, **kwargs: object):
+            del args, kwargs
+            return {}
+
+        async def abort(self, *args: object, **kwargs: object) -> None:
+            raise AssertionError("accepted interrupt must not use cleanup abort")
+
+    meeting = {
+        "id": "meeting",
+        "status": "interrupted",
+        "transcript": {"version": 0, "segments": []},
+        "audio": {"state": "partial"},
+    }
+
+    class Owner:
+        def request(self, method: str, path: str, **kwargs: object):
+            del kwargs
+            if path in {"/api/operator/status", "/api/admin", "/api/accounts"}:
+                return _Response(404)
+            if path.endswith("/audio/download"):
+                return _Response(200, content=b"mp3")
+            if method == "POST" and path.endswith("/frames"):
+                return _Response(409)
+            return _Response(200)
+
+        def json(self, method: str, path: str, expected: int, **kwargs: object):
+            del method, path, expected, kwargs
+            return copy.deepcopy(meeting), _Response(200)
+
+        def close(self) -> None:
+            pass
+
+    status = {
+        "capacity": {
+            "live": {"active": 0},
+            "file": {"active": 0},
+            "queues": {
+                "live_canonical": 0,
+                "live_refinement": 0,
+                "live_provisional": 0,
+                "batch": 0,
+            },
+        },
+        "active_meetings": [],
+        "accounts": [],
+    }
+
+    def control(_socket: Path, command: str, email=None, *, meeting_id=None):
+        del email
+        if command == "status":
+            return copy.deepcopy(status)
+        if command == "accounts.list":
+            return []
+        assert command == "meetings.interrupt" and meeting_id == "meeting"
+        return {"meeting_id": "meeting", "interrupted": True}
+
+    campaign = _campaign(
+        tmp_path,
+        operator_socket=str(socket_path),
+        account_a_cookie_file=str(cookie),
+        https_origin="https://moss.example",
+        quality_corpus=str(corpus),
+    )
+    campaign._clients["a"] = Owner()
+    monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
+    monkeypatch.setattr(external, "_control", control)
+    monkeypatch.setattr(external, "_wav_pcm", lambda path: b"\0\0" * 8_000)
+    monkeypatch.setattr(external, "_probe_mp3", lambda content: {"codec": "mp3"})
+    monkeypatch.setattr(
+        campaign,
+        "_await_meeting_terminal",
+        lambda meeting_id, timeout=1800: copy.deepcopy(meeting),
+    )
+    result = campaign.operator_control()
+    assert acceptance._validate_raw_predicate(
+        "operator_control",
+        {"raw": result},
+        candidate_sha="a" * 40,
+        candidate_tree="b" * 40,
+        uv_lock_sha256="c" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="d" * 64,
+        dependency_projection_sha256="e" * 64,
+    ) is True
+    assert Path("operator/content-free-counts.json") in campaign.safe_artifacts
+
+
+def test_malformed_external_envelope_is_a_qualification_blocker(tmp_path: Path):
+    path = tmp_path / "malformed.json"
+    path.write_text(
+        json.dumps({"schema": "wrong", "layer": "deployed", "candidate_sha": "a" * 40}),
+        encoding="utf-8",
+    )
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    _, errors = acceptance._read_external_report(
+        str(path),
+        layer="deployed",
+        candidate_sha="a" * 40,
+        bundle=bundle,
+        forbidden=(),
+    )
+    bundle.close()
+    table = acceptance._final_gate_table(
+        identity_errors=errors,
+        deterministic={gate: True for gate in acceptance.CORE_GATES},
+        deployed={gate: True for gate in acceptance.CORE_GATES},
+        pre_admission={gate: True for gate in acceptance.CORE_GATES},
+        wave=1,
+    )
+    assert errors == ["deployed_schema"]
+    assert table["passed"] is False
+
+
+def test_attempt_bundle_is_exclusive_write_once_and_completes_short_writes(monkeypatch, tmp_path: Path):
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    real_write = acceptance.os.write
+    monkeypatch.setattr(acceptance.os, "write", lambda descriptor, data: real_write(descriptor, data[:3]))
+    bundle.write_bytes("raw/large", b"0123456789")
+    bundle.finalize({"qualified": True, "g7": "UNCLAIMED"})
+    bundle.close()
+    assert (tmp_path / "attempt/raw/large").read_bytes() == b"0123456789"
+    assert json.loads((tmp_path / "attempt/verdict.json").read_text()) == {
+        "g7": "UNCLAIMED",
+        "qualified": True,
+    }
+    assert not (tmp_path / "attempt/.verdict.json.stage").exists()
+    with pytest.raises(FileExistsError):
+        acceptance.AttemptBundle(tmp_path / "attempt")
+
+
+def test_attempt_bundle_never_publishes_qualified_verdict_if_final_event_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    real_event = bundle.event
+
+    def fail_event(kind: str, **fields: object) -> None:
+        real_event(kind, **fields)
+        raise OSError("injected final event fsync failure")
+
+    monkeypatch.setattr(bundle, "event", fail_event)
+    with pytest.raises(OSError, match="injected final event fsync failure"):
+        bundle.finalize({"qualified": True, "g7": "UNCLAIMED"})
+    bundle.close()
+    assert not (tmp_path / "attempt/verdict.json").exists()
+    assert json.loads((tmp_path / "attempt/.verdict.json.stage").read_text()) == {
+        "g7": "UNCLAIMED",
+        "qualified": True,
+    }
+    assert "attempt_finalizing" in (tmp_path / "attempt/attempts.jsonl").read_text()
+
+
+def test_pytest_machine_report_binds_denominators_required_files_and_required_skips(
+    tmp_path: Path,
+):
+    root = ET.Element("testsuites", name="pytest tests")
+    suite = ET.SubElement(
+        root,
+        "testsuite",
+        tests=str(acceptance.MINIMUM_PYTHON_TESTS),
+        failures="0",
+        errors="0",
+        skipped="0",
+    )
+    for required in acceptance.REQUIRED_PYTHON_TEST_FILES:
+        ET.SubElement(
+            suite,
+            "testcase",
+            classname=required.removesuffix(".py").replace("/", "."),
+            name="test_required",
+        )
+    for required in acceptance.REQUIRED_PYTHON_TEST_CASES:
+        classname, name = required.rsplit(".", 1)
+        ET.SubElement(suite, "testcase", classname=classname, name=name)
+    for index in range(
+        acceptance.MINIMUM_PYTHON_TESTS
+        - len(acceptance.REQUIRED_PYTHON_TEST_FILES)
+        - len(acceptance.REQUIRED_PYTHON_TEST_CASES)
+    ):
+        ET.SubElement(suite, "testcase", classname="tests.test_other", name=f"test_{index}")
+    report = tmp_path / "pytest.xml"
+    ET.ElementTree(root).write(report, encoding="utf-8", xml_declaration=True)
+    counts, required, errors = acceptance._pytest_denominators(report, repo=ROOT)
+    assert counts == {
+        "collected": acceptance.MINIMUM_PYTHON_TESTS,
+        "executed": acceptance.MINIMUM_PYTHON_TESTS,
+        "passed": acceptance.MINIMUM_PYTHON_TESTS,
+        "failed": 0,
+        "skipped": 0,
+        "unmeasured": 0,
+    }
+    assert required == acceptance.REQUIRED_PYTHON_TEST_FILES
+    assert errors == []
+
+    required_case = suite.find("testcase")
+    assert required_case is not None
+    ET.SubElement(required_case, "skipped")
+    suite.set("skipped", "1")
+    ET.ElementTree(root).write(report, encoding="utf-8", xml_declaration=True)
+    _, _, errors = acceptance._pytest_denominators(report, repo=ROOT)
+    assert errors == [
+        f"pytest_required_file_not_all_passed:{acceptance.REQUIRED_PYTHON_TEST_FILES[0]}"
+    ]
+
+    required_node = next(
+        case
+        for case in suite.findall("testcase")
+        if f"{case.get('classname')}.{case.get('name')}"
+        == acceptance.REQUIRED_PYTHON_TEST_CASES[0]
+    )
+    suite.remove(required_node)
+    suite.append(
+        ET.Element("testcase", classname="tests.test_other", name="replacement_case")
+    )
+    ET.ElementTree(root).write(report, encoding="utf-8", xml_declaration=True)
+    _, _, errors = acceptance._pytest_denominators(report, repo=ROOT)
+    assert f"pytest_required_case_missing:{acceptance.REQUIRED_PYTHON_TEST_CASES[0]}" in errors
+
+
+def test_vitest_machine_report_binds_denominators_files_and_rejects_decrease(tmp_path: Path):
+    remaining = acceptance.MINIMUM_FRONTEND_TESTS
+    results = []
+    for index, required in enumerate(acceptance.REQUIRED_FRONTEND_TEST_FILES):
+        count = 1 if index else remaining - len(acceptance.REQUIRED_FRONTEND_TEST_FILES) + 1
+        remaining -= count
+        results.append(
+            {
+                "name": str(ROOT / required),
+                "status": "passed",
+                "assertionResults": [
+                    {"status": "passed", "title": f"case-{item}"} for item in range(count)
+                ],
+            }
+        )
+    payload = {
+        "success": True,
+        "numTotalTests": acceptance.MINIMUM_FRONTEND_TESTS,
+        "numPassedTests": acceptance.MINIMUM_FRONTEND_TESTS,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "testResults": results,
+    }
+    report = tmp_path / "vitest.json"
+    report.write_text(json.dumps(payload), encoding="utf-8")
+    counts, required, errors = acceptance._vitest_denominators(report, repo=ROOT)
+    assert counts["collected"] == acceptance.MINIMUM_FRONTEND_TESTS
+    assert required == acceptance.REQUIRED_FRONTEND_TEST_FILES
+    assert errors == []
+
+    payload["numTotalTests"] -= 1
+    payload["numPassedTests"] -= 1
+    results[0]["assertionResults"].pop()
+    report.write_text(json.dumps(payload), encoding="utf-8")
+    _, _, errors = acceptance._vitest_denominators(report, repo=ROOT)
+    assert errors == ["vitest_test_denominator_decreased"]
+
+
+def test_record_projection_binds_candidate_when_wheel_container_bytes_differ(tmp_path: Path):
+    source = {
+        "git_sha": "a" * 40,
+        "git_tree": "b" * 40,
+        "uv_lock_sha256": "c" * 64,
+        "fixtures": FIXTURES,
+    }
+    manifest = json.dumps({"schema": acceptance.SCHEMA, **source}, sort_keys=True).encode()
+    name = "moss_transcribe_diarize/build_candidate.json"
+    digest = base64.urlsafe_b64encode(hashlib.sha256(manifest).digest()).decode().rstrip("=")
+    record_name = "moss_transcribe_diarize-0.1.0.dist-info/RECORD"
+    rows = [[name, f"sha256={digest}", str(len(manifest))], [record_name, "", ""]]
+    record = io.StringIO()
+    csv.writer(record, lineterminator="\n").writerows(rows)
+
+    wheels = []
+    for index, year in enumerate((2025, 2026)):
+        path = tmp_path / f"candidate-{index}.whl"
+        with zipfile.ZipFile(path, "w") as archive:
+            for filename, payload in ((name, manifest), (record_name, record.getvalue().encode())):
+                info = zipfile.ZipInfo(filename, date_time=(year, 1, 1, 0, 0, 0))
+                archive.writestr(info, payload)
+        wheels.append(acceptance.inspect_candidate_wheel(path, source))
+    assert wheels[0]["sha256"] != wheels[1]["sha256"]
+    assert wheels[0]["record_projection_sha256"] == wheels[1]["record_projection_sha256"]
+    installed_rows = [
+        *rows,
+        ["bin/mtd-phase2-web", "sha256=installer", "1"],
+        ["moss_transcribe_diarize-0.1.0.dist-info/INSTALLER", "sha256=installer", "2"],
+        ["moss_transcribe_diarize/__pycache__/x.pyc", "sha256=installer", "3"],
+    ]
+    assert record_projection_sha256(rows) == record_projection_sha256(installed_rows)
+    assert installer_owned_empty_record("moss_transcribe_diarize/__pycache__/x.pyc")
+    assert installer_owned_empty_record("moss_transcribe_diarize-0.1.dist-info/RECORD")
+    assert not installer_owned_empty_record("moss_transcribe_diarize/app/phase2.py")
+
+
+def test_account_replay_cookie_stays_memory_only_and_lane_payload_is_two_lane(tmp_path: Path):
+    cookie = tmp_path / "cookie"
+    cookie.write_text("secret-session-value\n", encoding="utf-8")
+    cookie.chmod(0o600)
+    adapter = AccountCookieLiveReplayService(base_url="https://moss.test", cookie_file=cookie)
+    assert "secret-session-value" not in repr(adapter)
+    payload = adapter._lane_payload(
+        acceptance_replay_frame(), lane="system", timestamp_ns=10, silent=False
+    )
+    assert payload["lane"] == "system"
+    assert payload["sequence"] == 3
+    assert payload["capture_timestamp_ns"] == 10
+    with pytest.raises(ValueError, match="https"):
+        AccountCookieLiveReplayService(base_url="http://moss.test", cookie_file=cookie)
+
+
+def test_profile_secrets_are_read_from_mode_0600_files_and_profile_commands_are_redacted(
+    tmp_path: Path,
+):
+    configured = {}
+    for index, role in enumerate(acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES):
+        secret = tmp_path / role
+        secret.write_text(f"secret-{index}\n", encoding="utf-8")
+        secret.chmod(0o600)
+        configured[role] = str(secret)
+    values, summary, errors = acceptance._load_forbidden_values(
+        {"forbidden_files": configured}
+    )
+    assert errors == []
+    assert set(values) == {f"secret-{index}".encode() for index in range(len(configured))}
+    assert summary == {
+        "roles": sorted(configured),
+        "count": len(configured),
+        "required_roles": list(acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES),
+    }
+    embedded, _, errors = acceptance._load_forbidden_values({"forbidden_values": ["bad"]})
+    assert embedded == ()
+    assert errors == ["profile_must_not_embed_forbidden_values"]
+
+    Path(configured[acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES[0]]).write_text(
+        "", encoding="utf-8"
+    )
+    Path(configured[acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES[1]]).write_text(
+        "secret-2\n", encoding="utf-8"
+    )
+    _, _, errors = acceptance._load_forbidden_values({"forbidden_files": configured})
+    assert errors == [
+        f"forbidden_file_empty:{acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES[0]}",
+        "forbidden_file_values_not_distinct",
+    ]
+
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    result = acceptance.execute_command(
+        bundle=bundle,
+        repo=tmp_path,
+        name="profile-command",
+        argv=("/usr/bin/true", "secret-3"),
+        forbidden=values,
+        record_argv=False,
+    )
+    bundle.close()
+    assert result.argv == ("<profile-derived-command>",)
+    assert "secret-3" not in (tmp_path / "attempt/attempts.jsonl").read_text()
+
+
+def acceptance_replay_frame():
+    from moss_transcribe_diarize.app.live_session import AudioFrame
+
+    return AudioFrame(sequence=3, pcm=b"\0\0" * 2, sample_count=2)
+
+
+def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path):
+    bundle = acceptance.AttemptBundle(tmp_path / "attempt")
+    candidate = tmp_path / "candidate.json"
+    candidate.write_text(
+        json.dumps(
+            {
+                "schema": "moss-account-candidate.v1",
+                "activation_state": "staged_inert",
+                "release": str(tmp_path / "immutable-release"),
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = {
+        "original_fixture": str(ROOT / "tests/fixtures/phase2_cutover_original.json"),
+        "candidate_manifest": str(candidate),
+        "output": str(tmp_path / "rehearsal.json"),
+    }
+    passed, errors = acceptance._run_rehearsal(config, bundle=bundle, repo=ROOT, forbidden=())
+    bundle.close()
+    assert passed is True
+    assert errors == []
+    second_bundle = acceptance.AttemptBundle(tmp_path / "second-attempt")
+    passed, errors = acceptance._run_rehearsal(
+        config, bundle=second_bundle, repo=ROOT, forbidden=()
+    )
+    second_bundle.close()
+    assert passed is True
+    assert errors == []

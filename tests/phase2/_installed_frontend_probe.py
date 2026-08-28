@@ -12,6 +12,10 @@ from fastapi.testclient import TestClient
 
 import moss_transcribe_diarize.app.phase2 as phase2
 
+# This smoke isolates wheel assets, not the Linux runtime. The retained runtime probe exercises
+# the same wheel under exact SQLite 3.53.4 and separately proves wrong-runtime refusal.
+phase2.REQUIRED_SQLITE_RUNTIME = phase2.sqlite3.sqlite_version
+
 
 class WheelOidc:
     async def begin(self, request):

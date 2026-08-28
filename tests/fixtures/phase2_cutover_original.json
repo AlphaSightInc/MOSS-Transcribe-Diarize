@@ -1,0 +1,9 @@
+{
+  "active_jobs": 0,
+  "active_live": 0,
+  "creation_blocked": false,
+  "entrants": 0,
+  "queued_jobs": 0,
+  "schema": "moss-isolated-cutover-fixture.v1",
+  "service_identity": "phase1-rehearsal-control"
+}

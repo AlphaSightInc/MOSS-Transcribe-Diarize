@@ -21,6 +21,7 @@ from joserfc.errors import ExpiredTokenError, InvalidClaimError
 from joserfc.jwk import RSAKey
 from starlette.requests import Request
 
+from moss_transcribe_diarize.app import phase2
 from moss_transcribe_diarize.app.phase2 import (
     GOOGLE_ISSUERS,
     GOOGLE_CALLBACK_URL,
@@ -446,6 +447,19 @@ def test_existing_non_v1_database_is_refused_without_mutating_its_bytes_or_creat
     asyncio.run(exercise())
     assert database.read_bytes() == before
     assert not any(path.exists() for path in sidecars)
+
+
+def test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    database = tmp_path / "not-created" / "phase2.sqlite3"
+    monkeypatch.setattr(phase2, "REQUIRED_SQLITE_RUNTIME", "3.53.4")
+    monkeypatch.setattr(phase2.sqlite3, "sqlite_version", "3.53.1")
+
+    with pytest.raises(phase2.SqliteRuntimeError, match="exactly 3.53.4"):
+        asyncio.run(Phase2Store.open(database))
+
+    assert not database.parent.exists()
 
 
 def test_composite_ownership_foreign_keys_reject_cross_account_children(tmp_path: Path):

@@ -6,6 +6,7 @@ import asyncio
 import html
 import json
 import secrets
+import sqlite3
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, replace
@@ -18,6 +19,7 @@ from .phase2_audio import MeetingAudioArtifactSurvives, MeetingAudioCleanupError
 
 
 SCHEMA_VERSION = 1
+REQUIRED_SQLITE_RUNTIME = "3.53.4"
 OAUTH_COOKIE = "__Host-moss_oauth"
 SESSION_COOKIE = "__Host-moss_session"
 OAUTH_COOKIE_MAX_AGE = 10 * 60
@@ -32,6 +34,10 @@ DEFAULT_PHASE2_DATABASE_PATH = (
 
 class SchemaVersionError(RuntimeError):
     """The greenfield database exists but is not the one schema this product accepts."""
+
+
+class SqliteRuntimeError(RuntimeError):
+    """The Account process is not linked to the one accepted SQLite runtime."""
 
 
 class GoogleOidcRejected(ValueError):
@@ -237,6 +243,11 @@ class Phase2Store:
 
     @classmethod
     async def open(cls, database_path: str | Path) -> "Phase2Store":
+        if sqlite3.sqlite_version != REQUIRED_SQLITE_RUNTIME:
+            raise SqliteRuntimeError(
+                "Refusing SQLite runtime "
+                f"{sqlite3.sqlite_version}; exactly {REQUIRED_SQLITE_RUNTIME} is required."
+            )
         try:
             import aiosqlite
         except ImportError as exc:  # pragma: no cover - package dependency is definitive.
@@ -1933,6 +1944,15 @@ def create_phase2_app(
         redoc_url=None,
         openapi_url=None,
     )
+    from ..installed_candidate import installed_candidate_identity
+
+    packaged_candidate = installed_candidate_identity()
+    if packaged_candidate is not None:
+        @app.middleware("http")
+        async def report_packaged_candidate(request: Any, call_next: Any):
+            response = await call_next(request)
+            response.headers["X-MOSS-Candidate-SHA"] = packaged_candidate["git_sha"]
+            return response
     app.add_middleware(
         SessionMiddleware,
         secret_key=oauth_cookie_secret,

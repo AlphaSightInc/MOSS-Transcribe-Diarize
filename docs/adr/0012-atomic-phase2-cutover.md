@@ -107,6 +107,44 @@ Phase-1 histories, Voiceprints, auth records, and jobs have no import or compati
 Account database remains empty until that Account creates Meetings. Historical plans and evidence
 remain records, not executable product or authority surfaces.
 
+Issue #22 adds the qualification boundary without adding another product runtime. One
+`AcceptanceRun` binds one clean Git tree, frozen fixture identities, an embedded clean-wheel
+candidate identity, the installed wheel-member RECORD projection, the exact installed dependency
+projection, and every deterministic/deployed/pre-admission observation to one exclusive attempt
+directory. Failed and interrupted attempts remain evidence; there is no resume, skip, retry, or
+force path. The reducer derives G0-G6/G10 from raw predicate-bearing arrays and reports exact
+collected, executed, passed, failed, skipped, and unmeasured denominators. Pytest JUnit XML and
+Vitest JSON are load-bearing machine reports: a decreased denominator, missing required file, or
+skipped required Phase-2/frontend case fails G10 even when the command exits zero. G7 remains
+explicitly unclaimed and owned by Issue #23.
+
+Privacy scans are non-vacuous: the mode-0600 qualification profile must supply distinct nonempty
+Account-A/Account-B sentinels, both Account session cookies, the Google client secret, and the MOSS
+cookie-signing secret. Values remain memory-only; evidence records roles and counts, not values or
+paths. The G1 reducer requires the exact foreign read/cursor/frame/heartbeat/Stop/abort/rename/
+rerun/resume/retry/download and invalid/revoked-session cases with exact status plus identical
+before/after owner state. It also requires zero foreign matches across Account UI, history, Live
+snapshot/events, operator status/journal, server logs, and the LLM prompt log.
+
+SQLite 3.53.4 is an exact process invariant checked before database-parent creation or
+`aiosqlite.connect`. The smallest measured Linux packaging seam is the official
+`sqlite-autoconf-3530400` shared library in a candidate-owned prefix, pinned to published SHA3-256,
+loaded only by a separate Account Python 3.12 runtime through scoped `LD_LIBRARY_PATH`. The
+candidate stage installs lock-exported dependencies plus the exact clean wheel under an immutable
+versioned release, verifies its embedded identity and RECORD projection, and leaves the release
+inert beside the live Phase-1 checkout. It does not repoint the live checkout, create the
+`account-current` activation pointer, restart vLLM, or mutate the shared GPU environment. Issue #23
+alone quiesces Phase 1, seals its large archive, activates that one pointer, and installs the
+web-only cutover unit while proving the running vLLM PID, argv, and activation timestamp unchanged.
+
+The retained qualification prototype derived PASS from 18/18 policy falsifiers and separately
+measured the Linux exact-runtime path: wrong SQLite refused before any database artifact; the
+private prefix reported 3.53.4; `aiosqlite==0.22.1` preserved WAL, foreign keys, `FULL`, schema v1,
+and restart truth; and a clean wheel's installed member projection matched its candidate wheel.
+Real Google OAuth, deployed four-session/600-second capacity, the 12-session frozen quality corpus,
+production TLS, and the production-origin pre-admission campaign remain unmeasured until their
+external prerequisites exist. Synthetic reducer fixtures cannot close them.
+
 ## Consequences
 
 - Each wave passes its own release gates plus the cumulative Account/isolation core.

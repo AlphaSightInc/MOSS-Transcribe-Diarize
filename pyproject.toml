@@ -46,12 +46,23 @@ speaker-identity = [
   "onnxruntime==1.23.2",
 ]
 flash-attn = ["flash-attn"]
-dev = ["pytest"]
+dev = [
+    "pytest",
+]
+acceptance = [
+    "torch>=2.8",
+    "torchaudio>=2.8",
+    "onnxruntime==1.23.2",
+    "pillow>=11,<13",
+    "playwright>=1.55,<2",
+    "pytest",
+]
 
 [tool.setuptools.packages.find]
 include = ["moss_transcribe_diarize*"]
 
 [tool.setuptools.package-data]
+"moss_transcribe_diarize" = ["build_candidate.json"]
 "moss_transcribe_diarize.app" = [
   "frontend_assets/*",
   "frontend_assets/fonts/*",

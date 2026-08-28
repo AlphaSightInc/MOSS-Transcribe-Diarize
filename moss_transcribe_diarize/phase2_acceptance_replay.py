@@ -1,0 +1,253 @@
+"""Account-cookie HTTP Adapter for the retained Live replay evaluator."""
+
+from __future__ import annotations
+
+import asyncio
+import base64
+import json
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
+from .app.live_service_runtime import LiveServiceEvent, LiveServiceFrameResult, LiveServiceSnapshot
+from .live_service_replay import (
+    ServiceReplayIdentityCommitFailure,
+    ServiceReplayProviderConfigFailure,
+    ServiceReplayTransportFailure,
+    _descriptor_from_dict,
+    _event_from_dict,
+    _frame_ack_from_dict,
+    _snapshot_from_dict,
+)
+
+
+SESSION_COOKIE = "__Host-moss_session"
+HELPER_SCHEMA = "moss-live-helper-health.v1"
+
+
+class AccountReplayTransportFailure(ServiceReplayTransportFailure):
+    """A retryable Account transport refusal with its HTTP class retained."""
+
+    def __init__(self, message: str, *, http_status: int | None):
+        super().__init__(message)
+        self.http_status = http_status
+
+
+class AccountCookieLiveReplayService:
+    """Adapt Account Live HTTP to the existing authority-neutral replay Interface.
+
+    The cookie is read once from a caller-owned mode-0600 file, held only in memory, and never
+    appears in object representation, errors, requests paths, or replay artifacts.
+    """
+
+    def __init__(self, *, base_url: str, cookie_file: Path, timeout_seconds: float = 10.0):
+        if not base_url.startswith("https://"):
+            raise ValueError("Account replay requires an https:// origin")
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
+        if cookie_file.stat().st_mode & 0o777 != 0o600:
+            raise ValueError("Account replay cookie file must have mode 0600")
+        cookie = cookie_file.read_text(encoding="utf-8").strip()
+        if not cookie or "\n" in cookie or "\r" in cookie:
+            raise ValueError("Account replay cookie file must contain exactly one value")
+        self._base_url = base_url.rstrip("/")
+        self._timeout_seconds = float(timeout_seconds)
+        self._cookie = cookie
+        self._frame_samples: dict[str, int] = {}
+        self._heartbeat_sequence: dict[str, int] = {}
+
+    def descriptor(self):
+        """Read the authenticated production descriptor without creating a Meeting."""
+
+        return _descriptor_from_dict(self._json("GET", "/api/live/descriptor")["descriptor"])
+
+    def create(self):
+        payload = self._json("POST", "/api/live/sessions", {"echo_mode": "speakers"})
+        descriptor = _descriptor_from_dict(payload["descriptor"])
+        session_id = str(payload["id"])
+        self._frame_samples[session_id] = descriptor.frame_samples
+        self._heartbeat_sequence[session_id] = 0
+        from .app.live_service_runtime import LiveServiceCreateResult
+
+        return LiveServiceCreateResult(
+            session_id=session_id,
+            descriptor=descriptor,
+            snapshot=_snapshot_from_dict(payload["snapshot"]),
+        )
+
+    def attach_existing(self, session_id: str) -> None:
+        """Bind local frame geometry to an already owner-created Account Live Meeting."""
+
+        descriptor = self.descriptor()
+        self._frame_samples[session_id] = descriptor.frame_samples
+        self._heartbeat_sequence[session_id] = 0
+
+    def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
+        frame_samples = self._frame_samples[session_id]
+        timestamp_ns = frame.sequence * frame_samples * 1_000_000_000 // LIVE_SAMPLE_RATE
+        system = self._lane_payload(frame, lane="system", timestamp_ns=timestamp_ns, silent=False)
+        microphone = self._lane_payload(
+            AudioFrame(
+                sequence=frame.sequence,
+                pcm=b"\0" * len(frame.pcm),
+                sample_count=frame.sample_count,
+                sample_rate=frame.sample_rate,
+            ),
+            lane="microphone",
+            timestamp_ns=timestamp_ns,
+            silent=True,
+        )
+        system_result = self.accept_lane(session_id, system)
+        microphone_result = self.accept_lane(session_id, microphone)
+        self._heartbeat(session_id)
+        snapshot_payload = self._json(
+            "GET", f"/api/live/sessions/{self._quoted(session_id)}/snapshot"
+        )["snapshot"]
+        queued = tuple(
+            int(item)
+            for item in (
+                list(system_result.get("queued_item_ids", ()))
+                + list(microphone_result.get("queued_item_ids", ()))
+            )
+        )
+        return LiveServiceFrameResult(
+            ack=_frame_ack_from_dict(system_result["ack"]),
+            queued_item_ids=queued,
+            snapshot=_snapshot_from_dict(snapshot_payload),
+        )
+
+    def accept_lane(
+        self, session_id: str, payload: dict[str, object]
+    ) -> dict[str, Any]:
+        """Submit one exact v2 lane frame so a refused lane can be retried byte-for-byte."""
+
+        return self._json(
+            "POST", f"/api/live/sessions/{self._quoted(session_id)}/frames", payload
+        )
+
+    def heartbeat(self, session_id: str) -> None:
+        self._heartbeat(session_id)
+
+    def events(self, session_id: str, since_seq: int = 0) -> tuple[LiveServiceEvent, ...]:
+        query = urllib.parse.urlencode({"since_seq": int(since_seq)})
+        payload = self._json(
+            "GET", f"/api/live/sessions/{self._quoted(session_id)}/events?{query}"
+        )
+        return tuple(_event_from_dict(item) for item in payload["events"])
+
+    def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
+        query = "" if since_version is None else "?" + urllib.parse.urlencode({"since_version": since_version})
+        payload = self._json(
+            "GET", f"/api/live/sessions/{self._quoted(session_id)}/snapshot{query}"
+        )
+        snapshot = payload.get("snapshot")
+        return None if snapshot is None else _snapshot_from_dict(snapshot)
+
+    async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
+        payload = await asyncio.to_thread(
+            self._json,
+            "POST",
+            f"/api/live/sessions/{self._quoted(session_id)}/stop",
+            {"deadline": float(deadline)},
+        )
+        self._forget(session_id)
+        return _snapshot_from_dict(payload["snapshot"])
+
+    async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
+        payload = await asyncio.to_thread(
+            self._json,
+            "POST",
+            f"/api/live/sessions/{self._quoted(session_id)}/abort",
+            {"reason": reason},
+        )
+        self._forget(session_id)
+        return _snapshot_from_dict(payload["snapshot"])
+
+    def _heartbeat(self, session_id: str) -> None:
+        sequence = self._heartbeat_sequence[session_id]
+        lane = {
+            "state": "capturing",
+            "device_epoch": 0,
+            "dropped_frames": 0,
+            "discontinuities": 0,
+            "failure_code": None,
+        }
+        self._json(
+            "POST",
+            f"/api/live/sessions/{self._quoted(session_id)}/heartbeat",
+            {
+                "schema": HELPER_SCHEMA,
+                "instance_id": "phase2-acceptance-replay",
+                "sequence": sequence,
+                "sent_monotonic_ns": time.monotonic_ns(),
+                "helper_version": "phase2-acceptance.v1",
+                "state": "capturing",
+                "lanes": {"system": dict(lane), "microphone": dict(lane)},
+            },
+        )
+        self._heartbeat_sequence[session_id] = sequence + 1
+
+    @staticmethod
+    def _lane_payload(
+        frame: AudioFrame, *, lane: str, timestamp_ns: int, silent: bool
+    ) -> dict[str, object]:
+        return {
+            "lane": lane,
+            "sequence": frame.sequence,
+            "capture_timestamp_ns": timestamp_ns,
+            "device_epoch": 0,
+            "pcm_base64": base64.b64encode(frame.pcm).decode("ascii"),
+            "sample_count": frame.sample_count,
+            "sample_rate": frame.sample_rate,
+            "silent": silent,
+            "discontinuity": False,
+        }
+
+    @staticmethod
+    def _quoted(session_id: str) -> str:
+        return urllib.parse.quote(session_id, safe="")
+
+    def _forget(self, session_id: str) -> None:
+        self._frame_samples.pop(session_id, None)
+        self._heartbeat_sequence.pop(session_id, None)
+
+    def _json(
+        self, method: str, path: str, payload: dict[str, object] | None = None
+    ) -> dict[str, Any]:
+        data = None
+        headers = {"Accept": "application/json", "Cookie": f"{SESSION_COOKIE}={self._cookie}"}
+        if payload is not None:
+            data = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        request = urllib.request.Request(
+            self._base_url + path, data=data, headers=headers, method=method
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self._timeout_seconds) as response:
+                envelope = json.loads(response.read())
+        except urllib.error.HTTPError as exc:
+            body = exc.read()
+            try:
+                response = json.loads(body) if body else {}
+            except json.JSONDecodeError:
+                response = {}
+            detail = response.get("detail") if isinstance(response, dict) else None
+            if exc.code == 404 and path == "/api/live/sessions":
+                raise ServiceReplayProviderConfigFailure("Account Live routes are disabled") from exc
+            if exc.code in (408, 429, 502, 503, 504):
+                raise AccountReplayTransportFailure(
+                    str(detail or f"HTTP {exc.code}"), http_status=exc.code
+                ) from exc
+            raise ServiceReplayIdentityCommitFailure(str(detail or f"HTTP {exc.code}")) from exc
+        except (OSError, TimeoutError, json.JSONDecodeError) as exc:
+            raise AccountReplayTransportFailure(
+                f"ambiguous Account HTTP replay result: {type(exc).__name__}",
+                http_status=None,
+            ) from exc
+        if not isinstance(envelope, dict):
+            raise ServiceReplayTransportFailure("Account HTTP replay returned a non-object")
+        return envelope

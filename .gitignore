@@ -32,6 +32,7 @@ live-runs/
 
 # Host-local Account service profile. The tracked template contains no secrets.
 ops/moss-account.env
+ops/moss-vllm.env
 
 # Local certificate and keychain material; none may be committed.
 *.p12

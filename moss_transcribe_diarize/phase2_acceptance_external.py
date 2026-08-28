@@ -1,0 +1,2665 @@
+"""Fixed external Account/HTTP/UDS measurement families.
+
+This is the deployed-observation owner for the Wave-1 driver.  Callers provide only endpoints,
+session-cookie files, and immutable input fixtures.  The module chooses every route, mutation,
+projection, and success predicate itself; it never consumes a caller-authored observation.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import importlib.util
+import json
+import math
+import os
+import shutil
+import socket
+import ssl
+import stat
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import wave
+from urllib.parse import urlsplit
+from collections import defaultdict
+from pathlib import Path
+from typing import Any, Mapping
+
+import httpx
+
+from .app.phase2 import SESSION_COOKIE
+from .app.phase2_audio import MeetingAudioArchive
+from .app.phase2_control import request_control
+from .phase2_acceptance import (
+    G1_CROSS_OWNER_MATRIX,
+    G1_SENTINEL_SURFACES,
+    QUALIFICATION_URL_FIXTURE,
+)
+from .phase2_acceptance_replay import (
+    AccountCookieLiveReplayService,
+    AccountReplayTransportFailure,
+)
+from .live_service_replay import run_service_replay
+from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
+
+
+class ExternalMeasurementError(RuntimeError):
+    """A fixed measurement ran but did not produce trustworthy product state."""
+
+
+def _mode_600(path: Path, label: str) -> None:
+    if path.stat().st_mode & 0o777 != 0o600:
+        raise ExternalMeasurementError(f"{label} must be mode 0600")
+
+
+def _read_cookie(path: Path) -> str:
+    _mode_600(path, "Account cookie file")
+    value = path.read_text(encoding="utf-8").strip()
+    if not value or "\n" in value or "\r" in value:
+        raise ExternalMeasurementError("Account cookie file must contain one value")
+    return value
+
+
+def _owner_state_digest(payload: Mapping[str, object]) -> bytes:
+    """Compare exact durable owner state without retaining Account content in evidence."""
+
+    projection = {
+        key: payload.get(key)
+        for key in (
+            "id",
+            "mode",
+            "status",
+            "title",
+            "title_source",
+            "created_at_ms",
+            "updated_at_ms",
+            "transcript",
+            "audio",
+        )
+    }
+    return hashlib.sha256(
+        json.dumps(
+            projection, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+    ).digest()
+
+
+class AccountHttpClient:
+    """One Account Sign-in session whose cookie never enters output or exception text."""
+
+    def __init__(self, origin: str, cookie_file: Path):
+        if not origin.startswith("https://"):
+            raise ExternalMeasurementError("deployed Account measurement requires https://")
+        cookie = _read_cookie(cookie_file)
+        self._client = httpx.Client(
+            base_url=origin.rstrip("/"),
+            headers={"Cookie": f"{SESSION_COOKIE}={cookie}"},
+            timeout=httpx.Timeout(300.0, connect=15.0),
+            follow_redirects=False,
+        )
+
+    def request(self, method: str, path: str, **kwargs: object) -> httpx.Response:
+        try:
+            return self._client.request(method, path, **kwargs)
+        except httpx.HTTPError as exc:
+            raise ExternalMeasurementError(
+                f"Account HTTP transport failed: {type(exc).__name__}"
+            ) from exc
+
+    def json(self, method: str, path: str, expected: int, **kwargs: object) -> tuple[dict[str, Any], httpx.Response]:
+        response = self.request(method, path, **kwargs)
+        if response.status_code != expected:
+            raise ExternalMeasurementError(
+                f"Account HTTP {method} {path.split('?')[0]} returned {response.status_code}"
+            )
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise ExternalMeasurementError("Account HTTP returned non-JSON") from exc
+        if not isinstance(payload, dict):
+            raise ExternalMeasurementError("Account HTTP returned non-object")
+        return payload, response
+
+    def close(self) -> None:
+        self._client.close()
+
+
+def _control(
+    socket_path: Path,
+    command: str,
+    email: str | None = None,
+    *,
+    meeting_id: str | None = None,
+) -> object:
+    return asyncio.run(
+        request_control(socket_path, command, email, meeting_id=meeting_id)
+    )
+
+
+class FixedAccountCampaign:
+    """Share only created IDs across fixed measurement predicates; never share authority."""
+
+    def __init__(
+        self,
+        *,
+        candidate_sha: str,
+        config: Mapping[str, object],
+    ) -> None:
+        self.candidate_sha = candidate_sha
+        self.config = config
+        self._clients: dict[str, AccountHttpClient] = {}
+        self._live: dict[str, str] = {}
+        self._meetings: dict[str, list[str]] = defaultdict(list)
+        self._browser: object | None = None
+        self._journal_start = self._optional_size("operator_journal")
+        self._safe_artifacts: set[Path] = set()
+
+    def _artifact_root(self) -> Path:
+        root = Path(self._text("campaign_work_dir")).resolve()
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        return root
+
+    @property
+    def artifact_root(self) -> Path:
+        return self._artifact_root()
+
+    @property
+    def safe_artifacts(self) -> tuple[Path, ...]:
+        return tuple(sorted(self._safe_artifacts, key=lambda item: item.as_posix()))
+
+    @staticmethod
+    def _artifact_relative(relative: str) -> Path:
+        path = Path(relative)
+        if (
+            path.is_absolute()
+            or not path.parts
+            or any(part in {"", ".", ".."} for part in path.parts)
+            or path.suffix != ".json"
+        ):
+            raise ExternalMeasurementError("safe artifact path is invalid")
+        return path
+
+    def _artifact_json(self, relative: str, payload: object) -> None:
+        relative_path = self._artifact_relative(relative)
+        path = self._artifact_root() / relative_path
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        encoded = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
+        descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        try:
+            view = memoryview(encoded)
+            while view:
+                view = view[os.write(descriptor, view) :]
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        self._safe_artifacts.add(relative_path)
+
+    def _optional_size(self, key: str) -> int:
+        value = self.config.get(key)
+        if not isinstance(value, str) or not value:
+            return 0
+        try:
+            return Path(value).expanduser().stat().st_size
+        except OSError:
+            return 0
+
+    def _text(self, key: str) -> str:
+        value = self.config.get(key)
+        if not isinstance(value, str) or not value:
+            raise ExternalMeasurementError(f"measurement prerequisite absent: {key}")
+        return value
+
+    def close(self) -> None:
+        for client in self._clients.values():
+            client.close()
+
+    @property
+    def browser(self):
+        if self._browser is None:
+            from .phase2_acceptance_browser import BrowserCampaign
+
+            self._browser = BrowserCampaign(
+                self.config,
+                repo=Path(self._text("repo_root")).resolve(),
+                work=Path(self._text("campaign_work_dir")).resolve(),
+            )
+        return self._browser
+
+    def cleanup(self) -> None:
+        """Terminalize every reusable probe Meeting before the final zero-work predicate."""
+
+        failures = 0
+        for owner, meeting_id in tuple(self._live.items()):
+            client = self.a if owner == "a" else self.b
+            response = client.request(
+                "POST", f"/api/live/sessions/{meeting_id}/abort", json={}
+            )
+            if response.status_code not in {200, 409}:
+                failures += 1
+        self._live.clear()
+        if failures:
+            raise ExternalMeasurementError("probe Live cleanup failed")
+
+    @property
+    def origin(self) -> str:
+        return self._text("https_origin")
+
+    @property
+    def operator_socket(self) -> Path:
+        return Path(self._text("operator_socket")).expanduser()
+
+    def _account(self, name: str) -> AccountHttpClient:
+        client = self._clients.get(name)
+        if client is None:
+            client = AccountHttpClient(
+                self.origin, Path(self._text(f"account_{name}_cookie_file")).expanduser()
+            )
+            self._clients[name] = client
+        return client
+
+    @property
+    def a(self) -> AccountHttpClient:
+        return self._account("a")
+
+    @property
+    def b(self) -> AccountHttpClient:
+        return self._account("b")
+
+    @property
+    def a_peer(self) -> AccountHttpClient:
+        return self._account("a_peer")
+
+    @property
+    def b_peer(self) -> AccountHttpClient:
+        return self._account("b_peer")
+
+    @property
+    def revoked_probe(self) -> AccountHttpClient:
+        return self._account("revoked_probe")
+
+    def _live_id(self, owner: str) -> str:
+        known = self._live.get(owner)
+        if known is not None:
+            return known
+        client = self.a if owner == "a" else self.b
+        payload, _ = client.json(
+            "POST", "/api/live/sessions", 201, json={"echo_mode": "speakers"}
+        )
+        meeting_id = payload.get("id")
+        if not isinstance(meeting_id, str) or not meeting_id:
+            raise ExternalMeasurementError("Live create omitted Meeting ID")
+        self._live[owner] = meeting_id
+        return meeting_id
+
+    def _new_live_id(self, owner: str) -> str:
+        self._live.pop(owner, None)
+        return self._live_id(owner)
+
+    def installed_candidate_identity(self) -> dict[str, object]:
+        manifest_path = Path(self._text("candidate_manifest")).expanduser()
+        _mode_600(manifest_path, "candidate manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise ExternalMeasurementError("candidate manifest is not an object")
+        descriptor_payload, response = self.a.json("GET", "/api/live/descriptor", 200)
+        descriptor = descriptor_payload.get("descriptor")
+        if not isinstance(descriptor, dict):
+            raise ExternalMeasurementError("Live descriptor is absent")
+        unit = str(self.config.get("web_unit") or "moss-web.service")
+        if unit != "moss-web.service":
+            raise ExternalMeasurementError("Account web unit must be moss-web.service")
+        process = subprocess.run(
+            ("systemctl", "--user", "show", unit, "--property", "MainPID", "--value"),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if process.returncode:
+            raise ExternalMeasurementError("Account web MainPID is unavailable")
+        pid = int(process.stdout.strip())
+        proc = Path("/proc") / str(pid)
+        try:
+            cwd = os.readlink(proc / "cwd")
+            exe = os.readlink(proc / "exe")
+            cmdline = " ".join(
+                item.decode("utf-8", "replace")
+                for item in (proc / "cmdline").read_bytes().split(b"\0")
+                if item
+            )
+        except OSError as exc:
+            raise ExternalMeasurementError("Account web process identity is unreadable") from exc
+        installed_record = manifest.get("installed_record")
+        dependency = manifest.get("dependency_projection")
+        config_hashes = descriptor.get("config_hashes")
+        url_fixture = self._text("url_fixture")
+        if url_fixture != QUALIFICATION_URL_FIXTURE:
+            raise ExternalMeasurementError("URL fixture differs from the pinned public input")
+        file_fixture = _file_fixture_identity(
+            Path(self._text("file_fixture")).expanduser().resolve()
+        )
+        toolchain = _toolchain_identity(
+            Path(self._text("chrome_binary")).expanduser().resolve()
+        )
+        accelerator = _accelerator_identity(
+            _unit_pid(str(self.config.get("vllm_unit") or "moss-vllm.service"))
+        )
+        tls = _tls_identity(self.origin)
+        return {
+            "candidate_sha": manifest.get("git_sha"),
+            "candidate_tree": manifest.get("git_tree"),
+            "uv_lock_sha256": manifest.get("uv_lock_sha256"),
+            "fixtures": manifest.get("fixtures"),
+            "candidate_header_sha": response.headers.get("X-MOSS-Candidate-SHA"),
+            "wheel_record_verified": (
+                installed_record.get("record_verified")
+                if isinstance(installed_record, dict)
+                else False
+            ),
+            "wheel_record_entries_verified": (
+                installed_record.get("record_entries_verified", 0)
+                if isinstance(installed_record, dict)
+                else 0
+            ),
+            "wheel_record_projection_sha256": manifest.get(
+                "wheel_record_projection_sha256"
+            ),
+            "dependency_projection_sha256": (
+                dependency.get("sha256") if isinstance(dependency, dict) else None
+            ),
+            "sqlite_runtime": manifest.get("sqlite_runtime"),
+            "aiosqlite": self._dependency_version(dependency, "aiosqlite"),
+            "authlib": self._dependency_version(dependency, "Authlib"),
+            "process": {"pid": pid, "cwd": cwd, "exe": exe, "cmdline": cmdline},
+            "toolchain": toolchain,
+            "accelerator": accelerator,
+            "tls": tls,
+            "input_fixtures": {
+                "file": file_fixture,
+                "url": url_fixture,
+            },
+            "descriptor": {
+                "source_revision": descriptor.get("source_revision"),
+                "provider_name": descriptor.get("provider_name"),
+                "provider_revision": descriptor.get("provider_revision"),
+                "provider_manifest_hash": descriptor.get("provider_manifest_hash"),
+                "schema_version": descriptor.get("schema_version"),
+                "live_protocol_version": descriptor.get("live_protocol_version"),
+                "sample_rate": descriptor.get("sample_rate"),
+                "frame_samples": descriptor.get("frame_samples"),
+                "bounds": descriptor.get("bounds"),
+                "config_hashes": config_hashes,
+                "combined_config_hash": (
+                    config_hashes.get("combined_config_hash")
+                    if isinstance(config_hashes, dict)
+                    else None
+                ),
+            },
+        }
+
+    @staticmethod
+    def _dependency_version(dependency: object, name: str) -> object:
+        packages = dependency.get("packages") if isinstance(dependency, dict) else None
+        if not isinstance(packages, list):
+            return None
+        for item in packages:
+            if isinstance(item, dict) and str(item.get("name", "")).lower() == name.lower():
+                return item.get("version")
+        return None
+
+    def zero_work_end(self) -> dict[str, object]:
+        status = _control(self.operator_socket, "status")
+        if not isinstance(status, dict):
+            raise ExternalMeasurementError("operator status is not an object")
+        capacity = status.get("capacity")
+        if not isinstance(capacity, dict):
+            raise ExternalMeasurementError("operator capacity is absent")
+        live = capacity.get("live")
+        file = capacity.get("file")
+        queues = capacity.get("queues")
+        return {
+            "active_live": live.get("active") if isinstance(live, dict) else None,
+            "active_file": file.get("active") if isinstance(file, dict) else None,
+            "queue_depths": dict(queues) if isinstance(queues, dict) else {},
+        }
+
+    def cross_owner_matrix(self) -> dict[str, object]:
+        meeting_id = self._live_id("a")
+        sentinel = Path(self._text("account_a_sentinel_file")).read_bytes().strip()
+        if not sentinel:
+            raise ExternalMeasurementError("Account A sentinel is empty")
+        renamed = self.a.request(
+            "PUT",
+            f"/api/meetings/{meeting_id}/title",
+            json={"title": sentinel.decode("utf-8")},
+        )
+        if renamed.status_code != 200:
+            raise ExternalMeasurementError("owner sentinel title could not be installed")
+        before_payload, _ = self.a.json("GET", f"/api/meetings/{meeting_id}", 200)
+        before = _owner_state_digest(before_payload)
+
+        invalid = httpx.Client(base_url=self.origin, headers={"Cookie": f"{SESSION_COOKIE}=invalid"})
+        try:
+            cases: list[dict[str, object]] = []
+            for case_id, (method, route, expected_status) in G1_CROSS_OWNER_MATRIX.items():
+                client: AccountHttpClient | httpx.Client = self.b
+                actual = route.format(
+                    foreign_meeting_id=meeting_id,
+                    foreign_session_id=meeting_id,
+                    foreign_cursor=0,
+                    foreign_job_id=meeting_id,
+                )
+                kwargs: dict[str, object] = {}
+                if method in {"POST", "PUT"}:
+                    kwargs["json"] = (
+                        {"title": "foreign mutation"} if "title" in actual else {}
+                    )
+                if case_id.startswith("invalid_session"):
+                    client = invalid
+                elif case_id.startswith("revoked"):
+                    # A second same-Account Sign-in session is revoked by ordinary logout; the
+                    # primary Account session remains valid for the before/after owner projection.
+                    if case_id == "revoked_session_meeting":
+                        logout = self.revoked_probe.request("POST", "/auth/logout")
+                        if logout.status_code != 303:
+                            raise ExternalMeasurementError("logout did not revoke the peer session")
+                    client = self.revoked_probe
+                response = client.request(method, actual, **kwargs)
+                after_payload, _ = self.a.json("GET", f"/api/meetings/{meeting_id}", 200)
+                after = _owner_state_digest(after_payload)
+                cases.append(
+                    {
+                        "id": case_id,
+                        "method": method,
+                        "route": route,
+                        "observed_status": response.status_code,
+                        "owner_state_unchanged": after == before,
+                        "owner_content_matches": response.content.count(sentinel),
+                    }
+                )
+            return {"cases": cases}
+        finally:
+            invalid.close()
+
+    def same_account_convergence(self) -> dict[str, object]:
+        meeting_id = self._live_id("a")
+        observations = 0
+        mismatches = 0
+        for path in ("/api/meetings", f"/api/live/sessions/{meeting_id}/snapshot"):
+            first = self.a.request("GET", path)
+            second = self.a_peer.request("GET", path)
+            observations += 2
+            if first.status_code != 200 or second.status_code != 200 or first.json() != second.json():
+                mismatches += 1
+        return {"clients": 2, "observations": observations, "mismatches": mismatches}
+
+    def sentinel_absence(self) -> dict[str, object]:
+        a_sentinel = Path(self._text("account_a_sentinel_file")).read_bytes().strip()
+        b_sentinel = Path(self._text("account_b_sentinel_file")).read_bytes().strip()
+        if not a_sentinel or not b_sentinel:
+            raise ExternalMeasurementError("Account sentinels must be nonempty")
+        meeting_a = self._live_id("a")
+        meeting_b = self._live_id("b")
+        self.a.json(
+            "PUT",
+            f"/api/meetings/{meeting_a}/title",
+            200,
+            json={"title": a_sentinel.decode()},
+        )
+        self.b.json(
+            "PUT",
+            f"/api/meetings/{meeting_b}/title",
+            200,
+            json={"title": b_sentinel.decode()},
+        )
+        a_transcript = self._seed_live_transcript("a", meeting_a, 0)
+        b_transcript = self._seed_live_transcript("b", meeting_b, 1)
+        audio_a = self._seed_audio_sentinel("a", 0)
+        audio_b = self._seed_audio_sentinel("b", 1)
+        if audio_a[1] == audio_b[1]:
+            raise ExternalMeasurementError("Account audio sentinels are not distinct")
+        audio_checks = []
+        for owner, foreign, audio in (
+            (self.a, self.b, audio_a),
+            (self.b, self.a, audio_b),
+        ):
+            owner_download = owner.request(
+                "GET", f"/api/meetings/{audio[0]}/audio/download"
+            )
+            foreign_download = foreign.request(
+                "GET", f"/api/meetings/{audio[0]}/audio/download"
+            )
+            audio_checks.append(
+                {
+                    "owner_status": owner_download.status_code,
+                    "owner_identity_match": hashlib.sha256(owner_download.content).digest()
+                    == audio[1],
+                    "foreign_status": foreign_download.status_code,
+                    "foreign_artifact_bytes": int(
+                        foreign_download.status_code == 200
+                        and hashlib.sha256(foreign_download.content).digest() == audio[1]
+                    )
+                    * len(foreign_download.content),
+                }
+            )
+        status = json.dumps(_control(self.operator_socket, "status"), sort_keys=True).encode()
+        a_values = (a_sentinel, a_transcript)
+        b_values = (b_sentinel, b_transcript)
+        paired_surfaces: dict[str, tuple[tuple[bytes, tuple[bytes, ...]], ...]] = {
+            "account_ui": (
+                (
+                    self._rendered_body(
+                        Path(self._text("account_a_cookie_file")).expanduser(),
+                        meeting_a,
+                    ),
+                    b_values,
+                ),
+                (
+                    self._rendered_body(
+                        Path(self._text("account_b_cookie_file")).expanduser(),
+                        meeting_b,
+                    ),
+                    a_values,
+                ),
+            ),
+            "meeting_history": (
+                (self.a.request("GET", "/api/meetings").content, b_values),
+                (self.b.request("GET", "/api/meetings").content, a_values),
+            ),
+            "persistence_projection": (
+                (
+                    self.a.request("GET", f"/api/meetings/{meeting_a}").content
+                    + self.a.request("GET", f"/api/meetings/{audio_a[0]}").content,
+                    b_values,
+                ),
+                (
+                    self.b.request("GET", f"/api/meetings/{meeting_b}").content
+                    + self.b.request("GET", f"/api/meetings/{audio_b[0]}").content,
+                    a_values,
+                ),
+            ),
+            "live_snapshot": (
+                (
+                    self.a.request(
+                        "GET", f"/api/live/sessions/{meeting_a}/snapshot"
+                    ).content,
+                    b_values,
+                ),
+                (
+                    self.b.request(
+                        "GET", f"/api/live/sessions/{meeting_b}/snapshot"
+                    ).content,
+                    a_values,
+                ),
+            ),
+            "live_events": (
+                (
+                    self.a.request(
+                        "GET", f"/api/live/sessions/{meeting_a}/events?since_seq=0"
+                    ).content,
+                    b_values,
+                ),
+                (
+                    self.b.request(
+                        "GET", f"/api/live/sessions/{meeting_b}/events?since_seq=0"
+                    ).content,
+                    a_values,
+                ),
+            ),
+        }
+        surfaces: dict[str, tuple[int, int]] = {
+            name: (
+                sum(len(forbidden) for _content, forbidden in observations),
+                sum(
+                    content.lower().count(value.lower())
+                    for content, forbidden in observations
+                    for value in forbidden
+                ),
+            )
+            for name, observations in paired_surfaces.items()
+        }
+        all_values = (*a_values, *b_values)
+        surfaces["operator_status"] = (
+            len(all_values),
+            sum(status.lower().count(value.lower()) for value in all_values),
+        )
+        for surface, key in (
+            ("operator_journal", "operator_journal"),
+            ("server_logs", "server_log"),
+            ("llm_prompt_log", "llm_prompt_log"),
+        ):
+            path = Path(self._text(key)).expanduser()
+            content = path.read_bytes().lower()
+            surfaces[surface] = (
+                len(all_values),
+                sum(content.count(value.lower()) for value in all_values),
+            )
+        return {
+            "audio_sentinel_checks": audio_checks,
+            "surfaces": [
+                {
+                    "id": name,
+                    "searches": searches,
+                    "foreign_matches": matches,
+                }
+                for name, (searches, matches) in sorted(surfaces.items())
+            ]
+        }
+
+    def _seed_live_transcript(self, owner: str, meeting_id: str, clip_index: int) -> bytes:
+        repo = Path(self._text("repo_root")).resolve()
+        fixture = json.loads(
+            (
+                repo
+                / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json"
+            ).read_text(encoding="utf-8")
+        )
+        clips = fixture.get("clips") if isinstance(fixture, dict) else None
+        audio = fixture.get("audio") if isinstance(fixture, dict) else None
+        if not isinstance(clips, list) or not isinstance(audio, dict):
+            raise ExternalMeasurementError("sentinel speech fixture is invalid")
+        clip = clips[clip_index]
+        marker = str(clip["expected_marker"]).encode("utf-8")
+        pcm = _wav_pcm_clip(
+            repo / str(audio["path"]),
+            float(clip["start_seconds"]),
+            float(clip["end_seconds"]),
+        )
+        cookie_key = f"account_{owner}_cookie_file"
+        adapter = AccountCookieLiveReplayService(
+            base_url=self.origin,
+            cookie_file=Path(self._text(cookie_key)).expanduser(),
+            timeout_seconds=60,
+        )
+        adapter.attach_existing(meeting_id)
+        samples = adapter.descriptor().frame_samples
+        deadline = time.monotonic() + 90
+        sequence = 0
+        while time.monotonic() < deadline:
+            offset = sequence * samples * 2 % len(pcm)
+            chunk = (pcm + pcm)[offset : offset + samples * 2]
+            adapter.accept_frame(
+                meeting_id,
+                AudioFrame(sequence, chunk, samples, LIVE_SAMPLE_RATE),
+            )
+            projection = (self.a if owner == "a" else self.b).request(
+                "GET", f"/api/meetings/{meeting_id}"
+            ).content
+            if marker.lower() in projection.lower():
+                return marker
+            sequence += 1
+            time.sleep(samples / LIVE_SAMPLE_RATE)
+        raise ExternalMeasurementError("sentinel speech did not reach durable transcript")
+
+    def _seed_audio_sentinel(
+        self, owner: str, clip_index: int
+    ) -> tuple[str, bytes]:
+        repo = Path(self._text("repo_root")).resolve()
+        fixture = json.loads(
+            (
+                repo
+                / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json"
+            ).read_text(encoding="utf-8")
+        )
+        clips = fixture.get("clips") if isinstance(fixture, dict) else None
+        audio = fixture.get("audio") if isinstance(fixture, dict) else None
+        if not isinstance(clips, list) or not isinstance(audio, dict):
+            raise ExternalMeasurementError("sentinel audio fixture is invalid")
+        source_path = repo / str(audio["path"])
+        clip = clips[clip_index]
+        pcm = _wav_pcm_clip(
+            source_path,
+            float(clip["start_seconds"]),
+            float(clip["end_seconds"]),
+        )
+        token = f"account-audio-sentinel-{owner}".encode("ascii")
+        directory = Path(self._text("campaign_work_dir")) / "audio-sentinels"
+        directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = directory / f"{token.decode()}.wav"
+        with wave.open(str(path), "wb") as target:
+            target.setnchannels(1)
+            target.setsampwidth(2)
+            target.setframerate(LIVE_SAMPLE_RATE)
+            target.writeframes(pcm)
+        path.chmod(0o600)
+        client = self.a if owner == "a" else self.b
+        meeting_id = self._submit_file_for(client, path)
+        meeting = self._await_meeting_terminal_for(client, meeting_id)
+        if token.lower() not in json.dumps(meeting).encode().lower():
+            raise ExternalMeasurementError("audio sentinel title is absent from owner state")
+        download = client.request("GET", f"/api/meetings/{meeting_id}/audio/download")
+        if download.status_code != 200 or not download.content:
+            raise ExternalMeasurementError("audio sentinel artifact is unavailable")
+        return meeting_id, hashlib.sha256(download.content).digest()
+
+    def _rendered_body(self, cookie_file: Path, meeting_id: str) -> bytes:
+        from playwright.sync_api import sync_playwright
+
+        chrome = Path(self._text("chrome_binary")).expanduser().resolve()
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(executable_path=str(chrome), headless=True)
+            try:
+                context = browser.new_context()
+                context.add_cookies(
+                    [
+                        {
+                            "name": SESSION_COOKIE,
+                            "value": _read_cookie(cookie_file),
+                            "url": self.origin,
+                            "secure": True,
+                            "httpOnly": True,
+                            "sameSite": "Lax",
+                        }
+                    ]
+                )
+                page = context.new_page()
+                page.goto(self.origin, wait_until="networkidle")
+                page.wait_for_selector('[data-auth-state="signed-in"]')
+                page.wait_for_selector('[data-boot="ready"]')
+                page.locator(f'[data-open-meeting="{meeting_id}"]').click()
+                page.wait_for_selector("#transcript-panel")
+                return page.locator("body").inner_text().encode("utf-8")
+            finally:
+                browser.close()
+
+    def real_google_oauth(self) -> dict[str, object]:
+        result = self.browser.real_google_oauth(
+            lambda command, email=None: _control(self.operator_socket, command, email)
+        )
+        self._artifact_json("browser/oauth-counts.json", result)
+        return result
+
+    def revocation_lifecycle(self) -> dict[str, object]:
+        failures = 0
+        late_commits = 0
+        stale_revived = 0
+
+        # Ordinary sign-out owns only one Sign-in session. An already-accepted File Meeting keeps
+        # running and the primary same-Account session remains readable.
+        fixture = Path(self._text("file_fixture")).expanduser()
+        peer_file_id = self._submit_file_for(self.a_peer, fixture)
+        logout = self.a_peer.request("POST", "/auth/logout")
+        if logout.status_code != 303:
+            failures += 1
+        if self.a_peer.request("GET", "/api/meetings").status_code != 401:
+            failures += 1
+        if self.a.request("GET", "/api/meetings").status_code != 200:
+            failures += 1
+        try:
+            self._await_meeting_terminal(peer_file_id)
+        except ExternalMeasurementError:
+            failures += 1
+
+        live_id = self._new_live_id("b")
+        b_file_id = self._submit_file_for(self.b, fixture)
+        self._seed_live_transcript("b", live_id, 2)
+        before, _ = self.b.json("GET", f"/api/meetings/{live_id}", 200)
+        before_transcript = before.get("transcript")
+        before_version = (
+            int(before_transcript.get("version", 0))
+            if isinstance(before_transcript, dict)
+            else 0
+        )
+        if before_version <= 0 or not isinstance(before_transcript, dict) or not before_transcript.get("segments"):
+            raise ExternalMeasurementError("revoke probe lacks a durable transcript prefix")
+        email = self._text("account_b_email").strip().lower()
+        revoked = _control(self.operator_socket, "accounts.revoke", email)
+        if not isinstance(revoked, dict) or revoked.get("revoked") is not True:
+            failures += 1
+        for client in (self.b, self.b_peer):
+            if client.request("GET", "/api/meetings").status_code != 401:
+                failures += 1
+        late = self.b.request(
+            "POST",
+            f"/api/live/sessions/{live_id}/frames",
+            json=AccountCookieLiveReplayService._lane_payload(
+                AudioFrame(0, b"\0\0" * 8_000, 8_000, LIVE_SAMPLE_RATE),
+                lane="system",
+                timestamp_ns=0,
+                silent=False,
+            ),
+        )
+        if late.status_code != 401:
+            late_commits += 1
+
+        _control(self.operator_socket, "accounts.allow", email)
+        fresh = self.browser.fresh_sign_in_history(
+            "account_b_browser_profile",
+            (live_id, b_file_id),
+            expected_transcripts={live_id: before_transcript},
+        )
+        if fresh.get("signed_in") is not True or fresh.get("fresh_cookie_present") is not True:
+            failures += 1
+        history = fresh.get("history")
+        if not isinstance(history, dict) or not all(history.values()):
+            failures += 1
+        states = fresh.get("states")
+        live_state = states.get(live_id) if isinstance(states, dict) else None
+        file_state = states.get(b_file_id) if isinstance(states, dict) else None
+        if not isinstance(live_state, dict) or live_state.get("status") != "interrupted":
+            failures += 1
+        if not isinstance(live_state, dict) or live_state.get("audio_state") != "partial":
+            failures += 1
+        if not isinstance(file_state, dict) or file_state.get("status") != "interrupted":
+            failures += 1
+        if (
+            isinstance(live_state, dict)
+            and isinstance(live_state.get("transcript_version"), int)
+            and live_state["transcript_version"] > before_version
+        ):
+            late_commits += 1
+        if self.b.request("GET", "/api/meetings").status_code != 401:
+            stale_revived += 1
+        self._live.pop("b", None)
+        return {
+            "cases": 6,
+            "failures": failures,
+            "late_commits": late_commits,
+            "stale_authority_revived": stale_revived,
+            "durable_prefix_preserved": fresh.get("durable_transcript_matches") is True,
+            "partial_audio_playable": fresh.get("partial_audio_playable") is True,
+            "fresh_history_states": states,
+        }
+
+    def operator_control(self) -> dict[str, object]:
+        mode = stat.S_IMODE(self.operator_socket.stat().st_mode)
+        status_before = _control(self.operator_socket, "status")
+        if not isinstance(status_before, dict):
+            raise ExternalMeasurementError("operator status is not an object")
+        forbidden = []
+        files = self.config.get("content_boundary_files")
+        if isinstance(files, dict):
+            for value in files.values():
+                if isinstance(value, str):
+                    forbidden.append(Path(value).expanduser().read_bytes().strip())
+        journal_path = Path(self._text("operator_journal")).expanduser()
+        capacity = status_before.get("capacity")
+        active = status_before.get("active_meetings")
+        status_accounts = status_before.get("accounts")
+        account_rows = _control(self.operator_socket, "accounts.list")
+        count_mismatches = 0
+        if not isinstance(capacity, dict) or not isinstance(active, list):
+            count_mismatches += 1
+        else:
+            live = capacity.get("live")
+            file = capacity.get("file")
+            live_count = sum(
+                isinstance(item, dict) and item.get("mode") == "live" for item in active
+            )
+            file_count = sum(
+                isinstance(item, dict) and item.get("mode") in {"file", "url"} for item in active
+            )
+            count_mismatches += int(not isinstance(live, dict) or live.get("active") != live_count)
+            count_mismatches += int(not isinstance(file, dict) or file.get("active") != file_count)
+        if isinstance(status_accounts, list) and isinstance(account_rows, list):
+            allowlist = {
+                item.get("email"): item.get("enabled")
+                for item in account_rows
+                if isinstance(item, dict)
+            }
+            count_mismatches += sum(
+                allowlist.get(item.get("email")) != item.get("enabled")
+                for item in status_accounts
+                if isinstance(item, dict)
+            )
+        else:
+            count_mismatches += 1
+        tcp_admin_surfaces = sum(
+            self.a.request("GET", path).status_code != 404
+            for path in ("/api/operator/status", "/api/admin", "/api/accounts")
+        )
+
+        adapter = AccountCookieLiveReplayService(
+            base_url=self.origin,
+            cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
+            timeout_seconds=60,
+        )
+        created = adapter.create()
+        interrupted = False
+        try:
+            corpus = Path(self._text("quality_corpus")).expanduser()
+            manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+            pcm = _wav_pcm(corpus / manifest["cases"][0]["case_id"] / "audio.wav")
+            frame_samples = created.descriptor.frame_samples
+            admitted_item: int | None = None
+            admitted_started = False
+            for sequence in range(120):
+                offset = sequence * frame_samples * 2 % len(pcm)
+                chunk = (pcm + pcm)[offset : offset + frame_samples * 2]
+                adapter.accept_frame(
+                    created.session_id,
+                    AudioFrame(sequence, chunk, frame_samples, LIVE_SAMPLE_RATE),
+                )
+                events = adapter.events(created.session_id)
+                processed = {
+                    int(event.payload["item_id"])
+                    for event in events
+                    if event.kind == "canonical_processed"
+                    and isinstance(event.payload.get("item_id"), int)
+                }
+                started = [
+                    int(event.payload["item_id"])
+                    for event in events
+                    if event.kind == "canonical_started"
+                    and isinstance(event.payload.get("item_id"), int)
+                    and int(event.payload["item_id"]) not in processed
+                ]
+                queued = [
+                    int(event.payload["item_id"])
+                    for event in events
+                    if event.kind == "canonical_queued"
+                    and isinstance(event.payload.get("item_id"), int)
+                    and int(event.payload["item_id"]) not in processed
+                    and int(event.payload["item_id"]) not in started
+                ]
+                if started and queued:
+                    admitted_item = queued[0]
+                    admitted_started = True
+                    break
+                time.sleep(frame_samples / LIVE_SAMPLE_RATE)
+            if admitted_item is None:
+                raise ExternalMeasurementError(
+                    "operator interrupt probe did not observe admitted canonical work"
+                )
+            before, _ = self.a.json(
+                "GET", f"/api/meetings/{created.session_id}", 200
+            )
+            before_transcript = before.get("transcript")
+            outcome = _control(
+                self.operator_socket,
+                "meetings.interrupt",
+                meeting_id=created.session_id,
+            )
+            interrupted = (
+                isinstance(outcome, dict)
+                and outcome.get("meeting_id") == created.session_id
+                and outcome.get("interrupted") is True
+            )
+            after = self._await_meeting_terminal(created.session_id)
+            after_events = adapter.events(created.session_id)
+            after_status = _control(self.operator_socket, "status")
+            if not isinstance(after_status, dict):
+                raise ExternalMeasurementError("post-interrupt operator status is not an object")
+            post_capacity = after_status.get("capacity")
+            queues = post_capacity.get("queues") if isinstance(post_capacity, dict) else None
+            active_after = after_status.get("active_meetings")
+            target_still_active = sum(
+                isinstance(item, dict) and item.get("meeting_id") == created.session_id
+                for item in (active_after if isinstance(active_after, list) else [])
+            )
+            audio = self.a.request(
+                "GET", f"/api/meetings/{created.session_id}/audio/download"
+            )
+            audio_probe = _probe_mp3(audio.content) if audio.status_code == 200 else None
+            late = self.a.request(
+                "POST",
+                f"/api/live/sessions/{created.session_id}/frames",
+                json=AccountCookieLiveReplayService._lane_payload(
+                    AudioFrame(999, b"\0\0" * frame_samples, frame_samples, LIVE_SAMPLE_RATE),
+                    lane="system",
+                    timestamp_ns=999 * frame_samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
+                    silent=False,
+                ),
+            )
+            matching_processed = sum(
+                event.kind == "canonical_processed"
+                and event.payload.get("item_id") == admitted_item
+                for event in after_events
+            )
+            matching_started = sum(
+                event.kind == "canonical_started"
+                and event.payload.get("item_id") == admitted_item
+                for event in after_events
+            )
+            matching_discarded = sum(
+                event.kind == "canonical_discarded"
+                and event.payload.get("item_id") == admitted_item
+                for event in after_events
+            )
+            interrupt_probe = {
+                "admitted_work_observed": True,
+                "admitted_started": admitted_started,
+                "command_interrupted": interrupted,
+                "durable_interrupted": after.get("status") == "interrupted",
+                "transcript_unchanged": after.get("transcript") == before_transcript,
+                "target_active_after": target_still_active,
+                "queue_depth_after": (
+                    sum(int(value) for value in queues.values())
+                    if isinstance(queues, dict)
+                    and all(isinstance(value, int) for value in queues.values())
+                    else -1
+                ),
+                "queued_item_started_events": matching_started,
+                "admitted_item_processed_events": matching_processed,
+                "queued_item_discarded_events": matching_discarded,
+                "audio_partial_playable": (
+                    isinstance(after.get("audio"), dict)
+                    and after["audio"].get("state") == "partial"
+                    and isinstance(audio_probe, dict)
+                    and audio_probe.get("codec") == "mp3"
+                ),
+                "late_frame_status": late.status_code,
+            }
+        finally:
+            if not interrupted:
+                try:
+                    asyncio.run(adapter.abort(created.session_id, "acceptance cleanup"))
+                except Exception:
+                    pass
+
+        journal = journal_path.read_bytes()
+        new_journal = journal[self._journal_start :]
+        status = json.dumps(status_before, sort_keys=True).encode()
+        result = {
+            "socket_mode": f"{mode:04o}",
+            "tcp_admin_surfaces": tcp_admin_surfaces,
+            "forbidden_content_matches": sum(
+                status.count(value) + journal.count(value) for value in forbidden if value
+            ),
+            "count_mismatches": count_mismatches,
+            "interrupt_probe": interrupt_probe,
+        }
+        self._artifact_json(
+            "operator/content-free-counts.json",
+            {
+                "result": result,
+                "status_bytes_observed": len(status),
+                "journal_bytes_observed": len(new_journal),
+                "accounts_observed": len(status_accounts)
+                if isinstance(status_accounts, list)
+                else None,
+                "active_meetings_observed": len(active) if isinstance(active, list) else None,
+            },
+        )
+        return result
+
+    def meeting_modes_history_restart(self) -> dict[str, object]:
+        fixture = Path(self._text("file_fixture")).expanduser()
+        if not fixture.is_file():
+            raise ExternalMeasurementError("File fixture is unavailable")
+        url = self._text("url_fixture")
+        if not url.startswith("https://"):
+            raise ExternalMeasurementError("URL fixture must use https://")
+        live_id = self._live_id("a")
+        submitted = self.browser.submit_file_url_batch(fixture, url)
+        ordered = submitted.get("ordered")
+        detached = submitted.get("detached")
+        if not isinstance(ordered, list) or not isinstance(detached, dict):
+            raise ExternalMeasurementError("browser batch output is incomplete")
+        accepted = [
+            item
+            for item in ordered
+            if isinstance(item, dict)
+            and item.get("status") == 201
+            and isinstance(item.get("meeting_id"), str)
+        ]
+        file_ids = [
+            str(item["meeting_id"])
+            for item in accepted
+            if item.get("path") == "/api/meetings/file"
+        ]
+        all_url_ids = [
+            str(item["meeting_id"])
+            for item in accepted
+            if item.get("path") == "/api/meetings/url"
+        ]
+        accepted_failure_ids = [
+            str(item["meeting_id"])
+            for item in accepted
+            if item.get("input_kind") == "accepted_failure"
+        ]
+        successful_url_ids = [
+            meeting_id
+            for meeting_id in all_url_ids
+            if meeting_id not in set(accepted_failure_ids)
+        ]
+        detached_file_id = detached.get("meeting_id")
+        if (
+            len(file_ids) != 2
+            or len(successful_url_ids) != 2
+            or len(accepted_failure_ids) != 1
+            or not isinstance(detached_file_id, str)
+        ):
+            raise ExternalMeasurementError("browser batch did not create the ruled Meetings")
+        input_boundary_rejection = sum(
+            isinstance(item, dict) and item.get("status") in {400, 422}
+            for item in ordered
+        ) == 1
+        terminal_states = {
+            meeting_id: self._await_meeting_terminal(meeting_id).get("status")
+            for meeting_id in (*file_ids, *successful_url_ids, *accepted_failure_ids, detached_file_id)
+        }
+        accepted_failure_id = accepted_failure_ids[0]
+        failure_isolated = (
+            input_boundary_rejection
+            and terminal_states[accepted_failure_id] == "failed"
+            and all(
+                status == "completed"
+                for meeting_id, status in terminal_states.items()
+                if meeting_id != accepted_failure_id
+            )
+        )
+        stopped = self.a.request("POST", f"/api/live/sessions/{live_id}/stop")
+        if stopped.status_code != 200:
+            raise ExternalMeasurementError("Live Meeting did not Stop")
+        self._await_meeting_terminal(live_id)
+        self._meetings["file"].extend(file_ids)
+        self._meetings["url"].extend(successful_url_ids)
+        self._meetings["live"].append(live_id)
+        renamed_title = "Wave 1 durable owner title"
+        renamed, _ = self.a.json(
+            "PUT", f"/api/meetings/{file_ids[0]}/title", 200, json={"title": renamed_title}
+        )
+        first = self.a.json("GET", "/api/meetings", 200)[0]
+        second = self.a_peer.json("GET", "/api/meetings", 200)[0]
+        history_mismatches = int(first != second)
+        before_history = first.get("meetings", [])
+        before_ids = {item.get("id") for item in before_history if isinstance(item, dict)}
+        restart_failures = 0
+        unit = str(self.config.get("web_unit") or "moss-web.service")
+        if unit != "moss-web.service":
+            raise ExternalMeasurementError("Account restart unit must be moss-web.service")
+        restarted = subprocess.run(
+            ("systemctl", "--user", "restart", unit), check=False, capture_output=True
+        )
+        if restarted.returncode:
+            raise ExternalMeasurementError("Account web restart failed")
+        self._await_service()
+        after = self.a.json("GET", "/api/meetings", 200)[0]
+        after_ids = {
+            item.get("id") for item in after.get("meetings", []) if isinstance(item, dict)
+        }
+        if before_ids != after_ids:
+            restart_failures += 1
+        if before_history != after.get("meetings", []):
+            restart_failures += 1
+        peer_renamed = next(
+            (
+                item
+                for item in second.get("meetings", [])
+                if isinstance(item, dict) and item.get("id") == file_ids[0]
+            ),
+            None,
+        )
+        if (
+            renamed.get("title") != renamed_title
+            or not isinstance(peer_renamed, dict)
+            or peer_renamed.get("title") != renamed_title
+        ):
+            history_mismatches += 1
+        return {
+            "modes": ["live", "file", "multi_file", "url", "serial_batch"],
+            "same_account_clients": 2,
+            "history_mismatches": history_mismatches,
+            "restart_failures": restart_failures,
+            "submissions": {
+                "single_file": 1,
+                "multi_file": len(file_ids),
+                "url": len(successful_url_ids),
+                "serial_batch": len(ordered),
+                "browser_closed_after_accept": 1,
+                "accepted_failure": 1,
+                "input_boundary_rejection": 1,
+            },
+            "one_item_failure_isolated": failure_isolated,
+        }
+
+    def _submit_file(self, fixture: Path) -> str:
+        return self._submit_file_for(self.a, fixture)
+
+    def _submit_file_for(self, client: AccountHttpClient, fixture: Path) -> str:
+        with fixture.open("rb") as source:
+            payload, _ = client.json(
+                "POST",
+                "/api/meetings/file",
+                201,
+                files={"file": (fixture.name, source, "audio/wav")},
+            )
+        meeting_id = payload.get("id")
+        if not isinstance(meeting_id, str):
+            raise ExternalMeasurementError("File create omitted Meeting ID")
+        return meeting_id
+
+    def _submit_url(self, url: str) -> str:
+        payload, _ = self.a.json(
+            "POST", "/api/meetings/url", 201, json={"url": url}
+        )
+        meeting_id = payload.get("id")
+        if not isinstance(meeting_id, str):
+            raise ExternalMeasurementError("URL create omitted Meeting ID")
+        return meeting_id
+
+    def _await_meeting_terminal(self, meeting_id: str, timeout: float = 1800) -> dict[str, Any]:
+        return self._await_meeting_terminal_for(self.a, meeting_id, timeout)
+
+    @staticmethod
+    def _await_meeting_terminal_for(
+        client: AccountHttpClient, meeting_id: str, timeout: float = 1800
+    ) -> dict[str, Any]:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            payload, _ = client.json("GET", f"/api/meetings/{meeting_id}", 200)
+            if payload.get("status") in {"completed", "failed", "interrupted"}:
+                return payload
+            time.sleep(1)
+        raise ExternalMeasurementError("Meeting did not reach terminal truth")
+
+    def _await_service(self, timeout: float = 60) -> None:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            response = self.a.request("GET", "/api/auth/session")
+            if response.status_code == 200:
+                return
+            time.sleep(0.5)
+        raise ExternalMeasurementError("Account web did not return after restart")
+
+    def crash_recovery(self) -> dict[str, object]:
+        adapter = AccountCookieLiveReplayService(
+            base_url=self.origin,
+            cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
+            timeout_seconds=60,
+        )
+        created = adapter.create()
+        corpus = Path(self._text("quality_corpus")).expanduser()
+        manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+        pcm = _wav_pcm(corpus / manifest["cases"][0]["case_id"] / "audio.wav")
+        samples = created.descriptor.frame_samples
+        sent_pcm = bytearray()
+        durable_prefix = False
+        before: dict[str, Any] = {}
+        for sequence in range(max(120, int(60 * LIVE_SAMPLE_RATE / samples))):
+            offset = sequence * samples * 2 % len(pcm)
+            chunk = (pcm + pcm)[offset : offset + samples * 2]
+            adapter.accept_frame(
+                created.session_id,
+                AudioFrame(sequence, chunk, samples, LIVE_SAMPLE_RATE),
+            )
+            sent_pcm.extend(chunk)
+            time.sleep(samples / LIVE_SAMPLE_RATE)
+            before, _ = self.a.json(
+                "GET", f"/api/meetings/{created.session_id}", 200
+            )
+            transcript = before.get("transcript")
+            durable_prefix = (
+                isinstance(transcript, dict)
+                and int(transcript.get("version", 0)) > 0
+                and bool(transcript.get("segments"))
+            )
+            if durable_prefix:
+                break
+        if not durable_prefix:
+            raise ExternalMeasurementError("crash probe did not establish a durable prefix")
+        runtime_before = adapter.snapshot(created.session_id)
+        if runtime_before is None or runtime_before.session.accepted_samples <= 0:
+            raise ExternalMeasurementError("crash probe lacks an accepted audio prefix")
+        accepted_prefix_samples = runtime_before.session.accepted_samples
+        accepted_pcm = bytes(sent_pcm[: accepted_prefix_samples * 2])
+        if len(accepted_pcm) != accepted_prefix_samples * 2:
+            raise ExternalMeasurementError("crash probe PCM does not cover the accepted prefix")
+        unit = str(self.config.get("web_unit") or "moss-web.service")
+        old_pid = _unit_pid(unit)
+        killed = subprocess.run(
+            ("systemctl", "--user", "kill", "--signal=KILL", unit),
+            check=False,
+            capture_output=True,
+        )
+        started = subprocess.run(
+            ("systemctl", "--user", "start", unit), check=False, capture_output=True
+        )
+        if killed.returncode or started.returncode:
+            raise ExternalMeasurementError("forced Account web restart failed")
+        self._await_service()
+        new_pid = _unit_pid(unit)
+        if new_pid == old_pid:
+            raise ExternalMeasurementError("forced Account web restart did not replace the process")
+        after, _ = self.a.json(
+            "GET", f"/api/meetings/{created.session_id}", 200
+        )
+        self._meetings["crash"].append(created.session_id)
+        before_transcript = before.get("transcript")
+        after_transcript = after.get("transcript")
+        document_mismatches = int(after_transcript != before_transcript)
+        after_audio = after.get("audio")
+        recovered_audio = self.a.request(
+            "GET", f"/api/meetings/{created.session_id}/audio/download"
+        )
+        with tempfile.TemporaryDirectory(
+            prefix="moss-crash-audio-oracle-", dir=self._artifact_root()
+        ) as directory:
+            oracle_root = Path(directory)
+            source = oracle_root / "accepted-prefix.pcm"
+            source.write_bytes(accepted_pcm)
+            expected = MeetingAudioArchive(oracle_root / "archive").publish_live_prefix(
+                "oracle-account", "oracle-meeting", source, partial=True
+            )
+            expected_bytes = expected.path.read_bytes()
+            expected_metadata = {
+                "state": "partial",
+                "byte_count": expected.byte_count,
+                "duration_ms": expected.duration_ms,
+                "format": expected.format,
+                "sample_rate_hz": expected.sample_rate_hz,
+                "channels": expected.channels,
+                "bit_rate_bps": expected.bit_rate_bps,
+            }
+        recovered_metadata = {
+            key: after_audio.get(key) if isinstance(after_audio, dict) else None
+            for key in expected_metadata
+        }
+        audio_prefix_failures = int(
+            recovered_metadata != expected_metadata
+            or not isinstance(after_audio.get("relative_path"), str)
+            or not after_audio["relative_path"]
+            or recovered_audio.status_code != 200
+            or recovered_audio.content != expected_bytes
+        )
+        reattach = self.a.request(
+            "POST",
+            f"/api/live/sessions/{created.session_id}/frames",
+            json=AccountCookieLiveReplayService._lane_payload(
+                AudioFrame(999, b"\0" * samples * 2, samples, LIVE_SAMPLE_RATE),
+                lane="system",
+                timestamp_ns=999 * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
+                silent=True,
+            ),
+        )
+        return {
+            "cases": 1,
+            "nonempty_durable_prefix": durable_prefix,
+            "lost_commits": document_mismatches,
+            "durable_document_mismatches": document_mismatches,
+            "audio_prefix_failures": audio_prefix_failures,
+            "accepted_prefix_samples": accepted_prefix_samples,
+            "process_replaced": True,
+            "resumed_capture": int(reattach.status_code != 409),
+            "non_interrupted_active_rows": int(after.get("status") != "interrupted"),
+        }
+
+    def audio_durability_download(self) -> dict[str, object]:
+        if not self._meetings["file"] or not self._meetings["live"]:
+            self.meeting_modes_history_restart()
+        meeting_ids = (self._meetings["file"][0], self._meetings["live"][0])
+        format_mismatches = durability_failures = owner_failures = foreign_leaks = 0
+        unauthenticated_failures = revoked_failures = partial_download_failures = 0
+        permission_failures = path_failures = 0
+        probe_rows: list[dict[str, object]] = []
+        root = Path(self._text("meeting_audio_root")).expanduser().resolve()
+        for meeting_id in meeting_ids:
+            payload = self._await_meeting_terminal(meeting_id)
+            audio = payload.get("audio")
+            if not isinstance(audio, dict) or audio.get("state") != "available":
+                durability_failures += 1
+                continue
+            if (
+                audio.get("format") != "mp3"
+                or audio.get("sample_rate_hz") != 16_000
+                or audio.get("channels") != 1
+                or audio.get("bit_rate_bps") != 48_000
+            ):
+                format_mismatches += 1
+            owner = self.a.request("GET", f"/api/meetings/{meeting_id}/audio/download")
+            if owner.status_code != 200 or not owner.content:
+                owner_failures += 1
+            else:
+                measured = _probe_mp3(owner.content)
+                probe_rows.append({"state": "available", **measured})
+                if not (
+                    measured.get("codec") == "mp3"
+                    and measured.get("sample_rate_hz") == 16_000
+                    and measured.get("channels") == 1
+                    and measured.get("bit_rate_bps") == 48_000
+                ):
+                    format_mismatches += 1
+                if len(owner.content) != audio.get("byte_count"):
+                    format_mismatches += 1
+                disposition = owner.headers.get("content-disposition", "")
+                if ".mp3" not in disposition or "partial" in disposition.casefold():
+                    owner_failures += 1
+            relative = audio.get("relative_path")
+            if not isinstance(relative, str) or Path(relative).is_absolute() or ".." in Path(relative).parts:
+                path_failures += 1
+            else:
+                stored = (root / relative).resolve()
+                if root not in stored.parents or not stored.is_file():
+                    path_failures += 1
+                else:
+                    permission_failures += int(stat.S_IMODE(stored.stat().st_mode) != 0o600)
+                    permission_failures += int(
+                        any(
+                            stat.S_IMODE(parent.stat().st_mode) != 0o700
+                            for parent in stored.parents
+                            if parent == root or root in parent.parents
+                        )
+                    )
+            foreign = self.b.request("GET", f"/api/meetings/{meeting_id}/audio/download")
+            if foreign.status_code != 404:
+                foreign_leaks += 1
+            if self.b_peer.request(
+                "GET", f"/api/meetings/{meeting_id}/audio/download"
+            ).status_code != 401:
+                revoked_failures += 1
+            try:
+                anonymous = httpx.get(
+                    f"{self.origin}/api/meetings/{meeting_id}/audio/download",
+                    follow_redirects=False,
+                    timeout=30,
+                )
+            except httpx.HTTPError as exc:
+                raise ExternalMeasurementError(
+                    "anonymous audio boundary transport failed"
+                ) from exc
+            if anonymous.status_code != 401:
+                unauthenticated_failures += 1
+        cleanup_failures = sum(
+            1
+            for path in root.rglob("*")
+            if path.is_file() and path.suffix.lower() in {".wav", ".pcm", ".raw"}
+        )
+        partial_cases = 0
+        if self._meetings["crash"]:
+            crash_id = self._meetings["crash"][0]
+            partial = self.a.json(
+                "GET", f"/api/meetings/{crash_id}", 200
+            )[0]
+            partial_audio = partial.get("audio")
+            partial_cases = int(
+                isinstance(partial_audio, dict)
+                and partial_audio.get("state") == "partial"
+            )
+            partial_response = self.a.request(
+                "GET", f"/api/meetings/{crash_id}/audio/download"
+            )
+            if (
+                partial_response.status_code != 200
+                or not partial_response.content
+                or "partial" not in partial_response.headers.get(
+                    "content-disposition", ""
+                ).casefold()
+            ):
+                partial_download_failures += 1
+            else:
+                measured = _probe_mp3(partial_response.content)
+                probe_rows.append({"state": "partial", **measured})
+                if (
+                    not isinstance(partial_audio, dict)
+                    or len(partial_response.content) != partial_audio.get("byte_count")
+                    or measured.get("codec") != "mp3"
+                    or measured.get("sample_rate_hz") != 16_000
+                    or measured.get("channels") != 1
+                    or measured.get("bit_rate_bps") != 48_000
+                ):
+                    partial_download_failures += 1
+            if self.b.request(
+                "GET", f"/api/meetings/{crash_id}/audio/download"
+            ).status_code != 404:
+                foreign_leaks += 1
+
+        # A missing archive member is a reachable operator/filesystem failure. The public download
+        # path owns reconciliation and must make durable metadata truthful before returning 404.
+        out_of_band_id = self._submit_file(Path(self._text("file_fixture")).expanduser())
+        out_of_band = self._await_meeting_terminal(out_of_band_id)
+        out_audio = out_of_band.get("audio")
+        out_of_band_reconciled = False
+        if isinstance(out_audio, dict) and isinstance(out_audio.get("relative_path"), str):
+            stored = root / str(out_audio["relative_path"])
+            stored.unlink()
+            missing = self.a.request("GET", f"/api/meetings/{out_of_band_id}/audio/download")
+            reconciled = self.a.json("GET", f"/api/meetings/{out_of_band_id}", 200)[0]
+            reconciled_audio = reconciled.get("audio")
+            out_of_band_reconciled = (
+                missing.status_code == 404
+                and isinstance(reconciled_audio, dict)
+                and reconciled_audio.get("state") == "unavailable"
+            )
+        result = {
+            "live_cases": 1,
+            "file_cases": 1,
+            "format_mismatches": format_mismatches,
+            "durability_failures": durability_failures,
+            "cleanup_failures": cleanup_failures,
+            "owner_download_failures": owner_failures,
+            "foreign_leaks": foreign_leaks,
+            "unauthenticated_failures": unauthenticated_failures,
+            "revoked_failures": revoked_failures,
+            "partial_download_failures": partial_download_failures,
+            "partial_or_unavailable_crash_cases": partial_cases,
+            "path_failures": path_failures,
+            "permission_failures": permission_failures,
+            "out_of_band_reconciled": out_of_band_reconciled,
+            "ffprobe": probe_rows,
+        }
+        self._artifact_json("audio/content-free-format-durability.json", result)
+        return result
+
+    def account_product_regression(self) -> dict[str, object]:
+        active_id = self._new_live_id("a")
+        completed = self._durable_transcript_meeting()
+        result = self.browser.product_regression(active_id, str(completed["id"]))
+        self._artifact_json("browser/product-suite-counts.json", result)
+        return result
+
+    def transcript_pane_fidelity(self) -> dict[str, object]:
+        result = self.browser.transcript_fidelity(self._durable_transcript_meeting())
+        self._artifact_json("browser/transcript-fidelity-metrics.json", result)
+        return result
+
+    def _durable_transcript_meeting(self) -> dict[str, object]:
+        payload, _ = self.a.json("GET", "/api/meetings", 200)
+        meetings = payload.get("meetings")
+        if isinstance(meetings, list):
+            for meeting in meetings:
+                transcript = meeting.get("transcript") if isinstance(meeting, dict) else None
+                segments = transcript.get("segments") if isinstance(transcript, dict) else None
+                if (
+                    meeting.get("status") in {"completed", "interrupted"}
+                    and isinstance(segments, list)
+                    and segments
+                ):
+                    return meeting
+        fixture = Path(self._text("file_fixture")).expanduser()
+        meeting_id = self._submit_file(fixture)
+        return self._await_meeting_terminal(meeting_id)
+
+    def quality_corpus(self) -> dict[str, object]:
+        """Run the frozen six cases twice through Account Live and the retained scorer."""
+
+        repo = Path(self._text("repo_root")).resolve()
+        corpus = Path(self._text("quality_corpus")).expanduser().resolve()
+        work = Path(self._text("campaign_work_dir")).resolve() / "quality"
+        work.parent.mkdir(mode=0o700, exist_ok=True)
+        os.mkdir(work, mode=0o700)
+        manifest_path = corpus / "corpus-manifest.json"
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes)
+        cases = manifest.get("cases") if isinstance(manifest, dict) else None
+        if not isinstance(cases, list) or len(cases) != 6:
+            raise ExternalMeasurementError("quality corpus must contain six cases")
+        expected_ids = {
+            "mono_javier_intro_50s",
+            "interview_bill_ackman_60s",
+            "interview_keyu_jin_60s",
+            "interview_adam_frank_180s",
+            "discussion_jamie_dimon_180s",
+            "discussion_rtfl_90s",
+        }
+        case_by_id = {
+            str(item.get("case_id")): item for item in cases if isinstance(item, dict)
+        }
+        if set(case_by_id) != expected_ids:
+            raise ExternalMeasurementError("quality corpus case IDs differ from the frozen set")
+        input_identities = _verify_quality_inputs(
+            repo=repo, corpus=corpus, cases=cases
+        )
+        surface = _load_surface_harness(repo)
+        observations: list[dict[str, object]] = []
+        descriptor_identity: tuple[str, str, str] | None = None
+        order = tuple(item["case_id"] for item in cases)
+        cookie_paths = (
+            Path(self._text("account_a_cookie_file")).expanduser(),
+            Path(self._text("account_b_cookie_file")).expanduser(),
+        )
+        for pass_number in (1, 2):
+            pass_order = order if pass_number == 1 else tuple(reversed(order))
+            for index, case_id in enumerate(pass_order):
+                case_dir = corpus / str(case_id)
+                audio = case_dir / "audio.wav"
+                reference = case_dir / "reference.jsonl"
+                if not audio.is_file() or not reference.is_file():
+                    raise ExternalMeasurementError("quality case input is incomplete")
+                adapter = AccountCookieLiveReplayService(
+                    base_url=self.origin,
+                    cookie_file=cookie_paths[index % 2],
+                    timeout_seconds=300,
+                )
+                descriptor = adapter.descriptor()
+                identity = (
+                    descriptor.source_revision,
+                    descriptor.provider_manifest_hash,
+                    descriptor.config_hashes.combined_config_hash,
+                )
+                if descriptor_identity is None:
+                    descriptor_identity = identity
+                elif descriptor_identity != identity:
+                    raise ExternalMeasurementError("quality descriptor changed during campaign")
+                captured = surface.SurfaceCaptureService(
+                    adapter,
+                    settle_timeout=30.0,
+                    poll_seconds=0.25,
+                )
+                run_dir = work / f"pass-{pass_number}" / str(case_id)
+                run_dir.parent.mkdir(mode=0o700, exist_ok=True)
+                run_service_replay(
+                    service=captured,
+                    audio_path=audio,
+                    out_dir=run_dir,
+                    pace=1.0,
+                    max_pacing_lag=3.0,
+                    runs=1,
+                    expect_revision=identity[0],
+                    expect_provider_hash=identity[1],
+                    expect_config_hash=identity[2],
+                )
+                trace = run_dir / "run-001" / "trace.jsonl"
+                if "post_stop_final" not in captured.captures:
+                    for line in trace.read_text(encoding="utf-8").splitlines():
+                        row = json.loads(line)
+                        if row.get("kind") == "terminal" and isinstance(row.get("snapshot"), dict):
+                            from .live_service_replay import _snapshot_from_dict
+
+                            captured._capture(
+                                "post_stop_final", _snapshot_from_dict(row["snapshot"])
+                            )
+                required_surfaces = (
+                    "pre_stop_immediate",
+                    "pre_stop_settled",
+                    "post_stop_final",
+                )
+                if any(name not in captured.captures for name in required_surfaces):
+                    raise ExternalMeasurementError("quality run missed a transcript surface")
+                duration = _wav_duration(audio)
+                scored: dict[str, dict[str, object]] = {}
+                case = surface.Case(str(case_id), case_dir, reference)
+                for name in required_surfaces:
+                    rows = surface.transcript_rows(
+                        captured.captures[name]["snapshot"], duration
+                    )
+                    scored[name] = surface.score_surface(case, rows)
+                events = surface.read_service_events(trace)
+                measurements = surface.event_measurements(
+                    events,
+                    captured.captures["pre_stop_settled"]["snapshot"],
+                    captured.captures["post_stop_final"],
+                    captured.stop_requested_monotonic_ns,
+                    duration,
+                )
+                trace_rows = [
+                    json.loads(line)
+                    for line in trace.read_text(encoding="utf-8").splitlines()
+                    if line
+                ]
+                created_rows = [
+                    row for row in trace_rows if row.get("kind") == "session_created"
+                ]
+                if (
+                    len(created_rows) != 1
+                    or not isinstance(created_rows[0].get("session_id"), str)
+                ):
+                    raise ExternalMeasurementError("quality trace lacks one exact session ID")
+                observations.append(
+                    {
+                        "case_id": str(case_id),
+                        "pass": pass_number,
+                        "session_id": f"session-{len(observations) + 1:02d}",
+                        "category": case_by_id[str(case_id)].get("category"),
+                        "duration_seconds": duration,
+                        "windows": len(measurements["rolling_queue"]["windows"]),
+                        "metrics": {
+                            "immediate": scored["pre_stop_immediate"],
+                            "settled": scored["pre_stop_settled"],
+                            "final": scored["post_stop_final"],
+                        },
+                        "event_counts": {
+                            "service": len(events),
+                            "trace": len(trace_rows),
+                            "rolling_windows": len(
+                                measurements["rolling_queue"]["windows"]
+                            ),
+                        },
+                    }
+                )
+        result = _quality_projection(
+            observations,
+            corpus_manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+        )
+        result["input_identities"] = input_identities
+        self._artifact_json("quality/content-free-metrics.json", result)
+        return result
+
+    def four_session_capacity(self) -> dict[str, object]:
+        result = self._run_live_load(sessions=4, duration_seconds=600.0)
+        backpressure = self._backpressure_probe()
+        result.update(
+            {
+                "accounts": 2,
+                "real_human_speech": True,
+                "ingress_cadence_seconds": 0.5,
+                "continuous_wrong_owner_probes": result.pop("wrong_owner_probes") > 0,
+                "per_session_429_peer_progress_retry": all(
+                    backpressure[key] is True
+                    for key in ("observed_429", "peer_progress", "same_sequence_retry")
+                ),
+                "backpressure_observation": backpressure,
+            }
+        )
+        return result
+
+    def eight_session_overload(self) -> dict[str, object]:
+        result = self._run_live_load(sessions=8, duration_seconds=30.0)
+        backpressure = self._backpressure_probe()
+        result.update(
+            {
+                "accounts": 2,
+                "isolation_failures": int(result["cross_account_sentinel_deliveries"])
+                + int(result["marker_isolation_failures"]),
+                "fairness_failures": int(
+                    result["dispatch_skew"] > 1
+                    or result["fairness_measured"] is not True
+                ),
+                "per_session_backpressure_observed": backpressure["observed_429"],
+                "peer_progress_during_backpressure": backpressure["peer_progress"],
+                "refused_frame_retry_succeeded": backpressure["same_sequence_retry"],
+                "backpressure_observation": backpressure,
+            }
+        )
+        return result
+
+    def _run_live_load(self, *, sessions: int, duration_seconds: float) -> dict[str, object]:
+        repo = Path(self._text("repo_root")).resolve()
+        fixture = json.loads(
+            (repo / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json")
+            .read_text(encoding="utf-8")
+        )
+        clips = fixture.get("clips") if isinstance(fixture, dict) else None
+        audio_config = fixture.get("audio") if isinstance(fixture, dict) else None
+        if not isinstance(clips, list) or len(clips) < sessions or not isinstance(audio_config, dict):
+            raise ExternalMeasurementError("capacity fixture lacks unique session clips")
+        source_audio = repo / str(audio_config.get("path"))
+        session_inputs = [
+            (
+                _wav_pcm_clip(
+                    source_audio,
+                    float(clips[index]["start_seconds"]),
+                    float(clips[index]["end_seconds"]),
+                ),
+                str(clips[index]["expected_marker"]),
+            )
+            for index in range(sessions)
+        ]
+        cookie_paths = (
+            Path(self._text("account_a_cookie_file")).expanduser(),
+            Path(self._text("account_b_cookie_file")).expanduser(),
+        )
+        web_pid = _unit_pid(str(self.config.get("web_unit") or "moss-web.service"))
+        vllm_pid = _unit_pid(str(self.config.get("vllm_unit") or "moss-vllm.service"))
+        rss_before = _process_tree_rss(web_pid) + _process_tree_rss(vllm_pid)
+        log_offsets = {
+            key: Path(str(self.config[key])).expanduser().stat().st_size
+            for key in ("server_log", "vllm_log")
+        }
+        barrier = threading.Barrier(sessions)
+        lock = threading.Lock()
+        created: list[tuple[str, int, int]] = []
+        outputs: list[dict[str, object]] = []
+        failures: list[str] = []
+        cross_sentinel_deliveries = 0
+        wrong_owner_observations: list[dict[str, object]] = []
+        a_sentinel = Path(self._text("account_a_sentinel_file")).read_bytes().strip()
+        b_sentinel = Path(self._text("account_b_sentinel_file")).read_bytes().strip()
+        rss_samples = [rss_before]
+        cache_samples = [_vllm_cache_use(self._text("vllm_metrics_url"))]
+        next_resource_sample = time.monotonic() + 2.0
+
+        def worker(index: int) -> None:
+            nonlocal cross_sentinel_deliveries
+            owner = index % 2
+            adapter = AccountCookieLiveReplayService(
+                base_url=self.origin,
+                cookie_file=cookie_paths[owner],
+                timeout_seconds=300,
+            )
+            probe = AccountHttpClient(self.origin, cookie_paths[1 - owner])
+            session_id: str | None = None
+            terminal = False
+            try:
+                descriptor = adapter.descriptor()
+                frame_samples = descriptor.frame_samples
+                cadence = frame_samples / LIVE_SAMPLE_RATE
+                if not math.isclose(cadence, 0.5, abs_tol=1e-9):
+                    raise ExternalMeasurementError("capacity descriptor cadence is not 0.5 s")
+                pcm, marker = session_inputs[index]
+                created_result = adapter.create()
+                session_id = created_result.session_id
+                with lock:
+                    created.append((session_id, owner, index + 1))
+                barrier.wait(timeout=30)
+                started = time.monotonic()
+                started_ns = time.monotonic_ns()
+                frames = int(duration_seconds / cadence)
+                last_snapshot = created_result.snapshot
+                maximum_pending = last_snapshot.pending_work_items
+                for sequence in range(frames):
+                    offset = sequence * frame_samples * 2 % len(pcm)
+                    chunk = (pcm + pcm)[offset : offset + frame_samples * 2]
+                    target = started + sequence * cadence
+                    delay = target - time.monotonic()
+                    if delay > 0:
+                        time.sleep(delay)
+                    last_snapshot = adapter.accept_frame(
+                        session_id,
+                        AudioFrame(
+                            sequence=sequence,
+                            pcm=chunk,
+                            sample_count=frame_samples,
+                            sample_rate=LIVE_SAMPLE_RATE,
+                        ),
+                    ).snapshot
+                    maximum_pending = max(maximum_pending, last_snapshot.pending_work_items)
+                    response = probe.request(
+                        "GET", f"/api/live/sessions/{session_id}/snapshot"
+                    )
+                    forbidden = a_sentinel if owner == 0 else b_sentinel
+                    foreign_matches = response.content.count(forbidden)
+                    with lock:
+                        wrong_owner_observations.append(
+                            {
+                                "session_ordinal": index + 1,
+                                "sequence": sequence,
+                                "status": response.status_code,
+                                "foreign_matches": foreign_matches,
+                            }
+                        )
+                        if response.status_code != 404:
+                            failures.append("CrossOwnerProbe")
+                        cross_sentinel_deliveries += foreign_matches
+                stopped = asyncio.run(adapter.stop(session_id, time.monotonic() + 300))
+                terminal = True
+                events = adapter.events(session_id)
+                payloads = [event.to_dict() for event in events]
+                lags = [
+                    max(
+                        0.0,
+                        (int(event["payload"]["runtime_monotonic_ns"]) - started_ns)
+                        / 1_000_000_000
+                        - int(event["payload"]["committed_samples"]) / LIVE_SAMPLE_RATE,
+                    )
+                    for event in payloads
+                    if event.get("kind") == "canonical_processed"
+                    and isinstance(event.get("payload"), dict)
+                    and isinstance(event["payload"].get("runtime_monotonic_ns"), int)
+                    and isinstance(event["payload"].get("committed_samples"), int)
+                    and event["payload"].get("submitted") is True
+                ]
+                transcript_text = "\n".join(
+                    segment.text for segment in stopped.session.effective_transcript
+                ).casefold()
+                foreign_markers = [
+                    candidate.casefold()
+                    for position, (_candidate_pcm, candidate) in enumerate(session_inputs)
+                    if position != index
+                ]
+                with lock:
+                    outputs.append(
+                        {
+                            "ordinal": index + 1,
+                            "account_ordinal": owner + 1,
+                            "session_id": session_id,
+                            "frames": frames,
+                            "lags": lags,
+                            "accepted_samples": stopped.session.accepted_samples,
+                            "accounted_samples": stopped.session.accounted_samples,
+                            "events": payloads,
+                            "maximum_pending_work_items": maximum_pending,
+                            "own_marker_present": marker.casefold() in transcript_text,
+                            "foreign_markers_absent": all(
+                                candidate not in transcript_text for candidate in foreign_markers
+                            ),
+                        }
+                    )
+            except Exception as exc:
+                with lock:
+                    failures.append(type(exc).__name__)
+            finally:
+                probe.close()
+                if session_id is not None and not terminal:
+                    try:
+                        asyncio.run(adapter.abort(session_id, "acceptance load failure"))
+                    except Exception:
+                        with lock:
+                            failures.append("LoadCleanup")
+
+        threads = [threading.Thread(target=worker, args=(index,)) for index in range(sessions)]
+        campaign_started_ns = time.monotonic_ns()
+        for thread in threads:
+            thread.start()
+        wrong_owner_probes = 0
+        while any(thread.is_alive() for thread in threads):
+            if time.monotonic() >= next_resource_sample:
+                rss_samples.append(
+                    _process_tree_rss(web_pid) + _process_tree_rss(vllm_pid)
+                )
+                cache_samples.append(_vllm_cache_use(self._text("vllm_metrics_url")))
+                next_resource_sample = time.monotonic() + 2.0
+            for thread in threads:
+                thread.join(timeout=0.25)
+        campaign_finished_ns = time.monotonic_ns()
+        if failures or len(outputs) != sessions:
+            raise ExternalMeasurementError(
+                f"live load failed in {len(failures)} session/probe paths"
+            )
+        wrong_owner_probes = len(wrong_owner_observations)
+        rss_after = _process_tree_rss(web_pid) + _process_tree_rss(vllm_pid)
+        rss_samples.append(rss_after)
+        cache_samples.append(_vllm_cache_use(self._text("vllm_metrics_url")))
+        all_events = [event for output in outputs for event in output["events"]]  # type: ignore[index]
+        decode_seconds = 0.0
+        decoded_audio_seconds = 0.0
+        rolling_pending: dict[str, set[int]] = defaultdict(set)
+        refinement_depth = 0
+        terminal_failures = 0
+        stale_failed = 0
+        lifecycle = sorted(
+            (
+                event
+                for event in all_events
+                if event.get("kind")
+                in {"canonical_queued", "canonical_started", "canonical_processed"}
+            ),
+            key=lambda event: int((event.get("payload") or {}).get("runtime_monotonic_ns", 0)),
+        )
+        concurrency = _load_concurrency_harness(Path(self._text("repo_root")).resolve())
+        fairness = concurrency._canonical_lifecycle_fairness(
+            lifecycle,
+            {str(output["session_id"]) for output in outputs},
+            maximum_skew=1,
+        )
+        dispatch_skew = int(fairness.get("maximum_contended_pair_dispatch_skew", 2))
+        if fairness.get("passes") is not True:
+            failures.append("StandingFairnessEvaluator")
+        for event in all_events:
+            kind = event.get("kind")
+            payload = event.get("payload") or {}
+            session_id = str(event.get("session_id") or "")
+            if kind == "canonical_processed":
+                decode_seconds += float(payload.get("canonical_decode_elapsed_sec") or 0)
+                decoded_audio_seconds += float(payload.get("frozen_span_duration_sec") or 0)
+            elif kind == "rolling_decode_queued" and payload.get("admitted") is True:
+                item_id = payload.get("item_id")
+                if isinstance(item_id, int):
+                    rolling_pending[session_id].add(item_id)
+                    refinement_depth = max(
+                        refinement_depth, len(rolling_pending[session_id])
+                    )
+            elif kind == "rolling_decode_completed":
+                item_id = payload.get("item_id")
+                if isinstance(item_id, int):
+                    rolling_pending[session_id].discard(item_id)
+                if payload.get("outcome") in {"stale", "failed"}:
+                    stale_failed += 1
+            elif kind == "terminal_finalization_failed":
+                terminal_failures += 1
+        accepted_expected = int(duration_seconds * LIVE_SAMPLE_RATE)
+        sequence_gaps = sum(
+            int(output["accepted_samples"] != accepted_expected) for output in outputs
+        )
+        dropped_commits = sum(
+            int(output["accounted_samples"] != output["accepted_samples"])
+            for output in outputs
+        )
+        marker_isolation_failures = sum(
+            int(
+                output["own_marker_present"] is not True
+                or output["foreign_markers_absent"] is not True
+            )
+            for output in outputs
+        )
+        logs = b""
+        log_byte_counts: dict[str, int] = {}
+        for key in ("server_log", "vllm_log"):
+            path = Path(str(self.config[key])).expanduser()
+            with path.open("rb") as source:
+                source.seek(log_offsets[key])
+                tail = source.read()
+                log_byte_counts[key] = len(tail)
+                logs += tail.lower()
+        oom_errors = logs.count(b"out of memory") + logs.count(b"cuda oom")
+        accelerator_errors = logs.count(b"accelerator error") + logs.count(b"cuda error")
+        result = {
+            "sessions": sessions,
+            "requested_duration_seconds": duration_seconds,
+            "duration_seconds": (campaign_finished_ns - campaign_started_ns)
+            / 1_000_000_000,
+            "campaign_interval": {
+                "started_monotonic_ns": campaign_started_ns,
+                "finished_monotonic_ns": campaign_finished_ns,
+            },
+            "transcript_lag_seconds": {
+                f"session-{index + 1:02d}": output["lags"]
+                for index, output in enumerate(outputs)
+            },
+            "dispatch_skew": dispatch_skew,
+            "fairness_measured": fairness.get("applicability") == "measured"
+            and fairness.get("passes") is True,
+            "prestop_inference_rtf": (
+                decode_seconds / decoded_audio_seconds if decoded_audio_seconds else math.inf
+            ),
+            "refinement_queue_depth": refinement_depth,
+            "rss_growth_bytes": max(rss_samples) - min(rss_samples),
+            "rss_samples": rss_samples,
+            "vllm_gpu_cache_samples": cache_samples,
+            "vllm_gpu_cache_use": max(cache_samples),
+            "oom_errors": oom_errors,
+            "accelerator_errors": accelerator_errors,
+            "sequence_gaps": sequence_gaps,
+            "dropped_canonical_commits": dropped_commits,
+            "terminal_failures": terminal_failures,
+            "stale_failed_windows": stale_failed,
+            "cross_account_sentinel_deliveries": cross_sentinel_deliveries,
+            "marker_isolation_failures": marker_isolation_failures,
+            "wrong_owner_probes": wrong_owner_probes,
+            "wrong_owner_observations": wrong_owner_observations,
+            "fairness_observation": fairness,
+            "session_observations": [
+                {
+                    "session_ordinal": output["ordinal"],
+                    "account_ordinal": output["account_ordinal"],
+                    "frames": output["frames"],
+                    "lags": output["lags"],
+                    "accepted_samples": output["accepted_samples"],
+                    "accounted_samples": output["accounted_samples"],
+                    "maximum_pending_work_items": output[
+                        "maximum_pending_work_items"
+                    ],
+                    "own_marker_present": output["own_marker_present"],
+                    "foreign_markers_absent": output["foreign_markers_absent"],
+                    "events": [
+                        {
+                            "kind": event.get("kind"),
+                            "runtime_monotonic_ns": (event.get("payload") or {}).get(
+                                "runtime_monotonic_ns"
+                            ),
+                            "canonical_decode_elapsed_sec": (
+                                event.get("payload") or {}
+                            ).get("canonical_decode_elapsed_sec"),
+                            "frozen_span_duration_sec": (
+                                event.get("payload") or {}
+                            ).get("frozen_span_duration_sec"),
+                            "submitted": (event.get("payload") or {}).get("submitted"),
+                            "admitted": (event.get("payload") or {}).get("admitted"),
+                            "item_id": (event.get("payload") or {}).get("item_id"),
+                            "outcome": (event.get("payload") or {}).get("outcome"),
+                        }
+                        for event in output["events"]
+                        if event.get("kind")
+                        in {
+                            "canonical_queued",
+                            "canonical_started",
+                            "canonical_processed",
+                            "rolling_decode_queued",
+                            "rolling_decode_completed",
+                            "terminal_finalization_failed",
+                        }
+                    ],
+                }
+                for output in sorted(outputs, key=lambda item: int(item["ordinal"]))
+            ],
+            "log_match_counts": {
+                "oom": oom_errors,
+                "accelerator": accelerator_errors,
+            },
+        }
+        label = f"capacity-{sessions}"
+        self._artifact_json(
+            f"{label}/observations.json",
+            {
+                "result": result,
+                "sessions": result["session_observations"],
+                "wrong_owner_observations": wrong_owner_observations,
+                "rss_samples": rss_samples,
+                "vllm_gpu_cache_samples": cache_samples,
+                "observed_log_bytes": log_byte_counts,
+                "log_match_counts": {
+                    "oom": oom_errors,
+                    "accelerator": accelerator_errors,
+                },
+            },
+        )
+        return result
+
+    def _backpressure_probe(self) -> dict[str, object]:
+        # Existing replay/account transport owns exact retry identity.  Saturate one Meeting while
+        # advancing its peer; only an observed refusal followed by accepted same-sequence retry can
+        # satisfy this predicate.
+        corpus = Path(self._text("quality_corpus")).expanduser().resolve()
+        manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+        case_id = manifest["cases"][0]["case_id"]
+        pcm = _wav_pcm(corpus / case_id / "audio.wav")
+        hot = AccountCookieLiveReplayService(
+            base_url=self.origin,
+            cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
+            timeout_seconds=30,
+        )
+        peer = AccountCookieLiveReplayService(
+            base_url=self.origin,
+            cookie_file=Path(self._text("account_b_cookie_file")).expanduser(),
+            timeout_seconds=30,
+        )
+        hot_created, peer_created = hot.create(), peer.create()
+        samples = hot_created.descriptor.frame_samples
+        chunk = (pcm + pcm)[: samples * 2]
+        refused: tuple[dict[str, object], int] | None = None
+        peer_progress = False
+        result: dict[str, object] | None = None
+        cleanup_failures = 0
+        try:
+            for sequence in range(256):
+                frame = AudioFrame(sequence, chunk, samples, LIVE_SAMPLE_RATE)
+                timestamp_ns = sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE
+                for lane, silent, pcm_bytes in (
+                    ("system", False, frame.pcm),
+                    ("microphone", True, b"\0" * len(frame.pcm)),
+                ):
+                    payload = AccountCookieLiveReplayService._lane_payload(
+                        AudioFrame(sequence, pcm_bytes, samples, LIVE_SAMPLE_RATE),
+                        lane=lane,
+                        timestamp_ns=timestamp_ns,
+                        silent=silent,
+                    )
+                    try:
+                        hot.accept_lane(hot_created.session_id, payload)
+                    except AccountReplayTransportFailure as exc:
+                        if exc.http_status == 429:
+                            refused = (payload, sequence)
+                            break
+                        raise
+                hot.heartbeat(hot_created.session_id)
+                if refused is not None:
+                    break
+            peer_result = peer.accept_frame(
+                peer_created.session_id,
+                AudioFrame(0, chunk, samples, LIVE_SAMPLE_RATE),
+            )
+            peer_progress = peer_result.ack.accepted_samples > 0
+            retry_succeeded = False
+            if refused is not None:
+                retry_deadline = time.monotonic() + 30.0
+                while time.monotonic() < retry_deadline:
+                    hot.heartbeat(hot_created.session_id)
+                    peer.heartbeat(peer_created.session_id)
+                    try:
+                        retry = hot.accept_lane(hot_created.session_id, refused[0])
+                    except AccountReplayTransportFailure as exc:
+                        if exc.http_status != 429:
+                            raise
+                        time.sleep(0.25)
+                        continue
+                    retry_succeeded = (
+                        isinstance(retry.get("ack"), dict)
+                        and int(retry["ack"].get("accepted_samples", 0)) > 0
+                    )
+                    break
+            result = {
+                "observed_429": refused is not None,
+                "peer_progress": peer_progress,
+                "same_sequence_retry": retry_succeeded,
+                "refused_sequence": None if refused is None else refused[1],
+                "refused_lane": None if refused is None else refused[0]["lane"],
+            }
+        finally:
+            for service, session_id in (
+                (hot, hot_created.session_id),
+                (peer, peer_created.session_id),
+            ):
+                try:
+                    asyncio.run(service.abort(session_id, "acceptance backpressure probe"))
+                except Exception:
+                    cleanup_failures += 1
+        if cleanup_failures:
+            raise ExternalMeasurementError("backpressure probe cleanup failed")
+        if result is None:
+            raise ExternalMeasurementError("backpressure probe produced no result")
+        return result
+
+
+def _verify_quality_inputs(
+    *, repo: Path, corpus: Path, cases: list[object]
+) -> list[dict[str, object]]:
+    """Verify every consumed corpus byte against the frozen manifest before inference."""
+
+    identities: list[dict[str, object]] = []
+    for case in cases:
+        if not isinstance(case, dict) or not isinstance(case.get("case_id"), str):
+            raise ExternalMeasurementError("quality manifest case is invalid")
+        case_id = str(case["case_id"])
+        audio_claim = case.get("audio")
+        if not isinstance(audio_claim, dict):
+            raise ExternalMeasurementError("quality audio claim is absent")
+        audio_path = corpus / case_id / "audio.wav"
+        reference_path = corpus / case_id / "reference.jsonl"
+        audio_bytes = audio_path.read_bytes()
+        reference_bytes = reference_path.read_bytes()
+        try:
+            with wave.open(str(audio_path), "rb") as source:
+                pcm = source.readframes(source.getnframes())
+                samples = source.getnframes()
+        except (wave.Error, EOFError) as exc:
+            raise ExternalMeasurementError("quality WAV is invalid") from exc
+        checks = {
+            "wav_sha256": hashlib.sha256(audio_bytes).hexdigest()
+            == audio_claim.get("wav_sha256"),
+            "wav_bytes": len(audio_bytes) == audio_claim.get("wav_bytes"),
+            "pcm_sha256": hashlib.sha256(pcm).hexdigest()
+            == audio_claim.get("pcm_sha256"),
+            "samples": samples == audio_claim.get("samples"),
+            "reference_sha256": hashlib.sha256(reference_bytes).hexdigest()
+            == case.get("reference_sha256"),
+        }
+        source_dir = repo / str(case.get("source_directory") or "")
+        source_present = source_dir.is_dir()
+        source_audio_match: bool | None = None
+        source_reference_match: bool | None = None
+        if source_present:
+            file_digests = {
+                hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in source_dir.iterdir()
+                if path.is_file()
+            }
+            source_audio_match = case.get("source_audio_sha256") in file_digests
+            source_reference_match = case.get("source_reference_sha256") in file_digests
+            checks["source_audio_sha256"] = source_audio_match
+            checks["source_reference_sha256"] = source_reference_match
+        if not all(checks.values()):
+            raise ExternalMeasurementError("quality corpus input identity mismatch")
+        identities.append(
+            {
+                "case_id": case_id,
+                "checks": checks,
+                "source_present": source_present,
+                "source_audio_match": source_audio_match,
+                "source_reference_match": source_reference_match,
+            }
+        )
+    return identities
+
+
+def _wav_duration(path: Path) -> float:
+    import wave
+
+    with wave.open(str(path), "rb") as handle:
+        if (handle.getnchannels(), handle.getsampwidth(), handle.getframerate()) != (
+            1,
+            2,
+            16_000,
+        ):
+            raise ExternalMeasurementError("quality WAV must be mono PCM16 16 kHz")
+        return handle.getnframes() / 16_000
+
+
+def _probe_mp3(payload: bytes) -> dict[str, object]:
+    process = subprocess.run(
+        (
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels,bit_rate:format=duration,bit_rate",
+            "-of",
+            "json",
+            "pipe:0",
+        ),
+        input=payload,
+        capture_output=True,
+        check=False,
+    )
+    if process.returncode:
+        raise ExternalMeasurementError("ffprobe rejected owner MP3")
+    try:
+        result = json.loads(process.stdout)
+        stream = result["streams"][0]
+        format_row = result["format"]
+        return {
+            "codec": stream.get("codec_name"),
+            "sample_rate_hz": int(stream.get("sample_rate")),
+            "channels": int(stream.get("channels")),
+            "bit_rate_bps": int(stream.get("bit_rate") or format_row.get("bit_rate")),
+            "duration_seconds": float(format_row.get("duration")),
+            "bytes": len(payload),
+        }
+    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ExternalMeasurementError("ffprobe output is incomplete") from exc
+
+
+def _wav_pcm(path: Path) -> bytes:
+    with wave.open(str(path), "rb") as handle:
+        if (handle.getnchannels(), handle.getsampwidth(), handle.getframerate()) != (
+            1,
+            2,
+            LIVE_SAMPLE_RATE,
+        ):
+            raise ExternalMeasurementError("Live load WAV must be mono PCM16 16 kHz")
+        return handle.readframes(handle.getnframes())
+
+
+def _wav_pcm_clip(path: Path, start_seconds: float, end_seconds: float) -> bytes:
+    if not (0 <= start_seconds < end_seconds):
+        raise ExternalMeasurementError("capacity clip interval is invalid")
+    with wave.open(str(path), "rb") as handle:
+        if (handle.getnchannels(), handle.getsampwidth(), handle.getframerate()) != (
+            1,
+            2,
+            LIVE_SAMPLE_RATE,
+        ):
+            raise ExternalMeasurementError("capacity WAV must be mono PCM16 16 kHz")
+        start = int(start_seconds * LIVE_SAMPLE_RATE)
+        count = int((end_seconds - start_seconds) * LIVE_SAMPLE_RATE)
+        handle.setpos(start)
+        payload = handle.readframes(count)
+    if len(payload) != count * 2:
+        raise ExternalMeasurementError("capacity clip exceeds its source WAV")
+    return payload
+
+
+def _unit_pid(unit: str) -> int:
+    if unit not in {"moss-web.service", "moss-vllm.service"}:
+        raise ExternalMeasurementError("qualification accepts only fixed MOSS service units")
+    result = subprocess.run(
+        ("systemctl", "--user", "show", unit, "--property", "MainPID", "--value"),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    try:
+        pid = int(result.stdout.strip())
+    except ValueError as exc:
+        raise ExternalMeasurementError(f"{unit} MainPID is unavailable") from exc
+    if result.returncode or pid <= 0:
+        raise ExternalMeasurementError(f"{unit} is not running")
+    return pid
+
+
+def _version_line(argv: tuple[str, ...], label: str) -> str:
+    result = subprocess.run(argv, check=False, capture_output=True, text=True)
+    lines = (result.stdout or result.stderr).splitlines()
+    if result.returncode or not lines or not lines[0].strip():
+        raise ExternalMeasurementError(f"{label} version is unavailable")
+    return lines[0].strip()
+
+
+def _toolchain_identity(chrome: Path) -> dict[str, str]:
+    if not chrome.is_file():
+        raise ExternalMeasurementError("Chrome executable is unavailable")
+    tools = {
+        "chrome": (str(chrome), "--version"),
+        "node": (shutil.which("node") or "", "--version"),
+        "npm": (shutil.which("npm") or "", "--version"),
+        "ffmpeg": (shutil.which("ffmpeg") or "", "-version"),
+        "ffprobe": (shutil.which("ffprobe") or "", "-version"),
+    }
+    if any(not argv[0] for argv in tools.values()):
+        raise ExternalMeasurementError("qualification toolchain is incomplete")
+    return {
+        name: _version_line(argv, name)
+        for name, argv in tools.items()
+    }
+
+
+def _accelerator_identity(vllm_pid: int) -> dict[str, str]:
+    try:
+        argv = [
+            value.decode("utf-8", "strict")
+            for value in (Path("/proc") / str(vllm_pid) / "cmdline").read_bytes().split(b"\0")
+            if value
+        ]
+    except OSError as exc:
+        raise ExternalMeasurementError("vLLM runtime argv is unreadable") from exc
+    expected_root = Path.home() / ".local/share/moss-transcribe-diarize/venv/bin"
+    if not argv:
+        raise ExternalMeasurementError("vLLM runtime argv is empty")
+    python = Path(argv[0]).absolute()
+    if python.parent != expected_root or not python.name.startswith("python"):
+        raise ExternalMeasurementError("vLLM runtime is outside the declared GPU venv")
+    code = (
+        "import importlib.metadata,json,torch;"
+        "print(json.dumps({'vllm':importlib.metadata.version('vllm'),"
+        "'torch':torch.__version__,'cuda':torch.version.cuda or '',"
+        "'cuda_available':torch.cuda.is_available()}))"
+    )
+    result = subprocess.run(
+        (str(python), "-c", code), check=False, capture_output=True, text=True
+    )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise ExternalMeasurementError("vLLM/CUDA identity is unavailable") from exc
+    if (
+        result.returncode
+        or payload.get("cuda_available") is not True
+        or any(not isinstance(payload.get(key), str) or not payload[key] for key in ("vllm", "torch", "cuda"))
+    ):
+        raise ExternalMeasurementError("vLLM/CUDA identity is incomplete")
+    return {
+        "vllm": payload["vllm"],
+        "torch": payload["torch"],
+        "cuda": payload["cuda"],
+    }
+
+
+def _tls_identity(origin: str) -> dict[str, object]:
+    parsed = urlsplit(origin)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ExternalMeasurementError("qualification origin must use HTTPS")
+    port = parsed.port or 443
+    context = ssl.create_default_context()
+    try:
+        with socket.create_connection((parsed.hostname, port), timeout=15) as raw:
+            with context.wrap_socket(raw, server_hostname=parsed.hostname) as secured:
+                certificate = secured.getpeercert()
+    except (OSError, ssl.SSLError) as exc:
+        raise ExternalMeasurementError("deployed TLS is not trusted") from exc
+    subject = ",".join(
+        f"{key}={value}"
+        for group in certificate.get("subject", ())
+        for key, value in group
+    )
+    sans = sorted(
+        value
+        for kind, value in certificate.get("subjectAltName", ())
+        if kind in {"DNS", "IP Address"}
+    )
+    expiry = certificate.get("notAfter")
+    if not subject or not sans or not isinstance(expiry, str) or not expiry:
+        raise ExternalMeasurementError("deployed TLS identity is incomplete")
+    return {
+        "trusted": True,
+        "subject": subject,
+        "subject_alt_names": sans,
+        "not_after": expiry,
+    }
+
+
+def _file_fixture_identity(path: Path) -> dict[str, object]:
+    data = path.read_bytes()
+    if not data:
+        raise ExternalMeasurementError("File fixture is empty")
+    try:
+        with wave.open(str(path), "rb") as source:
+            format_identity = {
+                "channels": source.getnchannels(),
+                "sample_width_bytes": source.getsampwidth(),
+                "sample_rate_hz": source.getframerate(),
+                "frames": source.getnframes(),
+            }
+    except (wave.Error, EOFError) as exc:
+        raise ExternalMeasurementError("File fixture is not a WAV") from exc
+    return {
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "bytes": len(data),
+        **format_identity,
+    }
+
+
+def _process_tree_rss(root_pid: int) -> int:
+    children: dict[int, list[int]] = defaultdict(list)
+    rss: dict[int, int] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            status = (entry / "status").read_text(encoding="utf-8")
+        except OSError:
+            continue
+        fields = {
+            line.split(":", 1)[0]: line.split(":", 1)[1].strip()
+            for line in status.splitlines()
+            if ":" in line
+        }
+        try:
+            pid = int(fields["Pid"])
+            parent = int(fields["PPid"])
+            rss[pid] = int(fields.get("VmRSS", "0 kB").split()[0]) * 1024
+        except (KeyError, ValueError):
+            continue
+        children[parent].append(pid)
+    pending = [root_pid]
+    seen: set[int] = set()
+    total = 0
+    while pending:
+        pid = pending.pop()
+        if pid in seen:
+            continue
+        seen.add(pid)
+        total += rss.get(pid, 0)
+        pending.extend(children.get(pid, ()))
+    return total
+
+
+def _vllm_cache_use(url: str) -> float:
+    if not url.startswith("http://127.0.0.1:"):
+        raise ExternalMeasurementError("vLLM metrics must be host-local")
+    try:
+        response = httpx.get(url, timeout=10)
+    except httpx.HTTPError as exc:
+        raise ExternalMeasurementError("vLLM metrics are unavailable") from exc
+    if response.status_code != 200:
+        raise ExternalMeasurementError("vLLM metrics returned an error")
+    candidates: list[float] = []
+    for line in response.text.splitlines():
+        if line.startswith("#") or "gpu_cache_usage_perc" not in line:
+            continue
+        try:
+            candidates.append(float(line.rsplit(" ", 1)[1]))
+        except ValueError:
+            continue
+    if not candidates or not all(math.isfinite(value) for value in candidates):
+        raise ExternalMeasurementError("vLLM GPU cache metric is absent")
+    return max(candidates)
+
+
+def _load_surface_harness(repo: Path):
+    path = (
+        repo
+        / "prototypes"
+        / "streaming-diarization"
+        / "live-surface-optimization"
+        / "measure_three_surfaces.py"
+    )
+    name = "moss_phase2_acceptance_surface_harness"
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ExternalMeasurementError("quality scorer is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    import ssl
+
+    original_context = ssl._create_default_https_context
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        ssl._create_default_https_context = original_context
+    return module
+
+
+def _load_concurrency_harness(repo: Path):
+    path = (
+        repo
+        / "prototypes"
+        / "streaming-diarization"
+        / "concurrency"
+        / "run_cpu_hf_local_measurement.py"
+    )
+    name = "moss_phase2_acceptance_concurrency_harness"
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ExternalMeasurementError("standing concurrency evaluator is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _mean(rows: list[dict[str, object]], surface: str, field: str) -> float:
+    values = [float(row["metrics"][surface][field]) for row in rows]  # type: ignore[index]
+    if not values or not all(math.isfinite(value) for value in values):
+        raise ExternalMeasurementError("quality scorer returned non-finite output")
+    return sum(values) / len(values)
+
+
+def _quality_projection(
+    rows: list[dict[str, object]], *, corpus_manifest_sha256: str
+) -> dict[str, object]:
+    if len(rows) != 12:
+        raise ExternalMeasurementError("quality campaign did not produce 12 sessions")
+    by_category: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        by_category[str(row["category"])].append(row)
+    fields = (
+        "wer",
+        "tbsa",
+        "der",
+        "content_recall",
+        "matched_word_speaker_accuracy",
+        "reference_speech_der",
+    )
+    total_duration = sum(float(row["duration_seconds"]) for row in rows)
+    duration_weighted = {
+            field: sum(
+                float(row["duration_seconds"])
+            * float(row["metrics"]["settled"][field])  # type: ignore[index]
+            for row in rows
+        )
+        / total_duration
+        for field in fields
+    }
+    per_category = {
+        category: {
+            field: _mean(group, "settled", field) for field in fields
+        }
+        for category, group in sorted(by_category.items())
+    }
+    return {
+        "cases": 6,
+        "passes": 2,
+        "sessions": 12,
+        "windows": sum(int(row["windows"]) for row in rows),
+        "duration_seconds": total_duration,
+        "corpus_manifest_sha256": corpus_manifest_sha256,
+        "per_case": [
+            {
+                "case_id": row["case_id"],
+                "pass": row["pass"],
+                "session_id": row["session_id"],
+                "category": row["category"],
+                "duration_seconds": row["duration_seconds"],
+                "windows": row["windows"],
+                "metrics": row["metrics"],
+            }
+            for row in rows
+        ],
+        "per_category": per_category,
+        "duration_weighted": duration_weighted,
+        "macro": {
+            "immediate_wer": _mean(rows, "immediate", "wer"),
+            "settled_wer": _mean(rows, "settled", "wer"),
+            "recall": _mean(rows, "settled", "content_recall"),
+            "time_speaker_attribution": _mean(rows, "settled", "tbsa"),
+            "diarization_error_rate": _mean(rows, "settled", "der"),
+            "matched_speaker_accuracy": _mean(
+                rows, "settled", "matched_word_speaker_accuracy"
+            ),
+            "reference_speech_der": _mean(
+                rows, "settled", "reference_speech_der"
+            ),
+            "final_wer": _mean(rows, "final", "wer"),
+        },
+    }
