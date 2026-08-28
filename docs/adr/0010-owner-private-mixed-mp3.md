@@ -71,10 +71,11 @@ it does not rename or re-encode the MP3.
   absence is verified. A held concurrent fence measured one MP3 publication, one resolvable
   artifact, and no duplicate terminal mutation. Persistent cleanup uncertainty leaves the canonical Meeting active for
   visible startup recovery; it cannot make terminal status eligible while raw PCM survives.
-  Revocation cannot mutate audio metadata. Its fixed-stage cleanup is binding-owned and
-  cancellation-shielded with one causal retry. If both attempts fail after SQLite has already
-  interrupted the Meeting, startup reconciles canonical interrupted Live rows and fixed owner paths
-  without filesystem search, even if the Account has since been re-allowed. Metadata-backed MP3 is
+  After authority is already lost, recovery cannot invent audio metadata. Its fixed-stage cleanup
+  is binding-owned and cancellation-shielded with one causal retry. The historical authority-first
+  failure path remains covered: if both attempts fail after SQLite has already interrupted the
+  Meeting, startup reconciles canonical interrupted Live rows and fixed owner paths without
+  filesystem search, even if the Account has since been re-allowed. Metadata-backed MP3 is
   resolved through the same archive truth seam: verified absence permits a guarded unavailable
   update, while cleanup uncertainty preserves metadata and blocks startup visibly. Unrecorded MP3
   is removed. A failed Live creation likewise reaches durable `failed` only after the fixed stage
@@ -92,8 +93,14 @@ it does not rename or re-encode the MP3.
   after available metadata and raw cleanup but before the atomic transcript/status commit. Every
   revoked terminal exit therefore applies the same guarded state-only reconciliation before public
   terminal truth: the measured boundary ended interrupted/partial with identical `audio.mp3` bytes
-  and metadata. Account lifecycle revocation now fences and settles those bindings while their
-  captured generation remains valid, then disables Account authority in one final transaction.
+  and metadata. Account lifecycle revocation now prevents that ordering in the product: it fences
+publication, settles bindings and residual owner/mode rows while their captured generation remains
+valid, applies any state-only `available → partial` transition, and only then disables Account
+authority in a zero-active-row transaction. Persistent cleanup uncertainty leaves the row active
+and the Account durably enabled for startup retry rather than making raw or MP3 truth unreachable.
+The publication fence cancels only a rollback-safe SQLite transcript commit. A terminal audio
+publication performs filesystem I/O and therefore is never cancelled: revoke joins it, observes its
+one terminal/audio result, and changes Account authority only afterward.
 - A Stop request and a queued transcript persistence failure can become runnable together. Python
   3.10 measured the failure first while raw capture was still active; Python 3.12 measured raw Stop
   first. The shared transport therefore opens one adapter-owned Stop intent at endpoint entry and

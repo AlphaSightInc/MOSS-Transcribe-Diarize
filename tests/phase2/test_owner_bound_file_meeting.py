@@ -269,9 +269,15 @@ def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
 
 def test_revocation_fences_late_file_result_commit(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-late-file-{os.getpid()}-{time.time_ns()}.sock"
     sessions = asyncio.run(provision(database))
     runner = ControlledRunner()
-    app = make_app(database, runner, tmp_path / "file-work")
+    app = make_app(
+        database,
+        runner,
+        tmp_path / "file-work",
+        control_socket=socket,
+    )
 
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["sub-a"])
@@ -282,15 +288,26 @@ def test_revocation_fences_late_file_result_commit(tmp_path: Path):
         meeting_id = accepted.json()["id"]
         assert runner.started.wait(timeout=2)
 
-        async def revoke() -> None:
-            store = await Phase2Store.open(database)
-            try:
-                assert await store.revoke_email("a@example.com") is True
-            finally:
-                await store.close()
+        outcome: dict[str, object] = {}
 
-        asyncio.run(revoke())
+        def revoke() -> None:
+            outcome["result"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        deadline = time.monotonic() + 2
+        while ("sub-a", 0) not in app.state.phase2_file_tasks._fenced_owner_keys:
+            if time.monotonic() >= deadline:
+                raise AssertionError("late File result was not fenced")
+            time.sleep(0.01)
         runner.release.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"email": "a@example.com", "revoked": True}
+        }
         assert client.get(f"/api/meetings/{meeting_id}").status_code == 401
 
         deadline = time.monotonic() + 5

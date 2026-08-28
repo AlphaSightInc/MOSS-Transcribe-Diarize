@@ -215,6 +215,38 @@ async def provision(database: Path) -> dict[str, str]:
         await store.close()
 
 
+async def force_historical_authority_loss(store: Phase2Store, email: str) -> None:
+    """Inject the pre-#18 authority-first state for #17 recovery regressions only."""
+
+    target = await store.account_revoke_target(email)
+    assert target.account is not None
+    account = target.account
+    now = int(time.time() * 1_000)
+    async with store._mutation():
+        await store._connection.execute(
+            "UPDATE account_allowlist SET enabled = 0, updated_at_ms = ? WHERE bound_account_id = ?",
+            (now, account.account_id),
+        )
+        await store._connection.execute(
+            """
+            UPDATE accounts SET enabled = 0,
+                authority_generation = authority_generation + 1, updated_at_ms = ?
+            WHERE account_id = ? AND authority_generation = ?
+            """,
+            (now, account.account_id, account.authority_generation),
+        )
+        await store._connection.execute(
+            "DELETE FROM sign_in_sessions WHERE account_id = ?", (account.account_id,)
+        )
+        await store._connection.execute(
+            """
+            UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
+            WHERE account_id = ? AND status = 'active'
+            """,
+            (now, account.account_id),
+        )
+
+
 def make_app(
     database: Path,
     *,
@@ -961,6 +993,19 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
         first = client.post("/api/live/sessions").json()["id"]
         second = client.post("/api/live/sessions").json()["id"]
         live = app.state.phase2_live
+        second_binding = live._bindings[second]
+        original_second_commit = second_binding.handle.commit_transcript
+        queued_commit_entered = threading.Event()
+        release_queued_commit = threading.Event()
+
+        async def held_second_commit(document, *, terminal=False):
+            queued_commit_entered.set()
+            assert await asyncio.to_thread(release_queued_commit.wait, 5)
+            return await original_second_commit(document, terminal=terminal)
+
+        second_binding.handle.commit_transcript = held_second_commit
+        feed_two_lane_span(client, second)
+        assert queued_commit_entered.wait(timeout=2)
         original_interrupt = live.interrupt_binding
         first_settlement_entered = threading.Event()
         release_failure = threading.Event()
@@ -992,6 +1037,21 @@ def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
             json=v2_frame(0, "system"),
         ).status_code == 409
         assert app.state.phase2_live._bindings[second].authority_closing is True
+        assert second_binding.publication_fenced is True
+        release_queued_commit.set()
+        deadline = time.monotonic() + 2
+        while second_binding.worker is not None and not second_binding.worker.done():
+            if time.monotonic() >= deadline:
+                raise AssertionError("fenced publication worker did not quiesce")
+            time.sleep(0.01)
+        connection = sqlite3.connect(database)
+        try:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?",
+                (second,),
+            ).fetchone() == (0,)
+        finally:
+            connection.close()
         assert client.get("/api/auth/session").status_code == 200
         release_failure.set()
         worker.join(timeout=5)
@@ -1569,11 +1629,89 @@ def test_concurrent_fence_waits_for_one_terminal_audio_publication(tmp_path: Pat
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
         assert meeting["audio"]["state"] == "available"
-        retained = tmp_path / "meetings" / "sub-a" / meeting_id / "audio.mp3"
-        assert retained.is_file() and retained.stat().st_size == meeting["audio"]["byte_count"]
-        assert sorted(
-            path.name for path in retained.parent.iterdir() if path.suffix == ".mp3"
-        ) == ["audio.mp3"]
+
+
+def test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-terminal-fence-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        archive = app.state.phase2_audio_archive
+        original_publish = archive.publish_live_prefix
+        publish_started = threading.Event()
+        release_publish = threading.Event()
+        publish_count = 0
+        outcomes: dict[str, object] = {}
+
+        def held_publish(*args, **kwargs):
+            nonlocal publish_count
+            publish_count += 1
+            publish_started.set()
+            assert release_publish.wait(timeout=5)
+            return original_publish(*args, **kwargs)
+
+        archive.publish_live_prefix = held_publish
+
+        def stop_meeting() -> None:
+            outcomes["stop"] = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+
+        def revoke() -> None:
+            outcomes["revoke"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+
+        stop_thread = threading.Thread(target=stop_meeting)
+        stop_thread.start()
+        assert publish_started.wait(timeout=2)
+        assert binding.publication_phase == "terminal_settlement"
+        revoke_thread = threading.Thread(target=revoke)
+        revoke_thread.start()
+        deadline = time.monotonic() + 2
+        while not binding.publication_fenced:
+            if time.monotonic() >= deadline:
+                raise AssertionError("Account result fence was not installed")
+            time.sleep(0.01)
+        assert revoke_thread.is_alive()
+        assert binding.worker is not None and not binding.worker.cancelled()
+        assert client.get("/api/auth/session").status_code == 200
+
+        release_publish.set()
+        stop_thread.join(timeout=5)
+        revoke_thread.join(timeout=5)
+        assert not stop_thread.is_alive() and not revoke_thread.is_alive()
+        assert outcomes["stop"].status_code == 200
+        assert outcomes["revoke"] == {"email": "a@example.com", "revoked": True}
+        assert publish_count == 1
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("completed",)
+        audio = connection.execute(
+            "SELECT state, byte_count FROM meeting_audio WHERE meeting_id = ?",
+            (meeting_id,),
+        ).fetchone()
+        assert audio is not None and audio[0] == "available"
+        byte_count = audio[1]
+    finally:
+        connection.close()
+    retained = tmp_path / "meetings" / "sub-a" / meeting_id / "audio.mp3"
+    assert retained.is_file() and retained.stat().st_size == byte_count
+    assert sorted(
+        path.name for path in retained.parent.iterdir() if path.suffix == ".mp3"
+    ) == ["audio.mp3"]
 
 
 def test_failed_terminal_can_only_retain_partial_audio(tmp_path: Path):
@@ -1897,6 +2035,12 @@ def test_interrupted_reallowed_live_meeting_reconciles_missing_metadata_artifact
     async def revoke_and_reallow() -> str:
         store = await Phase2Store.open(database)
         try:
+            archive = MeetingAudioArchive(audio_root)
+            stages = LiveMeetingAudioStages(archive, max_bytes=32_000)
+            await store.recover_active_meetings(
+                audio_archive=archive,
+                live_audio_stages=stages,
+            )
             assert await store.revoke_email("a@example.com") is True
             await store.allow_email("a@example.com")
             admitted = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
@@ -2062,6 +2206,142 @@ def test_runtime_create_refusal_with_cleanup_uncertainty_recovers_on_restart(
     assert not stage_path.exists()
 
 
+def test_revoke_recovers_unregistered_live_row_after_transient_create_cleanup_refusal(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-transient-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(
+        app,
+        base_url="https://moss.test",
+        raise_server_exceptions=False,
+    ) as client:
+        session(client, sessions["a"])
+        stages = app.state.phase2_live.audio_stages
+        original_discard = stages.discard
+        attempts = 0
+
+        def fail_once(account_id: str, meeting_id: str) -> None:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise OSError("injected transient stage cleanup failure")
+            original_discard(account_id, meeting_id)
+
+        def refuse_create(*, echo_mode: str | None, session_id: str) -> None:
+            del echo_mode, session_id
+            raise ValueError("injected runtime creation refusal")
+
+        stages.discard = fail_once
+        app.state.phase2_live.runtime.create = refuse_create
+        assert client.post("/api/live/sessions").status_code == 400
+        connection = sqlite3.connect(database)
+        try:
+            meeting_id, status = connection.execute(
+                "SELECT meeting_id, status FROM meetings WHERE account_id = 'sub-a'"
+            ).fetchone()
+        finally:
+            connection.close()
+        assert status == "active"
+        assert stages.path("sub-a", meeting_id).is_file()
+
+        assert asyncio.run(execute_admin(socket, "revoke", "a@example.com")) == {
+            "email": "a@example.com",
+            "revoked": True,
+        }
+        assert attempts == 2
+        assert not stages.path("sub-a", meeting_id).exists()
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("interrupted",)
+        assert connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("unavailable",)
+        assert connection.execute(
+            "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+        ).fetchone() == (0, 1)
+    finally:
+        connection.close()
+
+
+def test_persistent_unregistered_live_cleanup_blocks_revoke_until_restart_retry(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-persistent-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(
+        app,
+        base_url="https://moss.test",
+        raise_server_exceptions=False,
+    ) as client:
+        session(client, sessions["a"])
+        stages = app.state.phase2_live.audio_stages
+
+        def always_fail(account_id: str, meeting_id: str) -> None:
+            del account_id, meeting_id
+            raise OSError("injected persistent stage cleanup failure")
+
+        def refuse_create(*, echo_mode: str | None, session_id: str) -> None:
+            del echo_mode, session_id
+            raise ValueError("injected runtime creation refusal")
+
+        stages.discard = always_fail
+        app.state.phase2_live.runtime.create = refuse_create
+        assert client.post("/api/live/sessions").status_code == 400
+        connection = sqlite3.connect(database)
+        try:
+            meeting_id = connection.execute(
+                "SELECT meeting_id FROM meetings WHERE account_id = 'sub-a'"
+            ).fetchone()[0]
+        finally:
+            connection.close()
+        with pytest.raises(Phase2ControlError, match="account_settlement_failed"):
+            asyncio.run(execute_admin(socket, "revoke", "a@example.com"))
+        connection = sqlite3.connect(database)
+        try:
+            assert connection.execute(
+                "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+            ).fetchone() == ("active",)
+            assert connection.execute(
+                "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+            ).fetchone() == (1, 0)
+            assert connection.execute(
+                "SELECT COUNT(*) FROM sign_in_sessions WHERE account_id = 'sub-a'"
+            ).fetchone() == (2,)
+        finally:
+            connection.close()
+
+    restarted = make_app(database, control_socket=socket)
+    with TestClient(restarted, base_url="https://moss.test"):
+        assert asyncio.run(execute_admin(socket, "revoke", "a@example.com")) == {
+            "email": "a@example.com",
+            "revoked": True,
+        }
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone() == ("interrupted",)
+        assert connection.execute(
+            "SELECT enabled, authority_generation FROM accounts WHERE account_id = 'sub-a'"
+        ).fetchone() == (0, 1)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM sign_in_sessions WHERE account_id = 'sub-a'"
+        ).fetchone() == (0,)
+    finally:
+        connection.close()
+
+
 def test_public_snapshot_waits_for_the_serialized_transcript_commit(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
@@ -2145,7 +2425,7 @@ def test_account_revoke_fences_a_queued_revision_and_returns_401(tmp_path: Path)
         async def revoke() -> None:
             store = await Phase2Store.open(database)
             try:
-                assert await store.revoke_email("a@example.com") is True
+                await force_historical_authority_loss(store, "a@example.com")
             finally:
                 await store.close()
 
@@ -2229,7 +2509,7 @@ def test_revoke_after_mp3_publish_cleans_or_fences_unrecorded_artifact(
             nonlocal revoked
             if not revoked:
                 revoked = True
-                assert await store.revoke_email("a@example.com") is True
+                await force_historical_authority_loss(store, "a@example.com")
             return await original_commit(*args, **kwargs)
 
         store._commit_meeting_audio = revoke_before_metadata
@@ -2308,7 +2588,7 @@ def test_revoke_after_audio_settlement_downgrades_before_terminal_publication(
             observed["raw_absent"] = not (
                 tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
             ).exists()
-            assert await store.revoke_email("a@example.com") is True
+            await force_historical_authority_loss(store, "a@example.com")
             return await original_finish(document, status)
 
         binding.handle.finish_with_transcript = revoke_before_terminal_tuple
@@ -2380,10 +2660,11 @@ def test_revoked_live_stage_cleanup_failure_is_reconciled_from_canonical_row_on_
             raise OSError("injected persistent revoked-stage cleanup failure")
 
         stages.discard = always_fail
-        assert client.portal.call(
-            app.state.phase2_store.revoke_email,
+        client.portal.call(
+            force_historical_authority_loss,
+            app.state.phase2_store,
             "a@example.com",
-        ) is True
+        )
         client.portal.call(
             app.state.phase2_live._fence,
             binding,

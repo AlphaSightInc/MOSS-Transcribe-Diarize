@@ -188,6 +188,8 @@ class FileMeetingTasks:
                 continue
             if snapshot.audio is None:
                 await entry.handle.record_audio_unavailable()
+            elif snapshot.audio.state == "available":
+                await entry.handle.downgrade_active_audio_to_partial()
             await entry.handle.finish("interrupted")
             interrupted.append(entry.handle.meeting_id)
         return tuple(interrupted)

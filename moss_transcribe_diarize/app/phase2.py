@@ -538,6 +538,19 @@ class Phase2Store:
         async with self._mutation():
             account = target.account
             if account is not None:
+                cursor = await self._connection.execute(
+                    """
+                    SELECT COUNT(*) AS active_count FROM meetings
+                    WHERE account_id = ? AND status = 'active'
+                    """,
+                    (account.account_id,),
+                )
+                active_count = int((await cursor.fetchone())["active_count"])
+                await cursor.close()
+                if active_count != 0:
+                    raise RuntimeError(
+                        "Account revoke requires every Meeting to be durably terminal."
+                    )
                 # An Account may have changed email after more than one allowed callback. A
                 # revoke is Account authority, so another already-bound email cannot restore it.
                 await self._connection.execute(
@@ -564,13 +577,6 @@ class Phase2Store:
                 await self._connection.execute(
                     "DELETE FROM sign_in_sessions WHERE account_id = ?", (account.account_id,)
                 )
-                await self._connection.execute(
-                    """
-                    UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
-                    WHERE account_id = ? AND status = 'active'
-                    """,
-                    (now, account.account_id),
-                )
             else:
                 await self._connection.execute(
                     "UPDATE account_allowlist SET enabled = 0, updated_at_ms = ? WHERE email = ?",
@@ -591,6 +597,39 @@ class Phase2Store:
         if audio_archive is not None:
             await self._recover_active_file_meetings(audio_archive)
         if audio_archive is not None and live_audio_stages is not None:
+            await self._recover_active_live_meetings(
+                audio_archive,
+                live_audio_stages,
+            )
+
+        await self._assert_no_active_meetings()
+
+    async def recover_active_account_meetings(
+        self,
+        account: Account,
+        *,
+        audio_archive: Any,
+        live_audio_stages: Any | None,
+    ) -> None:
+        """Settle residual rows through their fixed File/Live recovery paths."""
+
+        await self._recover_active_file_meetings(audio_archive, account=account)
+        if live_audio_stages is not None:
+            await self._recover_active_live_meetings(
+                audio_archive,
+                live_audio_stages,
+                account=account,
+            )
+        await self._assert_no_active_meetings(account.account_id)
+
+    async def _recover_active_live_meetings(
+        self,
+        audio_archive: Any,
+        live_audio_stages: Any,
+        *,
+        account: Account | None = None,
+    ) -> None:
+        if account is None:
             async with self._external_read():
                 cursor = await self._connection.execute(
                     """
@@ -607,6 +646,9 @@ class Phase2Store:
                 )
                 interrupted_rows = await cursor.fetchall()
                 await cursor.close()
+        else:
+            interrupted_rows = ()
+        if account is None:
             for row in interrupted_rows:
                 if row["audio_state"] in {"available", "partial"}:
                     await asyncio.to_thread(
@@ -650,36 +692,39 @@ class Phase2Store:
                     row["meeting_id"],
                 )
 
-            async with self._external_read():
-                cursor = await self._connection.execute(
-                    """
-                    SELECT m.account_id, m.meeting_id, a.authority_generation
-                    FROM meetings m
-                    JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
-                    WHERE m.mode = 'live' AND m.status = 'active'
-                    ORDER BY m.created_at_ms, m.meeting_id
-                    """
-                )
-                rows = await cursor.fetchall()
-                await cursor.close()
-            for row in rows:
-                handle = MeetingHandle(
-                    self,
-                    row["account_id"],
-                    int(row["authority_generation"]),
-                    row["meeting_id"],
-                )
-                await handle.recover_interrupted_audio(audio_archive, live_audio_stages)
-                await handle.finish("interrupted")
-
-        now = _now_ms()
-        async with self._mutation():
-            await self._connection.execute(
-                "UPDATE meetings SET status = 'interrupted', updated_at_ms = ? WHERE status = 'active'",
-                (now,),
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.account_id, m.meeting_id, a.authority_generation
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+                WHERE m.mode = 'live' AND m.status = 'active'
+                  AND (? IS NULL OR m.account_id = ?)
+                ORDER BY m.created_at_ms, m.meeting_id
+                """,
+                (
+                    None if account is None else account.account_id,
+                    None if account is None else account.account_id,
+                ),
             )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        for row in rows:
+            handle = MeetingHandle(
+                self,
+                row["account_id"],
+                int(row["authority_generation"]),
+                row["meeting_id"],
+            )
+            await handle.recover_interrupted_audio(audio_archive, live_audio_stages)
+            await handle.finish("interrupted")
 
-    async def _recover_active_file_meetings(self, audio_archive: Any) -> None:
+    async def _recover_active_file_meetings(
+        self,
+        audio_archive: Any,
+        *,
+        account: Account | None = None,
+    ) -> None:
         """Reconcile canonical File artifact paths before making a crashed row terminal."""
 
         async with self._external_read():
@@ -694,8 +739,13 @@ class Phase2Store:
                 LEFT JOIN meeting_audio ma
                   ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
                 WHERE m.mode = 'file' AND m.status = 'active'
+                  AND (? IS NULL OR m.account_id = ?)
                 ORDER BY m.created_at_ms, m.meeting_id
-                """
+                """,
+                (
+                    None if account is None else account.account_id,
+                    None if account is None else account.account_id,
+                ),
             )
             rows = await cursor.fetchall()
             await cursor.close()
@@ -726,6 +776,8 @@ class Phase2Store:
                         row["audio_relative_path"],
                     )
                     await handle.mark_audio_unavailable()
+                elif row["audio_state"] == "available":
+                    await handle.downgrade_active_audio_to_partial()
             else:
                 await asyncio.to_thread(
                     audio_archive.discard_unrecorded,
@@ -735,6 +787,20 @@ class Phase2Store:
                 if row["audio_state"] != "unavailable":
                     await handle.record_audio_unavailable()
             await handle.finish("interrupted")
+
+    async def _assert_no_active_meetings(self, account_id: str | None = None) -> None:
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT COUNT(*) AS active_count FROM meetings
+                WHERE status = 'active' AND (? IS NULL OR account_id = ?)
+                """,
+                (account_id, account_id),
+            )
+            active_count = int((await cursor.fetchone())["active_count"])
+            await cursor.close()
+        if active_count != 0:
+            raise RuntimeError("Active Meeting recovery did not reach durable terminal truth.")
 
     async def _mark_interrupted_meeting_audio_unavailable(
         self,
@@ -1300,8 +1366,7 @@ class Phase2Store:
                 WHERE account_id = ? AND meeting_id = ? AND state = 'available'
                   AND EXISTS (
                     SELECT 1 FROM meetings
-                    WHERE account_id = ? AND meeting_id = ?
-                      AND mode = 'live' AND status = 'active'
+                    WHERE account_id = ? AND meeting_id = ? AND status = 'active'
                   )
                   AND EXISTS (
                     SELECT 1 FROM accounts
@@ -1586,6 +1651,15 @@ class MeetingHandle:
             self.meeting_id,
         )
 
+    async def downgrade_active_audio_to_partial(self) -> None:
+        """Preserve verified bytes while making an active interruption truthful."""
+
+        await self._store._downgrade_meeting_audio_to_partial(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+        )
+
     async def downgrade_interrupted_audio_to_partial(self) -> bool:
         """System recovery only: reconcile a captured Live row after authority loss."""
 
@@ -1656,6 +1730,9 @@ def create_phase2_app(
     audio_archive = file_audio_archive or MeetingAudioArchive(
         meeting_audio_root or resolved_work_root.parent / "meetings"
     )
+    # The fixed Live stage path remains recoverable even when this process was started
+    # without a Live runtime. No capture can reserve this recovery-only instance.
+    live_audio_stages = LiveMeetingAudioStages(audio_archive, max_bytes=2)
     file_tasks = None
     if file_runner is not None:
         from .phase2_file import FileMeetingTasks
@@ -1702,9 +1779,7 @@ def create_phase2_app(
         try:
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
-                live_audio_stages=(
-                    None if phase2_live is None else phase2_live.audio_stages
-                ),
+                live_audio_stages=live_audio_stages,
             )
             if file_tasks is not None:
                 file_tasks.clear_transient_work()
@@ -1713,7 +1788,13 @@ def create_phase2_app(
             app.state.phase2_audio_archive = audio_archive
             from .phase2_lifecycle import AccountLifecycle
 
-            lifecycle = AccountLifecycle(store, live=phase2_live, files=file_tasks)
+            lifecycle = AccountLifecycle(
+                store,
+                live=phase2_live,
+                files=file_tasks,
+                audio_archive=audio_archive,
+                live_audio_stages=live_audio_stages,
+            )
             if live_control is not None:
                 lifecycle.bind_live_control(live_control)
             app.state.phase2_lifecycle = lifecycle

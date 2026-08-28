@@ -27,6 +27,7 @@ from moss_transcribe_diarize.app.phase2_audio import (
     MeetingAudioArchive,
     PublishedMeetingAudio,
 )
+from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
 
 
 class NeverOidc:
@@ -252,6 +253,7 @@ def make_app(
     *,
     archive: object | None = None,
     runner: object | None = None,
+    control_socket: Path | None = None,
 ):
     return create_phase2_app(
         database_path=database,
@@ -261,7 +263,94 @@ def make_app(
         file_work_root=work_root,
         meeting_audio_root=audio_root,
         file_audio_archive=archive,
+        control_socket_path=control_socket,
     )
+
+
+def test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    audio_root = tmp_path / "meetings"
+    socket = Path("/tmp") / f"moss-i18-file-audio-{time.time_ns()}.sock"
+    app = make_app(
+        database,
+        work_root,
+        audio_root,
+        control_socket=socket,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        finish_entered = threading.Event()
+        release_finish = threading.Event()
+        original_finish = app.state.phase2_store._finish_meeting
+
+        async def held_completed_finish(*args, **kwargs):
+            status = args[-1]
+            if status == "completed":
+                finish_entered.set()
+                assert await asyncio.to_thread(release_finish.wait, 5)
+            return await original_finish(*args, **kwargs)
+
+        app.state.phase2_store._finish_meeting = held_completed_finish
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        )
+        assert accepted.status_code == 201
+        meeting_id = accepted.json()["id"]
+        assert finish_entered.wait(timeout=5)
+        active = client.get(f"/api/meetings/{meeting_id}").json()
+        assert active["status"] == "active"
+        assert active["audio"]["state"] == "available"
+        original_audio = dict(active["audio"])
+        retained = audio_root / original_audio["relative_path"]
+        original_bytes = retained.read_bytes()
+
+        outcome: dict[str, object] = {}
+
+        def revoke() -> None:
+            outcome["result"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        worker.join(timeout=5)
+        release_finish.set()
+        assert not worker.is_alive()
+        assert outcome == {
+            "result": {"email": "a@example.com", "revoked": True}
+        }
+
+    connection = sqlite3.connect(database)
+    try:
+        row = connection.execute(
+            """
+            SELECT m.status, ma.state, ma.relative_path, ma.byte_count,
+                   ma.duration_ms, ma.format, ma.sample_rate_hz, ma.channels,
+                   ma.bit_rate_bps
+            FROM meetings m JOIN meeting_audio ma
+              ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (meeting_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row == (
+        "interrupted",
+        "partial",
+        original_audio["relative_path"],
+        original_audio["byte_count"],
+        original_audio["duration_ms"],
+        original_audio["format"],
+        original_audio["sample_rate_hz"],
+        original_audio["channels"],
+        original_audio["bit_rate_bps"],
+    )
+    assert retained.read_bytes() == original_bytes
 
 
 def test_file_completion_publishes_private_exact_mp3_and_owner_whole_download(tmp_path: Path):

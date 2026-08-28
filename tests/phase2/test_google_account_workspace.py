@@ -768,6 +768,8 @@ def test_reallow_does_not_resurrect_pre_revoke_workspace(tmp_path: Path):
             workspace = store.workspace(account)
             stale_meeting = await workspace.create_meeting("live")
             assert (await stale_meeting.snapshot()).status == "active"
+            await stale_meeting.record_audio_unavailable()
+            await stale_meeting.finish("interrupted")
             admin_store = await Phase2Store.open(database)
             try:
                 assert await admin_store.revoke_email("person@example.com") is True
@@ -955,6 +957,41 @@ def test_host_local_allow_list_and_revoke_commands_normalize_only_trim_and_case(
             "email": "person+tag@example.com",
             "revoked": True,
         }
+
+
+def test_revoke_final_transaction_refuses_any_residual_active_meeting(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = control_socket_path()
+    asyncio.run(provision(database, "person@example.com"))
+    app, _ = make_app(database, {"one": identity()}, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        assert sign_in(client, "one").status_code == 303
+        meeting = seed_active_live_meeting(database)
+
+        async def omit_recovery(*args, **kwargs) -> None:
+            del args, kwargs
+
+        app.state.phase2_store.recover_active_account_meetings = omit_recovery
+        with pytest.raises(Phase2ControlError, match="account_settlement_failed"):
+            asyncio.run(execute(socket, "revoke", "person@example.com"))
+
+        connection = sqlite3.connect(database)
+        try:
+            assert connection.execute(
+                "SELECT status FROM meetings WHERE meeting_id = ?", (meeting["id"],)
+            ).fetchone() == ("active",)
+            assert connection.execute(
+                """
+                SELECT enabled, authority_generation FROM accounts
+                WHERE account_id = 'google-sub-a'
+                """
+            ).fetchone() == (1, 0)
+            assert connection.execute(
+                "SELECT COUNT(*) FROM sign_in_sessions WHERE account_id = 'google-sub-a'"
+            ).fetchone() == (1,)
+        finally:
+            connection.close()
 
 
 def test_control_socket_is_private_single_owner_and_removed_on_shutdown(tmp_path: Path):

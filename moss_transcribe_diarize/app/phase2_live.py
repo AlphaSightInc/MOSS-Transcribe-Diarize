@@ -77,6 +77,8 @@ class _LiveBinding:
     raw_event_high_water: int = -1
     terminal_persisted: bool = False
     authority_closing: bool = False
+    publication_fenced: bool = False
+    publication_phase: str = "idle"
     capture_fenced: bool = False
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
@@ -237,11 +239,18 @@ class Phase2LiveMeetings:
         )
 
     def fence_account(self, owner_key: tuple[str, int]) -> tuple[_LiveBinding, ...]:
-        """Synchronously reject later mutations before the first terminal await."""
+        """Synchronously reject mutations and result commits before any settlement await."""
 
         bindings = self.bindings_for_account(owner_key)
         for binding in bindings:
             binding.authority_closing = True
+            binding.publication_fenced = True
+            if (
+                binding.worker is not None
+                and binding.publication_phase == "transcript_commit"
+            ):
+                binding.worker.cancel()
+            binding.queue.put_nowait(None)
         return bindings
 
     async def interrupt_binding(
@@ -252,6 +261,9 @@ class Phase2LiveMeetings:
     ) -> None:
         """Join any accepted Stop, settle interrupted truth, then release shared capture state."""
 
+        worker = binding.worker
+        if binding.publication_fenced and worker is not None:
+            await asyncio.gather(worker, return_exceptions=True)
         await self._fence(binding, reason)
         control.release(binding.handle.meeting_id)
         if not binding.terminal_persisted:
@@ -388,7 +400,7 @@ class Phase2LiveMeetings:
         if not self._accepting_publications:
             return
         binding = self._bindings.get(meeting_id)
-        if binding is None:
+        if binding is None or binding.publication_fenced:
             return
         high_water = -1 if not events else events[-1].seq
         if high_water <= binding.raw_event_high_water:
@@ -401,7 +413,7 @@ class Phase2LiveMeetings:
             publication = await binding.queue.get()
             if publication is None:
                 return
-            if binding.capture_fenced:
+            if binding.publication_fenced or binding.capture_fenced:
                 continue
             if _terminal_finalization_not_started(
                 publication.snapshot,
@@ -419,15 +431,23 @@ class Phase2LiveMeetings:
                 )
                 document_changed = document != binding.durable_document
                 if terminal is not None:
-                    await self._settle_terminal(
-                        binding,
-                        publication.snapshot,
-                        publication.events,
-                        terminal,
-                    )
+                    binding.publication_phase = "terminal_settlement"
+                    try:
+                        await self._settle_terminal(
+                            binding,
+                            publication.snapshot,
+                            publication.events,
+                            terminal,
+                        )
+                    finally:
+                        binding.publication_phase = "idle"
                     continue
                 elif document_changed:
-                    binding.durable_version = await binding.handle.commit_transcript(document)
+                    binding.publication_phase = "transcript_commit"
+                    try:
+                        binding.durable_version = await binding.handle.commit_transcript(document)
+                    finally:
+                        binding.publication_phase = "idle"
                     binding.durable_document = document
             except AccountRevoked:
                 await self._fence(binding, "meeting_authority_revoked")

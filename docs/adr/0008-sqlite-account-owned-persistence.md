@@ -28,7 +28,9 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 - Each Account-workspace mutation is one transaction behind the Account workspace module.
 - Account revoke is one final mutation after the in-process lifecycle has drained creation and
   settled owned Live/File work. That transaction disables every bound allowlist row and the Account,
-  increments its generation, deletes every Sign-in session, and interrupts only residual active rows.
+  increments its generation, and deletes every Sign-in session only after asserting there are zero
+  active rows. Residual File/Live rows must first pass their fixed recovery and cleanup paths; the
+  authority transaction never terminalizes them blindly.
   Therefore no process-owned worker loses its captured handle between cleanup and durable terminal
   truth, while every late old-generation mutation fails after the transaction.
 - The same mutation lock also bounds every request-facing read on the one connection. SQLite exposes
@@ -39,6 +41,10 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
   `active`/version 1/prefix, while commit exposed only `completed`/version 2/final document.
 - Crash recovery preserves the last committed transcript and recoverable audio prefix, changes
   active Meetings to `interrupted`, and never resumes capture.
+- Account-scoped recovery reuses those same File/Live owner paths before revoke. Verified complete
+  File audio interrupted at the finish boundary changes only its state to `partial`; fixed path,
+  bytes, and metadata remain unchanged. Persistent raw-stage uncertainty leaves the Meeting active
+  and Account/session rows enabled so startup can retry; the in-process generation gate stays closed.
 - Cold backup/restore is an operator-run stopped-service bundle, not a MOSS product feature or gate.
 - The measured Live binding probe in `prototypes/phase2-live-owner-binding/` fixes the poll boundary:
   eight alternating snapshot/event requests performed exactly eight SQLite reads of

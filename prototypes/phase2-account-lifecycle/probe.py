@@ -20,7 +20,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncIterator
 
-from moss_transcribe_diarize.app.phase2 import AccountRevoked, GoogleIdentity, Phase2Store
+from moss_transcribe_diarize.app.phase2 import (
+    AccountRevoked,
+    GoogleIdentity,
+    MeetingAudio,
+    Phase2Store,
+)
 
 
 EMAIL = "owner@example.com"
@@ -152,6 +157,165 @@ async def gate_probe() -> dict[str, object]:
     }
 
 
+async def publication_fence_probe() -> dict[str, object]:
+    """Measure the smallest synchronous fence needed before settlement awaits."""
+
+    publication_ready = asyncio.Event()
+    release_publication = asyncio.Event()
+    first_settlement_entered = asyncio.Event()
+    release_first_settlement = asyncio.Event()
+    bindings = {
+        "first": {"result_fenced": False, "durable_versions": []},
+        "second": {"result_fenced": False, "durable_versions": []},
+    }
+
+    async def publish(name: str) -> None:
+        publication_ready.set()
+        await release_publication.wait()
+        if bindings[name]["result_fenced"]:
+            return
+        bindings[name]["durable_versions"].append(1)
+
+    async def settle_first() -> None:
+        first_settlement_entered.set()
+        await release_first_settlement.wait()
+        raise RuntimeError("injected first settlement failure")
+
+    publication = asyncio.create_task(publish("second"))
+    await publication_ready.wait()
+    for binding in bindings.values():
+        binding["result_fenced"] = True
+    settlement = asyncio.create_task(settle_first())
+    await first_settlement_entered.wait()
+    release_publication.set()
+    await publication
+    blocked_while_first_held = bindings["second"]["durable_versions"] == []
+    release_first_settlement.set()
+    failure = None
+    try:
+        await settlement
+    except RuntimeError as exc:
+        failure = str(exc)
+    return {
+        "all_fenced_before_await": all(
+            bool(binding["result_fenced"]) for binding in bindings.values()
+        ),
+        "second_publication_blocked": blocked_while_first_held,
+        "first_settlement": failure,
+        "bindings": bindings,
+    }
+
+
+async def publication_worker_policy_probe() -> dict[str, object]:
+    """Falsify phase-specific worker shutdown without filesystem or SQLite noise."""
+
+    idle_queue: asyncio.Queue[None] = asyncio.Queue()
+
+    async def idle_worker() -> None:
+        await idle_queue.get()
+
+    idle = asyncio.create_task(idle_worker())
+    await asyncio.sleep(0)
+    idle_queue.put_nowait(None)
+    await idle
+
+    transcript_entered = asyncio.Event()
+    transcript_release = asyncio.Event()
+    transcript_versions: list[int] = []
+    transcript_rolled_back = False
+
+    async def transcript_worker() -> None:
+        nonlocal transcript_rolled_back
+        transcript_entered.set()
+        try:
+            await transcript_release.wait()
+            transcript_versions.append(1)
+        except asyncio.CancelledError:
+            transcript_rolled_back = True
+            raise
+
+    transcript = asyncio.create_task(transcript_worker())
+    await transcript_entered.wait()
+    transcript.cancel()
+    await asyncio.gather(transcript, return_exceptions=True)
+
+    terminal_entered = asyncio.Event()
+    terminal_release = asyncio.Event()
+    terminal_state: dict[str, object] = {
+        "account_enabled": True,
+        "audio_state": "staging",
+        "meeting_status": "active",
+        "publication_fenced": False,
+        "publication_phase": "terminal_settlement",
+        "publish_count": 0,
+        "raw_status": "closed",
+    }
+    order: list[str] = []
+
+    async def terminal_worker() -> None:
+        terminal_entered.set()
+        await terminal_release.wait()
+        terminal_state["publish_count"] = 1
+        terminal_state["audio_state"] = "available"
+        order.append("audio_published")
+        terminal_state["meeting_status"] = "completed"
+        order.append("meeting_completed")
+        terminal_state["publication_phase"] = "idle"
+
+    terminal = asyncio.create_task(terminal_worker())
+    await terminal_entered.wait()
+    terminal_state["publication_fenced"] = True
+    order.append("fence")
+
+    async def revoke_after_join() -> None:
+        await asyncio.gather(terminal)
+        order.append("worker_joined")
+        terminal_state["account_enabled"] = False
+        order.append("authority_disabled")
+
+    revoke = asyncio.create_task(revoke_after_join())
+    await asyncio.sleep(0)
+    held = {
+        "account_enabled": terminal_state["account_enabled"],
+        "audio_state": terminal_state["audio_state"],
+        "meeting_status": terminal_state["meeting_status"],
+        "publication_fenced": terminal_state["publication_fenced"],
+        "publication_phase": terminal_state["publication_phase"],
+        "raw_status": terminal_state["raw_status"],
+        "revoke_waiting": not revoke.done(),
+        "worker_cancelled": terminal.cancelled(),
+        "worker_done": terminal.done(),
+    }
+    terminal_release.set()
+    await revoke
+    settled = dict(terminal_state)
+    settled.update(
+        {
+            "order": order,
+            "revoke_done": revoke.done(),
+            "worker_cancelled": terminal.cancelled(),
+            "worker_done": terminal.done(),
+        }
+    )
+
+    return {
+        "idle_exit": {
+            "cancelled": idle.cancelled(),
+            "done": idle.done(),
+            "exit_signal": "queued",
+        },
+        "transcript_commit": {
+            "cancelled": transcript.cancelled(),
+            "durable_versions": transcript_versions,
+            "rollback_observed": transcript_rolled_back,
+        },
+        "terminal_audio": {
+            "held": held,
+            "settled": settled,
+        },
+    }
+
+
 @dataclass
 class ControlledMeeting:
     handle: object
@@ -233,6 +397,11 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         ]
 
         settled = await stop_origin(controlled, session)
+        expected_settled = [first.meeting_id, second.meeting_id]
+        settled_statuses = {
+            handle.meeting_id: (await handle.snapshot()).status
+            for handle in (first, second)
+        }
         logout_revoked = await store.revoke_session(session)
         observer_status_after_logout = (await observed.snapshot()).status
         origin_valid_after_logout = await store.account_for_session(session) is not None
@@ -256,6 +425,61 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         failing_session_valid_after_failure = (
             await store.account_for_session(failing_session) is not None
         )
+
+        # Prototype the only truthful interruption transition after File audio has
+        # already reached verified complete metadata: change state only, then finish.
+        audio_boundary = await workspace.create_meeting("file")
+        available = MeetingAudio(
+            state="available",
+            relative_path=f"{account.account_id}/{audio_boundary.meeting_id}/audio.mp3",
+            byte_count=17,
+            duration_ms=125,
+            format="mp3",
+            sample_rate_hz=16_000,
+            channels=1,
+            bit_rate_bps=48_000,
+        )
+        await store._commit_meeting_audio(
+            account.account_id,
+            account.authority_generation,
+            audio_boundary.meeting_id,
+            available,
+        )
+        async with store._mutation():
+            cursor = await store._connection.execute(
+                """
+                UPDATE meeting_audio SET state = 'partial'
+                WHERE account_id = ? AND meeting_id = ? AND state = 'available'
+                  AND EXISTS (
+                    SELECT 1 FROM meetings
+                    WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                  )
+                """,
+                (
+                    account.account_id,
+                    audio_boundary.meeting_id,
+                    account.account_id,
+                    audio_boundary.meeting_id,
+                ),
+            )
+            audio_downgraded = cursor.rowcount == 1
+            await cursor.close()
+        await audio_boundary.finish("interrupted")
+        audio_boundary_snapshot = await audio_boundary.snapshot()
+        interrupted_audio = audio_boundary_snapshot.audio
+
+        # Cleanup uncertainty must keep both Meeting and Account authority unchanged.
+        unregistered = await workspace.create_meeting("live")
+        cleanup_failure = None
+        try:
+            raise OSError("injected persistent raw-stage cleanup failure")
+        except OSError as exc:
+            cleanup_failure = str(exc)
+        uncertain_before_retry = (await unregistered.snapshot()).status
+        authority_before_retry = await store.account_for_session(observer_session) is not None
+        await unregistered.record_audio_unavailable()
+        await unregistered.finish("interrupted")
+        uncertain_after_retry = (await unregistered.snapshot()).status
 
         old_generation = account.authority_generation
         for handle in (observed, failing):
@@ -284,6 +508,8 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         result = {
             "logout": {
                 "settled": settled,
+                "expected_settled": expected_settled,
+                "settled_statuses": settled_statuses,
                 "session_revoked": logout_revoked,
                 "origin_valid": origin_valid_after_logout,
                 "observer_valid": observer_valid_after_logout,
@@ -292,6 +518,18 @@ async def ordering_probe(path: Path) -> dict[str, object]:
             "logout_failure": {
                 "error": failure,
                 "session_valid": failing_session_valid_after_failure,
+            },
+            "audio_boundary": {
+                "downgraded": audio_downgraded,
+                "meeting_status": audio_boundary_snapshot.status,
+                "audio": None if interrupted_audio is None else interrupted_audio.to_dict(),
+                "expected_metadata": available.to_dict(),
+            },
+            "unregistered_recovery": {
+                "cleanup_failure": cleanup_failure,
+                "status_before_retry": uncertain_before_retry,
+                "authority_before_retry": authority_before_retry,
+                "status_after_retry": uncertain_after_retry,
             },
             "revoke": {
                 "late_commit": late,
@@ -332,12 +570,18 @@ async def main() -> None:
             },
             {
                 "primitive": "existing owned-work controls",
-                "boundary": "shared Live Stop and indexed File task registrations",
-                "irreducible": "only those owners can quiesce inference and settle audio truth",
+                "boundary": (
+                    "shared Live Stop, synchronous result fence, phase-aware publication "
+                    "worker shutdown, indexed File tasks, and fixed owner/mode recovery"
+                ),
+                "irreducible": (
+                    "only those owners can quiesce inference and settle audio truth; a generic "
+                    "worker cancel cannot distinguish rollback-safe SQLite from live filesystem I/O"
+                ),
             },
             {
                 "primitive": "final SQLite authority transaction",
-                "boundary": "Account row, all sessions, and residual active Meetings",
+                "boundary": "Account row and all sessions after a zero-active-row assertion",
                 "irreducible": "it is the durable generation fence for every captured handle",
             },
             {
@@ -351,23 +595,36 @@ async def main() -> None:
             "logout settles only Live Meetings originated by one Sign-in session",
             "logout failure keeps that session valid and reopens only its session gate",
             "Account revoke settles all owned work before generation/session mutation",
+            "interruption downgrades verified complete audio by state only before terminal status",
+            "cleanup uncertainty leaves Meeting active and durable Account authority unchanged",
+            "a synchronous Live result fence precedes every settlement await",
+            "terminal audio publication is joined, never cancelled, before authority changes",
+            "only a SQLite transcript commit is cancelled because rollback is its atomic boundary",
             "old handles never revive after reallow and other Accounts never mutate",
         ],
         "assumptions_unknowns": [
             "Live and File terminal/audio algorithms are settled by Issues 13, 16, and 17",
             "socket framing and browser rendering are implementation checks, not policy proxies",
-            "production cancellation behavior remains unmeasured until focused integration tests",
+            "production cancellation, socket, and browser behavior is measured by focused tests",
         ],
         "falsifier": (
             "A drain misses a pre-admitted registration; a failed creator leaks the count; "
             "logout failure revokes authority; revoke leaves active owned work; late/stale work "
-            "commits; reallow reuses the old generation; or another Account changes."
+            "commits; complete audio stays available after interruption; cleanup uncertainty "
+            "becomes terminal; terminal audio is orphaned or cancelled; authority changes before "
+            "its worker joins; reallow reuses the old generation; or another Account changes."
         ),
         "tool_decisions": [
             {
                 "tool": "asyncio interleaving probe",
-                "necessary": "the new uncertainty is admission-versus-drain ordering",
-                "decision_change": "any missed registration or leaked count rejects the gate",
+                "necessary": (
+                    "the new uncertainties are admission-versus-drain ordering and phase-aware "
+                    "publication worker shutdown"
+                ),
+                "decision_change": (
+                    "any missed registration, leaked count, cancelled terminal audio, or authority "
+                    "mutation before worker join rejects the lifecycle composition"
+                ),
             },
             {
                 "tool": "production Phase2Store and MeetingHandle",
@@ -376,7 +633,7 @@ async def main() -> None:
             },
             {
                 "tool": "focused production integration tests after PASS",
-                "necessary": "real shared Stop, cancellation, socket, and browser paths are not modeled",
+                "necessary": "real shared Stop, cancellation, socket, and browser paths cross adapters",
                 "decision_change": "a path mismatch rejects or deepens the production seam",
             },
         ],
@@ -385,10 +642,20 @@ async def main() -> None:
         state: dict[str, object] = {
             "contract": contract,
             "gate": await gate_probe(),
+            "publication_fence": await publication_fence_probe(),
+            "publication_worker_policy": await publication_worker_policy_probe(),
             "ordering": await ordering_probe(Path(temporary) / "phase2.sqlite3"),
         }
     gate = state["gate"]
     ordering = state["ordering"]
+    publication_fence = state["publication_fence"]
+    publication_worker_policy = state["publication_worker_policy"]
+    idle_exit = publication_worker_policy["idle_exit"]
+    transcript_commit = publication_worker_policy["transcript_commit"]
+    terminal_audio = publication_worker_policy["terminal_audio"]
+    audio_boundary = ordering["audio_boundary"]
+    preserved_audio = dict(audio_boundary["expected_metadata"])
+    preserved_audio["state"] = "partial"
     passed = (
         gate["preadmitted_create_registered"] is True
         and gate["drain_waited_for_registration"] is True
@@ -397,10 +664,66 @@ async def main() -> None:
         and gate["logout_failure_reopen_admitted"] is True
         and gate["revoke_waited_for_logout"] is True
         and gate["concurrent_logout"] == "ScopeDraining"
+        and ordering["logout"]["settled"] == ordering["logout"]["expected_settled"]
+        and set(ordering["logout"]["settled_statuses"].values()) == {"completed"}
         and ordering["logout"]["origin_valid"] is False
         and ordering["logout"]["observer_valid"] is True
         and ordering["logout"]["observer_meeting"] == "active"
         and ordering["logout_failure"]["session_valid"] is True
+        and audio_boundary["downgraded"] is True
+        and audio_boundary["meeting_status"] == "interrupted"
+        and audio_boundary["audio"] == preserved_audio
+        and ordering["unregistered_recovery"]
+        == {
+            "cleanup_failure": "injected persistent raw-stage cleanup failure",
+            "status_before_retry": "active",
+            "authority_before_retry": True,
+            "status_after_retry": "interrupted",
+        }
+        and publication_fence["all_fenced_before_await"] is True
+        and publication_fence["second_publication_blocked"] is True
+        and publication_fence["first_settlement"]
+        == "injected first settlement failure"
+        and idle_exit
+        == {"cancelled": False, "done": True, "exit_signal": "queued"}
+        and transcript_commit
+        == {
+            "cancelled": True,
+            "durable_versions": [],
+            "rollback_observed": True,
+        }
+        and terminal_audio["held"]
+        == {
+            "account_enabled": True,
+            "audio_state": "staging",
+            "meeting_status": "active",
+            "publication_fenced": True,
+            "publication_phase": "terminal_settlement",
+            "raw_status": "closed",
+            "revoke_waiting": True,
+            "worker_cancelled": False,
+            "worker_done": False,
+        }
+        and terminal_audio["settled"]
+        == {
+            "account_enabled": False,
+            "audio_state": "available",
+            "meeting_status": "completed",
+            "order": [
+                "fence",
+                "audio_published",
+                "meeting_completed",
+                "worker_joined",
+                "authority_disabled",
+            ],
+            "publication_fenced": True,
+            "publication_phase": "idle",
+            "publish_count": 1,
+            "raw_status": "closed",
+            "revoke_done": True,
+            "worker_cancelled": False,
+            "worker_done": True,
+        }
         and ordering["revoke"]["late_commit"] == "AccountRevoked"
         and ordering["revoke"]["old_sessions_valid"] == [False, False]
         and ordering["revoke"]["fresh_generation"]
@@ -415,6 +738,10 @@ async def main() -> None:
             "authority_results": {
                 "logout": ordering["logout"],
                 "logout_failure": ordering["logout_failure"],
+                "audio_boundary": audio_boundary,
+                "unregistered_recovery": ordering["unregistered_recovery"],
+                "publication_fence": publication_fence,
+                "publication_worker_policy": publication_worker_policy,
                 "revoke": ordering["revoke"],
                 "other_account": ordering["other_account"],
             },

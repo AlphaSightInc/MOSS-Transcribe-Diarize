@@ -72,11 +72,15 @@ class AccountLifecycle:
         *,
         live: Any | None,
         files: Any | None,
+        audio_archive: Any | None = None,
+        live_audio_stages: Any | None = None,
         normal_stop_deadline: float = 5.0,
     ) -> None:
         self._store = store
         self._live = live
         self._files = files
+        self._audio_archive = audio_archive
+        self._live_audio_stages = live_audio_stages
         self._normal_stop_deadline = normal_stop_deadline
         self._live_control: Any | None = None
         self._session_gates: dict[str, _DrainGate] = {}
@@ -162,6 +166,15 @@ class AccountLifecycle:
             await self._interrupt_account_live(live_bindings)
             if self._files is not None:
                 await self._files.settle_fenced(file_entries)
+            if self._audio_archive is None:
+                raise AccountLifecycleSettlementError(
+                    "Account Meeting recovery is unavailable."
+                )
+            await self._store.recover_active_account_meetings(
+                account,
+                audio_archive=self._audio_archive,
+                live_audio_stages=self._live_audio_stages,
+            )
             return await self._store.finalize_account_revoke(target)
         except asyncio.CancelledError:
             # Cancellation is service shutdown.  Keep the old generation closed: work was

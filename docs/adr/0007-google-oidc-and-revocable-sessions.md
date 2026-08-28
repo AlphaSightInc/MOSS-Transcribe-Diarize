@@ -31,8 +31,11 @@ binding originated by that session, then revokes it; any Stop or durability fail
 and retains the cookie/session. Accepted File/URL work is Account-owned and continues. Host Account
 revoke closes and drains the Account-generation gate, synchronously fences every Live binding and
 File task before awaiting any one settlement, quiesces transcript/audio work while captured handles
-remain valid, and disables authority last. A failed revoke never reopens that uncertain generation;
-startup recovery plus a fresh command is the retry boundary.
+remain valid, recovers any residual active row through its fixed File/Live owner path, and disables
+authority last only after a zero-active-row assertion. The Live fence cancels only an in-flight
+SQLite transcript commit, whose transaction rollback is atomic; idle and terminal-settlement
+workers receive a queued exit and are joined before authority changes. A failed revoke never
+reopens that uncertain generation; startup recovery plus a fresh command is the retry boundary.
 
 `mtd-admin` sends one bounded, content-free command to the running product's mode-`0600` Unix socket.
 The socket adapter owns no policy and never opens SQLite. There is no second daemon, TCP listener,
@@ -70,3 +73,15 @@ then exercised the shared two-lane Stop, held Live/File results, fence-all-befor
 audio cleanup, cancelled logout reopening, restart-after-failed-revoke, socket single ownership and
 shutdown, and browser `401` capture teardown. These results accept the lifecycle module plus thin
 Unix transport; no queue, retry framework, or second scheduler was needed.
+
+The corrected probe also makes PASS depend on the exact logout-controlled Meeting IDs and their
+durable `completed` states, so a no-op Stop fails. It measured metadata-identical
+`available → partial` interruption, cleanup uncertainty remaining active/authorized until retry,
+and a queued second publication committing nothing while the first settlement was held and failed.
+The phase-policy probe also measured an idle queued exit without cancellation, a cancelled SQLite
+commit with rollback and no durable version, and held terminal audio publishing exactly once before
+Meeting completion, worker join, and authority disable. Production reproduced that held terminal
+audio boundary through the shared Live adapter.
+Production tests reproduced transient and persistent unregistered Live-create cleanup, restart
+retry, File audio at the publish/finish boundary, the final zero-active assertion, and the same
+synchronous publication fence.
