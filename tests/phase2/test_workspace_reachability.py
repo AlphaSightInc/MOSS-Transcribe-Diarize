@@ -408,6 +408,13 @@ async def _provision(database: Path) -> None:
     store = await Phase2Store.open(database)
     try:
         await store.allow_email("person@example.com")
+        admitted = await store.admit(
+            GoogleIdentity("browser-owner", "person@example.com", "Person")
+        )
+        assert admitted is not None
+        handle = await store.workspace(admitted[0]).create_meeting("file")
+        await handle.record_audio_unavailable()
+        await handle.finish("completed")
     finally:
         await store.close()
 
@@ -474,6 +481,7 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
         assert measured["mobile_media"] is True
         assert measured["mobile_user_agent"] is True
         assert measured["viewport_meta"] is True
+        assert measured["audio_unavailable_visible"] is True
         assert measured["rename_dialog_accessible"] is True
         assert measured["escape_restored_focus"] is True
         assert measured["both_observed_words"] is True
@@ -621,6 +629,10 @@ async def _exercise_two_browsers(
             "mobile_media": mobile_layout["mobileMedia"],
             "mobile_user_agent": mobile_layout["mobileUserAgent"],
             "viewport_meta": mobile_layout["viewportMeta"],
+            "audio_unavailable_visible": await second.evaluate(
+                "document.querySelector('[data-audio-unavailable]')?.textContent.trim() === "
+                "'Audio unavailable'"
+            ),
             "rename_dialog_accessible": rename_dialog_accessible,
             "escape_restored_focus": escape_restored_focus,
             "both_observed_words": True,

@@ -538,9 +538,11 @@ class Phase2Store:
     ) -> None:
         """The product process never resumes capture that was active before startup."""
 
-        if (audio_archive is None) != (live_audio_stages is None):
-            raise ValueError("Live audio startup recovery requires archive and stages together.")
+        if live_audio_stages is not None and audio_archive is None:
+            raise ValueError("Live audio startup recovery requires an archive.")
         if audio_archive is not None:
+            await self._recover_active_file_meetings(audio_archive)
+        if audio_archive is not None and live_audio_stages is not None:
             async with self._external_read():
                 cursor = await self._connection.execute(
                     """
@@ -559,6 +561,11 @@ class Phase2Store:
                 await cursor.close()
             for row in interrupted_rows:
                 if row["audio_state"] in {"available", "partial"}:
+                    await asyncio.to_thread(
+                        audio_archive.discard_staged,
+                        row["account_id"],
+                        row["meeting_id"],
+                    )
                     resolved = audio_archive.resolve(
                         row["account_id"],
                         row["meeting_id"],
@@ -616,6 +623,63 @@ class Phase2Store:
                 "UPDATE meetings SET status = 'interrupted', updated_at_ms = ? WHERE status = 'active'",
                 (now,),
             )
+
+    async def _recover_active_file_meetings(self, audio_archive: Any) -> None:
+        """Reconcile canonical File artifact paths before making a crashed row terminal."""
+
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.account_id, m.meeting_id, a.authority_generation,
+                       ma.state AS audio_state,
+                       ma.relative_path AS audio_relative_path,
+                       ma.byte_count AS audio_byte_count
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+                LEFT JOIN meeting_audio ma
+                  ON ma.account_id = m.account_id AND ma.meeting_id = m.meeting_id
+                WHERE m.mode = 'file' AND m.status = 'active'
+                ORDER BY m.created_at_ms, m.meeting_id
+                """
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        for row in rows:
+            handle = MeetingHandle(
+                self,
+                row["account_id"],
+                int(row["authority_generation"]),
+                row["meeting_id"],
+            )
+            if row["audio_state"] in {"available", "partial"}:
+                await asyncio.to_thread(
+                    audio_archive.discard_staged,
+                    row["account_id"],
+                    row["meeting_id"],
+                )
+                resolved = audio_archive.resolve(
+                    row["account_id"],
+                    row["meeting_id"],
+                    row["audio_relative_path"],
+                    int(row["audio_byte_count"]),
+                )
+                if resolved is None:
+                    await asyncio.to_thread(
+                        audio_archive.discard_stored,
+                        row["account_id"],
+                        row["meeting_id"],
+                        row["audio_relative_path"],
+                    )
+                    await handle.mark_audio_unavailable()
+            else:
+                await asyncio.to_thread(
+                    audio_archive.discard_unrecorded,
+                    row["account_id"],
+                    row["meeting_id"],
+                )
+                if row["audio_state"] != "unavailable":
+                    await handle.record_audio_unavailable()
+            await handle.finish("interrupted")
 
     async def _mark_interrupted_meeting_audio_unavailable(
         self,
@@ -1327,6 +1391,11 @@ class MeetingHandle:
 
         existing = await self.audio()
         if existing is not None and existing.state in {"available", "partial"}:
+            await asyncio.to_thread(
+                archive.discard_staged,
+                self._account_id,
+                self.meeting_id,
+            )
             if self.resolve_audio(archive, existing) is None:
                 await asyncio.to_thread(self.discard_audio, archive, existing)
                 await self.mark_audio_unavailable()
@@ -1491,7 +1560,7 @@ def create_phase2_app(
         store = await Phase2Store.open(database_path)
         try:
             await store.recover_active_meetings(
-                audio_archive=audio_archive if phase2_live is not None else None,
+                audio_archive=audio_archive,
                 live_audio_stages=(
                     None if phase2_live is None else phase2_live.audio_stages
                 ),

@@ -73,6 +73,29 @@ describe("MeetingHistory", () => {
     ]);
   });
 
+  it("renders explicit unavailable audio truth without a download link", async () => {
+    const unavailable = meeting({
+      audio: {
+        state: "unavailable",
+        relative_path: null,
+        byte_count: null,
+        duration_ms: null,
+        format: null,
+        sample_rate_hz: null,
+        channels: null,
+        bit_rate_bps: null
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ meetings: [unavailable] })));
+
+    await act(async () => {
+      render(<MeetingHistory />, root);
+    });
+    await vi.waitFor(() => expect(root.querySelector("[data-audio-unavailable]")).not.toBeNull());
+    expect(root.querySelector("[data-audio-unavailable]")?.textContent).toBe("Audio unavailable");
+    expect(root.querySelector("[data-audio-download]")).toBeNull();
+  });
+
   it("opens an active Live Meeting read-only and renders its transcript", async () => {
     const active = meeting({ id: "live-active", status: "active", title: "Standup" });
     const fetcher = vi.fn()

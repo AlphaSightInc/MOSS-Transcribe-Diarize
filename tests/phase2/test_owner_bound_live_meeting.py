@@ -767,6 +767,153 @@ def test_live_stage_bound_degrades_normal_stop_to_partial_without_losing_transcr
         assert not (meeting_dir / ".live-mix.pcm").exists()
 
 
+def test_terminal_audio_cleanup_precedes_atomic_final_transcript_and_status(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(
+        database,
+        terminal_text="[0][S01]atomic terminal words[0.000375]",
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        original_finish = binding.handle.finish_with_transcript
+        observed: list[tuple[str, str, str]] = []
+        stage_path = tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+
+        async def observe_atomic_finish(document, status):
+            before = await binding.handle.snapshot()
+            assert before.audio is not None and before.audio.state == "available"
+            assert not stage_path.exists()
+            observed.append(
+                (
+                    before.status,
+                    before.transcript["segments"][0]["text"],
+                    document["segments"][0]["text"],
+                )
+            )
+            return await original_finish(document, status)
+
+        binding.handle.finish_with_transcript = observe_atomic_finish
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        assert observed == [("active", "owner live words", "atomic terminal words")]
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert (meeting["status"], meeting["transcript"]["segments"][0]["text"]) == (
+            "completed",
+            "atomic terminal words",
+        )
+        assert meeting["audio"]["state"] == "available"
+
+
+def test_concurrent_fence_waits_for_one_terminal_audio_publication(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
+        archive = app.state.phase2_audio_archive
+        original_publish = archive.publish_live_prefix
+        publish_started = threading.Event()
+        release_publish = threading.Event()
+        fence_started = threading.Event()
+        publish_count = 0
+        outcomes: dict[str, object] = {}
+
+        def held_publish(*args, **kwargs):
+            nonlocal publish_count
+            publish_count += 1
+            publish_started.set()
+            assert release_publish.wait(timeout=5)
+            return original_publish(*args, **kwargs)
+
+        archive.publish_live_prefix = held_publish
+
+        def stop_meeting() -> None:
+            try:
+                outcomes["stop"] = client.post(
+                    f"/api/live/sessions/{meeting_id}/stop",
+                    json={"deadline": 2.0},
+                )
+            except BaseException as exc:  # pragma: no cover - assertion reports thread error.
+                outcomes["stop_error"] = exc
+
+        def fence_meeting() -> None:
+            fence_started.set()
+            try:
+                client.portal.call(
+                    app.state.phase2_live._fence,
+                    binding,
+                    "service shutdown",
+                )
+            except BaseException as exc:  # pragma: no cover - assertion reports thread error.
+                outcomes["fence_error"] = exc
+
+        stop_thread = threading.Thread(target=stop_meeting)
+        stop_thread.start()
+        assert publish_started.wait(timeout=2)
+        fence_thread = threading.Thread(target=fence_meeting)
+        fence_thread.start()
+        assert fence_started.wait(timeout=2)
+        release_publish.set()
+        stop_thread.join(timeout=5)
+        fence_thread.join(timeout=5)
+        assert not stop_thread.is_alive() and not fence_thread.is_alive()
+        assert "stop_error" not in outcomes and "fence_error" not in outcomes
+        assert outcomes["stop"].status_code == 200
+        assert publish_count == 1
+
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "completed"
+        assert meeting["audio"]["state"] == "available"
+        retained = tmp_path / "meetings" / "sub-a" / meeting_id / "audio.mp3"
+        assert retained.is_file() and retained.stat().st_size == meeting["audio"]["byte_count"]
+        assert sorted(
+            path.name for path in retained.parent.iterdir() if path.suffix == ".mp3"
+        ) == ["audio.mp3"]
+
+
+def test_failed_terminal_can_only_retain_partial_audio(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        binding = app.state.phase2_live._bindings[meeting_id]
+
+        async def settle_failed() -> None:
+            snapshot = app.state.phase2_live.runtime.snapshot(meeting_id)
+            assert snapshot is not None
+            await app.state.phase2_live._settle_terminal(
+                binding,
+                snapshot,
+                app.state.phase2_live.runtime.events(meeting_id),
+                "failed",
+            )
+
+        client.portal.call(settle_failed)
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "failed"
+        assert meeting["audio"]["state"] == "partial"
+        meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
+        assert (meeting_dir / "audio.partial.mp3").is_file()
+        assert not (meeting_dir / "audio.mp3").exists()
+
+
 def test_live_encode_failure_preserves_transcript_and_finishes_audio_unavailable(
     tmp_path: Path,
 ):

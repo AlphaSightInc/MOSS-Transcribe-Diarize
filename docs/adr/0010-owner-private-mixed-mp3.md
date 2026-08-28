@@ -26,13 +26,16 @@ Live capture tees only the exact runtime-accepted 16 kHz mono PCM16 mix into one
 owner-derived stage. Every accepted append is fsynced and the existing `max_tape_bytes` bound is
 the stage bound. Hitting the bound or a write failure never ends transcription, but permanently
 makes complete audio ineligible: a positive prefix becomes partial and zero complete samples become
-unavailable. Normal Stop commits the terminal transcript, settles MP3 metadata, verifies raw-stage
-cleanup, and only then finishes the Meeting. Startup never resumes capture; it enumerates canonical
-active Live Meeting rows and recovers each fixed owner path without filesystem search.
+unavailable. Normal Stop settles MP3 metadata, verifies raw-stage cleanup, atomically commits the
+final transcript and terminal Meeting status when the document changed (or finishes status-only
+when it did not), and only then updates the public projection. One per-binding settlement lock is
+shared by publication, fencing, shutdown, and in-service recovery. Startup never resumes capture;
+it enumerates canonical active rows and recovers fixed owner paths without filesystem search.
 
 ## Consequences
 
-- History offers complete download, partial download, or unavailable; there is no embedded player.
+- History offers complete download, partial download, or explicit `Audio unavailable`; there is no
+  embedded player.
 - Wrong-owner download resolves `404` through the Account workspace.
 - MOSS implements no quota, expiry, eviction, deletion, backup, storage dashboard, or file manager.
 - The production-semantics probe in
@@ -62,7 +65,8 @@ active Live Meeting rows and recovers each fixed owner path without filesystem s
   transcript, reconciled file/metadata truth, removed raw PCM, and ended interrupted. A fully
   finished boundary remained completed. A transient terminal cleanup failure retries that same
   owner-bound recovery operation and ends the authorized Meeting durably terminal only after raw
-  absence is verified. Persistent cleanup uncertainty leaves the canonical Meeting active for
+  absence is verified. A held concurrent fence measured one MP3 publication, one resolvable
+  artifact, and no duplicate terminal mutation. Persistent cleanup uncertainty leaves the canonical Meeting active for
   visible startup recovery; it cannot make terminal status eligible while raw PCM survives.
   Revocation cannot mutate audio metadata. Its fixed-stage cleanup is binding-owned and
   cancellation-shielded with one causal retry. If both attempts fail after SQLite has already
@@ -72,4 +76,8 @@ active Live Meeting rows and recovers each fixed owner path without filesystem s
   update, while cleanup uncertainty preserves metadata and blocks startup visibly. Unrecorded MP3
   is removed. A failed Live creation likewise reaches durable `failed` only after the fixed stage
   is verified absent; uncertainty leaves its canonical active row for startup recovery rather than
-  making raw PCM unreachable. Issue #18 owns moving revocation ordering before generation fencing.
+  making raw PCM unreachable. MP3 pre-publication uses one deterministic `.audio.staged.mp3` path;
+  Live and File startup recovery remove it through canonical owner paths before preserving verified
+  metadata or recording unavailable. Only normal completed settlement may retain complete audio;
+  failed/interrupted/crash outcomes are partial or unavailable. Issue #18 owns moving revocation
+  ordering before generation fencing.

@@ -69,6 +69,7 @@ class _LiveBinding:
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
     authority_cleanup_task: asyncio.Task[None] | None = None
+    terminal_settlement_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
 
 
@@ -298,29 +299,14 @@ class Phase2LiveMeetings:
                     finalizer_configured=self.runtime._terminal_finalizer is not None,
                 )
                 document_changed = document != binding.durable_document
-                if terminal is not None and not binding.terminal_persisted:
-                    if document_changed:
-                        binding.durable_version = await binding.handle.commit_transcript(document)
-                        binding.durable_document = document
-                    try:
-                        await self._settle_audio(
-                            binding,
-                            publication.snapshot,
-                            interrupted=terminal == "interrupted",
-                        )
-                    except AccountRevoked:
-                        await self._fence(binding, "meeting_authority_revoked")
-                        continue
-                    except Exception:
-                        await self._terminal_recovery_failed(
-                            binding,
-                            "audio_terminal_recovery_failed",
-                            publication.snapshot,
-                            publication.events,
-                        )
-                        continue
-                    await binding.handle.finish(terminal)
-                    binding.terminal_persisted = True
+                if terminal is not None:
+                    await self._settle_terminal(
+                        binding,
+                        publication.snapshot,
+                        publication.events,
+                        terminal,
+                    )
+                    continue
                 elif document_changed:
                     binding.durable_version = await binding.handle.commit_transcript(document)
                     binding.durable_document = document
@@ -342,7 +328,7 @@ class Phase2LiveMeetings:
         binding: _LiveBinding,
         snapshot: LiveServiceSnapshot,
         *,
-        interrupted: bool,
+        complete_eligible: bool,
     ) -> None:
         account_id = binding.owner_key[0]
         prefix = await asyncio.to_thread(
@@ -357,7 +343,7 @@ class Phase2LiveMeetings:
             await binding.handle.publish_audio(
                 self.audio_archive,
                 prefix.path,
-                partial=interrupted or not prefix.complete,
+                partial=not complete_eligible or not prefix.complete,
                 raw_pcm=True,
             )
         await asyncio.to_thread(
@@ -365,6 +351,213 @@ class Phase2LiveMeetings:
             account_id,
             binding.handle.meeting_id,
         )
+
+    async def _settle_terminal(
+        self,
+        binding: _LiveBinding,
+        terminal_snapshot: LiveServiceSnapshot | None,
+        terminal_events: tuple[LiveServiceEvent, ...],
+        status: str,
+        *,
+        reason: str | None = None,
+        recover: bool = False,
+        project_public: bool = False,
+        document_override: dict[str, object] | None = None,
+    ) -> None:
+        """Serialize audio, raw cleanup, atomic terminal DB truth, then publication."""
+
+        async with binding.terminal_settlement_lock:
+            if binding.terminal_persisted:
+                return
+            document = document_override
+            if document is None:
+                document = (
+                    binding.durable_document
+                    if terminal_snapshot is None
+                    else _transcript_document(terminal_snapshot)
+                )
+            if recover or terminal_snapshot is None:
+                await self._recover_terminal_locked(
+                    binding,
+                    reason or "terminal_persistence_failed",
+                    terminal_snapshot,
+                    terminal_events,
+                    document,
+                    project_public=project_public,
+                )
+                return
+            try:
+                await self._settle_audio(
+                    binding,
+                    terminal_snapshot,
+                    complete_eligible=status == "completed",
+                )
+            except AccountRevoked:
+                await self._complete_revoked_terminal_locked(
+                    binding,
+                    reason or "meeting_authority_revoked",
+                    terminal_snapshot,
+                    terminal_events,
+                )
+                return
+            except Exception:
+                await self._recover_terminal_locked(
+                    binding,
+                    reason or "audio_terminal_recovery_failed",
+                    terminal_snapshot,
+                    terminal_events,
+                    document,
+                    project_public=project_public,
+                )
+                return
+
+            try:
+                await self._finish_terminal(binding, document, status)
+            except AccountRevoked:
+                await self._complete_revoked_terminal_locked(
+                    binding,
+                    reason or "meeting_authority_revoked",
+                    terminal_snapshot,
+                    terminal_events,
+                )
+                return
+            except Exception:
+                await self._recover_terminal_locked(
+                    binding,
+                    reason or "transcript_persistence_failed",
+                    terminal_snapshot,
+                    terminal_events,
+                    document,
+                    project_public=project_public,
+                )
+                return
+
+            await self._publish_terminal_locked(
+                binding,
+                terminal_snapshot,
+                terminal_events,
+                reason=reason,
+                project_public=project_public,
+            )
+
+    async def _finish_terminal(
+        self,
+        binding: _LiveBinding,
+        document: dict[str, object],
+        status: str,
+    ) -> None:
+        if document != binding.durable_document:
+            version = await binding.handle.finish_with_transcript(document, status)
+            binding.durable_document = document
+            binding.durable_version = version
+        else:
+            await binding.handle.finish(status)
+
+    async def _recover_terminal_locked(
+        self,
+        binding: _LiveBinding,
+        reason: str,
+        terminal_snapshot: LiveServiceSnapshot | None,
+        terminal_events: tuple[LiveServiceEvent, ...],
+        document: dict[str, object],
+        *,
+        project_public: bool,
+    ) -> None:
+        binding.capture_fenced = True
+        try:
+            await binding.handle.recover_interrupted_audio(
+                self.audio_archive,
+                self.audio_stages,
+            )
+        except AccountRevoked:
+            await self._complete_revoked_terminal_locked(
+                binding,
+                reason,
+                terminal_snapshot,
+                terminal_events,
+            )
+            return
+        except Exception:
+            await self._publish_settlement_failure(binding, reason)
+            return
+        try:
+            await self._finish_terminal(binding, document, "interrupted")
+        except AccountRevoked:
+            await self._complete_revoked_terminal_locked(
+                binding,
+                reason,
+                terminal_snapshot,
+                terminal_events,
+            )
+            return
+        except Exception:
+            await self._publish_settlement_failure(binding, reason)
+            return
+        await self._publish_terminal_locked(
+            binding,
+            terminal_snapshot,
+            terminal_events,
+            reason=reason,
+            project_public=project_public,
+        )
+
+    async def _complete_revoked_terminal_locked(
+        self,
+        binding: _LiveBinding,
+        reason: str,
+        terminal_snapshot: LiveServiceSnapshot | None,
+        terminal_events: tuple[LiveServiceEvent, ...],
+    ) -> None:
+        binding.capture_fenced = True
+        if not await self._discard_stage_after_authority_loss(binding):
+            await self._publish_settlement_failure(binding, reason)
+            return
+        await self._publish_terminal_locked(
+            binding,
+            terminal_snapshot,
+            terminal_events,
+            reason=reason,
+            project_public=True,
+        )
+
+    async def _publish_terminal_locked(
+        self,
+        binding: _LiveBinding,
+        terminal_snapshot: LiveServiceSnapshot | None,
+        terminal_events: tuple[LiveServiceEvent, ...],
+        *,
+        reason: str | None,
+        project_public: bool,
+    ) -> None:
+        binding.terminal_persisted = True
+        if terminal_snapshot is not None:
+            if project_public:
+                binding.public_snapshot = _durable_terminal_projection(binding, terminal_snapshot)
+                new_events = tuple(
+                    event
+                    for event in terminal_events
+                    if event.seq > binding.public_event_high_water
+                    and event.kind
+                    in {"session_aborted", "terminal_failure", "session_tape_released"}
+                )
+                binding.public_events = binding.public_events + new_events
+                if new_events:
+                    binding.public_event_high_water = new_events[-1].seq
+            else:
+                binding.public_snapshot = terminal_snapshot
+                binding.public_events = terminal_events
+                binding.public_event_high_water = (
+                    -1 if not terminal_events else terminal_events[-1].seq
+                )
+        if reason is not None:
+            binding.persistence_failure = reason
+        async with binding.changed:
+            binding.changed.notify_all()
+
+    async def _publish_settlement_failure(self, binding: _LiveBinding, reason: str) -> None:
+        binding.persistence_failure = reason
+        async with binding.changed:
+            binding.changed.notify_all()
 
     async def _terminal_recovery_failed(
         self,
@@ -374,42 +567,14 @@ class Phase2LiveMeetings:
         terminal_events: tuple[LiveServiceEvent, ...],
     ) -> None:
         binding.capture_fenced = True
-        recovered = False
-        durable_interruption = False
-        try:
-            await binding.handle.recover_interrupted_audio(
-                self.audio_archive,
-                self.audio_stages,
-            )
-            recovered = True
-        except AccountRevoked:
-            durable_interruption = await self._discard_stage_after_authority_loss(binding)
-        except Exception:
-            # Keep the canonical row active: startup recovery is the only durable owner
-            # of a stage whose verified cleanup has not completed.
-            pass
-        if recovered:
-            try:
-                await binding.handle.finish("interrupted")
-                durable_interruption = True
-            except AccountRevoked:
-                durable_interruption = await self._discard_stage_after_authority_loss(
-                    binding
-                )
-            except Exception:
-                pass
-        if durable_interruption:
-            binding.terminal_persisted = True
-            # The terminal transcript was committed before audio settlement began, so
-            # this exact runtime publication is now safe to expose in full.
-            binding.public_snapshot = terminal_snapshot
-            binding.public_events = terminal_events
-            binding.public_event_high_water = (
-                -1 if not terminal_events else terminal_events[-1].seq
-            )
-        binding.persistence_failure = reason
-        async with binding.changed:
-            binding.changed.notify_all()
+        await self._settle_terminal(
+            binding,
+            terminal_snapshot,
+            terminal_events,
+            "interrupted",
+            reason=reason,
+            recover=True,
+        )
 
     async def _discard_stage_after_authority_loss(self, binding: _LiveBinding) -> bool:
         cleanup = binding.authority_cleanup_task
@@ -449,22 +614,7 @@ class Phase2LiveMeetings:
     async def _fence(self, binding: _LiveBinding, reason: str) -> None:
         if binding.terminal_persisted:
             return
-        if binding.capture_fenced:
-            try:
-                terminal_snapshot = self.runtime.snapshot(binding.handle.meeting_id)
-            except Exception:
-                terminal_snapshot = None
-            try:
-                terminal_events = self.runtime.events(binding.handle.meeting_id)
-            except Exception:
-                terminal_events = ()
-            await self._terminal_recovery_failed(
-                binding,
-                binding.persistence_failure or reason,
-                terminal_snapshot,
-                terminal_events,
-            )
-            return
+        recover = binding.capture_fenced
         binding.capture_fenced = True
         try:
             terminal_snapshot = self.runtime.snapshot(binding.handle.meeting_id)
@@ -472,73 +622,29 @@ class Phase2LiveMeetings:
             terminal_snapshot = None
         terminal_events: tuple[LiveServiceEvent, ...] = ()
         try:
-            aborted = await self.runtime.abort(binding.handle.meeting_id, reason)
-            terminal_snapshot = aborted
+            if not recover:
+                terminal_snapshot = await self.runtime.abort(binding.handle.meeting_id, reason)
         except Exception:
             pass
         try:
             terminal_events = self.runtime.events(binding.handle.meeting_id)
         except Exception:
             pass
-        durable_interruption = False
-        try:
-            if terminal_snapshot is not None:
-                await self._settle_audio(
-                    binding,
-                    terminal_snapshot,
-                    interrupted=True,
-                )
-            await binding.handle.finish("interrupted")
-            binding.terminal_persisted = True
-            durable_interruption = True
-        except AccountRevoked:
-            # Account revocation atomically interrupts all active Meetings before the
-            # captured handle's generation fence rejects this redundant finish.
-            durable_interruption = await self._discard_stage_after_authority_loss(binding)
-            binding.terminal_persisted = durable_interruption
-        except Exception:
-            recovered = False
-            try:
-                await binding.handle.recover_interrupted_audio(
-                    self.audio_archive,
-                    self.audio_stages,
-                )
-                recovered = True
-            except AccountRevoked:
-                durable_interruption = await self._discard_stage_after_authority_loss(
-                    binding
-                )
-                binding.terminal_persisted = durable_interruption
-            except Exception:
-                pass
-            if recovered:
-                try:
-                    await binding.handle.finish("interrupted")
-                    binding.terminal_persisted = True
-                    durable_interruption = True
-                except AccountRevoked:
-                    durable_interruption = await self._discard_stage_after_authority_loss(
-                        binding
-                    )
-                    binding.terminal_persisted = durable_interruption
-                except Exception:
-                    pass
-        if durable_interruption and terminal_snapshot is not None:
-            binding.public_snapshot = _durable_terminal_projection(binding, terminal_snapshot)
-            new_terminal_events = tuple(
-                event
-                for event in terminal_events
-                if event.seq > binding.public_event_high_water
-                and event.kind in {"session_aborted", "terminal_failure", "session_tape_released"}
-            )
-            binding.public_events = binding.public_events + new_terminal_events
-            if new_terminal_events:
-                binding.public_event_high_water = new_terminal_events[-1].seq
-        # Publish the failure flag only after the durable/public terminal projection is ready;
-        # otherwise a concurrent poll can observe the reason beside the old active snapshot.
-        binding.persistence_failure = reason
-        async with binding.changed:
-            binding.changed.notify_all()
+        effective_reason = binding.persistence_failure or reason
+        await self._settle_terminal(
+            binding,
+            terminal_snapshot,
+            terminal_events,
+            "interrupted",
+            reason=effective_reason,
+            recover=recover,
+            project_public=True,
+            document_override=(
+                binding.durable_document
+                if effective_reason == "transcript_persistence_failed"
+                else None
+            ),
+        )
 
 
 @dataclass(frozen=True, slots=True)

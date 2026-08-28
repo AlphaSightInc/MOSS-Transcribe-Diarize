@@ -2899,6 +2899,12 @@ textarea:focus {
   gap: 8px;
 }
 
+.history-audio-unavailable {
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .history-state-card,
 .history-enrollment-card {
   display: grid;

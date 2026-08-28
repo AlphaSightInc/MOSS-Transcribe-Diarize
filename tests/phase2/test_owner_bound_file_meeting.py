@@ -335,6 +335,41 @@ def test_startup_removes_transient_crash_orphan_after_durable_recovery(tmp_path:
         assert client.get(f"/api/meetings/{meeting_id}").json()["status"] == "interrupted"
 
 
+def test_startup_removes_file_mp3_crash_stage_before_truthful_interruption(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+
+    async def create_crashed_file() -> str:
+        store = await Phase2Store.open(database)
+        try:
+            account = await store.account_for_session(sessions["sub-a"])
+            assert account is not None
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.commit_transcript(
+                {"segments": [{"id": "seg_0001", "text": "durable file transcript"}]}
+            )
+            return handle.meeting_id
+        finally:
+            await store.close()
+
+    meeting_id = asyncio.run(create_crashed_file())
+    meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
+    meeting_dir.mkdir(parents=True)
+    staged = meeting_dir / ".audio.staged.mp3"
+    staged.write_bytes(b"crash-staged-file-mp3")
+
+    app = make_app(database, ControlledRunner(), work_root)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["transcript"]["segments"][0]["text"] == "durable file transcript"
+        assert meeting["audio"]["state"] == "unavailable"
+        assert not staged.exists()
+        assert not tuple(meeting_dir.glob("*.mp3"))
+
+
 def test_startup_cleanup_failure_blocks_admission_logs_no_content_and_closes_store(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

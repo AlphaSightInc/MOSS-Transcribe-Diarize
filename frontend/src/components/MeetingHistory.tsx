@@ -240,6 +240,10 @@ export function MeetingHistory() {
                         >
                           {meeting.audio.state === "partial" ? "Download partial audio" : "Download audio"}
                         </a>
+                      ) : meeting.audio?.state === "unavailable" ? (
+                        <span className="history-audio-unavailable" data-audio-unavailable>
+                          Audio unavailable
+                        </span>
                       ) : null}
                     </div>
                   </article>

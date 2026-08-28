@@ -11,6 +11,7 @@ import statistics
 import struct
 import subprocess
 import tempfile
+import threading
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -61,6 +62,33 @@ class _RejectCreateRuntime:
     def create(self, *, echo_mode: str | None, session_id: str) -> None:
         del echo_mode, session_id
         raise ValueError("prototype runtime creation refusal")
+
+
+class _HeldCountingArchive(MeetingAudioArchive):
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.publish_count = 0
+        self.publish_started = threading.Event()
+        self.release_publish = threading.Event()
+
+    def publish_live_prefix(
+        self,
+        account_id: str,
+        meeting_id: str,
+        source_path: str | Path,
+        *,
+        partial: bool,
+    ):
+        self.publish_count += 1
+        self.publish_started.set()
+        if not self.release_publish.wait(timeout=5):
+            raise TimeoutError("prototype did not release held MP3 publication")
+        return super().publish_live_prefix(
+            account_id,
+            meeting_id,
+            source_path,
+            partial=partial,
+        )
 
 
 def pcm_tone(samples: int, frequency: float = 880.0) -> bytes:
@@ -315,7 +343,10 @@ async def _cleanup_failure_probe(work: Path, pcm: bytes) -> dict[str, object]:
             public_snapshot=None,
             public_events=(),
             public_event_high_water=-1,
+            durable_document={"segments": [{"id": "seg_0001", "text": "durable transcript"}]},
+            durable_version=1,
             authority_cleanup_task=None,
+            terminal_settlement_lock=asyncio.Lock(),
             changed=asyncio.Condition(),
         )
         await live._terminal_recovery_failed(
@@ -490,6 +521,220 @@ async def _failed_create_cleanup_probe(work: Path, pcm: bytes) -> dict[str, obje
     return {"before_restart": before, "after_restart": after}
 
 
+async def _terminal_atomicity_probe(work: Path) -> dict[str, object]:
+    store = await Phase2Store.open(work / "moss.sqlite3")
+    old = {"segments": [{"id": "seg_0001", "text": "old"}]}
+    final = {"segments": [{"id": "seg_0001", "text": "final"}]}
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        workspace = store.workspace(admitted[0])
+
+        split = await workspace.create_meeting("live")
+        await split.commit_transcript(old)
+        await split.commit_transcript(final)
+        split_boundary = await split.snapshot()
+
+        atomic = await workspace.create_meeting("live")
+        await atomic.commit_transcript(old)
+        atomic_version = await atomic.finish_with_transcript(final, "completed")
+        atomic_boundary = await atomic.snapshot()
+        return {
+            "split_boundary": {
+                "status": split_boundary.status,
+                "transcript": split_boundary.transcript["segments"][0]["text"],
+                "version": split_boundary.transcript_version,
+            },
+            "atomic_boundary": {
+                "status": atomic_boundary.status,
+                "transcript": atomic_boundary.transcript["segments"][0]["text"],
+                "version": atomic_boundary.transcript_version,
+                "returned_version": atomic_version,
+            },
+        }
+    finally:
+        await store.close()
+
+
+async def _serialized_terminal_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    archive = _HeldCountingArchive(work / "meetings")
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    settlement_lock = asyncio.Lock()
+    outcomes: list[str] = []
+    document = {"segments": [{"id": "seg_0001", "text": "final"}]}
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, _ = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        stages.reserve(account.account_id, handle.meeting_id)
+        stage = stages.create(handle.meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+
+        async def settle() -> None:
+            async with settlement_lock:
+                if (await handle.snapshot()).status != "active":
+                    outcomes.append("existing-terminal")
+                    return
+                prefix = await asyncio.to_thread(
+                    stages.prefix,
+                    account.account_id,
+                    handle.meeting_id,
+                    expected_samples=len(pcm) // 2,
+                )
+                assert prefix is not None
+                await handle.publish_audio(
+                    archive,
+                    prefix.path,
+                    partial=False,
+                    raw_pcm=True,
+                )
+                await asyncio.to_thread(stages.discard, account.account_id, handle.meeting_id)
+                await handle.finish_with_transcript(document, "completed")
+                outcomes.append("published")
+
+        first = asyncio.create_task(settle())
+        assert await asyncio.to_thread(archive.publish_started.wait, 2)
+        second = asyncio.create_task(settle())
+        archive.release_publish.set()
+        await asyncio.gather(first, second)
+        snapshot = await handle.snapshot()
+        meeting_dir = archive.root / account.account_id / handle.meeting_id
+        return {
+            "outcomes": outcomes,
+            "publish_count": archive.publish_count,
+            "meeting_status": snapshot.status,
+            "audio_state": None if snapshot.audio is None else snapshot.audio.state,
+            "artifact_resolves": (
+                snapshot.audio is not None
+                and snapshot.audio.relative_path is not None
+                and snapshot.audio.byte_count is not None
+                and archive.resolve(
+                    account.account_id,
+                    handle.meeting_id,
+                    snapshot.audio.relative_path,
+                    snapshot.audio.byte_count,
+                )
+                is not None
+            ),
+            "mp3_files": sorted(
+                path.name for path in meeting_dir.iterdir() if path.suffix == ".mp3"
+            ),
+            "stage_exists": stages.path(account.account_id, handle.meeting_id).exists(),
+        }
+    finally:
+        archive.release_publish.set()
+        await store.close()
+
+
+async def _staged_crash_cleanup_probe(work: Path, pcm: bytes) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    audio_root = work / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    stages = LiveMeetingAudioStages(archive, max_bytes=len(pcm))
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, session_id = admitted
+        handle = await store.workspace(account).create_meeting("live")
+        stages.reserve(account.account_id, handle.meeting_id)
+        stage = stages.create(handle.meeting_id)
+        stage.append_mixed(
+            pcm=pcm,
+            start_timestamp_ns=0,
+            sample_count=len(pcm) // 2,
+            sample_rate=SAMPLE_RATE,
+        )
+        stages.release(handle.meeting_id)
+        staged_path = audio_root / account.account_id / handle.meeting_id / ".audio.staged.mp3"
+        staged_path.write_bytes(b"crash-staged-mp3")
+        meeting_id = handle.meeting_id
+    finally:
+        await store.close()
+
+    reopened_archive = MeetingAudioArchive(audio_root)
+    reopened_stages = LiveMeetingAudioStages(reopened_archive, max_bytes=len(pcm))
+    reopened = await Phase2Store.open(database)
+    try:
+        await reopened.recover_active_meetings(
+            audio_archive=reopened_archive,
+            live_audio_stages=reopened_stages,
+        )
+        account = await reopened.account_for_session(session_id)
+        assert account is not None
+        handle = await reopened.workspace(account).open_meeting(meeting_id)
+        assert handle is not None
+        snapshot = await handle.snapshot()
+        meeting_dir = audio_root / account.account_id / meeting_id
+        return {
+            "meeting_status": snapshot.status,
+            "audio_state": None if snapshot.audio is None else snapshot.audio.state,
+            "mp3_files": sorted(
+                path.name for path in meeting_dir.iterdir() if path.suffix == ".mp3"
+            ),
+            "staged_exists": staged_path.exists(),
+            "raw_stage_exists": reopened_stages.path(account.account_id, meeting_id).exists(),
+        }
+    finally:
+        await reopened.close()
+
+
+async def _file_staged_crash_cleanup_probe(work: Path) -> dict[str, object]:
+    database = work / "moss.sqlite3"
+    audio_root = work / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    store = await Phase2Store.open(database)
+    try:
+        await store.allow_email("a@example.com")
+        admitted = await store.admit(GoogleIdentity("account-a", "a@example.com", "A"))
+        assert admitted is not None
+        account, session_id = admitted
+        handle = await store.workspace(account).create_meeting("file")
+        await handle.commit_transcript(
+            {"segments": [{"id": "seg_0001", "text": "durable file transcript"}]}
+        )
+        meeting_dir = audio_root / account.account_id / handle.meeting_id
+        meeting_dir.mkdir(parents=True)
+        staged_path = meeting_dir / ".audio.staged.mp3"
+        staged_path.write_bytes(b"crash-staged-file-mp3")
+        meeting_id = handle.meeting_id
+    finally:
+        await store.close()
+
+    reopened = await Phase2Store.open(database)
+    startup_error = None
+    try:
+        try:
+            await reopened.recover_active_meetings(audio_archive=archive)
+        except Exception as exc:
+            startup_error = type(exc).__name__
+        account = await reopened.account_for_session(session_id)
+        assert account is not None
+        handle = await reopened.workspace(account).open_meeting(meeting_id)
+        assert handle is not None
+        snapshot = await handle.snapshot()
+        return {
+            "startup_error": startup_error,
+            "meeting_status": snapshot.status,
+            "audio_state": None if snapshot.audio is None else snapshot.audio.state,
+            "transcript": snapshot.transcript["segments"][0]["text"],
+            "staged_exists": staged_path.exists(),
+        }
+    finally:
+        await reopened.close()
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="moss-live-audio-prototype-") as temporary:
         root = Path(temporary)
@@ -642,6 +887,18 @@ def main() -> None:
             "failed_create_cleanup": asyncio.run(
                 _failed_create_cleanup_probe(root / "failed-create-cleanup", frame_pcm)
             ),
+            "terminal_atomicity": asyncio.run(
+                _terminal_atomicity_probe(root / "terminal-atomicity")
+            ),
+            "serialized_terminal_settlement": asyncio.run(
+                _serialized_terminal_probe(root / "serialized-terminal", frame_pcm)
+            ),
+            "staged_crash_cleanup": asyncio.run(
+                _staged_crash_cleanup_probe(root / "staged-crash", frame_pcm)
+            ),
+            "file_staged_crash_cleanup": asyncio.run(
+                _file_staged_crash_cleanup_probe(root / "file-staged-crash")
+            ),
         }
         state["verdict"] = "PASS" if (
             state["normal_stage"]["byte_exact"]
@@ -694,6 +951,42 @@ def main() -> None:
                     "audio_state": "unavailable",
                     "stage_exists": False,
                 },
+            }
+            and state["terminal_atomicity"] == {
+                "split_boundary": {
+                    "status": "active",
+                    "transcript": "final",
+                    "version": 2,
+                },
+                "atomic_boundary": {
+                    "status": "completed",
+                    "transcript": "final",
+                    "version": 2,
+                    "returned_version": 2,
+                },
+            }
+            and state["serialized_terminal_settlement"] == {
+                "outcomes": ["published", "existing-terminal"],
+                "publish_count": 1,
+                "meeting_status": "completed",
+                "audio_state": "available",
+                "artifact_resolves": True,
+                "mp3_files": ["audio.mp3"],
+                "stage_exists": False,
+            }
+            and state["staged_crash_cleanup"] == {
+                "meeting_status": "interrupted",
+                "audio_state": "partial",
+                "mp3_files": ["audio.partial.mp3"],
+                "staged_exists": False,
+                "raw_stage_exists": False,
+            }
+            and state["file_staged_crash_cleanup"] == {
+                "startup_error": None,
+                "meeting_status": "interrupted",
+                "audio_state": "unavailable",
+                "transcript": "durable file transcript",
+                "staged_exists": False,
             }
         ) else "FAIL"
         print(json.dumps(state, indent=2, sort_keys=True))

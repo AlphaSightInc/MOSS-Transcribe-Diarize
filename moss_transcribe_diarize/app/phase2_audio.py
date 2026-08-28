@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import secrets
 import shutil
 import subprocess
 import threading
@@ -332,7 +331,9 @@ class MeetingAudioArchive:
         meeting_dir = self.root / account_id / meeting_id
         for directory in (self.root, meeting_dir.parent, meeting_dir):
             self._ensure_private_directory(directory)
-        staged = meeting_dir / f".audio-{secrets.token_urlsafe(12)}.mp3"
+        # Publication is serialized per Meeting; one fixed stage makes crash cleanup
+        # derivable from the canonical owner path instead of a filesystem search.
+        staged = meeting_dir / ".audio.staged.mp3"
         final = meeting_dir / ("audio.partial.mp3" if partial else "audio.mp3")
         replaced = False
         try:
@@ -408,15 +409,26 @@ class MeetingAudioArchive:
         self._discard_path(path)
 
     def discard_unrecorded(self, account_id: str, meeting_id: str) -> None:
-        """Remove only the two canonical MP3 paths when no metadata grants either truth."""
+        """Remove every canonical MP3 path when no metadata grants retained truth."""
 
         meeting_dir = self.root / account_id / meeting_id
         if not self._path_exists(meeting_dir):
             # A Meeting that crashed between its SQLite row and stage reservation has no
             # directory entry capable of containing either canonical artifact.
             return
-        for path in (meeting_dir / "audio.mp3", meeting_dir / "audio.partial.mp3"):
+        for path in (
+            meeting_dir / ".audio.staged.mp3",
+            meeting_dir / "audio.mp3",
+            meeting_dir / "audio.partial.mp3",
+        ):
             self._discard_path(path)
+
+    def discard_staged(self, account_id: str, meeting_id: str) -> None:
+        """Remove the sole deterministic pre-publication artifact after interruption."""
+
+        meeting_dir = self.root / account_id / meeting_id
+        if self._path_exists(meeting_dir):
+            self._discard_path(meeting_dir / ".audio.staged.mp3")
 
     def resolve(
         self,

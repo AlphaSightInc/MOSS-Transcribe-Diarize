@@ -125,15 +125,32 @@ retained that valid complete artifact, removed the stage, and interrupted the st
 the fully finished boundary remained completed/available. Every boundary preserved transcript
 truth and left no raw stage. Recovery never searched the filesystem or resumed capture.
 
-The accepted ordering is final transcript, MP3 publication and metadata, verified stage cleanup,
-then Meeting status. A process loss before the final status repeats recovery from the canonical
-active record. Staging degradation never fails capture, but permanently makes complete ineligible:
+The accepted ordering is MP3 publication and metadata, verified stage cleanup, one atomic final
+transcript-plus-Meeting-status transaction when the transcript changed (or status-only finish when
+it did not), then public projection. The probe measured the rejected split boundary as `active`
+beside transcript version 2 containing the final words; the existing atomic Store primitive measured
+`completed` beside the same version-2 final document as one tuple. A process loss before that tuple
+repeats recovery from the canonical active record. Staging degradation never fails capture, but
+permanently makes complete ineligible:
 normal Stop publishes the bounded positive prefix as partial, or unavailable when no complete
 PCM16 sample exists. It may never silently claim complete after the declared bound or a write
 failure. The absorbed probe now calls the production stager, archive, Store, and recovery seams
 directly.
 
-The production-focused suite then passed 22/22 Live ownership and recovery cases. In particular,
+One per-binding settlement lock now composes the existing primitives without adding a scheduler or
+job authority. With the first production MP3 publication held, two concurrent terminal settlers
+measured exactly one encoder publication, outcomes `published` then `existing-terminal`, one
+resolvable `audio.mp3`, and no raw stage. Only `completed` makes complete audio eligible; an explicit
+failed-terminal regression retained `audio.partial.mp3` and never `audio.mp3`.
+
+Random staging names were rejected because startup could not derive them. Publication now uses the
+single owner-derived `.audio.staged.mp3` path under the per-Meeting serialization boundary. A
+simulated crash with that file plus a durable Live PCM stage restarted to exactly one
+`audio.partial.mp3`; both staged and raw paths were absent. The same shared archive leak was
+falsified for File mode: an active File row with a durable transcript and staged MP3 restarted
+interrupted/unavailable, preserved the transcript, removed the stage, and retained no MP3.
+
+The production-focused suite then passed 28/28 Live ownership and recovery cases. In particular,
 a transient failure after available MP3 metadata but before stage cleanup was retried through the
 same owner-bound recovery operation: available metadata/file truth survived, the raw stage was
 removed on the second attempt, and the Meeting durably ended interrupted instead of remaining
@@ -160,3 +177,7 @@ active with the stage present; a fresh Store/archive/stager restart removed the 
 interrupted/unavailable. A failed creation is therefore eligible for durable `failed` only after
 the fixed stage is verified absent. Ticket #18 owns the later improvement that moves revocation
 ordering before generation fencing.
+
+The merged Meeting history surface now renders explicit `Audio unavailable` text only for durable
+`unavailable`; available/partial remain downloads and a missing active audio row remains blank. Its
+component test and the real generated-bundle two-Chrome test both observed the explicit state.
