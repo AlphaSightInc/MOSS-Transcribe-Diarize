@@ -276,12 +276,24 @@ class Phase2LiveMeetings:
             binding.queue.put_nowait(None)
         return bindings
 
+    def fence_meeting(self, meeting_id: str) -> _LiveBinding | None:
+        """Synchronously claim one active binding without touching its Account peers."""
+
+        binding = self._bindings.get(meeting_id)
+        if binding is None or binding.terminal_persisted:
+            return None
+        binding.authority_closing = True
+        binding.publication_fenced = True
+        self.runtime._fence_session(meeting_id, "interrupted_by_operator")
+        binding.queue.put_nowait(None)
+        return binding
+
     async def interrupt_binding(
         self,
         binding: _LiveBinding,
         control: Any,
         reason: str,
-    ) -> None:
+    ) -> bool:
         """Join admitted publication, settle its durable document, then release capture."""
 
         worker = binding.worker
@@ -291,10 +303,12 @@ class Phase2LiveMeetings:
             binding,
             reason,
             document_override=binding.durable_document,
+            recover_audio=True,
         )
         control.release(binding.handle.meeting_id)
         if not binding.terminal_persisted:
             raise RuntimeError("Live Meeting interruption did not become durable.")
+        return (await binding.handle.snapshot()).status == "interrupted"
 
     async def sync_and_flush(self, meeting_id: str) -> _LiveBinding:
         binding = self._bindings[meeting_id]
@@ -802,13 +816,15 @@ class Phase2LiveMeetings:
         reason: str,
         *,
         document_override: dict[str, object] | None = None,
+        recover_audio: bool = False,
     ) -> None:
         if binding.terminal_persisted:
             return
         stop_attempt = binding.raw_stop_attempt
         if stop_attempt is not None and not stop_attempt.completed.is_set():
             await stop_attempt.completed.wait()
-        recover = binding.capture_fenced
+        was_fenced = binding.capture_fenced
+        recover = was_fenced or recover_audio
         binding.capture_fenced = True
         try:
             terminal_snapshot = self.runtime.snapshot(binding.handle.meeting_id)
@@ -816,7 +832,7 @@ class Phase2LiveMeetings:
             terminal_snapshot = None
         terminal_events: tuple[LiveServiceEvent, ...] = ()
         try:
-            if not recover:
+            if not was_fenced:
                 terminal_snapshot = await self.runtime.abort(binding.handle.meeting_id, reason)
         except Exception:
             pass

@@ -42,7 +42,10 @@ from moss_transcribe_diarize.app.phase2_control import (
     Phase2ControlServer,
     request_control,
 )
-from moss_transcribe_diarize.app.phase2_lifecycle import AccountLifecycle
+from moss_transcribe_diarize.app.phase2_lifecycle import (
+    AccountLifecycle,
+    MeetingLifecycleSettlementError,
+)
 
 
 @dataclass
@@ -1063,6 +1066,61 @@ def test_mtd_admin_account_commands_share_the_product_default_control_socket():
     assert parse_admin_args(["accounts", "revoke", "person@example.com"]).socket == str(
         DEFAULT_PHASE2_CONTROL_SOCKET_PATH
     )
+
+
+def test_mtd_admin_meeting_interrupt_uses_one_content_free_control_command():
+    parsed = parse_admin_args(["meetings", "interrupt", "opaque-meeting"])
+    assert parsed.socket == str(DEFAULT_PHASE2_CONTROL_SOCKET_PATH)
+    assert parsed.area == "meetings"
+    assert parsed.command == "interrupt"
+    assert parsed.meeting_id == "opaque-meeting"
+
+    socket = control_socket_path()
+
+    class Lifecycle:
+        async def interrupt_meeting(self, meeting_id: str) -> bool:
+            assert meeting_id == "opaque-meeting"
+            return True
+
+    async def exercise() -> None:
+        server = Phase2ControlServer(socket, Lifecycle())
+        await server.start()
+        try:
+            assert await request_control(
+                socket,
+                "meetings.interrupt",
+                meeting_id="opaque-meeting",
+            ) == {"meeting_id": "opaque-meeting", "interrupted": True}
+        finally:
+            await server.stop()
+
+    asyncio.run(exercise())
+
+
+def test_active_meeting_without_process_owner_fails_interrupt_instead_of_claiming_no_change():
+    socket = control_socket_path()
+
+    class Lifecycle:
+        async def interrupt_meeting(self, meeting_id: str) -> bool:
+            assert meeting_id == "active-without-owner"
+            raise MeetingLifecycleSettlementError("content sentinel must not cross")
+
+    async def exercise() -> None:
+        server = Phase2ControlServer(socket, Lifecycle())
+        await server.start()
+        try:
+            with pytest.raises(Phase2ControlError) as failure:
+                await request_control(
+                    socket,
+                    "meetings.interrupt",
+                    meeting_id="active-without-owner",
+                )
+            assert str(failure.value) == "meeting_settlement_failed"
+            assert "content sentinel" not in str(failure.value)
+        finally:
+            await server.stop()
+
+    asyncio.run(exercise())
 
 
 def test_mtd_admin_help_does_not_import_optional_model_runtime():

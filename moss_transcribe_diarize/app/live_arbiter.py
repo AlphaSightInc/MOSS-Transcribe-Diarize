@@ -151,6 +151,26 @@ class InferenceArbiter:
         del self._running_refinements[key]
         return True
 
+    def discard_live_queued(self) -> tuple[ArbiterWorkItem, ...]:
+        """Remove every not-yet-dispatched Live item, preserving batch and running work.
+
+        The arbiter owns all four queue containers and the canonical weight. Returning the
+        removed items lets its runtime owner close per-item timing without duplicating queue
+        selection rules outside this module. A running refinement is deliberately absent:
+        it has already left the queue and its completion still owes the normal release.
+        """
+
+        discarded = [
+            *self._live_canonical,
+            *self._live_refinement.values(),
+            *self._live_provisional.values(),
+        ]
+        self._live_canonical.clear()
+        self._live_canonical_weight = 0
+        self._live_refinement.clear()
+        self._live_provisional.clear()
+        return tuple(discarded)
+
     def submit_live_provisional(self, *, coalesce_key: str, payload: Any) -> ArbiterAdmission:
         previous = self._live_provisional.pop(coalesce_key, None)
         if previous is None and len(self._live_provisional) >= self.max_live_provisional_items:

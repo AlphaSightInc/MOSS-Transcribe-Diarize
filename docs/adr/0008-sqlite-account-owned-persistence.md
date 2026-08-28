@@ -77,6 +77,16 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 - Shutdown durably interrupts active bindings, then identity-unbinds the runtime publication sink
   before closing workers and the event loop. A later terminal listener may still release its tape,
   but cannot advance memory or SQLite.
+- A host Meeting interrupt is owned beyond its Unix handler exactly like accepted Account revoke,
+  but claims only one process-owned Meeting. Concurrent callers share that settlement; lifecycle
+  shutdown joins it before Live/File owners and SQLite close. A terminal or unknown locator is one
+  no-change result. An active SQLite row with no process owner fails visibly rather than reporting
+  no change or bypassing its cleanup owner. For Live work, the runtime removes that session's queued
+  canonical, refinement, and provisional items under its existing arbiter lock inside the
+  no-await process-owner claim, before an admitted SQLite publication can delay async settlement.
+  Operator aggregate depth therefore reflects the fence immediately while in-flight work remains
+  counted until its late result is rejected. Discarded canonical and refinement admissions close
+  through typed terminal events rather than disappearing from private timing maps.
 - Meeting title carries `automatic` or `manual` provenance in the existing Meeting row. Creation
   starts automatic; an owner-bound rename transaction trims and requires a non-empty title, writes
   the title and `manual` together, and is permitted for active or terminal Meetings. This is the
