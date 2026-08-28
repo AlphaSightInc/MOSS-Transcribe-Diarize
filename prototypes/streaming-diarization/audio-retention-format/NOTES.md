@@ -68,3 +68,14 @@ The accepted publication policy is therefore: encode to a same-directory staging
 replace `audio.mp3`, durably commit metadata, then remove File working input. Metadata-commit failure
 must remove the just-published MP3. Audio failure records `unavailable` after transcript durability
 and never changes transcript success.
+
+Formal review exposed that the old proposal let the long-file window extractor choose a container's
+default stream while terminal MP3 publication independently forced `0:a:0`. The extended probe used
+a supported 151-second Matroska source whose first stream was 440 Hz and whose second/default stream
+was 880 Hz. It measured the source selections as 440 Hz versus 880 Hz. One transient 16 kHz mono PCM
+WAV made with the existing default-stream semantics then measured 880 Hz; the 150-second inference
+window extracted from that WAV and the retained MP3 both measured 880 Hz. The shared-mix invariant
+passed 3/3 consumers. The corrected policy is therefore one canonical working WAV before inference;
+both direct/windowed inference and terminal encoding consume that exact one-stream artifact. If mix
+preparation fails, transcription may still consume the original source, but retained audio is
+explicitly `unavailable` rather than independently selecting another stream.

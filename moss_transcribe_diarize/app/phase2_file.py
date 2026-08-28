@@ -190,7 +190,7 @@ class FileMeetingTasks:
             if value is not None
         }
         runner_task = asyncio.create_task(
-            asyncio.to_thread(self._runner.transcribe, input_path, **options)
+            asyncio.to_thread(self._transcribe_from_one_mix, input_path, options)
         )
         started.set()
         try:
@@ -203,6 +203,21 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
+    def _transcribe_from_one_mix(
+        self,
+        input_path: Path,
+        options: dict[str, object],
+    ) -> tuple[Any, Path | None]:
+        mix_path: Path | None = None
+        if self._audio_archive is not None:
+            candidate = input_path.parent / "transcription-mix.wav"
+            try:
+                mix_path = self._audio_archive.prepare_mix(input_path, candidate)
+            except Exception:
+                candidate.unlink(missing_ok=True)
+        result = self._runner.transcribe(mix_path or input_path, **options)
+        return result, mix_path
+
     async def _complete(
         self,
         handle: Any,
@@ -210,7 +225,7 @@ class FileMeetingTasks:
         runner_task: asyncio.Task[Any],
     ) -> None:
         try:
-            result = await asyncio.shield(runner_task)
+            result, mix_path = await asyncio.shield(runner_task)
         except Exception:
             await self._mark_failed(handle)
             self._remove_work_dir(input_path.parent)
@@ -240,9 +255,12 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
-        audio_task = asyncio.create_task(
-            handle.publish_audio(self._audio_archive, input_path)
-        )
+        if mix_path is None:
+            audio_task = asyncio.create_task(handle.record_audio_unavailable())
+        else:
+            audio_task = asyncio.create_task(
+                handle.publish_audio(self._audio_archive, mix_path)
+            )
         try:
             await asyncio.shield(audio_task)
         except asyncio.CancelledError:

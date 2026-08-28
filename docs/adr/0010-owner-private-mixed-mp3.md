@@ -29,9 +29,13 @@ prefix as partial; audio failure never fails or deletes the transcript.
 - MOSS implements no quota, expiry, eviction, deletion, backup, storage dashboard, or file manager.
 - The production-semantics probe in
   `prototypes/streaming-diarization/audio-retention-format/publication_probe.py` accepts
-  `libmp3lame -b:a 48k` into a same-directory staging file followed by fsync and atomic replacement.
+  one default-stream 16 kHz mono PCM WAV as the sole input to inference and `libmp3lame -b:a 48k`,
+  then publishes through a same-directory staging file followed by fsync and atomic replacement.
+  In a 151-second two-stream falsifier, the source's first/default streams measured 440/880 Hz;
+  the canonical mix, long-window inference input, and retained MP3 all measured 880 Hz.
   FFprobe measured MPEG Layer III, 16 kHz, mono, 48,000 bit/s at stream and every packet; metadata
   duration/bytes matched the artifact, directories were `0700`, the MP3 was `0600`, and it alone
   survived cleanup. Forced encoding failure left transcript truth unchanged and no source, staging,
-  or output file. Transcript durability therefore precedes encoding; available/unavailable metadata
-  precedes Meeting completion; metadata failure removes a newly published file.
+  or output file. Transcript durability therefore precedes terminal encoding; available/unavailable
+  metadata precedes Meeting completion. A recoverable available-metadata failure removes its newly
+  published file and durably records unavailable; authority loss alone fences that fallback.

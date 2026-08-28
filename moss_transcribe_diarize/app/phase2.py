@@ -83,6 +83,19 @@ class MeetingAudio:
         }
 
 
+def _unavailable_meeting_audio() -> MeetingAudio:
+    return MeetingAudio(
+        state="unavailable",
+        relative_path=None,
+        byte_count=None,
+        duration_ms=None,
+        format=None,
+        sample_rate_hz=None,
+        channels=None,
+        bit_rate_bps=None,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class Meeting:
     meeting_id: str
@@ -991,16 +1004,7 @@ class MeetingHandle:
                 source_path,
             )
         except Exception:
-            audio = MeetingAudio(
-                state="unavailable",
-                relative_path=None,
-                byte_count=None,
-                duration_ms=None,
-                format=None,
-                sample_rate_hz=None,
-                channels=None,
-                bit_rate_bps=None,
-            )
+            audio = _unavailable_meeting_audio()
             await self._store._commit_meeting_audio(
                 self._account_id,
                 self._authority_generation,
@@ -1026,9 +1030,38 @@ class MeetingHandle:
                 self.meeting_id,
                 audio,
             )
+        except AccountRevoked:
+            try:
+                await asyncio.to_thread(archive.remove, publication)
+            except Exception:
+                pass
+            raise
+        except Exception:
+            try:
+                await asyncio.to_thread(archive.remove, publication)
+            except Exception:
+                pass
+            unavailable = _unavailable_meeting_audio()
+            await self._store._commit_meeting_audio(
+                self._account_id,
+                self._authority_generation,
+                self.meeting_id,
+                unavailable,
+            )
+            return unavailable
         except BaseException:
             await asyncio.to_thread(archive.remove, publication)
             raise
+        return audio
+
+    async def record_audio_unavailable(self) -> MeetingAudio:
+        audio = _unavailable_meeting_audio()
+        await self._store._commit_meeting_audio(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            audio,
+        )
         return audio
 
     async def audio(self) -> MeetingAudio | None:

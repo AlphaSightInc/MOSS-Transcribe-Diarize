@@ -7,6 +7,7 @@ import os
 import secrets
 import shutil
 import subprocess
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -30,7 +31,7 @@ class PublishedMeetingAudio:
 
 
 class MeetingAudioArchive:
-    """Encode, validate, and atomically publish one Meeting MP3."""
+    """Prepare one transcription mix, then validate and publish its Meeting MP3."""
 
     def __init__(
         self,
@@ -42,6 +43,54 @@ class MeetingAudioArchive:
         self.root = Path(root).expanduser()
         self._ffmpeg = ffmpeg if ffmpeg is not None else shutil.which("ffmpeg")
         self._ffprobe = ffprobe if ffprobe is not None else shutil.which("ffprobe")
+
+    def prepare_mix(
+        self,
+        source_path: str | Path,
+        destination_path: str | Path,
+    ) -> Path:
+        """Decode the one transcription mix consumed by both inference and retention."""
+
+        if not self._ffmpeg:
+            raise RuntimeError("Meeting audio mixing is unavailable.")
+        destination = Path(destination_path)
+        destination.unlink(missing_ok=True)
+        try:
+            subprocess.run(
+                [
+                    self._ffmpeg,
+                    "-nostdin",
+                    "-v",
+                    "error",
+                    "-y",
+                    "-i",
+                    str(Path(source_path)),
+                    "-vn",
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "16000",
+                    "-c:a",
+                    "pcm_s16le",
+                    "-f",
+                    "wav",
+                    str(destination),
+                ],
+                check=True,
+                capture_output=True,
+            )
+            with wave.open(str(destination), "rb") as mixed:
+                if (
+                    mixed.getnchannels() != 1
+                    or mixed.getframerate() != 16_000
+                    or mixed.getsampwidth() != 2
+                    or mixed.getnframes() <= 0
+                ):
+                    raise RuntimeError("Meeting transcription mix violates the PCM contract.")
+            return destination
+        except BaseException:
+            destination.unlink(missing_ok=True)
+            raise
 
     def publish(
         self,

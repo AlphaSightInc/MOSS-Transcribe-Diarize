@@ -22,7 +22,7 @@ Terminal publication and cleanup policy use a separate one-command falsifier:
 uv run --frozen python prototypes/streaming-diarization/audio-retention-format/publication_probe.py
 ```
 
-It generates a disposable stereo WAV, performs the proposed real FFmpeg conversion and atomic
-publication, probes stream and packet metadata, modes and surviving paths, then forces encoding
-and post-replace storage failures and prints transcript/unavailable/cleanup state. All files remain
-temporary.
+It generates a disposable stereo WAV plus a 151-second two-stream source, measures the shared
+canonical mix across the long-window inference and retained-MP3 paths, performs real FFmpeg atomic
+publication, probes metadata/modes/surviving paths, then forces encoding and post-replace storage
+failures and prints transcript/unavailable/cleanup state. All files remain temporary.

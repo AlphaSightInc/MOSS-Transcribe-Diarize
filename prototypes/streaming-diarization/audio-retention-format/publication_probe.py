@@ -11,6 +11,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import numpy as np
+
 
 def run(*args: str) -> str:
     return subprocess.run(args, check=True, capture_output=True, text=True).stdout
@@ -78,6 +80,80 @@ def fsync_directory(path: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def canonicalize_mix(source: Path, destination: Path) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-y",
+            "-i",
+            str(source),
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-c:a",
+            "pcm_s16le",
+            "-f",
+            "wav",
+            str(destination),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+def extract_inference_window(source: Path, destination: Path) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-ss",
+            "0.000000",
+            "-t",
+            "150.000000",
+            "-i",
+            str(source),
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-f",
+            "wav",
+            str(destination),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+def dominant_frequency(path: Path, *, stream: str | None = None) -> int:
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-ss",
+        "1",
+        "-t",
+        "1",
+        "-i",
+        str(path),
+    ]
+    if stream is not None:
+        command.extend(["-map", stream])
+    command.extend(["-ac", "1", "-ar", "16000", "-f", "s16le", "-"])
+    pcm = subprocess.run(command, check=True, capture_output=True).stdout
+    samples = np.frombuffer(pcm, dtype="<i2").astype(np.float64)
+    spectrum = np.abs(np.fft.rfft(samples * np.hanning(len(samples))))
+    frequencies = np.fft.rfftfreq(len(samples), 1 / 16_000)
+    return round(float(frequencies[int(np.argmax(spectrum))]))
 
 
 def publish(
@@ -156,16 +232,17 @@ def publish(
 def main() -> None:
     state: dict[str, object] = {
         "question": (
-            "Can terminal publication yield only a private 16 kHz mono 48-kbit/s CBR MP3, "
-            "while filesystem/encoder failure preserves transcript truth as unavailable?"
+            "Can one canonical transcription mix feed both 151-second window inference and "
+            "terminal private MP3 publication while failure preserves transcript truth?"
         ),
         "hypothesis": (
-            "FFmpeg libmp3lame -b:a 48k plus atomic same-directory replacement supplies the "
-            "smallest sufficient publication seam."
+            "One default-stream 16 kHz mono PCM WAV consumed by inference and libmp3lame "
+            "publication is the smallest sufficient shared interpretation."
         ),
         "falsifier": (
-            "Any codec/rate/channel/packet-bitrate mismatch, non-private mode, surviving source/"
-            "staging file, or transcript change on publication failure rejects the design."
+            "Different dominant frequencies at canonical mix, inference window, or retained MP3; "
+            "any format/privacy mismatch, surviving transient, or transcript change on failure "
+            "rejects the design."
         ),
         "ffmpeg": run("ffmpeg", "-version").splitlines()[0],
     }
@@ -212,6 +289,67 @@ def main() -> None:
             ),
             "source_exists_after_cleanup": source.exists(),
             "transcript": transcript,
+        }
+
+        multi_stream = temp / "multi-stream.mka"
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-v",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=frequency=440:duration=151:sample_rate=16000",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=frequency=880:duration=151:sample_rate=16000",
+                "-map",
+                "0:a:0",
+                "-map",
+                "1:a:0",
+                "-c:a",
+                "pcm_s16le",
+                "-disposition:a:0",
+                "0",
+                "-disposition:a:1",
+                "default",
+                str(multi_stream),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        canonical_mix = temp / "canonical-mix.wav"
+        inference_window = temp / "inference-window.wav"
+        canonicalize_mix(multi_stream, canonical_mix)
+        extract_inference_window(canonical_mix, inference_window)
+        retained_path, _ = publish(
+            canonical_mix,
+            root,
+            "account-a",
+            "meeting-multi-stream",
+        )
+        canonical_hz = dominant_frequency(canonical_mix)
+        inference_hz = dominant_frequency(inference_window)
+        retained_hz = dominant_frequency(retained_path)
+        state["multi_stream_shared_mix"] = {
+            "duration_seconds": 151,
+            "source_first_stream_hz": dominant_frequency(
+                multi_stream,
+                stream="0:a:0",
+            ),
+            "source_default_stream_hz": dominant_frequency(multi_stream),
+            "source_second_default_stream_hz": dominant_frequency(
+                multi_stream,
+                stream="0:a:1",
+            ),
+            "canonical_mix_hz": canonical_hz,
+            "windowed_inference_input_hz": inference_hz,
+            "retained_mp3_hz": retained_hz,
+            "all_consumers_match_canonical": canonical_hz == inference_hz == retained_hz,
         }
 
         post_replace_reason = None

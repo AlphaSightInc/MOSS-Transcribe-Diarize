@@ -13,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
+import numpy as np
 import pytest
 
 from moss_transcribe_diarize.app.phase2 import (
@@ -51,6 +52,10 @@ class BlockingArchive:
         self.root = root
         self.started = threading.Event()
         self.release = threading.Event()
+
+    def prepare_mix(self, source: Path, destination: Path) -> Path:
+        destination.write_bytes(source.read_bytes())
+        return destination
 
     def publish(self, account_id: str, meeting_id: str, _: Path) -> PublishedMeetingAudio:
         self.started.set()
@@ -177,18 +182,81 @@ def probe_mp3(path: Path) -> dict[str, object]:
     }
 
 
+def dominant_frequency(path: Path, *, stream: str | None = None) -> int:
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-ss",
+        "1",
+        "-t",
+        "1",
+        "-i",
+        str(path),
+    ]
+    if stream is not None:
+        command.extend(["-map", stream])
+    command.extend(["-ac", "1", "-ar", "16000", "-f", "s16le", "-"])
+    pcm = subprocess.run(command, check=True, capture_output=True).stdout
+    samples = np.frombuffer(pcm, dtype="<i2").astype(np.float64)
+    spectrum = np.abs(np.fft.rfft(samples * np.hanning(len(samples))))
+    frequencies = np.fft.rfftfreq(len(samples), 1 / 16_000)
+    return round(float(frequencies[int(np.argmax(spectrum))]))
+
+
+class WindowMixProbeRunner:
+    model_path = "window-mix-probe"
+
+    def __init__(self) -> None:
+        self.input_name: str | None = None
+        self.input_hz: int | None = None
+        self.window_hz: int | None = None
+
+    def transcribe(self, input_path: str | Path, **_: object):
+        source = Path(input_path)
+        window = source.parent / "observed-window.wav"
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-ss",
+                "0.000000",
+                "-t",
+                "150.000000",
+                "-i",
+                str(source),
+                "-vn",
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-f",
+                "wav",
+                str(window),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        self.input_name = source.name
+        self.input_hz = dominant_frequency(source)
+        self.window_hz = dominant_frequency(window)
+        return SimpleNamespace(text="[0][S01]shared transcription mix[1]")
+
+
 def make_app(
     database: Path,
     work_root: Path,
     audio_root: Path,
     *,
     archive: object | None = None,
+    runner: object | None = None,
 ):
     return create_phase2_app(
         database_path=database,
         oidc=NeverOidc(),
         oauth_cookie_secret="test-cookie-secret",
-        file_runner=ImmediateRunner(),
+        file_runner=runner or ImmediateRunner(),
         file_work_root=work_root,
         meeting_audio_root=audio_root,
         file_audio_archive=archive,
@@ -294,6 +362,72 @@ def test_file_completion_publishes_private_exact_mp3_and_owner_whole_download(tm
         assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 401
 
 
+def test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3(
+    tmp_path: Path,
+):
+    fixture = tmp_path / "two-track-151s.mka"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=151:sample_rate=16000",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=880:duration=151:sample_rate=16000",
+            "-map",
+            "0:a:0",
+            "-map",
+            "1:a:0",
+            "-c:a",
+            "pcm_s16le",
+            "-disposition:a:0",
+            "0",
+            "-disposition:a:1",
+            "default",
+            str(fixture),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    assert dominant_frequency(fixture, stream="0:a:0") == 440
+    assert dominant_frequency(fixture) == 880
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    audio_root = tmp_path / "meetings"
+    runner = WindowMixProbeRunner()
+    app = make_app(
+        database,
+        tmp_path / "file-work",
+        audio_root,
+        runner=runner,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": (fixture.name, fixture.read_bytes(), "audio/x-matroska")},
+        )
+        meeting_id = accepted.json()["id"]
+        meeting = await_terminal(client, meeting_id, "completed")
+
+    retained = audio_root / meeting["audio"]["relative_path"]
+    assert runner.input_name == "transcription-mix.wav"
+    assert runner.input_hz == 880
+    assert runner.window_hz == 880
+    assert dominant_frequency(retained) == 880
+    assert meeting["transcript"]["segments"][0]["text"] == "shared transcription mix"
+    assert list((tmp_path / "file-work").glob("**/*")) == []
+
+
 def test_meeting_stays_active_until_audio_metadata_is_durable(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
@@ -364,7 +498,7 @@ def test_audio_publication_failure_is_unavailable_and_preserves_transcript(
         connection.close()
 
 
-def test_metadata_commit_failure_removes_published_mp3_but_keeps_transcript(
+def test_available_metadata_commit_failure_removes_mp3_and_commits_unavailable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -375,26 +509,49 @@ def test_metadata_commit_failure_removes_published_mp3_but_keeps_transcript(
     app = make_app(database, work_root, audio_root)
 
     with TestClient(app, base_url="https://moss.test") as client:
-        async def reject_metadata(*_: object, **__: object) -> None:
-            raise RuntimeError("forced metadata failure")
+        real_commit = app.state.phase2_store._commit_meeting_audio
+        available_attempts = 0
 
-        monkeypatch.setattr(app.state.phase2_store, "_commit_meeting_audio", reject_metadata)
+        async def reject_available_once(*args: object, **kwargs: object) -> None:
+            nonlocal available_attempts
+            audio = args[-1]
+            if audio.state == "available" and available_attempts == 0:
+                available_attempts += 1
+                raise RuntimeError("forced available metadata failure")
+            await real_commit(*args, **kwargs)
+
+        monkeypatch.setattr(
+            app.state.phase2_store,
+            "_commit_meeting_audio",
+            reject_available_once,
+        )
         session(client, sessions["sub-a"])
         meeting_id = client.post(
             "/api/meetings/file",
             files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
         ).json()["id"]
-        meeting = await_terminal(client, meeting_id, "failed")
+        meeting = await_terminal(client, meeting_id, "completed")
         assert meeting["transcript"]["segments"][0]["text"] == "durable transcript"
-        assert meeting["audio"] is None
+        assert meeting["audio"] == {
+            "state": "unavailable",
+            "relative_path": None,
+            "byte_count": None,
+            "duration_ms": None,
+            "format": None,
+            "sample_rate_hz": None,
+            "channels": None,
+            "bit_rate_bps": None,
+        }
+        assert available_attempts == 1
         assert list(work_root.glob("**/*")) == []
         assert list(audio_root.glob("**/*.mp3")) == []
 
     connection = sqlite3.connect(database)
     try:
         assert connection.execute(
-            "SELECT COUNT(*) FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
-        ).fetchone() == (0,)
+            "SELECT state, relative_path, byte_count FROM meeting_audio WHERE meeting_id = ?",
+            (meeting_id,),
+        ).fetchone() == ("unavailable", None, None)
     finally:
         connection.close()
 
