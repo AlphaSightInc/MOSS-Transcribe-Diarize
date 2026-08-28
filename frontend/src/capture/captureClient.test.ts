@@ -342,7 +342,10 @@ describe("browser capture frame contract", () => {
     await expect((client as unknown as CaptureClient).createSession()).resolves.toMatchObject({
       id: "session",
     });
-    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls.map(([url]) => url)).toEqual([
+      "/api/live/sessions",
+      "/api/live/sessions/session/heartbeat",
+    ]);
   });
 
   it("stops through the authenticated server route before local capture teardown", async () => {
@@ -365,6 +368,7 @@ describe("browser capture frame contract", () => {
       {
         method: "POST",
         cache: "no-store",
+        credentials: "same-origin",
         signal: expect.any(AbortSignal),
         headers: {
           Authorization: "Bearer capture-token",
@@ -374,6 +378,40 @@ describe("browser capture frame contract", () => {
       },
     );
     expect(clientState.session).toBeNull();
+  });
+
+  it("uses the signed-in Account cookie without accepting or returning a bearer", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: "account-meeting",
+        descriptor: { sample_rate: 4, frame_samples: 2 },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ authority: "account", helperVersion: "test" });
+    const active = client as unknown as ActiveClient;
+    active.context = { sampleRate: 4 } as AudioContext;
+    active.descriptor = {
+      sampleRate: 4,
+      frameSamples: 2,
+      preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy },
+    };
+    active.session = null;
+    active.lanes.set("microphone", testLaneState());
+    active.lanes.set("system", testLaneState());
+    active.onWorkletFrame("microphone", workletFrame(0));
+    active.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+
+    await expect(client.createSession()).resolves.toEqual({
+      id: "account-meeting",
+      viewToken: null,
+    });
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/live/sessions",
+      expect.objectContaining({ credentials: "same-origin", headers: {} }),
+    );
   });
 
   it("rejects an invalid stop deadline before issuing a request", async () => {

@@ -48,6 +48,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=2048)
     parser.add_argument("--decoding", choices=["greedy", "sample"], default="greedy")
     parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument(
+        "--live-provider-manifest",
+        required=True,
+        help="Offline production Live provider manifest.",
+    )
+    parser.add_argument(
+        "--live-helper-lease-seconds",
+        required=True,
+        type=float,
+        help="Positive capture heartbeat lease; expiry interrupts the Live Meeting.",
+    )
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7861)
     return parser.parse_args(argv)
@@ -84,6 +95,21 @@ def _build_file_runner(args: argparse.Namespace):
     )
 
 
+def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
+    if args.live_helper_lease_seconds <= 0:
+        raise SystemExit("--live-helper-lease-seconds must be positive.")
+    from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
+    from .web_cli import _LiveCliRunnerProxy, _live_terminal_finalizer
+
+    config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
+    return build_live_runtime_factory(
+        config,
+        _LiveCliRunnerProxy(args),
+        vector_journal=None,
+        terminal_finalizer=_live_terminal_finalizer(args, file_runner=file_runner),
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     try:
         import uvicorn
@@ -92,6 +118,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     args = parse_args(argv)
     file_runner = _build_file_runner(args)
+    live_runtime_factory = _build_live_runtime_factory(args, file_runner)
     oidc = AuthlibGoogleOidc.configured(
         client_id=args.google_client_id,
         client_secret=_secret_from_file(
@@ -113,6 +140,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             "decoding": args.decoding,
             "temperature": args.temperature,
         },
+        live_runtime_factory=live_runtime_factory,
+        live_helper_lease_seconds=args.live_helper_lease_seconds,
     )
     uvicorn.run(
         app,

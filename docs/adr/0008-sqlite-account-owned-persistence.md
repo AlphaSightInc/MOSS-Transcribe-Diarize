@@ -29,3 +29,17 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 - Crash recovery preserves the last committed transcript and recoverable audio prefix, changes
   active Meetings to `interrupted`, and never resumes capture.
 - Cold backup/restore is an operator-run stopped-service bundle, not a MOSS product feature or gate.
+- The measured Live binding probe in `prototypes/phase2-live-owner-binding/` fixes the poll boundary:
+  eight alternating snapshot/event requests performed exactly eight SQLite reads of
+  `sign_in_sessions` plus enabled `accounts`, but zero Meeting/transcript content reads and zero
+  writes. Live content and cursors came from memory. This preserves ADR-0007's per-request revocation
+  check without moving the 250 ms content path into SQLite.
+- The same probe held a real transcript commit while a runtime thread advanced two raw revisions.
+  Public memory stayed on the old durable revision/event high-water until commit release, then advanced
+  once. Revocation fenced the next serialized write; the last durable document stayed public and the
+  Meeting became interrupted. Thus durable transcript commit, not raw inference completion, is the
+  publication boundary.
+- If the terminal event also changes the transcript, its owner-bound handle writes the final document,
+  increments its version, and changes Meeting status in one SQLite transaction. The probe injected
+  process loss after both writes but before commit: rollback exposed the prior active/version/document
+  tuple, while success exposed the terminal/final tuple; no mixed state was visible.

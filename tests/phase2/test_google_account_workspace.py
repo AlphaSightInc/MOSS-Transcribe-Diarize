@@ -7,6 +7,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -780,6 +781,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
     seen: dict[str, object] = {}
     oidc = object()
     file_runner = object()
+    live_runtime_factory = object()
     app = object()
 
     monkeypatch.setattr(
@@ -788,6 +790,15 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         lambda **kwargs: seen.setdefault("oidc", kwargs) and oidc,
     )
     monkeypatch.setattr(phase2_web_cli, "_build_file_runner", lambda args: file_runner)
+    monkeypatch.setattr(
+        phase2_web_cli,
+        "_build_live_runtime_factory",
+        lambda args, received_file_runner: (
+            live_runtime_factory
+            if received_file_runner is file_runner
+            else pytest.fail("Live terminal finalizer did not receive the File runner")
+        ),
+    )
 
     def fake_create_app(**kwargs: object):
         seen["app"] = kwargs
@@ -823,6 +834,10 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
             "greedy",
             "--temperature",
             "1.0",
+            "--live-provider-manifest",
+            "/etc/moss/live-provider.json",
+            "--live-helper-lease-seconds",
+            "30",
         ]
     )
 
@@ -840,6 +855,8 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
             "decoding": "greedy",
             "temperature": 1.0,
         },
+        "live_runtime_factory": live_runtime_factory,
+        "live_helper_lease_seconds": 30.0,
     }
     assert seen["uvicorn"] == {
         "app": app,
@@ -849,4 +866,52 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "ssl_keyfile": "/etc/moss/key.pem",
         "proxy_headers": False,
         "access_log": False,
+    }
+
+
+def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer(
+    monkeypatch,
+):
+    from moss_transcribe_diarize.app import live_provider_bundle, web_cli
+
+    seen: dict[str, object] = {}
+    config = object()
+    file_runner = object()
+    runtime_factory = object()
+
+    class Config:
+        @staticmethod
+        def from_manifest(path: str):
+            seen["manifest"] = path
+            return config
+
+    class LiveRunner:
+        def __init__(self, args):
+            seen["live_args"] = args
+
+    def build(received_config, canonical_runner, **kwargs):
+        seen["bundle"] = (received_config, canonical_runner, kwargs)
+        return runtime_factory
+
+    monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", Config)
+    monkeypatch.setattr(live_provider_bundle, "build_live_runtime_factory", build)
+    monkeypatch.setattr(web_cli, "_LiveCliRunnerProxy", LiveRunner)
+    monkeypatch.setattr(
+        web_cli,
+        "_live_terminal_finalizer",
+        lambda args, *, file_runner: ("terminal", args, file_runner),
+    )
+    args = SimpleNamespace(
+        live_provider_manifest="/etc/moss/live-provider.json",
+        live_helper_lease_seconds=30.0,
+    )
+
+    assert phase2_web_cli._build_live_runtime_factory(args, file_runner) is runtime_factory
+    received_config, canonical_runner, kwargs = seen["bundle"]
+    assert received_config is config
+    assert isinstance(canonical_runner, LiveRunner)
+    assert canonical_runner is not file_runner
+    assert kwargs == {
+        "vector_journal": None,
+        "terminal_finalizer": ("terminal", args, file_runner),
     }

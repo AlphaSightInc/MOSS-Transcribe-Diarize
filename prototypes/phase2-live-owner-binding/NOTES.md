@@ -1,0 +1,52 @@
+# Phase-2 owner-bound Live Meeting prototype
+
+## Contract
+
+- **Question:** can the originating MOSS Sign-in session control capture while every request first
+  resolves its enabled Account and then enters an Account-partitioned in-memory Live registry?
+- **Minimum state:** owner-bound Meeting handle, originating Sign-in session locator, transient Live
+  snapshot/events, terminal state. The registry stores state but grants no authority.
+- **Invariant:** every request resolves the current session plus enabled Account from SQLite;
+  same-Account observers read but do not mutate; another Account gets `404`; the 250 ms poll path may
+  read only authentication rows and reads no Meeting/transcript content or writes; revocation returns
+  `401` and fences late commits; interruption preserves the last durable prefix and never resumes.
+- **Assumption:** one Sign-in session is one Access client; sibling tabs sharing its cookie are not a
+  distinct client. This is settled by T-19 and ADR-0007, not introduced here.
+- **Hypothesis:** this state is sufficient; no bearer, view token, client Account identity, durable
+  grant, or global durable Meeting lookup is needed.
+- **Falsifier:** any printed path permits observer/foreign mutation or foreign read, performs a
+  Meeting/transcript read or write during polling, accepts a late result after revoke, loses the
+  committed prefix, or resumes after interruption.
+
+## One command
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 uv run --frozen --extra dev python prototypes/phase2-live-owner-binding/probe.py
+```
+
+## Verdict
+
+**Accepted.** The one-command run exercised the production `Phase2Store`, Account workspace,
+`MeetingHandle`, generation fence, SQLite trace callback, and a real runtime-thread to event-loop
+handoff feeding one serialized per-Meeting publication worker.
+
+- With raw revision/event high-water already at `3/12` and its database commit held, four polls saw
+  only durable/public revision `1`, event high-water `10`; SQL was 4 auth reads, 0 content reads,
+  0 writes.
+- Releasing revision 2 advanced durable/public to `2` and event high-water `11`; revision 3 remained
+  queued behind it. Eight further alternating snapshot/event polls returned `200` with exactly 8
+  authentication reads, 0 Meeting/transcript content reads, and 0 writes.
+- Same-Account observer control returned `403`; foreign read/control returned `404` with no mutation.
+- Revocation while revision 3 waited made the next request `401`; releasing the queued write hit the
+  captured handle's authority-generation fence. Public/durable stayed at revision `2`/event `11`,
+  status became `interrupted`, and the durable document contained revision 2 but no revision-3 text.
+- A probe-only terminal transaction then injected process loss after writing both the final document
+  and `completed`, but before commit. SQLite exposed the prior `active`/version-1/document tuple after
+  rollback; the successful run exposed `completed`/version-2/final-document. It never exposed a mixed
+  terminal status and transcript. The production handle may therefore absorb exactly this one
+  owner-bound transaction; a separate final-document commit followed by `finish` is rejected.
+
+The sufficient binding is therefore the existing Sign-in session plus owner-bound Meeting handle,
+an Account-partitioned in-memory Live registry, and one event-driven serialized durability bridge per
+active Meeting. Public memory advances only after its structured transcript commit. No additional
+page/device/view authority, authentication cache, polling timer, or durable event table is justified.

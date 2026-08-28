@@ -82,7 +82,7 @@ export type V2Frame = {
 
 export type CaptureSession = Readonly<{
   id: string;
-  viewToken: string;
+  viewToken: string | null;
 }>;
 
 type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
@@ -127,7 +127,8 @@ export type PreSessionCaptureFailure = Readonly<{
 type LaneHealthState = "capturing" | "degraded" | "failed";
 
 export type CaptureClientOptions = Readonly<{
-  captureBearer: string;
+  authority?: "bearer" | "account";
+  captureBearer?: string;
   helperVersion: string;
   onMeter?: (lane: CaptureLane, rms: number) => void;
   onPreflightStatus?: (statusLine: string) => void;
@@ -360,20 +361,20 @@ export function makeV2Frame(
  */
 export async function stopCaptureSession(
   session: CaptureSession,
-  captureBearer: string,
+  captureBearer: string | null,
   deadlineSeconds: number,
   signal?: AbortSignal,
 ): Promise<void> {
   if (!Number.isFinite(deadlineSeconds) || deadlineSeconds < 0) {
     throw new Error("stop deadline must be a non-negative finite number");
   }
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (captureBearer) headers.Authorization = `Bearer ${captureBearer}`;
   const request: RequestInit = {
     method: "POST",
     cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${captureBearer}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "same-origin",
+    headers,
     body: JSON.stringify({ deadline: deadlineSeconds }),
   };
   if (signal) request.signal = signal;
@@ -527,13 +528,18 @@ export class CaptureClient {
     const response = await fetch("/api/live/sessions", {
       method: "POST",
       cache: "no-store",
-      headers: { Authorization: `Bearer ${this.options.captureBearer}` },
+      credentials: "same-origin",
+      headers: this.authorityHeaders(),
     });
     if (!response.ok) throw new Error(`session create failed: HTTP ${response.status}`);
     const payload = record(await response.json(), "session response");
     const id = payload.id;
     const viewToken = payload.view_token;
-    if (typeof id !== "string" || !id || typeof viewToken !== "string" || !viewToken) {
+    if (
+      typeof id !== "string" ||
+      !id ||
+      (this.options.authority !== "account" && (typeof viewToken !== "string" || !viewToken))
+    ) {
       throw new Error("session response is missing credentials");
     }
     const serverDescriptor = record(payload.descriptor, "session descriptor");
@@ -543,7 +549,11 @@ export class CaptureClient {
     ) {
       throw new Error("session descriptor differs from preflight descriptor");
     }
-    this.session = Object.freeze({ id, viewToken });
+    this.session = Object.freeze({ id, viewToken: typeof viewToken === "string" ? viewToken : null });
+    // Establish the server-owned loss detector before returning control to the page. A reload or
+    // close may happen before the next worklet frame; without this initial heartbeat no lease
+    // exists to interrupt the now-orphaned Meeting.
+    await this.scheduleHeartbeat("capturing");
     return this.session;
   }
 
@@ -586,7 +596,7 @@ export class CaptureClient {
       try {
         await stopCaptureSession(
           session,
-          this.options.captureBearer,
+          this.options.authority === "account" ? null : this.options.captureBearer ?? null,
           remainingDeadline,
           stopDeadline.signal,
         );
@@ -627,7 +637,7 @@ export class CaptureClient {
     try {
       const response = await fetch(
         "/api/live/descriptor?client_min_protocol_version=2&client_max_protocol_version=2",
-        { cache: "no-store" },
+        { cache: "no-store", credentials: "same-origin" },
       );
       if (!response.ok) throw new Error(`descriptor request failed: HTTP ${response.status}`);
       this.descriptor = parseCaptureDescriptor(await response.json());
@@ -794,10 +804,8 @@ export class CaptureClient {
       response = await this.fetchRequest(`/api/live/sessions/${encodeURIComponent(session.id)}/frames`, {
         method: "POST",
         cache: "no-store",
-        headers: {
-          Authorization: `Bearer ${this.options.captureBearer}`,
-          "Content-Type": "application/json",
-        },
+        credentials: "same-origin",
+        headers: this.authorityHeaders(true),
         body: JSON.stringify(frame),
       }, this.frameDeadlineSignal ?? undefined);
     } catch (caught) {
@@ -960,10 +968,8 @@ export class CaptureClient {
           {
             method: "POST",
             cache: "no-store",
-            headers: {
-              Authorization: `Bearer ${this.options.captureBearer}`,
-              "Content-Type": "application/json",
-            },
+            credentials: "same-origin",
+            headers: this.authorityHeaders(true),
             body: JSON.stringify({
               schema: "moss-live-helper-health.v1",
               instance_id: this.instanceId,
@@ -1011,6 +1017,15 @@ export class CaptureClient {
 
   private abortRequests(reason?: unknown): void {
     for (const controller of this.requestControllers) controller.abort(reason);
+  }
+
+  private authorityHeaders(json = false): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (json) headers["Content-Type"] = "application/json";
+    if (this.options.authority !== "account") {
+      headers.Authorization = `Bearer ${this.options.captureBearer ?? ""}`;
+    }
+    return headers;
   }
 
   private heartbeatState(): HelperState {

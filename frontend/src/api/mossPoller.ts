@@ -65,7 +65,8 @@ interface SnapshotRender {
 
 export interface MossPollerOptions {
   sessionId: string;
-  accessToken: string;
+  authority?: "bearer" | "account";
+  accessToken?: string;
   terminalAccessToken?: string;
   mode?: SessionMode;
   baseUrl?: string;
@@ -139,7 +140,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   }
 
   async function recoverOwnerTerminal(signal: AbortSignal): Promise<string | null> {
-    if (!options.terminalAccessToken) return null;
+    if (!options.terminalAccessToken && options.authority !== "account") return null;
     const payload = await fetchJson(
       fetcher,
       endpoint("snapshot", snapshotVersion),
@@ -593,17 +594,17 @@ function speakerEntityIdFor(speaker: string, canonicalSpeakers: readonly string[
 async function fetchJson(
   fetcher: typeof globalThis.fetch,
   url: string,
-  accessToken: string,
+  accessToken: string | undefined,
   signal: AbortSignal
 ): Promise<unknown> {
+  const headers: Record<string, string> = {};
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   const response = await fetcher(url, {
     method: "GET",
     cache: "no-store",
     credentials: "same-origin",
     signal,
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+    headers
   });
   let payload: unknown;
   try {

@@ -37,3 +37,12 @@ view token, pairing/device grant, or compatibility mode.
   inference to quiesce, and only then removes source work and closes persistence. Startup first
   interrupts durable active Meetings, then removes children of the dedicated transient `file-work`
   root before admission. Cleanup failures are retrieved and logged without content.
+- The owner-bound Live probe in `prototypes/phase2-live-owner-binding/` accepts the same deep seam
+  for transient capture: every request resolves its Sign-in session and enabled Account, then enters
+  an Account-partitioned in-memory registry carrying the original Meeting handle. The originating
+  Sign-in session alone mutates; another same-Account session observes; foreign identifiers never
+  reach runtime state. The registry stores state but grants no authority.
+- The signed-in workspace loads the existing two-lane Chrome capture client in Account-authority
+  mode. It sends only the opaque Meeting ID plus the HttpOnly Sign-in cookie: no browser Account ID,
+  shared bearer, view token, or durable capture grant is created. Reload retains observer reattach by
+  Meeting ID, while the lost heartbeat lease interrupts the original capture.

@@ -741,6 +741,58 @@ class Phase2Store:
             if cursor.rowcount != 1:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")
 
+    async def _finish_meeting_with_transcript(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        document: Mapping[str, object],
+        status: str,
+    ) -> int:
+        """Atomically publish a last transcript revision and its terminal Meeting state."""
+
+        if status not in {"completed", "failed", "interrupted"}:
+            raise ValueError("Meeting terminal status is invalid.")
+        document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                UPDATE meetings
+                SET status = ?, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM accounts
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+                  )
+                """,
+                (status, now, account_id, meeting_id, account_id, authority_generation),
+            )
+            if cursor.rowcount != 1:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+            await self._connection.execute(
+                """
+                INSERT INTO meeting_transcripts(
+                    account_id, meeting_id, document_json, version, updated_at_ms
+                ) VALUES (?, ?, ?, 1, ?)
+                ON CONFLICT(account_id, meeting_id) DO UPDATE SET
+                    document_json = excluded.document_json,
+                    version = meeting_transcripts.version + 1,
+                    updated_at_ms = excluded.updated_at_ms
+                """,
+                (account_id, meeting_id, document_json, now),
+            )
+            version_cursor = await self._connection.execute(
+                """
+                SELECT version FROM meeting_transcripts
+                WHERE account_id = ? AND meeting_id = ?
+                """,
+                (account_id, meeting_id),
+            )
+            row = await version_cursor.fetchone()
+            await version_cursor.close()
+            return int(row["version"])
+
 
 class AccountWorkspace:
     """The only public persistence authority opened by a valid MOSS session."""
@@ -814,6 +866,19 @@ class MeetingHandle:
             status,
         )
 
+    async def finish_with_transcript(
+        self,
+        document: Mapping[str, object],
+        status: str,
+    ) -> int:
+        return await self._store._finish_meeting_with_transcript(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            document,
+            status,
+        )
+
 
 def create_phase2_app(
     *,
@@ -823,12 +888,15 @@ def create_phase2_app(
     file_runner: Any | None = None,
     file_work_root: str | Path | None = None,
     file_inference_options: Mapping[str, object] | None = None,
+    live_runtime_factory: Any | None = None,
+    live_helper_lease_seconds: float | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
     try:
         from fastapi import FastAPI, HTTPException
         from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+        from fastapi.staticfiles import StaticFiles
         from starlette.middleware.sessions import SessionMiddleware
     except ImportError as exc:  # pragma: no cover - package dependency is definitive.
         raise RuntimeError("Install FastAPI and itsdangerous to run the Phase-2 app.") from exc
@@ -846,6 +914,18 @@ def create_phase2_app(
             **dict(file_inference_options or {}),
         )
 
+    phase2_live = None
+    if live_runtime_factory is not None:
+        if live_helper_lease_seconds is None or live_helper_lease_seconds <= 0:
+            raise ValueError(
+                "live_helper_lease_seconds must be positive when Live mode is enabled."
+            )
+        from .phase2_live import Phase2LiveMeetings
+
+        phase2_live = Phase2LiveMeetings(live_runtime_factory())
+    elif live_helper_lease_seconds is not None:
+        raise ValueError("live_runtime_factory is required when a Live helper lease is set.")
+
     @asynccontextmanager
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
@@ -855,8 +935,12 @@ def create_phase2_app(
                 file_tasks.clear_transient_work()
             app.state.phase2_store = store
             app.state.phase2_file_tasks = file_tasks
+            if phase2_live is not None:
+                phase2_live.start()
             yield
         finally:
+            if phase2_live is not None:
+                await phase2_live.shutdown()
             if file_tasks is not None:
                 await file_tasks.stop()
             await store.close()
@@ -870,6 +954,12 @@ def create_phase2_app(
         same_site="lax",
         https_only=True,
     )
+    frontend_dir = Path(__file__).resolve().parents[2] / "ProjectResources" / "Frontend"
+    live_frontend_available = bool(
+        phase2_live is not None and (frontend_dir / "index.html").is_file()
+    )
+    if live_frontend_available:
+        app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
     @app.exception_handler(AccountRevoked)
     async def account_revoked(_: Request, __: AccountRevoked):
@@ -906,6 +996,16 @@ def create_phase2_app(
         )
         return response
 
+    if phase2_live is not None:
+        from .phase2_live import attach_phase2_live_routes
+
+        attach_phase2_live_routes(
+            app,
+            phase2_live,
+            require_account=require_account,
+            live_helper_lease_seconds=float(live_helper_lease_seconds),
+        )
+
     @app.get("/", response_class=HTMLResponse)
     async def root(request: Request):
         account = await request.app.state.phase2_store.account_for_session(
@@ -923,7 +1023,8 @@ def create_phase2_app(
         workspace = request.app.state.phase2_store.workspace(account)
         meetings = await workspace.list_meetings()
         response = HTMLResponse(
-            _workspace_html(account, meetings), headers={"Cache-Control": "no-store"}
+            _workspace_html(account, meetings, live_enabled=live_frontend_available),
+            headers={"Cache-Control": "no-store"},
         )
         return set_session_cookie(response, request.cookies[SESSION_COOKIE])
 
@@ -1060,7 +1161,12 @@ def _signed_out_html(state: str) -> str:
 <a data-action=\"google-sign-in\" href=\"/auth/google\">Sign in with Google</a></main></body></html>"""
 
 
-def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
+def _workspace_html(
+    account: Account,
+    meetings: list[Meeting],
+    *,
+    live_enabled: bool = False,
+) -> str:
     history = "".join(
         "<article data-meeting-card><button type=\"button\" data-open-meeting=\""
         f"{html.escape(meeting.meeting_id)}\">{html.escape(meeting.title or meeting.mode.title() + ' meeting')}"
@@ -1068,11 +1174,24 @@ def _workspace_html(account: Account, meetings: list[Meeting]) -> str:
         for meeting in meetings
     )
     empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
+    live_head = (
+        '<meta name="moss-authority" content="account">'
+        '<link rel="stylesheet" href="/static/styles.css">'
+        if live_enabled
+        else ""
+    )
+    live_body = (
+        '<section data-live-capture="account"><div id="app"></div></section>'
+        '<script type="module" src="/static/app.js"></script>'
+        if live_enabled
+        else ""
+    )
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title></head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><title>MOSS</title>{live_head}</head>
 <body><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
 <form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
+{live_body}
 <form data-file-upload=\"form\"><input name=\"file\" type=\"file\" required>
 <button type=\"submit\">Transcribe file</button></form><p data-file-upload=\"status\"></p>
 <section data-history=\"list\">{empty}{history}</section>

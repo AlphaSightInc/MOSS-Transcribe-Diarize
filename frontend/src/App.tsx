@@ -8,6 +8,8 @@ import { resetSessionState, sessionStatus, sessionStatusLine } from "./state/ses
 type PhaseOneMode = "live" | "file";
 
 export function App() {
+  const accountAuthority =
+    document.querySelector('meta[name="moss-authority"]')?.getAttribute("content") === "account";
   const [mode, setMode] = useState<PhaseOneMode>("live");
   const [captureBearer, setCaptureBearer] = useState("");
 
@@ -23,6 +25,7 @@ export function App() {
       data-accent="ink"
       data-density="compact"
       data-font="serif"
+      data-authority={accountAuthority ? "account" : "bearer"}
     >
       <header className="topbar">
         <span className="status top-status" data-state={status}>
@@ -57,7 +60,7 @@ export function App() {
                 disabled={modeLocked}
                 options={[
                   { value: "live", label: "Live" },
-                  { value: "file", label: "File" }
+                  ...(accountAuthority ? [] : [{ value: "file" as const, label: "File" }])
                 ]}
                 value={mode}
                 onChange={(nextMode) => {
@@ -70,6 +73,7 @@ export function App() {
 
             {mode === "live" ? (
               <ControlPanel
+                authority={accountAuthority ? "account" : "bearer"}
                 captureBearer={captureBearer}
                 onCaptureBearerChange={setCaptureBearer}
               />

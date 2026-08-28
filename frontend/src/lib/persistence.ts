@@ -23,7 +23,8 @@ export const storageKeys = {
 
 export interface SessionReattachRecord {
   sessionId: string;
-  viewToken: string;
+  authority?: "bearer" | "account";
+  viewToken: string | null;
 }
 
 export function browserStorage(): StorageLike {
@@ -99,18 +100,20 @@ export function clearSessionId(storage: StorageLike): void {
 
 export function loadSessionReattach(storage: StorageLike): SessionReattachRecord | null {
   const value = readJson<unknown>(storage, storageKeys.sessionReattach);
+  const record = value as SessionReattachRecord;
+  const accountRecord = record?.authority === "account";
   if (
     typeof value !== "object" ||
     value === null ||
-    typeof (value as SessionReattachRecord).sessionId !== "string" ||
-    typeof (value as SessionReattachRecord).viewToken !== "string" ||
-    !(value as SessionReattachRecord).sessionId.trim() ||
-    !(value as SessionReattachRecord).viewToken.trim()
+    typeof record.sessionId !== "string" ||
+    !record.sessionId.trim() ||
+    (!accountRecord && (typeof record.viewToken !== "string" || !record.viewToken.trim())) ||
+    (accountRecord && record.viewToken !== null)
   ) {
     storage.removeItem(storageKeys.sessionReattach);
     return null;
   }
-  return value as SessionReattachRecord;
+  return record;
 }
 
 export function saveSessionReattach(

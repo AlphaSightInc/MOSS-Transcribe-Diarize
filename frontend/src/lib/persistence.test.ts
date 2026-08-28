@@ -66,4 +66,19 @@ describe("persistence helpers", () => {
     expect(loadSessionReattach(storage)).toBeNull();
     expect(storage.getItem(storageKeys.sessionReattach)).toBeNull();
   });
+
+  it("reattaches an Account observer from Meeting ID without storing authority", () => {
+    const storage = createMemoryStorage();
+
+    saveSessionReattach(storage, {
+      sessionId: "account-meeting",
+      authority: "account",
+      viewToken: null,
+    });
+    expect(loadSessionReattach(storage)).toEqual({
+      sessionId: "account-meeting",
+      authority: "account",
+      viewToken: null,
+    });
+  });
 });

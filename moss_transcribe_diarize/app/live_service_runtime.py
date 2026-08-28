@@ -577,8 +577,32 @@ class LiveServiceRuntime:
         self._ready_session_set: set[str] = set()
         self._in_flight_session_ids: set[str] = set()
         self._in_flight_canonical_counts: dict[str, int] = {}
+        self._publication_observer: (
+            Callable[[str, LiveServiceSnapshot, tuple[LiveServiceEvent, ...]], None] | None
+        ) = None
 
-    def create(self, *, echo_mode: str | None = None) -> LiveServiceCreateResult:
+    def _bind_publication_observer(
+        self,
+        observer: Callable[[str, LiveServiceSnapshot, tuple[LiveServiceEvent, ...]], None],
+    ) -> None:
+        """Bind the one deployment-owned sink for raw snapshot/event advances.
+
+        The callback runs under the runtime lock and may run on an inference thread. It must
+        only hand immutable state to its owning event loop; persistence belongs outside this
+        runtime so Phase 1's measured inference and capture machinery remain unchanged.
+        """
+
+        with self._lock:
+            if self._publication_observer is not None:
+                raise RuntimeError("live publication observer is already bound.")
+            self._publication_observer = observer
+
+    def create(
+        self,
+        *,
+        echo_mode: str | None = None,
+        session_id: str | None = None,
+    ) -> LiveServiceCreateResult:
         # `echo_mode` is a T-06 browser-preflight concept (headphones vs speakers). No
         # client that exists today sends it -- not the shipping macOS capture app
         # (CaptureSecurity.postSession posts no body), not live_service_replay, not the
@@ -591,7 +615,9 @@ class LiveServiceRuntime:
         elif not isinstance(echo_mode, str) or echo_mode not in {"headphones", "speakers"}:
             raise ValueError("echo_mode must be headphones or speakers.")
         with self._lock:
-            session_id = self._new_session_id()
+            session_id = session_id or self._new_session_id()
+            if session_id in self._sessions:
+                raise ValueError("live session id already exists.")
             endpoint_policy = self._endpoint_policy_factory()
             self._require_one_span_cap(endpoint_policy)
             session = LiveSession(max_retained_samples=self.descriptor.bounds.max_retained_samples)
@@ -1521,6 +1547,12 @@ class LiveServiceRuntime:
         state.next_event_seq += 1
         state.work_changed.set()
         self._notify_drain_waiters_locked(state)
+        if self._publication_observer is not None:
+            self._publication_observer(
+                state.session_id,
+                self._snapshot(state),
+                tuple(state.events),
+            )
 
     def _record_canonical_queued(
         self,

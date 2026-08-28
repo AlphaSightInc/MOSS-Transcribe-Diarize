@@ -14,7 +14,11 @@ const mocks = vi.hoisted(() => {
   return {
     poller,
     createMossSessionPoller: vi.fn((_options: unknown) => poller),
-    captureOptions: null as { onPreflightStatus?: (statusLine: string) => void } | null,
+    captureOptions: null as {
+      authority?: string;
+      captureBearer?: string;
+      onPreflightStatus?: (statusLine: string) => void;
+    } | null,
   };
 });
 
@@ -99,5 +103,26 @@ describe("ControlPanel reattach", () => {
     act(() => mocks.captureOptions?.onPreflightStatus?.(remedy));
 
     expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
+  });
+
+  it("starts Account capture without rendering or requiring a bearer", async () => {
+    await act(async () => {
+      render(
+        <ControlPanel
+          authority="account"
+          captureBearer=""
+          onCaptureBearerChange={() => undefined}
+        />,
+        root,
+      );
+    });
+    expect(root.querySelector('[aria-label="Capture bearer"]')).toBeNull();
+    const enableMicrophone = [...root.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Enable microphone",
+    );
+    expect(enableMicrophone?.disabled).toBe(false);
+    await act(async () => enableMicrophone?.click());
+    expect(mocks.captureOptions).toMatchObject({ authority: "account" });
+    expect(mocks.captureOptions?.captureBearer).toBeUndefined();
   });
 });

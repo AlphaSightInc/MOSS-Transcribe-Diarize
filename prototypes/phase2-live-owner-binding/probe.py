@@ -1,0 +1,682 @@
+"""PROTOTYPE — owner-bound Live Meeting authorization and poll-storage boundary.
+
+Question: is the originating Sign-in session plus an owner-bound Meeting handle sufficient
+for capture control while same-Account observers read the in-memory Live registry?
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import sqlite3
+import tempfile
+import threading
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from moss_transcribe_diarize.app.phase2 import (
+    Account,
+    AccountRevoked,
+    GoogleIdentity,
+    Phase2Store,
+)
+
+
+READ_OPERATIONS = frozenset({"snapshot", "events"})
+MUTATION_OPERATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
+
+
+@dataclass
+class SqlCounts:
+    auth_reads: int = 0
+    content_reads: int = 0
+    writes: int = 0
+
+    def reset(self) -> None:
+        self.auth_reads = 0
+        self.content_reads = 0
+        self.writes = 0
+
+    def observe(self, statement: str) -> None:
+        normalized = " ".join(statement.lower().split())
+        if normalized.startswith("select"):
+            if any(
+                table in normalized
+                for table in (
+                    " meetings",
+                    " meeting_transcripts",
+                    " meeting_speakers",
+                    " meeting_audio",
+                    " voiceprints",
+                    " llm_artifacts",
+                )
+            ):
+                self.content_reads += 1
+            elif " sign_in_sessions" in normalized and " accounts" in normalized:
+                self.auth_reads += 1
+        elif normalized.startswith(("insert", "update", "delete", "replace")):
+            self.writes += 1
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "auth_reads": self.auth_reads,
+            "content_reads": self.content_reads,
+            "writes": self.writes,
+        }
+
+
+@dataclass
+class LiveBinding:
+    owner_key: tuple[str, int]
+    origin_session: str
+    handle: Any
+    snapshot: dict[str, object]
+    status: str = "active"
+    raw_version: int = 0
+    durable_version: int = 0
+    public_version: int = 0
+    raw_event_high_water: int = 0
+    public_event_high_water: int = 0
+    capture_fenced: bool = False
+
+
+@dataclass(frozen=True)
+class RawPublication:
+    revision_version: int
+    event_high_water: int
+    document: dict[str, object]
+
+
+class ControlledCommit:
+    """Hold each real MeetingHandle commit so visibility ordering is observable."""
+
+    def __init__(self, handle: Any) -> None:
+        self._handle = handle
+        self._started: dict[int, asyncio.Event] = {}
+        self._released: dict[int, asyncio.Event] = {}
+        self.order: list[int] = []
+
+    def _event(self, events: dict[int, asyncio.Event], version: int) -> asyncio.Event:
+        return events.setdefault(version, asyncio.Event())
+
+    async def __call__(self, publication: RawPublication) -> int:
+        self.order.append(publication.revision_version)
+        self._event(self._started, publication.revision_version).set()
+        await self._event(self._released, publication.revision_version).wait()
+        return await self._handle.commit_transcript(publication.document)
+
+    async def wait_started(self, version: int) -> None:
+        await self._event(self._started, version).wait()
+
+    def release(self, version: int) -> None:
+        self._event(self._released, version).set()
+
+
+class PublicationBridgeProbe:
+    """Prototype of the event-driven, serialized raw→durable→public bridge."""
+
+    def __init__(
+        self,
+        binding: LiveBinding,
+        commit: ControlledCommit,
+        loop: asyncio.AbstractEventLoop,
+    ) -> None:
+        self._binding = binding
+        self._commit = commit
+        self._loop = loop
+        self._queue: asyncio.Queue[RawPublication | None] = asyncio.Queue()
+        self._raw_changed = asyncio.Condition()
+        self._public_changed = asyncio.Condition()
+        self._fenced = asyncio.Event()
+        self._worker = asyncio.create_task(self._run())
+
+    def observe_from_runtime_thread(self, publication: RawPublication) -> None:
+        self._loop.call_soon_threadsafe(self._accept_raw, publication)
+
+    def _accept_raw(self, publication: RawPublication) -> None:
+        self._binding.raw_version = publication.revision_version
+        self._binding.raw_event_high_water = publication.event_high_water
+        self._queue.put_nowait(publication)
+        asyncio.create_task(self._notify(self._raw_changed))
+
+    async def _notify(self, condition: asyncio.Condition) -> None:
+        async with condition:
+            condition.notify_all()
+
+    async def wait_raw(self, version: int) -> None:
+        async with self._raw_changed:
+            await self._raw_changed.wait_for(lambda: self._binding.raw_version >= version)
+
+    async def wait_public(self, version: int) -> None:
+        async with self._public_changed:
+            await self._public_changed.wait_for(lambda: self._binding.public_version >= version)
+
+    async def wait_fenced(self) -> None:
+        await self._fenced.wait()
+
+    async def close(self) -> None:
+        self._queue.put_nowait(None)
+        await self._worker
+
+    async def _run(self) -> None:
+        while True:
+            publication = await self._queue.get()
+            if publication is None:
+                return
+            try:
+                durable_version = await self._commit(publication)
+            except AccountRevoked:
+                # Keep the last durable document/event boundary and fence capture.
+                self._binding.status = "interrupted"
+                self._binding.snapshot = {**self._binding.snapshot, "status": "interrupted"}
+                self._binding.capture_fenced = True
+                self._fenced.set()
+                continue
+            self._binding.durable_version = durable_version
+            self._binding.public_version = publication.revision_version
+            self._binding.public_event_high_water = publication.event_high_water
+            self._binding.snapshot = {
+                "status": "active",
+                "transcript_version": durable_version,
+                "segments": [
+                    segment["text"]
+                    for segment in publication.document.get("segments", [])
+                    if isinstance(segment, dict) and isinstance(segment.get("text"), str)
+                ],
+            }
+            await self._notify(self._public_changed)
+
+
+class SimulatedProcessLoss(RuntimeError):
+    """Probe-only failure after both terminal writes but before transaction commit."""
+
+
+async def commit_terminal_probe(
+    store: Phase2Store,
+    handle: Any,
+    document: dict[str, object],
+    *,
+    fail_before_commit: bool,
+) -> int:
+    """Prototype the minimum atomic terminal mutation before production absorbs it."""
+
+    document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+    async with store._mutation():
+        cursor = await store._connection.execute(
+            """
+            UPDATE meetings SET status = 'completed'
+            WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+              AND EXISTS (
+                SELECT 1 FROM accounts
+                WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
+              )
+            """,
+            (
+                handle._account_id,
+                handle.meeting_id,
+                handle._account_id,
+                handle._authority_generation,
+            ),
+        )
+        if cursor.rowcount != 1:
+            raise AccountRevoked("Meeting authority is revoked or interrupted.")
+        await store._connection.execute(
+            """
+            INSERT INTO meeting_transcripts(
+                account_id, meeting_id, document_json, version, updated_at_ms
+            ) VALUES (?, ?, ?, 1, 0)
+            ON CONFLICT(account_id, meeting_id) DO UPDATE SET
+                document_json = excluded.document_json,
+                version = meeting_transcripts.version + 1,
+                updated_at_ms = excluded.updated_at_ms
+            """,
+            (handle._account_id, handle.meeting_id, document_json),
+        )
+        if fail_before_commit:
+            raise SimulatedProcessLoss("process lost before SQLite commit")
+        cursor = await store._connection.execute(
+            """
+            SELECT version FROM meeting_transcripts
+            WHERE account_id = ? AND meeting_id = ?
+            """,
+            (handle._account_id, handle.meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        return int(row["version"])
+
+
+class AccountPartitionedLiveRegistry:
+    """Prototype-only registry: memory stores state; a valid Account is required to enter."""
+
+    def __init__(self) -> None:
+        self._bindings: dict[str, LiveBinding] = {}
+
+    def bind(self, account: Account, session_id: str, handle: Any) -> LiveBinding:
+        binding = LiveBinding(
+            owner_key=(account.account_id, account.authority_generation),
+            origin_session=session_id,
+            handle=handle,
+            snapshot={"status": "active", "transcript_version": 0, "segments": []},
+        )
+        self._bindings[handle.meeting_id] = binding
+        return binding
+
+    def open(self, account: Account, meeting_id: str) -> LiveBinding | None:
+        binding = self._bindings.get(meeting_id)
+        if binding is None:
+            return None
+        return (
+            binding
+            if binding.owner_key == (account.account_id, account.authority_generation)
+            else None
+        )
+
+    def interrupt(self, binding: LiveBinding) -> None:
+        binding.status = "interrupted"
+        binding.snapshot = {**binding.snapshot, "status": "interrupted"}
+
+
+async def authorize(
+    store: Phase2Store,
+    registry: AccountPartitionedLiveRegistry,
+    *,
+    session_id: str,
+    meeting_id: str,
+    operation: str,
+) -> tuple[int, LiveBinding | None]:
+    # ADR-0007 requires this SQLite auth resolution on every request. It is the only durable
+    # read allowed on the 250 ms snapshot/events path.
+    account = await store.account_for_session(session_id)
+    if account is None:
+        return 401, None
+    binding = registry.open(account, meeting_id)
+    if binding is None:
+        return 404, None
+    if operation in READ_OPERATIONS:
+        return 200, binding
+    if operation not in MUTATION_OPERATIONS:
+        raise ValueError(operation)
+    if session_id != binding.origin_session:
+        return 403, None
+    if binding.status != "active":
+        return 409, None
+    return 200, binding
+
+
+def show(action: str, binding: LiveBinding, sql: SqlCounts, **outcome: object) -> None:
+    print(
+        json.dumps(
+            {
+                "action": action,
+                "binding": {
+                    "meeting_id": binding.handle.meeting_id,
+                    "origin_session_bound": bool(binding.origin_session),
+                    "owner_generation": binding.owner_key[1],
+                    "status": binding.status,
+                    "snapshot": binding.snapshot,
+                    "versions": {
+                        "raw": binding.raw_version,
+                        "durable": binding.durable_version,
+                        "public": binding.public_version,
+                    },
+                    "event_high_water": {
+                        "raw": binding.raw_event_high_water,
+                        "public": binding.public_event_high_water,
+                    },
+                    "capture_fenced": binding.capture_fenced,
+                },
+                "sql": sql.to_dict(),
+                "outcome": outcome,
+            },
+            sort_keys=True,
+        )
+    )
+
+
+async def run() -> None:
+    with tempfile.TemporaryDirectory(prefix="mtd-phase2-live-owner-prototype-") as directory:
+        database = Path(directory) / "prototype.sqlite3"
+        store = await Phase2Store.open(database)
+        counts = SqlCounts()
+        await store._connection.set_trace_callback(counts.observe)
+        try:
+            await store.allow_email("a@example.com")
+            await store.allow_email("b@example.com")
+            admitted_a = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
+            admitted_a_observer = await store.admit(
+                GoogleIdentity("sub-a", "a@example.com", "A")
+            )
+            admitted_b = await store.admit(GoogleIdentity("sub-b", "b@example.com", "B"))
+            assert admitted_a is not None
+            assert admitted_a_observer is not None
+            assert admitted_b is not None
+            account_a, session_a = admitted_a
+            _, session_a_observer = admitted_a_observer
+            _, session_b = admitted_b
+
+            terminal_handle = await store.workspace(account_a).create_meeting("live")
+            await terminal_handle.commit_transcript(
+                {
+                    "segments": [
+                        {
+                            "id": "seg_0001",
+                            "start": 0.0,
+                            "end": 1.0,
+                            "speaker": "S01",
+                            "text": "pre-terminal durable",
+                        }
+                    ]
+                }
+            )
+            terminal_document = {
+                "segments": [
+                    {
+                        "id": "seg_0001",
+                        "start": 0.0,
+                        "end": 2.0,
+                        "speaker": "S01",
+                        "text": "terminal revision",
+                    }
+                ]
+            }
+            try:
+                await commit_terminal_probe(
+                    store,
+                    terminal_handle,
+                    terminal_document,
+                    fail_before_commit=True,
+                )
+            except SimulatedProcessLoss:
+                pass
+            rolled_back = await terminal_handle.snapshot()
+            assert rolled_back.status == "active"
+            assert rolled_back.transcript_version == 1
+            assert rolled_back.transcript is not None
+            assert rolled_back.transcript["segments"][0]["text"] == "pre-terminal durable"
+            terminal_version = await commit_terminal_probe(
+                store,
+                terminal_handle,
+                terminal_document,
+                fail_before_commit=False,
+            )
+            terminal_committed = await terminal_handle.snapshot()
+            assert terminal_version == 2
+            assert terminal_committed.status == "completed"
+            assert terminal_committed.transcript_version == 2
+            assert terminal_committed.transcript is not None
+            assert terminal_committed.transcript["segments"][0]["text"] == "terminal revision"
+            print(
+                json.dumps(
+                    {
+                        "action": "terminal_atomicity",
+                        "injected_process_loss": {
+                            "status": rolled_back.status,
+                            "transcript_version": rolled_back.transcript_version,
+                            "text": rolled_back.transcript["segments"][0]["text"],
+                        },
+                        "committed": {
+                            "status": terminal_committed.status,
+                            "transcript_version": terminal_committed.transcript_version,
+                            "text": terminal_committed.transcript["segments"][0]["text"],
+                        },
+                        "mixed_state_observed": False,
+                    },
+                    sort_keys=True,
+                )
+            )
+
+            handle = await store.workspace(account_a).create_meeting("live")
+            registry = AccountPartitionedLiveRegistry()
+            binding = registry.bind(account_a, session_a, handle)
+            counts.reset()
+            show("create", binding, counts, status=201)
+
+            origin_status, _ = await authorize(
+                store,
+                registry,
+                session_id=session_a,
+                meeting_id=handle.meeting_id,
+                operation="frame",
+            )
+            assert origin_status == 200
+            version = await handle.commit_transcript(
+                {
+                    "segments": [
+                        {
+                            "id": "seg_0001",
+                            "start": 0.0,
+                            "end": 1.0,
+                            "speaker": "S01",
+                            "text": "accepted prefix",
+                        }
+                    ]
+                }
+            )
+            binding.snapshot = {
+                "status": "active",
+                "transcript_version": version,
+                "segments": ["accepted prefix"],
+            }
+            binding.raw_version = binding.durable_version = binding.public_version = version
+            binding.raw_event_high_water = binding.public_event_high_water = 10
+            counts.reset()
+            show("origin_revision_durable", binding, counts, status=origin_status, version=version)
+
+            controlled_commit = ControlledCommit(handle)
+            bridge = PublicationBridgeProbe(binding, controlled_commit, asyncio.get_running_loop())
+            second = RawPublication(
+                revision_version=2,
+                event_high_water=11,
+                document={
+                    "segments": [
+                        {
+                            "id": "seg_0001",
+                            "start": 0.0,
+                            "end": 2.0,
+                            "speaker": "S01",
+                            "text": "accepted prefix then durable second",
+                        }
+                    ]
+                },
+            )
+            third = RawPublication(
+                revision_version=3,
+                event_high_water=12,
+                document={
+                    "segments": [
+                        {
+                            "id": "seg_0001",
+                            "start": 0.0,
+                            "end": 3.0,
+                            "speaker": "S01",
+                            "text": "late result after revoke",
+                        }
+                    ]
+                },
+            )
+
+            def runtime_thread() -> None:
+                bridge.observe_from_runtime_thread(second)
+                bridge.observe_from_runtime_thread(third)
+
+            producer = threading.Thread(target=runtime_thread, name="prototype-live-runtime")
+            producer.start()
+            await asyncio.to_thread(producer.join)
+            await bridge.wait_raw(3)
+            await controlled_commit.wait_started(2)
+
+            counts.reset()
+            held_poll_versions: list[int] = []
+            for _ in range(4):
+                status, opened = await authorize(
+                    store,
+                    registry,
+                    session_id=session_a_observer,
+                    meeting_id=handle.meeting_id,
+                    operation="snapshot",
+                )
+                assert status == 200 and opened is binding
+                held_poll_versions.append(int(opened.snapshot["transcript_version"]))
+            show(
+                "raw_ahead_commit_held",
+                binding,
+                counts,
+                poll_versions=held_poll_versions,
+                commit_order=controlled_commit.order,
+            )
+            assert held_poll_versions == [1, 1, 1, 1]
+            assert binding.raw_version == 3
+            assert binding.public_version == binding.durable_version == 1
+            assert binding.public_event_high_water == 10
+            assert counts.to_dict() == {"auth_reads": 4, "content_reads": 0, "writes": 0}
+
+            controlled_commit.release(2)
+            await bridge.wait_public(2)
+            await controlled_commit.wait_started(3)
+            counts.reset()
+            released_status, released_binding = await authorize(
+                store,
+                registry,
+                session_id=session_a_observer,
+                meeting_id=handle.meeting_id,
+                operation="snapshot",
+            )
+            assert released_status == 200 and released_binding is binding
+            show(
+                "durable_release_advances_public",
+                binding,
+                counts,
+                poll_version=released_binding.snapshot["transcript_version"],
+                commit_order=controlled_commit.order,
+            )
+            assert released_binding.snapshot["transcript_version"] == 2
+            assert binding.durable_version == binding.public_version == 2
+            assert binding.public_event_high_water == 11
+
+            counts.reset()
+            poll_statuses: list[int] = []
+            for index in range(8):
+                status, opened = await authorize(
+                    store,
+                    registry,
+                    session_id=session_a_observer,
+                    meeting_id=handle.meeting_id,
+                    operation="snapshot" if index % 2 == 0 else "events",
+                )
+                assert opened is binding
+                assert opened.snapshot["transcript_version"] == 2
+                poll_statuses.append(status)
+            show(
+                "eight_memory_polls",
+                binding,
+                counts,
+                statuses=poll_statuses,
+                content_source="memory",
+            )
+            assert poll_statuses == [200] * 8
+            assert counts.to_dict() == {"auth_reads": 8, "content_reads": 0, "writes": 0}
+
+            counts.reset()
+            observer_mutation, _ = await authorize(
+                store,
+                registry,
+                session_id=session_a_observer,
+                meeting_id=handle.meeting_id,
+                operation="stop",
+            )
+            foreign_read, _ = await authorize(
+                store,
+                registry,
+                session_id=session_b,
+                meeting_id=handle.meeting_id,
+                operation="snapshot",
+            )
+            foreign_mutation, _ = await authorize(
+                store,
+                registry,
+                session_id=session_b,
+                meeting_id=handle.meeting_id,
+                operation="abort",
+            )
+            show(
+                "isolation",
+                binding,
+                counts,
+                observer_mutation=observer_mutation,
+                foreign_read=foreign_read,
+                foreign_mutation=foreign_mutation,
+            )
+            assert (observer_mutation, foreign_read, foreign_mutation) == (403, 404, 404)
+            assert binding.snapshot["transcript_version"] == 2
+
+            assert await store.revoke_email("a@example.com") is True
+            controlled_commit.release(3)
+            await bridge.wait_fenced()
+            counts.reset()
+            revoked, _ = await authorize(
+                store,
+                registry,
+                session_id=session_a,
+                meeting_id=handle.meeting_id,
+                operation="snapshot",
+            )
+            show(
+                "revoke_races_serial_flush",
+                binding,
+                counts,
+                status=revoked,
+                commit_order=controlled_commit.order,
+            )
+            assert revoked == 401
+            assert counts.to_dict() == {"auth_reads": 1, "content_reads": 0, "writes": 0}
+            assert binding.capture_fenced is True
+            assert binding.status == "interrupted"
+            assert binding.raw_version == 3
+            assert binding.durable_version == binding.public_version == 2
+            assert binding.public_event_high_water == 11
+            assert controlled_commit.order == [2, 3]
+            await bridge.close()
+        finally:
+            await store.close()
+
+        connection = sqlite3.connect(database)
+        try:
+            durable = connection.execute(
+                """
+                SELECT m.status, t.version, t.document_json
+                FROM meetings m
+                JOIN meeting_transcripts t
+                  ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                WHERE m.meeting_id = ?
+                """
+                , (handle.meeting_id,)
+            ).fetchone()
+        finally:
+            connection.close()
+        assert durable is not None
+        assert durable[0] == "interrupted"
+        assert durable[1] == 2
+        assert "accepted prefix" in durable[2]
+        assert "durable second" in durable[2]
+        assert "late result after revoke" not in durable[2]
+        print(
+            json.dumps(
+                {
+                    "action": "durable_final",
+                    "status": durable[0],
+                    "transcript_version": durable[1],
+                    "accepted_prefix_preserved": True,
+                    "late_result_absent": True,
+                },
+                sort_keys=True,
+            )
+        )
+        print(
+            "VERDICT: PASS — serialized bridge exposes only durable revisions; terminal doc/status are atomic; revoke fences queued work"
+        )
+
+
+if __name__ == "__main__":
+    asyncio.run(run())
