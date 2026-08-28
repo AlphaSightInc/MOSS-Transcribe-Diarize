@@ -15,16 +15,21 @@
   another lifecycle policy. The same ownership applies to a rerun directory until copy, hash,
   record publication, and queue registration have all succeeded. Live raw creation remains owned
   until authority binding and helper registration succeed; resume/render state remains old until
-  its candidate durable state and worker registration can succeed. One JobManager-owned resume
-  critical section spans failed-state observation, candidate persistence, registry publication,
-  and enqueue. It cannot be removed because neither the durable row nor the queue independently
-  claims the transition for a competing request.
+  its candidate durable state and worker registration can succeed. One short, nonblocking
+  per-Job resume claim spans HTTP route entry through response construction; it identifies the one
+  overlapping request allowed to attempt registration and releases on success, failure, or
+  cancellation. It cannot be replaced by the existing JobManager mutation lock: if the first
+  registered execution fails before a waiting request acquires that lock, the waiter is no longer
+  distinguishable from a genuine later retry. The separate manager critical section remains the
+  durable mutation boundary across failed-state observation, candidate persistence, registry
+  publication, and enqueue; the request claim does not make that multi-effect transition atomic.
 - **Invariants:** a quiesced marker rejects Live create, job create, rerun, resume, and render; it
   does not reject existing frames, heartbeat, snapshot, events, Stop, abort, reads, or downloads;
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
-  One failed job admits at most one resume execution; a competing request receives typed conflict,
-  and save/enqueue failure restores the exact prior durable and in-memory state before admission
-  closes.
+  One failed job admits at most one execution from overlapping resume requests; a competitor
+  receives typed conflict without waiting, cancellation releases the claim exactly once, and a
+  genuinely later retry remains allowed. Save/enqueue failure restores the exact prior durable and
+  in-memory state before admission closes.
 - **Assumptions/unknowns:** the retained probe spawns two independent operating-system processes,
   each with a real `server.create_app` and gate, plus isolated production failure falsifiers. It
   exercises the absorbed marker, admission, route, runtime-status, Live, and job implementations
@@ -39,8 +44,9 @@
   registry entry, or queue entry. A Live bind refusal, resume save failure, or render save failure
   must leave no active undisclosed capture and no memory/disk/worker contradiction after entrant
   zero. Separate process PIDs must converge on marker enable/restart/disable while entrant counts
-  remain local. Two simultaneous resumes returning success, two queue entries, or drain zero while
-  either accepted execution remains disproves resume ownership.
+  remain local. Two overlapping resumes returning success even when the first execution has
+  already failed, two queue entries, a cancelled claim blocking a later request, or drain zero
+  while either accepted execution remains disproves resume ownership.
 - **Tool decision:** a two-instance logic probe is necessary because a long upload crossing marker
   enable is the reachable race that distinguishes a marker alone from marker plus entrant count.
   Cancelling the production upload coroutine after transaction creation is necessary because only
@@ -61,7 +67,13 @@
   Holding the real worker on a second job while two HTTP resume requests interleave is necessary:
   ordinary success cannot expose duplicate queue registration hidden behind one JobRecord. Two
   successful responses or two later runner calls require the manager-owned transition boundary;
-  one success plus one typed conflict preserves it.
+  one success plus one typed conflict preserves it. A second interleaving deliberately lets the
+  first accepted execution fail before the competitor can mutate manager state. It is necessary
+  because only that state proves the manager lock cannot remember overlapping request identity;
+  `200/200` rejects lock-only serialization, while `200/409` followed by a successful sequential
+  retry selects the short route claim. Raising `CancelledError` inside the real claim changes the
+  decision if it cannot be reacquired, because then the claim has become persistent lockout rather
+  than request ownership.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -106,16 +118,22 @@ The extended command exited `FAIL` before production was changed:
   returned `200`, and placed the same ID into the queue twice. The registry exposed only one queued
   JobRecord while the queue contained two executions; after release the runner processed both.
   The two new predicates made the retained command exit nonzero.
+- Even after the manager mutation lock fixed that held-worker race, a faster interleaving remained:
+  both routes entered admission, the first registered execution failed, and then the waiting second
+  route acquired the manager lock. Both returned `200`, attempts advanced `2` to `4`, and the
+  runner executed twice. The lock had serialized mutation but had lost the fact that the requests
+  overlapped. The added predicates made the retained command exit nonzero.
 
 These states are reachable cutover false-zero/orphan failures. The corrections only deepen the
 existing drain/admission meanings: Live drain includes running terminal finalization; undisclosed
 raw Live creation is aborted before admission closes; File creation owns every non-returned path;
 and resume/render publish a copied candidate only after its durable transition succeeds. Resume
-also owns failed-to-queued observation through enqueue under one manager-local critical section.
+also composes a short per-Job route claim with its manager-local mutation section: the claim rejects
+an overlapping waiter, while the manager section preserves exact durable and queue rollback.
 
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 43/43 predicates on Python 3.10.19 and 3.12.12 on
+**Accepted.** The command derived `PASS` from 46/46 predicates on Python 3.10.19 and 3.12.12 on
 2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
@@ -155,6 +173,10 @@ also owns failed-to-queued observation through enqueue under one manager-local c
 - Two held concurrent resume requests now produced exactly one `200`, one typed `409`, one durable
   attempt increment, and one queued runner call. Save and enqueue failure falsifiers restored the
   exact prior failed state; after release the sole accepted execution drained to terminal truth.
+- In the fast-failure interleaving both routes reached admission `2`, but the route claim produced
+  `200/409` even after the first execution became failed. Attempts stopped at `3` with one runner
+  execution; after both requests returned, a new sequential retry succeeded as attempt `4` and
+  drained. A synthetic cancellation released the same claim and immediate reacquisition succeeded.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

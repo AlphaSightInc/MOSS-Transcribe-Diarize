@@ -174,6 +174,40 @@ class ConcurrentResumeRunner(ProbeRunner):
         )
 
 
+class FastFailureResumeRunner(ProbeRunner):
+    """Fail the first accepted resume, then hold the next execution."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+        self.first_resume_failed = threading.Event()
+        self.retry_started = threading.Event()
+        self.release_retry = threading.Event()
+
+    def transcribe(self, audio_path: str, **kwargs: Any) -> TranscriptionResult:
+        self.calls += 1
+        callback = kwargs.get("status_callback")
+        if callback is not None:
+            callback("transcribing", 0.5, 1)
+        if self.calls == 2:
+            self.first_resume_failed.set()
+            raise RuntimeError("prototype immediate resume execution failure")
+        if self.calls == 3:
+            self.retry_started.set()
+            if not self.release_retry.wait(timeout=10):
+                raise RuntimeError("prototype sequential retry timed out")
+        return TranscriptionResult(
+            text="[0][S01]prototype[1]",
+            prompt_len=1,
+            generated_tokens=1,
+            elapsed_sec=0.01,
+            model=self.model_path,
+            audio=str(audio_path),
+            decoding="greedy",
+            temperature=None,
+        )
+
+
 def make_batch_app(root: Path, gate: Phase1CreationGate, runner: ProbeRunner):
     app = server.create_app(
         model_path="fake-model",
@@ -907,6 +941,147 @@ def concurrent_resume_state(root: Path, marker: Path) -> dict[str, Any]:
     return {"while_held": while_held, "after_drain": after_drain}
 
 
+def fast_failure_concurrent_resume_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Keep two route admissions concurrent while the first execution becomes failed."""
+
+    gate = Phase1CreationGate(marker)
+    runner = FastFailureResumeRunner()
+    app, wrapped = make_batch_app(root, gate, runner)
+    setup = TestClient(wrapped)
+    first = TestClient(wrapped)
+    second = TestClient(wrapped)
+    created = setup.post(
+        "/api/jobs", files={"file": ("fast-failure.wav", b"target", "audio/wav")}
+    )
+    created.raise_for_status()
+    job_id = created.json()["id"]
+    wait_job(setup, job_id)
+    target = app.state.manager.get_job(job_id)
+    target.status = "failed"
+    target.progress = 0.5
+    target.error = "prototype prior failure"
+    target.resume_attempts = 2
+    target.checkpoint_state = "partial"
+    app.state.manager._save_job(target)
+
+    admission_observations: list[dict[str, Any]] = []
+    second_admitted = threading.Event()
+    original_enter = gate.enter
+
+    def observed_enter():
+        admission = original_enter()
+        snapshot = gate.snapshot().to_dict()
+        admission_observations.append(snapshot)
+        if snapshot["entrants"] == 2:
+            second_admitted.set()
+        return admission
+
+    gate.enter = observed_enter
+    original_put = app.state.manager._queue.put
+    first_registered = threading.Event()
+    release_first_registration = threading.Event()
+    first_target_put = True
+    retry_source_state: dict[str, Any] = {}
+
+    def hold_first_registration(candidate_id: str) -> None:
+        nonlocal first_target_put
+        original_put(candidate_id)
+        if candidate_id == job_id and first_target_put:
+            first_target_put = False
+            first_registered.set()
+            if not runner.first_resume_failed.wait(timeout=10):
+                raise AssertionError("first resumed execution did not fail")
+            for _ in range(500):
+                if app.state.manager.get_job(job_id).status == "failed":
+                    break
+                time.sleep(0.002)
+            if app.state.manager.get_job(job_id).status != "failed":
+                raise AssertionError("first resumed execution did not publish failure")
+            retry_source = Path(app.state.manager.get_job(job_id).input_path)
+            retry_source_state["exists_after_failure"] = retry_source.is_file()
+            retry_source_state["directory"] = sorted(
+                path.name for path in retry_source.parent.iterdir()
+            )
+            if not release_first_registration.wait(timeout=10):
+                raise AssertionError("first resume registration was not released")
+
+    app.state.manager._queue.put = hold_first_registration
+    responses: list[dict[str, Any]] = []
+
+    def resume(client: TestClient, label: str) -> None:
+        response = client.post(f"/api/jobs/{job_id}/resume")
+        responses.append(
+            {"label": label, "status": response.status_code, "body": response.json()}
+        )
+
+    first_thread = threading.Thread(target=resume, args=(first, "first"), daemon=True)
+    second_thread = threading.Thread(target=resume, args=(second, "second"), daemon=True)
+    first_thread.start()
+    if not first_registered.wait(timeout=10):
+        raise AssertionError("first resume was not registered")
+    second_thread.start()
+    if not second_admitted.wait(timeout=10):
+        raise AssertionError("second resume route was not admitted concurrently")
+    release_first_registration.set()
+    first_thread.join(timeout=10)
+    second_thread.join(timeout=10)
+    if first_thread.is_alive() or second_thread.is_alive():
+        raise AssertionError("fast-failure resume requests did not return")
+    app.state.manager._queue.put = original_put
+    gate.enter = original_enter
+
+    concurrent = {
+        "responses": sorted(responses, key=lambda item: item["label"]),
+        "admissions": admission_observations,
+        "gate": gate.snapshot().to_dict(),
+        "target": app.state.manager.get_job(job_id).to_dict(),
+        "runner_calls": runner.calls,
+        "retry_source": retry_source_state,
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+    }
+
+    sequential_response = None
+    if sorted(item["status"] for item in responses) == [200, 409]:
+        sequential = setup.post(f"/api/jobs/{job_id}/resume")
+        sequential_response = {
+            "status": sequential.status_code,
+            "body": sequential.json(),
+        }
+    retry_started = runner.retry_started.wait(timeout=2)
+    runner.release_retry.set()
+    drain_finished = threading.Event()
+
+    def join_queue() -> None:
+        app.state.manager._queue.join()
+        drain_finished.set()
+
+    drain_thread = threading.Thread(target=join_queue, daemon=True)
+    drain_thread.start()
+    drained = drain_finished.wait(timeout=5)
+    cancelled_claim_released = False
+    later_claim_acquired = False
+    try:
+        with app.state.manager.claim_resume(job_id):
+            raise asyncio.CancelledError()
+    except asyncio.CancelledError:
+        cancelled_claim_released = True
+    with app.state.manager.claim_resume(job_id):
+        later_claim_acquired = True
+    after_drain = {
+        "sequential": sequential_response,
+        "target": app.state.manager.get_job(job_id).to_dict(),
+        "runner_calls": runner.calls,
+        "retry_started": retry_started,
+        "drained": drained,
+        "queue": app.state.manager._queue.qsize(),
+        "activity": app.state.manager.activity_counts(),
+        "cancelled_claim_released": cancelled_claim_released,
+        "later_claim_acquired": later_claim_acquired,
+    }
+    return {"concurrent": concurrent, "after_drain": after_drain}
+
+
 def render_save_failure_state(root: Path, marker: Path) -> dict[str, Any]:
     """Fail durable rendering publication before thread start, then retry and drain."""
 
@@ -1233,6 +1408,56 @@ def main() -> int:
             and concurrent_resume["after_drain"]["runner_calls"] == 3
         )
         emit(states, "concurrent_resume", **concurrent_resume)
+
+        fast_failure_resume = fast_failure_concurrent_resume_state(
+            root / "fast-failure-resume",
+            root / "fast-failure-resume-state" / "marker",
+        )
+        fast_statuses = sorted(
+            response["status"]
+            for response in fast_failure_resume["concurrent"]["responses"]
+        )
+        checks["fast_failure_concurrent_resume_keeps_one_owner"] = (
+            fast_statuses == [200, 409]
+            and max(
+                observation["entrants"]
+                for observation in fast_failure_resume["concurrent"]["admissions"]
+            )
+            == 2
+            and fast_failure_resume["concurrent"]["gate"]
+            == {"state": "open", "entrants": 0}
+            and fast_failure_resume["concurrent"]["target"]["status"] == "failed"
+            and fast_failure_resume["concurrent"]["target"]["resume_attempts"] == 3
+            and fast_failure_resume["concurrent"]["runner_calls"] == 2
+            and fast_failure_resume["concurrent"]["retry_source"][
+                "exists_after_failure"
+            ]
+            and fast_failure_resume["concurrent"]["queue"] == 0
+            and fast_failure_resume["concurrent"]["activity"]
+            == {"queued": 0, "active": 0}
+        )
+        checks["later_sequential_resume_after_failure_is_allowed"] = (
+            fast_failure_resume["after_drain"]["sequential"] is not None
+            and fast_failure_resume["after_drain"]["sequential"]["status"] == 200
+            and fast_failure_resume["after_drain"]["sequential"]["body"][
+                "resume_attempts"
+            ]
+            == 4
+            and fast_failure_resume["after_drain"]["target"]["status"]
+            == "waiting_review"
+            and fast_failure_resume["after_drain"]["target"]["resume_attempts"] == 4
+            and fast_failure_resume["after_drain"]["runner_calls"] == 3
+            and fast_failure_resume["after_drain"]["retry_started"]
+            and fast_failure_resume["after_drain"]["drained"]
+            and fast_failure_resume["after_drain"]["queue"] == 0
+            and fast_failure_resume["after_drain"]["activity"]
+            == {"queued": 0, "active": 0}
+        )
+        checks["cancelled_resume_claim_releases_exactly_once"] = (
+            fast_failure_resume["after_drain"]["cancelled_claim_released"]
+            and fast_failure_resume["after_drain"]["later_claim_acquired"]
+        )
+        emit(states, "fast_failure_concurrent_resume", **fast_failure_resume)
 
         render_failure = render_save_failure_state(
             root / "render-save-failure", root / "render-save-failure-state" / "marker"
@@ -1616,7 +1841,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 43
+    verdict = all(checks.values()) and len(checks) == 46
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (

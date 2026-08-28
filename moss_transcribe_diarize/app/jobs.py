@@ -8,9 +8,10 @@ import shutil
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Iterator
 
 from moss_transcribe_diarize.subtitle import (
     SubtitleSegment,
@@ -264,6 +265,8 @@ class JobManager:
         self._jobs: dict[str, JobRecord] = {}
         self._queue: queue.Queue[str] = queue.Queue()
         self._resume_lock = threading.Lock()
+        self._resume_claim_lock = threading.Lock()
+        self._resume_claims: set[str] = set()
         self._render_lock = threading.Lock()
         self._progress_save_times: dict[str, float] = {}
         startup_resume_ids = self._load_existing_jobs()
@@ -407,6 +410,20 @@ class JobManager:
             decoding=source.decoding if decoding is None else decoding,
             temperature=source.temperature if temperature is None else temperature,
         )
+
+    @contextmanager
+    def claim_resume(self, job_id: str) -> Iterator[None]:
+        """Own one overlapping HTTP resume request without serializing later retries."""
+
+        with self._resume_claim_lock:
+            if job_id in self._resume_claims:
+                raise RuntimeError(f"Job {job_id} already has a resume request in progress.")
+            self._resume_claims.add(job_id)
+        try:
+            yield
+        finally:
+            with self._resume_claim_lock:
+                self._resume_claims.remove(job_id)
 
     def resume_job(self, job_id: str) -> JobRecord:
         # One transition owns durable state, registry publication, and enqueue. Without

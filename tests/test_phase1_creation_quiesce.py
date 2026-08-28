@@ -107,6 +107,23 @@ class _ConcurrentResumeRunner(CheckpointRecordingRunner):
         return NoopRunner.transcribe(self, audio_path, **kwargs)
 
 
+class _FastFailureResumeRunner(CheckpointRecordingRunner):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+        self.first_resume_failed = threading.Event()
+
+    def transcribe(self, audio_path, **kwargs):
+        self.calls += 1
+        callback = kwargs.get("status_callback")
+        if callback is not None:
+            callback("transcribing", 0.5, 1)
+        if self.calls == 2:
+            self.first_resume_failed.set()
+            raise RuntimeError("test immediate resume execution failure")
+        return NoopRunner.transcribe(self, audio_path, **kwargs)
+
+
 def _assert_quiesced(response) -> None:
     assert response.status_code == 503
     assert response.json()["failure"] == {
@@ -876,6 +893,15 @@ def test_concurrent_resume_registers_one_execution_and_conflicts_the_other(
         original_save(candidate)
 
     monkeypatch.setattr(app.state.manager, "_save_job", hold_first_candidate)
+    admission_counts: list[int] = []
+    original_enter = gate.enter
+
+    def observed_enter():
+        admission = original_enter()
+        admission_counts.append(gate.snapshot().entrants)
+        return admission
+
+    monkeypatch.setattr(gate, "enter", observed_enter)
     responses: list[object] = []
 
     def resume(client: TestClient) -> None:
@@ -887,10 +913,10 @@ def test_concurrent_resume_registers_one_execution_and_conflicts_the_other(
     assert first_save_entered.wait(timeout=5)
     second_thread.start()
     for _ in range(100):
-        if gate.snapshot().entrants == 2:
+        if admission_counts and max(admission_counts) == 2:
             break
         time.sleep(0.01)
-    assert gate.snapshot().entrants == 2
+    assert max(admission_counts) == 2
     release_first_save.set()
     first_thread.join(timeout=5)
     second_thread.join(timeout=5)
@@ -898,7 +924,9 @@ def test_concurrent_resume_registers_one_execution_and_conflicts_the_other(
     assert not second_thread.is_alive()
     assert sorted(response.status_code for response in responses) == [200, 409]
     conflict = next(response for response in responses if response.status_code == 409)
-    assert conflict.json()["detail"] == f"Job {job_id} already has an active execution."
+    assert conflict.json()["detail"] == (
+        f"Job {job_id} already has a resume request in progress."
+    )
     assert save_observations == [{"registry_status": "failed"}]
     assert gate.snapshot().entrants == 0
     assert app.state.manager._queue.qsize() == 1
@@ -913,6 +941,123 @@ def test_concurrent_resume_registers_one_execution_and_conflicts_the_other(
     assert runner.calls == 3
     assert app.state.manager._queue.qsize() == 0
     assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+
+def test_fast_failure_overlapping_resume_keeps_one_request_owner_then_allows_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = Phase1CreationGate(tmp_path / "state" / "phase1-creation-quiesced")
+    runner = _FastFailureResumeRunner()
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=runner,
+        phase1_creation_gate=gate,
+    )
+    setup = TestClient(app)
+    first = TestClient(app)
+    second = TestClient(app)
+    created = setup.post(
+        "/api/jobs", files={"file": ("resume-target.wav", b"target", "audio/wav")}
+    )
+    job_id = created.json()["id"]
+    _wait_for_job(setup, job_id)
+    target = app.state.manager.get_job(job_id)
+    target.status = "failed"
+    target.progress = 0.5
+    target.error = "prior failure"
+    target.resume_attempts = 2
+    target.checkpoint_state = "partial"
+    app.state.manager._save_job(target)
+
+    admission_counts: list[int] = []
+    original_enter = gate.enter
+
+    def observed_enter():
+        admission = original_enter()
+        admission_counts.append(gate.snapshot().entrants)
+        return admission
+
+    monkeypatch.setattr(gate, "enter", observed_enter)
+    original_put = app.state.manager._queue.put
+    first_registration_held = threading.Event()
+    release_first_registration = threading.Event()
+    first_target_put = True
+
+    def hold_first_registration(candidate_id: str) -> None:
+        nonlocal first_target_put
+        original_put(candidate_id)
+        if candidate_id == job_id and first_target_put:
+            first_target_put = False
+            assert runner.first_resume_failed.wait(timeout=5)
+            for _ in range(200):
+                if app.state.manager.get_job(job_id).status == "failed":
+                    break
+                time.sleep(0.01)
+            assert app.state.manager.get_job(job_id).status == "failed"
+            first_registration_held.set()
+            assert release_first_registration.wait(timeout=10)
+
+    monkeypatch.setattr(app.state.manager._queue, "put", hold_first_registration)
+    responses: list[tuple[str, object]] = []
+
+    def resume(client: TestClient, label: str) -> None:
+        responses.append((label, client.post(f"/api/jobs/{job_id}/resume")))
+
+    first_thread = threading.Thread(target=resume, args=(first, "first"), daemon=True)
+    second_thread = threading.Thread(target=resume, args=(second, "second"), daemon=True)
+    first_thread.start()
+    assert first_registration_held.wait(timeout=5)
+    second_thread.start()
+    for _ in range(200):
+        if any(label == "second" for label, _ in responses):
+            break
+        time.sleep(0.01)
+    assert any(label == "second" for label, _ in responses)
+    assert max(admission_counts) == 2
+    release_first_registration.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+    assert not first_thread.is_alive()
+    assert not second_thread.is_alive()
+
+    by_label = {label: response for label, response in responses}
+    assert by_label["first"].status_code == 200
+    assert by_label["second"].status_code == 409
+    assert by_label["second"].json()["detail"] == (
+        f"Job {job_id} already has a resume request in progress."
+    )
+    assert app.state.manager.get_job(job_id).status == "failed"
+    assert app.state.manager.get_job(job_id).resume_attempts == 3
+    assert runner.calls == 2
+    assert gate.snapshot().entrants == 0
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+    monkeypatch.setattr(app.state.manager._queue, "put", original_put)
+    retried = setup.post(f"/api/jobs/{job_id}/resume")
+    assert retried.status_code == 200
+    assert retried.json()["resume_attempts"] == 4
+    terminal = _wait_for_job(setup, job_id)
+    assert terminal["status"] == "waiting_review"
+    assert terminal["resume_attempts"] == 4
+    assert runner.calls == 3
+    assert app.state.manager.activity_counts() == {"queued": 0, "active": 0}
+
+
+def test_cancelled_resume_claim_releases_for_later_request(tmp_path: Path) -> None:
+    app = server.create_app(
+        model_path="fake-model",
+        runs_dir=tmp_path / "runs",
+        file_mode_runner=CheckpointRecordingRunner(),
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        with app.state.manager.claim_resume("cancelled-claim"):
+            raise asyncio.CancelledError()
+
+    with app.state.manager.claim_resume("cancelled-claim"):
+        pass
 
 
 def test_render_save_failure_restores_old_truth_before_thread_registration(

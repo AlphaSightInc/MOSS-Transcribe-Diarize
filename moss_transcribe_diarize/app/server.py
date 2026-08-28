@@ -401,7 +401,8 @@ def create_app(
     def resume_job(job_id: str):
         with phase1_creation_admission():
             try:
-                return manager.resume_job(job_id).to_dict()
+                with manager.claim_resume(job_id):
+                    return manager.resume_job(job_id).to_dict()
             except KeyError as exc:
                 raise HTTPException(status_code=404, detail=str(exc)) from exc
             except FileNotFoundError as exc:
