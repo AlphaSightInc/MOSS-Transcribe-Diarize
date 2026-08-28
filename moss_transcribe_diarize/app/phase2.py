@@ -1942,13 +1942,23 @@ def create_phase2_app(
         https_only=True,
     )
     frontend_dir = Path(__file__).resolve().parent / "frontend_assets"
-    live_frontend_available = bool(
-        phase2_live is not None
-        and all(
-            (frontend_dir / relative).is_file()
-            for relative in ("app.js", "styles.css", "worklets/lane-framer.js")
+    required_live_assets = ("app.js", "styles.css", "worklets/lane-framer.js")
+    invalid_live_assets = (
+        tuple(
+            relative
+            for relative in required_live_assets
+            if not (frontend_dir / relative).is_file()
+            or (frontend_dir / relative).stat().st_size == 0
         )
+        if phase2_live is not None
+        else ()
     )
+    if invalid_live_assets:
+        raise RuntimeError(
+            "Live Account frontend assets are missing or empty: "
+            + ", ".join(invalid_live_assets)
+        )
+    live_frontend_available = phase2_live is not None
     static_assets = frozenset(
         {
             "app.js",

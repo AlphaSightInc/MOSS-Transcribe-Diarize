@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 import sys
-import textwrap
 import zipfile
 from pathlib import Path
 
@@ -12,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OPS = ROOT / "ops"
 FRONTEND_ASSETS = ROOT / "moss_transcribe_diarize" / "app" / "frontend_assets"
+INSTALLED_FRONTEND_PROBE = Path(__file__).with_name("_installed_frontend_probe.py")
 
 
 def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
@@ -158,35 +158,9 @@ def test_account_frontend_has_one_generated_location_and_is_installed_in_wheel(
     probe = subprocess.run(
         [
             sys.executable,
-            "-c",
-            textwrap.dedent(
-                f"""
-                from pathlib import Path
-                from fastapi.testclient import TestClient
-                import moss_transcribe_diarize.app.phase2 as phase2
-
-                expected_root = Path({str(target)!r}).resolve()
-                assert Path(phase2.__file__).resolve().is_relative_to(expected_root)
-
-                class NeverOidc:
-                    async def begin(self, request):
-                        raise AssertionError("OIDC must not run")
-                    async def complete(self, request):
-                        raise AssertionError("OIDC must not run")
-
-                app = phase2.create_phase2_app(
-                    database_path=Path({str(tmp_path / 'installed.sqlite3')!r}),
-                    oidc=NeverOidc(),
-                    oauth_cookie_secret="wheel-smoke-cookie-secret",
-                )
-                with TestClient(app, base_url="https://moss.test") as client:
-                    bundle = client.get("/static/app.js")
-                    assert bundle.status_code == 200
-                    assert "Live" in bundle.text
-                    assert "Microphone" in bundle.text
-                    assert client.get("/static/worklets/lane-framer.js").status_code == 200
-                """
-            ),
+            str(INSTALLED_FRONTEND_PROBE),
+            str(target),
+            str(tmp_path / "installed.sqlite3"),
         ],
         cwd=tmp_path,
         env={**os.environ, "PYTHONPATH": str(target)},
