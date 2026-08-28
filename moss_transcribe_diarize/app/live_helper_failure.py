@@ -165,6 +165,7 @@ class LiveHelperFailureCoordinator:
         on_terminal: Callable[[LiveHelperTerminalRecord], None] | None = None,
     ) -> None:
         self._lease_ns = _positive_lease_ns(live_helper_lease_seconds)
+        self._monotonic_ns = monotonic_ns or time.monotonic_ns
         self._timer = timer or AsyncioLiveHelperTimer(monotonic_ns=monotonic_ns)
         self._on_expire = on_expire or (lambda _session_id, _sequence: None)
         self._v2_sessions = v2_sessions
@@ -177,6 +178,41 @@ class LiveHelperFailureCoordinator:
         self._sessions: dict[str, _LeaseState] = {}
         self._terminal_sessions: set[str] = set()
         self._lock = threading.RLock()
+
+    def arm(self, session_id: str) -> LiveHelperLeaseSnapshot | None:
+        """Start the same abandonment lease before the browser's first heartbeat arrives."""
+
+        _session_id(session_id)
+        with self._lock:
+            if session_id in self._terminal_sessions:
+                return None
+            current = self._sessions.get(session_id)
+            if current is not None:
+                return LiveHelperLeaseSnapshot(
+                    session_id=session_id,
+                    sequence=current.sequence,
+                    generation=current.generation,
+                    deadline_monotonic_ns=current.deadline_monotonic_ns,
+                )
+            sequence = -1
+            generation = 1
+            deadline = self._monotonic_ns() + self._lease_ns
+            timer = self._timer.schedule(
+                deadline,
+                lambda: self._expire_if_current(session_id, sequence, generation),
+            )
+            self._sessions[session_id] = _LeaseState(
+                sequence=sequence,
+                generation=generation,
+                deadline_monotonic_ns=deadline,
+                timer=timer,
+            )
+            return LiveHelperLeaseSnapshot(
+                session_id=session_id,
+                sequence=sequence,
+                generation=generation,
+                deadline_monotonic_ns=deadline,
+            )
 
     async def observe(
         self,

@@ -6,6 +6,7 @@ import json
 import sqlite3
 import threading
 import time
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceConfigHashes,
     LiveServiceDescriptor,
     LiveServiceRuntime,
+    _ManualTerminalScheduler,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_session import (
@@ -33,6 +35,7 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
 )
+from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
 from moss_transcribe_diarize.app.phase2 import (
     GoogleIdentity,
     Phase2Store,
@@ -80,6 +83,31 @@ class Decoder:
         return InferenceTranscript(f"[0][S01]owner live words[{seconds:g}]")
 
 
+class WholeMeetingStub:
+    window_seconds = 150
+    stride_seconds = 120
+
+    def __init__(self, text: str):
+        self.text = text
+
+    def transcribe(self, audio_path, **kwargs):
+        del kwargs
+        with wave.open(str(audio_path), "rb") as handle:
+            handle.readframes(handle.getnframes())
+        return type(
+            "Result",
+            (),
+            {
+                "text": self.text,
+                "generated_tokens": 3,
+                "prompt_len": 0,
+                "window_count": 1,
+                "completed_windows": 1,
+                "possibly_truncated": False,
+            },
+        )()
+
+
 @dataclass
 class Identity:
     def prepare(
@@ -107,7 +135,12 @@ class Identity:
         )
 
 
-def make_runtime(*, speech: tuple[bool, ...] = (True, False)) -> LiveServiceRuntime:
+def make_runtime(
+    *,
+    speech: tuple[bool, ...] = (True, False),
+    terminal_text: str | None = None,
+    terminal_scheduler: _ManualTerminalScheduler | None = None,
+) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
         source_revision="a" * 40,
         provider_name="phase2-live-test",
@@ -125,6 +158,7 @@ def make_runtime(*, speech: tuple[bool, ...] = (True, False)) -> LiveServiceRunt
             max_identity_speakers=2,
             max_events=128,
             hard_cap_samples=4_000,
+            max_tape_bytes=None if terminal_text is None else 32_000,
         ),
         frame_samples=2,
     )
@@ -139,7 +173,14 @@ def make_runtime(*, speech: tuple[bool, ...] = (True, False)) -> LiveServiceRunt
         ),
         speech_provider_factory=lambda: SpeechProvider(speech),
         decoder_factory=Decoder,
+        rolling_decoder_factory=None if terminal_text is None else Decoder,
         identity_preparer_factory=Identity,
+        terminal_finalizer=(
+            None
+            if terminal_text is None
+            else TerminalTranscriptFinalizer(runner=WholeMeetingStub(terminal_text))
+        ),
+        _terminal_scheduler=terminal_scheduler,
     )
 
 
@@ -166,12 +207,18 @@ def make_app(
     *,
     lease_seconds: float = 30.0,
     speech: tuple[bool, ...] = (True, False),
+    terminal_text: str | None = None,
+    terminal_scheduler: _ManualTerminalScheduler | None = None,
 ):
     return create_phase2_app(
         database_path=database,
         oidc=NeverOidc(),
         oauth_cookie_secret="test-cookie-secret",
-        live_runtime_factory=lambda: make_runtime(speech=speech),
+        live_runtime_factory=lambda: make_runtime(
+            speech=speech,
+            terminal_text=terminal_text,
+            terminal_scheduler=terminal_scheduler,
+        ),
         live_helper_lease_seconds=lease_seconds,
     )
 
@@ -256,7 +303,12 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
 ):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
-    app = make_app(database)
+    terminal_scheduler = _ManualTerminalScheduler()
+    app = make_app(
+        database,
+        terminal_text="[0][S01]terminal owner words[0.000375]",
+        terminal_scheduler=terminal_scheduler,
+    )
 
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, None)
@@ -323,17 +375,153 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
             json={"deadline": 2.0},
         )
         assert stopped.status_code == 200
+        # Stop-tail words are durable and readable while the later finalizer is still running,
+        # but the Meeting row itself remains active until the final tuple commits.
+        assert stopped.json()["raw_terminal_status"] == "closed"
         assert stopped.json()["snapshot"]["session"]["status"] == "closed"
+        assert stopped.json()["snapshot"]["session"]["finalization_status"] == "running"
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "active"
+        assert meeting["transcript_version"] == 2
+        assert terminal_scheduler.pending == 1
+
+        assert terminal_scheduler.run_one() is True
+        terminal = wait_snapshot(
+            client,
+            meeting_id,
+            lambda body: body["snapshot"]["session"]["finalization_status"] == "final",
+        )
+        assert terminal["snapshot"]["session"]["status"] == "closed"
+        assert terminal["snapshot"]["session"]["effective_transcript"][0]["text"] == (
+            "terminal owner words"
+        )
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
-        # Stop drains the mixer's intentionally held tail, producing one final accepted revision.
-        assert meeting["transcript_version"] == 2
+        assert meeting["transcript_version"] == 3
         assert meeting["transcript"]["segments"][0]["speaker"] == "S01"
-        assert meeting["transcript"]["segments"][0]["text"] == "owner live words"
+        assert meeting["transcript"]["segments"][0]["text"] == "terminal owner words"
         assert client.post(
             f"/api/live/sessions/{meeting_id}/frames",
             json=v2_frame(3, "system"),
         ).status_code == 409
+
+
+def test_shutdown_unbinds_late_terminal_finalizer_after_durable_interruption(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    terminal_scheduler = _ManualTerminalScheduler()
+    app = make_app(
+        database,
+        terminal_text="[0][S01]late terminal words[0.000375]",
+        terminal_scheduler=terminal_scheduler,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(
+            client,
+            meeting_id,
+            lambda body: body["meeting_transcript_version"] == 1,
+        )
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        assert stopped.json()["snapshot"]["session"]["finalization_status"] == "running"
+        assert terminal_scheduler.pending == 1
+        binding = app.state.phase2_live._bindings[meeting_id]
+
+    durable_version_after_shutdown = binding.durable_version
+    public_after_shutdown = binding.public_snapshot
+    assert public_after_shutdown is not None
+    assert public_after_shutdown.session.status == "closed"
+    assert public_after_shutdown.terminal_failure is not None
+
+    # The runtime's last listener still owns tape cleanup, but no longer owns a web-loop sink.
+    assert terminal_scheduler.run_one() is True
+    assert binding.durable_version == durable_version_after_shutdown
+    assert binding.public_snapshot == public_after_shutdown
+    assert "session_tape_released" in {
+        event.kind for event in app.state.phase2_live.runtime.events(meeting_id)
+    }
+
+    connection = sqlite3.connect(database)
+    try:
+        durable = connection.execute(
+            """
+            SELECT m.status, t.version, t.document_json
+            FROM meetings m
+            LEFT JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            WHERE m.meeting_id = ?
+            """,
+            (meeting_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    assert durable is not None
+    assert durable[0] == "interrupted"
+    assert durable[1] == durable_version_after_shutdown
+    assert "late terminal words" not in (durable[2] or "")
+
+
+def test_stop_tail_persistence_failure_fences_pending_finalizer_on_last_durable_prefix(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    terminal_scheduler = _ManualTerminalScheduler()
+    app = make_app(
+        database,
+        terminal_text="[0][S01]undurable terminal words[0.000375]",
+        terminal_scheduler=terminal_scheduler,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        durable_prefix = wait_snapshot(
+            client,
+            meeting_id,
+            lambda body: body["meeting_transcript_version"] == 1,
+        )
+        binding = app.state.phase2_live._bindings[meeting_id]
+
+        async def fail_stop_tail_commit(document, *, terminal=False):
+            del document, terminal
+            raise sqlite3.OperationalError("injected Stop-tail persistence failure")
+
+        binding.handle.commit_transcript = fail_stop_tail_commit
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        failed = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        assert failed["persistence_failure"] == "transcript_persistence_failed"
+        assert failed["snapshot"]["session"]["status"] == "closed"
+        assert failed["snapshot"]["session"]["finalization_status"] == "running"
+        assert failed["snapshot"]["terminal_failure"] is not None
+        assert failed["snapshot"]["session"]["effective_transcript"] == (
+            durable_prefix["snapshot"]["session"]["effective_transcript"]
+        )
+        assert binding.capture_fenced is True
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["transcript_version"] == 1
+        assert terminal_scheduler.pending == 1
+
+        public_before_late_finalizer = binding.public_snapshot
+        assert terminal_scheduler.run_one() is True
+        time.sleep(0.01)
+        assert binding.public_snapshot == public_before_late_finalizer
+        meeting_after = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting_after == meeting
+        assert "undurable terminal words" not in json.dumps(meeting_after)
 
 
 def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(
@@ -370,6 +558,32 @@ def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_
         assert client.post(
             f"/api/live/sessions/{meeting_id}/frames",
             json=v2_frame(3, "system"),
+        ).status_code == 409
+
+
+def test_create_arms_abandonment_lease_before_first_heartbeat(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, lease_seconds=0.02)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        created = client.post("/api/live/sessions")
+        assert created.status_code == 201
+        meeting_id = created.json()["id"]
+
+        terminal = wait_snapshot(
+            client,
+            meeting_id,
+            lambda body: body["snapshot"]["session"]["status"] in {"failed", "aborted"},
+        )
+        assert terminal["meeting_transcript_version"] == 0
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["status"] == "interrupted"
+        assert meeting["transcript"] is None
+        assert client.post(
+            f"/api/live/sessions/{meeting_id}/frames",
+            json=v2_frame(0, "system"),
         ).status_code == 409
 
 

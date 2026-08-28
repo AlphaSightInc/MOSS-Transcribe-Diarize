@@ -7,7 +7,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -872,7 +872,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
 def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer(
     monkeypatch,
 ):
-    from moss_transcribe_diarize.app import live_provider_bundle, web_cli
+    from moss_transcribe_diarize.app import live_provider_bundle
 
     seen: dict[str, object] = {}
     config = object()
@@ -889,18 +889,19 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
         def __init__(self, args):
             seen["live_args"] = args
 
+    web_cli = ModuleType("moss_transcribe_diarize.app.web_cli")
+    web_cli._LiveCliRunnerProxy = LiveRunner
+    web_cli._live_terminal_finalizer = (
+        lambda args, *, file_runner: ("terminal", args, file_runner)
+    )
+    monkeypatch.setitem(sys.modules, "moss_transcribe_diarize.app.web_cli", web_cli)
+
     def build(received_config, canonical_runner, **kwargs):
         seen["bundle"] = (received_config, canonical_runner, kwargs)
         return runtime_factory
 
     monkeypatch.setattr(live_provider_bundle, "LiveProviderBundleConfig", Config)
     monkeypatch.setattr(live_provider_bundle, "build_live_runtime_factory", build)
-    monkeypatch.setattr(web_cli, "_LiveCliRunnerProxy", LiveRunner)
-    monkeypatch.setattr(
-        web_cli,
-        "_live_terminal_finalizer",
-        lambda args, *, file_runner: ("terminal", args, file_runner),
-    )
     args = SimpleNamespace(
         live_provider_manifest="/etc/moss/live-provider.json",
         live_helper_lease_seconds=30.0,

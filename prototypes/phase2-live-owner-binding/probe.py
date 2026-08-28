@@ -129,9 +129,12 @@ class PublicationBridgeProbe:
         self._raw_changed = asyncio.Condition()
         self._public_changed = asyncio.Condition()
         self._fenced = asyncio.Event()
+        self._accepting = True
         self._worker = asyncio.create_task(self._run())
 
     def observe_from_runtime_thread(self, publication: RawPublication) -> None:
+        if not self._accepting:
+            return
         self._loop.call_soon_threadsafe(self._accept_raw, publication)
 
     def _accept_raw(self, publication: RawPublication) -> None:
@@ -156,6 +159,7 @@ class PublicationBridgeProbe:
         await self._fenced.wait()
 
     async def close(self) -> None:
+        self._accepting = False
         self._queue.put_nowait(None)
         await self._worker
 
@@ -186,6 +190,75 @@ class PublicationBridgeProbe:
                 ],
             }
             await self._notify(self._public_changed)
+
+
+@dataclass(frozen=True)
+class FinalizingPublication:
+    raw_version: int
+    session_status: str
+    finalization_status: str
+    document: dict[str, object]
+
+
+class ControlledAtomicTerminal:
+    """Hold the final document/status transaction so pre-commit visibility is observable."""
+
+    def __init__(self, handle: Any) -> None:
+        self._handle = handle
+        self.started = asyncio.Event()
+        self.released = asyncio.Event()
+
+    async def __call__(self, publication: FinalizingPublication) -> int:
+        self.started.set()
+        await self.released.wait()
+        return await self._handle.finish_with_transcript(publication.document, "completed")
+
+
+class TerminalFinalizerGateProbe:
+    """Publish durable stop-tail state, then only the finalizer's atomic terminal tuple."""
+
+    def __init__(
+        self,
+        binding: LiveBinding,
+        commit_terminal: ControlledAtomicTerminal,
+    ) -> None:
+        self.binding = binding
+        self._commit_terminal = commit_terminal
+
+    async def accept(self, publication: FinalizingPublication) -> None:
+        self.binding.raw_version = publication.raw_version
+        if publication.session_status == "closed" and publication.finalization_status == "not_started":
+            return
+        if publication.session_status == "closed" and publication.finalization_status == "running":
+            durable_version = await self.binding.handle.commit_transcript(publication.document)
+            self.binding.durable_version = durable_version
+            self.binding.public_version = publication.raw_version
+            self.binding.snapshot = {
+                "status": "closed",
+                "finalization_status": "running",
+                "transcript_version": durable_version,
+                "segments": [
+                    segment["text"]
+                    for segment in publication.document.get("segments", [])
+                    if isinstance(segment, dict) and isinstance(segment.get("text"), str)
+                ],
+            }
+            return
+        assert publication.session_status == "closed"
+        assert publication.finalization_status in {"final", "failed", "unavailable"}
+        durable_version = await self._commit_terminal(publication)
+        self.binding.durable_version = durable_version
+        self.binding.public_version = publication.raw_version
+        self.binding.status = "completed"
+        self.binding.snapshot = {
+            "status": "completed",
+            "transcript_version": durable_version,
+            "segments": [
+                segment["text"]
+                for segment in publication.document.get("segments", [])
+                if isinstance(segment, dict) and isinstance(segment.get("text"), str)
+            ],
+        }
 
 
 class SimulatedProcessLoss(RuntimeError):
@@ -427,6 +500,124 @@ async def run() -> None:
                 )
             )
 
+            finalizer_handle = await store.workspace(account_a).create_meeting("live")
+            rolling_document = {
+                "segments": [
+                    {
+                        "id": "seg_0001",
+                        "start": 0.0,
+                        "end": 1.0,
+                        "speaker": "S01",
+                        "text": "rolling words",
+                    }
+                ]
+            }
+            await finalizer_handle.commit_transcript(rolling_document)
+            finalizer_binding = LiveBinding(
+                owner_key=(account_a.account_id, account_a.authority_generation),
+                origin_session=session_a,
+                handle=finalizer_handle,
+                snapshot={
+                    "status": "active",
+                    "transcript_version": 1,
+                    "segments": ["rolling words"],
+                },
+                durable_version=1,
+                public_version=1,
+                raw_version=1,
+            )
+            controlled_terminal = ControlledAtomicTerminal(finalizer_handle)
+            finalizer_gate = TerminalFinalizerGateProbe(
+                finalizer_binding,
+                controlled_terminal,
+            )
+            await finalizer_gate.accept(
+                FinalizingPublication(2, "closed", "not_started", rolling_document)
+            )
+            stop_tail_document = {
+                "segments": [
+                    {
+                        "id": "seg_0001",
+                        "start": 0.0,
+                        "end": 1.5,
+                        "speaker": "S01",
+                        "text": "rolling words plus stop tail",
+                    }
+                ]
+            }
+            await finalizer_gate.accept(
+                FinalizingPublication(3, "closed", "running", stop_tail_document)
+            )
+            during = await finalizer_handle.snapshot()
+            assert during.status == "active"
+            assert during.transcript_version == 2
+            assert finalizer_binding.public_version == 3
+            assert finalizer_binding.snapshot["status"] == "closed"
+            assert finalizer_binding.snapshot["finalization_status"] == "running"
+            assert finalizer_binding.snapshot["segments"] == ["rolling words plus stop tail"]
+            final_document = {
+                "segments": [
+                    {
+                        "id": "seg_0001",
+                        "start": 0.0,
+                        "end": 2.0,
+                        "speaker": "S01",
+                        "text": "terminal finalizer words",
+                    }
+                ]
+            }
+            terminal_task = asyncio.create_task(
+                finalizer_gate.accept(
+                    FinalizingPublication(4, "closed", "final", final_document)
+                )
+            )
+            await controlled_terminal.started.wait()
+            held = await finalizer_handle.snapshot()
+            assert held.status == "active"
+            assert held.transcript_version == 2
+            assert finalizer_binding.public_version == 3
+            controlled_terminal.released.set()
+            await terminal_task
+            finalized = await finalizer_handle.snapshot()
+            assert finalized.status == "completed"
+            assert finalized.transcript_version == 3
+            assert finalized.transcript == final_document
+            assert finalizer_binding.public_version == 4
+            assert finalizer_binding.snapshot["segments"] == ["terminal finalizer words"]
+            print(
+                json.dumps(
+                    {
+                        "action": "terminal_finalizer_publication_gate",
+                        "closed_not_started": {
+                            "durable_status": during.status,
+                            "public_version": 1,
+                            "raw_version": 2,
+                        },
+                        "closed_running": {
+                            "durable_status": during.status,
+                            "durable_version": during.transcript_version,
+                            "public_version": 3,
+                            "raw_version": 3,
+                            "segments": ["rolling words plus stop tail"],
+                        },
+                        "atomic_commit_held": {
+                            "durable_status": held.status,
+                            "durable_version": held.transcript_version,
+                            "public_version": 3,
+                            "raw_version": 4,
+                        },
+                        "terminal_published": {
+                            "durable_status": finalized.status,
+                            "durable_version": finalized.transcript_version,
+                            "public_version": finalizer_binding.public_version,
+                            "raw_version": finalizer_binding.raw_version,
+                            "segments": finalizer_binding.snapshot["segments"],
+                        },
+                    },
+                    sort_keys=True,
+                )
+            )
+
             handle = await store.workspace(account_a).create_meeting("live")
             registry = AccountPartitionedLiveRegistry()
             binding = registry.bind(account_a, session_a, handle)
@@ -638,6 +829,45 @@ async def run() -> None:
             assert binding.public_event_high_water == 11
             assert controlled_commit.order == [2, 3]
             await bridge.close()
+            late_raw_version = binding.raw_version
+            late_thread = threading.Thread(
+                target=bridge.observe_from_runtime_thread,
+                args=(
+                    RawPublication(
+                        revision_version=4,
+                        event_high_water=13,
+                        document={
+                            "segments": [
+                                {
+                                    "id": "seg_0001",
+                                    "start": 0.0,
+                                    "end": 4.0,
+                                    "speaker": "S01",
+                                    "text": "late finalizer after bridge shutdown",
+                                }
+                            ]
+                        },
+                    ),
+                ),
+            )
+            late_thread.start()
+            late_thread.join()
+            await asyncio.sleep(0)
+            assert binding.raw_version == late_raw_version
+            assert binding.durable_version == binding.public_version == 2
+            print(
+                json.dumps(
+                    {
+                        "action": "late_finalizer_after_bridge_shutdown",
+                        "observer_enabled": False,
+                        "raw_version": binding.raw_version,
+                        "durable_version": binding.durable_version,
+                        "public_version": binding.public_version,
+                        "late_publication_ignored": True,
+                    },
+                    sort_keys=True,
+                )
+            )
         finally:
             await store.close()
 
@@ -674,7 +904,7 @@ async def run() -> None:
             )
         )
         print(
-            "VERDICT: PASS — serialized bridge exposes only durable revisions; terminal doc/status are atomic; revoke fences queued work"
+            "VERDICT: PASS — serialized bridge exposes only durable revisions; finalizer completion gates atomic terminal publication; revoke and shutdown fence late work"
         )
 
 

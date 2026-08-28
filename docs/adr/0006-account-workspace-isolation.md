@@ -45,4 +45,20 @@ view token, pairing/device grant, or compatibility mode.
 - The signed-in workspace loads the existing two-lane Chrome capture client in Account-authority
   mode. It sends only the opaque Meeting ID plus the HttpOnly Sign-in cookie: no browser Account ID,
   shared bearer, view token, or durable capture grant is created. Reload retains observer reattach by
-  Meeting ID, while the lost heartbeat lease interrupts the original capture.
+  Meeting ID, while the server arms the existing helper lease at creation so a lost first heartbeat
+  or later heartbeat interrupts the original capture.
+- The serial URL probe in `prototypes/phase2-serial-url-acquisition/` accepts one transient source
+  acquisition as the only additional primitive. Direct HTTP(S) media enforces declared and streamed
+  2 GiB limits, a 30-second network-inactivity timeout, a 3,900-second total timeout, and five
+  redirects. Redirect responses are manually streamed and closed unread; every next Location is
+  revalidated as HTTP(S), avoiding HTTPX automatic redirect-body buffering. Known YouTube hosts use
+  pinned `yt-dlp[default]` with `--no-playlist` semantics and
+  explicit `bestaudio/best` stdout: Python enforces the strict byte ceiling while draining one
+  `input.media`. The downloader runs in its own process group. An explicitly retained cleanup task
+  absorbs repeated cancellation only until that group is quiescent, then removes partial output and
+  propagates cancellation; acquisition-owner completion therefore implies no live downloader or
+  orphaned cleanup task. Total deadlines use Python 3.10-compatible `asyncio.wait_for`. Direct HTML is
+  rejected. The acquired path enters the
+  same owner-carrying File task, while each item remains an independent Meeting and no batch
+  identity exists. yt-dlp's manifest `--max-filesize`, parent-only kill, anonymous shielded cleanup,
+  and automatic redirects were measured-rejected.

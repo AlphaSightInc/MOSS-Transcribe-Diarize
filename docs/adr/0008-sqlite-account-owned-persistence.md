@@ -43,3 +43,11 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
   increments its version, and changes Meeting status in one SQLite transaction. The probe injected
   process loss after both writes but before commit: rollback exposed the prior active/version/document
   tuple, while success exposed the terminal/final tuple; no mixed state was visible.
+- A configured terminal finalizer makes closed/`running` a nonterminal persistence state: any changed
+  stop-tail document commits normally and becomes public while the Meeting row remains active. Only
+  `final`, `failed`, or `unavailable` writes `completed`; a changed final document and that status use
+  the same transaction. The momentary closed/`not_started` event before a configured pass starts is
+  not published. A deployment with no finalizer retains the legacy closed/`not_started` completion.
+- Shutdown durably interrupts active bindings, then identity-unbinds the runtime publication sink
+  before closing workers and the event loop. A later terminal listener may still release its tape,
+  but cannot advance memory or SQLite.

@@ -120,10 +120,13 @@ class Phase2LiveMeetings:
         self.runtime = runtime
         self._bindings: dict[str, _LiveBinding] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._accepting_publications = False
+        self._publication_observer = self._observe_raw
 
     def start(self) -> None:
         self._loop = asyncio.get_running_loop()
-        self.runtime._bind_publication_observer(self._observe_raw)
+        self._accepting_publications = True
+        self.runtime._bind_publication_observer(self._publication_observer)
 
     async def shutdown(self) -> None:
         for meeting_id, binding in tuple(self._bindings.items()):
@@ -133,6 +136,10 @@ class Phase2LiveMeetings:
                     await self.sync_and_flush(meeting_id)
                 except Exception:
                     binding.capture_fenced = True
+        self.runtime._unbind_publication_observer(self._publication_observer)
+        self._accepting_publications = False
+        self._loop = None
+        for binding in self._bindings.values():
             binding.queue.put_nowait(None)
         workers = tuple(
             binding.worker for binding in self._bindings.values() if binding.worker is not None
@@ -248,9 +255,11 @@ class Phase2LiveMeetings:
         snapshot: LiveServiceSnapshot,
         events: tuple[LiveServiceEvent, ...],
     ) -> None:
+        if not self._accepting_publications:
+            return
         loop = self._loop
         if loop is None:
-            raise RuntimeError("Phase-2 Live publication bridge is not started.")
+            return
         loop.call_soon_threadsafe(self._accept_raw, meeting_id, snapshot, events)
 
     def _accept_raw(
@@ -259,6 +268,8 @@ class Phase2LiveMeetings:
         snapshot: LiveServiceSnapshot,
         events: tuple[LiveServiceEvent, ...],
     ) -> None:
+        if not self._accepting_publications:
+            return
         binding = self._bindings.get(meeting_id)
         if binding is None:
             return
@@ -275,9 +286,20 @@ class Phase2LiveMeetings:
                 return
             if binding.capture_fenced:
                 continue
+            if _terminal_finalization_not_started(
+                publication.snapshot,
+                finalizer_configured=self.runtime._terminal_finalizer is not None,
+            ):
+                # `session_closed` is emitted immediately before the configured finalizer is
+                # marked running. This one raw intermediate is not a durable/public ending;
+                # the next queued publication carries running or a terminal refusal.
+                continue
             document = _transcript_document(publication.snapshot)
             try:
-                terminal = _durable_terminal_status(publication.snapshot)
+                terminal = _durable_terminal_status(
+                    publication.snapshot,
+                    finalizer_configured=self.runtime._terminal_finalizer is not None,
+                )
                 document_changed = document != binding.durable_document
                 if terminal is not None and not binding.terminal_persisted:
                     if document_changed:
@@ -435,6 +457,7 @@ def attach_phase2_live_routes(
             v2_sessions.create(binding.handle.meeting_id)
             v2_mixers.create(binding.handle.meeting_id)
             tapes.create(binding.handle.meeting_id)
+            helper_failures.arm(binding.handle.meeting_id)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         snapshot = binding.public_snapshot
@@ -759,15 +782,39 @@ def _transcript_document(snapshot: LiveServiceSnapshot) -> dict[str, object]:
     }
 
 
-def _durable_terminal_status(snapshot: LiveServiceSnapshot) -> str | None:
+def _durable_terminal_status(
+    snapshot: LiveServiceSnapshot,
+    *,
+    finalizer_configured: bool,
+) -> str | None:
     if snapshot.terminal_failure is not None or snapshot.session.status in {"aborted", "failed"}:
         return "interrupted"
+    if snapshot.session.status == "closed" and snapshot.session.finalization_status in {
+        "final",
+        "failed",
+        "unavailable",
+    }:
+        return "completed"
     if (
         snapshot.session.status == "closed"
-        and snapshot.session.finalization_status != "running"
+        and snapshot.session.finalization_status == "not_started"
+        and not finalizer_configured
     ):
         return "completed"
     return None
+
+
+def _terminal_finalization_not_started(
+    snapshot: LiveServiceSnapshot,
+    *,
+    finalizer_configured: bool,
+) -> bool:
+    return (
+        finalizer_configured
+        and snapshot.terminal_failure is None
+        and snapshot.session.status == "closed"
+        and snapshot.session.finalization_status == "not_started"
+    )
 
 
 def _meeting_transcript_version(binding: _LiveBinding) -> int:

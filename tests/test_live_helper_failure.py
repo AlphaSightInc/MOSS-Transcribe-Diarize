@@ -81,6 +81,35 @@ def test_live_helper_lease_requires_positive_explicit_value():
             LiveHelperFailureCoordinator(live_helper_lease_seconds=value)
 
 
+def test_creation_lease_is_replaced_by_first_accepted_heartbeat():
+    expired: list[tuple[str, int]] = []
+    timer = FakeTimer()
+    coordinator = LiveHelperFailureCoordinator(
+        live_helper_lease_seconds=0.4,
+        timer=timer,
+        monotonic_ns=lambda: 100,
+        on_expire=lambda session_id, sequence: expired.append((session_id, sequence)),
+        on_terminal=lambda _record: None,
+    )
+    presence = HelperPresenceRegistry(monotonic_ns=lambda: 200)
+
+    initial = coordinator.arm("session-a")
+    first = observe(
+        coordinator,
+        "session-a",
+        presence.observe("session-a", HelperHeartbeat.from_dict(heartbeat_payload())),
+    )
+
+    assert initial is not None and first is not None
+    assert (initial.sequence, initial.generation) == (-1, 1)
+    assert (first.sequence, first.generation) == (0, 2)
+    assert timer.scheduled[0][1].cancelled is True
+    timer.scheduled[0][1].fire()
+    assert expired == []
+    timer.scheduled[1][1].fire()
+    assert expired == [("session-a", 0)]
+
+
 def test_muted_alive_duplicate_heartbeat_does_not_renew_lease():
     presence = HelperPresenceRegistry(monotonic_ns=iter((100, 999)).__next__)
     timer = FakeTimer()

@@ -13,7 +13,16 @@ const IDLE_POLL_DELAY_MS = 2_000;
 const RETRY_DELAYS_MS = [500, 1_000, 2_000, 5_000] as const;
 const POLL_REQUEST_TIMEOUT_MS = 10_000;
 const MAX_UNCHANGED_SNAPSHOT_NO_PROGRESS_ROUNDS = 2;
-const TERMINAL_STATUSES = new Set<SessionLifecycle>(["closed", "failed", "aborted"]);
+const TERMINAL_STATUSES = new Set<SessionLifecycle>(["failed", "aborted"]);
+const FINALIZATION_STATUSES = new Set([
+  "not_started",
+  "running",
+  "final",
+  "failed",
+  "unavailable"
+] as const);
+
+type FinalizationStatus = "not_started" | "running" | "final" | "failed" | "unavailable";
 
 type JsonObject = Record<string, unknown>;
 
@@ -36,6 +45,9 @@ interface MossSnapshot {
   version: number;
   sampleRate: number;
   failureReason: string | null;
+  terminalFailureReason: string | null;
+  persistenceFailure: string | null;
+  finalizationStatus: FinalizationStatus;
   statusLine: string | null;
   labelRevisionVersion: number;
   canonicalSpeakers: string[];
@@ -103,7 +115,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   let retryIndex = 0;
   let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   let pollController: AbortController | null = null;
-  let finalizationSeen = false;
+  let identityFinalizationSeen = false;
   let lastLabelRevisionVersion = 0;
   let lastSessionState: Pick<MossSnapshot, "sessionId" | "status" | "failureReason"> | null = null;
   let lastIngressAcceptedSamples: number | null = null;
@@ -148,7 +160,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       signal
     );
     const snapshot = parseSnapshot(payload);
-    if (!snapshot || !TERMINAL_STATUSES.has(snapshot.status)) return null;
+    if (!snapshot || !isTerminalSnapshot(snapshot)) return null;
 
     const renderedSnapshot = renderSnapshot(
       snapshot,
@@ -183,7 +195,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       status: snapshot.status,
       failureReason: snapshot.failureReason
     };
-    return snapshot.failureReason ?? snapshot.statusLine ?? `Session ${snapshot.status}.`;
+    return terminalMessage(snapshot);
   }
 
   async function poll(): Promise<void> {
@@ -233,17 +245,16 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         (highest, event) => Math.max(highest, event.seq),
         eventSequence
       );
-      const finalizationArrived = consumedEvents.some(
+      const identityFinalizationArrived = consumedEvents.some(
         (event) => event.kind === "identity_finalized"
       );
       const eventCursorAdvanced = consumedSequence > eventSequence;
 
       if (snapshot) {
-        const isFinalized = finalizationSeen || finalizationArrived;
         const renderedSnapshot = renderSnapshot(
           snapshot,
           consumedSequence,
-          isFinalized,
+          identityFinalizationSeen || identityFinalizationArrived,
           lastLabelRevisionVersion,
           revisedSpanIds,
           priorProvisional
@@ -254,7 +265,10 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
           mode,
           state: snapshot.status,
           status: snapshot.status,
-          error: snapshot.failureReason,
+          error:
+            snapshot.failureReason ??
+            snapshot.terminalFailureReason ??
+            snapshot.persistenceFailure,
           status_line: snapshot.statusLine
         });
         dispatch(renderedSnapshot.event);
@@ -290,12 +304,16 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       }
 
       for (const event of consumedEvents) {
-        const referenceEvent = mapRuntimeEvent(event, snapshot, isFinalizationKnown(finalizationSeen, finalizationArrived));
+        const referenceEvent = mapRuntimeEvent(
+          event,
+          snapshot,
+          identityFinalizationSeen || identityFinalizationArrived
+        );
         if (referenceEvent) {
           dispatch(referenceEvent);
         }
       }
-      finalizationSeen ||= finalizationArrived;
+      identityFinalizationSeen ||= identityFinalizationArrived;
       eventSequence = consumedSequence;
       if (ingressAcceptedSamples !== null) {
         lastIngressAcceptedSamples = ingressAcceptedSamples;
@@ -319,8 +337,8 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         unchangedSnapshotNoProgressRounds = 0;
       }
 
-      if (snapshot && TERMINAL_STATUSES.has(snapshot.status)) {
-        const message = snapshot.failureReason ?? `Session ${snapshot.status}.`;
+      if (snapshot && isTerminalSnapshot(snapshot)) {
+        const message = terminalMessage(snapshot);
         stop();
         options.onTerminal?.(message);
         return;
@@ -487,7 +505,7 @@ function renderSnapshot(
 function mapRuntimeEvent(
   event: MossRuntimeEvent,
   snapshot: MossSnapshot | null,
-  finalized: boolean
+  identityFinalized: boolean
 ): WsEvent | null {
   switch (event.kind) {
     case "identity_finalized": {
@@ -512,7 +530,7 @@ function mapRuntimeEvent(
             snapshot.sampleRate,
             snapshot.canonicalSpeakers,
             {
-              state: finalized ? "final" : "confirmed",
+              state: identityFinalized ? "final" : "confirmed",
               segmentIdPrefix: `${commit.spanId}:`,
               provisionalStale: false
             }
@@ -633,6 +651,9 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     version: requiredNonNegativeNumber(session.version, "snapshot version"),
     sampleRate: requiredPositiveNumber(descriptor.sample_rate, "snapshot sample_rate"),
     failureReason: optionalString(session.failure_reason),
+    terminalFailureReason: parseTerminalFailureReason(snapshot.terminal_failure),
+    persistenceFailure: optionalString(response.persistence_failure),
+    finalizationStatus: parseFinalizationStatus(session.finalization_status),
     statusLine: optionalString(response.status_line),
     labelRevisionVersion: requiredNonNegativeNumber(
       session.label_revision_version ?? 0,
@@ -802,8 +823,34 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "request failed";
 }
 
-function isFinalizationKnown(previouslySeen: boolean, arrivedNow: boolean): boolean {
-  return previouslySeen || arrivedNow;
+function parseFinalizationStatus(value: unknown): FinalizationStatus {
+  if (value === undefined) return "not_started";
+  if (typeof value === "string" && FINALIZATION_STATUSES.has(value as FinalizationStatus)) {
+    return value as FinalizationStatus;
+  }
+  return fail("snapshot finalization status");
+}
+
+function isTerminalSnapshot(snapshot: MossSnapshot): boolean {
+  if (snapshot.terminalFailureReason !== null || snapshot.persistenceFailure !== null) return true;
+  if (TERMINAL_STATUSES.has(snapshot.status)) return true;
+  return snapshot.status === "closed" && snapshot.finalizationStatus !== "running";
+}
+
+function parseTerminalFailureReason(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  const failure = record(value, "snapshot terminal failure");
+  return optionalString(failure.message) ?? "Live Meeting interrupted.";
+}
+
+function terminalMessage(snapshot: MossSnapshot): string {
+  return (
+    snapshot.failureReason ??
+    snapshot.terminalFailureReason ??
+    snapshot.persistenceFailure ??
+    snapshot.statusLine ??
+    `Session ${snapshot.status}.`
+  );
 }
 
 /**

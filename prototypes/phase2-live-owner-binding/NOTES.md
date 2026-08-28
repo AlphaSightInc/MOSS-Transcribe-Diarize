@@ -10,13 +10,17 @@
   same-Account observers read but do not mutate; another Account gets `404`; the 250 ms poll path may
   read only authentication rows and reads no Meeting/transcript content or writes; revocation returns
   `401` and fences late commits; interruption preserves the last durable prefix and never resumes.
+  A cleanly closed runtime remains durably active while terminal finalization is `running`; its
+  stop-tail transcript becomes public only after its ordinary commit. Only a terminal finalization
+  outcome may atomically publish its last document together with `completed`.
 - **Assumption:** one Sign-in session is one Access client; sibling tabs sharing its cookie are not a
   distinct client. This is settled by T-19 and ADR-0007, not introduced here.
 - **Hypothesis:** this state is sufficient; no bearer, view token, client Account identity, durable
   grant, or global durable Meeting lookup is needed.
 - **Falsifier:** any printed path permits observer/foreign mutation or foreign read, performs a
   Meeting/transcript read or write during polling, accepts a late result after revoke, loses the
-  committed prefix, or resumes after interruption.
+  committed prefix, resumes after interruption, or exposes closed/final words before their atomic
+  terminal commit.
 
 ## One command
 
@@ -45,8 +49,19 @@ handoff feeding one serialized per-Meeting publication worker.
   rollback; the successful run exposed `completed`/version-2/final-document. It never exposed a mixed
   terminal status and transcript. The production handle may therefore absorb exactly this one
   owner-bound transaction; a separate final-document commit followed by `finish` is rejected.
+- A simulated asynchronous finalizer advanced raw state through closed/`not_started`,
+  closed/`running`, and closed/`final`. The momentary configured-finalizer `not_started` state stayed
+  private. The changed stop-tail document committed as version 2, then public memory exposed
+  closed/`running` while the Meeting row remained active. Holding the final transaction left that
+  durable/public tuple unchanged; release atomically exposed `completed` version 3 with the
+  finalizer's replacement words, then and only then advanced public memory.
+- Disabling the publication bridge before a late runtime-thread callback left raw/durable/public at
+  `3/2/2`; the late revision was ignored. Production therefore unbinds the identity-checked runtime
+  observer only after every active binding is durably interrupted, before its event loop closes.
 
 The sufficient binding is therefore the existing Sign-in session plus owner-bound Meeting handle,
 an Account-partitioned in-memory Live registry, and one event-driven serialized durability bridge per
-active Meeting. Public memory advances only after its structured transcript commit. No additional
-page/device/view authority, authentication cache, polling timer, or durable event table is justified.
+active Meeting. Public memory advances only after its structured transcript commit; closed/running
+is a durable, nonterminal observation, while `final`, `failed`, or `unavailable` drives the atomic
+terminal tuple. No additional page/device/view authority, authentication cache, polling timer, or
+durable event table is justified.

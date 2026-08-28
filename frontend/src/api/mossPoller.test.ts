@@ -696,6 +696,162 @@ describe("MOSS session poller", () => {
     expect(pollDelayForStatus("closing")).toBe(2_000);
     expect(pollDelayForStatus("idle")).toBe(2_000);
   });
+
+  it("keeps polling closed running finalization and renders final words before terminal", async () => {
+    vi.useFakeTimers();
+    const onTerminal = vi.fn();
+    const order: string[] = [];
+    let snapshotRequests = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/events")) {
+        return jsonResponse({
+          events:
+            snapshotRequests <= 1
+              ? [
+                  {
+                    seq: 1,
+                    session_id: "session-finalizing",
+                    kind: "identity_finalized",
+                    payload: { identity_revision_version: 1 }
+                  }
+                ]
+              : [
+                  {
+                    seq: 2,
+                    session_id: "session-finalizing",
+                    kind: "terminal_finalization_completed",
+                    payload: { finalization_status: "final" }
+                  }
+                ]
+        });
+      }
+      snapshotRequests += 1;
+      const final = snapshotRequests === 2;
+      return jsonResponse({
+        snapshot: {
+          session_id: "session-finalizing",
+          descriptor: { sample_rate: 16_000 },
+          session: {
+            status: "closed",
+            finalization_status: final ? "final" : "running",
+            version: snapshotRequests,
+            failure_reason: null,
+            label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: ["speaker-0001"] },
+            committed: [
+              {
+                span_id: 1,
+                start_sample: 0,
+                transcript: final
+                  ? "[0][S01]terminal final words[1]"
+                  : "[0][S01]durable stop tail[1]",
+                revised_transcript: null
+              }
+            ],
+            provisional: null
+          }
+        },
+        unchanged: false,
+        status_line: null
+      });
+    });
+    const poller = createMossSessionPoller({
+      sessionId: "session-finalizing",
+      authority: "account",
+      fetch: fetcher as typeof fetch,
+      dispatch(event) {
+        if (event.type === "transcript_update") {
+          order.push(`transcript:${event.items[0]?.text}:${event.items[0]?.state}`);
+        }
+      },
+      onTerminal(message) {
+        order.push(`terminal:${message}`);
+        onTerminal(message);
+      }
+    });
+
+    try {
+      poller.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(snapshotRequests).toBe(1);
+      expect(poller.running()).toBe(true);
+      expect(onTerminal).not.toHaveBeenCalled();
+      expect(order).toEqual(["transcript:durable stop tail:final"]);
+
+      await vi.advanceTimersByTimeAsync(1_999);
+      expect(snapshotRequests).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(snapshotRequests).toBe(2);
+      expect(order).toEqual([
+        "transcript:durable stop tail:final",
+        "transcript:terminal final words:final",
+        "terminal:Session closed."
+      ]);
+      expect(onTerminal).toHaveBeenCalledWith("Session closed.");
+      expect(poller.running()).toBe(false);
+    } finally {
+      poller.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it("ends visibly when persistence fences a closed running finalizer", async () => {
+    const order: string[] = [];
+    const onTerminal = vi.fn();
+    const poller = createMossSessionPoller({
+      sessionId: "session-persistence-fenced",
+      authority: "account",
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) return jsonResponse({ events: [] });
+        return jsonResponse({
+          snapshot: {
+            session_id: "session-persistence-fenced",
+            descriptor: { sample_rate: 16_000 },
+            session: {
+              status: "closed",
+              finalization_status: "running",
+              version: 8,
+              failure_reason: null,
+              label_revision_version: 0,
+              identity_snapshot: { canonical_speakers: ["speaker-0001"] },
+              committed: [
+                {
+                  span_id: 1,
+                  start_sample: 0,
+                  transcript: "[0][S01]last durable prefix[1]",
+                  revised_transcript: null
+                }
+              ],
+              provisional: null
+            },
+            terminal_failure: { message: "transcript_persistence_failed" }
+          },
+          unchanged: false,
+          persistence_failure: "transcript_persistence_failed",
+          status_line: null
+        });
+      }) as typeof fetch,
+      dispatch(event) {
+        if (event.type === "transcript_update") {
+          order.push(`transcript:${event.items[0]?.text}`);
+        }
+      },
+      onTerminal(message) {
+        order.push(`terminal:${message}`);
+        onTerminal(message);
+      }
+    });
+
+    await poller.poll();
+
+    expect(order).toEqual([
+      "transcript:last durable prefix",
+      "terminal:transcript_persistence_failed"
+    ]);
+    expect(onTerminal).toHaveBeenCalledWith("transcript_persistence_failed");
+    expect(poller.running()).toBe(false);
+  });
 });
 
 function jsonResponse(payload: unknown, status = 200): Response {

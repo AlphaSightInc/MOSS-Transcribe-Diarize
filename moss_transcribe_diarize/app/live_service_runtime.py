@@ -597,6 +597,17 @@ class LiveServiceRuntime:
                 raise RuntimeError("live publication observer is already bound.")
             self._publication_observer = observer
 
+    def _unbind_publication_observer(
+        self,
+        observer: Callable[[str, LiveServiceSnapshot, tuple[LiveServiceEvent, ...]], None],
+    ) -> None:
+        """Remove exactly the deployment sink that was bound, under the runtime lock."""
+
+        with self._lock:
+            if self._publication_observer is not observer:
+                raise RuntimeError("live publication observer binding does not match.")
+            self._publication_observer = None
+
     def create(
         self,
         *,
