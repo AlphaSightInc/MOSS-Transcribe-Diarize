@@ -24,6 +24,20 @@ Meetings before returning. Revoke also increments the Account's durable authorit
 workspace and Meeting handles capture that generation, so re-allow plus fresh sign-in cannot revive
 pre-revoke work. Every later request resolves session plus enabled Account from SQLite.
 
+One in-process Account lifecycle module owns that ordering. Opaque counted gates cover Meeting
+creation from before Sign-in-session resolution through Live binding or File/URL task registration.
+Sign-out closes and drains only its Sign-in-session gate, runs the shared normal Live Stop for every
+binding originated by that session, then revokes it; any Stop or durability failure reopens the gate
+and retains the cookie/session. Accepted File/URL work is Account-owned and continues. Host Account
+revoke closes and drains the Account-generation gate, synchronously fences every Live binding and
+File task before awaiting any one settlement, quiesces transcript/audio work while captured handles
+remain valid, and disables authority last. A failed revoke never reopens that uncertain generation;
+startup recovery plus a fresh command is the retry boundary.
+
+`mtd-admin` sends one bounded, content-free command to the running product's mode-`0600` Unix socket.
+The socket adapter owns no policy and never opens SQLite. There is no second daemon, TCP listener,
+admin webpage, or direct-database runtime revoke.
+
 There is no password, invite token, shared bearer, refresh token, Headscale identity forwarding,
 emergency bypass, or non-Google fallback. The production origin keeps explicit port `:7861` and uses
 a browser-trusted Let's Encrypt certificate obtained through NS1 DNS-01.
@@ -48,3 +62,11 @@ The Account authority-generation prototype in
 revoke, explicit re-allow, and fresh same-`sub` sign-in, a pre-revoke workspace created a new active
 Meeting. With the generation fence, every pre-revoke list, open, snapshot, and create path is
 rejected while the fresh workspace creates and reads an active Meeting.
+
+The lifecycle ordering probe in `prototypes/phase2-account-lifecycle/` measured exact counted drain,
+failed-create release, concurrent logout/revoke serialization, logout-failure authority retention,
+late/stale generation fencing, reallow, and other-Account isolation. Production integration tests
+then exercised the shared two-lane Stop, held Live/File results, fence-all-before-await, interrupted
+audio cleanup, cancelled logout reopening, restart-after-failed-revoke, socket single ownership and
+shutdown, and browser `401` capture teardown. These results accept the lifecycle module plus thin
+Unix transport; no queue, retry framework, or second scheduler was needed.

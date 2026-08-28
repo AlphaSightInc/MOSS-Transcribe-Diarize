@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import stat
 import subprocess
 import sqlite3
 import sys
@@ -34,6 +36,13 @@ from moss_transcribe_diarize.app.phase2 import (
 )
 from moss_transcribe_diarize.app import phase2_web_cli
 from moss_transcribe_diarize.app.phase2_admin import execute, parse_args as parse_admin_args
+from moss_transcribe_diarize.app.phase2_control import (
+    DEFAULT_PHASE2_CONTROL_SOCKET_PATH,
+    Phase2ControlError,
+    Phase2ControlServer,
+    request_control,
+)
+from moss_transcribe_diarize.app.phase2_lifecycle import AccountLifecycle
 
 
 @dataclass
@@ -80,14 +89,24 @@ async def provision(database: Path, *emails: str) -> None:
         await store.close()
 
 
-def make_app(database: Path, responses: dict[str, dict[str, object] | Exception]):
+def make_app(
+    database: Path,
+    responses: dict[str, dict[str, object] | Exception],
+    *,
+    control_socket: Path | None = None,
+):
     remote = FakeGoogleRemote(responses=responses, start_calls=[], complete_calls=[])
     app = create_phase2_app(
         database_path=database,
         oidc=AuthlibGoogleOidc(remote=remote, client_id="test-client-id"),
         oauth_cookie_secret="test-only-signed-oauth-cookie-secret",
+        control_socket_path=control_socket,
     )
     return app, remote
+
+
+def control_socket_path() -> Path:
+    return Path("/tmp") / f"moss-i18-auth-{os.getpid()}-{time.time_ns()}.sock"
 
 
 def sign_in(client: TestClient, code: str) -> object:
@@ -668,22 +687,29 @@ def test_account_workspace_hides_foreign_meeting_and_all_unauthenticated_content
 
 def test_revoked_account_loses_every_session_and_meetings_are_interrupted(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
+    socket = control_socket_path()
     asyncio.run(provision(database, "person@example.com"))
-    app, _ = make_app(database, {"one": identity(), "two": identity()})
+    app, _ = make_app(
+        database,
+        {"one": identity(), "two": identity()},
+        control_socket=socket,
+    )
 
-    with TestClient(app, base_url="https://moss.test") as first, TestClient(
-        app, base_url="https://moss.test"
-    ) as second:
-        sign_in(first, "one")
-        sign_in(second, "two")
+    with TestClient(app, base_url="https://moss.test") as client:
+        sign_in(client, "one")
+        first_session = client.cookies.get(SESSION_COOKIE)
+        sign_in(client, "two")
+        second_session = client.cookies.get(SESSION_COOKIE)
         meeting = seed_active_live_meeting(database)
-        assert asyncio.run(execute(database, "revoke", "person@example.com")) == {
+        assert asyncio.run(execute(socket, "revoke", "person@example.com")) == {
             "email": "person@example.com",
             "revoked": True,
         }
-        assert first.get("/api/meetings").status_code == 401
-        assert second.get("/api/meetings").status_code == 401
-        revoked_page = first.get("/")
+        client.cookies.set(SESSION_COOKIE, first_session, domain="moss.test", path="/")
+        assert client.get("/api/meetings").status_code == 401
+        client.cookies.set(SESSION_COOKIE, second_session, domain="moss.test", path="/")
+        assert client.get("/api/meetings").status_code == 401
+        revoked_page = client.get("/")
         assert 'data-auth-state="revoked"' in revoked_page.text
         assert "Access revoked" in revoked_page.text
 
@@ -696,6 +722,7 @@ def test_revoked_account_loses_every_session_and_meetings_are_interrupted(tmp_pa
 
 def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reallow(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
+    socket = control_socket_path()
     asyncio.run(provision(database, "first@example.com", "second@example.com"))
     app, _ = make_app(
         database,
@@ -704,30 +731,30 @@ def test_revoking_one_bound_email_disables_all_bound_emails_until_explicit_reall
             "second": identity("sub-a", "second@example.com"),
             "wrong-owner": identity("sub-b", "second@example.com"),
         },
+        control_socket=socket,
     )
 
     with TestClient(app, base_url="https://moss.test") as client:
         assert sign_in(client, "first").status_code == 303
         assert client.post("/auth/logout", follow_redirects=False).status_code == 303
         assert sign_in(client, "second").status_code == 303
-        assert asyncio.run(execute(database, "revoke", "first@example.com")) == {
+        assert asyncio.run(execute(socket, "revoke", "first@example.com")) == {
             "email": "first@example.com",
             "revoked": True,
         }
         assert sign_in(client, "second").headers["location"] == "/?auth=denied"
 
-        assert asyncio.run(execute(database, "allow", "second@example.com")) == {
+        assert asyncio.run(execute(socket, "allow", "second@example.com")) == {
             "email": "second@example.com",
             "enabled": True,
         }
         assert sign_in(client, "wrong-owner").headers["location"] == "/?auth=denied"
         assert sign_in(client, "second").status_code == 303
         assert client.get("/api/auth/session").json()["email"] == "second@example.com"
-
-    assert asyncio.run(execute(database, "list")) == [
-        {"email": "first@example.com", "enabled": False},
-        {"email": "second@example.com", "enabled": True},
-    ]
+        assert asyncio.run(execute(socket, "list")) == [
+            {"email": "first@example.com", "enabled": False},
+            {"email": "second@example.com", "enabled": True},
+        ]
 
 
 def test_reallow_does_not_resurrect_pre_revoke_workspace(tmp_path: Path):
@@ -806,29 +833,198 @@ def test_callback_storage_error_clears_temporary_oauth_cookie(tmp_path: Path):
     assert database_counts(database) == (0, 0)
 
 
-def test_host_local_allow_list_and_revoke_commands_normalize_only_trim_and_case(tmp_path: Path):
+def test_creation_admission_precedes_authority_lookup_and_logout_drains_registration(
+    tmp_path: Path,
+):
     database = tmp_path / "moss.sqlite3"
 
-    assert asyncio.run(execute(database, "allow", " Person+tag@EXAMPLE.com ")) == {
-        "email": "person+tag@example.com",
-        "enabled": True,
-    }
-    assert asyncio.run(execute(database, "list")) == [
-        {"email": "person+tag@example.com", "enabled": True}
-    ]
-    assert asyncio.run(execute(database, "revoke", "person+tag@example.com")) == {
-        "email": "person+tag@example.com",
-        "revoked": True,
-    }
+    async def exercise() -> None:
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("person@example.com")
+            admitted = await store.admit(
+                GoogleIdentity("google-sub-a", "person@example.com", "Person")
+            )
+            assert admitted is not None
+            account, session_id = admitted
+            lifecycle = AccountLifecycle(store, live=None, files=None)
+            lookup_started = asyncio.Event()
+            release_lookup = asyncio.Event()
+            registration_started = asyncio.Event()
+            release_registration = asyncio.Event()
+            original_lookup = store.account_for_session
+            calls = 0
+
+            async def held_first_lookup(candidate: str | None):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    lookup_started.set()
+                    await release_lookup.wait()
+                return await original_lookup(candidate)
+
+            store.account_for_session = held_first_lookup
+
+            async def create_and_register() -> None:
+                async with lifecycle.admit_creation(session_id) as resolved:
+                    assert resolved == account
+                    registration_started.set()
+                    await release_registration.wait()
+
+            create_task = asyncio.create_task(create_and_register())
+            await lookup_started.wait()
+            logout_task = asyncio.create_task(lifecycle.logout(session_id))
+            await asyncio.sleep(0)
+            assert not logout_task.done()
+            release_lookup.set()
+            await registration_started.wait()
+            await asyncio.sleep(0)
+            assert not logout_task.done()
+            release_registration.set()
+            await create_task
+            assert await logout_task is True
+            assert await original_lookup(session_id) is None
+        finally:
+            await store.close()
+
+    asyncio.run(exercise())
 
 
-def test_mtd_admin_account_commands_share_the_product_default_database():
-    assert parse_admin_args(["accounts", "allow", "person@example.com"]).database == str(
-        DEFAULT_PHASE2_DATABASE_PATH
+def test_creation_failure_releases_count_and_cancelled_logout_reopens_session_gate(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+
+    async def exercise() -> None:
+        store = await Phase2Store.open(database)
+        try:
+            await store.allow_email("person@example.com")
+            admitted = await store.admit(
+                GoogleIdentity("google-sub-a", "person@example.com", "Person")
+            )
+            assert admitted is not None
+            _, session_id = admitted
+            lifecycle = AccountLifecycle(store, live=None, files=None)
+
+            with pytest.raises(RuntimeError, match="injected creation failure"):
+                async with lifecycle.admit_creation(session_id):
+                    raise RuntimeError("injected creation failure")
+
+            release_registration = asyncio.Event()
+
+            async def held_registration() -> None:
+                async with lifecycle.admit_creation(session_id):
+                    await release_registration.wait()
+
+            creator = asyncio.create_task(held_registration())
+            await asyncio.sleep(0)
+            logout = asyncio.create_task(lifecycle.logout(session_id))
+            await asyncio.sleep(0)
+            assert not logout.done()
+            logout.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await logout
+            release_registration.set()
+            await creator
+
+            # Cancellation owns and reopens the session gate; a later admission and logout
+            # remain reachable instead of leaving the browser permanently "closing".
+            async with lifecycle.admit_creation(session_id):
+                pass
+            assert await lifecycle.logout(session_id) is True
+        finally:
+            await store.close()
+
+    asyncio.run(exercise())
+
+
+def test_host_local_allow_list_and_revoke_commands_normalize_only_trim_and_case(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = control_socket_path()
+    app, _ = make_app(database, {}, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test"):
+        assert asyncio.run(execute(socket, "allow", " Person+tag@EXAMPLE.com ")) == {
+            "email": "person+tag@example.com",
+            "enabled": True,
+        }
+        assert asyncio.run(execute(socket, "list")) == [
+            {"email": "person+tag@example.com", "enabled": True}
+        ]
+        assert asyncio.run(execute(socket, "revoke", "person+tag@example.com")) == {
+            "email": "person+tag@example.com",
+            "revoked": True,
+        }
+
+
+def test_control_socket_is_private_single_owner_and_removed_on_shutdown(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = control_socket_path()
+    app, _ = make_app(database, {}, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test"):
+        assert stat.S_IMODE(socket.stat().st_mode) == 0o600
+        contender, _ = make_app(tmp_path / "contender.sqlite3", {}, control_socket=socket)
+        with pytest.raises(Phase2ControlError, match="Another product process"):
+            with TestClient(contender, base_url="https://moss.test"):
+                pass
+        assert asyncio.run(request_control(socket, "accounts.list")) == []
+
+    assert not socket.exists()
+    with pytest.raises(Phase2ControlError, match="unavailable"):
+        asyncio.run(request_control(socket, "accounts.list"))
+
+
+def test_control_socket_refuses_non_socket_path_without_mutation(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    control_path = control_socket_path()
+    control_path.write_text("operator-owned", encoding="utf-8")
+    app, _ = make_app(database, {}, control_socket=control_path)
+
+    with pytest.raises(Phase2ControlError, match="not a Unix socket"):
+        with TestClient(app, base_url="https://moss.test"):
+            pass
+    assert control_path.read_text(encoding="utf-8") == "operator-owned"
+
+
+def test_control_shutdown_cancels_held_command_and_removes_socket() -> None:
+    socket = control_socket_path()
+
+    class HeldLifecycle:
+        def __init__(self) -> None:
+            self.started = asyncio.Event()
+
+        async def revoke_account(self, email: str) -> bool:
+            del email
+            self.started.set()
+            await asyncio.Event().wait()
+            return True
+
+    async def exercise() -> None:
+        lifecycle = HeldLifecycle()
+        server = Phase2ControlServer(socket, lifecycle)
+        await server.start()
+        request = asyncio.create_task(
+            request_control(socket, "accounts.revoke", "person@example.com")
+        )
+        await lifecycle.started.wait()
+        await asyncio.wait_for(server.stop(), timeout=1.0)
+        result = await asyncio.gather(request, return_exceptions=True)
+        assert len(result) == 1 and isinstance(result[0], Phase2ControlError)
+        assert not socket.exists()
+
+    asyncio.run(exercise())
+
+
+def test_mtd_admin_account_commands_share_the_product_default_control_socket():
+    assert parse_admin_args(["accounts", "allow", "person@example.com"]).socket == str(
+        DEFAULT_PHASE2_CONTROL_SOCKET_PATH
     )
-    assert parse_admin_args(["accounts", "list"]).database == str(DEFAULT_PHASE2_DATABASE_PATH)
-    assert parse_admin_args(["accounts", "revoke", "person@example.com"]).database == str(
-        DEFAULT_PHASE2_DATABASE_PATH
+    assert parse_admin_args(["accounts", "list"]).socket == str(
+        DEFAULT_PHASE2_CONTROL_SOCKET_PATH
+    )
+    assert parse_admin_args(["accounts", "revoke", "person@example.com"]).socket == str(
+        DEFAULT_PHASE2_CONTROL_SOCKET_PATH
     )
 
 
@@ -977,6 +1173,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         },
         "live_runtime_factory": live_runtime_factory,
         "live_helper_lease_seconds": 30.0,
+        "control_socket_path": DEFAULT_PHASE2_CONTROL_SOCKET_PATH,
     }
     assert seen["uvicorn"] == {
         "app": app,

@@ -14,6 +14,7 @@ from typing import Sequence
 from .phase2 import AuthlibGoogleOidc, DEFAULT_PHASE2_DATABASE_PATH, create_phase2_app
 from .phase2_audio import DEFAULT_PHASE2_MEETING_AUDIO_ROOT
 from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
+from .phase2_control import DEFAULT_PHASE2_CONTROL_SOCKET_PATH
 
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[2] / "pretrained" / "moss-transcribe-diarize"
@@ -25,6 +26,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--database",
         default=str(DEFAULT_PHASE2_DATABASE_PATH),
         help="The Phase-2 SQLite database path (defaults to the product database).",
+    )
+    parser.add_argument(
+        "--control-socket",
+        default=str(DEFAULT_PHASE2_CONTROL_SOCKET_PATH),
+        help="Mode-0600 host-local Account control socket.",
     )
     parser.add_argument("--google-client-id", required=True)
     parser.add_argument("--google-client-secret-file", required=True)
@@ -149,6 +155,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         },
         live_runtime_factory=live_runtime_factory,
         live_helper_lease_seconds=args.live_helper_lease_seconds,
+        control_socket_path=Path(args.control_socket).expanduser(),
     )
     uvicorn.run(
         app,

@@ -13,10 +13,16 @@ const mocks = vi.hoisted(() => {
   };
   return {
     poller,
-    createMossSessionPoller: vi.fn((_options: unknown) => poller),
+    pollerOptions: null as { onTerminal?: (message: string) => void } | null,
+    createMossSessionPoller: vi.fn((options: { onTerminal?: (message: string) => void }) => {
+      mocks.pollerOptions = options;
+      return poller;
+    }),
+    captureClose: vi.fn().mockResolvedValue(undefined),
     captureOptions: null as {
       authority?: string;
       captureBearer?: string;
+      onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
     } | null,
   };
@@ -28,13 +34,25 @@ vi.mock("../api/mossPoller", () => ({
 
 vi.mock("../capture/captureClient", () => ({
   CaptureClient: class {
-    constructor(options: { onPreflightStatus?: (statusLine: string) => void }) {
+    options: {
+      onMeter?: (lane: "microphone" | "system", rms: number) => void;
+      onPreflightStatus?: (statusLine: string) => void;
+    };
+
+    constructor(options: {
+      onMeter?: (lane: "microphone" | "system", rms: number) => void;
+      onPreflightStatus?: (statusLine: string) => void;
+    }) {
       mocks.captureOptions = options;
+      this.options = options;
     }
 
     prepare = vi.fn().mockResolvedValue(undefined);
-    startMicrophone = vi.fn().mockResolvedValue(undefined);
-    close = vi.fn().mockResolvedValue(undefined);
+    startMicrophone = vi.fn(async () => this.options.onMeter?.("microphone", 0.5));
+    requestDisplayMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
+    attachDisplayMedia = vi.fn(async () => this.options.onMeter?.("system", 0.5));
+    createSession = vi.fn().mockResolvedValue({ id: "account-live-meeting" });
+    close = mocks.captureClose;
   }
 }));
 
@@ -49,6 +67,7 @@ describe("ControlPanel reattach", () => {
     window.sessionStorage.clear();
     vi.clearAllMocks();
     mocks.captureOptions = null;
+    mocks.pollerOptions = null;
   });
 
   afterEach(() => {
@@ -193,5 +212,33 @@ describe("ControlPanel reattach", () => {
 
     expect(mocks.createMossSessionPoller).not.toHaveBeenCalled();
     expect(root.querySelector('[data-capture-phase="configuring"]')).not.toBeNull();
+  });
+
+  it("stops active Account capture visibly when polling receives revoked 401", async () => {
+    await act(async () => {
+      render(
+        <ControlPanel authority="account" captureBearer="" onCaptureBearerChange={() => undefined} />,
+        root,
+      );
+    });
+    const button = (label: string) =>
+      [...root.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent?.trim() === label,
+      );
+
+    await act(async () => button("Enable microphone")?.click());
+    await act(async () => button("Share audio")?.click());
+    await act(async () => button("Start capture")?.click());
+    expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
+    expect(mocks.poller.start).toHaveBeenCalledOnce();
+
+    await act(async () => mocks.pollerOptions?.onTerminal?.("Sign in required."));
+
+    expect(mocks.captureClose).toHaveBeenCalledOnce();
+    expect(mocks.poller.stop).toHaveBeenCalledOnce();
+    expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
+    expect(root.querySelector('[role="status"]')?.textContent).toBe("Sign in required.");
+    expect(button("Stop and finalize")).toBeUndefined();
+    expect(button("Reset capture")).toBeTruthy();
   });
 });

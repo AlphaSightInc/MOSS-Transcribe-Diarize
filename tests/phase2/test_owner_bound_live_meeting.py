@@ -51,6 +51,8 @@ from moss_transcribe_diarize.app.phase2_audio import (
     MeetingAudioArchive,
     MeetingAudioCleanupError,
 )
+from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
+from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
 from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
 
@@ -222,6 +224,7 @@ def make_app(
     terminal_scheduler: _ManualTerminalScheduler | None = None,
     max_tape_bytes: int = 32_000,
     audio_archive=None,
+    control_socket: Path | None = None,
 ):
     return create_phase2_app(
         database_path=database,
@@ -236,6 +239,7 @@ def make_app(
         live_helper_lease_seconds=lease_seconds,
         meeting_audio_root=database.parent / "meetings",
         file_audio_archive=audio_archive,
+        control_socket_path=control_socket,
     )
 
 
@@ -758,6 +762,319 @@ def test_raw_stop_latch_all_unauthorized_entrants_release_once():
     assert attempt.entrants == 0
     assert attempt.completed.is_set()
     assert binding.raw_stop_attempt is None
+
+
+def test_logout_drains_live_create_through_transport_registration(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        adapter = app.state.live_transport_control._adapter
+        original_publication = adapter.publication
+        publication_entered = threading.Event()
+        release_publication = threading.Event()
+        held = False
+        outcome: dict[str, object] = {}
+
+        async def hold_initial_publication(
+            authority,
+            meeting_id,
+            *,
+            wait_for_durability,
+        ):
+            nonlocal held
+            if not held and wait_for_durability is False:
+                held = True
+                publication_entered.set()
+                assert await asyncio.to_thread(release_publication.wait, 5)
+            return await original_publication(
+                authority,
+                meeting_id,
+                wait_for_durability=wait_for_durability,
+            )
+
+        adapter.publication = hold_initial_publication
+
+        def create() -> None:
+            outcome["create"] = client.post("/api/live/sessions")
+
+        def logout() -> None:
+            outcome["logout"] = client.post("/auth/logout", follow_redirects=False)
+
+        create_worker = threading.Thread(target=create)
+        create_worker.start()
+        assert publication_entered.wait(timeout=2)
+        logout_worker = threading.Thread(target=logout)
+        logout_worker.start()
+        time.sleep(0.05)
+        assert logout_worker.is_alive()
+        release_publication.set()
+        create_worker.join(timeout=5)
+        logout_worker.join(timeout=5)
+        assert not create_worker.is_alive() and not logout_worker.is_alive()
+        created = outcome["create"]
+        logged_out = outcome["logout"]
+        assert created.status_code == 201
+        assert logged_out.status_code == 303
+        meeting_id = created.json()["id"]
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0] == "completed"
+    finally:
+        connection.close()
+
+
+def test_logout_stops_every_origin_live_before_revoking_only_that_session(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        first = client.post("/api/live/sessions").json()["id"]
+        second = client.post("/api/live/sessions").json()["id"]
+        session(client, sessions["a-observer"])
+        observed = client.post("/api/live/sessions").json()["id"]
+        session(client, sessions["a"])
+
+        logout = client.post("/auth/logout", follow_redirects=False)
+        assert logout.status_code == 303
+        assert client.cookies.get(SESSION_COOKIE) is None
+        assert client.get("/api/auth/session").status_code == 401
+        session(client, sessions["a-observer"])
+        assert client.get("/api/auth/session").status_code == 200
+        assert client.get(f"/api/live/sessions/{observed}/snapshot").status_code == 200
+
+        meetings = {meeting["id"]: meeting for meeting in client.get("/api/meetings").json()["meetings"]}
+        assert meetings[first]["status"] == "completed"
+        assert meetings[second]["status"] == "completed"
+        assert meetings[observed]["status"] == "active"
+
+
+def test_logout_stop_failure_keeps_cookie_session_and_reopens_creation(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        control = app.state.phase2_live_control
+        original_stop = control.stop
+
+        async def refuse_stop(authority, session_id, deadline, intent=None):
+            del authority, session_id, deadline, intent
+            raise RuntimeError("injected durable Stop refusal")
+
+        control.stop = refuse_stop
+        logout = client.post("/auth/logout", follow_redirects=False)
+        assert logout.status_code == 503
+        assert client.cookies.get(SESSION_COOKIE) == sessions["a"]
+        assert client.get("/api/auth/session").status_code == 200
+        control.stop = original_stop
+        assert client.post("/api/live/sessions").status_code == 201
+        assert client.post(
+            f"/api/live/sessions/{meeting_id}/abort",
+            json={"reason": "test cleanup"},
+        ).status_code == 200
+
+
+def test_concurrent_logout_settles_before_account_revoke_disables_authority(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-concurrent-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        control = app.state.phase2_live_control
+        original_stop = control.stop
+        stop_entered = threading.Event()
+        release_stop = threading.Event()
+        outcome: dict[str, object] = {}
+
+        async def held_stop(authority, session_id, deadline, intent=None):
+            stop_entered.set()
+            assert await asyncio.to_thread(release_stop.wait, 5)
+            return await original_stop(authority, session_id, deadline, intent)
+
+        control.stop = held_stop
+
+        def logout() -> None:
+            try:
+                outcome["logout"] = client.portal.call(
+                    app.state.phase2_lifecycle.logout,
+                    sessions["a"],
+                )
+            except Exception as exc:
+                outcome["logout_error"] = exc
+
+        def revoke() -> None:
+            try:
+                outcome["revoke"] = asyncio.run(
+                    execute_admin(socket, "revoke", "a@example.com")
+                )
+            except Exception as exc:
+                outcome["revoke_error"] = exc
+
+        logout_worker = threading.Thread(target=logout)
+        logout_worker.start()
+        assert stop_entered.wait(timeout=2)
+        revoke_worker = threading.Thread(target=revoke)
+        revoke_worker.start()
+        time.sleep(0.05)
+        assert revoke_worker.is_alive()
+        release_stop.set()
+        logout_worker.join(timeout=5)
+        revoke_worker.join(timeout=5)
+        assert not logout_worker.is_alive() and not revoke_worker.is_alive()
+        assert outcome == {
+            "logout": True,
+            "revoke": {"email": "a@example.com", "revoked": True},
+        }
+        session(client, sessions["a"])
+        assert client.get("/api/auth/session").status_code == 401
+
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0] == "completed"
+    finally:
+        connection.close()
+
+
+def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        first = client.post("/api/live/sessions").json()["id"]
+        second = client.post("/api/live/sessions").json()["id"]
+        live = app.state.phase2_live
+        original_interrupt = live.interrupt_binding
+        first_settlement_entered = threading.Event()
+        release_failure = threading.Event()
+        outcome: dict[str, object] = {}
+
+        async def fail_first(binding, control, reason):
+            if binding.handle.meeting_id == first:
+                first_settlement_entered.set()
+                assert await asyncio.to_thread(release_failure.wait, 5)
+                raise RuntimeError("injected first settlement failure")
+            return await original_interrupt(binding, control, reason)
+
+        live.interrupt_binding = fail_first
+
+        def revoke() -> None:
+            try:
+                outcome["result"] = asyncio.run(
+                    execute_admin(socket, "revoke", "a@example.com")
+                )
+            except Exception as exc:
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        assert first_settlement_entered.wait(timeout=2)
+        # Every target was synchronously fenced before the first terminal await failed.
+        assert client.post(
+            f"/api/live/sessions/{second}/frames",
+            json=v2_frame(0, "system"),
+        ).status_code == 409
+        assert app.state.phase2_live._bindings[second].authority_closing is True
+        assert client.get("/api/auth/session").status_code == 200
+        release_failure.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert isinstance(outcome.get("error"), Phase2ControlError)
+        assert str(outcome["error"]) == "account_settlement_failed"
+        assert client.get("/api/auth/session").status_code == 200
+        live.interrupt_binding = original_interrupt
+
+    # A failed revoke never reopens the uncertain generation in-process.  Normal startup
+    # recovery settles its rows; a fresh lifecycle can then retry and disable authority last.
+    restarted = make_app(database, control_socket=socket)
+    with TestClient(restarted, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        assert client.get("/api/auth/session").status_code == 200
+        assert asyncio.run(execute_admin(socket, "revoke", "a@example.com")) == {
+            "email": "a@example.com",
+            "revoked": True,
+        }
+        assert client.get("/api/auth/session").status_code == 401
+
+    connection = sqlite3.connect(database)
+    try:
+        statuses = dict(connection.execute("SELECT meeting_id, status FROM meetings"))
+    finally:
+        connection.close()
+    assert statuses[first] == "interrupted"
+    assert statuses[second] == "interrupted"
+
+
+def test_control_revoke_returns_after_durable_interrupt_and_fresh_generation(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, control_socket=socket)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        revoked_meeting = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, revoked_meeting)
+        session(client, sessions["b"])
+        other_meeting = client.post("/api/live/sessions").json()["id"]
+
+        assert asyncio.run(execute_admin(socket, "revoke", "a@example.com")) == {
+            "email": "a@example.com",
+            "revoked": True,
+        }
+        session(client, sessions["a"])
+        assert client.get("/api/auth/session").status_code == 401
+        session(client, sessions["a-observer"])
+        assert client.get("/api/auth/session").status_code == 401
+        session(client, sessions["b"])
+        assert client.get(f"/api/live/sessions/{other_meeting}/snapshot").status_code == 200
+
+        assert asyncio.run(execute_admin(socket, "allow", "a@example.com")) == {
+            "email": "a@example.com",
+            "enabled": True,
+        }
+
+        async def fresh_session() -> tuple[int, str]:
+            admitted = await app.state.phase2_store.admit(
+                GoogleIdentity("sub-a", "a@example.com", "A")
+            )
+            assert admitted is not None
+            return admitted[0].authority_generation, admitted[1]
+
+        generation, new_session = client.portal.call(fresh_session)
+        assert generation == 1
+        session(client, new_session)
+        assert client.get(f"/api/live/sessions/{revoked_meeting}/snapshot").status_code == 404
+        assert client.post("/api/live/sessions").status_code == 201
+
+    connection = sqlite3.connect(database)
+    try:
+        rows = dict(connection.execute("SELECT meeting_id, status FROM meetings"))
+        revoked_audio = connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (revoked_meeting,)
+        ).fetchone()
+    finally:
+        connection.close()
+    assert rows[revoked_meeting] == "interrupted"
+    assert revoked_audio == ("partial",)
+    assert rows[other_meeting] == "interrupted"  # normal service shutdown, not Account revoke
 
 
 def test_raw_stop_latch_cancelled_entrant_releases_only_its_claim():

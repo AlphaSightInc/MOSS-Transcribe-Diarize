@@ -97,6 +97,23 @@ class LiveTransportEventView:
     fields: Mapping[str, object]
 
 
+@dataclass(frozen=True, slots=True)
+class LiveTransportStopResult:
+    """The shared capture/runtime Stop result, independent of HTTP rendering."""
+
+    snapshot: LiveServiceSnapshot
+    v2_snapshot: LiveV2SessionSnapshot | None
+
+
+class LiveTransportStopRefused(RuntimeError):
+    """A v2 capture state that cannot truthfully complete normal Stop."""
+
+    def __init__(self, kind: str, snapshot: LiveV2SessionSnapshot):
+        super().__init__(snapshot.terminal_reason or kind)
+        self.kind = kind
+        self.snapshot = snapshot
+
+
 class LiveTransportAdapter(Protocol):
     """The only authority/publication facts allowed outside the shared transport."""
 
@@ -112,6 +129,10 @@ class LiveTransportAdapter(Protocol):
         payload: Mapping[str, object],
         authority: object,
     ) -> LiveTransportCreated: ...
+
+    async def release_create(self, authority: object) -> None: ...
+
+    def validate_mutation(self, authority: object) -> None: ...
 
     def snapshot(
         self,
@@ -195,6 +216,12 @@ class _LegacyLiveTransportAdapter:
             },
         )
 
+    async def release_create(self, authority: object) -> None:
+        del authority
+
+    def validate_mutation(self, authority: object) -> None:
+        del authority
+
     def snapshot(
         self,
         authority: object,
@@ -251,6 +278,130 @@ class _LegacyLiveTransportAdapter:
         del intent
 
 
+class LiveTransportControl:
+    """One non-HTTP owner for v2/mixer/tape/helper/raw terminal ordering."""
+
+    def __init__(
+        self,
+        *,
+        runtime: LiveServiceRuntime,
+        adapter: LiveTransportAdapter,
+        v2_sessions: Any,
+        v2_mixers: Any,
+        tapes: Any,
+        helper_failures: Any,
+        helper_presence: Any,
+    ) -> None:
+        self._runtime = runtime
+        self._adapter = adapter
+        self._v2_sessions = v2_sessions
+        self._v2_mixers = v2_mixers
+        self._tapes = tapes
+        self._helper_failures = helper_failures
+        self._helper_presence = helper_presence
+
+    async def stop(
+        self,
+        authority: object,
+        session_id: str,
+        deadline: float,
+        intent: object | None = None,
+    ) -> LiveTransportStopResult:
+        """Run the same normal Stop used by HTTP and internal Account logout."""
+
+        if intent is None:
+            intent = self._adapter.begin_stop(session_id)
+        release_on_error = False
+        try:
+            loop = asyncio.get_running_loop()
+            end_time = loop.time() + max(0.0, deadline)
+            try:
+                v2_session = self._v2_sessions.get(session_id)
+            except KeyError:
+                v2_session = None
+            v2_snapshot = None
+            if v2_session is not None:
+                try:
+                    v2_snapshot = await v2_session.stop(0.0)
+                except LiveV2SessionTerminalError:
+                    if v2_session.status != "closed":
+                        raise
+                    v2_snapshot = v2_session.snapshot()
+                while v2_snapshot.status == "closing":
+                    mixed = self._v2_mixers.get(session_id).admit_available(
+                        session_id,
+                        v2_session,
+                        self._runtime,
+                        final=True,
+                    )
+                    _tape_mixed(self._tapes, session_id, mixed)
+                    v2_snapshot = await v2_session.stop(0.0)
+                    if v2_snapshot.status != "closing" or mixed is None:
+                        break
+                    if loop.time() >= end_time:
+                        break
+                    await asyncio.sleep(0)
+                if v2_snapshot.status == "closing":
+                    raise LiveTransportStopRefused("unconsumed_frames", v2_snapshot)
+                if v2_snapshot.status == "failed":
+                    await self._runtime.abort(
+                        session_id,
+                        v2_snapshot.terminal_reason or "v2 capture failed",
+                    )
+                    self.release(session_id)
+                    await self._adapter.publication(
+                        authority,
+                        session_id,
+                        wait_for_durability=True,
+                    )
+                    raise LiveTransportStopRefused("v2_terminal_failure", v2_snapshot)
+                release_on_error = True
+            remaining = max(0.0, end_time - loop.time())
+            stopped = await self._adapter.stop(authority, session_id, remaining, intent)
+            self.release(session_id)
+            release_on_error = False
+            await self._adapter.publication(
+                authority,
+                session_id,
+                wait_for_durability=True,
+            )
+            return LiveTransportStopResult(stopped, v2_snapshot)
+        finally:
+            self._adapter.release_stop(intent)
+            if release_on_error:
+                self.release(session_id)
+
+    async def abort(self, authority: object, session_id: str, reason: str) -> None:
+        """Interrupt and durably publish through the same shared capture owners."""
+
+        await self._runtime.abort(session_id, reason)
+        try:
+            v2_session = self._v2_sessions.get(session_id)
+        except KeyError:
+            v2_session = None
+        if v2_session is not None:
+            try:
+                v2_session.abort(reason)
+            except LiveV2SessionTerminalError:
+                pass
+        self.release(session_id)
+        await self._adapter.publication(
+            authority,
+            session_id,
+            wait_for_durability=True,
+        )
+
+    def release(self, session_id: str) -> None:
+        _release_live_capture_state(
+            session_id,
+            v2_sessions=self._v2_sessions,
+            v2_mixers=self._v2_mixers,
+            tapes=self._tapes,
+            helper_failures=self._helper_failures,
+            helper_presence=self._helper_presence,
+        )
+
+
 def attach_live_routes(
     app,
     runtime: LiveServiceRuntime,
@@ -259,7 +410,7 @@ def attach_live_routes(
     live_helper_lease_seconds: float,
     tape_store: LiveSessionTapeStore | None = None,
     transport_adapter: LiveTransportAdapter | None = None,
-) -> None:
+) -> LiveTransportControl:
     from fastapi import HTTPException
     from fastapi.responses import JSONResponse
 
@@ -304,6 +455,16 @@ def attach_live_routes(
     app.state.live_tapes = tapes
     app.state.live_helper_presence = helper_presence
     app.state.live_helper_failures = helper_failures
+    control = LiveTransportControl(
+        runtime=runtime,
+        adapter=adapter,
+        v2_sessions=v2_sessions,
+        v2_mixers=v2_mixers,
+        tapes=tapes,
+        helper_failures=helper_failures,
+        helper_presence=helper_presence,
+    )
+    app.state.live_transport_control = control
 
     async def terminal_conflict_response(
         authority: object,
@@ -437,41 +598,45 @@ def attach_live_routes(
 
     @app.post("/api/live/sessions")
     async def create_live_session(request: Request):
+        authority: object | None = None
         try:
             authority = await adapter.authorize(request, "create", None)
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-        payload = await _optional_json(request)
         try:
+            payload = await _optional_json(request)
             created = await adapter.create(payload, authority)
+            try:
+                v2_sessions.create(created.session_id)
+                v2_mixers.create(created.session_id)
+                tapes.create(created.session_id)
+                if created.arm_helper_lease:
+                    helper_failures.arm(created.session_id)
+            except Exception:
+                if access is not None:
+                    access.release_session(created.session_id)
+                raise
+            published = await adapter.publication(
+                created.authority,
+                created.session_id,
+                wait_for_durability=False,
+            )
+            if published is None:
+                raise HTTPException(status_code=500, detail="Live session publication failed.")
+            response = {
+                "id": created.session_id,
+                **created.response_fields,
+                "descriptor": runtime.descriptor.to_dict(),
+                "snapshot": published.to_dict(),
+            }
+            return JSONResponse(response, status_code=created.status_code)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except LiveAccessError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-        try:
-            v2_sessions.create(created.session_id)
-            v2_mixers.create(created.session_id)
-            tapes.create(created.session_id)
-            if created.arm_helper_lease:
-                helper_failures.arm(created.session_id)
-        except Exception:
-            if access is not None:
-                access.release_session(created.session_id)
-            raise
-        published = await adapter.publication(
-            created.authority,
-            created.session_id,
-            wait_for_durability=False,
-        )
-        if published is None:
-            raise HTTPException(status_code=500, detail="Live session publication failed.")
-        response = {
-            "id": created.session_id,
-            **created.response_fields,
-            "descriptor": runtime.descriptor.to_dict(),
-            "snapshot": published.to_dict(),
-        }
-        return JSONResponse(response, status_code=created.status_code)
+        finally:
+            if authority is not None:
+                await adapter.release_create(authority)
 
     @app.post("/api/live/sessions/{session_id}/frames")
     async def accept_live_frame(session_id: str, request: Request):
@@ -480,6 +645,7 @@ def attach_live_routes(
             authority = await adapter.authorize(request, "frame", session_id)
             payload = await request.json()
             frame = _frame_from_payload(payload)
+            adapter.validate_mutation(authority)
             if frame.v2_frame is None:
                 accepted = runtime.accept_frame(session_id, frame.audio_frame)
                 result = _TransportAcceptResult(
@@ -584,8 +750,9 @@ def attach_live_routes(
     @app.post("/api/live/sessions/{session_id}/heartbeat")
     async def accept_live_helper_heartbeat(session_id: str, request: Request):
         try:
-            await adapter.authorize(request, "heartbeat", session_id)
+            authority = await adapter.authorize(request, "heartbeat", session_id)
             heartbeat = HelperHeartbeat.from_dict(await request.json())
+            adapter.validate_mutation(authority)
             presence = helper_presence.observe(session_id, heartbeat)
             await helper_failures.observe(session_id, presence)
             return JSONResponse({"helper_presence": presence.to_dict()})
@@ -643,102 +810,49 @@ def attach_live_routes(
     @app.post("/api/live/sessions/{session_id}/stop")
     async def stop_live_session(session_id: str, request: Request):
         stop_intent = adapter.begin_stop(session_id)
-        release_v2_on_error = False
         authority: object | None = None
         try:
             authority = await adapter.authorize(request, "stop", session_id)
             payload = await _optional_json(request)
-            deadline = float(payload.get("deadline", 0.0))
-            loop = asyncio.get_running_loop()
-            end_time = loop.time() + max(0.0, deadline)
-            try:
-                v2_session = v2_sessions.get(session_id)
-            except KeyError:
-                v2_session = None
-            v2_snapshot = None
-            if v2_session is not None:
-                try:
-                    v2_snapshot = await v2_session.stop(0.0)
-                except LiveV2SessionTerminalError:
-                    if v2_session.status != "closed":
-                        raise
-                    # A joined request can observe v2 closed while the first request is
-                    # still inside the shared raw Stop. Continue through adapter.stop:
-                    # the joined intent waits for that outcome, while a later intent
-                    # still reaches the runtime's existing closed conflict.
-                    v2_snapshot = v2_session.snapshot()
-                while v2_snapshot.status == "closing":
-                    mixed = v2_mixers.get(session_id).admit_available(
-                        session_id,
-                        v2_session,
-                        runtime,
-                        final=True,
-                    )
-                    _tape_mixed(tapes, session_id, mixed)
-                    v2_snapshot = await v2_session.stop(0.0)
-                    if v2_snapshot.status != "closing" or mixed is None:
-                        break
-                    if loop.time() >= end_time:
-                        break
-                    # Each mixer call is capped at max_frame_samples. Yield between chunks
-                    # so a stop cannot monopolize the service while draining a stale backlog.
-                    await asyncio.sleep(0)
-                if v2_snapshot.status == "closing":
-                    status, failure = live_v2_unconsumed_frames_response()
-                    published = await adapter.publication(
-                        authority,
-                        session_id,
-                        wait_for_durability=False,
-                    )
-                    failure["snapshot"] = None if published is None else published.to_dict()
-                    failure["v2_session"] = v2_snapshot.to_dict()
-                    return JSONResponse(failure, status_code=status)
-                if v2_snapshot.status == "failed":
-                    await runtime.abort(
-                        session_id,
-                        v2_snapshot.terminal_reason or "v2 capture failed",
-                    )
-                    _release_live_capture_state(
-                        session_id,
-                        v2_sessions=v2_sessions,
-                        v2_mixers=v2_mixers,
-                        tapes=tapes,
-                        helper_failures=helper_failures,
-                        helper_presence=helper_presence,
-                    )
-                    published = await adapter.publication(
-                        authority,
-                        session_id,
-                        wait_for_durability=True,
-                    )
-                    status, failure = live_v2_terminal_failure_response(v2_snapshot.terminal_reason)
-                    failure["snapshot"] = None if published is None else published.to_dict()
-                    failure["v2_session"] = v2_snapshot.to_dict()
-                    return JSONResponse(failure, status_code=status)
-                release_v2_on_error = True
-            deadline = max(0.0, end_time - loop.time())
-            stopped = await adapter.stop(authority, session_id, deadline, stop_intent)
-            _release_live_capture_state(
+            adapter.validate_mutation(authority)
+            result = await control.stop(
+                authority,
                 session_id,
-                v2_sessions=v2_sessions,
-                v2_mixers=v2_mixers,
-                tapes=tapes,
-                helper_failures=helper_failures,
-                helper_presence=helper_presence,
+                float(payload.get("deadline", 0.0)),
+                stop_intent,
             )
-            release_v2_on_error = False
             published = await adapter.publication(
                 authority,
                 session_id,
-                wait_for_durability=True,
+                wait_for_durability=False,
             )
             response = {
                 "snapshot": None if published is None else published.to_dict(),
-                "raw_terminal_status": stopped.session.status,
+                "raw_terminal_status": result.snapshot.session.status,
             }
-            if v2_snapshot is not None:
-                response["v2_session"] = v2_snapshot.to_dict()
+            if result.v2_snapshot is not None:
+                response["v2_session"] = result.v2_snapshot.to_dict()
             return response
+        except LiveTransportStopRefused as exc:
+            if exc.kind == "unconsumed_frames":
+                status, failure = live_v2_unconsumed_frames_response()
+                published = await adapter.publication(
+                    authority,
+                    session_id,
+                    wait_for_durability=False,
+                )
+            else:
+                status, failure = live_v2_terminal_failure_response(
+                    exc.snapshot.terminal_reason
+                )
+                published = await adapter.publication(
+                    authority,
+                    session_id,
+                    wait_for_durability=True,
+                )
+            failure["snapshot"] = None if published is None else published.to_dict()
+            failure["v2_session"] = exc.snapshot.to_dict()
+            return JSONResponse(failure, status_code=status)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except LiveAccessError as exc:
@@ -806,15 +920,6 @@ def attach_live_routes(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         finally:
             adapter.release_stop(stop_intent)
-            if release_v2_on_error:
-                _release_live_capture_state(
-                    session_id,
-                    v2_sessions=v2_sessions,
-                    v2_mixers=v2_mixers,
-                    tapes=tapes,
-                    helper_failures=helper_failures,
-                    helper_presence=helper_presence,
-                )
 
     @app.post("/api/live/sessions/{session_id}/abort")
     async def abort_live_session(session_id: str, request: Request):
@@ -822,28 +927,12 @@ def attach_live_routes(
             authority = await adapter.authorize(request, "abort", session_id)
             payload = await _optional_json(request)
             reason = str(payload.get("reason") or "aborted")
-            await runtime.abort(session_id, reason)
-            try:
-                v2_session = v2_sessions.get(session_id)
-            except KeyError:
-                v2_session = None
-            if v2_session is not None:
-                try:
-                    v2_session.abort(reason)
-                except LiveV2SessionTerminalError:
-                    pass
-            _release_live_capture_state(
-                session_id,
-                v2_sessions=v2_sessions,
-                v2_mixers=v2_mixers,
-                tapes=tapes,
-                helper_failures=helper_failures,
-                helper_presence=helper_presence,
-            )
+            adapter.validate_mutation(authority)
+            await control.abort(authority, session_id, reason)
             published = await adapter.publication(
                 authority,
                 session_id,
-                wait_for_durability=True,
+                wait_for_durability=False,
             )
             return {"snapshot": None if published is None else published.to_dict()}
         except KeyError as exc:
@@ -893,11 +982,14 @@ def attach_live_routes(
             revoke_live_view,
             methods=["DELETE"],
         )
+
         app.add_api_route(
             "/api/live/devices/{device_id}",
             revoke_live_device,
             methods=["DELETE"],
         )
+
+    return control
 
 
 @dataclass(frozen=True, slots=True)

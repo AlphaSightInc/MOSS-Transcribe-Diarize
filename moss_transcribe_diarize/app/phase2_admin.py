@@ -8,35 +8,23 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from .phase2 import DEFAULT_PHASE2_DATABASE_PATH, Phase2Store, normalize_email
+from .phase2_control import DEFAULT_PHASE2_CONTROL_SOCKET_PATH, request_control
 
 
-async def execute(database: str | Path, command: str, email: str | None = None) -> object:
-    store = await Phase2Store.open(database)
-    try:
-        if command == "allow":
-            if email is None:
-                raise ValueError("EMAIL is required.")
-            normalized = normalize_email(email)
-            await store.allow_email(normalized)
-            return {"email": normalized, "enabled": True}
-        if command == "revoke":
-            if email is None:
-                raise ValueError("EMAIL is required.")
-            return {"email": normalize_email(email), "revoked": await store.revoke_email(email)}
-        if command == "list":
-            return await store.list_allowlist()
+async def execute(socket: str | Path, command: str, email: str | None = None) -> object:
+    if command not in {"allow", "revoke", "list"}:
         raise ValueError(f"Unknown accounts command: {command}")
-    finally:
-        await store.close()
+    if command != "list" and email is None:
+        raise ValueError("EMAIL is required.")
+    return await request_control(socket, f"accounts.{command}", email)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Host-local MOSS Phase-2 administration.")
     parser.add_argument(
-        "--database",
-        default=str(DEFAULT_PHASE2_DATABASE_PATH),
-        help="The Phase-2 SQLite database path (defaults to the product database).",
+        "--socket",
+        default=str(DEFAULT_PHASE2_CONTROL_SOCKET_PATH),
+        help="The running product's host-local control socket.",
     )
     commands = parser.add_subparsers(dest="area", required=True)
     accounts = commands.add_parser("accounts")
@@ -53,7 +41,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     if args.area != "accounts":  # argparse keeps this defensive branch unreachable.
         raise SystemExit(2)
-    result = asyncio.run(execute(args.database, args.command, getattr(args, "email", None)))
+    result = asyncio.run(execute(args.socket, args.command, getattr(args, "email", None)))
     print(json.dumps(result, sort_keys=True))
 
 

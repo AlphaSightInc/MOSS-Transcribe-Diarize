@@ -74,6 +74,20 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
     setMessage(`${failure.lane}: ${failure.code}`);
   };
 
+  const handleTerminal = (terminalMessage: string, clearSaved: boolean) => {
+    if (clearSaved) clearSessionReattach(sessionReattachStorage());
+    pollerRef.current?.stop();
+    pollerRef.current = null;
+    const client = clientRef.current;
+    clientRef.current = null;
+    if (client) void client.close().catch(() => undefined);
+    metersRef.current = EMPTY_METERS;
+    setMeters(EMPTY_METERS);
+    transition("terminal");
+    setMessage(terminalMessage);
+    requestMeetingHistoryRefresh();
+  };
+
   const configureMicrophone = async () => {
     if ((!accountAuthority && !captureBearer.trim()) || clientRef.current) return;
     transition("configuring");
@@ -158,10 +172,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
         terminalAccessToken: accountAuthority ? undefined : captureBearer.trim(),
         onError: setMessage,
         onTerminal(terminalMessage) {
-          clearSessionReattach(sessionReattachStorage());
-          transition("terminal");
-          setMessage(terminalMessage);
-          requestMeetingHistoryRefresh();
+          handleTerminal(terminalMessage, true);
         }
       });
       pollerRef.current = poller;
@@ -240,9 +251,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
         authority: "account",
         onError: setMessage,
         onTerminal(terminalMessage) {
-          transition("terminal");
-          setMessage(terminalMessage);
-          requestMeetingHistoryRefresh();
+          handleTerminal(terminalMessage, false);
         }
       });
       pollerRef.current = poller;
@@ -260,10 +269,7 @@ export function ControlPanel({ authority = "bearer", captureBearer, onCaptureBea
         accessToken: saved.viewToken ?? undefined,
         onError: setMessage,
         onTerminal(terminalMessage) {
-          clearSessionReattach(sessionReattachStorage());
-          transition("terminal");
-          setMessage(terminalMessage);
-          requestMeetingHistoryRefresh();
+          handleTerminal(terminalMessage, true);
         }
       });
       pollerRef.current = poller;

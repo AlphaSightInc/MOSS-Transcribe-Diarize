@@ -26,6 +26,11 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 ## Consequences
 
 - Each Account-workspace mutation is one transaction behind the Account workspace module.
+- Account revoke is one final mutation after the in-process lifecycle has drained creation and
+  settled owned Live/File work. That transaction disables every bound allowlist row and the Account,
+  increments its generation, deletes every Sign-in session, and interrupts only residual active rows.
+  Therefore no process-owned worker loses its captured handle between cleanup and durable terminal
+  truth, while every late old-generation mutation fails after the transaction.
 - The same mutation lock also bounds every request-facing read on the one connection. SQLite exposes
   a connection's own uncommitted writes, so an unlocked read could otherwise observe terminal status
   before the transcript upsert in the same transaction. Internal SELECTs already inside a mutation

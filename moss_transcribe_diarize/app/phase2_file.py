@@ -6,6 +6,7 @@ import asyncio
 import logging
 import secrets
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,12 @@ DEFAULT_PHASE2_FILE_WORK_ROOT = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "file-work"
 )
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class _OwnedFileTask:
+    handle: Any
+    task: asyncio.Task[None]
 
 
 class FileMeetingTasks:
@@ -52,7 +59,8 @@ class FileMeetingTasks:
         self._temperature = temperature if decoding == "sample" else None
         self._url_acquirer = url_acquirer
         self._audio_archive = audio_archive
-        self._tasks: set[asyncio.Task[None]] = set()
+        self._tasks: dict[str, _OwnedFileTask] = {}
+        self._fenced_owner_keys: set[tuple[str, int]] = set()
 
     def clear_transient_work(self) -> None:
         """Remove only children of the dedicated, non-durable File work root."""
@@ -101,8 +109,7 @@ class FileMeetingTasks:
 
         started = asyncio.Event()
         task = asyncio.create_task(self._run(handle, input_path, started))
-        self._tasks.add(task)
-        task.add_done_callback(self._task_done)
+        self._register(handle, task)
         await started.wait()
         return handle
 
@@ -125,22 +132,75 @@ class FileMeetingTasks:
         task = asyncio.create_task(
             self._acquire_and_run(handle, source_url, staging_dir, started)
         )
-        self._tasks.add(task)
-        task.add_done_callback(self._task_done)
+        self._register(handle, task)
         await started.wait()
         return handle
 
     async def stop(self) -> None:
         """Fence coroutine commits before the owning SQLite connection closes."""
 
-        tasks = tuple(self._tasks)
+        tasks = tuple(entry.task for entry in self._tasks.values())
         for task in tasks:
             task.cancel()
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    def _task_done(self, task: asyncio.Task[None]) -> None:
-        self._tasks.discard(task)
+    async def interrupt_account(self, owner_key: tuple[str, int]) -> tuple[str, ...]:
+        """Quiesce this Account generation, then durably interrupt its active File rows."""
+
+        entries = self.fence_account(owner_key)
+        return await self.settle_fenced(entries)
+
+    def fence_account(self, owner_key: tuple[str, int]) -> tuple[_OwnedFileTask, ...]:
+        """Reject every later result before waiting for any one task."""
+
+        self._fenced_owner_keys.add(owner_key)
+        entries = tuple(
+            entry
+            for entry in self._tasks.values()
+            if entry.handle.owner_key == owner_key
+        )
+        for entry in entries:
+            entry.task.cancel()
+        return entries
+
+    async def settle_fenced(
+        self,
+        entries: tuple[_OwnedFileTask, ...],
+    ) -> tuple[str, ...]:
+        if entries:
+            results = await asyncio.gather(
+                *(entry.task for entry in entries),
+                return_exceptions=True,
+            )
+            for result in results:
+                if isinstance(result, Exception) and not isinstance(
+                    result, asyncio.CancelledError
+                ):
+                    raise RuntimeError("File Meeting could not be quiesced.") from result
+        interrupted: list[str] = []
+        for entry in entries:
+            try:
+                snapshot = await entry.handle.snapshot()
+            except AccountRevoked:
+                continue
+            if snapshot.status != "active":
+                continue
+            if snapshot.audio is None:
+                await entry.handle.record_audio_unavailable()
+            await entry.handle.finish("interrupted")
+            interrupted.append(entry.handle.meeting_id)
+        return tuple(interrupted)
+
+    def _register(self, handle: Any, task: asyncio.Task[None]) -> None:
+        meeting_id = handle.meeting_id
+        self._tasks[meeting_id] = _OwnedFileTask(handle=handle, task=task)
+        task.add_done_callback(lambda completed: self._task_done(meeting_id, completed))
+
+    def _task_done(self, meeting_id: str, task: asyncio.Task[None]) -> None:
+        entry = self._tasks.get(meeting_id)
+        if entry is not None and entry.task is task:
+            self._tasks.pop(meeting_id, None)
         if task.cancelled():
             return
         if task.exception() is not None:
@@ -231,6 +291,10 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             return
 
+        if handle.owner_key in self._fenced_owner_keys:
+            self._remove_work_dir(input_path.parent)
+            return
+
         try:
             document = {
                 "segments": [
@@ -255,6 +319,10 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
+        if handle.owner_key in self._fenced_owner_keys:
+            self._remove_work_dir(input_path.parent)
+            return
+
         if mix_path is None:
             audio_task = asyncio.create_task(handle.record_audio_unavailable())
         else:
@@ -272,6 +340,7 @@ class FileMeetingTasks:
                 LOGGER.error("File Meeting audio publication failed during shutdown.")
             self._remove_work_dir(input_path.parent)
             raise
+
         except AccountRevoked:
             self._remove_work_dir(input_path.parent)
             return
@@ -279,6 +348,10 @@ class FileMeetingTasks:
             await self._mark_failed(handle)
             self._remove_work_dir(input_path.parent)
             raise
+
+        if handle.owner_key in self._fenced_owner_keys:
+            self._remove_work_dir(input_path.parent)
+            return
 
         try:
             self._remove_work_dir(input_path.parent)

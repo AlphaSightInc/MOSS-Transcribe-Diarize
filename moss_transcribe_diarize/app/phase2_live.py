@@ -27,7 +27,7 @@ from .live_transport import (
     LiveTransportSnapshotView,
     attach_live_routes,
 )
-from .phase2 import Account, AccountRevoked
+from .phase2 import Account, AccountRevoked, SESSION_COOKIE
 
 
 class LiveMeetingNotFound(KeyError):
@@ -76,6 +76,7 @@ class _LiveBinding:
     public_event_high_water: int = -1
     raw_event_high_water: int = -1
     terminal_persisted: bool = False
+    authority_closing: bool = False
     capture_fenced: bool = False
     persistence_failure: str | None = None
     worker: asyncio.Task[None] | None = None
@@ -208,7 +209,8 @@ class Phase2LiveMeetings:
         if mutation and session_id != binding.origin_session:
             raise LiveMeetingReadOnly("active Meeting observers are read-only.")
         if mutation and (
-            binding.capture_fenced
+            binding.authority_closing
+            or binding.capture_fenced
             or binding.terminal_persisted
             or (
                 binding.public_snapshot is not None
@@ -217,6 +219,43 @@ class Phase2LiveMeetings:
         ):
             raise LiveMeetingTerminal("live Meeting is terminal.")
         return binding
+
+    def bindings_for_origin(self, session_id: str) -> tuple[_LiveBinding, ...]:
+        return tuple(
+            binding
+            for binding in self._bindings.values()
+            if binding.origin_session == session_id and not binding.terminal_persisted
+        )
+
+    def bindings_for_account(
+        self, owner_key: tuple[str, int]
+    ) -> tuple[_LiveBinding, ...]:
+        return tuple(
+            binding
+            for binding in self._bindings.values()
+            if binding.owner_key == owner_key and not binding.terminal_persisted
+        )
+
+    def fence_account(self, owner_key: tuple[str, int]) -> tuple[_LiveBinding, ...]:
+        """Synchronously reject later mutations before the first terminal await."""
+
+        bindings = self.bindings_for_account(owner_key)
+        for binding in bindings:
+            binding.authority_closing = True
+        return bindings
+
+    async def interrupt_binding(
+        self,
+        binding: _LiveBinding,
+        control: Any,
+        reason: str,
+    ) -> None:
+        """Join any accepted Stop, settle interrupted truth, then release shared capture state."""
+
+        await self._fence(binding, reason)
+        control.release(binding.handle.meeting_id)
+        if not binding.terminal_persisted:
+            raise RuntimeError("Live Meeting interruption did not become durable.")
 
     async def sync_and_flush(self, meeting_id: str) -> _LiveBinding:
         binding = self._bindings[meeting_id]
@@ -757,11 +796,13 @@ class Phase2LiveMeetings:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _Phase2CreateAuthority:
     account: Account
     origin_session: str
     workspace: Any
+    admission: Any
+    released: bool = False
 
 
 class _Phase2LiveTransportAdapter:
@@ -769,7 +810,11 @@ class _Phase2LiveTransportAdapter:
 
     _MUTATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
 
-    def __init__(self, live: Phase2LiveMeetings, require_account: Any) -> None:
+    def __init__(
+        self,
+        live: Phase2LiveMeetings,
+        require_account: Any,
+    ) -> None:
         self.live = live
         self.require_account = require_account
 
@@ -781,18 +826,30 @@ class _Phase2LiveTransportAdapter:
     ) -> object:
         from fastapi import HTTPException
 
-        account = await self.require_account(request)
-        sign_in_session = request.cookies.get("__Host-moss_session")
-        if operation == "descriptor":
-            return account
+        sign_in_session = request.cookies.get(SESSION_COOKIE)
         if operation == "create":
             if not sign_in_session:
                 raise HTTPException(status_code=401, detail="Sign in required.")
+            lifecycle = request.app.state.phase2_lifecycle
+            admission = lifecycle.admit_creation(
+                sign_in_session,
+            )
+            try:
+                account = await admission.__aenter__()
+            except lifecycle.unavailable_error as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Account lifecycle is changing.",
+                ) from exc
             return _Phase2CreateAuthority(
                 account=account,
                 origin_session=sign_in_session,
                 workspace=request.app.state.phase2_store.workspace(account),
+                admission=admission,
             )
+        account = await self.require_account(request)
+        if operation == "descriptor":
+            return account
         if session_id is None:
             raise ValueError("session_id is required after Live Meeting creation.")
         try:
@@ -829,6 +886,19 @@ class _Phase2LiveTransportAdapter:
             response_fields={},
             arm_helper_lease=True,
         )
+
+    async def release_create(self, authority: object) -> None:
+        if not isinstance(authority, _Phase2CreateAuthority) or authority.released:
+            return
+        authority.released = True
+        await authority.admission.__aexit__(None, None, None)
+
+    def validate_mutation(self, authority: object) -> None:
+        binding = self._binding(authority)
+        if binding.authority_closing:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=409, detail="Account lifecycle is changing.")
 
     def snapshot(
         self,
@@ -905,11 +975,11 @@ def attach_phase2_live_routes(
     *,
     require_account: Any,
     live_helper_lease_seconds: float,
-) -> None:
+) -> Any:
     """Attach Account authority to the one shared Live transport implementation."""
 
     app.state.phase2_live = live
-    attach_live_routes(
+    control = attach_live_routes(
         app,
         live.runtime,
         None,
@@ -917,6 +987,8 @@ def attach_phase2_live_routes(
         tape_store=live.audio_stages,
         transport_adapter=_Phase2LiveTransportAdapter(live, require_account),
     )
+    app.state.phase2_live_control = control
+    return control
 
 
 def _transcript_document(snapshot: LiveServiceSnapshot) -> dict[str, object]:

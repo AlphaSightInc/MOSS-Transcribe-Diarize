@@ -62,6 +62,13 @@ class Account:
 
 
 @dataclass(frozen=True, slots=True)
+class AccountRevokeTarget:
+    email: str
+    exists: bool
+    account: Account | None
+
+
+@dataclass(frozen=True, slots=True)
 class MeetingAudio:
     state: str
     relative_path: str | None
@@ -482,51 +489,92 @@ class Phase2Store:
         return [{"email": row["email"], "enabled": bool(row["enabled"])} for row in rows]
 
     async def revoke_email(self, email: str) -> bool:
+        """Direct store primitive retained for offline recovery/tests, not the host CLI."""
+
+        target = await self.account_revoke_target(email)
+        return await self.finalize_account_revoke(target)
+
+    async def account_revoke_target(self, email: str) -> AccountRevokeTarget:
         normalized = _required_email(email)
-        now = _now_ms()
-        async with self._mutation():
+        async with self._external_read():
             cursor = await self._connection.execute(
                 "SELECT bound_account_id FROM account_allowlist WHERE email = ?", (normalized,)
             )
             row = await cursor.fetchone()
             await cursor.close()
             if row is None:
-                return False
+                return AccountRevokeTarget(normalized, False, None)
             account_id = row["bound_account_id"]
-            if account_id is not None:
-                # An Account may have changed email after more than one allowed callback.  A
+            if account_id is None:
+                return AccountRevokeTarget(normalized, True, None)
+            cursor = await self._connection.execute(
+                """
+                SELECT account_id, email, display_name, authority_generation
+                FROM accounts WHERE account_id = ? AND enabled = 1
+                """,
+                (account_id,),
+            )
+            account_row = await cursor.fetchone()
+            await cursor.close()
+        if account_row is None:
+            return AccountRevokeTarget(normalized, True, None)
+        return AccountRevokeTarget(
+            normalized,
+            True,
+            Account(
+                account_id=account_row["account_id"],
+                email=account_row["email"],
+                display_name=account_row["display_name"],
+                authority_generation=int(account_row["authority_generation"]),
+            ),
+        )
+
+    async def finalize_account_revoke(self, target: AccountRevokeTarget) -> bool:
+        """Make authority loss durable only after the lifecycle owner drains work."""
+
+        if not target.exists:
+            return False
+        now = _now_ms()
+        async with self._mutation():
+            account = target.account
+            if account is not None:
+                # An Account may have changed email after more than one allowed callback. A
                 # revoke is Account authority, so another already-bound email cannot restore it.
                 await self._connection.execute(
                     """
                     UPDATE account_allowlist SET enabled = 0, updated_at_ms = ?
                     WHERE bound_account_id = ?
                     """,
-                    (now, account_id),
+                    (now, account.account_id),
                 )
-                await self._connection.execute(
+                cursor = await self._connection.execute(
                     """
                     UPDATE accounts
                     SET enabled = 0,
                         authority_generation = authority_generation + 1,
                         updated_at_ms = ?
-                    WHERE account_id = ?
+                    WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
                     """,
-                    (now, account_id),
+                    (now, account.account_id, account.authority_generation),
                 )
+                changed = cursor.rowcount
+                await cursor.close()
+                if changed != 1:
+                    raise AccountRevoked("Account authority changed during revoke.")
                 await self._connection.execute(
-                    "DELETE FROM sign_in_sessions WHERE account_id = ?", (account_id,)
+                    "DELETE FROM sign_in_sessions WHERE account_id = ?", (account.account_id,)
                 )
                 await self._connection.execute(
                     """
                     UPDATE meetings SET status = 'interrupted', updated_at_ms = ?
                     WHERE account_id = ? AND status = 'active'
                     """,
-                    (now, account_id),
+                    (now, account.account_id),
                 )
             else:
                 await self._connection.execute(
                     "UPDATE account_allowlist SET enabled = 0, updated_at_ms = ? WHERE email = ?",
-                    (now, normalized),
+                    (now, target.email),
                 )
             return True
 
@@ -1317,6 +1365,12 @@ class MeetingHandle:
         self._authority_generation = authority_generation
         self.meeting_id = meeting_id
 
+    @property
+    def owner_key(self) -> tuple[str, int]:
+        """Captured Account authority for process-owned lifecycle registries."""
+
+        return self._account_id, self._authority_generation
+
     async def snapshot(self) -> Meeting:
         return await self._store._meeting_snapshot(
             self._account_id,
@@ -1573,6 +1627,7 @@ def create_phase2_app(
     url_acquirer: Any | None = None,
     meeting_audio_root: str | Path | None = None,
     file_audio_archive: Any | None = None,
+    control_socket_path: str | Path | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -1595,6 +1650,7 @@ def create_phase2_app(
 
     from .phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
     from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
+    from .phase2_lifecycle import AccountLifecycleUnavailable
 
     resolved_work_root = Path(file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT).expanduser()
     audio_archive = file_audio_archive or MeetingAudioArchive(
@@ -1637,9 +1693,12 @@ def create_phase2_app(
     elif live_helper_lease_seconds is not None:
         raise ValueError("live_runtime_factory is required when a Live helper lease is set.")
 
+    live_control = None
+
     @asynccontextmanager
     async def lifespan(app: Any) -> AsyncIterator[None]:
         store = await Phase2Store.open(database_path)
+        control_server = None
         try:
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
@@ -1652,10 +1711,24 @@ def create_phase2_app(
             app.state.phase2_store = store
             app.state.phase2_file_tasks = file_tasks
             app.state.phase2_audio_archive = audio_archive
+            from .phase2_lifecycle import AccountLifecycle
+
+            lifecycle = AccountLifecycle(store, live=phase2_live, files=file_tasks)
+            if live_control is not None:
+                lifecycle.bind_live_control(live_control)
+            app.state.phase2_lifecycle = lifecycle
             if phase2_live is not None:
                 phase2_live.start()
+            if control_socket_path is not None:
+                from .phase2_control import Phase2ControlServer
+
+                control_server = Phase2ControlServer(control_socket_path, lifecycle)
+                await control_server.start()
+                app.state.phase2_control = control_server
             yield
         finally:
+            if control_server is not None:
+                await control_server.stop()
             if phase2_live is not None:
                 await phase2_live.shutdown()
             if file_tasks is not None:
@@ -1681,6 +1754,10 @@ def create_phase2_app(
     @app.exception_handler(AccountRevoked)
     async def account_revoked(_: Request, __: AccountRevoked):
         return JSONResponse({"detail": "Sign in required."}, status_code=401)
+
+    @app.exception_handler(AccountLifecycleUnavailable)
+    async def account_lifecycle_unavailable(_: Request, __: AccountLifecycleUnavailable):
+        return JSONResponse({"detail": "Account lifecycle is changing."}, status_code=409)
 
     async def require_account(request: Request) -> Account:
         account = await request.app.state.phase2_store.account_for_session(
@@ -1716,7 +1793,7 @@ def create_phase2_app(
     if phase2_live is not None:
         from .phase2_live import attach_phase2_live_routes
 
-        attach_phase2_live_routes(
+        live_control = attach_phase2_live_routes(
             app,
             phase2_live,
             require_account=require_account,
@@ -1768,8 +1845,19 @@ def create_phase2_app(
 
     @app.post("/auth/logout")
     async def logout(request: Request):
-        await require_account(request)
-        await request.app.state.phase2_store.revoke_session(request.cookies.get(SESSION_COOKIE))
+        try:
+            await request.app.state.phase2_lifecycle.logout(
+                request.cookies.get(SESSION_COOKIE)
+            )
+        except AccountRevoked:
+            raise
+        except AccountLifecycleUnavailable:
+            raise
+        except Exception:
+            return JSONResponse(
+                {"detail": "Live Meetings could not be stopped; you remain signed in."},
+                status_code=503,
+            )
         response = RedirectResponse("/", status_code=303)
         response.delete_cookie(
             SESSION_COOKIE,
@@ -1795,44 +1883,54 @@ def create_phase2_app(
 
     @app.post("/api/meetings/file", status_code=201)
     async def create_file_meeting(request: Request):
-        account = await require_account(request)
         if request.app.state.phase2_file_tasks is None:
             raise HTTPException(status_code=503, detail="File transcription is unavailable.")
         try:
-            form = await request.form()
-            upload = form.get("file")
-            if upload is None or not hasattr(upload, "read"):
-                raise ValueError("Missing upload file.")
-            handle = await request.app.state.phase2_file_tasks.accept(
-                request.app.state.phase2_store.workspace(account),
-                upload,
-            )
+            session_id = request.cookies.get(SESSION_COOKIE)
+            async with request.app.state.phase2_lifecycle.admit_creation(
+                session_id or "",
+            ) as account:
+                form = await request.form()
+                upload = form.get("file")
+                if upload is None or not hasattr(upload, "read"):
+                    raise ValueError("Missing upload file.")
+                handle = await request.app.state.phase2_file_tasks.accept(
+                    request.app.state.phase2_store.workspace(account),
+                    upload,
+                )
             return (await handle.snapshot()).to_dict()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except AccountRevoked:
+            raise
+        except AccountLifecycleUnavailable:
             raise
         except Exception as exc:
             raise HTTPException(status_code=500, detail="Upload could not be accepted.") from exc
 
     @app.post("/api/meetings/url", status_code=201)
     async def create_url_meeting(request: Request):
-        account = await require_account(request)
         if request.app.state.phase2_file_tasks is None:
             raise HTTPException(status_code=503, detail="File transcription is unavailable.")
         try:
-            payload = await request.json()
-            source_url = payload.get("url") if isinstance(payload, dict) else None
-            if not isinstance(source_url, str):
-                raise ValueError("Missing media URL.")
-            handle = await request.app.state.phase2_file_tasks.accept_url(
-                request.app.state.phase2_store.workspace(account),
-                source_url,
-            )
+            session_id = request.cookies.get(SESSION_COOKIE)
+            async with request.app.state.phase2_lifecycle.admit_creation(
+                session_id or "",
+            ) as account:
+                payload = await request.json()
+                source_url = payload.get("url") if isinstance(payload, dict) else None
+                if not isinstance(source_url, str):
+                    raise ValueError("Missing media URL.")
+                handle = await request.app.state.phase2_file_tasks.accept_url(
+                    request.app.state.phase2_store.workspace(account),
+                    source_url,
+                )
             return (await handle.snapshot()).to_dict()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except AccountRevoked:
+            raise
+        except AccountLifecycleUnavailable:
             raise
         except Exception as exc:
             raise HTTPException(status_code=500, detail="URL could not be accepted.") from exc

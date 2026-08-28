@@ -789,6 +789,37 @@ describe("browser capture frame contract", () => {
     expect(postedSequences(fetchSpy)).toEqual([0, 1]);
   });
 
+  it("closes local tracks and helper state on revoked Account frame 401 without retry", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Sign in required." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+    const onTransportError = vi.fn();
+    const { client, lane } = activeFrameClient(onTransportError);
+    const context = Object.assign(new EventTarget(), {
+      sampleRate: 4,
+      close: vi.fn().mockResolvedValue(undefined),
+    });
+    const track = Object.assign(new EventTarget(), { stop: vi.fn() });
+    client.context = context as unknown as AudioContext;
+    lane.tracks = [track];
+
+    client.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(context.close).toHaveBeenCalledOnce());
+
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(client.session).toBeNull();
+    expect(client.lanes.size).toBe(0);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(onTransportError).toHaveBeenCalledWith(
+      "frame",
+      expect.objectContaining({ message: "frame POST failed: HTTP 401" }),
+    );
+  });
+
   it("retries the same sequence after an unconsumed lane-capacity 429", async () => {
     const fetchSpy = vi
       .fn()

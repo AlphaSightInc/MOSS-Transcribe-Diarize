@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sqlite3
 import threading
 import time
@@ -18,6 +19,7 @@ from moss_transcribe_diarize.app.phase2 import (
     SESSION_COOKIE,
     create_phase2_app,
 )
+from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
 
 
 class NeverOidc:
@@ -68,13 +70,20 @@ async def provision(database: Path) -> dict[str, str]:
         await store.close()
 
 
-def make_app(database: Path, runner: object | None, work_root: Path):
+def make_app(
+    database: Path,
+    runner: object | None,
+    work_root: Path,
+    *,
+    control_socket: Path | None = None,
+):
     return create_phase2_app(
         database_path=database,
         oidc=NeverOidc(),
         oauth_cookie_secret="test-cookie-secret",
         file_runner=runner,
         file_work_root=work_root,
+        control_socket_path=control_socket,
     )
 
 
@@ -143,6 +152,93 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
         connection.close()
     assert runner.inputs == [("input.wav", b"owner-audio")]
     assert list((tmp_path / "file-work").glob("**/*")) == []
+
+
+def test_logout_does_not_cancel_accepted_file_work(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    app = make_app(database, runner, tmp_path / "file-work")
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"accepted", "audio/wav")},
+        ).json()["id"]
+        assert runner.started.wait(timeout=2)
+        logout = client.post("/auth/logout", follow_redirects=False)
+        assert logout.status_code == 303
+        assert client.get("/api/auth/session").status_code == 401
+        runner.release.set()
+        session(client, sessions["sub-a-second"])
+        meeting = await_terminal(client, meeting_id, "completed")
+        assert meeting["transcript_version"] == 1
+
+
+def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-i18-file-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(
+        database,
+        runner,
+        work_root,
+        control_socket=socket,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"held-result", "audio/wav")},
+        ).json()["id"]
+        assert runner.started.wait(timeout=2)
+        outcome: dict[str, object] = {}
+
+        def revoke() -> None:
+            outcome["result"] = asyncio.run(
+                execute_admin(socket, "revoke", "a@example.com")
+            )
+
+        worker = threading.Thread(target=revoke)
+        worker.start()
+        deadline = time.monotonic() + 2
+        owner_key = ("sub-a", 0)
+        while owner_key not in app.state.phase2_file_tasks._fenced_owner_keys:
+            if time.monotonic() >= deadline:
+                raise AssertionError("Account File tasks were not fenced")
+            time.sleep(0.01)
+        assert worker.is_alive()
+        assert client.post(
+            "/api/meetings/file",
+            files={"file": ("later.wav", b"later", "audio/wav")},
+        ).status_code == 409
+        # Durable authority changes last, after the held provider result is quiesced.
+        assert client.get("/api/auth/session").status_code == 200
+        runner.release.set()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert outcome["result"] == {"email": "a@example.com", "revoked": True}
+        assert client.get("/api/auth/session").status_code == 401
+
+    connection = sqlite3.connect(database)
+    try:
+        status = connection.execute(
+            "SELECT status FROM meetings WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0]
+        transcript_count = connection.execute(
+            "SELECT COUNT(*) FROM meeting_transcripts WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0]
+        audio_state = connection.execute(
+            "SELECT state FROM meeting_audio WHERE meeting_id = ?", (meeting_id,)
+        ).fetchone()[0]
+    finally:
+        connection.close()
+    assert (status, transcript_count, audio_state) == ("interrupted", 0, "unavailable")
+    assert list(work_root.glob("**/*")) == []
 
 
 def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
@@ -288,7 +384,7 @@ def test_shutdown_waits_for_sync_runner_before_source_cleanup_and_fences_commit(
     assert not shutdown_thread.is_alive()
     assert shutdown_error == []
     assert not source.exists()
-    assert app.state.phase2_file_tasks._tasks == set()
+    assert app.state.phase2_file_tasks._tasks == {}
 
     connection = sqlite3.connect(database)
     try:
@@ -440,7 +536,7 @@ def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
         deadline = time.monotonic() + 5
         while app.state.phase2_file_tasks._tasks and time.monotonic() < deadline:
             time.sleep(0.01)
-        assert app.state.phase2_file_tasks._tasks == set()
+        assert app.state.phase2_file_tasks._tasks == {}
         assert meeting["transcript"]["segments"][0]["text"] == "owner sentinel"
         assert meeting["audio"]["state"] == "unavailable"
         assert source.exists()

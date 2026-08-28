@@ -92,7 +92,8 @@ it does not rename or re-encode the MP3.
   after available metadata and raw cleanup but before the atomic transcript/status commit. Every
   revoked terminal exit therefore applies the same guarded state-only reconciliation before public
   terminal truth: the measured boundary ended interrupted/partial with identical `audio.mp3` bytes
-  and metadata. Issue #18 owns moving revocation ordering before generation fencing.
+  and metadata. Account lifecycle revocation now fences and settles those bindings while their
+  captured generation remains valid, then disables Account authority in one final transaction.
 - A Stop request and a queued transcript persistence failure can become runnable together. Python
   3.10 measured the failure first while raw capture was still active; Python 3.12 measured raw Stop
   first. The shared transport therefore opens one adapter-owned Stop intent at endpoint entry and
