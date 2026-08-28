@@ -34,7 +34,10 @@ from .app.phase2 import SESSION_COOKIE
 from .app.phase2_audio import MeetingAudioArchive
 from .app.phase2_control import request_control
 from .app.phase2_operator import render_operator_status, serialize_operator_payload
-from .concurrency_evidence import canonical_lifecycle_fairness
+from .concurrency_evidence import (
+    canonical_lifecycle_fairness,
+    prestop_inference_projection,
+)
 from .phase2_acceptance import (
     G1_CROSS_OWNER_MATRIX,
     G1_SENTINEL_SURFACES,
@@ -46,10 +49,106 @@ from .phase2_acceptance_replay import (
 )
 from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
+from .installed_candidate import validated_candidate_artifacts
 
 
 class ExternalMeasurementError(RuntimeError):
     """A fixed measurement ran but did not produce trustworthy product state."""
+
+
+class _CampaignBackpressure:
+    """Bind one exact refusal, peer advance, and retry to existing campaign sessions."""
+
+    def __init__(self, session_count: int) -> None:
+        self._lock = threading.Lock()
+        self._refusal_seen = threading.Event()
+        self._peer_progress_seen = threading.Event()
+        self._state: dict[str, object] = {
+            "observed_429": False,
+            "peer_progress": False,
+            "same_sequence_retry": False,
+            "campaign_session_ordinals": list(range(1, session_count + 1)),
+            "target_session_ordinal": 1,
+            "peer_session_ordinal": 2,
+        }
+
+    def accept(
+        self,
+        index: int,
+        adapter: AccountCookieLiveReplayService,
+        session_id: str,
+        frame: AudioFrame,
+    ):
+        if index != 0:
+            accepted = adapter.accept_frame(session_id, frame)
+            if index == 1 and self._refusal_seen.is_set():
+                with self._lock:
+                    if self._state["peer_progress"] is False:
+                        self._state["peer_progress"] = True
+                        self._state["peer_progress_sequence"] = frame.sequence
+                        self._state["peer_progress_monotonic_ns"] = time.monotonic_ns()
+                self._peer_progress_seen.set()
+            return accepted.snapshot
+
+        timestamp_ns = (
+            frame.sequence * frame.sample_count * 1_000_000_000 // LIVE_SAMPLE_RATE
+        )
+        for lane, silent, pcm_bytes in (
+            ("system", False, frame.pcm),
+            ("microphone", True, b"\0" * len(frame.pcm)),
+        ):
+            payload = AccountCookieLiveReplayService._lane_payload(
+                AudioFrame(
+                    frame.sequence,
+                    pcm_bytes,
+                    frame.sample_count,
+                    LIVE_SAMPLE_RATE,
+                ),
+                lane=lane,
+                timestamp_ns=timestamp_ns,
+                silent=silent,
+            )
+            refused_here = False
+            while True:
+                try:
+                    adapter.accept_lane(session_id, payload)
+                except AccountReplayTransportFailure as exc:
+                    if exc.http_status != 429:
+                        raise
+                    refused_here = True
+                    with self._lock:
+                        if self._state["observed_429"] is False:
+                            self._state.update(
+                                {
+                                    "observed_429": True,
+                                    "refused_sequence": frame.sequence,
+                                    "refused_lane": lane,
+                                    "refused_monotonic_ns": time.monotonic_ns(),
+                                }
+                            )
+                    self._refusal_seen.set()
+                    if not self._peer_progress_seen.wait(timeout=30):
+                        raise ExternalMeasurementError(
+                            "eight-session peer made no progress during backpressure"
+                        )
+                    adapter.heartbeat(session_id)
+                    time.sleep(0.25)
+                    continue
+                if refused_here:
+                    with self._lock:
+                        if self._state["same_sequence_retry"] is False:
+                            self._state["same_sequence_retry"] = True
+                            self._state["retry_monotonic_ns"] = time.monotonic_ns()
+                break
+        adapter.heartbeat(session_id)
+        snapshot = adapter.snapshot(session_id)
+        if snapshot is None:
+            raise ExternalMeasurementError("eight-session target snapshot is absent")
+        return snapshot
+
+    def observation(self) -> dict[str, object]:
+        with self._lock:
+            return dict(self._state)
 
 
 def _admin_status_surfaces(
@@ -353,26 +452,31 @@ class FixedAccountCampaign:
             or manifest.get("activation_state") != "staged_inert"
         ):
             raise ExternalMeasurementError("candidate manifest is not an object")
-        release_value = manifest.get("release")
-        launcher_value = manifest.get("release_launcher")
-        if not isinstance(release_value, str) or not isinstance(launcher_value, str):
-            raise ExternalMeasurementError("candidate release identity is absent")
-        release = Path(release_value).resolve()
-        launcher = Path(launcher_value).resolve()
+        try:
+            artifacts = validated_candidate_artifacts(manifest)
+        except (OSError, ValueError) as exc:
+            raise ExternalMeasurementError("candidate artifact identity is invalid") from exc
+        release = artifacts.release
+        launcher = artifacts.launchers["mtd-account-web"]
         active_pointer = (
             Path.home() / ".local/share/moss-transcribe-diarize/account-current"
         )
         if (
-            not release.is_dir()
-            or launcher != release / "bin/mtd-account-web"
-            or not launcher.is_file()
-            or not active_pointer.is_symlink()
+            not active_pointer.is_symlink()
             or active_pointer.resolve() != release
         ):
             raise ExternalMeasurementError("running Account release does not match the manifest")
-        launcher_sha = hashlib.sha256(launcher.read_bytes()).hexdigest()
-        if manifest.get("release_launcher_sha256") != launcher_sha:
-            raise ExternalMeasurementError("Account launcher differs from the candidate manifest")
+        launcher_digests = {
+            name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for name, path in artifacts.launchers.items()
+        }
+        unit_root = Path.home() / ".config/systemd/user"
+        installed_units = {name: unit_root / name for name in artifacts.units}
+        if any(
+            not installed.is_file() or installed.read_bytes() != artifacts.units[name].read_bytes()
+            for name, installed in installed_units.items()
+        ):
+            raise ExternalMeasurementError("installed service unit differs from the candidate manifest")
         descriptor_payload, response = self.a.json("GET", "/api/live/descriptor", 200)
         descriptor = descriptor_payload.get("descriptor")
         if not isinstance(descriptor, dict):
@@ -450,7 +554,18 @@ class FixedAccountCampaign:
                 "activation_state": manifest.get("activation_state"),
                 "release": str(release),
                 "release_launcher": str(launcher),
-                "release_launcher_sha256": launcher_sha,
+                "release_launcher_sha256": launcher_digests["mtd-account-web"],
+                "release_admin_launcher": str(artifacts.launchers["mtd-admin"]),
+                "release_admin_launcher_sha256": launcher_digests["mtd-admin"],
+                "release_vllm_launcher": str(artifacts.launchers["mtd-vllm"]),
+                "release_vllm_launcher_sha256": launcher_digests["mtd-vllm"],
+                "web_unit_sha256": hashlib.sha256(
+                    installed_units["moss-web.service"].read_bytes()
+                ).hexdigest(),
+                "vllm_unit_sha256": hashlib.sha256(
+                    installed_units["moss-vllm.service"].read_bytes()
+                ).hexdigest(),
+                "installed_units_match_manifest": True,
                 "active_pointer_resolves_to_release": True,
             },
             "aiosqlite": self._dependency_version(dependency, "aiosqlite"),
@@ -1825,8 +1940,16 @@ class FixedAccountCampaign:
         return result
 
     def eight_session_overload(self) -> dict[str, object]:
-        result = self._run_live_load(sessions=8, duration_seconds=30.0)
-        backpressure = self._backpressure_probe()
+        result = self._run_live_load(
+            sessions=8,
+            duration_seconds=30.0,
+            embedded_backpressure=True,
+        )
+        backpressure = result.pop("embedded_backpressure_observation")
+        if not isinstance(backpressure, dict):
+            raise ExternalMeasurementError(
+                "eight-session campaign omitted its backpressure observation"
+            )
         result.update(
             {
                 "accounts": 2,
@@ -1844,7 +1967,15 @@ class FixedAccountCampaign:
         )
         return result
 
-    def _run_live_load(self, *, sessions: int, duration_seconds: float) -> dict[str, object]:
+    def _run_live_load(
+        self,
+        *,
+        sessions: int,
+        duration_seconds: float,
+        embedded_backpressure: bool = False,
+    ) -> dict[str, object]:
+        if embedded_backpressure and sessions != 8:
+            raise ValueError("embedded backpressure belongs to the eight-session campaign")
         repo = Path(self._text("repo_root")).resolve()
         fixture = json.loads(
             (repo / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json")
@@ -1889,6 +2020,7 @@ class FixedAccountCampaign:
         rss_samples = [rss_before]
         cache_samples = [_vllm_cache_use(self._text("vllm_metrics_url"))]
         next_resource_sample = time.monotonic() + 2.0
+        backpressure = _CampaignBackpressure(sessions) if embedded_backpressure else None
 
         def worker(index: int) -> None:
             nonlocal cross_sentinel_deliveries
@@ -1921,19 +2053,22 @@ class FixedAccountCampaign:
                 for sequence in range(frames):
                     offset = sequence * frame_samples * 2 % len(pcm)
                     chunk = (pcm + pcm)[offset : offset + frame_samples * 2]
-                    target = started + sequence * cadence
-                    delay = target - time.monotonic()
-                    if delay > 0:
-                        time.sleep(delay)
-                    last_snapshot = adapter.accept_frame(
-                        session_id,
-                        AudioFrame(
-                            sequence=sequence,
-                            pcm=chunk,
-                            sample_count=frame_samples,
-                            sample_rate=LIVE_SAMPLE_RATE,
-                        ),
-                    ).snapshot
+                    if not (embedded_backpressure and index == 0):
+                        target = started + sequence * cadence
+                        delay = target - time.monotonic()
+                        if delay > 0:
+                            time.sleep(delay)
+                    frame = AudioFrame(
+                        sequence=sequence,
+                        pcm=chunk,
+                        sample_count=frame_samples,
+                        sample_rate=LIVE_SAMPLE_RATE,
+                    )
+                    last_snapshot = (
+                        adapter.accept_frame(session_id, frame).snapshot
+                        if backpressure is None
+                        else backpressure.accept(index, adapter, session_id, frame)
+                    )
                     maximum_pending = max(maximum_pending, last_snapshot.pending_work_items)
                     response = probe.request(
                         "GET", f"/api/live/sessions/{session_id}/snapshot"
@@ -2032,8 +2167,7 @@ class FixedAccountCampaign:
         rss_samples.append(rss_after)
         cache_samples.append(_vllm_cache_use(self._text("vllm_metrics_url")))
         all_events = [event for output in outputs for event in output["events"]]  # type: ignore[index]
-        decode_seconds = 0.0
-        decoded_audio_seconds = 0.0
+        inference = prestop_inference_projection(all_events)
         rolling_pending: dict[str, set[int]] = defaultdict(set)
         refinement_depth = 0
         terminal_failures = 0
@@ -2059,10 +2193,7 @@ class FixedAccountCampaign:
             kind = event.get("kind")
             payload = event.get("payload") or {}
             session_id = str(event.get("session_id") or "")
-            if kind == "canonical_processed":
-                decode_seconds += float(payload.get("canonical_decode_elapsed_sec") or 0)
-                decoded_audio_seconds += float(payload.get("frozen_span_duration_sec") or 0)
-            elif kind == "rolling_decode_queued" and payload.get("admitted") is True:
+            if kind == "rolling_decode_queued" and payload.get("admitted") is True:
                 item_id = payload.get("item_id")
                 if isinstance(item_id, int):
                     rolling_pending[session_id].add(item_id)
@@ -2119,9 +2250,7 @@ class FixedAccountCampaign:
             "dispatch_skew": dispatch_skew,
             "fairness_measured": fairness.get("applicability") == "measured"
             and fairness.get("passes") is True,
-            "prestop_inference_rtf": (
-                decode_seconds / decoded_audio_seconds if decoded_audio_seconds else math.inf
-            ),
+            "prestop_inference_rtf": inference["rtf"],
             "refinement_queue_depth": refinement_depth,
             "rss_growth_bytes": max(rss_samples) - min(rss_samples),
             "rss_samples": rss_samples,
@@ -2167,6 +2296,7 @@ class FixedAccountCampaign:
                             "admitted": (event.get("payload") or {}).get("admitted"),
                             "item_id": (event.get("payload") or {}).get("item_id"),
                             "outcome": (event.get("payload") or {}).get("outcome"),
+                            "reason": (event.get("payload") or {}).get("reason"),
                         }
                         for event in output["events"]
                         if event.get("kind")
@@ -2187,6 +2317,9 @@ class FixedAccountCampaign:
                 "accelerator": accelerator_errors,
             },
         }
+        if embedded_backpressure:
+            assert backpressure is not None
+            result["embedded_backpressure_observation"] = backpressure.observation()
         label = f"capacity-{sessions}"
         self._artifact_json(
             f"{label}/observations.json",

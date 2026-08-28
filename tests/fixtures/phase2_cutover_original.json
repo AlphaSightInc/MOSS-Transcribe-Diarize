@@ -1,16 +1,16 @@
 {
   "runtime_views": [
     {
-      "active_jobs": 0,
+      "active_jobs": 1,
       "active_live": 0,
-      "entrants": 0,
+      "entrants": 1,
       "name": "phase1-studio",
-      "queued_jobs": 0
+      "queued_jobs": 1
     },
     {
       "active_jobs": 0,
-      "active_live": 0,
-      "entrants": 0,
+      "active_live": 1,
+      "entrants": 1,
       "name": "phase1-live",
       "queued_jobs": 0
     }

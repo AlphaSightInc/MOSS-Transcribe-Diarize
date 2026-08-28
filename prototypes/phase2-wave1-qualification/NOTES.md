@@ -4,11 +4,12 @@
 
 Can one immutable candidate manifest and one write-once attempt bundle prove or refuse the
 cumulative Wave-1 core without manufacturing deployed or G7 evidence? The measured design needs
-thirteen irreducible primitives: immutable candidate identity, a write-once attempt bundle, pure
+sixteen irreducible primitives: immutable candidate identity, a write-once attempt bundle, pure
 gate predicates, collection only through already-authorized adapters, machine test denominators,
 distinct content boundaries, the production archive oracle, canonical output identity, measured
 fairness, one disposable revoked session, campaign-unit denominators, mechanical cutover rehearsal,
-and the installed operator CLI projection.
+the installed operator CLI projection, one manifested restart-artifact set, a pre-Stop inference
+projection, and campaign-bound overload backpressure.
 
 ### Review-falsifier experiment contract
 
@@ -28,7 +29,9 @@ and the installed operator CLI projection.
   cutover remain externally unmeasured. The isolated rehearsal proves mechanics only and never G7.
 - **Falsifier:** `git_sha` raises before the bundle; no queued/started events pass G4; the G5 401
   probe is still valid; 15/4/8/12/122 are absent; a dangling release passes rehearsal; or operator
-  raw state passes without both CLI surfaces.
+  raw state passes without both CLI surfaces. Later review adds: zero-from-start claims drain; a
+  dirty checkout or changed admin/unit byte passes; Stop-tail work dilutes pre-Stop RTF; or a
+  detached two-session backpressure probe satisfies the eight-session overload campaign.
 - **Tool decision:** call the production entrypoint and reducers because a model cannot establish a
   reachable false pass; use a temporary isolated host because filesystem install/restore truth
   cannot be measured in memory. Any observed falsifier rejects the production candidate.
@@ -95,6 +98,21 @@ restore, directly compares the whole old tree, and observes unchanged vLLM runti
 requires both installed `mtd-admin status` surfaces through the shared allowlist. Candidate staging
 executes SQLite construction and installs launchers from the detached candidate checkout. The
 running Account process must resolve through the manifested immutable release and active pointer.
+
+**RED under final review:** the retained probe first passed a zero-from-start rehearsal, a dirty
+reused checkout, and a changed `mtd-admin` launcher while rejecting real nonzero drain work
+(24/30). After binding those bytes and transitions, two production G4 reducers still passed a
+known pre-Stop RTF of 1.1 after Stop-tail dilution to 0.55 and accepted detached backpressure
+booleans with no eight-session target/peer identity (30/32).
+
+**GREEN after final correction: 32/32 derived assertions passed.** The candidate artifact seam now
+verifies a clean exact detached checkout, all three release launchers, both systemd units, and the
+installed unit bytes. Rehearsal begins with five accepted work units across two file-backed runtime
+views, preserves all five after the marker blocks a new admission, then records exactly five drain
+transitions before snapshot. Canonical queue reason excludes only Stop-generated work from RTF;
+the eight-session reducer requires target/peer ordinals and refusal/progress/retry timestamps inside
+that same campaign interval. Zero initial work, dirty/mixed candidate bytes, Stop dilution, and a
+detached backpressure probe all fail.
 
 The available development runtimes are not qualification candidates: CPython 3.10.19 and 3.12.12
 both report SQLite 3.50.4; CPython 3.14 reports 3.53.0; `pysqlite3==0.6.0` reports 3.51.1. The

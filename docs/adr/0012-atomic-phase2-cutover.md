@@ -137,7 +137,7 @@ inert beside the live Phase-1 checkout. It does not repoint the live checkout, c
 alone quiesces Phase 1, seals its large archive, activates that one pointer, and installs the
 web-only cutover unit while proving the running vLLM PID, argv, and activation timestamp unchanged.
 
-The retained qualification prototype derived PASS from 25/25 policy falsifiers and separately
+The retained qualification prototype derived PASS from 32/32 policy falsifiers and separately
 measured the Linux exact-runtime path: wrong SQLite refused before any database artifact; the
 private prefix reported 3.53.4; `aiosqlite==0.22.1` preserved WAL, foreign keys, `FULL`, schema v1,
 and restart truth; and a clean wheel's installed member projection matched its candidate wheel.
@@ -148,7 +148,14 @@ JSON status to cross the same allowlist. The cutover rehearsal now performs real
 two-view drain, archive, manifested-release/unit-byte verification, pointer activation, injected
 post-install failure, full-tree restore, and direct vLLM runtime-state comparison. Staging executes
 SQLite construction and copies launchers only from the detached candidate checkout; qualification
-binds the live web process to that manifested immutable release and active pointer.
+binds the live web process to that manifested immutable release and active pointer. Final review
+made that artifact boundary complete: every reuse rechecks the detached checkout is clean; the
+manifest binds the web, admin, and vLLM launchers plus both future-restart systemd units; installed
+unit bytes must match. The rehearsal starts with five accepted work units across both runtime
+views, observes them unchanged immediately after the marker refuses a new admission, and performs
+five explicit continuation transitions to zero before snapshot. G4 now derives pre-Stop inference
+RTF only from canonical items not queued with `reason=stop`, and overload backpressure carries its
+target/peer ordinals plus refusal/progress/retry times inside the same eight-session interval.
 Real Google OAuth, deployed four-session/600-second capacity, the 12-session frozen quality corpus,
 production TLS, and the production-origin pre-admission campaign remain unmeasured until their
 external prerequisites exist. Synthetic reducer fixtures cannot close them.

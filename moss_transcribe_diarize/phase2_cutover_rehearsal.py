@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
@@ -10,6 +9,8 @@ import stat
 import tarfile
 import tempfile
 from pathlib import Path
+
+from moss_transcribe_diarize.installed_candidate import validated_candidate_artifacts
 
 
 STEPS = (
@@ -79,40 +80,46 @@ def _write_fixture_tree(root: Path, files: object) -> None:
         destination.chmod(0o600)
 
 
-def _candidate_paths(candidate: object) -> tuple[Path, Path, Path, Path]:
-    if (
-        not isinstance(candidate, dict)
-        or candidate.get("schema") != "moss-account-candidate.v1"
-        or candidate.get("activation_state") != "staged_inert"
-    ):
-        raise ValueError("cutover rehearsal requires one staged candidate manifest")
-    values = tuple(
-        candidate.get(key)
-        for key in ("release", "release_launcher", "web_unit_path", "vllm_unit_path")
+def _write_runtime_views(root: Path, rows: object) -> None:
+    statuses = _runtime_statuses(root / ".marker-absent", rows)
+    root.mkdir(mode=0o700, parents=True)
+    for index, status in enumerate(statuses):
+        payload = {key: value for key, value in status.items() if key != "creation_state"}
+        (root / f"{index}.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _read_runtime_views(marker: Path, root: Path) -> list[dict[str, object]]:
+    rows = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(root.glob("*.json"))]
+    return _runtime_statuses(marker, rows)
+
+
+def _work_units(rows: list[dict[str, object]]) -> int:
+    return sum(
+        int(row[key])
+        for row in rows
+        for key in ("entrants", "active_live", "active_jobs", "queued_jobs")
     )
-    if any(not isinstance(value, str) or not value for value in values):
-        raise ValueError("staged candidate manifest lacks install paths")
-    release, launcher, web_unit, vllm_unit = (Path(str(value)).resolve() for value in values)
-    if (
-        not release.is_dir()
-        or launcher != release / "bin/mtd-account-web"
-        or not launcher.is_file()
-        or not web_unit.is_file()
-        or not vllm_unit.is_file()
-    ):
-        raise ValueError("staged candidate release is incomplete")
-    expected_digests = {
-        launcher: candidate.get("release_launcher_sha256"),
-        web_unit: candidate.get("web_unit_sha256"),
-        vllm_unit: candidate.get("vllm_unit_sha256"),
-    }
-    if any(
-        not isinstance(expected, str)
-        or hashlib.sha256(path.read_bytes()).hexdigest() != expected
-        for path, expected in expected_digests.items()
-    ):
-        raise ValueError("staged candidate install bytes do not match its manifest")
-    return release, launcher, web_unit, vllm_unit
+
+
+def _try_admit(marker: Path, runtime_root: Path) -> bool:
+    if marker.is_file():
+        return False
+    first = sorted(runtime_root.glob("*.json"))[0]
+    row = json.loads(first.read_text(encoding="utf-8"))
+    row["entrants"] = int(row["entrants"]) + 1
+    first.write_text(json.dumps(row), encoding="utf-8")
+    return True
+
+
+def _drain_one(runtime_root: Path) -> bool:
+    for path in sorted(runtime_root.glob("*.json")):
+        row = json.loads(path.read_text(encoding="utf-8"))
+        for key in ("entrants", "queued_jobs", "active_jobs", "active_live"):
+            if int(row[key]) > 0:
+                row[key] = int(row[key]) - 1
+                path.write_text(json.dumps(row), encoding="utf-8")
+                return True
+    return False
 
 
 def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, object]:
@@ -120,7 +127,7 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
     candidate = json.loads(candidate_manifest.read_text(encoding="utf-8"))
     if original_payload.get("schema") != "moss-isolated-cutover-fixture.v2":
         raise ValueError("cutover rehearsal fixture schema mismatch")
-    release, launcher, web_unit, vllm_unit = _candidate_paths(candidate)
+    install = validated_candidate_artifacts(candidate)
     observed_steps: list[str] = []
 
     with tempfile.TemporaryDirectory(prefix="moss-cutover-rehearsal-") as directory:
@@ -129,6 +136,8 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         control_root = root / "control"
         control_root.mkdir(mode=0o700)
         marker = control_root / "phase1-creation-quiesced"
+        runtime_root = control_root / "runtime-views"
+        _write_runtime_views(runtime_root, original_payload.get("runtime_views"))
         _write_fixture_tree(archive_root, original_payload.get("snapshot_files"))
         vllm_runtime_relative = original_payload.get("vllm_runtime_file")
         if (
@@ -150,10 +159,24 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         current.symlink_to(phase1_release)
         original_projection = _tree_projection(archive_root)
 
+        before_block = _read_runtime_views(marker, runtime_root)
+        initial_work_units = _work_units(before_block)
+        if (
+            initial_work_units <= 0
+            or any(row["creation_state"] != "open" for row in before_block)
+        ):
+            raise ValueError("cutover rehearsal requires accepted Phase-1 work before block")
+
         marker.write_text("moss-phase1-creation-quiesced-v1\n", encoding="utf-8")
         marker.chmod(0o600)
         observed_steps.append("block")
-        blocked = _runtime_statuses(marker, original_payload.get("runtime_views"))
+        blocked_before_drain = _read_runtime_views(marker, runtime_root)
+        post_block_work_units = _work_units(blocked_before_drain)
+        post_block_admission_rejected = not _try_admit(marker, runtime_root)
+        drain_transitions = 0
+        while _drain_one(runtime_root):
+            drain_transitions += 1
+        blocked = _read_runtime_views(marker, runtime_root)
         if any(
             row["creation_state"] != "quiesced"
             or any(
@@ -173,18 +196,23 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         observed_steps.append("snapshot")
 
         next_pointer = archive_root / ".account-current.next"
-        next_pointer.symlink_to(release)
+        next_pointer.symlink_to(install.release)
         os.replace(next_pointer, current)
         unit_root = archive_root / "systemd"
         unit_root.mkdir(mode=0o700, exist_ok=True)
-        shutil.copyfile(web_unit, unit_root / "moss-web.service")
-        shutil.copyfile(vllm_unit, unit_root / "moss-vllm.service")
+        for name, source in install.units.items():
+            shutil.copyfile(source, unit_root / name)
         observed_steps.append("install")
         installed = (
-            current.resolve() == release
-            and (current / "bin/mtd-account-web").resolve() == launcher
-            and (unit_root / "moss-web.service").read_bytes() == web_unit.read_bytes()
-            and (unit_root / "moss-vllm.service").read_bytes() == vllm_unit.read_bytes()
+            current.resolve() == install.release
+            and all(
+                (current / f"bin/{name}").read_bytes() == source.read_bytes()
+                for name, source in install.launchers.items()
+            )
+            and all(
+                (unit_root / name).read_bytes() == source.read_bytes()
+                for name, source in install.units.items()
+            )
         )
         if not installed:
             raise RuntimeError("candidate installation verification failed")
@@ -218,7 +246,7 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         observed_steps.append("prove_original")
 
         original_restored = restored_projection == original_projection
-        candidate_pointer_absent = current.resolve() != release
+        candidate_pointer_absent = current.resolve() != install.release
         snapshot_bytes = snapshot.stat().st_size
 
     return {
@@ -226,6 +254,10 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         "production": False,
         "steps": observed_steps,
         "runtime_views": len(blocked),
+        "initial_work_units": initial_work_units,
+        "post_block_work_units": post_block_work_units,
+        "post_block_admission_rejected": post_block_admission_rejected,
+        "drain_transitions": drain_transitions,
         "all_views_quiesced_and_zero": True,
         "snapshot_bytes": snapshot_bytes,
         "candidate_installed_and_verified": installed,
@@ -236,6 +268,10 @@ def rehearse(*, original_fixture: Path, candidate_manifest: Path) -> dict[str, o
         "passed": (
             tuple(observed_steps) == STEPS
             and len(blocked) == 2
+            and initial_work_units > 0
+            and post_block_work_units == initial_work_units
+            and post_block_admission_rejected
+            and drain_transitions == initial_work_units
             and snapshot_bytes > 0
             and installed
             and forced_failure

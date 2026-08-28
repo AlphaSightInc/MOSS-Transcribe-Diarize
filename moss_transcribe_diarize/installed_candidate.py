@@ -8,10 +8,99 @@ import csv
 import hashlib
 import io
 import os
+import subprocess
+from dataclasses import dataclass
 from importlib.metadata import distribution, distributions
 from importlib.resources import files
 from pathlib import Path
 from typing import Iterable, Sequence
+
+
+@dataclass(frozen=True)
+class CandidateArtifacts:
+    release: Path
+    launchers: dict[str, Path]
+    checkout: Path
+    units: dict[str, Path]
+
+
+def validated_candidate_artifacts(manifest: object) -> CandidateArtifacts:
+    """Resolve and verify every byte that a staged Account restart can execute."""
+
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema") != "moss-account-candidate.v1"
+        or manifest.get("activation_state") != "staged_inert"
+    ):
+        raise ValueError("staged candidate manifest is malformed")
+    path_fields = {
+        "release": "release",
+        "mtd-account-web": "release_launcher",
+        "mtd-admin": "release_admin_launcher",
+        "mtd-vllm": "release_vllm_launcher",
+        "checkout": "qualification_checkout",
+        "moss-web.service": "web_unit_path",
+        "moss-vllm.service": "vllm_unit_path",
+    }
+    values = {name: manifest.get(field) for name, field in path_fields.items()}
+    if any(not isinstance(value, str) or not value for value in values.values()):
+        raise ValueError("staged candidate manifest lacks install paths")
+    paths = {name: Path(str(value)).resolve() for name, value in values.items()}
+    release = paths["release"]
+    checkout = paths["checkout"]
+    launchers = {name: paths[name] for name in ("mtd-account-web", "mtd-admin", "mtd-vllm")}
+    units = {name: paths[name] for name in ("moss-web.service", "moss-vllm.service")}
+    if (
+        not release.is_dir()
+        or not checkout.is_dir()
+        or any(path != release / f"bin/{name}" for name, path in launchers.items())
+        or any(path != checkout / f"ops/systemd/{name}" for name, path in units.items())
+        or any(not path.is_file() for path in (*launchers.values(), *units.values()))
+    ):
+        raise ValueError("staged candidate release is incomplete")
+    digest_fields = {
+        "mtd-account-web": "release_launcher_sha256",
+        "mtd-admin": "release_admin_launcher_sha256",
+        "mtd-vllm": "release_vllm_launcher_sha256",
+        "moss-web.service": "web_unit_sha256",
+        "moss-vllm.service": "vllm_unit_sha256",
+    }
+    artifacts = {**launchers, **units}
+    if any(
+        not isinstance(manifest.get(field), str)
+        or hashlib.sha256(artifacts[name].read_bytes()).hexdigest() != manifest[field]
+        for name, field in digest_fields.items()
+    ):
+        raise ValueError("staged candidate install bytes do not match its manifest")
+    git_sha = manifest.get("git_sha")
+    checked = subprocess.run(
+        ("git", "-C", str(checkout), "rev-parse", "HEAD"),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    dirty = subprocess.run(
+        (
+            "git",
+            "-C",
+            str(checkout),
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+        ),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if (
+        not isinstance(git_sha, str)
+        or checked.returncode
+        or checked.stdout.strip() != git_sha
+        or dirty.returncode
+        or dirty.stdout.strip()
+    ):
+        raise ValueError("staged candidate checkout is not the clean manifested commit")
+    return CandidateArtifacts(release, launchers, checkout, units)
 
 
 def record_projection_sha256(rows: Iterable[Sequence[str]]) -> str:

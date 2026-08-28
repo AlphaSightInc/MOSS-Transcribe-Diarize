@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import math
 import struct
+import subprocess
 import tempfile
 import copy
 import inspect
@@ -114,27 +115,51 @@ def complete_observations(sha: str) -> tuple[Observation, ...]:
     )
 
 
-def rehearse_cutover(root: Path) -> dict[str, object]:
-    from moss_transcribe_diarize.phase2_cutover_rehearsal import rehearse
-
-    root.mkdir()
+def _cutover_inputs(
+    root: Path, *, initially_busy: bool
+) -> tuple[Path, Path, Path, Path, Path]:
+    root.mkdir(parents=True)
     release = root / "candidate-release"
     (release / "bin").mkdir(parents=True)
     launcher = release / "bin/mtd-account-web"
+    admin_launcher = release / "bin/mtd-admin"
+    vllm_launcher = release / "bin/mtd-vllm"
     launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    web_unit = root / "moss-web.service"
-    vllm_unit = root / "moss-vllm.service"
+    admin_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    vllm_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    checkout = root / "candidate-checkout"
+    (checkout / "ops/systemd").mkdir(parents=True)
+    web_unit = checkout / "ops/systemd/moss-web.service"
+    vllm_unit = checkout / "ops/systemd/moss-vllm.service"
     web_unit.write_text("ExecStart=/candidate/bin/mtd-account-web\n", encoding="utf-8")
     vllm_unit.write_text("ExecStart=/shared/bin/vllm\n", encoding="utf-8")
+    subprocess.run(("git", "init", "--quiet", str(checkout)), check=True)
+    subprocess.run(("git", "-C", str(checkout), "config", "user.email", "probe@example.invalid"), check=True)
+    subprocess.run(("git", "-C", str(checkout), "config", "user.name", "probe"), check=True)
+    subprocess.run(("git", "-C", str(checkout), "add", "."), check=True)
+    subprocess.run(("git", "-C", str(checkout), "commit", "--quiet", "-m", "candidate"), check=True)
+    checkout_sha = subprocess.check_output(
+        ("git", "-C", str(checkout), "rev-parse", "HEAD"), text=True
+    ).strip()
     candidate = root / "candidate.json"
     candidate.write_text(
         json.dumps(
             {
                 "schema": "moss-account-candidate.v1",
                 "activation_state": "staged_inert",
+                "git_sha": checkout_sha,
                 "release": str(release),
                 "release_launcher": str(launcher),
                 "release_launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
+                "release_admin_launcher": str(admin_launcher),
+                "release_admin_launcher_sha256": hashlib.sha256(
+                    admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_vllm_launcher": str(vllm_launcher),
+                "release_vllm_launcher_sha256": hashlib.sha256(
+                    vllm_launcher.read_bytes()
+                ).hexdigest(),
+                "qualification_checkout": str(checkout),
                 "web_unit_path": str(web_unit),
                 "web_unit_sha256": hashlib.sha256(web_unit.read_bytes()).hexdigest(),
                 "vllm_unit_path": str(vllm_unit),
@@ -151,8 +176,20 @@ def rehearse_cutover(root: Path) -> dict[str, object]:
                 "service_identity": "phase1-control",
                 "vllm_runtime_file": "runtime/vllm.json",
                 "runtime_views": [
-                    {"name": name, "entrants": 0, "active_live": 0, "active_jobs": 0, "queued_jobs": 0}
-                    for name in ("studio", "live")
+                    {
+                        "name": "studio",
+                        "entrants": 1 if initially_busy else 0,
+                        "active_live": 0,
+                        "active_jobs": 1 if initially_busy else 0,
+                        "queued_jobs": 1 if initially_busy else 0,
+                    },
+                    {
+                        "name": "live",
+                        "entrants": 1 if initially_busy else 0,
+                        "active_live": 1 if initially_busy else 0,
+                        "active_jobs": 0,
+                        "queued_jobs": 0,
+                    },
                 ],
                 "snapshot_files": {
                     "profiles/moss.env": "MOSS_PHASE=1\n",
@@ -164,7 +201,64 @@ def rehearse_cutover(root: Path) -> dict[str, object]:
         ),
         encoding="utf-8",
     )
+    return fixture, candidate, checkout, admin_launcher, vllm_launcher
+
+
+def rehearse_cutover(root: Path) -> dict[str, object]:
+    from moss_transcribe_diarize.phase2_cutover_rehearsal import rehearse
+
+    fixture, candidate, _, _, _ = _cutover_inputs(root, initially_busy=True)
     return rehearse(original_fixture=fixture, candidate_manifest=candidate)
+
+
+def cutover_false_pass_controls(root: Path) -> dict[str, object]:
+    from moss_transcribe_diarize.phase2_cutover_rehearsal import rehearse
+
+    zero_fixture, zero_candidate, _, _, _ = _cutover_inputs(
+        root / "zero", initially_busy=False
+    )
+    try:
+        zero_passed = bool(
+            rehearse(
+                original_fixture=zero_fixture,
+                candidate_manifest=zero_candidate,
+            )["passed"]
+        )
+    except (OSError, RuntimeError, ValueError):
+        zero_passed = False
+
+    dirty_fixture, dirty_candidate, dirty_checkout, _, _ = _cutover_inputs(
+        root / "dirty", initially_busy=False
+    )
+    (dirty_checkout / "untracked-mixed-unit").write_text("mixed\n", encoding="utf-8")
+    try:
+        dirty_passed = bool(
+            rehearse(
+                original_fixture=dirty_fixture,
+                candidate_manifest=dirty_candidate,
+            )["passed"]
+        )
+    except (OSError, RuntimeError, ValueError):
+        dirty_passed = False
+
+    mixed_fixture, mixed_candidate, _, admin_launcher, _ = _cutover_inputs(
+        root / "mixed-admin", initially_busy=False
+    )
+    admin_launcher.write_text("#!/bin/sh\nexit 23\n", encoding="utf-8")
+    try:
+        mixed_admin_passed = bool(
+            rehearse(
+                original_fixture=mixed_fixture,
+                candidate_manifest=mixed_candidate,
+            )["passed"]
+        )
+    except (OSError, RuntimeError, ValueError):
+        mixed_admin_passed = False
+    return {
+        "zero_from_start_passed": zero_passed,
+        "dirty_checkout_passed": dirty_passed,
+        "mixed_admin_passed": mixed_admin_passed,
+    }
 
 
 def production_audio_oracle(root: Path) -> dict[str, object]:
@@ -366,6 +460,165 @@ def fairness_false_pass() -> dict[str, object]:
     }
 
 
+def lifecycle_phase_false_pass() -> dict[str, object]:
+    raw = capacity_raw()
+    for session in raw["session_observations"]:  # type: ignore[index]
+        ordinal = int(session["session_ordinal"])
+        events = session["events"]  # type: ignore[index]
+        for event in events:
+            if event["kind"] == "canonical_processed":
+                event["canonical_decode_elapsed_sec"] = 1.1
+        events.extend(
+            (
+                {
+                    "kind": "canonical_queued",
+                    "runtime_monotonic_ns": 50 + ordinal,
+                    "item_id": 100 + ordinal,
+                    "reason": "stop",
+                },
+                {
+                    "kind": "canonical_started",
+                    "runtime_monotonic_ns": 60 + ordinal,
+                    "item_id": 100 + ordinal,
+                },
+                {
+                    "kind": "canonical_processed",
+                    "runtime_monotonic_ns": 70 + ordinal,
+                    "item_id": 100 + ordinal,
+                    "canonical_decode_elapsed_sec": 0.0,
+                    "frozen_span_duration_sec": 1.0,
+                },
+            )
+        )
+    lifecycle = sorted(
+        [
+        {
+            "session_id": str(session["session_ordinal"]),
+            "kind": event["kind"],
+            "payload": {key: value for key, value in event.items() if key != "kind"},
+        }
+        for session in raw["session_observations"]  # type: ignore[index]
+        for event in session["events"]  # type: ignore[index]
+        if str(event["kind"]).startswith("canonical_")
+        ],
+        key=lambda event: int(event["payload"]["runtime_monotonic_ns"]),
+    )
+    fairness = acceptance.canonical_lifecycle_fairness(
+        lifecycle, {"1", "2", "3", "4"}, maximum_skew=1
+    )
+    raw["fairness_observation"] = fairness
+    raw["dispatch_skew"] = fairness["maximum_contended_pair_dispatch_skew"]
+    raw["prestop_inference_rtf"] = 0.55
+    return {
+        "prestop_rtf": 1.1,
+        "combined_rtf": 0.55,
+        "diluted_passed": acceptance._validate_capacity({"raw": raw}),
+    }
+
+
+def detached_overload_backpressure_false_pass() -> dict[str, object]:
+    sessions = []
+    for ordinal in range(1, 9):
+        sessions.append(
+            {
+                "session_ordinal": ordinal,
+                "account_ordinal": 1 if ordinal % 2 else 2,
+                "frames": 60,
+                "accepted_samples": 480_000,
+                "accounted_samples": 480_000,
+                "own_marker_present": True,
+                "foreign_markers_absent": True,
+                "events": [
+                    {
+                        "kind": "canonical_queued",
+                        "runtime_monotonic_ns": ordinal,
+                        "item_id": ordinal,
+                    },
+                    {
+                        "kind": "canonical_started",
+                        "runtime_monotonic_ns": 10 + ordinal,
+                        "item_id": ordinal,
+                    },
+                    {
+                        "kind": "canonical_processed",
+                        "runtime_monotonic_ns": 20 + ordinal,
+                        "item_id": ordinal,
+                    },
+                ],
+            }
+        )
+    lifecycle = sorted(
+        [
+        {
+            "session_id": str(session["session_ordinal"]),
+            "kind": event["kind"],
+            "payload": {key: value for key, value in event.items() if key != "kind"},
+        }
+        for session in sessions
+        for event in session["events"]
+        ],
+        key=lambda event: int(event["payload"]["runtime_monotonic_ns"]),
+    )
+    fairness = acceptance.canonical_lifecycle_fairness(
+        lifecycle, {str(value) for value in range(1, 9)}, maximum_skew=1
+    )
+    raw = {
+        "sessions": 8,
+        "accounts": 2,
+        "requested_duration_seconds": 30,
+        "duration_seconds": 30,
+        "campaign_interval": {
+            "started_monotonic_ns": 1_000_000_000,
+            "finished_monotonic_ns": 31_000_000_000,
+        },
+        "session_observations": sessions,
+        "wrong_owner_observations": [
+            {
+                "session_ordinal": ordinal,
+                "sequence": sequence,
+                "status": 404,
+                "foreign_matches": 0,
+            }
+            for sequence in range(60)
+            for ordinal in range(1, 9)
+        ],
+        "backpressure_observation": {
+            "observed_429": True,
+            "peer_progress": True,
+            "same_sequence_retry": True,
+            "campaign_session_ordinals": list(range(1, 9)),
+            "target_session_ordinal": 1,
+            "peer_session_ordinal": 2,
+            "refused_monotonic_ns": 10_000_000_000,
+            "peer_progress_monotonic_ns": 11_000_000_000,
+            "retry_monotonic_ns": 12_000_000_000,
+        },
+        "sequence_gaps": 0,
+        "cross_account_sentinel_deliveries": 0,
+        "isolation_failures": 0,
+        "fairness_failures": 0,
+        "fairness_measured": True,
+        "fairness_observation": fairness,
+    }
+    bound_passed = acceptance._validate_overload({"raw": raw})
+    detached = copy.deepcopy(raw)
+    for key in (
+        "campaign_session_ordinals",
+        "target_session_ordinal",
+        "peer_session_ordinal",
+        "refused_monotonic_ns",
+        "peer_progress_monotonic_ns",
+        "retry_monotonic_ns",
+    ):
+        detached["backpressure_observation"].pop(key)
+    return {
+        "campaign_sessions": 8,
+        "backpressure_session_binding": {"target": 1, "peer": 2},
+        "bound_probe_passed": bound_passed,
+        "detached_probe_passed": acceptance._validate_overload({"raw": detached}),
+    }
+
+
 def session_boundary_state() -> dict[str, object]:
     from moss_transcribe_diarize.phase2_acceptance_external import FixedAccountCampaign
 
@@ -519,12 +772,18 @@ def main() -> int:
         failed_attempt = attempt / "verdict.json"
         write_once(failed_attempt, cases["missing_deployed"])
         preserved_failure = json.loads(failed_attempt.read_text(encoding="utf-8"))
-        rehearsal = rehearse_cutover(root / "rehearsal")
+        try:
+            rehearsal = rehearse_cutover(root / "rehearsal")
+        except (OSError, RuntimeError, ValueError) as exc:
+            rehearsal = {"passed": False, "failure": type(exc).__name__}
+        cutover_controls = cutover_false_pass_controls(root / "cutover-controls")
         audio_oracle = production_audio_oracle(root / "audio-oracle")
         output_entry = valid_output_enters_attempt(root / "output-entry")
         missing_release = missing_release_rehearsal(root / "missing-release-rehearsal")
 
     fairness = fairness_false_pass()
+    lifecycle_phase = lifecycle_phase_false_pass()
+    overload_binding = detached_overload_backpressure_false_pass()
     session_boundaries = session_boundary_state()
     denominators = denominator_projection_state()
     operator_cli = operator_cli_evidence_state()
@@ -644,8 +903,23 @@ def main() -> int:
                 },
                 {
                     "name": "mechanical_cutover_rehearsal",
-                    "boundary": "an isolated host performs real block, drain, snapshot, candidate verification, pointer activation, forced failure, and whole restore; it never admits production",
-                    "irreducible": "step labels and a dangling symlink do not prove install or rollback tooling",
+                    "boundary": "an isolated host begins with accepted work, blocks new admission, drains both file-backed runtime views, snapshots, activates, forces failure, and restores; it never admits production",
+                    "irreducible": "zero-from-start labels do not prove that blocked accepted work can drain before rollback",
+                },
+                {
+                    "name": "manifested_restart_artifacts",
+                    "boundary": "one clean detached checkout binds all three release launchers and both future-restart unit files",
+                    "irreducible": "the current web process alone cannot prove later admin, vLLM, or service restart bytes",
+                },
+                {
+                    "name": "prestop_inference_projection",
+                    "boundary": "canonical queue reason separates work admitted by frames from Stop-tail work before RTF reduction",
+                    "irreducible": "without lifecycle phase, cheap Stop-tail work can dilute a failing pre-Stop RTF",
+                },
+                {
+                    "name": "campaign_bound_backpressure",
+                    "boundary": "target, peer, and monotonic refusal/progress/retry observations belong to the exact eight campaign ordinals and interval",
+                    "irreducible": "detached two-session booleans cannot prove overload behavior inside the eight-session campaign",
                 },
                 {
                     "name": "operator_cli_projection",
@@ -667,13 +941,17 @@ def main() -> int:
                 "G5 revoked authority does not consume the later G2 Account-revoke sessions",
                 "terminal verdict exposes 15 actions, 4 and 8 capacity sessions, and 12 sessions/122 windows",
                 "cutover rehearsal rejects a missing candidate release and restores actual isolated host bytes",
+                "a dirty detached checkout or changed future launcher/unit byte cannot qualify",
+                "the rehearsal starts nonzero, rejects admission after block, and drains exactly the admitted units",
+                "only canonical work not queued for Stop contributes to the pre-Stop RTF",
+                "overload backpressure target and peer are members of the same eight-session interval",
                 "both mtd-admin status surfaces match the exact operator allowlist",
             ],
             "assumptions_unknowns": [
                 "real OAuth, deployed campaigns, TLS, rollback host state, and production canary are externally unmeasured",
                 "the committed external campaigns remain unqualified until their real OAuth, host, and speech prerequisites are measured",
             ],
-            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, a valid peer is called revoked, 15/4/8/12/122 disappear, a missing release rehearses successfully, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
+            "falsifier": "any dirty/wrong-runtime/wrong-SHA/missing/raw-false case passes, a valid exact output fails before its bundle, absent contention passes G4, Stop-tail work dilutes pre-Stop RTF, detached backpressure satisfies overload, a valid peer is called revoked, 15/4/8/12/122 disappear, zero-from-start claims drain, a dirty checkout or mixed restart byte rehearses, mtd-admin is unexercised, a failed artifact can be replaced, G7 becomes claimed, or equal accepted PCM produces different archive bytes/metadata",
             "tool_decisions": [
                 {
                     "tool": "state-reducer prototype",
@@ -707,8 +985,13 @@ def main() -> int:
                 },
                 {
                     "tool": "isolated filesystem cutover host",
-                    "necessary": "block/install/restore mechanics require real paths and bytes while production admission remains forbidden",
-                    "decision_change": "accepting a missing release or failing exact restore rejects the rehearsal tooling",
+                    "necessary": "block/drain/install/restore mechanics require real mutable counters, paths, and bytes while production admission remains forbidden",
+                    "decision_change": "accepting zero initial work, a dirty/mixed candidate, or failing exact restore rejects the rehearsal tooling",
+                },
+                {
+                    "tool": "production capacity reducers",
+                    "necessary": "RTF phase and overload membership are properties of retained lifecycle arrays, not producer summary booleans",
+                    "decision_change": "accepting Stop dilution or a detached backpressure probe rejects the raw evidence shape",
                 },
             ],
         },
@@ -718,12 +1001,15 @@ def main() -> int:
             "failed_attempt_preserved": not preserved_failure["cumulative_core_passed"],
         },
         "cutover_rehearsal": rehearsal,
+        "cutover_false_pass_controls": cutover_controls,
         "machine_denominators": suite_cases,
         "content_boundaries": boundary_cases,
         "owner_matrix": matrix_cases,
         "production_audio_oracle": audio_oracle,
         "candidate_output_entry": output_entry,
         "capacity_fairness": fairness,
+        "capacity_lifecycle_phase": lifecycle_phase,
+        "overload_backpressure_binding": overload_binding,
         "session_boundaries": session_boundaries,
         "campaign_denominators": denominators,
         "missing_release_rehearsal": missing_release,
@@ -741,10 +1027,20 @@ def main() -> int:
         cases["raw_failure"]["cumulative_core_passed"] is False,
         overwrite_refused,
         not preserved_failure["cumulative_core_passed"],
-        rehearsal["steps"]
+        rehearsal.get("steps")
         == ["block", "drain", "snapshot", "install", "verify", "forced_failure", "restore", "prove_original"],
-        rehearsal["original_restored"],
-        rehearsal["candidate_pointer_absent"],
+        rehearsal.get("initial_work_units", 0) > 0,
+        rehearsal.get("post_block_work_units") == rehearsal.get("initial_work_units"),
+        rehearsal.get("drain_transitions") == rehearsal.get("initial_work_units"),
+        rehearsal.get("post_block_admission_rejected") is True,
+        rehearsal.get("original_restored") is True,
+        rehearsal.get("candidate_pointer_absent") is True,
+        cutover_controls
+        == {
+            "zero_from_start_passed": False,
+            "dirty_checkout_passed": False,
+            "mixed_admin_passed": False,
+        },
         suite_cases == {"complete": True, "decreased": False, "required_skip": False, "missing_file": False},
         boundary_cases == {"complete": True, "missing": False, "duplicate": False},
         matrix_cases == {"complete": True, "missing": False, "changed": False},
@@ -753,6 +1049,15 @@ def main() -> int:
         audio_oracle["first_bytes"] > 0,
         output_entry["reached_attempt_bundle"] is True,
         fairness == {"baseline_passed": True, "absent_fairness_passed": False},
+        lifecycle_phase
+        == {"prestop_rtf": 1.1, "combined_rtf": 0.55, "diluted_passed": False},
+        overload_binding
+        == {
+            "campaign_sessions": 8,
+            "backpressure_session_binding": {"target": 1, "peer": 2},
+            "bound_probe_passed": True,
+            "detached_probe_passed": False,
+        },
         session_boundaries["selected_g5_probe"] == "revoked_probe",
         session_boundaries["g5_current_probe_status"] == 401,
         denominators

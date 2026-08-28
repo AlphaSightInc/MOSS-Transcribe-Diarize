@@ -18,7 +18,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-require_cmd systemctl install getent cmp stat readlink
+require_cmd systemctl install getent cmp stat readlink basename git
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 UNIT_DIR="${LINUX_USER_DIR}/.config/systemd/user"
 CONFIG_DIR="${LINUX_USER_DIR}/.config/moss-transcribe-diarize"
@@ -32,14 +32,31 @@ for profile in "${ACCOUNT_PROFILE}" "${VLLM_PROFILE}"; do
 done
 [ -L "${ACCOUNT_CURRENT}" ] || die "reviewed Account release is not activated: ${ACCOUNT_CURRENT}"
 ACTIVE_RELEASE="$(readlink -f "${ACCOUNT_CURRENT}")"
-for launcher in mtd-account-web mtd-admin mtd-vllm; do
-  [ -x "${ACTIVE_RELEASE}/bin/${launcher}" ] || die "active release launcher is missing: ${launcher}"
-done
+CANDIDATE_SHA="$(basename "${ACTIVE_RELEASE}")"
+CANDIDATE_MANIFEST="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/candidate-manifests/${CANDIDATE_SHA}.json"
+[ -f "${CANDIDATE_MANIFEST}" ] || die "active release manifest is missing: ${CANDIDATE_MANIFEST}"
+[ "$(stat -c '%a' "${CANDIDATE_MANIFEST}")" = "600" ] || \
+  die "active release manifest must be mode 0600: ${CANDIDATE_MANIFEST}"
+MANIFEST_CHECKOUT="$("${ACTIVE_RELEASE}/bin/python" - "${CANDIDATE_MANIFEST}" "${ACTIVE_RELEASE}" <<'PY'
+import json
+import pathlib
+import sys
+
+from moss_transcribe_diarize.installed_candidate import validated_candidate_artifacts
+
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+artifacts = validated_candidate_artifacts(manifest)
+if artifacts.release != pathlib.Path(sys.argv[2]).resolve():
+    raise SystemExit("active release differs from the candidate manifest")
+print(artifacts.checkout)
+PY
+)"
+[ -n "${MANIFEST_CHECKOUT}" ] || die "candidate manifest checkout is absent"
 
 stamp="$(utc_stamp)"
 changing=""
 for unit in ${UNITS}; do
-  source_unit="${SCRIPT_DIR}/systemd/${unit}"
+  source_unit="${MANIFEST_CHECKOUT}/ops/systemd/${unit}"
   target_unit="${UNIT_DIR}/${unit}"
   [ -f "${source_unit}" ] || die "tracked unit is missing: ${source_unit}"
   if [ -f "${target_unit}" ] && cmp -s "${source_unit}" "${target_unit}"; then
@@ -65,7 +82,7 @@ dry_run && exit 0
 
 mkdir -p "${UNIT_DIR}"
 for unit in ${changing}; do
-  source_unit="${SCRIPT_DIR}/systemd/${unit}"
+  source_unit="${MANIFEST_CHECKOUT}/ops/systemd/${unit}"
   target_unit="${UNIT_DIR}/${unit}"
   if [ -f "${target_unit}" ]; then
     mv "${target_unit}" "${target_unit}.backup-${stamp}"

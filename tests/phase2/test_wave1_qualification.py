@@ -10,6 +10,8 @@ import io
 import zipfile
 import os
 import stat
+import subprocess
+import threading
 from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -40,6 +42,25 @@ FIXTURES = {
     "concurrency_preregistration": "b6fbe1f5dc60c0f0a20128026eefa8bc369a456927fe267cf94aa2a8b2865d52",
 }
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def _commit_candidate_checkout(checkout: Path) -> str:
+    subprocess.run(("git", "init", "--quiet", str(checkout)), check=True)
+    subprocess.run(
+        ("git", "-C", str(checkout), "config", "user.email", "test@example.invalid"),
+        check=True,
+    )
+    subprocess.run(
+        ("git", "-C", str(checkout), "config", "user.name", "test"), check=True
+    )
+    subprocess.run(("git", "-C", str(checkout), "add", "."), check=True)
+    subprocess.run(
+        ("git", "-C", str(checkout), "commit", "--quiet", "-m", "candidate"),
+        check=True,
+    )
+    return subprocess.check_output(
+        ("git", "-C", str(checkout), "rev-parse", "HEAD"), text=True
+    ).strip()
 
 
 class _Response:
@@ -269,9 +290,136 @@ def _overload_raw() -> dict[str, object]:
             "dispatch_skew": fairness["maximum_contended_pair_dispatch_skew"],
             "sequence_gaps": 0,
             "cross_account_sentinel_deliveries": 0,
+            "backpressure_observation": {
+                "observed_429": True,
+                "peer_progress": True,
+                "same_sequence_retry": True,
+                "campaign_session_ordinals": list(range(1, 9)),
+                "target_session_ordinal": 1,
+                "peer_session_ordinal": 2,
+                "refused_monotonic_ns": 10_000_000_000,
+                "peer_progress_monotonic_ns": 11_000_000_000,
+                "retry_monotonic_ns": 12_000_000_000,
+            },
         }
     )
     return value
+
+
+def test_capacity_rtf_excludes_stop_tail_and_overload_backpressure_is_campaign_bound():
+    capacity = _capacity_raw()
+    for session in capacity["session_observations"]:
+        ordinal = int(session["session_ordinal"])
+        session["events"].extend(
+            (
+                {
+                    "kind": "canonical_queued",
+                    "runtime_monotonic_ns": 50 + ordinal,
+                    "item_id": 100 + ordinal,
+                    "reason": "stop",
+                },
+                {
+                    "kind": "canonical_started",
+                    "runtime_monotonic_ns": 60 + ordinal,
+                    "item_id": 100 + ordinal,
+                },
+                {
+                    "kind": "canonical_processed",
+                    "runtime_monotonic_ns": 70 + ordinal,
+                    "item_id": 100 + ordinal,
+                    "canonical_decode_elapsed_sec": 100.0,
+                    "frozen_span_duration_sec": 1.0,
+                },
+            )
+        )
+    lifecycle = sorted(
+        (
+            {
+                "session_id": str(session["session_ordinal"]),
+                "kind": event["kind"],
+                "payload": {key: value for key, value in event.items() if key != "kind"},
+            }
+            for session in capacity["session_observations"]
+            for event in session["events"]
+            if str(event["kind"]).startswith("canonical_")
+        ),
+        key=lambda event: int(event["payload"]["runtime_monotonic_ns"]),
+    )
+    fairness = acceptance.canonical_lifecycle_fairness(
+        lifecycle, {"1", "2", "3", "4"}, maximum_skew=1
+    )
+    capacity["fairness_observation"] = fairness
+    capacity["dispatch_skew"] = fairness["maximum_contended_pair_dispatch_skew"]
+    assert acceptance._validate_capacity({"raw": capacity}) is True
+
+    diluted = copy.deepcopy(capacity)
+    for session in diluted["session_observations"]:
+        for event in session["events"]:
+            if event["kind"] == "canonical_processed" and event["item_id"] < 100:
+                event["canonical_decode_elapsed_sec"] = 1.1
+            elif event["kind"] == "canonical_processed":
+                event["canonical_decode_elapsed_sec"] = 0.0
+    diluted["prestop_inference_rtf"] = 0.55
+    assert acceptance._validate_capacity({"raw": diluted}) is False
+
+    overload = _overload_raw()
+    assert acceptance._validate_overload({"raw": overload}) is True
+    del overload["backpressure_observation"]["target_session_ordinal"]
+    assert acceptance._validate_overload({"raw": overload}) is False
+
+    overload = _overload_raw()
+    overload["backpressure_observation"]["retry_monotonic_ns"] = 32_000_000_000
+    assert acceptance._validate_overload({"raw": overload}) is False
+
+
+def test_campaign_backpressure_retries_exact_target_frame_after_same_campaign_peer():
+    probe = external._CampaignBackpressure(8)
+    target_calls: list[dict[str, object]] = []
+
+    class Target:
+        def accept_lane(self, session_id: str, payload: dict[str, object]):
+            assert session_id == "target"
+            target_calls.append(payload)
+            if len(target_calls) == 1:
+                raise external.AccountReplayTransportFailure("full", http_status=429)
+            return {"accepted": True}
+
+        def heartbeat(self, session_id: str) -> None:
+            assert session_id == "target"
+
+        def snapshot(self, session_id: str):
+            assert session_id == "target"
+            return SimpleNamespace(pending_work_items=1)
+
+    class Peer:
+        def accept_frame(self, session_id: str, frame: object):
+            assert session_id == "peer"
+            return SimpleNamespace(snapshot=SimpleNamespace(pending_work_items=0))
+
+    frame = external.AudioFrame(3, b"\0\0" * 8_000, 8_000, 16_000)
+    target_result: list[object] = []
+    target = threading.Thread(
+        target=lambda: target_result.append(probe.accept(0, Target(), "target", frame))
+    )
+    target.start()
+    assert probe._refusal_seen.wait(timeout=1)
+    probe.accept(1, Peer(), "peer", frame)
+    target.join(timeout=2)
+    assert not target.is_alive()
+    assert target_result
+    assert target_calls[0] is target_calls[1]
+    observation = probe.observation()
+    assert observation["campaign_session_ordinals"] == list(range(1, 9))
+    assert observation["target_session_ordinal"] == 1
+    assert observation["peer_session_ordinal"] == 2
+    assert observation["observed_429"] is True
+    assert observation["peer_progress"] is True
+    assert observation["same_sequence_retry"] is True
+    assert (
+        observation["refused_monotonic_ns"]
+        <= observation["peer_progress_monotonic_ns"]
+        <= observation["retry_monotonic_ns"]
+    )
 
 
 def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
@@ -289,7 +437,21 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
             "sqlite_runtime": "3.53.4",
             "aiosqlite": "0.22.1",
             "authlib": "1.7.2",
-            "manifest": {"schema": "moss-account-candidate.v1", "activation_state": "staged_inert", "release": "/srv/release", "release_launcher": "/srv/release/bin/mtd-account-web", "release_launcher_sha256": "9" * 64, "active_pointer_resolves_to_release": True},
+            "manifest": {
+                "schema": "moss-account-candidate.v1",
+                "activation_state": "staged_inert",
+                "release": "/srv/release",
+                "release_launcher": "/srv/release/bin/mtd-account-web",
+                "release_launcher_sha256": "9" * 64,
+                "release_admin_launcher": "/srv/release/bin/mtd-admin",
+                "release_admin_launcher_sha256": "8" * 64,
+                "release_vllm_launcher": "/srv/release/bin/mtd-vllm",
+                "release_vllm_launcher_sha256": "7" * 64,
+                "web_unit_sha256": "6" * 64,
+                "vllm_unit_sha256": "5" * 64,
+                "installed_units_match_manifest": True,
+                "active_pointer_resolves_to_release": True,
+            },
             "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "argv": ["/srv/release/bin/python", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
             "toolchain": {name: "version" for name in ("chrome", "node", "npm", "ffmpeg", "ffprobe")},
             "accelerator": {"vllm": "1", "torch": "1", "cuda": "1"},
@@ -513,6 +675,24 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     report = _report("deployed", sha, wheel)
     identity = next(item for item in report["predicates"] if item["id"] == "installed_candidate_identity")
     identity["raw"]["candidate_tree"] = "e" * 40
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G0"] is False
+    assert "deployed:G0:installed_candidate_identity:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    identity = next(
+        item for item in report["predicates"] if item["id"] == "installed_candidate_identity"
+    )
+    del identity["raw"]["manifest"]["release_admin_launcher_sha256"]
     outcomes, errors = acceptance.evaluate_external_report(
         report,
         layer="deployed",
@@ -925,12 +1105,27 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     release_bin = release / "bin"
     release_bin.mkdir(parents=True)
     launcher = release_bin / "mtd-account-web"
+    admin_launcher = release_bin / "mtd-admin"
+    vllm_launcher = release_bin / "mtd-vllm"
     launcher.write_bytes(b"reviewed launcher\n")
+    admin_launcher.write_bytes(b"reviewed admin\n")
+    vllm_launcher.write_bytes(b"reviewed vllm\n")
     (release_bin / "python").write_bytes(b"runtime\n")
+    checkout = tmp_path / "checkout"
+    unit_sources = checkout / "ops/systemd"
+    unit_sources.mkdir(parents=True)
+    web_unit = unit_sources / "moss-web.service"
+    vllm_unit = unit_sources / "moss-vllm.service"
+    web_unit.write_bytes(b"web unit\n")
+    vllm_unit.write_bytes(b"vllm unit\n")
     fake_home = tmp_path / "home"
     pointer = fake_home / ".local/share/moss-transcribe-diarize/account-current"
     pointer.parent.mkdir(parents=True)
     pointer.symlink_to(release)
+    installed_units = fake_home / ".config/systemd/user"
+    installed_units.mkdir(parents=True)
+    (installed_units / "moss-web.service").write_bytes(web_unit.read_bytes())
+    (installed_units / "moss-vllm.service").write_bytes(vllm_unit.read_bytes())
     manifest = tmp_path / "candidate.json"
     manifest.write_text(
         json.dumps(
@@ -959,6 +1154,19 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
                 "release_launcher_sha256": hashlib.sha256(
                     launcher.read_bytes()
                 ).hexdigest(),
+                "release_admin_launcher": str(admin_launcher),
+                "release_admin_launcher_sha256": hashlib.sha256(
+                    admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_vllm_launcher": str(vllm_launcher),
+                "release_vllm_launcher_sha256": hashlib.sha256(
+                    vllm_launcher.read_bytes()
+                ).hexdigest(),
+                "qualification_checkout": str(checkout),
+                "web_unit_path": str(web_unit),
+                "web_unit_sha256": hashlib.sha256(web_unit.read_bytes()).hexdigest(),
+                "vllm_unit_path": str(vllm_unit),
+                "vllm_unit_sha256": hashlib.sha256(vllm_unit.read_bytes()).hexdigest(),
             }
         ),
         encoding="utf-8",
@@ -999,11 +1207,14 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     )
     campaign._clients["a"] = IdentityClient()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
-    monkeypatch.setattr(
-        external.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="123\n"),
-    )
+    def run_identity_command(argv, **kwargs):
+        if tuple(argv[:4]) == ("git", "-C", str(checkout), "rev-parse"):
+            return SimpleNamespace(returncode=0, stdout="a" * 40 + "\n")
+        if tuple(argv[:4]) == ("git", "-C", str(checkout), "status"):
+            return SimpleNamespace(returncode=0, stdout="")
+        return SimpleNamespace(returncode=0, stdout="123\n")
+
+    monkeypatch.setattr(external.subprocess, "run", run_identity_command)
     original_readlink = os.readlink
     monkeypatch.setattr(
         external.os,
@@ -1042,6 +1253,14 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
             "moss_transcribe_diarize.app.phase2_web_cli",
         ],
     }
+    assert identity["manifest"]["installed_units_match_manifest"] is True
+    (installed_units / "moss-web.service").write_bytes(b"mixed future restart unit\n")
+    with pytest.raises(
+        external.ExternalMeasurementError,
+        match="installed service unit differs",
+    ):
+        campaign.installed_candidate_identity()
+    (installed_units / "moss-web.service").write_bytes(web_unit.read_bytes())
     pointer.unlink()
     other_release = tmp_path / "other-release"
     other_release.mkdir()
@@ -1398,11 +1617,20 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
     monkeypatch.setattr(
         campaign,
         "_run_live_load",
-        lambda *, sessions, duration_seconds: {
+        lambda *, sessions, duration_seconds, embedded_backpressure=False: {
             **copy.deepcopy(base_load if sessions == 4 else _overload_raw()),
             "wrong_owner_probes": 1,
             "marker_isolation_failures": 0,
             "fairness_measured": True,
+            **(
+                {
+                    "embedded_backpressure_observation": copy.deepcopy(
+                        _overload_raw()["backpressure_observation"]
+                    )
+                }
+                if embedded_backpressure
+                else {}
+            ),
         },
     )
     monkeypatch.setattr(
@@ -2418,20 +2646,37 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
     release = tmp_path / "immutable-release"
     (release / "bin").mkdir(parents=True)
     launcher = release / "bin/mtd-account-web"
+    admin_launcher = release / "bin/mtd-admin"
+    vllm_launcher = release / "bin/mtd-vllm"
     launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    web_unit = tmp_path / "moss-web.service"
-    vllm_unit = tmp_path / "moss-vllm.service"
+    admin_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    vllm_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    checkout = tmp_path / "checkout"
+    (checkout / "ops/systemd").mkdir(parents=True)
+    web_unit = checkout / "ops/systemd/moss-web.service"
+    vllm_unit = checkout / "ops/systemd/moss-vllm.service"
     web_unit.write_text("ExecStart=/candidate/bin/web\n", encoding="utf-8")
     vllm_unit.write_text("ExecStart=/shared/bin/vllm\n", encoding="utf-8")
+    checkout_sha = _commit_candidate_checkout(checkout)
     candidate = tmp_path / "candidate.json"
     candidate.write_text(
         json.dumps(
             {
                 "schema": "moss-account-candidate.v1",
                 "activation_state": "staged_inert",
+                "git_sha": checkout_sha,
                 "release": str(release),
                 "release_launcher": str(launcher),
                 "release_launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
+                "release_admin_launcher": str(admin_launcher),
+                "release_admin_launcher_sha256": hashlib.sha256(
+                    admin_launcher.read_bytes()
+                ).hexdigest(),
+                "release_vllm_launcher": str(vllm_launcher),
+                "release_vllm_launcher_sha256": hashlib.sha256(
+                    vllm_launcher.read_bytes()
+                ).hexdigest(),
+                "qualification_checkout": str(checkout),
                 "web_unit_path": str(web_unit),
                 "web_unit_sha256": hashlib.sha256(web_unit.read_bytes()).hexdigest(),
                 "vllm_unit_path": str(vllm_unit),
@@ -2449,6 +2694,11 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
     bundle.close()
     assert passed is True
     assert errors == []
+    state = json.loads((tmp_path / "attempt/raw/cutover-rehearsal-state.json").read_text())
+    assert state["initial_work_units"] == 5
+    assert state["post_block_work_units"] == 5
+    assert state["drain_transitions"] == 5
+    assert state["post_block_admission_rejected"] is True
     second_bundle = acceptance.AttemptBundle(tmp_path / "second-attempt")
     passed, errors = acceptance._run_rehearsal(
         config, bundle=second_bundle, repo=ROOT, forbidden=()
@@ -2471,20 +2721,36 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
         ),
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="release"):
+    with pytest.raises(ValueError, match="install paths"):
         cutover.rehearse(
             original_fixture=ROOT / "tests/fixtures/phase2_cutover_original.json",
             candidate_manifest=missing_manifest,
         )
 
-    busy_fixture = tmp_path / "busy-phase1.json"
+    zero_fixture = tmp_path / "zero-phase1.json"
     fixture_payload = json.loads(
         (ROOT / "tests/fixtures/phase2_cutover_original.json").read_text()
     )
-    fixture_payload["runtime_views"][0]["entrants"] = 1
-    busy_fixture.write_text(json.dumps(fixture_payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="quiesced and drained"):
+    for row in fixture_payload["runtime_views"]:
+        for key in ("entrants", "active_live", "active_jobs", "queued_jobs"):
+            row[key] = 0
+    zero_fixture.write_text(json.dumps(fixture_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="accepted Phase-1 work"):
         cutover.rehearse(
-            original_fixture=busy_fixture,
+            original_fixture=zero_fixture,
+            candidate_manifest=candidate,
+        )
+
+    admin_launcher.write_text("#!/bin/sh\nexit 23\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="install bytes"):
+        cutover.rehearse(
+            original_fixture=ROOT / "tests/fixtures/phase2_cutover_original.json",
+            candidate_manifest=candidate,
+        )
+    admin_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    (checkout / "untracked-mixed-unit").write_text("mixed\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="clean manifested commit"):
+        cutover.rehearse(
+            original_fixture=ROOT / "tests/fixtures/phase2_cutover_original.json",
             candidate_manifest=candidate,
         )

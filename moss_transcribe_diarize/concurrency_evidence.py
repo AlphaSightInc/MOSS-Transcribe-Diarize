@@ -2,7 +2,57 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping, Sequence
+
+
+def prestop_inference_projection(
+    events: Sequence[Mapping[str, Any]],
+) -> dict[str, int | float]:
+    """Reduce inference cost for canonical work admitted before Stop."""
+
+    def payload(event: Mapping[str, Any]) -> Mapping[str, Any]:
+        nested = event.get("payload")
+        return nested if isinstance(nested, Mapping) else event
+
+    stop_items = {
+        int(payload(event)["item_id"])
+        for event in events
+        if event.get("kind") == "canonical_queued"
+        and payload(event).get("reason") == "stop"
+        and isinstance(payload(event).get("item_id"), int)
+    }
+    decode_seconds = 0.0
+    audio_seconds = 0.0
+    processed_items = 0
+    for event in events:
+        if event.get("kind") != "canonical_processed":
+            continue
+        item = payload(event)
+        item_id = item.get("item_id")
+        if not isinstance(item_id, int):
+            raise ValueError("canonical processed event lacks item identity")
+        if item_id in stop_items:
+            continue
+        try:
+            decode = float(item["canonical_decode_elapsed_sec"])
+            audio = float(item["frozen_span_duration_sec"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("canonical processed event lacks inference timing") from exc
+        if not math.isfinite(decode) or decode < 0 or not math.isfinite(audio) or audio <= 0:
+            raise ValueError("canonical processed inference timing is invalid")
+        decode_seconds += decode
+        audio_seconds += audio
+        processed_items += 1
+    if processed_items == 0 or audio_seconds <= 0:
+        raise ValueError("pre-Stop inference evidence is absent")
+    return {
+        "processed_items": processed_items,
+        "stop_items": len(stop_items),
+        "decode_seconds": decode_seconds,
+        "audio_seconds": audio_seconds,
+        "rtf": decode_seconds / audio_seconds,
+    }
 
 
 def canonical_lifecycle_fairness(

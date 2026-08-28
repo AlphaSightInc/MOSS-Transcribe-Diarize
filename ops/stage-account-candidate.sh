@@ -90,6 +90,8 @@ if [ ! -d "${CHECKOUT}/.git" ]; then
   CHECKOUT_STAGE=""
 fi
 [ "$(git -C "${CHECKOUT}" rev-parse HEAD)" = "${CANDIDATE_SHA}" ] || die "candidate checkout SHA mismatch"
+[ -z "$(git -C "${CHECKOUT}" status --porcelain=v1 --untracked-files=all)" ] || \
+  die "reused candidate checkout is dirty"
 
 # The exact candidate owns the runtime builder too.  Never execute deployment
 # machinery from the invoking checkout after candidate identity is known.
@@ -186,6 +188,14 @@ payload = {
     "release_launcher_sha256": hashlib.sha256(
         pathlib.Path(release, "bin/mtd-account-web").read_bytes()
     ).hexdigest(),
+    "release_admin_launcher": f"{release}/bin/mtd-admin",
+    "release_admin_launcher_sha256": hashlib.sha256(
+        pathlib.Path(release, "bin/mtd-admin").read_bytes()
+    ).hexdigest(),
+    "release_vllm_launcher": f"{release}/bin/mtd-vllm",
+    "release_vllm_launcher_sha256": hashlib.sha256(
+        pathlib.Path(release, "bin/mtd-vllm").read_bytes()
+    ).hexdigest(),
     "qualification_checkout": checkout,
     "qualification_command": f"cd {checkout} && PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/phase2-acceptance/run.py",
     "web_unit_path": f"{checkout}/ops/systemd/moss-web.service",
@@ -210,6 +220,8 @@ import pathlib
 import stat
 import sys
 
+from moss_transcribe_diarize.installed_candidate import validated_candidate_artifacts
+
 path = pathlib.Path(sys.argv[1])
 payload = json.loads(path.read_text())
 assert payload["git_sha"] == sys.argv[2]
@@ -217,6 +229,8 @@ assert payload["release"] == sys.argv[3]
 assert payload["qualification_checkout"] == sys.argv[4]
 assert payload["activation_state"] == "staged_inert"
 assert stat.S_IMODE(path.stat().st_mode) == 0o600
+artifacts = validated_candidate_artifacts(payload)
+assert artifacts.release == pathlib.Path(sys.argv[3]).resolve()
 PY
 
 evidence candidate_sha "${CANDIDATE_SHA}"

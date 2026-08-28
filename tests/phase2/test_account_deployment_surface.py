@@ -37,6 +37,7 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     unit = (OPS / "systemd" / "moss-web.service").read_text(encoding="utf-8")
     vllm_unit = (OPS / "systemd" / "moss-vllm.service").read_text(encoding="utf-8")
     vllm_profile = (OPS / "moss-vllm.env.example").read_text(encoding="utf-8")
+    account_profile = (OPS / "moss-account.env.example").read_text(encoding="utf-8")
     windows = (OPS / "configure-windows-network.ps1").read_text(encoding="utf-8")
 
     assert "account-current" in start
@@ -60,8 +61,11 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert 'ln -s "${RELEASE}" "${CHECKOUT}/.venv"' in stage_account
     assert "activation_state" in stage_account and "staged_inert" in stage_account
     assert "release_launcher_sha256" in stage_account
+    assert "release_admin_launcher_sha256" in stage_account
+    assert "release_vllm_launcher_sha256" in stage_account
     assert "web_unit_sha256" in stage_account
     assert "vllm_unit_sha256" in stage_account
+    assert "reused candidate checkout is dirty" in stage_account
     assert "account-current" not in stage_account
     assert "${VENV_DIR}" not in stage_account
     assert "--editable \"${PROJECT_DIR}\"" in install_wsl  # GPU bootstrap only.
@@ -75,7 +79,10 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert ".config/moss-transcribe-diarize" in install
     assert "service profile must be mode 0600" in install
     assert "reviewed Account release is not activated" in install
-    assert "active release launcher is missing" in install
+    assert "active release manifest is missing" in install
+    assert "validated_candidate_artifacts" in install
+    assert "${MANIFEST_CHECKOUT}/ops/systemd/${unit}" in install
+    assert "${SCRIPT_DIR}/systemd/${unit}" not in install
     assert "ops/moss-account.env" not in install
     assert "moss-account.env" in unit
     assert "EnvironmentFile=%h/.config/moss-transcribe-diarize/vllm.env" in vllm_unit
@@ -85,6 +92,8 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "MOSS_MAX_MODEL_LEN=16384" in vllm_profile
     assert '"${MOSS_GPU_MEMORY_UTILIZATION:-0.38}"' in vllm_launcher
     assert '"${MOSS_MAX_MODEL_LEN:-16384}"' in vllm_launcher
+    assert "~/.config/moss-transcribe-diarize/moss-account.env" in account_profile
+    assert "Copy to ops/moss-account.env" not in account_profile
     propagated = subprocess.run(
         [
             "bash",

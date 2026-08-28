@@ -28,7 +28,10 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .concurrency_evidence import canonical_lifecycle_fairness
+from .concurrency_evidence import (
+    canonical_lifecycle_fairness,
+    prestop_inference_projection,
+)
 from .installed_candidate import installed_dependency_projection, record_projection_sha256
 from .app.phase2 import GOOGLE_CALLBACK_URL
 
@@ -135,7 +138,7 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with the committed suites.  Falling below them means a test was
 # removed or ceased collection; adding tests does not require changing the acceptance driver.
-MINIMUM_PYTHON_TESTS = 1031
+MINIMUM_PYTHON_TESTS = 1033
 MINIMUM_FRONTEND_TESTS = 121
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
@@ -1033,8 +1036,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     sequence_gaps = 0
     dropped_commits = 0
     marker_failures = 0
-    decode_seconds = 0.0
-    audio_seconds = 0.0
+    capacity_events: list[Mapping[str, object]] = []
     refinement_pending: dict[int, set[int]] = {}
     refinement_depth = 0
     terminal_failures = 0
@@ -1059,22 +1061,13 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         for event in item["events"]:
             if not isinstance(event, dict):
                 return False
+            capacity_events.append(event)
             timestamp = event.get("runtime_monotonic_ns")
             if not isinstance(timestamp, int):
                 return False
             lifecycle.append((timestamp, ordinal, event))
             kind = event.get("kind")
-            if kind == "canonical_processed":
-                try:
-                    decode = float(event.get("canonical_decode_elapsed_sec"))
-                    audio = float(event.get("frozen_span_duration_sec"))
-                except (TypeError, ValueError):
-                    return False
-                if not all(math.isfinite(value) and value >= 0 for value in (decode, audio)):
-                    return False
-                decode_seconds += decode
-                audio_seconds += audio
-            elif kind == "terminal_finalization_failed":
+            if kind == "terminal_finalization_failed":
                 terminal_failures += 1
 
     canonical_events: list[dict[str, object]] = []
@@ -1139,7 +1132,11 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         sequences == list(range(int(ordered_sessions[ordinal - 1]["frames"])))
         for ordinal, sequences in probe_sequences.items()
     )
-    rtf = decode_seconds / audio_seconds if audio_seconds > 0 else math.inf
+    try:
+        inference = prestop_inference_projection(capacity_events)
+    except ValueError:
+        return False
+    rtf = float(inference["rtf"])
     rss_growth = max(rss) - min(rss)
     cache_peak = max(cache)
     return (
@@ -1211,6 +1208,19 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         observed = (finished - started) / 1_000_000_000
         if requested != 30 or observed <= 0 or not math.isclose(
             float(raw["duration_seconds"]), observed
+        ):
+            return False
+        campaign_ordinals = [int(value) for value in backpressure["campaign_session_ordinals"]]
+        target_ordinal = int(backpressure["target_session_ordinal"])
+        peer_ordinal = int(backpressure["peer_session_ordinal"])
+        refused_ns = int(backpressure["refused_monotonic_ns"])
+        peer_ns = int(backpressure["peer_progress_monotonic_ns"])
+        retry_ns = int(backpressure["retry_monotonic_ns"])
+        if (
+            campaign_ordinals != list(range(1, 9))
+            or target_ordinal == peer_ordinal
+            or {target_ordinal, peer_ordinal} - set(campaign_ordinals)
+            or not (started <= refused_ns <= peer_ns <= retry_ns <= finished)
         ):
             return False
         expected_samples = int(requested * 16_000)
@@ -1648,6 +1658,19 @@ def _validate_raw_predicate(
             == f"{manifest['release']}/bin/mtd-account-web"
             and isinstance(manifest.get("release_launcher_sha256"), str)
             and len(manifest["release_launcher_sha256"]) == 64
+            and manifest.get("release_admin_launcher")
+            == f"{manifest['release']}/bin/mtd-admin"
+            and isinstance(manifest.get("release_admin_launcher_sha256"), str)
+            and len(manifest["release_admin_launcher_sha256"]) == 64
+            and manifest.get("release_vllm_launcher")
+            == f"{manifest['release']}/bin/mtd-vllm"
+            and isinstance(manifest.get("release_vllm_launcher_sha256"), str)
+            and len(manifest["release_vllm_launcher_sha256"]) == 64
+            and isinstance(manifest.get("web_unit_sha256"), str)
+            and len(manifest["web_unit_sha256"]) == 64
+            and isinstance(manifest.get("vllm_unit_sha256"), str)
+            and len(manifest["vllm_unit_sha256"]) == 64
+            and manifest.get("installed_units_match_manifest") is True
             and manifest.get("active_pointer_resolves_to_release") is True
             and isinstance(process, dict)
             and isinstance(process.get("pid"), int)
@@ -2075,6 +2098,10 @@ def _run_rehearsal(
         payload.get("production") is False
         and tuple(payload.get("steps", ())) == required
         and payload.get("runtime_views") == 2
+        and int(payload.get("initial_work_units", 0)) > 0
+        and payload.get("post_block_work_units") == payload.get("initial_work_units")
+        and payload.get("drain_transitions") == payload.get("initial_work_units")
+        and payload.get("post_block_admission_rejected") is True
         and payload.get("all_views_quiesced_and_zero") is True
         and int(payload.get("snapshot_bytes", 0)) > 0
         and payload.get("candidate_installed_and_verified") is True
