@@ -13,7 +13,9 @@
   `401` and fences late commits; interruption preserves the last durable prefix and never resumes.
   A cleanly closed runtime remains durably active while terminal finalization is `running`; its
   stop-tail transcript becomes public only after its ordinary commit. Only a terminal finalization
-  outcome may atomically publish its last document together with `completed`.
+  outcome may atomically publish its last document together with `completed`. Request-facing reads
+  on the store's one SQLite connection share its existing mutation lock; internal SELECTs already
+  inside a mutation stay unlocked. A reader may wait, but cannot see half a multi-row transaction.
 - **Assumption:** one Sign-in session is one Access client; sibling tabs sharing its cookie are not a
   distinct client. This is settled by T-19 and ADR-0007, not introduced here.
 - **Hypothesis:** this state is sufficient; no bearer, view token, client Account identity, durable
@@ -52,6 +54,11 @@ handoff feeding one serialized per-Meeting publication worker.
   no session-storage write; reload returned that observer page to `idle`. The originating page kept
   its existing controller when its history item opened, while reload removed control and restored
   only the stored read view. No second capture or authority state is needed.
+- Holding a terminal transaction after its Meeting-status `UPDATE` but before transcript revision 2
+  blocked concurrent snapshot, list, and authentication reads on the existing store lock. Releasing
+  with rollback exposed `active`/version 1/`durable prefix`; releasing with commit exposed
+  `completed`/version 2/`terminal revision`. Authentication returned the same Account only after
+  either transaction ended. No mixed tuple or new persistence primitive was needed.
 - With raw revision/event high-water already at `3/12` and its database commit held, four polls saw
   only durable/public revision `1`, event high-water `10`; SQL was 4 auth reads, 0 content reads,
   0 writes.

@@ -233,26 +233,29 @@ class Phase2Store:
         await self._connection.close()
 
     async def user_version(self) -> int:
-        cursor = await self._connection.execute("PRAGMA user_version")
-        row = await cursor.fetchone()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute("PRAGMA user_version")
+            row = await cursor.fetchone()
+            await cursor.close()
         return int(row[0])
 
     async def table_names(self) -> set[str]:
-        cursor = await self._connection.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
-        )
-        rows = await cursor.fetchall()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
         return {str(row[0]) for row in rows}
 
     async def sqlite_settings(self) -> dict[str, object]:
         settings: dict[str, object] = {}
-        for name in ("journal_mode", "foreign_keys", "synchronous"):
-            cursor = await self._connection.execute(f"PRAGMA {name}")
-            row = await cursor.fetchone()
-            await cursor.close()
-            settings[name] = row[0]
+        async with self._external_read():
+            for name in ("journal_mode", "foreign_keys", "synchronous"):
+                cursor = await self._connection.execute(f"PRAGMA {name}")
+                row = await cursor.fetchone()
+                await cursor.close()
+                settings[name] = row[0]
         return settings
 
     async def _initialize_schema(self) -> None:
@@ -381,6 +384,13 @@ class Phase2Store:
             else:
                 await self._connection.commit()
 
+    @asynccontextmanager
+    async def _external_read(self) -> AsyncIterator[None]:
+        """Keep request-facing reads outside another coroutine's uncommitted transaction."""
+
+        async with self._write_lock:
+            yield
+
     async def allow_email(self, email: str) -> None:
         normalized = _required_email(email)
         now = _now_ms()
@@ -395,11 +405,12 @@ class Phase2Store:
             )
 
     async def list_allowlist(self) -> list[dict[str, object]]:
-        cursor = await self._connection.execute(
-            "SELECT email, enabled FROM account_allowlist ORDER BY email"
-        )
-        rows = await cursor.fetchall()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                "SELECT email, enabled FROM account_allowlist ORDER BY email"
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
         return [{"email": row["email"], "enabled": bool(row["enabled"])} for row in rows]
 
     async def revoke_email(self, email: str) -> bool:
@@ -536,17 +547,18 @@ class Phase2Store:
     async def account_for_session(self, session_id: str | None) -> Account | None:
         if not session_id:
             return None
-        cursor = await self._connection.execute(
-            """
-            SELECT a.account_id, a.email, a.display_name, a.authority_generation
-            FROM sign_in_sessions s
-            JOIN accounts a ON a.account_id = s.account_id
-            WHERE s.session_id = ? AND a.enabled = 1
-            """,
-            (session_id,),
-        )
-        row = await cursor.fetchone()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT a.account_id, a.email, a.display_name, a.authority_generation
+                FROM sign_in_sessions s
+                JOIN accounts a ON a.account_id = s.account_id
+                WHERE s.session_id = ? AND a.enabled = 1
+                """,
+                (session_id,),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
         if row is None:
             return None
         return Account(
@@ -569,22 +581,23 @@ class Phase2Store:
         return AccountWorkspace(self, account)
 
     async def _list_meetings(self, account_id: str, authority_generation: int) -> list[Meeting]:
-        cursor = await self._connection.execute(
-            """
-            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
-                   t.document_json, t.version AS transcript_version
-            FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id
-                AND a.enabled = 1 AND a.authority_generation = ?
-            LEFT JOIN meeting_transcripts t
-                ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
-            WHERE m.account_id = ?
-            ORDER BY m.created_at_ms DESC, m.meeting_id DESC
-            """,
-            (authority_generation, account_id),
-        )
-        rows = await cursor.fetchall()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                       t.document_json, t.version AS transcript_version
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                    AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_transcripts t
+                    ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                WHERE m.account_id = ?
+                ORDER BY m.created_at_ms DESC, m.meeting_id DESC
+                """,
+                (authority_generation, account_id),
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
         return [_meeting_from_row(row) for row in rows]
 
     async def _create_meeting(
@@ -617,17 +630,18 @@ class Phase2Store:
         authority_generation: int,
         meeting_id: str,
     ) -> "MeetingHandle | None":
-        cursor = await self._connection.execute(
-            """
-            SELECT 1 FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id
-                AND a.enabled = 1 AND a.authority_generation = ?
-            WHERE m.account_id = ? AND m.meeting_id = ?
-            """,
-            (authority_generation, account_id, meeting_id),
-        )
-        row = await cursor.fetchone()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT 1 FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                    AND a.enabled = 1 AND a.authority_generation = ?
+                WHERE m.account_id = ? AND m.meeting_id = ?
+                """,
+                (authority_generation, account_id, meeting_id),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
         return (
             MeetingHandle(self, account_id, authority_generation, meeting_id)
             if row is not None
@@ -640,21 +654,22 @@ class Phase2Store:
         authority_generation: int,
         meeting_id: str,
     ) -> Meeting:
-        cursor = await self._connection.execute(
-            """
-            SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
-                   t.document_json, t.version AS transcript_version
-            FROM meetings m
-            JOIN accounts a ON a.account_id = m.account_id
-                AND a.enabled = 1 AND a.authority_generation = ?
-            LEFT JOIN meeting_transcripts t
-                ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
-            WHERE m.account_id = ? AND m.meeting_id = ?
-            """,
-            (authority_generation, account_id, meeting_id),
-        )
-        row = await cursor.fetchone()
-        await cursor.close()
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.meeting_id, m.mode, m.title, m.status, m.created_at_ms,
+                       t.document_json, t.version AS transcript_version
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                    AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_transcripts t
+                    ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                WHERE m.account_id = ? AND m.meeting_id = ?
+                """,
+                (authority_generation, account_id, meeting_id),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
         if row is None:  # A handle is never permitted to escape its Account query.
             raise KeyError(meeting_id)
         return _meeting_from_row(row)

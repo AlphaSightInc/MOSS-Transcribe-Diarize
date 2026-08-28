@@ -26,6 +26,12 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
 ## Consequences
 
 - Each Account-workspace mutation is one transaction behind the Account workspace module.
+- The same mutation lock also bounds every request-facing read on the one connection. SQLite exposes
+  a connection's own uncommitted writes, so an unlocked read could otherwise observe terminal status
+  before the transcript upsert in the same transaction. Internal SELECTs already inside a mutation
+  remain direct and never reacquire the lock. The Live probe held exactly that between-write state:
+  snapshot, list, and authentication reads all waited; rollback exposed only
+  `active`/version 1/prefix, while commit exposed only `completed`/version 2/final document.
 - Crash recovery preserves the last committed transcript and recoverable audio prefix, changes
   active Meetings to `interrupted`, and never resumes capture.
 - Cold backup/restore is an operator-run stopped-service bundle, not a MOSS product feature or gate.

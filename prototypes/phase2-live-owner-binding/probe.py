@@ -572,6 +572,103 @@ class SimulatedProcessLoss(RuntimeError):
     """Probe-only failure after both terminal writes but before transaction commit."""
 
 
+async def _probe_external_snapshot(store: Phase2Store, handle: Any) -> dict[str, object]:
+    async with store._write_lock:
+        cursor = await store._connection.execute(
+            """
+            SELECT m.status, t.version, t.document_json
+            FROM meetings m
+            LEFT JOIN meeting_transcripts t
+              ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+            WHERE m.account_id = ? AND m.meeting_id = ?
+            """,
+            (handle._account_id, handle.meeting_id),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+    document = json.loads(row["document_json"])
+    return {
+        "status": row["status"],
+        "version": int(row["version"]),
+        "text": document["segments"][0]["text"],
+    }
+
+
+async def _probe_external_list(store: Phase2Store, handle: Any) -> dict[str, object]:
+    return await _probe_external_snapshot(store, handle)
+
+
+async def _probe_external_auth(store: Phase2Store, session_id: str) -> str | None:
+    async with store._write_lock:
+        cursor = await store._connection.execute(
+            """
+            SELECT a.email
+            FROM sign_in_sessions s
+            JOIN accounts a ON a.account_id = s.account_id
+            WHERE s.session_id = ? AND a.enabled = 1
+            """,
+            (session_id,),
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+    return None if row is None else str(row["email"])
+
+
+async def held_terminal_read_isolation_probe(
+    store: Phase2Store,
+    handle: Any,
+    session_id: str,
+    document: dict[str, object],
+    *,
+    commit: bool,
+) -> dict[str, object]:
+    """Hold after status UPDATE; external reads use the existing mutation lock."""
+
+    status_updated = asyncio.Event()
+    release = asyncio.Event()
+    document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+
+    async def mutate() -> None:
+        try:
+            async with store._mutation():
+                await store._connection.execute(
+                    """
+                    UPDATE meetings SET status = 'completed'
+                    WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                    """,
+                    (handle._account_id, handle.meeting_id),
+                )
+                status_updated.set()
+                await release.wait()
+                if not commit:
+                    raise SimulatedProcessLoss("probe rollback between terminal writes")
+                await store._connection.execute(
+                    """
+                    UPDATE meeting_transcripts
+                    SET document_json = ?, version = version + 1
+                    WHERE account_id = ? AND meeting_id = ?
+                    """,
+                    (document_json, handle._account_id, handle.meeting_id),
+                )
+        except SimulatedProcessLoss:
+            pass
+
+    mutation_task = asyncio.create_task(mutate())
+    await status_updated.wait()
+    reads = {
+        "snapshot": asyncio.create_task(_probe_external_snapshot(store, handle)),
+        "list": asyncio.create_task(_probe_external_list(store, handle)),
+        "auth": asyncio.create_task(_probe_external_auth(store, session_id)),
+    }
+    await asyncio.sleep(0)
+    blocked = {name: not task.done() for name, task in reads.items()}
+    assert blocked == {"snapshot": True, "list": True, "auth": True}
+    release.set()
+    await mutation_task
+    results = {name: await task for name, task in reads.items()}
+    return {"blocked_between_writes": blocked, "results_after_transaction": results}
+
+
 async def commit_terminal_probe(
     store: Phase2Store,
     handle: Any,
@@ -763,6 +860,63 @@ async def run() -> None:
                     }
                 ]
             }
+            read_isolation_handle = await store.workspace(account_a).create_meeting("live")
+            await read_isolation_handle.commit_transcript(
+                {
+                    "segments": [
+                        {
+                            "id": "seg_0001",
+                            "start": 0.0,
+                            "end": 1.0,
+                            "speaker": "S01",
+                            "text": "durable prefix",
+                        }
+                    ]
+                }
+            )
+            rollback_reads = await held_terminal_read_isolation_probe(
+                store,
+                read_isolation_handle,
+                session_a,
+                terminal_document,
+                commit=False,
+            )
+            commit_reads = await held_terminal_read_isolation_probe(
+                store,
+                read_isolation_handle,
+                session_a,
+                terminal_document,
+                commit=True,
+            )
+            assert rollback_reads["results_after_transaction"]["snapshot"] == {
+                "status": "active",
+                "version": 1,
+                "text": "durable prefix",
+            }
+            assert rollback_reads["results_after_transaction"]["list"] == (
+                rollback_reads["results_after_transaction"]["snapshot"]
+            )
+            assert rollback_reads["results_after_transaction"]["auth"] == "a@example.com"
+            assert commit_reads["results_after_transaction"]["snapshot"] == {
+                "status": "completed",
+                "version": 2,
+                "text": "terminal revision",
+            }
+            assert commit_reads["results_after_transaction"]["list"] == (
+                commit_reads["results_after_transaction"]["snapshot"]
+            )
+            assert commit_reads["results_after_transaction"]["auth"] == "a@example.com"
+            print(
+                json.dumps(
+                    {
+                        "action": "same_connection_external_read_isolation",
+                        "rollback": rollback_reads,
+                        "commit": commit_reads,
+                        "mixed_tuple_observed": False,
+                    },
+                    sort_keys=True,
+                )
+            )
             try:
                 await commit_terminal_probe(
                     store,
@@ -1213,7 +1367,7 @@ async def run() -> None:
             )
         )
         print(
-            "VERDICT: PASS — one shared transport preserves legacy/Phase-2 frame, Stop, and error semantics; Phase-2 publication waits for durability; finalizer completion, revoke, and shutdown fence late work"
+            "VERDICT: PASS — one shared transport preserves legacy/Phase-2 frame, Stop, and error semantics; external reads wait for transaction boundaries; Phase-2 publication waits for durability; finalizer completion, revoke, and shutdown fence late work"
         )
 
 

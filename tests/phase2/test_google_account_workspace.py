@@ -127,6 +127,102 @@ def seed_active_live_meeting(database: Path, account_id: str = "google-sub-a") -
     return {"id": meeting_id}
 
 
+def test_request_reads_wait_for_terminal_transaction_commit_or_rollback(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+
+    async def exercise() -> None:
+        store = await Phase2Store.open(database)
+        original_execute = store._connection.execute
+        try:
+            await store.allow_email("person@example.com")
+            admitted = await store.admit(
+                GoogleIdentity("sub-a", "person@example.com", "Person")
+            )
+            assert admitted is not None
+            account, session_id = admitted
+            workspace = store.workspace(account)
+            handle = await workspace.create_meeting("live")
+            prefix = {"segments": [{"speaker": "S01", "text": "durable prefix"}]}
+            terminal = {"segments": [{"speaker": "S01", "text": "terminal final"}]}
+            assert await handle.commit_transcript(prefix) == 1
+
+            status_updated = asyncio.Event()
+            release = asyncio.Event()
+            fail_after_status = True
+
+            async def held_execute(sql: str, parameters: object = None):
+                cursor = (
+                    await original_execute(sql)
+                    if parameters is None
+                    else await original_execute(sql, parameters)
+                )
+                normalized = " ".join(sql.lower().split())
+                if (
+                    normalized.startswith("update meetings set status = ?, updated_at_ms = ?")
+                    and isinstance(parameters, tuple)
+                    and parameters[0] == "completed"
+                    and parameters[3] == handle.meeting_id
+                ):
+                    status_updated.set()
+                    await release.wait()
+                    if fail_after_status:
+                        raise RuntimeError("injected rollback between terminal writes")
+                return cursor
+
+            store._connection.execute = held_execute
+
+            async def concurrent_reads():
+                snapshot_task = asyncio.create_task(handle.snapshot())
+                list_task = asyncio.create_task(workspace.list_meetings())
+                auth_task = asyncio.create_task(store.account_for_session(session_id))
+                await asyncio.sleep(0)
+                assert not snapshot_task.done()
+                assert not list_task.done()
+                assert not auth_task.done()
+                return snapshot_task, list_task, auth_task
+
+            rollback_task = asyncio.create_task(
+                handle.finish_with_transcript(terminal, "completed")
+            )
+            await status_updated.wait()
+            rollback_reads = await concurrent_reads()
+            release.set()
+            with pytest.raises(RuntimeError, match="injected rollback"):
+                await rollback_task
+            rolled_back, rollback_list, rollback_account = await asyncio.gather(*rollback_reads)
+            assert (rolled_back.status, rolled_back.transcript_version, rolled_back.transcript) == (
+                "active",
+                1,
+                prefix,
+            )
+            assert rollback_list == [rolled_back]
+            assert rollback_account == account
+
+            status_updated = asyncio.Event()
+            release = asyncio.Event()
+            fail_after_status = False
+            commit_task = asyncio.create_task(
+                handle.finish_with_transcript(terminal, "completed")
+            )
+            await status_updated.wait()
+            commit_reads = await concurrent_reads()
+            release.set()
+            assert await commit_task == 2
+            committed, commit_list, commit_account = await asyncio.gather(*commit_reads)
+            assert (committed.status, committed.transcript_version, committed.transcript) == (
+                "completed",
+                2,
+                terminal,
+            )
+            assert commit_list == [committed]
+            assert commit_account == account
+        finally:
+            store._connection.execute = original_execute
+            await store.close()
+
+    asyncio.run(exercise())
+
+
 def test_authlib_172_google_client_is_openid_only_and_uses_s256_pkce():
     import authlib
 
