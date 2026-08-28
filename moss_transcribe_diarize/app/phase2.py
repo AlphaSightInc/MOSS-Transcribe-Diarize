@@ -18,6 +18,8 @@ from typing import Any, AsyncIterator, Mapping, Protocol
 
 from starlette.requests import Request
 
+from .phase2_audio import MeetingAudioArtifactSurvives, MeetingAudioCleanupError
+
 
 SCHEMA_VERSION = 1
 OAUTH_COOKIE = "__Host-moss_oauth"
@@ -1003,6 +1005,8 @@ class MeetingHandle:
                 self.meeting_id,
                 source_path,
             )
+        except MeetingAudioCleanupError:
+            raise
         except Exception:
             audio = _unavailable_meeting_audio()
             await self._store._commit_meeting_audio(
@@ -1032,16 +1036,14 @@ class MeetingHandle:
             )
         except AccountRevoked:
             try:
-                await asyncio.to_thread(archive.remove, publication)
+                await asyncio.to_thread(archive.discard, publication)
             except Exception:
                 pass
             raise
         except Exception:
             try:
-                await asyncio.to_thread(archive.remove, publication)
-            except Exception:
-                pass
-            if await asyncio.to_thread(archive.artifact_exists, publication):
+                await asyncio.to_thread(archive.discard, publication)
+            except MeetingAudioArtifactSurvives:
                 await self._store._commit_meeting_audio(
                     self._account_id,
                     self._authority_generation,
@@ -1058,7 +1060,10 @@ class MeetingHandle:
             )
             return unavailable
         except BaseException:
-            await asyncio.to_thread(archive.remove, publication)
+            try:
+                await asyncio.to_thread(archive.discard, publication)
+            except Exception:
+                pass
             raise
         return audio
 
@@ -1094,6 +1099,15 @@ class MeetingHandle:
             self.meeting_id,
             audio.relative_path,
             audio.byte_count,
+        )
+
+    def discard_audio(self, archive: Any, audio: MeetingAudio) -> None:
+        if audio.relative_path is None:
+            raise MeetingAudioCleanupError("Meeting audio path is unavailable.")
+        archive.discard_stored(
+            self._account_id,
+            self.meeting_id,
+            audio.relative_path,
         )
 
 
@@ -1354,6 +1368,13 @@ def create_phase2_app(
         archive = request.app.state.phase2_audio_archive
         path = handle.resolve_audio(archive, audio)
         if path is None:
+            try:
+                await asyncio.to_thread(handle.discard_audio, archive, audio)
+            except MeetingAudioCleanupError:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Meeting audio cannot be reconciled safely.",
+                ) from None
             await handle.mark_audio_unavailable()
             raise HTTPException(status_code=404, detail="Meeting audio is unavailable.")
 

@@ -34,11 +34,11 @@ prefix as partial; audio failure never fails or deletes the transcript.
   In a 151-second two-stream falsifier, the source's first/default streams measured 440/880 Hz;
   the canonical mix, long-window inference input, and retained MP3 all measured 880 Hz.
   FFprobe measured MPEG Layer III, 16 kHz, mono, 48,000 bit/s at stream and every packet; metadata
-  duration/bytes matched the artifact, directories were `0700`, the MP3 was `0600`, and it alone
-  survived cleanup. Forced encoding failure left transcript truth unchanged and no source, staging,
-  or output file. Transcript durability therefore precedes terminal encoding; available/unavailable
-  metadata precedes Meeting completion. After an available-metadata failure, an absent artifact
-  becomes durably unavailable. If removal fails and the known-valid MP3 survives, retry that exact
+  duration/bytes matched the artifact, directories were `0700`, and the MP3 was `0600`. Each newly
+  created root, Account, and Meeting entry is fsynced through its parent in creation order; final
+  replacement is fsynced through Meeting before metadata. One production discard operation owns
+  unlink, verified absence, and parent fsync for publication, metadata, and download reconciliation.
+  Only its success permits durable unavailable. If the known-valid MP3 survives, retry that exact
   available metadata once; success is available, and another failure propagates without audio
-  metadata. Durable unavailable never coexists with a surviving MP3; authority loss fences all
-  reconciliation.
+  metadata. Size mismatch follows the same discard rule. Durable unavailable never coexists with a
+  surviving MP3; authority loss fences all reconciliation.

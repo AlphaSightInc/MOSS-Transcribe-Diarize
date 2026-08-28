@@ -30,6 +30,14 @@ class PublishedMeetingAudio:
     bit_rate_bps: int = 48_000
 
 
+class MeetingAudioCleanupError(RuntimeError):
+    """The archive could not prove an artifact absent and durably seal that fact."""
+
+
+class MeetingAudioArtifactSurvives(MeetingAudioCleanupError):
+    """The canonical MP3 still exists after a discard attempt."""
+
+
 class MeetingAudioArchive:
     """Prepare one transcription mix, then validate and publish its Meeting MP3."""
 
@@ -149,24 +157,27 @@ class MeetingAudioArchive:
                 byte_count=final.stat().st_size,
                 duration_ms=metadata["duration_ms"],
             )
-        except BaseException:
-            staged.unlink(missing_ok=True)
-            if replaced:
-                final.unlink(missing_ok=True)
+        except BaseException as cause:
+            cleanup_target = final if replaced else staged
+            try:
+                self._discard_path(cleanup_target)
+            except MeetingAudioCleanupError as cleanup_error:
+                raise cleanup_error from cause
             raise
 
-    def remove(self, publication: PublishedMeetingAudio) -> None:
-        publication.path.unlink(missing_ok=True)
-        if publication.path.parent.exists():
-            self._fsync_directory(publication.path.parent)
+    def discard(self, publication: PublishedMeetingAudio) -> None:
+        self._discard_path(publication.path)
 
-    @staticmethod
-    def artifact_exists(publication: PublishedMeetingAudio) -> bool:
-        try:
-            publication.path.stat()
-        except FileNotFoundError:
-            return False
-        return True
+    def discard_stored(
+        self,
+        account_id: str,
+        meeting_id: str,
+        relative_path: str,
+    ) -> None:
+        path = self._stored_path(account_id, meeting_id, relative_path)
+        if path is None:
+            raise MeetingAudioCleanupError("Meeting audio path is not canonical.")
+        self._discard_path(path)
 
     def resolve(
         self,
@@ -175,16 +186,7 @@ class MeetingAudioArchive:
         relative_path: str,
         byte_count: int,
     ) -> Path | None:
-        meeting_dir = self.root / account_id / meeting_id
-        candidates = (meeting_dir / "audio.mp3", meeting_dir / "audio.partial.mp3")
-        expected = next(
-            (
-                path
-                for path in candidates
-                if relative_path == path.relative_to(self.root).as_posix()
-            ),
-            None,
-        )
+        expected = self._stored_path(account_id, meeting_id, relative_path)
         if expected is None:
             return None
         try:
@@ -194,6 +196,53 @@ class MeetingAudioArchive:
         if not expected.is_file() or file_stat.st_size != byte_count:
             return None
         return expected
+
+    def _stored_path(
+        self,
+        account_id: str,
+        meeting_id: str,
+        relative_path: str,
+    ) -> Path | None:
+        meeting_dir = self.root / account_id / meeting_id
+        candidates = (meeting_dir / "audio.mp3", meeting_dir / "audio.partial.mp3")
+        return next(
+            (
+                path
+                for path in candidates
+                if relative_path == path.relative_to(self.root).as_posix()
+            ),
+            None,
+        )
+
+    def _discard_path(self, path: Path) -> None:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            if self._path_exists(path):
+                raise MeetingAudioArtifactSurvives(
+                    "Meeting audio artifact survives cleanup."
+                ) from exc
+            raise MeetingAudioCleanupError(
+                "Meeting audio cleanup outcome is unknown."
+            ) from exc
+        if self._path_exists(path):
+            raise MeetingAudioArtifactSurvives("Meeting audio artifact survives cleanup.")
+        try:
+            self._fsync_directory(path.parent)
+        except OSError as exc:
+            raise MeetingAudioCleanupError(
+                "Meeting audio cleanup is not durably sealed."
+            ) from exc
+        if self._path_exists(path):
+            raise MeetingAudioArtifactSurvives("Meeting audio artifact survives cleanup.")
+
+    @staticmethod
+    def _path_exists(path: Path) -> bool:
+        try:
+            path.stat()
+        except FileNotFoundError:
+            return False
+        return True
 
     def _probe(self, path: Path) -> dict[str, int]:
         assert self._ffprobe is not None
@@ -235,10 +284,18 @@ class MeetingAudioArchive:
             raise RuntimeError("Meeting audio output has no positive duration.")
         return {"duration_ms": duration_ms}
 
-    @staticmethod
-    def _ensure_private_directory(path: Path) -> None:
-        path.mkdir(parents=True, exist_ok=True)
+    def _ensure_private_directory(self, path: Path) -> None:
+        created = False
+        try:
+            path.mkdir()
+        except FileExistsError:
+            if not path.is_dir():
+                raise
+        else:
+            created = True
         path.chmod(0o700)
+        if created:
+            self._fsync_directory(path.parent)
 
     @staticmethod
     def _fsync_directory(path: Path) -> None:

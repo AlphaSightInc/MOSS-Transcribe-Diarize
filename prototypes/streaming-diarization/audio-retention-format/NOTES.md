@@ -53,21 +53,14 @@ Measured 2026-08-27 with:
 uv run --frozen python prototypes/streaming-diarization/audio-retention-format/publication_probe.py
 ```
 
-The real FFmpeg 8.1 path converted a disposable 48 kHz stereo WAV to one MP3 reported by ffprobe as
-MPEG Layer III, 16,000 Hz, mono, 48,000 bit/s. Every reported audio packet was 48,000 bit/s. MP3
-duration was 1,000 ms; metadata byte count equaled the 6,741-byte file. Root, Account, and Meeting
-directories were `0700`; the file was `0600`; the root-relative path was
-`account-a/meeting-a/audio.mp3`. After terminal cleanup, that MP3 was the only surviving file.
-
-Forced FFmpeg failure produced no staging/output/source files, selected explicit `unavailable`
-metadata with no path/bytes/duration, and left the transcript document byte-for-byte unchanged.
-Forced storage failure immediately after atomic replacement also raised explicitly, removed the
-uncommitted final MP3, left zero Meeting files, and preserved transcript truth.
-The accepted publication policy is therefore: encode to a same-directory staging MP3 with
-`libmp3lame -b:a 48k`, validate the stream and packet contract with ffprobe, fsync and atomically
-replace `audio.mp3`, durably commit metadata, then remove File working input. Metadata-commit failure
-must remove the just-published MP3. Audio failure records `unavailable` after transcript durability
-and never changes transcript success.
+The rewritten probe imports and calls production `MeetingAudioArchive` and `MeetingHandle`; it no
+longer carries a second publication or reconciliation implementation. Its printed state explicitly
+records the structural question, minimum primitives, invariants, assumptions/unknowns, falsifier,
+and tool decision. Real FFmpeg 8.1 produced a 6,741-byte MPEG Layer III file at 16,000 Hz, mono, and
+48,000 bit/s at stream and every packet. Root, Account, and Meeting directories were `0700`; the
+file was `0600`; transcript truth was unchanged. The production hierarchy trace before metadata was
+exactly root-parent, root, Account, Meeting: each newly created child entry was fsynced through its
+parent, followed by final-file fsync through Meeting.
 
 Formal review exposed that the old proposal let the long-file window extractor choose a container's
 default stream while terminal MP3 publication independently forced `0:a:0`. The extended probe used
@@ -80,12 +73,14 @@ both direct/windowed inference and terminal encoding consume that exact one-stre
 preparation fails, transcription may still consume the original source, but retained audio is
 explicitly `unavailable` rather than independently selecting another stream.
 
-The standards adversary then combined a failed `available` metadata commit with failed artifact
-removal. The extended probe measured both truthful surviving-file outcomes: a successful second
-commit of the same known-valid metadata produced `available`; a failed second commit propagated.
-Both retained the MP3 and committed `unavailable` zero times. Production tests reproduce both
-outcomes and also retain the earlier successful-removal case, which commits `unavailable` only
-after the path is absent. The accepted reconciliation is one causal retry, not a general retry
-layer: absent artifact means unavailable; surviving known-valid artifact means retry that exact
-available metadata once; another failure leaves the Meeting failed without audio metadata. An MP3
-and durable `unavailable` must never coexist.
+The production discard path now owns unlink, verified absence, and parent fsync. The probe measured
+three adversarial outcomes directly through it: post-replace cleanup failure returned typed
+`MeetingAudioArtifactSurvives` and made unavailable ineligible; a size mismatch with successful
+discard left no artifact and made unavailable eligible; a forced size-mismatch discard failure
+returned the same typed survivor state and made unavailable ineligible. Production `MeetingHandle`
+also measured both metadata-reconciliation outcomes: successful retry of the same known-valid
+available metadata returned available, while a second failure propagated; both retained the MP3,
+attempted exactly `available, available`, and committed unavailable zero times. The accepted rule is
+one causal reconciliation, not a general retry layer: only production discard success permits
+unavailable; surviving known-valid bytes permit one exact available retry; another failure leaves
+the Meeting failed without audio metadata. An MP3 and durable unavailable never coexist.

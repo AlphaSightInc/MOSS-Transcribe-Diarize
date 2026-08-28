@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
-"""PROTOTYPE: falsify terminal MP3 publication and cleanup policy."""
+"""PROTOTYPE: falsify production Meeting-audio truth and durability policy."""
 
 from __future__ import annotations
 
+import asyncio
 import json
-import os
-import shutil
 import stat
 import subprocess
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
+
+from moss_transcribe_diarize.app.phase2 import MeetingHandle
+from moss_transcribe_diarize.app.phase2_audio import (
+    MeetingAudioArtifactSurvives,
+    MeetingAudioArchive,
+)
 
 
 def run(*args: str) -> str:
     return subprocess.run(args, check=True, capture_output=True, text=True).stdout
 
 
-def probe(path: Path) -> dict[str, object]:
+def probe_mp3(path: Path) -> dict[str, object]:
     media = json.loads(
         run(
             "ffprobe",
@@ -48,13 +54,6 @@ def probe(path: Path) -> dict[str, object]:
             str(path),
         )
     )["packets"]
-    packet_bitrates = sorted(
-        {
-            round(int(packet["size"]) * 8 / float(packet["duration_time"]))
-            for packet in packets
-            if float(packet.get("duration_time") or 0) > 0
-        }
-    )
     stream = media["streams"][0]
     container = media["format"]
     return {
@@ -63,74 +62,16 @@ def probe(path: Path) -> dict[str, object]:
         "sample_rate_hz": int(stream["sample_rate"]),
         "channels": int(stream["channels"]),
         "stream_bit_rate_bps": int(stream["bit_rate"]),
-        "packet_bitrates_bps": packet_bitrates,
+        "packet_bitrates_bps": sorted(
+            {
+                round(int(packet["size"]) * 8 / float(packet["duration_time"]))
+                for packet in packets
+                if float(packet.get("duration_time") or 0) > 0
+            }
+        ),
         "duration_ms": round(float(container["duration"]) * 1000),
         "byte_count": int(container["size"]),
     }
-
-
-def ensure_private_directory(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
-    path.chmod(0o700)
-
-
-def fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def canonicalize_mix(source: Path, destination: Path) -> None:
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-nostdin",
-            "-v",
-            "error",
-            "-y",
-            "-i",
-            str(source),
-            "-vn",
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            "-c:a",
-            "pcm_s16le",
-            "-f",
-            "wav",
-            str(destination),
-        ],
-        check=True,
-        capture_output=True,
-    )
-
-
-def extract_inference_window(source: Path, destination: Path) -> None:
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-y",
-            "-ss",
-            "0.000000",
-            "-t",
-            "150.000000",
-            "-i",
-            str(source),
-            "-vn",
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            "-f",
-            "wav",
-            str(destination),
-        ],
-        check=True,
-        capture_output=True,
-    )
 
 
 def dominant_frequency(path: Path, *, stream: str | None = None) -> int:
@@ -156,130 +97,174 @@ def dominant_frequency(path: Path, *, stream: str | None = None) -> int:
     return round(float(frequencies[int(np.argmax(spectrum))]))
 
 
-def publish(
-    source: Path,
-    root: Path,
-    account_id: str,
-    meeting_id: str,
-    *,
-    fail_after_replace: bool = False,
-) -> tuple[Path, dict[str, object]]:
-    account_dir = root / account_id
-    meeting_dir = account_dir / meeting_id
-    for directory in (root, account_dir, meeting_dir):
-        ensure_private_directory(directory)
-    staged = meeting_dir / ".audio.staging.mp3"
-    final = meeting_dir / "audio.mp3"
-    replaced = False
-    try:
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-nostdin",
-                "-v",
-                "error",
-                "-y",
-                "-i",
-                str(source),
-                "-map",
-                "0:a:0",
-                "-vn",
-                "-map_metadata",
-                "-1",
-                "-ar",
-                "16000",
-                "-ac",
-                "1",
-                "-c:a",
-                "libmp3lame",
-                "-b:a",
-                "48k",
-                "-f",
-                "mp3",
-                str(staged),
-            ],
-            check=True,
-            capture_output=True,
-        )
-        metadata = probe(staged)
-        if metadata["format"] != "mp3" or metadata["codec"] != "mp3":
-            raise RuntimeError("not MP3")
-        if (
-            metadata["sample_rate_hz"] != 16000
-            or metadata["channels"] != 1
-            or metadata["stream_bit_rate_bps"] != 48000
-            or metadata["packet_bitrates_bps"] != [48000]
+def extract_production_window(source: Path, destination: Path) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-ss",
+            "0.000000",
+            "-t",
+            "150.000000",
+            "-i",
+            str(source),
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-f",
+            "wav",
+            str(destination),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+class TracingArchive(MeetingAudioArchive):
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.fsynced_directories: list[Path] = []
+
+    def _fsync_directory(self, path: Path) -> None:
+        self.fsynced_directories.append(path)
+        super()._fsync_directory(path)
+
+
+class CommitProbeStore:
+    def __init__(self, *, retry_available_succeeds: bool) -> None:
+        self.retry_available_succeeds = retry_available_succeeds
+        self.commit_attempts: list[str] = []
+
+    async def _commit_meeting_audio(self, *args: object) -> None:
+        audio = args[-1]
+        self.commit_attempts.append(audio.state)
+        if audio.state == "available" and (
+            len(self.commit_attempts) == 1 or not self.retry_available_succeeds
         ):
-            raise RuntimeError("MP3 encoding contract mismatch")
-        staged.chmod(0o600)
-        with staged.open("rb") as output:
-            os.fsync(output.fileno())
-        os.replace(staged, final)
-        replaced = True
-        if fail_after_replace:
-            raise OSError("forced post-replace storage failure")
-        fsync_directory(meeting_dir)
-        metadata["relative_path"] = final.relative_to(root).as_posix()
-        metadata["state"] = "available"
-        return final, metadata
-    except BaseException:
-        staged.unlink(missing_ok=True)
-        if replaced:
-            final.unlink(missing_ok=True)
-        raise
+            raise RuntimeError("forced available metadata failure")
 
 
-def reconcile_failed_available_commit(
-    path: Path,
+class SurvivingDiscardArchive(MeetingAudioArchive):
+    def discard(self, publication) -> None:
+        if not publication.path.exists():
+            raise AssertionError("publication unexpectedly absent")
+        raise MeetingAudioArtifactSurvives("forced surviving production MP3")
+
+
+async def metadata_reconciliation(
+    root: Path,
+    source: Path,
     *,
     retry_available_succeeds: bool,
 ) -> dict[str, object]:
-    commits = ["available:failed"]
-    removal_error = None
+    root.parent.mkdir(parents=True, exist_ok=True)
+    archive = SurvivingDiscardArchive(root)
+    store = CommitProbeStore(retry_available_succeeds=retry_available_succeeds)
+    handle = MeetingHandle(store, "account-a", 1, "meeting-metadata")
+    outcome = "propagated"
+    returned_state = None
     try:
-        raise OSError("forced removal failure")
-    except OSError as exc:
-        removal_error = type(exc).__name__
-
-    if path.exists():
-        commits.append(
-            "available:committed" if retry_available_succeeds else "available:failed"
-        )
-        outcome = "available" if retry_available_succeeds else "propagated"
+        returned = await handle.publish_audio(archive, source)
+    except RuntimeError:
+        pass
     else:
-        commits.append("unavailable:committed")
-        outcome = "unavailable"
+        returned_state = returned.state
+        outcome = returned.state
+    publication_path = root / "account-a" / "meeting-metadata" / "audio.mp3"
     return {
         "outcome": outcome,
-        "removal_error": removal_error,
-        "artifact_survives": path.exists(),
-        "commit_attempts": commits,
-        "unavailable_committed": "unavailable:committed" in commits,
+        "returned_state": returned_state,
+        "commit_attempts": store.commit_attempts,
+        "artifact_survives": publication_path.exists(),
+        "unavailable_committed": "unavailable" in store.commit_attempts,
     }
+
+
+def make_two_stream_source(path: Path) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=151:sample_rate=16000",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=880:duration=151:sample_rate=16000",
+            "-map",
+            "0:a:0",
+            "-map",
+            "1:a:0",
+            "-c:a",
+            "pcm_s16le",
+            "-disposition:a:0",
+            "0",
+            "-disposition:a:1",
+            "default",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
+def fail_unlink_for(target: Path):
+    original = Path.unlink
+
+    def fail_selected(path: Path, *args: object, **kwargs: object) -> None:
+        if path == target:
+            raise OSError("forced canonical MP3 unlink failure")
+        original(path, *args, **kwargs)
+
+    return fail_selected
 
 
 def main() -> None:
     state: dict[str, object] = {
-        "question": (
-            "Can one canonical transcription mix feed both 151-second window inference and "
-            "terminal private MP3 publication while failure preserves transcript and artifact truth?"
+        "structural_question": (
+            "Can one production archive keep inference, MP3 bytes, filesystem durability, and "
+            "available/unavailable metadata truthful across every cleanup path?"
         ),
-        "hypothesis": (
-            "One default-stream 16 kHz mono PCM WAV consumed by inference and libmp3lame "
-            "publication is the smallest sufficient shared interpretation."
-        ),
+        "minimum_primitives": [
+            "one transient 16 kHz mono PCM transcription mix",
+            "one canonical owner-partitioned MP3 path",
+            "one production discard operation: unlink, verify absence, fsync parent",
+            "owner-bound available/unavailable metadata commit",
+        ],
+        "invariants": [
+            "direct and windowed inference and retained MP3 consume one canonical mix",
+            "available follows durable valid MP3 and exact metadata",
+            "unavailable is committed only after discard proves canonical MP3 absent",
+            "a surviving MP3 is never paired with durable unavailable",
+            "new root, Account, Meeting, and final-file entries are parent-fsynced in order",
+            "audio failure never changes transcript truth",
+        ],
+        "assumptions_unknowns": [
+            "cooperating single-process operator; no hostile filesystem mutation",
+            "perceived MP3 quality remains unmeasured and is not a gate",
+            "production-host encoding time remains descriptive, not a fixed threshold",
+        ],
         "falsifier": (
-            "Different dominant frequencies at canonical mix, inference window, or retained MP3; "
-            "any format/privacy mismatch, surviving transient, transcript change on failure, or "
-            "unavailable metadata beside a surviving MP3 rejects the design."
+            "Any mix-frequency divergence, missing hierarchy fsync, format/privacy mismatch, "
+            "unavailable metadata beside surviving MP3, or changed transcript rejects the design."
+        ),
+        "tool_decision": (
+            "Call production MeetingAudioArchive and MeetingHandle directly; use real FFmpeg/"
+            "ffprobe and forced filesystem/commit failures because each result selects a truth state."
         ),
         "ffmpeg": run("ffmpeg", "-version").splitlines()[0],
     }
     with tempfile.TemporaryDirectory(prefix="moss-file-mp3-prototype-") as temp_name:
         temp = Path(temp_name)
-        work_dir = temp / "file-work" / "source"
-        work_dir.mkdir(parents=True)
-        source = work_dir / "input.wav"
+        transcript = {"segments": [{"text": "transcript truth"}]}
+        source = temp / "source.wav"
         subprocess.run(
             [
                 "ffmpeg",
@@ -302,139 +287,118 @@ def main() -> None:
             check=True,
             capture_output=True,
         )
-        transcript = {"segments": [{"text": "transcript truth"}]}
-        root = temp / "meetings"
-        final, metadata = publish(source, root, "account-a", "meeting-a")
-        shutil.rmtree(work_dir)
+
+        root = temp / "archive" / "meetings"
+        root.parent.mkdir()
+        archive = TracingArchive(root)
+        mix = temp / "transcription-mix.wav"
+        archive.prepare_mix(source, mix)
+        publication = archive.publish("account-a", "meeting-success", mix)
+        measured = probe_mp3(publication.path)
         state["success"] = {
-            "metadata": metadata,
-            "metadata_byte_count_matches": metadata["byte_count"] == final.stat().st_size,
+            "metadata": measured,
+            "metadata_bytes_match": measured["byte_count"] == publication.byte_count,
+            "relative_path": publication.relative_path,
             "root_mode": oct(stat.S_IMODE(root.stat().st_mode)),
-            "account_mode": oct(stat.S_IMODE(final.parent.parent.stat().st_mode)),
-            "meeting_mode": oct(stat.S_IMODE(final.parent.stat().st_mode)),
-            "file_mode": oct(stat.S_IMODE(final.stat().st_mode)),
-            "surviving_files": sorted(
-                path.relative_to(temp).as_posix() for path in temp.rglob("*") if path.is_file()
-            ),
-            "source_exists_after_cleanup": source.exists(),
-            "transcript": transcript,
-        }
-
-        multi_stream = temp / "multi-stream.mka"
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-nostdin",
-                "-v",
-                "error",
-                "-y",
-                "-f",
-                "lavfi",
-                "-i",
-                "sine=frequency=440:duration=151:sample_rate=16000",
-                "-f",
-                "lavfi",
-                "-i",
-                "sine=frequency=880:duration=151:sample_rate=16000",
-                "-map",
-                "0:a:0",
-                "-map",
-                "1:a:0",
-                "-c:a",
-                "pcm_s16le",
-                "-disposition:a:0",
-                "0",
-                "-disposition:a:1",
-                "default",
-                str(multi_stream),
+            "account_mode": oct(stat.S_IMODE(publication.path.parent.parent.stat().st_mode)),
+            "meeting_mode": oct(stat.S_IMODE(publication.path.parent.stat().st_mode)),
+            "file_mode": oct(stat.S_IMODE(publication.path.stat().st_mode)),
+            "fsynced_directories": [
+                path.relative_to(temp).as_posix() for path in archive.fsynced_directories
             ],
-            check=True,
-            capture_output=True,
-        )
-        canonical_mix = temp / "canonical-mix.wav"
-        inference_window = temp / "inference-window.wav"
-        canonicalize_mix(multi_stream, canonical_mix)
-        extract_inference_window(canonical_mix, inference_window)
-        retained_path, _ = publish(
-            canonical_mix,
-            root,
-            "account-a",
-            "meeting-multi-stream",
-        )
-        canonical_hz = dominant_frequency(canonical_mix)
-        inference_hz = dominant_frequency(inference_window)
-        retained_hz = dominant_frequency(retained_path)
-        state["multi_stream_shared_mix"] = {
-            "duration_seconds": 151,
-            "source_first_stream_hz": dominant_frequency(
-                multi_stream,
-                stream="0:a:0",
-            ),
-            "source_default_stream_hz": dominant_frequency(multi_stream),
-            "source_second_default_stream_hz": dominant_frequency(
-                multi_stream,
-                stream="0:a:1",
-            ),
-            "canonical_mix_hz": canonical_hz,
-            "windowed_inference_input_hz": inference_hz,
-            "retained_mp3_hz": retained_hz,
-            "all_consumers_match_canonical": canonical_hz == inference_hz == retained_hz,
-        }
-        state["metadata_cleanup_reconciliation"] = {
-            "surviving_artifact_retry_succeeds": reconcile_failed_available_commit(
-                retained_path,
-                retry_available_succeeds=True,
-            ),
-            "surviving_artifact_retry_fails": reconcile_failed_available_commit(
-                retained_path,
-                retry_available_succeeds=False,
-            ),
-        }
-
-        post_replace_reason = None
-        try:
-            publish(
-                final,
-                root,
-                "account-a",
-                "meeting-c",
-                fail_after_replace=True,
-            )
-        except Exception as exc:
-            post_replace_reason = type(exc).__name__
-        state["post_replace_failure"] = {
-            "exception_type": post_replace_reason,
-            "remaining_files": sorted(
-                path.name for path in (root / "account-a" / "meeting-c").iterdir()
-            ),
             "transcript_unchanged": transcript == {"segments": [{"text": "transcript truth"}]},
         }
 
-        failed_source_dir = temp / "file-work" / "failed-source"
-        failed_source_dir.mkdir(parents=True)
-        failed_source = failed_source_dir / "input.wav"
-        failed_source.write_bytes(b"not decodable")
-        failed_transcript = json.loads(json.dumps(transcript))
-        failure_reason = None
-        try:
-            publish(failed_source, root, "account-a", "meeting-b")
-        except Exception as exc:
-            failure_reason = type(exc).__name__
-        unavailable = {
-            "state": "unavailable",
-            "relative_path": None,
-            "byte_count": None,
-            "duration_ms": None,
+        multi_stream = temp / "multi-stream.mka"
+        make_two_stream_source(multi_stream)
+        multi_mix = temp / "multi-mix.wav"
+        inference_window = temp / "inference-window.wav"
+        archive.prepare_mix(multi_stream, multi_mix)
+        extract_production_window(multi_mix, inference_window)
+        retained = archive.publish("account-a", "meeting-multi", multi_mix)
+        canonical_hz = dominant_frequency(multi_mix)
+        window_hz = dominant_frequency(inference_window)
+        retained_hz = dominant_frequency(retained.path)
+        state["multi_stream_shared_mix"] = {
+            "source_first_stream_hz": dominant_frequency(multi_stream, stream="0:a:0"),
+            "source_default_stream_hz": dominant_frequency(multi_stream),
+            "canonical_mix_hz": canonical_hz,
+            "windowed_inference_input_hz": window_hz,
+            "retained_mp3_hz": retained_hz,
+            "all_consumers_match": canonical_hz == window_hz == retained_hz,
         }
-        shutil.rmtree(failed_source_dir)
-        state["failure"] = {
-            "exception_type": failure_reason,
-            "metadata": unavailable,
-            "transcript_unchanged": failed_transcript == transcript,
-            "remaining_meeting_b_files": sorted(
-                path.name for path in (root / "account-a" / "meeting-b").iterdir()
+
+        postreplace_dir = root / "account-a" / "meeting-postreplace"
+        postreplace_path = postreplace_dir / "audio.mp3"
+        real_fsync = archive._fsync_directory
+
+        def fail_postreplace_fsync(path: Path) -> None:
+            if path == postreplace_dir:
+                raise OSError("forced post-replace fsync failure")
+            real_fsync(path)
+
+        archive._fsync_directory = fail_postreplace_fsync
+        postreplace_exception = None
+        with patch.object(Path, "unlink", fail_unlink_for(postreplace_path)):
+            try:
+                archive.publish("account-a", "meeting-postreplace", mix)
+            except Exception as exc:
+                postreplace_exception = type(exc).__name__
+        archive._fsync_directory = real_fsync
+        state["postreplace_cleanup_failure"] = {
+            "exception_type": postreplace_exception,
+            "artifact_survives": postreplace_path.exists(),
+            "unavailable_eligible": False,
+        }
+
+        mismatch = archive.publish("account-a", "meeting-mismatch", mix)
+        mismatch.path.write_bytes(mismatch.path.read_bytes() + b"size mismatch")
+        resolved_before_discard = archive.resolve(
+            "account-a",
+            "meeting-mismatch",
+            mismatch.relative_path,
+            mismatch.byte_count,
+        )
+        archive.discard_stored("account-a", "meeting-mismatch", mismatch.relative_path)
+        state["size_mismatch_discarded"] = {
+            "resolved_before_discard": resolved_before_discard is not None,
+            "artifact_survives": mismatch.path.exists(),
+            "unavailable_eligible": not mismatch.path.exists(),
+        }
+
+        mismatch_survives = archive.publish("account-a", "meeting-mismatch-survives", mix)
+        mismatch_survives.path.write_bytes(mismatch_survives.path.read_bytes() + b"size mismatch")
+        mismatch_exception = None
+        with patch.object(Path, "unlink", fail_unlink_for(mismatch_survives.path)):
+            try:
+                archive.discard_stored(
+                    "account-a",
+                    "meeting-mismatch-survives",
+                    mismatch_survives.relative_path,
+                )
+            except Exception as exc:
+                mismatch_exception = type(exc).__name__
+        state["size_mismatch_survives"] = {
+            "exception_type": mismatch_exception,
+            "artifact_survives": mismatch_survives.path.exists(),
+            "unavailable_eligible": False,
+        }
+
+        state["metadata_cleanup_reconciliation"] = {
+            "retry_succeeds": asyncio.run(
+                metadata_reconciliation(
+                    temp / "metadata-success" / "meetings",
+                    mix,
+                    retry_available_succeeds=True,
+                )
             ),
-            "source_exists_after_cleanup": failed_source.exists(),
+            "retry_fails": asyncio.run(
+                metadata_reconciliation(
+                    temp / "metadata-failure" / "meetings",
+                    mix,
+                    retry_available_succeeds=False,
+                )
+            ),
         }
     print(json.dumps(state, indent=2, sort_keys=True))
 

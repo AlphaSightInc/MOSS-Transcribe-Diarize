@@ -23,6 +23,7 @@ from moss_transcribe_diarize.app.phase2 import (
     create_phase2_app,
 )
 from moss_transcribe_diarize.app.phase2_audio import (
+    MeetingAudioArtifactSurvives,
     MeetingAudioArchive,
     PublishedMeetingAudio,
 )
@@ -70,7 +71,7 @@ class BlockingArchive:
             duration_ms=1000,
         )
 
-    def remove(self, publication: PublishedMeetingAudio) -> None:
+    def discard(self, publication: PublishedMeetingAudio) -> None:
         publication.path.unlink(missing_ok=True)
 
     def resolve(
@@ -573,9 +574,9 @@ def test_metadata_and_removal_failure_never_marks_surviving_mp3_unavailable(
 
         def fail_removal(publication: PublishedMeetingAudio) -> None:
             assert publication.path.exists()
-            raise OSError("forced removal failure")
+            raise MeetingAudioArtifactSurvives("forced surviving MP3")
 
-        monkeypatch.setattr(archive, "remove", fail_removal)
+        monkeypatch.setattr(archive, "discard", fail_removal)
         real_commit = app.state.phase2_store._commit_meeting_audio
         commit_attempts: list[str] = []
 
@@ -612,6 +613,153 @@ def test_metadata_and_removal_failure_never_marks_surviving_mp3_unavailable(
         assert list(work_root.glob("**/*")) == []
 
 
+def test_post_replace_failure_and_failed_discard_never_commits_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    audio_root = tmp_path / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    app = make_app(database, work_root, audio_root, archive=archive)
+    real_fsync = archive._fsync_directory
+    fsync_calls = 0
+
+    def fail_final_publish_fsync(path: Path) -> None:
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 4:
+            raise OSError("forced final publication fsync failure")
+        real_fsync(path)
+
+    real_unlink = Path.unlink
+
+    def fail_canonical_unlink(path: Path, *args: object, **kwargs: object) -> None:
+        if path.name == "audio.mp3":
+            raise OSError("forced canonical MP3 unlink failure")
+        real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(archive, "_fsync_directory", fail_final_publish_fsync)
+    monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        ).json()["id"]
+        meeting = await_terminal(client, meeting_id, "failed")
+
+    assert meeting["transcript"]["segments"][0]["text"] == "durable transcript"
+    assert meeting["audio"] is None
+    assert len(list(audio_root.glob("**/audio.mp3"))) == 1
+    assert list(work_root.glob("**/*")) == []
+    connection = sqlite3.connect(database)
+    try:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM meeting_audio WHERE meeting_id = ?",
+            (meeting_id,),
+        ).fetchone() == (0,)
+    finally:
+        connection.close()
+
+
+@pytest.mark.parametrize("discard_fails", [False, True])
+def test_size_mismatch_reconciliation_never_marks_surviving_mp3_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    discard_fails: bool,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    audio_root = tmp_path / "meetings"
+    app = make_app(database, work_root, audio_root)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        ).json()["id"]
+        meeting = await_terminal(client, meeting_id, "completed")
+        path = audio_root / meeting["audio"]["relative_path"]
+        path.write_bytes(path.read_bytes() + b"size mismatch")
+        if discard_fails:
+            real_unlink = Path.unlink
+
+            def fail_canonical_unlink(
+                candidate: Path,
+                *args: object,
+                **kwargs: object,
+            ) -> None:
+                if candidate == path:
+                    raise OSError("forced mismatched MP3 unlink failure")
+                real_unlink(candidate, *args, **kwargs)
+
+            monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+
+        response = client.get(f"/api/meetings/{meeting_id}/audio/download")
+        reconciled = client.get(f"/api/meetings/{meeting_id}").json()
+
+    if discard_fails:
+        assert response.status_code == 503
+        assert reconciled["audio"]["state"] == "available"
+        assert path.exists()
+    else:
+        assert response.status_code == 404
+        assert reconciled["audio"]["state"] == "unavailable"
+        assert not path.exists()
+
+
+def test_new_archive_hierarchy_is_fsynced_before_available_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    audio_root = tmp_path / "meetings"
+    archive = MeetingAudioArchive(audio_root)
+    app = make_app(database, work_root, audio_root, archive=archive)
+    fsynced: list[Path] = []
+    observed_at_available: list[Path] = []
+    real_fsync = archive._fsync_directory
+
+    def trace_fsync(path: Path) -> None:
+        fsynced.append(path)
+        real_fsync(path)
+
+    monkeypatch.setattr(archive, "_fsync_directory", trace_fsync)
+    with TestClient(app, base_url="https://moss.test") as client:
+        real_commit = app.state.phase2_store._commit_meeting_audio
+
+        async def trace_available(*args: object, **kwargs: object) -> None:
+            audio = args[-1]
+            if audio.state == "available":
+                observed_at_available.extend(fsynced)
+            await real_commit(*args, **kwargs)
+
+        monkeypatch.setattr(
+            app.state.phase2_store,
+            "_commit_meeting_audio",
+            trace_available,
+        )
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+        ).json()["id"]
+        await_terminal(client, meeting_id, "completed")
+
+    assert observed_at_available == [
+        audio_root.parent,
+        audio_root,
+        audio_root / "sub-a",
+        audio_root / "sub-a" / meeting_id,
+    ]
+
+
 def test_post_replace_storage_failure_removes_uncommitted_mp3(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -620,11 +768,17 @@ def test_post_replace_storage_failure_removes_uncommitted_mp3(
     source.write_bytes(stereo_wav())
     root = tmp_path / "meetings"
     archive = MeetingAudioArchive(root)
+    real_fsync = archive._fsync_directory
+    fsync_calls = 0
 
-    def fail_fsync(_: Path) -> None:
-        raise OSError("forced directory fsync failure")
+    def fail_final_fsync(path: Path) -> None:
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 4:
+            raise OSError("forced directory fsync failure")
+        real_fsync(path)
 
-    monkeypatch.setattr(archive, "_fsync_directory", fail_fsync)
+    monkeypatch.setattr(archive, "_fsync_directory", fail_final_fsync)
     with pytest.raises(OSError, match="forced directory fsync failure"):
         archive.publish("sub-a", "meeting-a", source)
     assert list(root.glob("**/*.mp3")) == []
