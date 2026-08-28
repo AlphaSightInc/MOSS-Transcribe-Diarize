@@ -562,7 +562,7 @@ def _install_receive_idle_timeout(request) -> None:
 async def _read_upload_chunk(file, size: int = 1024 * 1024) -> bytes:
     try:
         return await asyncio.wait_for(file.read(size), timeout=UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS)
-    except asyncio.TimeoutError as exc:
+    except (asyncio.TimeoutError, TimeoutError) as exc:
         raise _UploadReceiveIdleTimeout("Upload receive timed out.") from exc
 
 

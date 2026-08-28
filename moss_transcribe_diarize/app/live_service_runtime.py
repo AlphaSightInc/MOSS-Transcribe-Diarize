@@ -823,6 +823,32 @@ class LiveServiceRuntime:
                 return None
             return snapshot
 
+    def _operator_queue_snapshot(self) -> dict[str, int | bool]:
+        """Aggregate content-free queue and worker facts under the runtime lock."""
+
+        with self._lock:
+            batch = 0
+            live_canonical = 0
+            live_refinement = 0
+            live_provisional = 0
+            for state in self._sessions.values():
+                queues = state.arbiter.snapshot()
+                batch += queues.batch
+                live_canonical += queues.live_canonical
+                live_refinement += queues.live_refinement
+                live_provisional += queues.live_provisional
+            return {
+                "batch": batch,
+                "live_canonical": live_canonical,
+                "live_refinement": live_refinement,
+                "live_provisional": live_provisional,
+                "worker_busy": bool(self._in_flight_session_ids)
+                or any(
+                    state.session.snapshot().finalization_status == "running"
+                    for state in self._sessions.values()
+                ),
+            }
+
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
         loop = asyncio.get_running_loop()
         end_time = loop.time() + max(0.0, float(deadline))

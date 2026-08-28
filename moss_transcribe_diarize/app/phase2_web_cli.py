@@ -129,6 +129,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit("Install uvicorn to run mtd-phase2-web.") from exc
 
     args = parse_args(argv)
+    from .phase2_operator import configure_operator_journal
+
+    configure_operator_journal()
     file_runner = _build_file_runner(args)
     live_runtime_factory = _build_live_runtime_factory(args, file_runner)
     oidc = AuthlibGoogleOidc.configured(
