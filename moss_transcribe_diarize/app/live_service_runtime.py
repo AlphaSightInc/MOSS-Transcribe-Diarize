@@ -979,18 +979,36 @@ class LiveServiceRuntime:
         """
 
         reason = reason or "aborted"
+        self._fence_session(session_id, reason, detail=detail)
+        with self._lock:
+            state = self._get(session_id)
+        snapshot = await state.session.abort(reason)
+        with self._lock:
+            return self._snapshot(state, session_snapshot=snapshot)
+
+    def _fence_session(
+        self,
+        session_id: str,
+        reason: str,
+        *,
+        detail: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Synchronously terminalize one raw session before its owner first awaits."""
+
+        reason = reason or "aborted"
         with self._lock:
             state = self._get(session_id)
             self._discard_session_queued_work_locked(state)
             if state.terminal_failure is None:
                 self._fail(
                     state,
-                    LiveServiceTransportPacingFailure(reason, code="aborted", detail=detail).failure,
+                    LiveServiceTransportPacingFailure(
+                        reason,
+                        code="aborted",
+                        detail=detail,
+                    ).failure,
                     event_kind="session_aborted",
                 )
-        snapshot = await state.session.abort(reason)
-        with self._lock:
-            return self._snapshot(state, session_snapshot=snapshot)
 
     def _discard_session_queued_work_locked(self, state: _RuntimeSession) -> None:
         """Discard one terminal session's queued Live work and its owned accounting.
@@ -1005,17 +1023,26 @@ class LiveServiceRuntime:
         discarded = state.arbiter.discard_live_queued()
         if not discarded:
             return
-        for item in discarded:
-            if item.kind == InferenceArbiter.LIVE_CANONICAL:
-                state.canonical_timing.pop(item.id, None)
-            elif item.kind == InferenceArbiter.LIVE_REFINEMENT:
-                state.rolling_timing.pop(item.id, None)
         self._ready_session_set.discard(state.session_id)
         self._ready_session_ids = deque(
             session_id
             for session_id in self._ready_session_ids
             if session_id != state.session_id
         )
+        for item in discarded:
+            if item.kind == InferenceArbiter.LIVE_CANONICAL:
+                state.canonical_timing.pop(item.id, None)
+                self._record_event(
+                    state,
+                    "canonical_discarded",
+                    {
+                        "item_id": item.id,
+                        "reason": "session_terminal",
+                        "span_count": item.weight,
+                    },
+                )
+            elif item.kind == InferenceArbiter.LIVE_REFINEMENT:
+                self._record_rolling_completed(state, item.id, "session_terminal", None)
         state.work_changed.set()
         self._notify_drain_waiters_locked(state)
 

@@ -112,6 +112,31 @@ class HeldDecoder:
         return InferenceTranscript("[0][S01]late inference result[0.000125]")
 
 
+class HoldSecondDecoder:
+    max_samples = 4_000
+
+    def __init__(
+        self,
+        second_started: threading.Event,
+        release_second: threading.Event,
+        second_finished: threading.Event,
+    ) -> None:
+        self.second_started = second_started
+        self.release_second = release_second
+        self.second_finished = second_finished
+        self.calls = 0
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        del pcm
+        self.calls += 1
+        if self.calls == 2:
+            self.second_started.set()
+            assert self.release_second.wait(timeout=5), "test did not release second inference"
+            self.second_finished.set()
+        seconds = span.sample_count / LIVE_SAMPLE_RATE
+        return InferenceTranscript(f"[0][S01]ordered inference[{seconds:g}]")
+
+
 class WholeMeetingStub:
     window_seconds = 150
     stride_seconds = 120
@@ -1194,10 +1219,18 @@ def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
     database = tmp_path / "moss.sqlite3"
     socket = Path("/tmp") / f"moss-i20-live-{os.getpid()}-{time.time_ns()}.sock"
     sessions = asyncio.run(provision(database))
+    second_decode_started = threading.Event()
+    release_second_decode = threading.Event()
+    second_decode_finished = threading.Event()
     app = make_app(
         database,
         control_socket=socket,
         speech=(True, False, True, False, True, False),
+        decoder_factory=lambda: HoldSecondDecoder(
+            second_decode_started,
+            release_second_decode,
+            second_decode_finished,
+        ),
     )
 
     with TestClient(app, base_url="https://moss.test") as client:
@@ -1223,6 +1256,47 @@ def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
         assert commit_started.wait(timeout=2)
         assert admitted_document is not None
         feed_two_lane_pairs(client, target, range(3, 6))
+        assert second_decode_started.wait(timeout=2)
+        live = app.state.phase2_live
+        runtime = live.runtime
+        with runtime._lock:
+            target_state = runtime._sessions[target]
+            target_state.arbiter.submit_batch(
+                key="unrelated-batch",
+                payload={"kind": "batch"},
+            )
+            canonical = target_state.arbiter.submit_live_canonical(
+                key=f"{target}:queued-canonical",
+                payload={"kind": "canonical"},
+            )
+            runtime._record_canonical_queued(target_state, canonical.item_id)
+            refinement = target_state.arbiter.submit_live_refinement(
+                coalesce_key=f"{target}:queued-refinement",
+                payload={"kind": "refinement"},
+            )
+            target_state.rolling_timing[refinement.item_id] = SimpleNamespace(
+                queued_ns=runtime._monotonic_ns(),
+                started_ns=None,
+                window_index=9,
+                start_sample=0,
+                end_sample=2,
+            )
+            target_state.arbiter.submit_live_provisional(
+                coalesce_key=f"{target}:queued-provisional",
+                payload={"kind": "provisional"},
+            )
+            queued_canonical_ids = {
+                item.id for item in target_state.arbiter._live_canonical
+            }
+            queued_refinement_ids = {
+                item.id for item in target_state.arbiter._live_refinement.values()
+            }
+        feed_two_lane_span(client, peer)
+        aggregate_before = live.operator_snapshot()["queues"]
+        assert aggregate_before["live_canonical"] >= 2
+        assert aggregate_before["live_refinement"] == 1
+        assert aggregate_before["live_provisional"] == 1
+        assert aggregate_before["batch"] == 1
 
         outcome: dict[str, object] = {}
 
@@ -1237,6 +1311,57 @@ def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
                 raise AssertionError("operator Live result fence was not installed")
             time.sleep(0.01)
         assert peer_binding.publication_fenced is False
+        assert worker.is_alive()
+        deadline = time.monotonic() + 2
+        while runtime.snapshot(target).terminal_failure is None:
+            if time.monotonic() >= deadline:
+                raise AssertionError("raw runtime fence was not installed synchronously")
+            time.sleep(0.005)
+        with runtime._lock:
+            target_queues = runtime._sessions[target].arbiter.snapshot()
+        aggregate_after_claim = live.operator_snapshot()["queues"]
+        assert (
+            target_queues.live_canonical,
+            target_queues.live_refinement,
+            target_queues.live_provisional,
+        ) == (0, 0, 0)
+        assert aggregate_after_claim["live_canonical"] == 1
+        assert aggregate_after_claim["live_refinement"] == 0
+        assert aggregate_after_claim["live_provisional"] == 0
+        assert aggregate_after_claim["batch"] == 1
+        target_events = runtime.events(target)
+        canonical_discarded = [
+            event for event in target_events if event.kind == "canonical_discarded"
+        ]
+        assert {event.payload["item_id"] for event in canonical_discarded} == queued_canonical_ids
+        assert queued_canonical_ids.isdisjoint(
+            {
+                event.payload["item_id"]
+                for event in target_events
+                if event.kind == "canonical_started"
+            }
+        )
+        refinement_terminal = [
+            event
+            for event in target_events
+            if event.kind == "rolling_decode_completed"
+            and event.payload["outcome"] == "session_terminal"
+        ]
+        assert {
+            event.payload["item_id"] for event in refinement_terminal
+        } == queued_refinement_ids
+        accounted_before_release = runtime.snapshot(target).session.accounted_samples
+        release_second_decode.set()
+        assert second_decode_finished.wait(timeout=2)
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            peer_raw = runtime.snapshot(peer)
+            if peer_raw.session.accounted_samples > 0 and peer_raw.pending_work_items == 0:
+                break
+            time.sleep(0.005)
+        else:  # pragma: no cover - the assertion above owns the timeout.
+            raise AssertionError("peer work did not complete while owner commit stayed held")
+        assert runtime.snapshot(target).session.accounted_samples == accounted_before_release
         assert worker.is_alive()
         release_commit.set()
         worker.join(timeout=5)

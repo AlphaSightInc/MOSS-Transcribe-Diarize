@@ -685,6 +685,7 @@ Existing `committed`, `committed_prefix_hash`, and `label_revision_version` reta
 Add events containing counts/timing, not transcript text:
 
 - `decode_salvaged`
+- `canonical_discarded`
 - `rolling_decode_queued`
 - `rolling_decode_completed`
 - `text_revision_applied`

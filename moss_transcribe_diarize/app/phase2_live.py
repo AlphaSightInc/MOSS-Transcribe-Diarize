@@ -284,6 +284,7 @@ class Phase2LiveMeetings:
             return None
         binding.authority_closing = True
         binding.publication_fenced = True
+        self.runtime._fence_session(meeting_id, "interrupted_by_operator")
         binding.queue.put_nowait(None)
         return binding
 

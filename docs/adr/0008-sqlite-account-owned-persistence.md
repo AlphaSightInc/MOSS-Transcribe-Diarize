@@ -82,9 +82,11 @@ and cursors remain in memory, so the 250 ms poll path never reads SQLite.
   shutdown joins it before Live/File owners and SQLite close. A terminal or unknown locator is one
   no-change result. An active SQLite row with no process owner fails visibly rather than reporting
   no change or bypassing its cleanup owner. For Live work, the runtime removes that session's queued
-  canonical, refinement, and provisional items under its existing arbiter lock before abort first
-  awaits; operator aggregate depth therefore reflects the fence immediately while in-flight work
-  remains counted until its late result is rejected.
+  canonical, refinement, and provisional items under its existing arbiter lock inside the
+  no-await process-owner claim, before an admitted SQLite publication can delay async settlement.
+  Operator aggregate depth therefore reflects the fence immediately while in-flight work remains
+  counted until its late result is rejected. Discarded canonical and refinement admissions close
+  through typed terminal events rather than disappearing from private timing maps.
 - Meeting title carries `automatic` or `manual` provenance in the existing Meeting row. Creation
   starts automatic; an owner-bound rename transaction trims and requires a non-empty title, writes
   the title and `manual` together, and is permitted for active or terminal Meetings. This is the

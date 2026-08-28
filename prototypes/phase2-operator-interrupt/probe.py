@@ -24,6 +24,7 @@ from moss_transcribe_diarize.app.live_endpoint import (
     EndpointPolicyConfig,
     SpeechObservation,
 )
+from moss_transcribe_diarize.app.live_coordinator import CanonicalWork
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds,
     LiveServiceConfigHashes,
@@ -294,11 +295,26 @@ async def _runtime_discard_probe() -> dict[str, object]:
     # them. The payloads are never dispatched; their queue/counter lifetime is the question.
     with runtime._lock:
         target_state = runtime._sessions[target]
-        target_state.arbiter.submit_live_canonical(
-            key=f"{target}:canonical-probe",
-            payload={"probe": "canonical"},
+        target_state.arbiter.submit_batch(
+            key="unrelated-batch",
+            payload={"probe": "batch"},
         )
-        target_state.arbiter.submit_live_refinement(
+        canonical = target_state.arbiter.submit_live_canonical(
+            key=f"{target}:canonical-probe",
+            payload=CanonicalWork(
+                session_key=target,
+                spans=(
+                    FrozenSpan(
+                        id=999,
+                        epoch=0,
+                        start_sample=1_000,
+                        end_sample=2_000,
+                        reason="operator_interrupt_probe",
+                    ),
+                ),
+            ),
+        )
+        refinement = target_state.arbiter.submit_live_refinement(
             coalesce_key=f"{target}:rolling:0",
             payload={"probe": "refinement"},
         )
@@ -311,10 +327,19 @@ async def _runtime_discard_probe() -> dict[str, object]:
     runtime.accept_frame(peer, _runtime_frame(1, b"p"))
     target_before = _runtime_queue_depth(runtime, target)
     aggregate_before = runtime._operator_queue_snapshot()
+    started_before_claim = sum(
+        event.kind == "canonical_started" for event in runtime.events(target)
+    )
 
-    await runtime.abort(target, "interrupted_by_operator")
-    target_after_abort = _runtime_queue_depth(runtime, target)
-    aggregate_after_abort = runtime._operator_queue_snapshot()
+    # This is the exact production ordering under test: the process owner has installed its
+    # no-await claim while an admitted SQLite transcript commit keeps async settlement held.
+    # Before absorption the runtime has no synchronous fence, so the three target queues and
+    # in-flight provider remain runnable until the later async abort.
+    synchronous_fence = getattr(runtime, "_fence_session", None)
+    if synchronous_fence is not None:
+        synchronous_fence(target, "interrupted_by_operator")
+    target_after_claim = _runtime_queue_depth(runtime, target)
+    aggregate_after_claim = runtime._operator_queue_snapshot()
 
     release_decode.set()
     deadline = time.monotonic() + 2
@@ -326,20 +351,45 @@ async def _runtime_discard_probe() -> dict[str, object]:
     else:
         raise RuntimeError("peer canonical work did not complete after target release")
 
+    started_while_commit_held = sum(
+        event.kind == "canonical_started" for event in runtime.events(target)
+    )
+    await runtime.abort(target, "interrupted_by_operator")
     target_after_release = _runtime_queue_depth(runtime, target)
     target_snapshot = runtime.snapshot(target)
+    target_events = runtime.events(target)
+    canonical_dispositions = [
+        dict(event.payload)
+        for event in target_events
+        if event.kind == "canonical_discarded"
+    ]
+    refinement_dispositions = [
+        dict(event.payload)
+        for event in target_events
+        if event.kind == "rolling_decode_completed"
+        and event.payload.get("outcome") == "session_terminal"
+    ]
     aggregate_before_repeat = runtime._operator_queue_snapshot()
     repeated = await runtime.abort(target, "interrupted_by_operator")
     aggregate_after_repeat = runtime._operator_queue_snapshot()
     assert target_snapshot is not None
     return {
         "target_queue_before": target_before,
-        "target_queue_after_abort": target_after_abort,
+        "target_queue_after_claim": target_after_claim,
         "target_queue_after_release": target_after_release,
         "aggregate_before": aggregate_before,
-        "aggregate_after_abort": aggregate_after_abort,
+        "aggregate_after_claim": aggregate_after_claim,
         "aggregate_before_repeat": aggregate_before_repeat,
         "aggregate_after_repeat": aggregate_after_repeat,
+        "batch_before": aggregate_before["batch"],
+        "batch_after_claim": aggregate_after_claim["batch"],
+        "canonical_dispositions": canonical_dispositions,
+        "canonical_started_before_claim": started_before_claim,
+        "canonical_started_while_commit_held": started_while_commit_held,
+        "queued_canonical_item_id": canonical.item_id,
+        "queued_refinement_item_id": refinement.item_id,
+        "refinement_dispositions": refinement_dispositions,
+        "synchronous_runtime_fence_available": synchronous_fence is not None,
         "target_accounted_samples": target_snapshot.session.accounted_samples,
         "target_status": target_snapshot.session.status,
         "peer_accounted_samples": runtime.snapshot(peer).session.accounted_samples,
@@ -428,7 +478,7 @@ async def run(suppress: str | None) -> dict[str, object]:
             "refinement": 1,
             "provisional": 1,
         }
-        and runtime_discard["target_queue_after_abort"] == {
+        and runtime_discard["target_queue_after_claim"] == {
             "canonical": 0,
             "refinement": 0,
             "provisional": 0,
@@ -442,10 +492,30 @@ async def run(suppress: str | None) -> dict[str, object]:
             runtime_discard["aggregate_before"]
         )
         == 4
-        and _aggregate_queue_depth(runtime_discard["aggregate_after_abort"]) == 1,
+        and _aggregate_queue_depth(runtime_discard["aggregate_after_claim"]) == 1
+        and runtime_discard["batch_before"]
+        == runtime_discard["batch_after_claim"]
+        == 1,
         "runtime_late_result_and_peer": runtime_discard["target_accounted_samples"] == 0
         and runtime_discard["target_status"] == "aborted"
         and runtime_discard["peer_accounted_samples"] == 1_000,
+        "runtime_claim_precedes_owner_await": runtime_discard[
+            "synchronous_runtime_fence_available"
+        ]
+        and runtime_discard["canonical_started_before_claim"]
+        == runtime_discard["canonical_started_while_commit_held"]
+        == 1,
+        "runtime_discard_events_terminal": runtime_discard["canonical_dispositions"]
+        == [
+            {
+                "item_id": runtime_discard["queued_canonical_item_id"],
+                "reason": "session_terminal",
+                "span_count": 1,
+            }
+        ]
+        and len(runtime_discard["refinement_dispositions"]) == 1
+        and runtime_discard["refinement_dispositions"][0]["item_id"]
+        == runtime_discard["queued_refinement_item_id"],
         "runtime_repeat_idempotent": runtime_discard["aggregate_before_repeat"]
         == runtime_discard["aggregate_after_repeat"]
         and runtime_discard["repeated_status"] == "aborted",
@@ -495,6 +565,7 @@ async def run(suppress: str | None) -> dict[str, object]:
         "invariants": [
             "claim grants no Account or content access",
             "canonical, refinement, and provisional target queues become zero before await",
+            "discarded canonical and refinement admissions receive typed terminal dispositions",
             "queued and late target results cannot commit after claim",
             "runtime and operator queue counters reconcile without touching peer work",
             "unrelated work continues",

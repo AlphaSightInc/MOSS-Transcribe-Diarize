@@ -1046,6 +1046,7 @@ def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_
     with runtime._lock:
         target_state = runtime._sessions[target.session_id]
         held_timing_ids = set(target_state.canonical_timing)
+        target_state.arbiter.submit_batch(key="unrelated-batch", payload={"kind": "batch"})
         canonical = target_state.arbiter.submit_live_canonical(
             key=f"{target.session_id}:queued-canonical",
             payload={"kind": "canonical"},
@@ -1055,7 +1056,13 @@ def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_
             coalesce_key=f"{target.session_id}:queued-refinement",
             payload={"kind": "refinement"},
         )
-        target_state.rolling_timing[refinement.item_id] = SimpleNamespace()
+        target_state.rolling_timing[refinement.item_id] = SimpleNamespace(
+            queued_ns=runtime._monotonic_ns(),
+            started_ns=None,
+            window_index=7,
+            start_sample=0,
+            end_sample=1000,
+        )
         target_state.arbiter.submit_live_provisional(
             coalesce_key=f"{target.session_id}:queued-provisional",
             payload={"kind": "provisional"},
@@ -1075,8 +1082,9 @@ def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_
         aggregate_before["live_refinement"],
         aggregate_before["live_provisional"],
     ) == (2, 1, 1)
+    assert aggregate_before["batch"] == 1
 
-    aborted = asyncio.run(runtime.abort(target.session_id, "interrupted_by_operator"))
+    runtime._fence_session(target.session_id, "interrupted_by_operator")
 
     with runtime._lock:
         target_state = runtime._sessions[target.session_id]
@@ -1094,6 +1102,36 @@ def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_
         aggregate_after["live_refinement"],
         aggregate_after["live_provisional"],
     ) == (1, 0, 0)
+    assert aggregate_after["batch"] == 1
+    fenced = runtime.snapshot(target.session_id)
+    assert fenced.terminal_failure is not None
+    assert fenced.terminal_failure.code == "aborted"
+    events = runtime.events(target.session_id)
+    assert [
+        event.payload
+        for event in events
+        if event.kind == "canonical_discarded"
+    ] == [
+        {
+            "item_id": canonical.item_id,
+            "reason": "session_terminal",
+            "span_count": 1,
+        }
+    ]
+    assert canonical.item_id not in {
+        event.payload["item_id"] for event in events if event.kind == "canonical_started"
+    }
+    refinement_terminal = [
+        event
+        for event in events
+        if event.kind == "rolling_decode_completed"
+        and event.payload["outcome"] == "session_terminal"
+    ]
+    assert len(refinement_terminal) == 1
+    assert refinement_terminal[0].payload["item_id"] == refinement.item_id
+    assert refinement_terminal[0].payload["window_index"] == 7
+
+    aborted = asyncio.run(runtime.abort(target.session_id, "interrupted_by_operator"))
     assert aborted.session.status == "aborted"
 
     decoder.release.set()

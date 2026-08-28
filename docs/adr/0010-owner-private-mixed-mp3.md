@@ -121,8 +121,11 @@ Meeting, and only then disabled authority—never a second recovery publish.
 - Operator interruption reuses the same serialized terminal owners. The synchronous Live claim
   rejects capture/publication before its first await; raw abort makes queued and later inference
   unpublishable. The runtime-owned per-session arbiter discard removes queued canonical,
-  refinement, and provisional items plus their timing/readiness accounting before abort yields;
-  an already-running provider is not cancelled and its result is rejected by terminal authority.
+  refinement, and provisional items plus their timing/readiness accounting inside the no-await
+  owner claim, before held transcript persistence can delay terminal settlement. A discarded
+  canonical item emits `canonical_discarded`; a discarded refinement closes through
+  `rolling_decode_completed` with `session_terminal`, with no fake start. An already-running
+  provider is not cancelled and its result is rejected by terminal authority.
   The measured target depth was `3 -> 0`, aggregate depth `4 -> 1`, and the peer then completed.
   The File claim cancels and joins only its selected task, waits for synchronous
   input use to end, and removes that working source while peer Meetings continue. Both paths reuse

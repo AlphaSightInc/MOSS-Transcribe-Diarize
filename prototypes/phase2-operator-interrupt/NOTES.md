@@ -57,3 +57,29 @@ held target provider committed zero target samples, the peer reached 1,000 accou
 queued timing/readiness entries were reconciled, and repeat abort changed no counter. The existing
 `--suppress fence` and `--suppress cleanup` controls remain independent falsifiers for the higher
 owner composition.
+
+## Synchronous runtime-fence and lifecycle-accounting correction — RED (2026-08-28)
+
+The next falsifier held the owner settlement at the same admitted SQLite transcript-commit boundary
+used by production, while the real runtime held one provider request plus exactly one queued
+canonical, refinement, and provisional item; one peer canonical item and one unrelated batch item
+were also present. The process-owner claim had no synchronous runtime fence. While its async
+settlement remained held, target depth stayed `3 -> 3`, operator aggregate stayed `4 -> 4`, the
+released in-flight answer committed 1,000 target samples, and no discarded canonical/refinement
+terminal disposition existed. The later async abort was therefore too late even though it eventually
+cleared the private queues.
+
+**Required correction:** one private runtime-owned synchronous fence must atomically mark the raw
+session terminal, discard its queued Live work, and emit honest terminal dispositions before the
+owner claim returns. Canonical gets a new `canonical_discarded` event rather than a fake start or
+processed record; refinement reuses `rolling_decode_completed` with `outcome=session_terminal`.
+Batch and peer work remain untouched. Async `abort` only completes the lower `LiveSession.abort`.
+
+## Synchronous runtime-fence and lifecycle-accounting correction — PASS
+
+The absorbed production seam changed the held-commit state before owner settlement could await:
+target depth `3 -> 0`, operator aggregate `4 -> 1`, and batch depth remained `1`. Releasing the
+already-running provider while SQLite publication stayed held committed zero target samples; peer
+canonical work completed. The one discarded canonical item emitted one `canonical_discarded`
+record with its item ID, terminal reason, and span count and no start; the queued refinement emitted
+one `rolling_decode_completed/session_terminal`. Repeating abort emitted neither duplicate.
