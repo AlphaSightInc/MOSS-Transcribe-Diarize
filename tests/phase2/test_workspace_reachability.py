@@ -213,6 +213,7 @@ class _ChromePage:
         url: str,
         width: int,
         height: int,
+        mobile: bool = False,
     ) -> "_ChromePage":
         debugger_port = _free_port()
         process = subprocess.Popen(
@@ -238,6 +239,29 @@ class _ChromePage:
             page.socket = await websockets.connect(endpoint, origin="http://127.0.0.1")
             await page.command("Page.enable")
             await page.command("Network.enable")
+            if mobile:
+                await page.command(
+                    "Emulation.setDeviceMetricsOverride",
+                    {
+                        "width": width,
+                        "height": height,
+                        "deviceScaleFactor": 1,
+                        "mobile": True,
+                        "screenWidth": width,
+                        "screenHeight": height,
+                    },
+                )
+                await page.command(
+                    "Network.setUserAgentOverride",
+                    {
+                        "userAgent": (
+                            "Mozilla/5.0 (Linux; Android 13; Pixel 7) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            "Chrome/138.0.0.0 Mobile Safari/537.36"
+                        )
+                    },
+                )
+                await page.command("Page.reload", {"ignoreCache": True})
             return page
         except BaseException:
             page.close()
@@ -445,8 +469,10 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
         assert measured["mobile_order"] == ["file", "live", "history"]
         assert measured["desktop_history_visible"] is True
         assert measured["mobile_history_visible"] is True
-        assert measured["mobile_inner_width"] <= 768
+        assert measured["mobile_inner_width"] == 390
+        assert measured["mobile_screen_width"] == 390
         assert measured["mobile_media"] is True
+        assert measured["mobile_user_agent"] is True
         assert measured["rename_dialog_accessible"] is True
         assert measured["escape_restored_focus"] is True
         assert measured["both_observed_words"] is True
@@ -479,6 +505,7 @@ async def _exercise_two_browsers(
         url=f"{base_url}/auth/google",
         width=390,
         height=844,
+        mobile=True,
     )
     try:
         ready = "document.querySelector('[data-auth-state=\"signed-in\"]') && document.querySelector('[data-boot=\"ready\"]')"
@@ -589,7 +616,9 @@ async def _exercise_two_browsers(
             "desktop_history_visible": desktop_layout["historyVisible"],
             "mobile_history_visible": mobile_layout["historyVisible"],
             "mobile_inner_width": mobile_layout["innerWidth"],
+            "mobile_screen_width": mobile_layout["screenWidth"],
             "mobile_media": mobile_layout["mobileMedia"],
+            "mobile_user_agent": mobile_layout["mobileUserAgent"],
             "rename_dialog_accessible": rename_dialog_accessible,
             "escape_restored_focus": escape_restored_focus,
             "both_observed_words": True,
@@ -609,5 +638,6 @@ async def _measure_layout(page: _ChromePage) -> dict[str, object]:
         "history.scrollIntoView({block: 'end'}); const box = history.getBoundingClientRect(); "
         "return {order: sections.map(section => section.dataset.workspaceSection), "
         "historyVisible: box.top < innerHeight && box.bottom > 0, innerWidth, "
-        "mobileMedia: matchMedia('(max-width: 768px)').matches}; })()"
+        "screenWidth: screen.width, mobileMedia: matchMedia('(max-width: 768px)').matches, "
+        "mobileUserAgent: navigator.userAgent.includes('Mobile')}; })()"
     )
