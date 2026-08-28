@@ -162,6 +162,7 @@ def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
         runner.release.set()
         meeting = await_terminal(client, meeting_id, "failed")
         assert meeting["transcript"] is None
+        assert meeting["audio"] is None
         assert meeting["transcript_version"] == 0
 
     restarted = make_app(database, None, tmp_path / "restart-work")
@@ -405,7 +406,8 @@ def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
         while app.state.phase2_file_tasks._tasks and time.monotonic() < deadline:
             time.sleep(0.01)
         assert app.state.phase2_file_tasks._tasks == set()
-        assert meeting["transcript"] is None
+        assert meeting["transcript"]["segments"][0]["text"] == "owner sentinel"
+        assert meeting["audio"]["state"] == "unavailable"
         assert source.exists()
         assert "File Meeting background task failed." in caplog.text
         assert "secret path" not in caplog.text

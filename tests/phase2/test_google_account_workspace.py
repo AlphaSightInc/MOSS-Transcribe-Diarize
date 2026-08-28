@@ -963,6 +963,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "oauth_cookie_secret": "test-oauth-secret",
         "file_runner": file_runner,
         "file_work_root": phase2_web_cli.DEFAULT_PHASE2_FILE_WORK_ROOT,
+        "meeting_audio_root": phase2_web_cli.DEFAULT_PHASE2_MEETING_AUDIO_ROOT,
         "file_inference_options": {
             "prompt": "deployed prompt",
             "max_length": 16384,

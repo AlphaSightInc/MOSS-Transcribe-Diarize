@@ -39,6 +39,7 @@ class FileMeetingTasks:
         decoding: str | None = None,
         temperature: float | None = None,
         url_acquirer: Any | None = None,
+        audio_archive: Any | None = None,
     ):
         self._runner = runner
         self._work_root = Path(work_root).expanduser()
@@ -50,6 +51,7 @@ class FileMeetingTasks:
         self._decoding = decoding
         self._temperature = temperature if decoding == "sample" else None
         self._url_acquirer = url_acquirer
+        self._audio_archive = audio_archive
         self._tasks: set[asyncio.Task[None]] = set()
 
     def clear_transient_work(self) -> None:
@@ -188,7 +190,7 @@ class FileMeetingTasks:
             if value is not None
         }
         runner_task = asyncio.create_task(
-            asyncio.to_thread(self._runner.transcribe, input_path, **options)
+            asyncio.to_thread(self._transcribe_from_one_mix, input_path, options)
         )
         started.set()
         try:
@@ -201,6 +203,21 @@ class FileMeetingTasks:
             self._remove_work_dir(input_path.parent)
             raise
 
+    def _transcribe_from_one_mix(
+        self,
+        input_path: Path,
+        options: dict[str, object],
+    ) -> tuple[Any, Path | None]:
+        mix_path: Path | None = None
+        if self._audio_archive is not None:
+            candidate = input_path.parent / "transcription-mix.wav"
+            try:
+                mix_path = self._audio_archive.prepare_mix(input_path, candidate)
+            except Exception:
+                candidate.unlink(missing_ok=True)
+        result = self._runner.transcribe(mix_path or input_path, **options)
+        return result, mix_path
+
     async def _complete(
         self,
         handle: Any,
@@ -208,7 +225,7 @@ class FileMeetingTasks:
         runner_task: asyncio.Task[Any],
     ) -> None:
         try:
-            result = await asyncio.shield(runner_task)
+            result, mix_path = await asyncio.shield(runner_task)
         except Exception:
             await self._mark_failed(handle)
             self._remove_work_dir(input_path.parent)
@@ -227,16 +244,48 @@ class FileMeetingTasks:
             return
 
         try:
+            await handle.commit_transcript(document)
+        except AccountRevoked:
+            # Revocation/interruption is already the durable terminal authority. A late result
+            # must disappear rather than reconstructing a handle from its Meeting identifier.
+            self._remove_work_dir(input_path.parent)
+            return
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_work_dir(input_path.parent)
+            raise
+
+        if mix_path is None:
+            audio_task = asyncio.create_task(handle.record_audio_unavailable())
+        else:
+            audio_task = asyncio.create_task(
+                handle.publish_audio(self._audio_archive, mix_path)
+            )
+        try:
+            await asyncio.shield(audio_task)
+        except asyncio.CancelledError:
+            try:
+                await audio_task
+            except AccountRevoked:
+                pass
+            except Exception:
+                LOGGER.error("File Meeting audio publication failed during shutdown.")
+            self._remove_work_dir(input_path.parent)
+            raise
+        except AccountRevoked:
+            self._remove_work_dir(input_path.parent)
+            return
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_work_dir(input_path.parent)
+            raise
+
+        try:
             self._remove_work_dir(input_path.parent)
         except Exception:
             await self._mark_failed(handle)
             raise
         try:
-            await handle.commit_transcript(document, terminal=True)
+            await handle.finish("completed")
         except AccountRevoked:
-            # Revocation/interruption is already the durable terminal authority. A late result
-            # must disappear rather than reconstructing a handle from its Meeting identifier.
             pass
-        except Exception:
-            await self._mark_failed(handle)
-            raise

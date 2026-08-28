@@ -44,3 +44,47 @@ choice (32 kbit/s), while 64 kbit/s costs 33% more storage without a selected ex
 reuse purpose. Perceived quality was not measured; this is an explicit product judgment, not a
 quality-gate result. The disposable listening clips were removed after the judgment; the reusable
 one-command size/timing measurement remains in this bench.
+
+## Terminal publication and cleanup
+
+Measured 2026-08-27 with:
+
+```bash
+uv run --frozen python prototypes/streaming-diarization/audio-retention-format/publication_probe.py
+```
+
+The rewritten probe imports and calls production `MeetingAudioArchive` and `MeetingHandle`; it no
+longer carries a second publication or reconciliation implementation. Its printed state explicitly
+records the structural question, minimum primitives, invariants, assumptions/unknowns, falsifier,
+and tool decision. Real FFmpeg 8.1 produced a 6,741-byte MPEG Layer III file at 16,000 Hz, mono, and
+48,000 bit/s at stream and every packet. Root, Account, and Meeting directories were `0700`; the
+file was `0600`; transcript truth was unchanged. The production hierarchy trace before metadata was
+exactly root-parent, root, Account, Meeting: each newly created child entry was fsynced through its
+parent, followed by final-file fsync through Meeting.
+
+Formal review exposed that the old proposal let the long-file window extractor choose a container's
+default stream while terminal MP3 publication independently forced `0:a:0`. The extended probe used
+a supported 151-second Matroska source whose first stream was 440 Hz and whose second/default stream
+was 880 Hz. It measured the source selections as 440 Hz versus 880 Hz. One transient 16 kHz mono PCM
+WAV made with the existing default-stream semantics then measured 880 Hz; the 150-second inference
+window extracted from that WAV and the retained MP3 both measured 880 Hz. The shared-mix invariant
+passed 3/3 consumers. The corrected policy is therefore one canonical working WAV before inference;
+both direct/windowed inference and terminal encoding consume that exact one-stream artifact. If mix
+preparation fails, transcription may still consume the original source, but retained audio is
+explicitly `unavailable` rather than independently selecting another stream.
+
+The production discard path now owns unlink, verified absence, and parent fsync. The probe measured
+three adversarial outcomes directly through it: post-replace cleanup failure returned typed
+`MeetingAudioArtifactSurvives` and made unavailable ineligible; a size mismatch with successful
+discard left no artifact and made unavailable eligible; a forced size-mismatch discard failure
+returned the same typed survivor state and made unavailable ineligible. Production `MeetingHandle`
+also measured both metadata-reconciliation outcomes: successful retry of the same known-valid
+available metadata returned available, while a second failure propagated; both retained the MP3,
+attempted exactly `available, available`, and committed unavailable zero times. The accepted rule is
+one causal reconciliation, not a general retry layer: only production discard success permits
+unavailable; surviving known-valid bytes permit one exact available retry; another failure leaves
+the Meeting failed without audio metadata. An MP3 and durable unavailable never coexist.
+When both unlink and the subsequent existence probe were forced to raise `OSError`, production
+discard returned typed `MeetingAudioCleanupError`, retained the artifact, and made unavailable
+ineligible. This uncertainty is therefore handled by the same controlled failure boundary rather
+than leaking a raw filesystem exception or changing metadata.

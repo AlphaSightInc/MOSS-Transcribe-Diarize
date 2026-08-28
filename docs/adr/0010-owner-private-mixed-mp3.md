@@ -27,3 +27,20 @@ prefix as partial; audio failure never fails or deletes the transcript.
 - History offers complete download, partial download, or unavailable; there is no embedded player.
 - Wrong-owner download resolves `404` through the Account workspace.
 - MOSS implements no quota, expiry, eviction, deletion, backup, storage dashboard, or file manager.
+- The production-semantics probe in
+  `prototypes/streaming-diarization/audio-retention-format/publication_probe.py` accepts
+  one default-stream 16 kHz mono PCM WAV as the sole input to inference and `libmp3lame -b:a 48k`,
+  then publishes through a same-directory staging file followed by fsync and atomic replacement.
+  In a 151-second two-stream falsifier, the source's first/default streams measured 440/880 Hz;
+  the canonical mix, long-window inference input, and retained MP3 all measured 880 Hz.
+  FFprobe measured MPEG Layer III, 16 kHz, mono, 48,000 bit/s at stream and every packet; metadata
+  duration/bytes matched the artifact, directories were `0700`, and the MP3 was `0600`. Each newly
+  created root, Account, and Meeting entry is fsynced through its parent in creation order; final
+  replacement is fsynced through Meeting before metadata. One production discard operation owns
+  unlink, verified absence, and parent fsync for publication, metadata, and download reconciliation.
+  Only its success permits durable unavailable. If the known-valid MP3 survives, retry that exact
+  available metadata once; success is available, and another failure propagates without audio
+  metadata. Size mismatch follows the same discard rule. Durable unavailable never coexists with a
+  surviving MP3. If existence itself cannot be observed, discard raises typed cleanup uncertainty,
+  the download surface returns a controlled failure, and metadata does not change. Authority loss
+  fences all reconciliation.
