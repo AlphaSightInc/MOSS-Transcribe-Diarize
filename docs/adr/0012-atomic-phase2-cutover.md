@@ -43,7 +43,7 @@ reopening the old deployment. All three commands use the same Linux-home marker 
 
 ## Measured prerequisite verdict
 
-`prototypes/phase1-creation-quiesce/` derived `PASS` from 30/30 predicates on Python 3.10.19 and
+`prototypes/phase1-creation-quiesce/` derived `PASS` from 32/32 predicates on Python 3.10.19 and
 3.12.12 against two concurrent production `create_app` process views, plus isolated production
 upload-cancellation and terminal-runtime falsifiers. It held an upload across enable, kept it
 visible as one entrant until registration, rejected all five creation routes with typed retryable
@@ -60,6 +60,10 @@ pass and cancelled the real upload coroutine, then observed exact `1` to `0` dra
 The final construction falsifier failed staging-file open after directory creation but before an
 abortable transaction existed. Strong construction cleanup in `JobManager` removed its owned
 directory while admission was still `1`; HTTP then returned `400` with admission `0` and no files.
+The rerun falsifier pre-admitted before marker enable, wrote a real partial copy under
+`quiesced/entrant=1`, and raised. `create_job_from_file` now owns all effects through copy, hash,
+record save, and enqueue return; failure removes transient registry state and the new directory
+before HTTP returns, without changing the source job or queue.
 The one command and full printed states are in the prototype `NOTES.md`. This is
 deterministic implementation evidence only; 4070 Ti filesystem, service restart, and deployment
 behavior remain unmeasured until the reviewed prerequisite lands and is deployed deliberately.

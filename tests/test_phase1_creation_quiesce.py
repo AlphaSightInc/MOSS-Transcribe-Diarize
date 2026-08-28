@@ -265,6 +265,88 @@ def test_two_phase1_processes_quiesce_new_work_and_drain_existing_work(
     stop_id = live.post("/api/live/sessions", headers=live_headers).json()["id"]
     abort_id = live.post("/api/live/sessions", headers=live_headers).json()["id"]
 
+    rerun_copy_entered = threading.Event()
+    release_rerun_copy = threading.Event()
+    rerun_copy_observations: list[dict[str, object]] = []
+    rerun_cleanup_observations: list[dict[str, object]] = []
+    original_copyfile = jobs_module.shutil.copyfile
+    original_rmtree = jobs_module.shutil.rmtree
+    before_job_ids = sorted(job.id for job in batch_app.state.manager.list_jobs())
+    before_job_dirs = sorted(path.name for path in (tmp_path / "batch-runs").iterdir())
+    before_queue = batch_app.state.manager._queue.qsize()
+
+    def held_partial_copy(source, destination, *args, **kwargs):
+        rerun_copy_entered.set()
+        assert release_rerun_copy.wait(timeout=5)
+        with Path(source).open("rb") as incoming, Path(destination).open("wb") as output:
+            output.write(incoming.read(4))
+            output.flush()
+        rerun_copy_observations.append(
+            {
+                "entrants": batch_gate.snapshot().entrants,
+                "state": batch_gate.snapshot().state,
+                "destination": Path(destination).read_bytes(),
+            }
+        )
+        raise OSError("test partial rerun copy failure")
+
+    def observed_rerun_rmtree(path, *args, **kwargs):
+        if Path(path).parent == tmp_path / "batch-runs":
+            rerun_cleanup_observations.append(
+                {
+                    "entrants": batch_gate.snapshot().entrants,
+                    "state": batch_gate.snapshot().state,
+                    "job_dir_exists": Path(path).exists(),
+                }
+            )
+        return original_rmtree(path, *args, **kwargs)
+
+    rerun_result: dict[str, object] = {}
+
+    def fail_preadmitted_rerun() -> None:
+        response = batch.post(f"/api/jobs/{first_id}/rerun", json={})
+        rerun_result["status"] = response.status_code
+
+    with monkeypatch.context() as rerun_failure:
+        rerun_failure.setattr(jobs_module.shutil, "copyfile", held_partial_copy)
+        rerun_failure.setattr(jobs_module.shutil, "rmtree", observed_rerun_rmtree)
+        rerun_thread = threading.Thread(target=fail_preadmitted_rerun, daemon=True)
+        rerun_thread.start()
+        assert rerun_copy_entered.wait(timeout=5)
+        assert batch_gate.snapshot().to_dict() == {"state": "open", "entrants": 1}
+        enable_phase1_creation_quiesce(marker)
+        assert batch.get("/api/runtime").json()["phase1_creation"]["entrants"] == 1
+        assert live.get("/api/runtime").json()["phase1_creation"]["active_live_sessions"] == 2
+        release_rerun_copy.set()
+        rerun_thread.join(timeout=5)
+
+    assert not rerun_thread.is_alive()
+    assert rerun_result == {"status": 400}
+    assert rerun_copy_observations == [
+        {"entrants": 1, "state": "quiesced", "destination": b"firs"}
+    ]
+    assert rerun_cleanup_observations == [
+        {"entrants": 1, "state": "quiesced", "job_dir_exists": True}
+    ]
+    assert sorted(job.id for job in batch_app.state.manager.list_jobs()) == before_job_ids
+    assert batch_app.state.manager._queue.qsize() == before_queue
+    assert sorted(path.name for path in (tmp_path / "batch-runs").iterdir()) == before_job_dirs
+    assert batch.get("/api/runtime").json()["phase1_creation"] == {
+        "state": "quiesced",
+        "entrants": 0,
+        "active_jobs": 0,
+        "queued_jobs": 0,
+        "active_live_sessions": 0,
+    }
+    assert live.get("/api/runtime").json()["phase1_creation"] == {
+        "state": "quiesced",
+        "entrants": 0,
+        "active_jobs": 0,
+        "queued_jobs": 0,
+        "active_live_sessions": 2,
+    }
+    disable_phase1_creation_quiesce(marker)
+
     original_read = server._read_upload_chunk
     upload_started = threading.Event()
     release_upload = threading.Event()

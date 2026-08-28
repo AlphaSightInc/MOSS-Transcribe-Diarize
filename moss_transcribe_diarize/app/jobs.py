@@ -294,29 +294,36 @@ class JobManager:
         suffix = source_path.suffix or ".media"
         job_dir = self.runs_dir / job_id
         job_dir.mkdir(parents=True, exist_ok=False)
-        input_path = job_dir / f"input{suffix}"
-        shutil.copyfile(source_path, input_path)
-        job = JobRecord(
-            id=job_id,
-            status="queued",
-            progress=0.0,
-            media_name=media_name or source_path.name,
-            input_path=str(input_path),
-            job_dir=str(job_dir),
-            inference_prompt=options["prompt"],
-            max_length=options["max_length"],
-            max_new_tokens=options["max_new_tokens"],
-            decoding=options["decoding"],
-            temperature=options["temperature"],
-            model=self.model_runner.model_path,
-            source_sha256=_sha256_file(input_path),
-            checkpoint_dir=str(job_dir / "checkpoint"),
-            checkpoint_state="ready",
-        )
-        self._jobs[job.id] = job
-        self._save_job(job)
-        self._queue.put(job.id)
-        return job
+        try:
+            input_path = job_dir / f"input{suffix}"
+            shutil.copyfile(source_path, input_path)
+            job = JobRecord(
+                id=job_id,
+                status="queued",
+                progress=0.0,
+                media_name=media_name or source_path.name,
+                input_path=str(input_path),
+                job_dir=str(job_dir),
+                inference_prompt=options["prompt"],
+                max_length=options["max_length"],
+                max_new_tokens=options["max_new_tokens"],
+                decoding=options["decoding"],
+                temperature=options["temperature"],
+                model=self.model_runner.model_path,
+                source_sha256=_sha256_file(input_path),
+                checkpoint_dir=str(job_dir / "checkpoint"),
+                checkpoint_state="ready",
+            )
+            self._jobs[job.id] = job
+            self._save_job(job)
+            self._queue.put(job.id)
+            return job
+        except BaseException:
+            # Until enqueue returns, this method owns every new effect. A caller must never
+            # observe a failed rerun as a registered job or a cutover drain directory.
+            self._jobs.pop(job_id, None)
+            shutil.rmtree(job_dir)
+            raise
 
     def create_upload_transaction(
         self,

@@ -340,6 +340,115 @@ def constructor_failure_state(root: Path, marker: Path) -> dict[str, Any]:
     return result
 
 
+def rerun_copy_failure_state(root: Path, marker: Path) -> dict[str, Any]:
+    """Pre-admit rerun, enable marker, then fail after writing a real partial copy."""
+
+    runs_dir = root / "runs"
+    gate = Phase1CreationGate(marker)
+    app, _wrapped = make_batch_app(runs_dir, gate, ProbeRunner())
+    source_path = root / "seed.wav"
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.write_bytes(b"real-source-bytes")
+    source_job = app.state.manager.create_job_from_file(source_path)
+    app.state.manager._queue.join()
+    endpoint = next(
+        route.endpoint
+        for route in app.routes
+        if route.path == "/api/jobs/{job_id}/rerun" and "POST" in (route.methods or set())
+    )
+    original_copyfile = jobs_module.shutil.copyfile
+    original_rmtree = jobs_module.shutil.rmtree
+    copy_observations: list[dict[str, Any]] = []
+    cleanup_observations: list[dict[str, Any]] = []
+    before_registry = sorted(app.state.manager._jobs)
+    before_queue = app.state.manager._queue.qsize()
+    before_job_dirs = sorted(path.name for path in runs_dir.iterdir())
+
+    def partial_copy(source: Any, destination: Any, *args: Any, **kwargs: Any):
+        source = Path(source)
+        destination = Path(destination)
+        with source.open("rb") as source_handle, destination.open("wb") as destination_handle:
+            destination_handle.write(source_handle.read(4))
+            destination_handle.flush()
+        copy_observations.append(
+            {
+                "entrants": gate.snapshot().entrants,
+                "marker_state": gate.snapshot().state,
+                "destination_exists": destination.exists(),
+                "destination_bytes": destination.read_bytes().hex(),
+            }
+        )
+        raise OSError("prototype partial rerun copy failure")
+
+    def observed_rmtree(path: Any, *args: Any, **kwargs: Any):
+        path = Path(path)
+        if path.parent == runs_dir:
+            cleanup_observations.append(
+                {
+                    "entrants": gate.snapshot().entrants,
+                    "marker_state": gate.snapshot().state,
+                    "job_dir_exists": path.exists(),
+                }
+            )
+        return original_rmtree(path, *args, **kwargs)
+
+    class HeldRequest:
+        def __init__(self) -> None:
+            self.started: asyncio.Event | None = None
+            self.release: asyncio.Event | None = None
+
+        async def json(self) -> dict[str, Any]:
+            assert self.started is not None and self.release is not None
+            self.started.set()
+            await self.release.wait()
+            return {}
+
+    async def exercise() -> dict[str, Any]:
+        request = HeldRequest()
+        request.started = asyncio.Event()
+        request.release = asyncio.Event()
+        task = asyncio.create_task(endpoint(source_job.id, request))
+        await request.started.wait()
+        held = gate.snapshot().to_dict()
+        enable_phase1_creation_quiesce(marker)
+        quiesced_held = gate.snapshot().to_dict()
+        request.release.set()
+        error_status = None
+        try:
+            await task
+        except Exception as exc:
+            error_status = getattr(exc, "status_code", None)
+        return {
+            "error_status": error_status,
+            "held_before_enable": held,
+            "held_after_enable": quiesced_held,
+            "after": {
+                "gate": gate.snapshot().to_dict(),
+                "registry": sorted(app.state.manager._jobs),
+                "queue": app.state.manager._queue.qsize(),
+                "job_dirs": sorted(path.name for path in runs_dir.iterdir()),
+            },
+        }
+
+    jobs_module.shutil.copyfile = partial_copy
+    jobs_module.shutil.rmtree = observed_rmtree
+    try:
+        result = asyncio.run(exercise())
+        result.update(
+            {
+                "before_registry": before_registry,
+                "before_queue": before_queue,
+                "before_job_dirs": before_job_dirs,
+                "copy_observations": copy_observations,
+                "cleanup_observations": cleanup_observations,
+            }
+        )
+    finally:
+        jobs_module.shutil.copyfile = original_copyfile
+        jobs_module.shutil.rmtree = original_rmtree
+    return result
+
+
 def terminal_finalization_state(root: Path, marker: Path) -> dict[str, Any]:
     """Hold the real terminal pass and read the production runtime status surface."""
 
@@ -408,6 +517,40 @@ def main() -> int:
             and constructor_failure["after"]["job_dirs"] == []
         )
         emit(states, "constructor_failure", **constructor_failure)
+
+        rerun_failure = rerun_copy_failure_state(
+            root / "rerun-failure", root / "rerun-failure-state" / "marker"
+        )
+        checks["preadmitted_rerun_failure_visible"] = (
+            rerun_failure["held_before_enable"] == {"state": "open", "entrants": 1}
+            and rerun_failure["held_after_enable"]
+            == {"state": "quiesced", "entrants": 1}
+            and rerun_failure["error_status"] == 400
+            and rerun_failure["copy_observations"]
+            == [
+                {
+                    "entrants": 1,
+                    "marker_state": "quiesced",
+                    "destination_exists": True,
+                    "destination_bytes": b"real".hex(),
+                }
+            ]
+        )
+        checks["preadmitted_rerun_failure_cleanup_ordered"] = (
+            rerun_failure["cleanup_observations"]
+            == [
+                {
+                    "entrants": 1,
+                    "marker_state": "quiesced",
+                    "job_dir_exists": True,
+                }
+            ]
+            and rerun_failure["after"]["gate"] == {"state": "quiesced", "entrants": 0}
+            and rerun_failure["after"]["registry"] == rerun_failure["before_registry"]
+            and rerun_failure["after"]["queue"] == rerun_failure["before_queue"]
+            and rerun_failure["after"]["job_dirs"] == rerun_failure["before_job_dirs"]
+        )
+        emit(states, "preadmitted_rerun_copy_failure", **rerun_failure)
 
         cancelled = cancelled_upload_state(
             root / "cancelled-upload-runs", root / "cancelled-upload-state" / "marker"
@@ -768,7 +911,7 @@ def main() -> int:
             error_status=error_response.status_code,
         )
 
-    verdict = all(checks.values()) and len(checks) == 30
+    verdict = all(checks.values()) and len(checks) == 32
     summary = {
         "schema": "moss.phase1-creation-quiesce-prototype.v1",
         "question": (
@@ -783,7 +926,7 @@ def main() -> int:
             "Any admitted work after quiesced plus entrants zero, invisible pre-admitted work, "
             "an existing continuation blocked by the gate, terminal work hidden as drained, "
             "cancellation releasing admission before its upload transaction is removed, or a "
-            "constructor failure leaving its pre-transaction job directory behind."
+            "constructor/rerun failure leaving its newly owned job directory behind."
         ),
         "checks": checks,
         "states": states,

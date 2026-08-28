@@ -12,7 +12,8 @@
   cannot cross processes or reboot, so neither primitive can be removed. Cleanup includes a job
   directory whose transaction constructor fails before returning. It is part of the existing
   admission boundary, not another counter; finalization status is existing Live runtime truth, not
-  another lifecycle policy.
+  another lifecycle policy. The same ownership applies to a rerun directory until copy, hash,
+  record publication, and queue registration have all succeeded.
 - **Invariants:** a quiesced marker rejects Live create, job create, rerun, resume, and render; it
   does not reject existing frames, heartbeat, snapshot, events, Stop, abort, reads, or downloads;
   marker uncertainty rejects creation; enable/disable is durable and idempotent.
@@ -26,7 +27,8 @@
   existing continuation also disproves it. A closed/running terminal pass reported as zero or a
   cancelled upload releasing its entrant before removing its transaction also disproves it.
   A staging-file constructor failure returning while its new job directory remains also disproves
-  it.
+  it. A pre-admitted rerun failing after a partial copy must likewise leave no new directory,
+  registry entry, or queue entry.
 - **Tool decision:** a two-instance logic probe is necessary because a long upload crossing marker
   enable is the reachable race that distinguishes a marker alone from marker plus entrant count.
   Cancelling the production upload coroutine after transaction creation is necessary because only
@@ -37,6 +39,9 @@
   Failing the real staging-file open is necessary because it is the only reachable point after
   directory creation but before the server owns an abortable transaction; a leftover directory
   requires strong construction cleanup in `JobManager`, not another server transaction wrapper.
+  Failing a real partial rerun copy after marker enable is necessary because it distinguishes
+  admission ordering from `create_job_from_file` ownership; any residual directory rejects the
+  existing pre-return boundary.
   Real inference, Chrome, and remote-host tools cannot change that state-ordering decision and are
   intentionally excluded.
 
@@ -63,14 +68,18 @@ The extended command exited `FAIL` before production was changed:
   saw entrant `1`, but no cleanup ran, and the request returned with entrant `0` plus the orphan
   directory. The extended probe exited nonzero with
   `constructor_failure_cleanup_ordered=false` while every prior predicate stayed green.
+- A rerun entered while open, marker enable observed `quiesced` with entrant `1`, and a real file
+  write copied `real` before raising. HTTP returned `400` with entrant `0`, unchanged registry and
+  queue, but an extra partial job directory remained. The probe exited nonzero with
+  `preadmitted_rerun_failure_cleanup_ordered=false` while every prior predicate stayed green.
 
-These states are reachable cutover false-zero/orphan failures. The correction may therefore only
-deepen the two existing meanings: Live drain includes running terminal finalization, and upload
-admission ends after every non-committed transaction has been aborted.
+These states are reachable cutover false-zero/orphan failures. The corrections only deepen the
+existing drain/admission meanings: Live drain includes running terminal finalization, and a File
+creation admission ends after every non-returned transaction or job directory has been removed.
 
 ## Verdict
 
-**Accepted.** The command derived `PASS` from 30/30 predicates on Python 3.10.19 and 3.12.12 on
+**Accepted.** The command derived `PASS` from 32/32 predicates on Python 3.10.19 and 3.12.12 on
 2026-08-28.
 
 - Before enable, two Live sessions were active and a held upload was visible as one entrant.
@@ -95,6 +104,9 @@ admission ends after every non-committed transaction has been aborted.
 - A failed staging-file open saw its newly created job directory and entrant `1`; strong
   construction cleanup removed that directory while the entrant was still `1`, then HTTP returned
   `400` with entrant `0` and no filesystem material.
+- A rerun pre-admitted at entrant `1`, marker enable changed its state to `quiesced`, then a real
+  partial copy wrote `real` and raised. Cleanup removed the new directory while entrant remained
+  `1`; HTTP returned `400` with entrant `0`, unchanged registry/queue, and only the source job dir.
 
 The measured minimum is therefore one durable marker composed with one process-local counted
 admission scope. A marker alone is rejected because it cannot expose a request already waiting on a

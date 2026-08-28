@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from moss_transcribe_diarize.app import jobs as jobs_module
 from moss_transcribe_diarize.app.jobs import JobManager
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 
@@ -91,3 +92,48 @@ def test_upload_transaction_constructor_failure_removes_owned_job_directory(
 
     assert manager.list_jobs() == []
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("failure_stage", ["copy", "hash", "save", "enqueue"])
+def test_create_job_from_file_failure_restores_pre_call_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_stage: str,
+) -> None:
+    runs_dir = tmp_path / "runs"
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"real-source")
+    manager = make_manager(runs_dir)
+
+    if failure_stage == "copy":
+        def fail_copy(source_path, destination, *args, **kwargs):
+            with Path(source_path).open("rb") as incoming, Path(destination).open("wb") as output:
+                output.write(incoming.read(4))
+            raise OSError("copy failed")
+
+        monkeypatch.setattr(jobs_module.shutil, "copyfile", fail_copy)
+    elif failure_stage == "hash":
+        monkeypatch.setattr(
+            jobs_module,
+            "_sha256_file",
+            lambda _path: (_ for _ in ()).throw(OSError("hash failed")),
+        )
+    elif failure_stage == "save":
+        monkeypatch.setattr(
+            manager,
+            "_save_job",
+            lambda _job: (_ for _ in ()).throw(OSError("save failed")),
+        )
+    else:
+        monkeypatch.setattr(
+            manager._queue,
+            "put",
+            lambda _job_id: (_ for _ in ()).throw(OSError("enqueue failed")),
+        )
+
+    with pytest.raises(OSError, match=f"{failure_stage} failed"):
+        manager.create_job_from_file(source)
+
+    assert manager.list_jobs() == []
+    assert manager._queue.qsize() == 0
+    assert list(runs_dir.iterdir()) == []
