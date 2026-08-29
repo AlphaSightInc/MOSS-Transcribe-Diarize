@@ -80,6 +80,8 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert stage_account.index("installed_project_record_identity()", admin_transfer) > (
         admin_transfer
     )
+    assert stage_account.count('/bin/python" -I -') == 5
+    assert '/usr/bin/python3.12 -I - "${MOSS_CANDIDATE_WHEEL}"' in stage_account
     assert "sqlite-3.53.4" in account_launcher
     assert "LD_LIBRARY_PATH" in account_launcher
     assert "stage-account-candidate.sh" in install_wsl
@@ -353,6 +355,24 @@ def test_candidate_manifest_failure_leaves_no_partial_and_retry_publishes_once(
     assert final.read_text(encoding="utf-8") == '{\n  "candidate": "one"\n}\n'
 
 
+def test_launcher_record_transfer_paths_are_exact_and_platform_bounded():
+    for path in (
+        "../../../bin/mtd-admin",
+        "../../../bin/mtd-phase2-cutover",
+        "../../../Scripts/mtd-admin.exe",
+        "../../../Scripts/mtd-admin-script.py",
+        "..\\..\\..\\Scripts\\mtd-phase2-cutover.exe",
+    ):
+        assert installed_candidate._transferred_launcher_record(path)
+    for path in (
+        "../../../bin/mtd-phase2-web",
+        "../../../bin/mtd-admin.backup",
+        "../../../bin/nested/mtd-admin",
+        "mtd-admin",
+    ):
+        assert not installed_candidate._transferred_launcher_record(path)
+
+
 def test_staged_acceptance_lock_contains_the_full_test_runtime_and_inventory():
     exported = subprocess.run(
         [
@@ -537,15 +557,17 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     full_record_before_transfer = subprocess.run(
         [
             str(venv / "bin" / "python"),
+            "-I",
             "-c",
             (
                 "import json; "
-                "from moss_transcribe_diarize.installed_candidate import "
-                "installed_record_identity; "
-                "print(json.dumps(installed_record_identity(), sort_keys=True))"
+                "import moss_transcribe_diarize.installed_candidate as candidate; "
+                "payload = candidate.installed_record_identity(); "
+                "payload['module_path'] = candidate.__file__; "
+                "print(json.dumps(payload, sort_keys=True))"
             ),
         ],
-        cwd=tmp_path,
+        cwd=ROOT,
         check=False,
         capture_output=True,
         text=True,
@@ -553,6 +575,7 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     assert full_record_before_transfer.returncode == 0, full_record_before_transfer.stderr
     full_record_identity = json.loads(full_record_before_transfer.stdout)
     assert full_record_identity["record_verified"] is True
+    assert Path(full_record_identity["module_path"]).is_relative_to(venv)
 
     # The stage transfers only these pip-generated script paths.  Wheel-owned
     # package members and the replacement launchers retain separate authorities.
@@ -564,13 +587,14 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     full_record_after_transfer = subprocess.run(
         [
             str(venv / "bin" / "python"),
+            "-I",
             "-c",
             (
                 "from moss_transcribe_diarize.installed_candidate import "
                 "installed_record_identity; installed_record_identity()"
             ),
         ],
-        cwd=tmp_path,
+        cwd=ROOT,
         check=False,
         capture_output=True,
         text=True,
@@ -582,6 +606,7 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     projected_record_after_transfer = subprocess.run(
         [
             str(venv / "bin" / "python"),
+            "-I",
             "-c",
             (
                 "import json; "
@@ -590,7 +615,7 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
                 "print(json.dumps(installed_project_record_identity(), sort_keys=True))"
             ),
         ],
-        cwd=tmp_path,
+        cwd=ROOT,
         check=False,
         capture_output=True,
         text=True,
@@ -601,9 +626,36 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     projected_record_identity = json.loads(projected_record_after_transfer.stdout)
     assert projected_record_identity["record_projection_verified"] is True
     assert (
+        projected_record_identity["record_verification_scope"]
+        == "installed_except_transferred_launchers"
+    )
+    assert (
         projected_record_identity["record_projection_sha256"]
         == full_record_identity["record_projection_sha256"]
     )
+    untouched_script = venv / "bin" / "mtd-phase2-web"
+    original_script = untouched_script.read_bytes()
+    untouched_script.write_bytes(original_script + b"\n# injected script drift\n")
+    projected_script_drift = subprocess.run(
+        [
+            str(venv / "bin" / "python"),
+            "-I",
+            "-c",
+            (
+                "from moss_transcribe_diarize.installed_candidate import "
+                "installed_project_record_identity; installed_project_record_identity()"
+            ),
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert projected_script_drift.returncode != 0
+    assert "Installed candidate RECORD mismatch: ../../../bin/mtd-phase2-web" in (
+        projected_script_drift.stderr
+    )
+    untouched_script.write_bytes(original_script)
     for launcher in ("mtd-admin", "mtd-phase2-cutover"):
         helped = subprocess.run(
             [str(venv / "bin" / launcher), "--help"],
@@ -626,13 +678,14 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     projected_member_drift = subprocess.run(
         [
             str(venv / "bin" / "python"),
+            "-I",
             "-c",
             (
                 "from moss_transcribe_diarize.installed_candidate import "
                 "installed_project_record_identity; installed_project_record_identity()"
             ),
         ],
-        cwd=tmp_path,
+        cwd=ROOT,
         check=False,
         capture_output=True,
         text=True,

@@ -174,6 +174,28 @@ def installer_owned_empty_record(filename: str) -> bool:
     )
 
 
+_TRANSFERRED_LAUNCHER_RECORD_PATHS = frozenset(
+    {
+        "../../../bin/mtd-admin",
+        "../../../bin/mtd-phase2-cutover",
+        "bin/mtd-admin",
+        "bin/mtd-phase2-cutover",
+        "../../../Scripts/mtd-admin.exe",
+        "../../../Scripts/mtd-admin-script.py",
+        "../../../Scripts/mtd-phase2-cutover.exe",
+        "../../../Scripts/mtd-phase2-cutover-script.py",
+        "Scripts/mtd-admin.exe",
+        "Scripts/mtd-admin-script.py",
+        "Scripts/mtd-phase2-cutover.exe",
+        "Scripts/mtd-phase2-cutover-script.py",
+    }
+)
+
+
+def _transferred_launcher_record(filename: str) -> bool:
+    return filename.replace("\\", "/") in _TRANSFERRED_LAUNCHER_RECORD_PATHS
+
+
 def _installed_record() -> tuple[Distribution, list[list[str]]]:
     package = distribution("moss-transcribe-diarize")
     text = package.read_text("RECORD")
@@ -219,16 +241,16 @@ def installed_record_identity() -> dict[str, object]:
 
 
 def installed_project_record_identity() -> dict[str, object]:
-    """Verify wheel-owned members after launcher paths transfer to shell ownership."""
+    """Verify installed members except the two transferred launcher records."""
 
     package, records = _installed_record()
-    wheel_owned = [row for row in records if _wheel_owned_record_row(row)]
-    verified = _verify_installed_record_rows(package, wheel_owned)
+    retained = [row for row in records if not _transferred_launcher_record(row[0])]
+    verified = _verify_installed_record_rows(package, retained)
     if not verified:
-        raise RuntimeError("Installed candidate RECORD projection has no wheel members.")
+        raise RuntimeError("Installed candidate RECORD has no retained members.")
     return {
         "record_verified": True,
-        "record_verification_scope": "wheel_owned_projection",
+        "record_verification_scope": "installed_except_transferred_launchers",
         "record_projection_verified": True,
         "record_entries_verified": verified,
         "record_projection_sha256": record_projection_sha256(records),

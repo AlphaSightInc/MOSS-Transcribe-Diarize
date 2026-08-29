@@ -28,7 +28,7 @@ cleanup_stages() {
 }
 trap cleanup_stages EXIT
 
-readarray -t CANDIDATE_IDENTITY < <(/usr/bin/python3.12 - "${MOSS_CANDIDATE_WHEEL}" <<'PY'
+readarray -t CANDIDATE_IDENTITY < <(/usr/bin/python3.12 -I - "${MOSS_CANDIDATE_WHEEL}" <<'PY'
 import json
 import csv
 import hashlib
@@ -109,7 +109,7 @@ if [ ! -d "${RELEASE}" ]; then
   # Verify the complete pip installation before the candidate-owned shell
   # launchers take ownership of two generated console-script paths.
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
-    "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
+    "${RELEASE_STAGE}/bin/python" -I - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
 import json
 import sqlite3
 import sys
@@ -132,7 +132,7 @@ PY
   install -m 0555 "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover"
   install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
-    "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_RECORD}" <<'PY'
+    "${RELEASE_STAGE}/bin/python" -I - "${CANDIDATE_RECORD}" <<'PY'
 import sys
 from moss_transcribe_diarize.installed_candidate import installed_project_record_identity
 
@@ -153,7 +153,7 @@ cmp -s "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE}/bin/mtd-phase2-
 cmp -s "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE}/bin/mtd-vllm" || \
   die "vLLM launcher differs from the detached candidate checkout"
 PYTHONDONTWRITEBYTECODE=1 LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
-  "${RELEASE}/bin/python" - "${CANDIDATE_SHA}" <<'PY'
+  "${RELEASE}/bin/python" -I - "${CANDIDATE_SHA}" <<'PY'
 import sqlite3
 import sys
 from moss_transcribe_diarize.installed_candidate import (
@@ -173,7 +173,7 @@ fi
 
 if [ ! -e "${MANIFEST}" ]; then
   MANIFEST_STAGE="$(mktemp "${MANIFESTS_DIR}/.${CANDIDATE_SHA}.manifest.XXXXXX")"
-  LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" "${RELEASE}/bin/python" - \
+  LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" "${RELEASE}/bin/python" -I - \
     "${MANIFEST_STAGE}" "${MANIFEST}" "${MOSS_CANDIDATE_WHEEL}" "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" \
     "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" "${RELEASE}" "${CHECKOUT}" "${SQLITE_PREFIX}" <<'PY'
 import hashlib
@@ -235,7 +235,8 @@ PY
   MANIFEST_STAGE=""
 fi
 
-/usr/bin/python3.12 - "${MANIFEST}" "${CANDIDATE_SHA}" "${RELEASE}" "${CHECKOUT}" <<'PY'
+LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" "${RELEASE}/bin/python" -I - \
+  "${MANIFEST}" "${CANDIDATE_SHA}" "${RELEASE}" "${CHECKOUT}" <<'PY'
 import json
 import pathlib
 import stat
