@@ -14,7 +14,7 @@ export LD_LIBRARY_PATH="${CUDA_HOME}/lib:${LD_LIBRARY_PATH:-}"
 export VLLM_USE_V2_MODEL_RUNNER=0
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-exec "${VENV_DIR}/bin/vllm" serve "${MODEL_DIR}" \
+exec "${VENV_DIR}/bin/python" -I "${VENV_DIR}/bin/vllm" serve "${MODEL_DIR}" \
   --served-model-name OpenMOSS-Team/MOSS-Transcribe-Diarize \
   --trust-remote-code \
   --host 127.0.0.1 \

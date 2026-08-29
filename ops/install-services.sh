@@ -37,7 +37,7 @@ CANDIDATE_MANIFEST="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize/candi
 [ -f "${CANDIDATE_MANIFEST}" ] || die "active release manifest is missing: ${CANDIDATE_MANIFEST}"
 [ "$(stat -c '%a' "${CANDIDATE_MANIFEST}")" = "600" ] || \
   die "active release manifest must be mode 0600: ${CANDIDATE_MANIFEST}"
-MANIFEST_CHECKOUT="$("${ACTIVE_RELEASE}/bin/python" - "${CANDIDATE_MANIFEST}" "${ACTIVE_RELEASE}" <<'PY'
+MANIFEST_CHECKOUT="$("${ACTIVE_RELEASE}/bin/python" -I - "${CANDIDATE_MANIFEST}" "${ACTIVE_RELEASE}" <<'PY'
 import json
 import pathlib
 import sys

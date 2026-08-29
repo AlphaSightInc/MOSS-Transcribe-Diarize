@@ -22,7 +22,7 @@ done
 }
 
 export LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-exec "${RUNTIME_DIR}/bin/python" -m moss_transcribe_diarize.app.phase2_web_cli \
+exec "${RUNTIME_DIR}/bin/python" -I -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "${MOSS_PHASE2_DATABASE}" \
   --control-socket "${MOSS_PHASE2_CONTROL_SOCKET}" \
   --google-client-id "${MOSS_GOOGLE_CLIENT_ID}" \

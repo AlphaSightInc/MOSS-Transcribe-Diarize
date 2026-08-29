@@ -51,6 +51,7 @@ def _build_clean_wheel(root: Path) -> Path:
 
 def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     start = (OPS / "start-web.sh").read_text(encoding="utf-8")
+    start_vllm = (OPS / "start-vllm.sh").read_text(encoding="utf-8")
     install = (OPS / "install-services.sh").read_text(encoding="utf-8")
     install_wsl = (OPS / "install-wsl.sh").read_text(encoding="utf-8")
     stage_account = (OPS / "stage-account-candidate.sh").read_text(encoding="utf-8")
@@ -67,9 +68,15 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
 
     assert "account-current" in start
     assert 'exec "${ACCOUNT_CURRENT}/bin/mtd-account-web"' in start
-    assert "bin/python\" -m moss_transcribe_diarize.app.phase2_web_cli" in account_launcher
-    assert "bin/python\" -m moss_transcribe_diarize.app.phase2_admin" in admin_launcher
-    assert "bin/python\" -m moss_transcribe_diarize.app.phase2_cutover_cli" in cutover_launcher
+    assert "bin/python\" -I -m moss_transcribe_diarize.app.phase2_web_cli" in account_launcher
+    assert "bin/python\" -I -m moss_transcribe_diarize.app.phase2_admin" in admin_launcher
+    assert (
+        "bin/python\" -I -m moss_transcribe_diarize.app.phase2_cutover_cli"
+        in cutover_launcher
+    )
+    assert 'bin/python" -I "${VENV_DIR}/bin/vllm" serve' in vllm_launcher
+    assert 'bin/python" -I "${VENV_DIR}/bin/vllm" serve' in start_vllm
+    assert 'ACTIVE_RELEASE}/bin/python" -I -' in install
     assert "sqlite-3.53.4" in cutover_launcher and "LD_LIBRARY_PATH" in cutover_launcher
     assert 'account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin' in stage_account
     assert 'account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover' in stage_account
@@ -579,6 +586,7 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
 
     # The stage transfers only these pip-generated script paths.  Wheel-owned
     # package members and the replacement launchers retain separate authorities.
+    shutil.copy2(OPS / "account-web-launcher.sh", venv / "bin" / "mtd-account-web")
     shutil.copy2(OPS / "account-admin-launcher.sh", venv / "bin" / "mtd-admin")
     shutil.copy2(
         OPS / "account-cutover-launcher.sh",
@@ -656,15 +664,94 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
         projected_script_drift.stderr
     )
     untouched_script.write_bytes(original_script)
-    for launcher in ("mtd-admin", "mtd-phase2-cutover"):
-        helped = subprocess.run(
+    installed_app = tuple(
+        venv.glob("lib/python*/site-packages/moss_transcribe_diarize/app")
+    )
+    assert len(installed_app) == 1
+    for launcher, module in (
+        ("mtd-admin", "phase2_admin"),
+        ("mtd-phase2-cutover", "phase2_cutover_cli"),
+    ):
+        target = installed_app[0] / f"{module}.py"
+        original_target = target.read_bytes()
+        held = target.with_suffix(".py.held")
+        target.rename(held)
+        missing = subprocess.run(
             [str(venv / "bin" / launcher), "--help"],
-            env={**os.environ, "PYTHONPATH": sysconfig.get_paths()["purelib"]},
+            cwd=ROOT,
+            env={
+                **os.environ,
+                "PYTHONHOME": str(ROOT),
+                "PYTHONPATH": str(ROOT),
+            },
             check=False,
             capture_output=True,
             text=True,
         )
-        assert helped.returncode == 0, helped.stderr
+        held.rename(target)
+        assert missing.returncode != 0
+        assert f"No module named moss_transcribe_diarize.app.{module}" in missing.stderr
+        target.write_text(
+            f"print('STAGED_LAUNCHER={module}:' + __file__)\n",
+            encoding="utf-8",
+        )
+        resolved = subprocess.run(
+            [str(venv / "bin" / launcher), "--help"],
+            cwd=ROOT,
+            env={
+                **os.environ,
+                "PYTHONHOME": str(ROOT),
+                "PYTHONPATH": str(ROOT),
+            },
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        target.write_bytes(original_target)
+        assert resolved.returncode == 0, resolved.stderr
+        assert resolved.stdout.strip() == f"STAGED_LAUNCHER={module}:{target}"
+
+    web_module = installed_app[0] / "phase2_web_cli.py"
+    original_web_module = web_module.read_bytes()
+    web_module.write_text("print('STAGED_WEB=' + __file__)\n", encoding="utf-8")
+    fake_home = tmp_path / "launcher-home"
+    sqlite_library = (
+        fake_home
+        / ".local/share/moss-transcribe-diarize/sqlite-3.53.4/lib/libsqlite3.so"
+    )
+    sqlite_library.parent.mkdir(parents=True)
+    sqlite_library.touch()
+    web_environment = {
+        **os.environ,
+        "HOME": str(fake_home),
+        "PYTHONHOME": str(ROOT),
+        "PYTHONPATH": str(ROOT),
+        "MOSS_GOOGLE_CLIENT_ID": "client",
+        "MOSS_GOOGLE_CLIENT_SECRET_FILE": str(tmp_path / "google-secret"),
+        "MOSS_OAUTH_COOKIE_SECRET_FILE": str(tmp_path / "cookie-secret"),
+        "MOSS_TLS_CERTFILE": str(tmp_path / "cert"),
+        "MOSS_TLS_KEYFILE": str(tmp_path / "key"),
+        "MOSS_LIVE_PROVIDER_MANIFEST": str(tmp_path / "provider"),
+        "MOSS_LIVE_HELPER_LEASE_SECONDS": "60",
+        "MOSS_PHASE2_DATABASE": str(tmp_path / "database"),
+        "MOSS_PHASE2_CONTROL_SOCKET": str(tmp_path / "control.sock"),
+        "MOSS_FILE_WORK_ROOT": str(tmp_path / "file-work"),
+        "MOSS_MEETING_AUDIO_ROOT": str(tmp_path / "audio"),
+    }
+    try:
+        web_started = subprocess.run(
+            [str(venv / "bin" / "mtd-account-web")],
+            cwd=ROOT,
+            env=web_environment,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    finally:
+        web_module.write_bytes(original_web_module)
+    assert web_started.returncode == 0, web_started.stderr
+    assert web_started.stdout.strip() == f"STAGED_WEB={web_module}"
 
     installed_module_paths = tuple(
         venv.glob(
@@ -697,3 +784,40 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     )
     assert expected in projected_member_drift.stderr
     installed_module.write_bytes(original_module)
+
+
+def test_vllm_launcher_uses_isolated_generic_runtime(tmp_path: Path):
+    fake_home = tmp_path / "home"
+    venv_bin = fake_home / ".local/share/moss-transcribe-diarize/venv/bin"
+    venv_bin.mkdir(parents=True)
+    (venv_bin / "python").symlink_to(sys.executable)
+    vllm_entry = venv_bin / "vllm"
+    vllm_entry.write_text(
+        "\n".join(
+            (
+                "#!/usr/bin/env python3",
+                "import json, sys",
+                "print(json.dumps({'isolated': sys.flags.isolated, 'path': sys.path}))",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    vllm_entry.chmod(0o755)
+    launched = subprocess.run(
+        [str(OPS / "vllm-launcher.sh")],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "HOME": str(fake_home),
+            "PYTHONHOME": str(ROOT),
+            "PYTHONPATH": str(ROOT),
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert launched.returncode == 0, launched.stderr
+    identity = json.loads(launched.stdout)
+    assert identity["isolated"] == 1
+    assert str(ROOT) not in identity["path"]
