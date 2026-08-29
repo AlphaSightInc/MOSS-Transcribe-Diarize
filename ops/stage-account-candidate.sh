@@ -106,10 +106,8 @@ if [ ! -d "${RELEASE}" ]; then
     -r "${RELEASE_STAGE}/locked-requirements.txt"
   "${RELEASE_STAGE}/bin/pip" install --no-deps "${MOSS_CANDIDATE_WHEEL}"
   rm "${RELEASE_STAGE}/locked-requirements.txt"
-  install -m 0555 "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
-  install -m 0555 "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
-  install -m 0555 "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover"
-  install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
+  # Verify the complete pip installation before the candidate-owned shell
+  # launchers take ownership of two generated console-script paths.
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
     "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
 import json
@@ -129,6 +127,19 @@ record = installed_record_identity()
 assert record["record_entries_verified"] > 0
 assert record["record_projection_sha256"] == sys.argv[5]
 PY
+  install -m 0555 "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
+  install -m 0555 "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
+  install -m 0555 "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover"
+  install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
+  LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
+    "${RELEASE_STAGE}/bin/python" - "${CANDIDATE_RECORD}" <<'PY'
+import sys
+from moss_transcribe_diarize.installed_candidate import installed_project_record_identity
+
+record = installed_project_record_identity()
+assert record["record_projection_verified"] is True
+assert record["record_projection_sha256"] == sys.argv[1]
+PY
   chmod -R a-w "${RELEASE_STAGE}"
   mv "${RELEASE_STAGE}" "${RELEASE}"
   RELEASE_STAGE=""
@@ -145,11 +156,14 @@ PYTHONDONTWRITEBYTECODE=1 LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
   "${RELEASE}/bin/python" - "${CANDIDATE_SHA}" <<'PY'
 import sqlite3
 import sys
-from moss_transcribe_diarize.installed_candidate import installed_candidate_identity, installed_record_identity
+from moss_transcribe_diarize.installed_candidate import (
+    installed_candidate_identity,
+    installed_project_record_identity,
+)
 
 assert sqlite3.sqlite_version == "3.53.4"
 assert installed_candidate_identity()["git_sha"] == sys.argv[1]
-assert installed_record_identity()["record_entries_verified"] > 0
+assert installed_project_record_identity()["record_entries_verified"] > 0
 PY
 
 if [ ! -L "${CHECKOUT}/.venv" ]; then
@@ -169,7 +183,7 @@ import sqlite3
 import sys
 from moss_transcribe_diarize.installed_candidate import (
     installed_dependency_projection,
-    installed_record_identity,
+    installed_project_record_identity,
     publish_candidate_manifest,
 )
 
@@ -182,7 +196,7 @@ payload = {
     "fixtures": json.loads(fixtures),
     "wheel_sha256": hashlib.sha256(pathlib.Path(wheel).read_bytes()).hexdigest(),
     "wheel_record_projection_sha256": record,
-    "installed_record": installed_record_identity(),
+    "installed_record": installed_project_record_identity(),
     "dependency_projection": installed_dependency_projection(),
     "sqlite_runtime": sqlite3.sqlite_version,
     "sqlite_prefix": sqlite_prefix,

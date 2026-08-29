@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -23,6 +24,29 @@ def _shell_function(source: str, name: str) -> str:
     start = source.index(f"{name}() {{")
     end = source.index("\n}", start) + 2
     return source[start:end]
+
+
+def _build_clean_wheel(root: Path) -> Path:
+    build_source = root / "source"
+    build_source.mkdir()
+    for name in ("pyproject.toml", "README.md", "LICENSE"):
+        shutil.copy2(ROOT / name, build_source / name)
+    shutil.copytree(
+        ROOT / "moss_transcribe_diarize",
+        build_source / "moss_transcribe_diarize",
+    )
+    wheel_dir = root / "wheel"
+    built = subprocess.run(
+        ["uv", "build", "--wheel", "--out-dir", str(wheel_dir)],
+        cwd=build_source,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert built.returncode == 0, built.stderr
+    wheels = tuple(wheel_dir.glob("*.whl"))
+    assert len(wheels) == 1
+    return wheels[0]
 
 
 def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
@@ -49,6 +73,13 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "sqlite-3.53.4" in cutover_launcher and "LD_LIBRARY_PATH" in cutover_launcher
     assert 'account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin' in stage_account
     assert 'account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover' in stage_account
+    admin_transfer = stage_account.index(
+        'account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin'
+    )
+    assert stage_account.index("installed_record_identity()") < admin_transfer
+    assert stage_account.index("installed_project_record_identity()", admin_transfer) > (
+        admin_transfer
+    )
     assert "sqlite-3.53.4" in account_launcher
     assert "LD_LIBRARY_PATH" in account_launcher
     assert "stage-account-candidate.sh" in install_wsl
@@ -371,26 +402,7 @@ def test_account_frontend_has_one_generated_location_and_is_installed_in_wheel(
         if source.is_file():
             assert (FRONTEND_ASSETS / source.relative_to(public)).read_bytes() == source.read_bytes()
 
-    build_source = tmp_path / "source"
-    build_source.mkdir()
-    for name in ("pyproject.toml", "README.md", "LICENSE"):
-        shutil.copy2(ROOT / name, build_source / name)
-    shutil.copytree(
-        ROOT / "moss_transcribe_diarize",
-        build_source / "moss_transcribe_diarize",
-    )
-    wheel_dir = tmp_path / "wheel"
-    built = subprocess.run(
-        ["uv", "build", "--wheel", "--out-dir", str(wheel_dir)],
-        cwd=build_source,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert built.returncode == 0, built.stderr
-    wheels = tuple(wheel_dir.glob("*.whl"))
-    assert len(wheels) == 1
-    wheel = wheels[0]
+    wheel = _build_clean_wheel(tmp_path)
     prefix = "moss_transcribe_diarize/app/frontend_assets/"
     with zipfile.ZipFile(wheel) as archive:
         packaged_assets = {
@@ -503,3 +515,132 @@ def test_account_frontend_has_one_generated_location_and_is_installed_in_wheel(
     )
     assert base_help.returncode == 0, base_help.stderr
     assert "{run,restore}" in base_help.stdout
+
+
+def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: Path):
+    wheel = _build_clean_wheel(tmp_path)
+    venv = tmp_path / "staged-release"
+    created = subprocess.run(
+        [sys.executable, "-m", "venv", "--system-site-packages", str(venv)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert created.returncode == 0, created.stderr
+    installed = subprocess.run(
+        [str(venv / "bin" / "pip"), "install", "--no-deps", str(wheel)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert installed.returncode == 0, installed.stderr
+    full_record_before_transfer = subprocess.run(
+        [
+            str(venv / "bin" / "python"),
+            "-c",
+            (
+                "import json; "
+                "from moss_transcribe_diarize.installed_candidate import "
+                "installed_record_identity; "
+                "print(json.dumps(installed_record_identity(), sort_keys=True))"
+            ),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert full_record_before_transfer.returncode == 0, full_record_before_transfer.stderr
+    full_record_identity = json.loads(full_record_before_transfer.stdout)
+    assert full_record_identity["record_verified"] is True
+
+    # The stage transfers only these pip-generated script paths.  Wheel-owned
+    # package members and the replacement launchers retain separate authorities.
+    shutil.copy2(OPS / "account-admin-launcher.sh", venv / "bin" / "mtd-admin")
+    shutil.copy2(
+        OPS / "account-cutover-launcher.sh",
+        venv / "bin" / "mtd-phase2-cutover",
+    )
+    full_record_after_transfer = subprocess.run(
+        [
+            str(venv / "bin" / "python"),
+            "-c",
+            (
+                "from moss_transcribe_diarize.installed_candidate import "
+                "installed_record_identity; installed_record_identity()"
+            ),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert full_record_after_transfer.returncode != 0
+    assert "Installed candidate RECORD mismatch: ../../../bin/mtd-admin" in (
+        full_record_after_transfer.stderr
+    )
+    projected_record_after_transfer = subprocess.run(
+        [
+            str(venv / "bin" / "python"),
+            "-c",
+            (
+                "import json; "
+                "from moss_transcribe_diarize.installed_candidate import "
+                "installed_project_record_identity; "
+                "print(json.dumps(installed_project_record_identity(), sort_keys=True))"
+            ),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert projected_record_after_transfer.returncode == 0, (
+        projected_record_after_transfer.stderr
+    )
+    projected_record_identity = json.loads(projected_record_after_transfer.stdout)
+    assert projected_record_identity["record_projection_verified"] is True
+    assert (
+        projected_record_identity["record_projection_sha256"]
+        == full_record_identity["record_projection_sha256"]
+    )
+    for launcher in ("mtd-admin", "mtd-phase2-cutover"):
+        helped = subprocess.run(
+            [str(venv / "bin" / launcher), "--help"],
+            env={**os.environ, "PYTHONPATH": sysconfig.get_paths()["purelib"]},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert helped.returncode == 0, helped.stderr
+
+    installed_module_paths = tuple(
+        venv.glob(
+            "lib/python*/site-packages/moss_transcribe_diarize/installed_candidate.py"
+        )
+    )
+    assert len(installed_module_paths) == 1
+    installed_module = installed_module_paths[0]
+    original_module = installed_module.read_bytes()
+    installed_module.write_bytes(original_module + b"\n# injected wheel-member drift\n")
+    projected_member_drift = subprocess.run(
+        [
+            str(venv / "bin" / "python"),
+            "-c",
+            (
+                "from moss_transcribe_diarize.installed_candidate import "
+                "installed_project_record_identity; installed_project_record_identity()"
+            ),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert projected_member_drift.returncode != 0
+    expected = (
+        "Installed candidate RECORD mismatch: "
+        "moss_transcribe_diarize/installed_candidate.py"
+    )
+    assert expected in projected_member_drift.stderr
+    installed_module.write_bytes(original_module)

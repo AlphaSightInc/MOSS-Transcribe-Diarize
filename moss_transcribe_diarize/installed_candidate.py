@@ -10,7 +10,7 @@ import io
 import os
 import subprocess
 from dataclasses import dataclass
-from importlib.metadata import distribution, distributions
+from importlib.metadata import Distribution, distribution, distributions
 from importlib.resources import files
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -108,18 +108,26 @@ def validated_candidate_artifacts(manifest: object) -> CandidateArtifacts:
     return CandidateArtifacts(release, launchers, checkout, units)
 
 
-def record_projection_sha256(rows: Iterable[Sequence[str]]) -> str:
-    """Hash candidate wheel members, excluding installer-owned RECORD additions."""
+def _wheel_owned_record_row(row: Sequence[str]) -> bool:
+    """Return whether one installed RECORD row came from the candidate wheel."""
 
     installer_owned = {"INSTALLER", "REQUESTED", "direct_url.json", "uv_cache.json"}
-    projection = sorted(
-        [str(value) for value in row]
-        for row in rows
-        if len(row) == 3
+    return (
+        len(row) == 3
         and bool(row[1])
         and not row[0].startswith(("bin/", "../../../bin/"))
         and not row[0].endswith(".pyc")
         and row[0].rsplit("/", 1)[-1] not in installer_owned
+    )
+
+
+def record_projection_sha256(rows: Iterable[Sequence[str]]) -> str:
+    """Hash candidate wheel members, excluding installer-owned RECORD additions."""
+
+    projection = sorted(
+        [str(value) for value in row]
+        for row in rows
+        if _wheel_owned_record_row(row)
     )
     if not projection:
         raise RuntimeError("Candidate RECORD projection has no wheel members.")
@@ -166,15 +174,22 @@ def installer_owned_empty_record(filename: str) -> bool:
     )
 
 
-def installed_record_identity() -> dict[str, object]:
-    """Verify the installed distribution against its own wheel RECORD."""
-
+def _installed_record() -> tuple[Distribution, list[list[str]]]:
     package = distribution("moss-transcribe-diarize")
     text = package.read_text("RECORD")
     if text is None:
         raise RuntimeError("Installed candidate RECORD is missing.")
-    verified = 0
     records = list(csv.reader(io.StringIO(text)))
+    if any(len(row) != 3 for row in records):
+        raise RuntimeError("Installed candidate RECORD is malformed.")
+    return package, records
+
+
+def _verify_installed_record_rows(
+    package: Distribution,
+    records: Iterable[Sequence[str]],
+) -> int:
+    verified = 0
     for filename, digest, size in records:
         if not digest:
             if not installer_owned_empty_record(filename):
@@ -188,8 +203,33 @@ def installed_record_identity() -> dict[str, object]:
         if actual != expected or len(payload) != int(size):
             raise RuntimeError(f"Installed candidate RECORD mismatch: {filename}")
         verified += 1
+    return verified
+
+
+def installed_record_identity() -> dict[str, object]:
+    """Verify every installed distribution member against its current RECORD."""
+
+    package, records = _installed_record()
+    verified = _verify_installed_record_rows(package, records)
     return {
         "record_verified": True,
+        "record_entries_verified": verified,
+        "record_projection_sha256": record_projection_sha256(records),
+    }
+
+
+def installed_project_record_identity() -> dict[str, object]:
+    """Verify wheel-owned members after launcher paths transfer to shell ownership."""
+
+    package, records = _installed_record()
+    wheel_owned = [row for row in records if _wheel_owned_record_row(row)]
+    verified = _verify_installed_record_rows(package, wheel_owned)
+    if not verified:
+        raise RuntimeError("Installed candidate RECORD projection has no wheel members.")
+    return {
+        "record_verified": True,
+        "record_verification_scope": "wheel_owned_projection",
+        "record_projection_verified": True,
         "record_entries_verified": verified,
         "record_projection_sha256": record_projection_sha256(records),
     }
