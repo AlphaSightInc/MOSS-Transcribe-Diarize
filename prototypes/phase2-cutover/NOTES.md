@@ -119,3 +119,16 @@ The production helper is `relocate_installed_console_scripts`; the real-wheel
 deployment test now moves the venv and verifies the direct command and retained
 RECORD checks. Node 24 tooling is separately staged beside the application because
 the host's Node 18 cannot load the locked Vite/Vitest tools.
+
+## Failure fence versus accepted Stop
+
+The `bbacc5bc` Linux run caught a failed-interruption race: a joined Stop's queued
+terminal publication could commit `completed` while `_fence` awaited Stop. The
+minimum fix uses the existing publication gate before that wait; it does not
+close capture authority until the admitted Stop returns.
+
+`fence_publication_probe.py` uses production `_fence` and `_accept_raw` with an
+event-held Stop. **RED: 1 new terminal publication admitted during the join;
+GREEN: 0**, with capture authority still open until Stop completes. No sleeps or
+latency threshold select the outcome. The 56 Live owner-binding regressions pass
+on both Mac and Linux, including rejected pre-auth entrants joining an owner Stop.

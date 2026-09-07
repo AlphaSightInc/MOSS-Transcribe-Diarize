@@ -1732,6 +1732,34 @@ def test_raw_stop_latch_cancelled_entrant_releases_only_its_claim():
     assert binding.raw_stop_attempt is None
 
 
+def test_failure_fence_closes_publication_before_joining_accepted_stop():
+    async def exercise():
+        live = Phase2LiveMeetings(object(), audio_archive=None, audio_stages=None)
+        completed = asyncio.Event()
+        binding = SimpleNamespace(
+            terminal_persisted=False, raw_stop_attempt=SimpleNamespace(completed=completed),
+            capture_fenced=False, publication_fenced=False, queue=asyncio.Queue(),
+            raw_event_high_water=-1, handle=SimpleNamespace(meeting_id="m"),
+            persistence_failure=None, durable_document={},
+        )
+        async def abort(*_args):
+            return None
+        async def settle(*_args, **_kwargs):
+            pass
+        live.runtime = SimpleNamespace(snapshot=lambda _: None, events=lambda _: (), abort=abort)
+        live._bindings["m"] = binding
+        live._accepting_publications = True
+        live._settle_terminal = settle
+        fence = asyncio.create_task(live._fence(binding, "transcript_persistence_failed"))
+        await asyncio.sleep(0)
+        live._accept_raw("m", None, (SimpleNamespace(seq=1),))
+        observed = (binding.publication_fenced, binding.capture_fenced, binding.queue.qsize())
+        completed.set()
+        await fence
+        assert observed == (True, False, 0)
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize(
     ("entrant_key", "rejection_status"),
     ((None, 401), ("b", 404)),

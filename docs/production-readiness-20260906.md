@@ -67,3 +67,9 @@ The first exact-runtime run on `2568966c` executed all twelve component commands
   revocation probe now performs the required durable interruption before revoking
   authority. Both corrected checks passed on Linux; production audio and
   revocation semantics were not changed.
+- **F7 — failure/Stop race:** the subsequent Linux run passed 11/12 commands but
+  caught a genuine race: normal Stop could publish `completed` while a failure
+  fence waited for Stop. The existing publication gate now closes before that
+  wait; the accepted raw Stop remains allowed to finish. A deterministic probe
+  measures newly admitted terminal publications **1 before / 0 after**. All
+  **56 Live owner-binding tests pass on both platforms** after the fix.

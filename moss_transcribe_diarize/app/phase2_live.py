@@ -820,6 +820,9 @@ class Phase2LiveMeetings:
     ) -> None:
         if binding.terminal_persisted:
             return
+        # Claim publication before joining Stop. The accepted raw Stop may
+        # finish, but its queued success must not outrun this failure fence.
+        binding.publication_fenced = True
         stop_attempt = binding.raw_stop_attempt
         if stop_attempt is not None and not stop_attempt.completed.is_set():
             await stop_attempt.completed.wait()
