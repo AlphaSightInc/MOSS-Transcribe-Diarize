@@ -106,3 +106,16 @@ refused**. A single immediate request fails while bounded observation succeeds.
 Verdict: absorb the wait into the production adapter; retain this probe in the bench.
 Regression tests also cover deadline exhaustion, both views before marker removal,
 and candidate HTTP release-identity mismatch. This is startup evidence, not G7.
+
+## Installer relocation boundary
+
+`relocate_scripts_probe.py WHEEL` measured a real wheel installed into a temporary
+venv. Moving it broke direct `mtd-phase2-web` execution. Rewriting only generated
+script interpreter prefixes plus their installer-owned RECORD rows repaired it:
+**6 scripts rewritten, direct CLI exit 0, full installed RECORD exit 0**. The wheel
+member projection did not change. This selects an installation step before sealing,
+not another launcher exemption or a modification of an already-published runtime.
+The production helper is `relocate_installed_console_scripts`; the real-wheel
+deployment test now moves the venv and verifies the direct command and retained
+RECORD checks. Node 24 tooling is separately staged beside the application because
+the host's Node 18 cannot load the locked Vite/Vitest tools.

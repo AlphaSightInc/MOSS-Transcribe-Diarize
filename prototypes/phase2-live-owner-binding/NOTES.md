@@ -153,3 +153,12 @@ active Meeting. Public memory advances only after its structured transcript comm
 is a durable, nonterminal observation, while `final`, `failed`, or `unavailable` drives the atomic
 terminal tuple. No additional page/device/view authority, authentication cache, polling timer, or
 durable event table is justified.
+
+## 2026-09-06 executable reconciliation
+
+The Linux campaign rejected the old probe's direct store revoke while Meetings
+were still active. Production correctly requires lifecycle-owned durable
+interruption first. The probe now settles its owned active handles before the
+store authority change, with revision 3 still held. Measured **PASS**: durable
+status interrupted, transcript version 2, accepted prefix preserved, late result
+absent. No production revocation guarantee was weakened to make the probe pass.

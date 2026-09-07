@@ -96,6 +96,7 @@ fi
 # The exact candidate owns the runtime builder too.  Never execute deployment
 # machinery from the invoking checkout after candidate identity is known.
 "${CHECKOUT}/ops/build-account-sqlite.sh"
+bash "${CHECKOUT}/ops/install-account-node.sh"
 
 if [ ! -d "${RELEASE}" ]; then
   RELEASE_STAGE="$(mktemp -d "${RELEASES_DIR}/.${CANDIDATE_SHA}.stage.XXXXXX")"
@@ -109,11 +110,12 @@ if [ ! -d "${RELEASE}" ]; then
   # Verify the complete pip installation before the candidate-owned shell
   # launchers take ownership of two generated console-script paths.
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
-    "${RELEASE_STAGE}/bin/python" -I - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" <<'PY'
+    "${RELEASE_STAGE}/bin/python" -I - "${CANDIDATE_SHA}" "${CANDIDATE_TREE}" "${CANDIDATE_LOCK}" "${CANDIDATE_FIXTURES}" "${CANDIDATE_RECORD}" "${RELEASE}" <<'PY'
 import json
 import sqlite3
 import sys
-from moss_transcribe_diarize.installed_candidate import installed_candidate_identity, installed_record_identity
+from pathlib import Path
+from moss_transcribe_diarize.installed_candidate import installed_candidate_identity, installed_record_identity, relocate_installed_console_scripts
 
 identity = installed_candidate_identity()
 assert sqlite3.sqlite_version == "3.53.4"
@@ -126,11 +128,15 @@ assert identity == {
 record = installed_record_identity()
 assert record["record_entries_verified"] > 0
 assert record["record_projection_sha256"] == sys.argv[5]
+relocate_installed_console_scripts(Path(sys.argv[6]))
+assert installed_record_identity()["record_projection_sha256"] == sys.argv[5]
 PY
   install -m 0555 "${CHECKOUT}/ops/account-web-launcher.sh" "${RELEASE_STAGE}/bin/mtd-account-web"
   install -m 0555 "${CHECKOUT}/ops/account-admin-launcher.sh" "${RELEASE_STAGE}/bin/mtd-admin"
   install -m 0555 "${CHECKOUT}/ops/account-cutover-launcher.sh" "${RELEASE_STAGE}/bin/mtd-phase2-cutover"
   install -m 0555 "${CHECKOUT}/ops/vllm-launcher.sh" "${RELEASE_STAGE}/bin/mtd-vllm"
+  ln -s "${RUNTIME_ROOT}/node-v24.20.0-linux-x64/bin/node" "${RELEASE_STAGE}/bin/node"
+  ln -s "${RUNTIME_ROOT}/node-v24.20.0-linux-x64/bin/npm" "${RELEASE_STAGE}/bin/npm"
   LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
     "${RELEASE_STAGE}/bin/python" -I - "${CANDIDATE_RECORD}" <<'PY'
 import sys

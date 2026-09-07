@@ -191,6 +191,7 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
         OPS / "install-services.sh",
         OPS / "install-wsl.sh",
         OPS / "build-account-sqlite.sh",
+        OPS / "install-account-node.sh",
         OPS / "stage-account-candidate.sh",
         OPS / "account-web-launcher.sh",
         OPS / "account-admin-launcher.sh",
@@ -207,7 +208,7 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
         assert parsed.returncode == 0, parsed.stderr
 
     helped = subprocess.run(
-        ["uv", "run", "--frozen", "mtd-phase2-web", "--help"],
+        [sys.executable, "-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli", "--help"],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -217,7 +218,7 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
     assert "--google-client-id" in helped.stdout
     assert "--live-provider-manifest" in helped.stdout
     cutover_help = subprocess.run(
-        ["uv", "run", "--frozen", "mtd-phase2-cutover", "--help"],
+        [sys.executable, "-I", "-m", "moss_transcribe_diarize.app.phase2_cutover_cli", "--help"],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -592,6 +593,23 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
     full_record_identity = json.loads(full_record_before_transfer.stdout)
     assert full_record_identity["record_verified"] is True
     assert Path(full_record_identity["module_path"]).is_relative_to(venv)
+
+    relocated = tmp_path / "published-release"
+    relocation = subprocess.run(
+        [str(venv / "bin/python"), "-I", "-c",
+         "from pathlib import Path; import sys; from moss_transcribe_diarize.installed_candidate import relocate_installed_console_scripts; assert relocate_installed_console_scripts(Path(sys.argv[1])) >= 3",
+         str(relocated)], check=False, capture_output=True, text=True,
+    )
+    assert relocation.returncode == 0, relocation.stderr
+    venv.rename(relocated)
+    venv = relocated
+    direct = subprocess.run(
+        [str(venv / "bin/mtd-phase2-web"), "--help"],
+        env={**os.environ, "PYTHONPATH": sysconfig.get_paths()["purelib"]},
+        check=False, capture_output=True, text=True,
+    )
+    assert direct.returncode == 0, direct.stderr
+    assert "--google-client-id" in direct.stdout
 
     # The stage transfers only these pip-generated script paths.  Wheel-owned
     # package members and the replacement launchers retain separate authorities.

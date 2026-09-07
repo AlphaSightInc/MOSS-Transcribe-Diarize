@@ -370,11 +370,13 @@ def test_file_completion_publishes_private_exact_mp3_and_owner_whole_download(tm
         meeting_id = accepted.json()["id"]
         meeting = await_terminal(client, meeting_id, "completed")
         audio = meeting["audio"]
+        path = audio_root / audio["relative_path"]
+        observed = probe_mp3(path)
         assert audio == {
             "state": "available",
             "relative_path": f"sub-a/{meeting_id}/audio.mp3",
             "byte_count": audio["byte_count"],
-            "duration_ms": 1000,
+            "duration_ms": observed["duration_ms"],
             "format": "mp3",
             "sample_rate_hz": 16000,
             "channels": 1,
@@ -382,7 +384,14 @@ def test_file_completion_publishes_private_exact_mp3_and_owner_whole_download(tm
         }
         assert meeting["transcript"]["segments"][0]["text"] == "durable transcript"
 
-        path = audio_root / audio["relative_path"]
+        # FFprobe versions differ on whether MP3 container duration includes
+        # encoder padding. The playback samples must still contain exactly the
+        # one-second source; do not weaken this to an arbitrary time tolerance.
+        decoded = subprocess.run(
+            ["ffmpeg", "-v", "error", "-i", str(path), "-f", "s16le", "-ac", "1", "-ar", "16000", "pipe:1"],
+            check=True, capture_output=True,
+        ).stdout
+        assert len(decoded) == 16000 * 2
         encoded = path.read_bytes()
         assert probe_mp3(path) == {
             "codec": "mp3",

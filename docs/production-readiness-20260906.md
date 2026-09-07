@@ -47,3 +47,23 @@ Local verification for F1/F2: **1,080 Python tests and 37 subtests passed**, inc
 **252 Phase-2 tests**. Frontend: **121 tests**, typecheck, and production build passed.
 `uv lock --check` and `git diff --check` passed. This is implementation evidence,
 not a production-ready verdict. The separate dirty ticket-24 worktree is preserved.
+
+## Linux component run
+
+The first exact-runtime run on `2568966c` executed all twelve component commands;
+**8 passed / 4 failed**. This exposed further unattended blockers:
+
+- **F4 — frontend tooling:** the host's Node 18 cannot load the locked tools.
+  Staging now installs pinned Node 24.20.0 alongside the application and links its
+  `node`/`npm` into the release, without replacing the system Node.
+- **F5 — executable tests and scripts:** a test invoked `uv run`, attempting to
+  resync the sealed runtime. It now invokes the installed interpreter directly.
+  Separately, moved venvs broke generated console scripts. The measured installer
+  repair rewrites interpreter prefixes and installer-owned RECORD rows before
+  sealing; direct command execution and full RECORD verification both pass.
+- **F6 — stale test assumptions:** Linux FFprobe includes MP3 encoder padding in
+  container duration. The test now verifies reported container metadata against
+  the artifact and independently decodes exactly 16,000 source samples. The old
+  revocation probe now performs the required durable interruption before revoking
+  authority. Both corrected checks passed on Linux; production audio and
+  revocation semantics were not changed.

@@ -1380,6 +1380,12 @@ async def run() -> None:
             assert (observer_mutation, foreign_read, foreign_mutation) == (403, 404, 404)
             assert binding.snapshot["transcript_version"] == 2
 
+            # The store primitive no longer owns interruption: the lifecycle
+            # owner settles every Meeting before revoking Account authority.
+            # Model that settled boundary while the stale publication is held.
+            for owned in (terminal_handle, read_isolation_handle, finalizer_handle, handle):
+                if (await owned.snapshot()).status == "active":
+                    await owned.finish("interrupted")
             assert await store.revoke_email("a@example.com") is True
             controlled_commit.release(3)
             await bridge.wait_fenced()

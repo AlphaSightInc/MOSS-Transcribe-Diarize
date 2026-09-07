@@ -9,6 +9,7 @@ import hashlib
 import io
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from importlib.metadata import Distribution, distribution, distributions
 from importlib.resources import files
@@ -133,6 +134,40 @@ def record_projection_sha256(rows: Iterable[Sequence[str]]) -> str:
         raise RuntimeError("Candidate RECORD projection has no wheel members.")
     encoded = json.dumps(projection, separators=(",", ":"), sort_keys=False).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def relocate_installed_console_scripts(destination: Path) -> int:
+    """Relocate pip-generated interpreter paths and their installer-owned RECORD rows.
+
+    Run only while constructing an unsealed runtime, before transferring shell
+    launchers. Packaged modules and the wheel-member projection are unchanged.
+    """
+    source = Path(sys.prefix)
+    changed = 0
+    for package in distributions():
+        encoded = package.read_text("RECORD")
+        if encoded is None:
+            continue
+        rows = list(csv.reader(io.StringIO(encoded)))
+        rewritten = False
+        for row in rows:
+            path = Path(package.locate_file(row[0])).resolve()
+            if path.parent != (source / "bin").resolve() or not path.is_file():
+                continue
+            content = path.read_bytes()
+            if not content.startswith(b"#!") or str(source).encode() not in content:
+                continue
+            content = content.replace(str(source).encode(), str(destination).encode())
+            path.write_bytes(content)
+            digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).rstrip(b"=").decode()
+            row[1], row[2] = "sha256=" + digest, str(len(content))
+            rewritten = True
+            changed += 1
+        if rewritten:
+            record = next(item for item in package.files or () if str(item).endswith(".dist-info/RECORD"))
+            with Path(package.locate_file(record)).open("w", newline="") as stream:
+                csv.writer(stream).writerows(rows)
+    return changed
 
 
 def installed_dependency_projection() -> dict[str, object]:
