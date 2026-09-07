@@ -10,7 +10,8 @@ until real qualification inputs are ready. No gate is waived.
 - **F1 — packaging:** the staged `6c10b30f` runtime's dependency projection differs
   from its manifest: `webrtcvad-wheels==2.0.14` was added manually. The locked
   acceptance and speaker-identity extras now include that deployed dependency.
-  Acceptance also owns `uv==0.9.13`; cutover puts the release's `bin` first on PATH.
+  Acceptance also owns `uv==0.9.13`; cutover puts the release's `bin` first on PATH
+  and runs the documented `npm --prefix frontend ci` in its fresh qualification clone.
 - **F2 — startup:** systemd `active` preceded HTTP readiness during restore.
   The adapter now waits for both real Phase-1 runtime views before returning from
   startup, while creation remains blocked. Candidate startup also requires an
@@ -42,7 +43,7 @@ not an MVP blocker. See the ruling linked in `phase2-afk-charter.md` §4.1.
   pre-admission campaigns; then attended Chrome microphone/tab/screen G7. Report
   exact measured denominators. Only a passing candidate can reach pre-admission.
 
-Local verification for F1/F2: **252 Phase-2 tests passed**; the focused deployment,
-qualification, and provider run passed **87 tests** (overlaps the Phase-2 suite).
+Local verification for F1/F2: **1,080 Python tests and 37 subtests passed**, including
+**252 Phase-2 tests**. Frontend: **121 tests**, typecheck, and production build passed.
 `uv lock --check` and `git diff --check` passed. This is implementation evidence,
 not a production-ready verdict. The separate dirty ticket-24 worktree is preserved.

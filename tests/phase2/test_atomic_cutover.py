@@ -507,6 +507,9 @@ def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, 
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
     ops.run_qualification(artifacts=artifacts, candidate_sha=fixture["candidate"]["git_sha"], attempt=tmp_path / "attempt")
     assert calls[-1][1]["env"]["PATH"] == f"{artifacts.release}/bin:/usr/bin:/bin"
+    assert calls[-2][0] == ("npm", "--prefix", "frontend", "ci")
+    assert calls[-2][1]["cwd"] == tmp_path / "attempt/qualification"
+    assert calls[-2][1]["check"] is True
 
 
 def test_activation_pointer_replace_is_fsynced_before_install_returns(

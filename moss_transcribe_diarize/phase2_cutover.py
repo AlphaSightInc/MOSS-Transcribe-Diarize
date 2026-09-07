@@ -747,6 +747,12 @@ class SystemCutoverOps:
         )
         sqlite_prefix = Path(str(json.loads(self.profile.candidate_manifest.read_text())["sqlite_prefix"]))
         environment["LD_LIBRARY_PATH"] = str(sqlite_prefix / "lib")
+        subprocess.run(
+            ("npm", "--prefix", "frontend", "ci"),
+            cwd=qualification,
+            env=environment,
+            check=True,
+        )
         completed = subprocess.run(
             (
                 str(artifacts.release / "bin/python"),
