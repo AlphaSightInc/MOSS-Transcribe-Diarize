@@ -49,6 +49,15 @@ def _build_clean_wheel(root: Path) -> Path:
     return wheels[0]
 
 
+def test_candidate_exports_deployed_speech_and_build_prerequisites():
+    exported = subprocess.run(
+        ["uv", "export", "--frozen", "--extra", "acceptance", "--no-emit-project"],
+        cwd=ROOT, check=True, capture_output=True, text=True,
+    ).stdout
+    for requirement in ("webrtcvad-wheels==2.0.14", "onnxruntime==1.23.2", "uv==0.9.13"):
+        assert requirement in exported
+
+
 def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     start = (OPS / "start-web.sh").read_text(encoding="utf-8")
     start_vllm = (OPS / "start-vllm.sh").read_text(encoding="utf-8")

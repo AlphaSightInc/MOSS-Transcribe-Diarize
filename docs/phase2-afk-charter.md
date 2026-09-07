@@ -89,9 +89,12 @@ return `401`.
   revokes every session, fences new capture/results, and durably marks all active Meetings
   `interrupted` before the CLI returns. The next request from each revoked browser is `401` and the
   browser stops local capture visibly. Other sessions survive single-browser sign-out.
-- Keep origin and explicit port `:7861`; use a browser-trusted Let's Encrypt certificate for
-  `ga0-alienware-rtx4070ti.tailnet.aisight.us` obtained by lego 5.3.1 through NS1 DNS-01. Load a
-  renewed certificate only at a zero-Live-Meeting restart.
+- Keep origin `https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861` and browser-trusted
+  HTTPS. Per the [2026-09-01 operator ruling](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/23#issuecomment-5503890316),
+  the tailnet MVP may use the existing self-signed certificate installed in the client OS and
+  Chrome trust stores. No certificate bypass/interstitial is acceptable. Let's Encrypt via
+  lego 5.3.1 / NS1 DNS-01 remains the later graduation path, not an MVP blocker. Load any
+  replacement certificate only at a zero-Live-Meeting restart.
 
 ### 4.2 Persistence
 

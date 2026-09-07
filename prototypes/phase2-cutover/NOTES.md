@@ -87,3 +87,22 @@ forward sequence.
 
 Real OAuth, trusted TLS, Chrome microphone/tab/screen, and the remote host are deliberately
 unmeasured here and cannot close G7.
+
+## 2026-09-06 startup boundary
+
+The remote 20260902T033121Z restore failed after starting both web units: systemd's
+`active` did not imply `/api/runtime` was reachable. The startup probe uses the real
+`SystemCutoverOps._runtime_status` parser against a delayed loopback HTTP server.
+One command: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python prototypes/phase2-cutover/startup_probe.py`.
+
+Minimum primitives: process liveness, a valid HTTP response, and a finite wait.
+Creation remains blocked until both restored views respond; a malformed response
+or dead unit is not transient success. Production startup latency remains unmeasured;
+240 seconds retains the already-deployed startup-wait budget, not a performance claim.
+
+Measured: delayed healthy response **173 ms / 7 attempts, ready**; dead process
+**0 ms / 0 HTTP requests, refused**; malformed response **163 ms / 7 attempts,
+refused**. A single immediate request fails while bounded observation succeeds.
+Verdict: absorb the wait into the production adapter; retain this probe in the bench.
+Regression tests also cover deadline exhaustion, both views before marker removal,
+and candidate HTTP release-identity mismatch. This is startup evidence, not G7.

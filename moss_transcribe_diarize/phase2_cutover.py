@@ -23,10 +23,14 @@ import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Mapping, Protocol, Sequence
+from typing import Callable, Mapping, Protocol, Sequence
 
 from .installed_candidate import CandidateArtifacts, validated_candidate_artifacts
-from .phase2_g7_canary import run_attended_g7_canary, validate_attended_g7
+from .phase2_g7_canary import (
+    G7_PRODUCTION_ORIGIN,
+    run_attended_g7_canary,
+    validate_attended_g7,
+)
 
 
 PROFILE_SCHEMA = "moss-phase2-cutover-profile.v1"
@@ -39,6 +43,8 @@ TERMINAL_PHASES = frozenset({"restored", "preadmission", "SAFE_STOPPED"})
 PHASE1_UNITS = ("moss-web.service", "moss-live-web.service")
 VLLM_UNIT = "moss-vllm.service"
 CANDIDATE_WEB_UNIT = "moss-web.service"
+# Same startup budget as the deployed web-unit startup wait; not a quality gate.
+WEB_START_TIMEOUT_SECONDS = 240
 REQUIRED_SNAPSHOT_ROLES = frozenset(
     {
         "phase1_checkout",
@@ -80,6 +86,10 @@ class CutoverRefused(RuntimeError):
 
 class CutoverUnsafe(RuntimeError):
     """Restoration is uncertain; both product surfaces must remain stopped."""
+
+
+class RuntimeViewUnavailable(RuntimeError):
+    """HTTP has not become reachable yet; unlike a malformed runtime response."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -596,8 +606,10 @@ class SystemCutoverOps:
         try:
             with urllib.request.urlopen(request, timeout=10, context=context) as response:
                 payload = json.loads(response.read())
-        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
-            raise RuntimeError(f"Phase-1 runtime view unavailable: {view.name}") from exc
+        except (OSError, urllib.error.URLError) as exc:
+            raise RuntimeViewUnavailable(f"Phase-1 runtime view unavailable: {view.name}") from exc
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"Phase-1 runtime view malformed: {view.name}") from exc
         creation = payload.get("phase1_creation") if isinstance(payload, dict) else None
         if not isinstance(creation, dict):
             raise RuntimeError(f"Phase-1 runtime view malformed: {view.name}")
@@ -644,6 +656,35 @@ class SystemCutoverOps:
             self._systemctl("enable" if state["enabled"] else "disable", unit)
             if state["active"]:
                 self._systemctl("start", unit)
+        for view in self.profile.runtime_views:
+            unit = "moss-web.service" if view.name == "batch" else "moss-live-web.service"
+            if original.service_states[unit]["active"]:
+                self._wait_for_http(unit, lambda: self._runtime_status(view))
+
+    def _wait_for_http(self, unit: str, observe: Callable[[], object]) -> None:
+        deadline = time.monotonic() + WEB_START_TIMEOUT_SECONDS
+        while True:
+            if self._systemctl("is-active", unit, check=False).stdout.strip() != "active":
+                raise RuntimeError(f"web unit stopped before HTTP readiness: {unit}")
+            try:
+                observe()
+                return
+            except RuntimeViewUnavailable as exc:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(f"web HTTP readiness timed out: {unit}") from exc
+                time.sleep(1)
+
+    def _candidate_status(self, candidate_sha: str) -> None:
+        context = ssl.create_default_context(cafile=self.account_profile["MOSS_TLS_CERTFILE"])
+        request = urllib.request.Request(
+            G7_PRODUCTION_ORIGIN, headers={"Cache-Control": "no-store"}
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=10, context=context) as response:
+                if response.headers.get("X-MOSS-Candidate-SHA") != candidate_sha:
+                    raise RuntimeError("candidate HTTP response has the wrong release identity")
+        except (OSError, urllib.error.URLError) as exc:
+            raise RuntimeViewUnavailable("candidate HTTP unavailable") from exc
 
     def install_candidate(self, artifacts: CandidateArtifacts) -> None:
         self.activation.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -673,6 +714,8 @@ class SystemCutoverOps:
         current = self._unit_state(CANDIDATE_WEB_UNIT)
         if not current["active"]:
             raise RuntimeError("candidate web unit did not start")
+        candidate_sha = str(json.loads(self.profile.candidate_manifest.read_text())["git_sha"])
+        self._wait_for_http(CANDIDATE_WEB_UNIT, lambda: self._candidate_status(candidate_sha))
         with socket.socket() as probe:
             probe.settimeout(0.2)
             if probe.connect_ex(("127.0.0.1", 7860)) == 0:
@@ -699,6 +742,9 @@ class SystemCutoverOps:
         output = qualification / f"evidence/phase2/wave-1/{stamp}-{candidate_sha[:7]}"
         environment = dict(os.environ)
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        environment["PATH"] = os.pathsep.join(
+            (str(artifacts.release / "bin"), environment.get("PATH", os.defpath))
+        )
         sqlite_prefix = Path(str(json.loads(self.profile.candidate_manifest.read_text())["sqlite_prefix"]))
         environment["LD_LIBRARY_PATH"] = str(sqlite_prefix / "lib")
         completed = subprocess.run(

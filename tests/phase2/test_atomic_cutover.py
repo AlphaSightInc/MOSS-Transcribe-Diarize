@@ -414,6 +414,101 @@ def test_cutover_success_requires_attended_g7_before_preadmission(monkeypatch, t
         CutoverRun.open_incomplete(attempt=attempt, ops=ops).restore()
 
 
+@pytest.mark.parametrize("outcome", ("ready", "dead", "malformed", "timeout"))
+def test_http_readiness_retries_only_unavailable_live_services(monkeypatch, tmp_path, outcome):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = SystemCutoverOps(
+        profile=load_cutover_profile(fixture["profile"]), artifacts=None, account_profile={}
+    )
+    clock = [0.0]
+    observations = []
+    monkeypatch.setattr(cutover.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(cutover.time, "sleep", lambda seconds: clock.__setitem__(0, clock[0] + seconds))
+    monkeypatch.setattr(cutover, "WEB_START_TIMEOUT_SECONDS", 2)
+    monkeypatch.setattr(ops, "_systemctl", lambda *args, **kwargs: subprocess.CompletedProcess(
+        args, 0, "inactive" if outcome == "dead" else "active", ""
+    ))
+
+    def observe():
+        observations.append(clock[0])
+        if outcome == "malformed":
+            raise RuntimeError("malformed")
+        if outcome == "timeout" or len(observations) == 1:
+            raise cutover.RuntimeViewUnavailable("not listening")
+
+    if outcome == "ready":
+        ops._wait_for_http("moss-web.service", observe)
+        assert observations == [0, 1]
+    else:
+        with pytest.raises(RuntimeError, match={
+            "dead": "stopped", "malformed": "malformed", "timeout": "timed out"
+        }[outcome]):
+            ops._wait_for_http("moss-web.service", observe)
+        assert len(observations) == {"dead": 0, "malformed": 1, "timeout": 3}[outcome]
+
+
+def test_phase1_start_observes_both_http_views_while_creation_is_blocked(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    fake = FakeCutoverOps(fixture)
+    original = fake.capture_original_state()
+    fake.enable_phase1_block()
+    ops = SystemCutoverOps(
+        profile=load_cutover_profile(fixture["profile"]), artifacts=None, account_profile={}
+    )
+    monkeypatch.setattr(ops, "_systemctl", lambda *args, **kwargs: subprocess.CompletedProcess(args, 0, "active", ""))
+    observed = []
+    def status(view):
+        assert fixture["marker"].exists()
+        observed.append(view.name)
+        return {"state": "quiesced"}
+    monkeypatch.setattr(ops, "_runtime_status", status)
+    ops.start_phase1(original)
+    assert observed == ["batch", "live"]
+    assert fixture["marker"].exists()
+
+
+@pytest.mark.parametrize("served_sha", ("candidate", "stale"))
+def test_candidate_readiness_requires_exact_http_release(monkeypatch, tmp_path, served_sha):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = SystemCutoverOps(
+        profile=load_cutover_profile(fixture["profile"]), artifacts=None,
+        account_profile={"MOSS_TLS_CERTFILE": "trusted-cert"},
+    )
+    class Response:
+        headers = {"X-MOSS-Candidate-SHA": served_sha}
+        def __enter__(self):
+            return self
+        def __exit__(self, *_args):
+            pass
+    contexts = []
+    monkeypatch.setattr(cutover.ssl, "create_default_context", lambda **kwargs: contexts.append(kwargs))
+    monkeypatch.setattr(cutover.urllib.request, "urlopen", lambda *args, **kwargs: Response())
+    if served_sha == "candidate":
+        ops._candidate_status("candidate")
+    else:
+        with pytest.raises(RuntimeError, match="wrong release"):
+            ops._candidate_status("candidate")
+    assert contexts == [{"cafile": "trusted-cert"}]
+
+
+def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = SystemCutoverOps(
+        profile=load_cutover_profile(fixture["profile"]), artifacts=None, account_profile={}
+    )
+    artifacts = validated_candidate_artifacts(fixture["candidate"])
+    calls = []
+    def run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        if argv[0] == "git" and argv[1] == "clone":
+            Path(argv[-1]).mkdir(parents=True)
+        return subprocess.CompletedProcess(argv, 0)
+    monkeypatch.setattr(cutover.subprocess, "run", run)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    ops.run_qualification(artifacts=artifacts, candidate_sha=fixture["candidate"]["git_sha"], attempt=tmp_path / "attempt")
+    assert calls[-1][1]["env"]["PATH"] == f"{artifacts.release}/bin:/usr/bin:/bin"
+
+
 def test_activation_pointer_replace_is_fsynced_before_install_returns(
     monkeypatch, tmp_path
 ):
