@@ -6,6 +6,7 @@ import {
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
 import { captureMeetingId, resetSessionState } from "../state/session";
+import { watchCreatedMeeting } from "../lib/finalSummary";
 import {
   clearSessionReattach,
   loadSessionReattach,
@@ -150,6 +151,7 @@ export function ControlPanel() {
     resetSessionState();
     try {
       const session = await client.createSession();
+      watchCreatedMeeting(session.id);
       saveSessionReattach(sessionReattachStorage(), {
         sessionId: session.id
       });

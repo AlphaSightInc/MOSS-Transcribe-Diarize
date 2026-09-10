@@ -186,7 +186,33 @@ batch root, Live runtime and model health/models/metrics returned 200. Live cert
 verification was explicitly disabled for availability measurement: trusted TLS remains
 unqualified. No service changes or playback.
 
-## C7 — Remaining sequence
+## C7 — Browser-owned final summaries
+
+Optional local settings, creator-only finalization watcher, serial browser worker,
+exact delivery retries, Cancel/Retry, strict V15 validation, owner/version-bound
+persistence and automatic title are implemented. No provider settings reach MOSS.
+Closed worker tabs recover through visible Cancel/Retry; restart fences old attempts.
+History reads never initiate inference. File/URL acceptance refreshes history without
+reloading away its worker. File-only workspaces also mount the history/summary UI.
+
+Adversarial review reproduced a post-Cancel provider request while the generating
+response was delayed; fixed and regression proves zero external requests after Cancel.
+32 simultaneous summary admissions yield one winner and 31 conflicts. Timeout/network/
+408/429/5xx deliveries alone retry byte-identically; invalid output is never repaired.
+
+Real muted Chromium + scratch production HTTP/store + separate HTTPS fake provider:
+**8/8** checks pass (actual CORS preflight/POST, payload isolation, no provider settings
+sent to MOSS, no ambient credential/ID leakage, foreign 404, saved results, no inference
+on history/reload). Synthetic transcripts, host SQLite 3.50.4, test certificate trust
+explicitly bypassed: not deployed/trusted-TLS/full G9 load qualification. Runner:
+`prototypes/client-configured-llm/final_browser_probe.py`.
+
+Full regression: **1164 Python passed, 2 skipped, 37 subtests passed**, 62.24 s;
+**153 frontend passed**, type-check/build pass. Final cutover now requires Wave 3 and
+every individual core/G8/G9 layer, rejecting a green aggregate with missing/failed
+rows. Four falsifiers prove restoration without admission. No cutover executed.
+
+## C8 — Remaining sequence
 
 1. Finish real G8 measurement/evaluation for the integrated W2 source.
    Preserve the separate accepted evidence boundaries: causal matching uses at least

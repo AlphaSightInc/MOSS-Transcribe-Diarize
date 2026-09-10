@@ -738,7 +738,7 @@ class SystemCutoverOps:
         )
         (qualification / ".venv").symlink_to(artifacts.release)
         stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-        output = qualification / f"evidence/phase2/wave-1/{stamp}-{candidate_sha[:7]}"
+        output = qualification / f"evidence/phase2/wave-3/{stamp}-{candidate_sha[:7]}"
         environment = dict(os.environ)
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
         environment["PATH"] = os.pathsep.join(
@@ -757,7 +757,7 @@ class SystemCutoverOps:
                 str(artifacts.release / "bin/python"),
                 str(qualification / "scripts/phase2-acceptance/run.py"),
                 "--wave",
-                "1",
+                "3",
                 "--output",
                 str(output),
                 "--profile",
@@ -768,7 +768,7 @@ class SystemCutoverOps:
             check=False,
         )
         if completed.returncode:
-            raise RuntimeError("same-SHA Wave-1 qualification failed")
+            raise RuntimeError("same-SHA three-wave qualification failed")
         return output
 
     def run_attended_g7(
@@ -1065,20 +1065,31 @@ class CutoverRun:
         candidate = json.loads(
             (output / "candidate-manifest.json").read_text(encoding="utf-8")
         )
-        required = {"G0", "G1", "G2", "G3", "G4", "G5", "G6", "G10"}
+        required = {"G0", "G1", "G2", "G3", "G4", "G5", "G6", "G8", "G9", "G10"}
+        gates = gate_table.get("gates", {})
+        layers = {"deterministic", "deployed", "pre_admission"}
+        individual_passes = isinstance(gates, dict) and all(
+            isinstance(gates.get(gate), dict)
+            and gates[gate].get("passed") is True
+            and isinstance(gates[gate].get("layers"), dict)
+            and set(gates[gate]["layers"]) == layers
+            and all(gates[gate]["layers"][layer] is True for layer in layers)
+            for gate in required
+        )
         if (
             verdict.get("schema") != "moss-phase2-acceptance.v1"
-            or verdict.get("wave") != 1
+            or verdict.get("wave") != 3
             or verdict.get("candidate_sha") != self.candidate_sha
             or verdict.get("qualified") is not True
             or verdict.get("g7") != "UNCLAIMED"
             or gate_table.get("passed") is not True
             or set(gate_table.get("required", ())) != required
+            or not individual_passes
             or candidate.get("git_sha") != self.candidate_sha
             or candidate.get("git_tree") != self.candidate.get("git_tree")
             or candidate.get("uv_lock_sha256") != self.candidate.get("uv_lock_sha256")
         ):
-            raise RuntimeError("same-SHA Wave-1 qualification bundle is not complete")
+            raise RuntimeError("same-SHA three-wave qualification bundle is not complete")
 
     def _publish_terminal(
         self,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { FinalSummary, FinalSummarySettings } from "./FinalSummary";
 import {
   listMeetings,
   openMeeting,
@@ -158,6 +159,7 @@ export function MeetingHistory() {
   return (
     <section className="panel history-panel account-history-panel" aria-label="Meeting history">
       <div className="panel-body">
+        <FinalSummarySettings />
         <div className="history-panel-actions">
           <label className="history-search">
             <span className="sr-only">Search meetings</span>
@@ -180,6 +182,7 @@ export function MeetingHistory() {
         </div>
 
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
+        {selected?.status === "completed" && <FinalSummary key={selected.id} meeting={selected} />}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
         ) : null}

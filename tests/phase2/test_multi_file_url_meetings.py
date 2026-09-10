@@ -115,6 +115,7 @@ const vm = require('node:vm');
 let submitListener = null;
 let reloads = 0;
 const calls = [];
+const created = [];
 const statusFixture = {textContent: ''};
 const formFixture = {
   elements: {
@@ -125,20 +126,22 @@ const formFixture = {
 };
 globalThis.document = {
   querySelector: (selector) => selector.includes('form') ? formFixture
-    : selector.includes('status') ? statusFixture : {textContent: ''},
+    : selector.includes('status') ? statusFixture : null,
   querySelectorAll: () => [],
+  dispatchEvent: (event) => { if (event.type === 'moss:meeting-created') created.push(event.detail.meeting_id); },
 };
+globalThis.CustomEvent = class { constructor(type, options) { this.type = type; this.detail = options.detail; } };
 globalThis.FormData = class { append() {} };
 globalThis.fetch = async (path) => {
   calls.push(path);
   if (calls.length === 2) throw new Error('network failure');
-  return {ok: calls.length !== 3};
+  return {ok: calls.length !== 3, json: async () => ({id: `accepted-${calls.length}`})};
 };
 globalThis.location = {reload: () => { reloads += 1; }};
 vm.runInThisContext(fs.readFileSync(0, 'utf8'));
 (async () => {
   await submitListener({preventDefault() {}});
-  process.stdout.write(JSON.stringify({calls, status: statusFixture.textContent, reloads}));
+  process.stdout.write(JSON.stringify({calls, created, status: statusFixture.textContent, reloads}));
 })().catch((error) => { console.error(error); process.exit(1); });
 """
     result = subprocess.run(
@@ -177,6 +180,7 @@ def test_mixed_serial_items_are_independent_and_owner_bound(tmp_path: Path):
             ],
             "status": "2 accepted; 2 rejected. Accepted work continues on the server.",
             "reloads": 1,
+            "created": ["accepted-1", "accepted-4"],
         }
 
         accepted = [

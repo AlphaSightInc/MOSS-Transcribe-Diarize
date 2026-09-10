@@ -193,8 +193,8 @@ return `401`.
   target language, timeout, and retry schedule live only in that browser's local storage. Blank
   endpoint/model disables calls; Clear removes values. The server never stores or serves them.
 - Browser calls non-streaming OpenAI-compatible `POST /v1/chat/completions` and reads
-  `choices[0].message.content`. `/v1/models` is not required. Requested model is provenance, not a
-  verified identity. Chrome must reach and trust the configured endpoint and its CORS policy.
+  `choices[0].message.content`. `/v1/models` is not required. Requested model stays browser-local,
+  not server provenance or verified identity. Chrome must reach and trust the configured endpoint and its CORS policy.
 - Send only this Meeting's finalized transcript, browser prompt, and request parameters. Never send
   audio, Voiceprints, another Meeting, Account history, or Account identifiers.
 - Default to `prototypes/client-configured-llm/final-summary-prompt.txt`. Accept raw JSON with
@@ -206,7 +206,10 @@ return `401`.
   network error, timeout, HTTP 408/429, or 5xx. Invalid output and other HTTP errors fail
   immediately. Cancel aborts current/scheduled work; owner-only Retry starts a fresh capped group.
 - Persist states `queued`, `generating`, `retry_wait`, `current`, `failed`, and `cancelled`, plus
-  validated output, source/artifact versions, requested model, prompt profile, and automatic title.
+  validated output, source/artifact versions, attempt ID, fixed failure code, and automatic title.
+  Under approved production decision D5, endpoint/model/key/prompt/language/request settings never
+  enter server provenance, requests or logs. The built-in public default prompt ships as an asset;
+  user-supplied prompts remain browser-local.
   `topics[0].title` becomes title only when present and no owner-written title exists.
 - `llm_status` and `llm_summary_update` become reachable. `llm_format_update` remains unreachable.
   Same-Account clients may read the artifact; view/history clients never call automatically.

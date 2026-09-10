@@ -196,12 +196,13 @@ describe("MeetingHistory", () => {
     const original = meeting({ id: "shared", title: "Original" });
     const renamed = { ...original, title: "Owner title", title_source: "manual" as const };
     const otherClient = { ...renamed, title: "Other client title" };
-    const fetcher = vi.fn()
-      .mockResolvedValueOnce(response({ meetings: [original] }))
-      .mockResolvedValueOnce(response(original))
-      .mockResolvedValueOnce(response({ id: "shared", title: "Owner title", title_source: "manual" }))
-      .mockResolvedValueOnce(response({ meetings: [otherClient] }))
-      .mockResolvedValueOnce(response({ meetings: [] }));
+    const lists = [[original], [otherClient], []];
+    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/summary")) return response({ summary: null });
+      if (url.endsWith("/title") && init?.method === "PUT") return response({ id: "shared", title: "Owner title", title_source: "manual" });
+      if (url === "/api/meetings") return response({ meetings: lists.shift() ?? [] });
+      return response(original);
+    });
     vi.stubGlobal("fetch", fetcher);
 
     await act(async () => {
@@ -209,7 +210,7 @@ describe("MeetingHistory", () => {
     });
     await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="shared"]')).not.toBeNull());
     await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="shared"]')?.click());
-    act(() => root.querySelector<HTMLButtonElement>(".history-action-btn")?.click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-meeting-card="shared"] .history-action-btn')?.click());
     const title = root.querySelector<HTMLInputElement>('[aria-label="Meeting title"]');
     if (!title) throw new Error("missing title field");
     title.value = "  Owner title  ";

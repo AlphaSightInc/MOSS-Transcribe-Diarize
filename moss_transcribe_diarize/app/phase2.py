@@ -1660,6 +1660,8 @@ def create_phase2_app(
                 audio_archive=audio_archive,
                 live_audio_stages=live_audio_stages,
             )
+            from .phase2_summary import recover_summaries
+            await recover_summaries(store)
             if file_tasks is not None:
                 file_tasks.clear_transient_work()
             app.state.phase2_store = store
@@ -1836,6 +1838,9 @@ def create_phase2_app(
             samesite="lax",
         )
         return response
+
+    from .phase2_summary import attach_summary_routes
+    attach_summary_routes(app, require_account)
 
     if phase2_live is not None:
         from .phase2_live import attach_phase2_live_routes
@@ -2158,13 +2163,10 @@ def _workspace_html(
     live_head = (
         '<meta name="moss-authority" content="account">'
         '<link rel="stylesheet" href="/static/styles.css">'
-        if live_enabled
-        else ""
     )
     live_body = (
         '<section data-workspace-section="live" data-live-capture="account">'
         '<h2 class="phase2-workspace-heading">Live transcription</h2><div id="app"></div></section>'
-        '<script type="module" src="/static/app.js"></script>'
         if live_enabled
         else ""
     )
@@ -2181,12 +2183,17 @@ def _workspace_html(
 <section data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
 </section></main>
+<script type="module" src="/static/app.js"></script>
 <script>
 const uploadForm = document.querySelector('[data-file-upload="form"]');
 const uploadStatus = document.querySelector('[data-file-upload="status"]');
 async function submitItem(path, options) {{
   try {{
-    return (await fetch(path, options)).ok;
+    const response = await fetch(path, options);
+    if (!response.ok) return false;
+    const meeting = await response.json();
+    document.dispatchEvent(new CustomEvent('moss:meeting-created', {{detail: {{meeting_id: meeting.id}}}}));
+    return true;
   }} catch {{
     return false;
   }}
@@ -2212,7 +2219,10 @@ uploadForm.addEventListener('submit', async (event) => {{
     }})) ? accepted++ : failed++;
   }}
   uploadStatus.textContent = `${{accepted}} accepted; ${{failed}} rejected. Accepted work continues on the server.`;
-  if (accepted > 0) location.reload();
+  if (accepted > 0) {{
+    if (document.querySelector('[data-history-boot="ready"]')) document.dispatchEvent(new Event('moss:refresh-meeting-history'));
+    else location.reload();
+  }}
 }});
 </script></body></html>"""
 

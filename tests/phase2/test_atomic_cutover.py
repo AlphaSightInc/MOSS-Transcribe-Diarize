@@ -355,10 +355,12 @@ class FakeCutoverOps:
         if self.qualification_fails:
             raise RuntimeError("injected qualification failure")
         reported_sha = "0" * 40 if self.qualification_sha_mismatch else candidate_sha
-        output = attempt / "qualification/evidence/phase2/wave-1/run"
+        output = attempt / "qualification/evidence/phase2/wave-3/run"
         output.mkdir(parents=True)
-        (output / "verdict.json").write_text(json.dumps({"schema": "moss-phase2-acceptance.v1", "wave": 1, "candidate_sha": reported_sha, "qualified": True, "g7": "UNCLAIMED"}), encoding="utf-8")
-        (output / "gate-table.json").write_text(json.dumps({"passed": True, "required": ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G10"]}), encoding="utf-8")
+        (output / "verdict.json").write_text(json.dumps({"schema": "moss-phase2-acceptance.v1", "wave": 3, "candidate_sha": reported_sha, "qualified": True, "g7": "UNCLAIMED"}), encoding="utf-8")
+        required = ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G8", "G9", "G10"]
+        (output / "gate-table.json").write_text(json.dumps({"passed": True, "required": required,
+            "gates": {gate: {"passed": True, "layers": {layer: True for layer in ("deterministic", "deployed", "pre_admission")}} for gate in required}}), encoding="utf-8")
         (output / "candidate-manifest.json").write_text(json.dumps({"git_sha": reported_sha, "git_tree": self.fixture["candidate"]["git_tree"], "uv_lock_sha256": self.fixture["candidate"]["uv_lock_sha256"]}), encoding="utf-8")
         return output
 
@@ -809,7 +811,7 @@ def test_attended_g7_reducer_rejects_each_load_bearing_observation(monkeypatch, 
             validate_attended_g7(payload, candidate=candidate)
 
 
-def test_planned_restored_terminal_runs_wave1_then_whole_restore_without_attended_g7(
+def test_planned_restored_terminal_runs_wave3_then_whole_restore_without_attended_g7(
     monkeypatch, tmp_path
 ):
     fixture = _cutover_fixture(monkeypatch, tmp_path)
@@ -901,6 +903,30 @@ def test_same_sha_qualification_mismatch_restores_without_preadmission(monkeypat
         ops=ops,
     ).run()
     assert result.terminal == "restored" and result.error == "RuntimeError"
+    assert ops.phase1_running is True and ops.candidate_running is False
+
+
+@pytest.mark.parametrize("mutation", ["wave1", "missing_g8", "failed_g9", "unmeasured_layer"])
+def test_release_refuses_incomplete_waves_even_when_aggregate_claims_pass(monkeypatch, tmp_path, mutation):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    class IncompleteWaves(FakeCutoverOps):
+        def run_qualification(self, **kwargs):
+            output = super().run_qualification(**kwargs)
+            verdict_path = output / "verdict.json"
+            table_path = output / "gate-table.json"
+            verdict = json.loads(verdict_path.read_text())
+            table = json.loads(table_path.read_text())
+            if mutation == "wave1": verdict["wave"] = 1
+            elif mutation == "missing_g8": del table["gates"]["G8"]
+            elif mutation == "failed_g9": table["gates"]["G9"]["passed"] = False
+            else: table["gates"]["G9"]["layers"]["deployed"] = False
+            verdict_path.write_text(json.dumps(verdict))
+            table_path.write_text(json.dumps(table))
+            return output
+    ops = IncompleteWaves(fixture)
+    monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
+    result = CutoverRun.prepare(profile_path=fixture["profile"], attempt=tmp_path / "attempt", terminal="preadmission", ops=ops).run()
+    assert result.terminal == "restored"
     assert ops.phase1_running is True and ops.candidate_running is False
 
 
