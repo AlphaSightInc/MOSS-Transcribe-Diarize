@@ -132,11 +132,21 @@ cleanup versus Stop and newly eligible Stop/abort tail evidence.
 Focused naming/Live/lifecycle tests: **80 passed**. Prototype verdict is retained in
 `prototypes/phase2-account-lifecycle/MANUAL_IDENTITY_NOTES.md`.
 
+Merge commit: `0b0e0d45` (parents `123a08d8` and preserved snapshot `3f8e98f9`).
+Post-merge full regression: **1141 passed, 2 skipped, 37 subtests passed**, 64.94 s.
+Frontend remains **121/121**, type-check/build passed; no frontend changes in this
+backend slice. Manual naming is not yet wired into the user interface.
+
 ## C5 — Remaining sequence
 
-1. Complete W1 deployed browser/lifecycle qualification producers and replace
-   superseded prototype invocations; run full Python/frontend gates.
-2. Integrate W2 manual names/voiceprints from the preserved ticket-24 work, merge-only.
+1. Finish W2 on the integrated manual-naming backend: UI, opaque-ID bank rename/delete,
+   bank-revision fencing, compatible-entry matching and real G8 measurement/evaluation.
+   Preserve the separate accepted evidence boundaries: causal matching uses at least
+   1 s live evidence; enrollment uses the quality-gated album centroid at 2 s. Do not
+   silently substitute the enrollment observation seam for causal match evidence.
+2. Reuse the standing voice-profile bench and its accepted rule. The production
+   worktree currently lacks its ignored model/corpus/runtime assets; locate/reuse the
+   existing originals before a fresh run. Cache replay is development evidence only.
 3. Implement W3 optional browser-direct AI settings/calls and version-bound summary
    persistence; never persist endpoint, model, API key or prompt on the server.
 4. Trusted HTTPS and renewal; staged installation, final integrated G8/G9 producers,
@@ -144,5 +154,5 @@ Focused naming/Live/lifecycle tests: **80 passed**. Prototype verdict is retaine
 5. After quiet hours, attended Chrome microphone + shared-audio canary. Only then
    final production deployment approval/admission.
 
-No user action is needed during C1. DNS credential provisioning and the attended
+No manual action is required for these completed source checkpoints. DNS credential provisioning and the attended
 canary remain later manual prerequisites; never put credentials in chat.
