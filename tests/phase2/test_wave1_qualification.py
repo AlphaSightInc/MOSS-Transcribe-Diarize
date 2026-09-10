@@ -1492,7 +1492,7 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
         if str(path) == "/proc/123/cmdline":
             return (
                 str(release_bin / "python").encode()
-                + b"\0-m\0moss_transcribe_diarize.app.phase2_web_cli\0"
+                + b"\0-I\0-m\0moss_transcribe_diarize.app.phase2_web_cli\0"
             )
         return original_read_bytes(path)
 
@@ -1510,11 +1510,27 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
         "exe": "/release/current",
         "argv": [
             str(release_bin / "python"),
+            "-I",
             "-m",
             "moss_transcribe_diarize.app.phase2_web_cli",
         ],
     }
     assert identity["manifest"]["installed_units_match_manifest"] is True
+    approved_argv = identity["process"]["argv"]
+    for refused_argv in (
+        [approved_argv[0], "-m", approved_argv[3]],
+        [str(tmp_path / "foreign-python"), *approved_argv[1:]],
+        [*approved_argv[:3], "moss_transcribe_diarize.app.phase1_web_cli"],
+    ):
+        def refused_cmdline(path: Path) -> bytes:
+            if str(path) == "/proc/123/cmdline":
+                return b"\0".join(item.encode() for item in refused_argv) + b"\0"
+            return original_read_bytes(path)
+
+        monkeypatch.setattr(Path, "read_bytes", refused_cmdline)
+        with pytest.raises(external.ExternalMeasurementError, match="outside the manifested release"):
+            campaign.installed_candidate_identity()
+    monkeypatch.setattr(Path, "read_bytes", read_bytes)
     (installed_units / "moss-web.service").write_bytes(b"mixed future restart unit\n")
     with pytest.raises(
         external.ExternalMeasurementError,

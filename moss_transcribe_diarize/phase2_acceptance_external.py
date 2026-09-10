@@ -505,9 +505,9 @@ class FixedAccountCampaign:
         except OSError as exc:
             raise ExternalMeasurementError("Account web process identity is unreadable") from exc
         if (
-            len(argv) < 3
+            len(argv) < 4
             or Path(argv[0]).resolve() != (release / "bin/python").resolve()
-            or argv[1:3] != ["-m", "moss_transcribe_diarize.app.phase2_web_cli"]
+            or argv[1:4] != ["-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]
         ):
             raise ExternalMeasurementError("Account web process is outside the manifested release")
         installed_record = manifest.get("installed_record")
