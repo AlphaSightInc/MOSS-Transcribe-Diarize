@@ -41,8 +41,9 @@ Google-era producers/probes and must be replaced before qualification can run.
 Dependency audit found one development-tool advisory reported through two packages
 (Vitest and its mocker, pinned 4.1.10). Upstream fixes it in 4.1.11:
 https://github.com/vitest-dev/vitest/security/advisories/GHSA-82fw-gwwq-j7x9
-The audit does not establish an exposed production attack path. Apply the bounded
-patch update and rerun frontend/packaging checks before release.
+The audit does not establish an exposed production attack path. Updated Vitest and
+its matched packages to 4.1.11. Post-update: 121 frontend tests pass; type-check and
+build pass; `npm audit --json` reports zero vulnerabilities. Built assets unchanged.
 
 ## C2 — Remaining sequence
 
