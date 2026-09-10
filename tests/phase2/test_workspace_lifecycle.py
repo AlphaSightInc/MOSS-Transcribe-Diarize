@@ -153,6 +153,10 @@ def test_schema_v2_contains_exact_ownership_tables_and_settings(tmp_path: Path):
             meeting_columns = {row[1] for row in await cursor.fetchall()}
             await cursor.close()
             assert "title_source" in meeting_columns
+            cursor = await store._connection.execute("PRAGMA table_info(voiceprints)")
+            voiceprint_columns = {row[1] for row in await cursor.fetchall()}
+            await cursor.close()
+            assert {"embedder_id", "embedding_dimension"} <= voiceprint_columns
             settings = await store.sqlite_settings()
             assert settings == {"journal_mode": "wal", "foreign_keys": 1, "synchronous": 2}
         finally:

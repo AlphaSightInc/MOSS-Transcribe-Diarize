@@ -811,6 +811,12 @@ class LiveServiceRuntime:
                 return None
             return snapshot
 
+    def _identity_observations(self, session_id: str) -> tuple[object, ...]:
+        """Return this live session's immutable, in-memory album observations."""
+
+        with self._lock:
+            return tuple(self._get(session_id).coordinator.journal_observations())
+
     def _operator_queue_snapshot(self) -> dict[str, int | bool]:
         """Aggregate content-free queue and worker facts under the runtime lock."""
 

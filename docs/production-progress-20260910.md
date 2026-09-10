@@ -110,7 +110,29 @@ standalone deterministic probes pass; the added browser/revocation probes pass a
 recorded above. Fidelity probe imports and CLI start without retired Google classes.
 These are development/source results, not trusted-TLS deployed qualification.
 
-## C4 — Remaining sequence
+## C4 — Ticket-24 manual naming integration
+
+Source worktree was left untouched. Seven changed/new files were copied byte-for-byte
+(verified with `cmp`) to snapshot branch `integration/ticket24-snapshot-20260910`,
+commit `3f8e98f9`, then merged without rebasing. The retired Google test's sole new
+schema assertion was ported to the browser-workspace lifecycle test.
+
+The inherited slice adds owner-bound active manual naming, immediate transcript
+relabeling, quality-gated 2 s enrollment, replaceable pending intent, private list and
+persistence. Matching, bank rename/delete, UI and G8 remain subsequent W2 work.
+
+Adversarial review found three reachable lifecycle regressions. A real-COMMIT probe
+reproduced cancelled naming leaving SQLite label Durable while live label stayed S01;
+the service-owned task fixed convergence. Tail-eligible pending enrollment measured
+one sample when cleared late and zero when closed at accepted Stop. Fixed both, plus
+restored synchronous publication fencing before identity cleanup. Lifespan joins
+accepted naming. Regression tests cover held COMMIT, next publication, held identity
+cleanup versus Stop and newly eligible Stop/abort tail evidence.
+
+Focused naming/Live/lifecycle tests: **80 passed**. Prototype verdict is retained in
+`prototypes/phase2-account-lifecycle/MANUAL_IDENTITY_NOTES.md`.
+
+## C5 — Remaining sequence
 
 1. Complete W1 deployed browser/lifecycle qualification producers and replace
    superseded prototype invocations; run full Python/frontend gates.

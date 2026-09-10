@@ -183,6 +183,39 @@ class Identity:
         )
 
 
+class EligibleIdentity(Identity):
+    def journal_observations(self):
+        return (
+            SimpleNamespace(
+                speaker_label="speaker-0001",
+                centroid=(0.6, 0.8),
+                sample_seconds=2.0,
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        )
+
+
+class ControlledIdentity(Identity):
+    def __init__(self, state: dict[str, float]) -> None:
+        self.state = state
+
+    def journal_observations(self):
+        return (
+            SimpleNamespace(
+                speaker_label="speaker-0001",
+                centroid=(1.0, 0.0),
+                sample_seconds=self.state["seconds"],
+                exemplar_count=2,
+                provisional=False,
+                embedder_id="wespeaker:test-revision",
+                embedder_state_sha="ab" * 32,
+            ),
+        )
+
+
 def make_runtime(
     *,
     speech: tuple[bool, ...] = (True, False),
@@ -190,6 +223,7 @@ def make_runtime(
     terminal_scheduler: _ManualTerminalScheduler | None = None,
     max_tape_bytes: int = 32_000,
     decoder_factory=Decoder,
+    identity_factory=Identity,
 ) -> LiveServiceRuntime:
     descriptor = LiveServiceDescriptor(
         source_revision="a" * 40,
@@ -224,7 +258,7 @@ def make_runtime(
         speech_provider_factory=lambda: SpeechProvider(speech),
         decoder_factory=decoder_factory,
         rolling_decoder_factory=None if terminal_text is None else Decoder,
-        identity_preparer_factory=Identity,
+        identity_preparer_factory=identity_factory,
         terminal_finalizer=(
             None
             if terminal_text is None
@@ -289,6 +323,7 @@ def make_app(
     audio_archive=None,
     control_socket: Path | None = None,
     decoder_factory=Decoder,
+    identity_factory=Identity,
 ):
     return create_phase2_app(
         database_path=database,
@@ -298,6 +333,7 @@ def make_app(
             terminal_scheduler=terminal_scheduler,
             max_tape_bytes=max_tape_bytes,
             decoder_factory=decoder_factory,
+            identity_factory=identity_factory,
         ),
         live_helper_lease_seconds=lease_seconds,
         meeting_audio_root=database.parent / "meetings",
@@ -580,6 +616,207 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
             "sub-a",
         ) is True
         assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 401
+
+
+def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprint(
+    tmp_path: Path,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, identity_factory=EligibleIdentity)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        assert client.post(
+            f"/api/live/sessions/{meeting_id}/heartbeat",
+            json=heartbeat(),
+        ).status_code == 200
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+
+        named = client.put(
+            f"/api/meetings/{meeting_id}/speakers/speaker-0001/name",
+            json={"label": "  Alex  "},
+        )
+        assert named.status_code == 200
+        assert named.json() == {
+            "meeting_id": meeting_id,
+            "speaker_id": "speaker-0001",
+            "label": "Alex",
+            "voiceprint_id": named.json()["voiceprint_id"],
+            "enrollment": "enrolled",
+            "transcript_version": 2,
+        }
+        assert isinstance(named.json()["voiceprint_id"], str)
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["transcript"]["segments"][0]["speaker"] == "Alex"
+        live = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        assert live["speaker_labels"] == {"speaker-0001": "Alex"}
+        assert live["speaker_label_revision"] == 1
+        owner_bank = client.get("/api/voiceprints").json()
+        assert owner_bank == {
+            "voiceprints": [
+                {
+                    "id": named.json()["voiceprint_id"],
+                    "label": "Alex",
+                    "embedder_id": "wespeaker:test-revision",
+                    "embedding_dimension": 2,
+                    "revision": 1,
+                    "sample_count": 1,
+                }
+            ]
+        }
+
+        session(client, sessions["b"])
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+        foreign = client.put(
+            f"/api/meetings/{meeting_id}/speakers/speaker-0001/name",
+            json={"label": "foreign"},
+        )
+        assert foreign.status_code == 404
+        session(client, sessions["a"])
+        assert client.get("/api/voiceprints").json() == owner_bank
+        assert client.put(
+            f"/api/meetings/{meeting_id}/speakers/not-a-speaker/name",
+            json={"label": "nobody"},
+        ).status_code == 404
+
+        stopped = client.post(
+            f"/api/live/sessions/{meeting_id}/stop",
+            json={"deadline": 2.0},
+        )
+        assert stopped.status_code == 200
+        final_meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert final_meeting["transcript"]["segments"][0]["speaker"] == "Alex"
+        assert client.get("/api/voiceprints").json() == owner_bank
+
+
+@pytest.mark.parametrize("ending", ["stop", "abort"])
+def test_terminal_action_clears_unfulfilled_manual_name_but_preserves_transcript_text(
+    tmp_path: Path,
+    ending: str,
+):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    evidence_state = {"seconds": 1.5}
+    app = make_app(database, identity_factory=lambda: ControlledIdentity(evidence_state))
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+
+        named = client.put(
+            f"/api/meetings/{meeting_id}/speakers/speaker-0001/name",
+            json={"label": "Pending name"},
+        )
+        assert named.status_code == 200
+        assert named.json()["enrollment"] == "pending"
+        assert named.json()["voiceprint_id"] is None
+        assert app.state.phase2_speaker_identity.pending_count == 1
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+
+        # Newly eligible final-tail evidence must not complete the pending enrollment.
+        evidence_state["seconds"] = 2.0
+        terminal = client.post(
+            f"/api/live/sessions/{meeting_id}/{ending}",
+            json={"deadline": 2.0} if ending == "stop" else {"reason": "test abort"},
+        )
+        assert terminal.status_code == 200
+        assert app.state.phase2_speaker_identity.pending_count == 0
+        meeting = client.get(f"/api/meetings/{meeting_id}").json()
+        assert meeting["transcript"]["segments"][0]["speaker"] == "Pending name"
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+
+
+def test_first_later_eligible_live_centroid_completes_pending_exactly_once(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    evidence_state = {"seconds": 1.5}
+    app = make_app(
+        database,
+        speech=(True, False, True, False, True, False),
+        identity_factory=lambda: ControlledIdentity(evidence_state),
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        named = client.put(
+            f"/api/meetings/{meeting_id}/speakers/speaker-0001/name",
+            json={"label": "Later eligible"},
+        )
+        assert named.json()["enrollment"] == "pending"
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+
+        evidence_state["seconds"] = 2.0
+        feed_two_lane_pairs(client, meeting_id, range(3, 6))
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] >= 3)
+        enrolled = client.get("/api/voiceprints").json()["voiceprints"]
+        assert [(item["label"], item["sample_count"]) for item in enrolled] == [
+            ("Later eligible", 1)
+        ]
+        assert app.state.phase2_speaker_identity.pending_count == 0
+
+        feed_two_lane_pairs(client, meeting_id, range(6, 9))
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] >= 4)
+        assert client.get("/api/voiceprints").json()["voiceprints"] == enrolled
+
+
+def test_cancelled_manual_name_joins_commit_publication_and_pending_before_next_revision(tmp_path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    evidence_state = {"seconds": 1.5}
+    app = make_app(
+        database, speech=(True, False, True, False),
+        identity_factory=lambda: ControlledIdentity(evidence_state),
+    )
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting_id)
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+        async def cancel_after_commit():
+            store = app.state.phase2_store
+            identity = app.state.phase2_speaker_identity
+            owner = await store.account_for_session(sessions["a"])
+            workspace = store.workspace(owner)
+            handle = await workspace.open_meeting(meeting_id)
+            committed, release = asyncio.Event(), asyncio.Event()
+            original = store._connection.commit
+            async def held_commit():
+                await original()
+                committed.set()
+                await release.wait()
+            store._connection.commit = held_commit
+            try:
+                caller = asyncio.create_task(identity.bank(workspace).name_speaker(
+                    handle, "speaker-0001", "Surviving name",
+                ))
+                await asyncio.wait_for(committed.wait(), timeout=3)
+                caller.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await caller
+                assert identity._naming_tasks
+                assert all(not task.cancelled() for task in identity._naming_tasks)
+                release.set()
+                await identity.shutdown()
+                binding = app.state.phase2_live._bindings[meeting_id]
+                assert binding.speaker_labels == {"speaker-0001": "Surviving name"}
+                assert binding.durable_version == 2
+                assert identity.pending_count == 1
+            finally:
+                release.set()
+                store._connection.commit = original
+        client.portal.call(cancel_after_commit)
+        feed_two_lane_pairs(client, meeting_id, range(3, 6))
+        wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] >= 3)
+        saved = client.get(f"/api/meetings/{meeting_id}").json()
+        assert {segment["speaker"] for segment in saved["transcript"]["segments"]} == {"Surviving name"}
 
 
 def test_shutdown_unbinds_late_terminal_finalizer_after_durable_interruption(tmp_path: Path):
@@ -1525,10 +1762,18 @@ def test_raw_stop_latch_cancelled_entrant_releases_only_its_claim():
     assert binding.raw_stop_attempt is None
 
 
-def test_failure_fence_closes_publication_before_joining_accepted_stop():
+@pytest.mark.parametrize("hold_identity_cleanup", [False, True])
+def test_failure_fence_closes_publication_before_joining_accepted_stop(hold_identity_cleanup):
     async def exercise():
         live = Phase2LiveMeetings(object(), audio_archive=None, audio_stages=None)
         completed = asyncio.Event()
+        identity_lock = asyncio.Lock()
+        if hold_identity_cleanup:
+            await identity_lock.acquire()
+        async def clear_identity(_handle):
+            async with identity_lock:
+                pass
+        live._speaker_identity = SimpleNamespace(clear_meeting=clear_identity)
         binding = SimpleNamespace(
             terminal_persisted=False, raw_stop_attempt=SimpleNamespace(completed=completed),
             capture_fenced=False, publication_fenced=False, queue=asyncio.Queue(),
@@ -1548,6 +1793,10 @@ def test_failure_fence_closes_publication_before_joining_accepted_stop():
         live._accept_raw("m", None, (SimpleNamespace(seq=1),))
         observed = (binding.publication_fenced, binding.capture_fenced, binding.queue.qsize())
         completed.set()
+        if hold_identity_cleanup:
+            live._accept_raw("m", None, (SimpleNamespace(seq=2),))
+            assert binding.queue.qsize() == 0
+            identity_lock.release()
         await fence
         assert observed == (True, False, 0)
     asyncio.run(exercise())

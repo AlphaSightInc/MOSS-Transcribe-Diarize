@@ -233,8 +233,9 @@ async def _seed_content_store(database: Path) -> tuple[Phase2Store, str, str]:
         await store._connection.execute(
             """
             INSERT INTO voiceprints(
-                account_id, voiceprint_id, label, revision, created_at_ms, updated_at_ms
-            ) VALUES (?, 'voiceprint-id-sentinel', 'voiceprint-label-sentinel', 1, ?, ?)
+                account_id, voiceprint_id, label, embedder_id, embedding_dimension,
+                revision, created_at_ms, updated_at_ms
+            ) VALUES (?, 'voiceprint-id-sentinel', 'voiceprint-label-sentinel', 'test-encoder', 2, 1, ?, ?)
             """,
             (account.account_id, now_ms, now_ms),
         )
