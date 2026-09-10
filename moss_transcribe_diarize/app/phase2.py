@@ -22,7 +22,6 @@ SCHEMA_VERSION = 2
 REQUIRED_SQLITE_RUNTIME = "3.53.4"
 SESSION_COOKIE = "__Host-moss_session"
 SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
-GOOGLE_CALLBACK_URL = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/auth/google/callback"
 DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )

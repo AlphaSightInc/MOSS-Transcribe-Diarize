@@ -25,8 +25,6 @@ dependencies = [
   "uvicorn>=0.30",
   "python-multipart>=0.0.9",
   "aiosqlite==0.22.1",
-  "Authlib==1.7.2",
-  "itsdangerous==2.2.0",
   "httpx==0.28.1",
   "yt-dlp[default]==2026.8.19",
 ]

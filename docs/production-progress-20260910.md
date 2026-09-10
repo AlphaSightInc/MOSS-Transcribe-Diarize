@@ -45,7 +45,35 @@ The audit does not establish an exposed production attack path. Updated Vitest a
 its matched packages to 4.1.11. Post-update: 121 frontend tests pass; type-check and
 build pass; `npm audit --json` reports zero vulnerabilities. Built assets unchanged.
 
-## C2 — Remaining sequence
+## C2 — Browser identity and irreversible revocation collectors
+
+- Replaced deployed Google admission measurement with two fresh persistent browser
+  profiles, overlapping first tabs, real nonempty file history, browser restart,
+  foreign-owner refusal, cookie privacy and trusted-TLS observations.
+- Revocation uses normal operator revoke, rejects old credentials and late writes,
+  and proves exact saved prefix plus decodable partial audio through the narrowly
+  approved read-only disposable-state seam. No reallow/recovery path.
+- Removed orphan Google callback helper and Authlib/itsdangerous dependencies;
+  installed dependency projection still binds the complete runtime.
+- Gate falsifiers reject each missing browser invariant and mismatched candidate
+  restore inventory: 64 qualification tests pass.
+- Browser bench: 13/13 production bootstrap assertions (including refused cookies
+  and unsupported Web Locks), plus 12 actual collector semantic assertions.
+  TLS/inference are explicitly stubbed only in the collector's local probe.
+- Revocation bench: seven measured checks pass, including live WAL reads, read-only
+  enforcement and corrupt-audio rejection. Neither bench is deployed qualification.
+- Adversarial review found three false-pass paths. Corrected: accepted File must
+  complete with nonempty speech after cookie loss; revoking B must preserve A's exact
+  saved meeting; first-tab overlap must be observed in the browser's actual lock
+  queue. Failed/interrupted/empty File, global revoke, changed peer and removed-lock
+  mutations are rejected. The removed-lock test runs the actual collector.
+- Full Python before these final reviewer corrections: 1085 passed, 2 skipped,
+  37 subtests passed (60.07 s). Focused qualification rerun covers the corrections.
+
+Automatic attempt-owned credentials/log collection and migration of the remaining
+Google-era lifecycle probes are still required before W1 qualification can run.
+
+## C3 — Remaining sequence
 
 1. Complete W1 deployed browser/lifecycle qualification producers and replace
    superseded prototype invocations; run full Python/frontend gates.

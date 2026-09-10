@@ -11,3 +11,11 @@ External AI remains browser/device-configured and called directly by that browse
 This supersedes Google/allowlist-person identity in ADR-0006/0007, schema-v1 ownership assumptions in ADR-0008, provider-settings provenance persistence in ADR-0011, and separate production-wave release sequencing in ADR-0012. Unrelated invariants, including audio custody, four-session capacity, and accepted voiceprint/diarization behavior, remain binding. New schema/first-tab coordination must be prototyped before production changes; incompatible existing databases are preserved, not silently reinterpreted.
 
 The exact execution and evidence gates are in [the approved completion plan](../production-plan-20260910.md). Quiet-hours audio restrictions and the final attended canary remain separate from silent automation.
+
+Qualification-only revocation evidence may read exact test-created rows through a
+read-only SQLite transaction and silently decode their audio. This exception is
+limited to disposable candidate roots proven empty by cutover preparation and bound
+to the same candidate restore plan. It does not permit database writes, authority
+restoration, unrelated/user-data inspection, or a new operator content interface.
+Artifacts contain checks and counts, never transcript/audio/credential values.
+Measured verdict: `prototypes/phase2-account-lifecycle/REVOCATION_SNAPSHOT_NOTES.md`.

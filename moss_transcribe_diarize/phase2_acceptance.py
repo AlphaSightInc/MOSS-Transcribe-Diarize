@@ -1,7 +1,9 @@
 """One append-only qualification attempt for one Phase-2 candidate.
 
 The module observes through Git, subprocesses, HTTP/browser-produced reports, and the existing
-operator command.  It never opens the product database or starts another product runtime.
+operator command. It never starts another product runtime. Revocation evidence alone
+reads exact test-created rows in disposable candidate state through read-only SQLite;
+it never restores browser authority or changes the database.
 """
 
 from __future__ import annotations
@@ -33,7 +35,7 @@ from .concurrency_evidence import (
     prestop_inference_projection,
 )
 from .installed_candidate import installed_dependency_projection, record_projection_sha256
-from .app.phase2 import GOOGLE_CALLBACK_URL
+from .phase2_g7_canary import G7_PRODUCTION_ORIGIN
 
 
 SCHEMA = "moss-phase2-acceptance.v1"
@@ -166,7 +168,7 @@ EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
     "deployed": {
         "G0": ("installed_candidate_identity", "zero_work_end"),
         "G1": ("cross_owner_matrix", "sentinel_absence", "same_account_convergence"),
-        "G2": ("real_google_oauth", "revocation_lifecycle"),
+        "G2": ("browser_workspace_identity", "revocation_lifecycle"),
         "G3": ("meeting_modes_history_restart", "crash_recovery"),
         "G4": ("four_session_capacity", "eight_session_overload", "quality_corpus"),
         "G5": ("audio_durability_download",),
@@ -176,7 +178,7 @@ EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
     "pre_admission": {
         "G0": ("installed_candidate_identity", "zero_work_end"),
         "G1": ("cross_owner_matrix", "sentinel_absence"),
-        "G2": ("real_google_oauth", "revocation_lifecycle"),
+        "G2": ("browser_workspace_identity", "revocation_lifecycle"),
         "G3": ("meeting_modes_history_restart",),
         "G4": ("four_session_capacity", "eight_session_overload", "quality_corpus"),
         "G5": ("audio_durability_download",),
@@ -421,7 +423,6 @@ def discover_candidate(repo: Path) -> dict[str, object]:
             "executable": str(Path(sys.executable).resolve()),
             "sqlite": sqlite3.sqlite_version,
             "aiosqlite": _package_version("aiosqlite"),
-            "authlib": _package_version("Authlib"),
             "platform": platform.platform(),
         },
         "dependencies": {
@@ -1671,7 +1672,6 @@ def _validate_raw_predicate(
             and raw.get("dependency_projection_sha256") == dependency_projection_sha256
             and raw.get("sqlite_runtime") == REQUIRED_SQLITE
             and raw.get("aiosqlite") == "0.22.1"
-            and raw.get("authlib") == "1.7.2"
             and isinstance(manifest, dict)
             and manifest.get("schema") == "moss-account-candidate.v1"
             and manifest.get("activation_state") == "staged_inert"
@@ -1811,15 +1811,20 @@ def _validate_raw_predicate(
         )
     if predicate_id == "same_account_convergence":
         return int(raw.get("clients", 0)) >= 2 and int(raw.get("observations", 0)) > 0 and raw.get("mismatches") == 0
-    if predicate_id == "real_google_oauth":
+    if predicate_id == "browser_workspace_identity":
         cookie = raw.get("cookie_contract")
         tls = raw.get("tls_identity")
         return (
-            raw.get("provider") == "google"
-            and raw.get("real_external_accounts") is True
-            and raw.get("allowed_completed") == 1
-            and raw.get("denied_completed") == 1
-            and raw.get("denied_accounts_created") == 0
+            raw.get("first_tabs") == 2
+            and raw.get("first_tab_lock_contention_observed") is True
+            and raw.get("created_workspaces") == 2
+            and raw.get("same_profile_owner") is True
+            and raw.get("profiles_isolated") is True
+            and raw.get("foreign_meeting_status") == 404
+            and raw.get("mutation_without_cookie_status") == 401
+            and raw.get("invalid_cookie_bootstrap_status") == 401
+            and raw.get("cross_origin_status") == 403
+            and raw.get("nonempty_saved_history") is True
             and raw.get("tls_trusted_without_interstitial") is True
             and isinstance(tls, dict)
             and tls.get("trusted") is True
@@ -1831,12 +1836,12 @@ def _validate_raw_predicate(
             and bool(tls["not_after"])
             and raw.get("browser_restart_session_survived") is True
             and raw.get("history_survived_restart") is True
-            and raw.get("callback_url") == GOOGLE_CALLBACK_URL
-            and raw.get("callback_observations") == 2
+            and raw.get("workspace_url") == G7_PRODUCTION_ORIGIN + "/"
             and isinstance(cookie, dict)
             and cookie.get("cookie_secure") is True
             and cookie.get("cookie_http_only") is True
             and cookie.get("cookie_same_site") == "Lax"
+            and cookie.get("javascript_cannot_read_cookie") is True
         )
     if predicate_id == "revocation_lifecycle":
         return (
@@ -2045,7 +2050,6 @@ def _cross_layer_identity_errors(
         "dependency_projection_sha256",
         "sqlite_runtime",
         "aiosqlite",
-        "authlib",
         "manifest",
         "toolchain",
         "accelerator",
@@ -2209,8 +2213,6 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
             identity_errors.append("sqlite_runtime_mismatch")
         if candidate["runtime"]["aiosqlite"] != "0.22.1":
             identity_errors.append("aiosqlite_runtime_mismatch")
-        if candidate["runtime"]["authlib"] != "1.7.2":
-            identity_errors.append("authlib_runtime_mismatch")
         if not isinstance(candidate.get("wheel"), dict) or candidate["wheel"].get("record_verified") is not True:
             identity_errors.append("candidate_wheel_unmeasured")
 

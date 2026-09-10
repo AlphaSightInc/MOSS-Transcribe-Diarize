@@ -16,13 +16,14 @@ import ssl
 import stat
 import subprocess
 import time
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
-from .app.phase2 import GOOGLE_CALLBACK_URL, SESSION_COOKIE
+from .app.phase2 import SESSION_COOKIE
 
 
 class BrowserMeasurementError(RuntimeError):
@@ -36,7 +37,7 @@ ACCEPTED_FAILURE_URL = "https://127.0.0.1:1/phase2-acceptance-failure"
 def _trusted_tls_identity(origin: str) -> dict[str, object]:
     parsed = urlsplit(origin)
     if parsed.scheme != "https" or not parsed.hostname:
-        raise BrowserMeasurementError("OAuth origin must use HTTPS")
+        raise BrowserMeasurementError("Workspace origin must use HTTPS")
     try:
         with socket.create_connection((parsed.hostname, parsed.port or 443), timeout=15) as raw:
             with ssl.create_default_context().wrap_socket(
@@ -44,7 +45,7 @@ def _trusted_tls_identity(origin: str) -> dict[str, object]:
             ) as secured:
                 certificate = secured.getpeercert()
     except (OSError, ssl.SSLError) as exc:
-        raise BrowserMeasurementError("OAuth origin TLS is not trusted") from exc
+        raise BrowserMeasurementError("Workspace origin TLS is not trusted") from exc
     subject = ",".join(
         f"{key}={value}"
         for group in certificate.get("subject", ())
@@ -53,7 +54,7 @@ def _trusted_tls_identity(origin: str) -> dict[str, object]:
     sans = sorted(value for _kind, value in certificate.get("subjectAltName", ()))
     expiry = certificate.get("notAfter")
     if not subject or not sans or not isinstance(expiry, str) or not expiry:
-        raise BrowserMeasurementError("OAuth origin TLS identity is incomplete")
+        raise BrowserMeasurementError("Workspace origin TLS identity is incomplete")
     return {
         "trusted": True,
         "subject": subject,
@@ -121,199 +122,140 @@ class BrowserCampaign:
         if not self.chrome.is_file():
             raise BrowserMeasurementError("Chrome executable is unavailable")
 
-    def real_google_oauth(self, control: Any) -> dict[str, object]:
-        """Traverse the real provider with one allowed and one denied external account."""
+    def browser_workspace_identity(self, control: Any) -> dict[str, object]:
+        """Measure input-free first visits, isolation and nonempty history continuity."""
 
-        allowed_email = _text(self.config, "allowed_google_email").strip().lower()
-        denied_email = _text(self.config, "denied_google_email").strip().lower()
-        expected_callback = _text(self.config, "google_callback_url").split("?", 1)[0]
-        if expected_callback != GOOGLE_CALLBACK_URL:
-            raise BrowserMeasurementError("Google callback does not match the committed product callback")
-        if not allowed_email or allowed_email == denied_email:
-            raise BrowserMeasurementError("OAuth accounts must be distinct")
-        control("accounts.allow", allowed_email)
-        control("accounts.revoke", denied_email)
-        before_rows = control("accounts.list", None)
-        denied_before = sum(
-            isinstance(item, dict) and item.get("email") == denied_email
-            for item in (before_rows if isinstance(before_rows, list) else [])
-        )
-        tls_identity = _trusted_tls_identity(self.origin)
-        results: dict[str, dict[str, object]] = {}
-        allowed_history_count = 0
-        callback_observations = 0
-        with sync_playwright() as playwright:
-            for label, profile_key, expected in (
-                ("allowed", "allowed_google_browser_profile", "signed-in"),
-                ("denied", "denied_google_browser_profile", "denied"),
-            ):
-                profile = Path(_text(self.config, profile_key)).expanduser().resolve()
-                if not profile.is_dir():
-                    raise BrowserMeasurementError(f"{label} Google browser profile is unavailable")
-                context = playwright.chromium.launch_persistent_context(
-                    str(profile), executable_path=str(self.chrome), headless=True
-                )
+        tls = _trusted_tls_identity(self.origin)
+        fixture = Path(_text(self.config, "file_fixture")).expanduser()
+        if not fixture.is_file():
+            raise BrowserMeasurementError("Workspace probe requires real speech input")
+        before = control("accounts.list", None)
+        if not isinstance(before, list):
+            raise BrowserMeasurementError("Workspace inventory is unavailable")
+        with tempfile.TemporaryDirectory(prefix="workspace-identity-", dir=self.work) as scratch:
+            with sync_playwright() as playwright:
+                def launch(name: str):
+                    return playwright.chromium.launch_persistent_context(
+                        str(Path(scratch) / name), executable_path=str(self.chrome),
+                        headless=True, args=["--mute-audio"],
+                    )
+
+                first, second = launch("first"), launch("second")
                 try:
-                    page = context.pages[0] if context.pages else context.new_page()
-                    observed_callbacks: list[str] = []
-                    page.on(
-                        "request",
-                        lambda request: observed_callbacks.append(
-                            request.url.split("?", 1)[0]
-                        )
-                        if request.url.split("?", 1)[0] == expected_callback
-                        else None,
+                    held = []
+                    first.route("**/api/workspace/bootstrap", lambda route: held.append(route))
+                    pages = [first.new_page(), first.new_page()]
+                    for page in pages:
+                        page.goto(self.origin, wait_until="commit")
+                        page.wait_for_selector('[data-auth-state="bootstrap"]')
+                    deadline = time.monotonic() + 10
+                    contention = False
+                    while time.monotonic() < deadline:
+                        # Query actual browser lock state, not DOM readiness: one initializer
+                        # must hold the lock while the second is already waiting for it.
+                        contention = pages[0].evaluate("""async () => {
+                          const state = await navigator.locks.query();
+                          const named = items => items.filter(x => x.name === 'moss-workspace-bootstrap');
+                          return named(state.held).length === 1 && named(state.pending).length === 1;
+                        }""")
+                        if len(held) > 1 or (contention and len(held) == 1):
+                            break
+                        pages[0].wait_for_timeout(10)
+                    if len(held) != 1 or not contention:
+                        for route in held:
+                            route.abort()
+                        first.unroute("**/api/workspace/bootstrap")
+                        raise BrowserMeasurementError("First tabs did not serialize bootstrap")
+                    held[0].continue_()
+                    first.unroute("**/api/workspace/bootstrap")
+                    for page in pages:
+                        page.wait_for_selector('[data-auth-state="signed-in"]')
+                    owners = [
+                        page.evaluate("async () => (await (await fetch('/api/auth/session')).json()).workspace_id")
+                        for page in pages
+                    ]
+                    peer_page = second.new_page()
+                    peer_page.goto(self.origin, wait_until="domcontentloaded")
+                    peer_page.wait_for_selector('[data-auth-state="signed-in"]')
+                    peer_id = peer_page.evaluate(
+                        "async () => (await (await fetch('/api/auth/session')).json()).workspace_id"
                     )
-                    page.goto(f"{self.origin}/auth/google", wait_until="domcontentloaded")
-                    page.wait_for_selector(f'[data-auth-state="{expected}"]', timeout=120_000)
-                    cookies = context.cookies(self.origin)
-                    session = next(
-                        (item for item in cookies if item.get("name") == SESSION_COOKIE), None
-                    )
-                    results[label] = {
-                        "state": expected,
-                        "session_cookie_present": session is not None,
-                        "cookie_secure": None if session is None else session.get("secure"),
-                        "cookie_http_only": None if session is None else session.get("httpOnly"),
-                        "cookie_same_site": None if session is None else session.get("sameSite"),
+                    cookie = next(c for c in first.cookies(self.origin) if c["name"] == SESSION_COOKIE)
+                    peer_cookie = next(c for c in second.cookies(self.origin) if c["name"] == SESSION_COOKIE)
+                    cookie_contract = {
+                        "cookie_secure": cookie["secure"],
+                        "cookie_http_only": cookie["httpOnly"],
+                        "cookie_same_site": cookie["sameSite"],
+                        "javascript_cannot_read_cookie": pages[0].evaluate("document.cookie === ''"),
                     }
-                    if label == "allowed":
-                        allowed_history_count = page.locator("[data-open-meeting]").count()
-                    callback_observations += len(observed_callbacks)
+                    # Nonempty saved history, not equality of two empty lists.
+                    created = first.request.post(
+                        self.origin + "/api/meetings/file",
+                        multipart={"file": {"name": fixture.name, "mimeType": "audio/wav", "buffer": fixture.read_bytes()}},
+                    )
+                    if created.status != 201:
+                        raise BrowserMeasurementError("Workspace history fixture was not accepted")
+                    meeting_id = created.json()["id"]
+                    deadline = time.monotonic() + 600
+                    saved = None
+                    while time.monotonic() < deadline:
+                        response = first.request.get(self.origin + "/api/meetings/" + meeting_id)
+                        if response.status != 200:
+                            raise BrowserMeasurementError("Workspace history fixture became inaccessible")
+                        saved = response.json()
+                        if saved["status"] != "active":
+                            break
+                        pages[0].wait_for_timeout(100)
+                    if not saved or saved["status"] != "completed" or not saved.get("transcript", {}).get("segments"):
+                        raise BrowserMeasurementError("Workspace history fixture has no completed speech")
+                    foreign_status = second.request.get(self.origin + "/api/meetings/" + meeting_id).status
+                    cross_origin_status = first.request.post(
+                        self.origin + "/api/workspace/bootstrap",
+                        headers={"Origin": "https://foreign.invalid"},
+                    ).status
+                    second.clear_cookies()
+                    missing_status = second.request.put(
+                        self.origin + "/api/meetings/" + meeting_id + "/title",
+                        data={"title": "must not write"},
+                    ).status
+                    second.add_cookies([{**peer_cookie, "value": "invalid-workspace-credential"}])
+                    invalid_status = second.request.post(self.origin + "/api/workspace/bootstrap").status
                 finally:
-                    context.close()
-            profile = Path(
-                _text(self.config, "allowed_google_browser_profile")
-            ).expanduser().resolve()
-            context = playwright.chromium.launch_persistent_context(
-                str(profile), executable_path=str(self.chrome), headless=True
-            )
-            try:
-                page = context.pages[0] if context.pages else context.new_page()
-                _wait_workspace(page, self.origin)
-                restart_session_survived = True
-                restart_history_survived = (
-                    page.locator("[data-open-meeting]").count()
-                    == allowed_history_count
-                )
-            finally:
-                context.close()
-        accounts = control("accounts.list", None)
-        rows = accounts if isinstance(accounts, list) else []
-        denied_after = sum(
-            isinstance(item, dict) and item.get("email") == denied_email for item in rows
-        )
-        allowed = results["allowed"]
-        denied = results["denied"]
-        return {
-            "provider": "google",
-            "real_external_accounts": True,
-            "allowed_completed": int(
-                allowed["state"] == "signed-in" and allowed["session_cookie_present"] is True
-            ),
-            "denied_completed": int(
-                denied["state"] == "denied" and denied["session_cookie_present"] is False
-            ),
-            "denied_accounts_created": int(denied_after > denied_before),
-            "tls_trusted_without_interstitial": tls_identity["trusted"],
-            "tls_identity": tls_identity,
-            "browser_restart_session_survived": restart_session_survived,
-            "history_survived_restart": restart_history_survived,
-            "callback_url": expected_callback,
-            "callback_observations": callback_observations,
-            "cookie_contract": allowed,
-        }
+                    first.close()
+                    second.close()
 
-    def fresh_sign_in_history(
-        self,
-        profile_key: str,
-        expected_meeting_ids: tuple[str, ...],
-        *,
-        expected_transcripts: Mapping[str, object] | None = None,
-    ) -> dict[str, object]:
-        profile = Path(_text(self.config, profile_key)).expanduser().resolve()
-        with sync_playwright() as playwright:
-            context = playwright.chromium.launch_persistent_context(
-                str(profile), executable_path=str(self.chrome), headless=True
-            )
-            try:
-                page = context.pages[0] if context.pages else context.new_page()
-                page.goto(f"{self.origin}/auth/google", wait_until="domcontentloaded")
-                page.wait_for_selector('[data-auth-state="signed-in"]', timeout=120_000)
-                page.wait_for_selector('[data-boot="ready"]')
-                observed = {
-                    meeting_id: page.locator(
-                        f'[data-open-meeting="{meeting_id}"]'
-                    ).count()
-                    == 1
-                    for meeting_id in expected_meeting_ids
-                }
-                states = page.evaluate(
-                    """async (ids) => Object.fromEntries(await Promise.all(ids.map(async (id) => {
-                      const response = await fetch(`/api/meetings/${encodeURIComponent(id)}`);
-                      if (!response.ok) return [id, {http_status: response.status}];
-                      const value = await response.json();
-                      return [id, {
-                        http_status: response.status,
-                        status: value.status,
-                        transcript_version: value.transcript?.version ?? null,
-                        audio_state: value.audio?.state ?? null
-                      }];
-                    })))""",
-                    list(expected_meeting_ids),
-                )
-                transcript_matches = True
-                if expected_transcripts:
-                    observed_transcripts = page.evaluate(
-                        """async (ids) => Object.fromEntries(await Promise.all(ids.map(async (id) => {
-                          const response = await fetch(`/api/meetings/${encodeURIComponent(id)}`);
-                          const value = await response.json();
-                          return [id, value.transcript ?? null];
-                        })))""",
-                        list(expected_transcripts),
-                    )
-                    transcript_matches = observed_transcripts == dict(expected_transcripts)
-                partial_audio_playable = True
-                for meeting_id in expected_transcripts or {}:
-                    response = context.request.get(
-                        f"{self.origin}/api/meetings/{meeting_id}/audio/download"
-                    )
-                    if response.status != 200:
-                        partial_audio_playable = False
-                        continue
-                    payload = response.body()
-                    probe = subprocess.run(
-                        (
-                            "ffprobe",
-                            "-v",
-                            "error",
-                            "-show_entries",
-                            "stream=codec_name",
-                            "-of",
-                            "default=nw=1:nk=1",
-                            "pipe:0",
-                        ),
-                        input=payload,
-                        capture_output=True,
-                        check=False,
-                    )
-                    partial_audio_playable = partial_audio_playable and (
-                        probe.returncode == 0 and probe.stdout.strip() == b"mp3"
-                    )
-                cookies = context.cookies(self.origin)
-                session = next(
-                    (item for item in cookies if item.get("name") == SESSION_COOKIE), None
-                )
-                return {
-                    "signed_in": True,
-                    "history": observed,
-                    "states": states,
-                    "fresh_cookie_present": session is not None,
-                    "durable_transcript_matches": transcript_matches,
-                    "partial_audio_playable": partial_audio_playable,
-                }
-            finally:
-                context.close()
+                restarted = launch("first")
+                try:
+                    page = restarted.new_page()
+                    page.goto(self.origin, wait_until="domcontentloaded")
+                    page.wait_for_selector('[data-auth-state="signed-in"]')
+                    returned = restarted.request.get(self.origin + "/api/auth/session")
+                    restored = restarted.request.get(self.origin + "/api/meetings/" + meeting_id)
+                    same_owner = returned.status == 200 and returned.json().get("workspace_id") == owners[0]
+                    history_survived = restored.status == 200 and restored.json() == saved
+                finally:
+                    restarted.close()
+        after = control("accounts.list", None)
+        if not isinstance(after, list):
+            raise BrowserMeasurementError("Final workspace inventory is unavailable")
+        return {
+            "workspace_url": self.origin + "/",
+            "first_tabs": 2,
+            "first_tab_lock_contention_observed": contention,
+            "created_workspaces": len(after) - len(before),
+            "same_profile_owner": owners[0] == owners[1],
+            "profiles_isolated": peer_id != owners[0],
+            "foreign_meeting_status": foreign_status,
+            "mutation_without_cookie_status": missing_status,
+            "invalid_cookie_bootstrap_status": invalid_status,
+            "cross_origin_status": cross_origin_status,
+            "tls_trusted_without_interstitial": tls["trusted"],
+            "tls_identity": tls,
+            "browser_restart_session_survived": same_owner,
+            "history_survived_restart": history_survived,
+            "nonempty_saved_history": True,
+            "cookie_contract": cookie_contract,
+        }
 
     def product_regression(
         self, meeting_id: str, export_meeting_id: str

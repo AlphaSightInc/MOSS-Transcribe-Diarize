@@ -15,8 +15,11 @@ import json
 import socket
 import sqlite3
 import tempfile
+import wave
 from contextlib import asynccontextmanager
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import uvicorn
 from playwright.async_api import async_playwright
@@ -25,18 +28,23 @@ from moss_transcribe_diarize.app import phase2
 
 
 @asynccontextmanager
-async def running(database, port=0):
+async def running(database, port=0, *, file_runner=None):
     listener = socket.socket()
     listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     listener.bind(("127.0.0.1", port))
     port = listener.getsockname()[1]
-    app = phase2.create_phase2_app(database_path=database)
+    app = phase2.create_phase2_app(
+        database_path=database, file_runner=file_runner,
+        file_work_root=database.parent / "file-work",
+    )
 
     @app.middleware("http")
     async def delayed_cookie(request, call_next):
         response = await call_next(request)
         if request.url.path == "/api/workspace/bootstrap":
             await asyncio.sleep(.05)  # Fault injection, not a production threshold.
+            if getattr(app.state, "probe_drop_cookie", False):
+                del response.headers["set-cookie"]
         return response
     server = uvicorn.Server(uvicorn.Config(app, log_level="error", access_log=False))
     task = asyncio.create_task(server.serve(sockets=[listener]))
@@ -118,6 +126,25 @@ async def probe(root):
                     evidence["without_lock_workspace_count"] = len(set(observed_ids))
                 finally:
                     await control.close()
+                blocked = await profile("cookie-roundtrip-failure")
+                try:
+                    app.state.probe_drop_cookie = True
+                    page = await blocked.new_page()
+                    await page.goto(origin)
+                    await page.get_by_text("Allow cookies for this site, then reload.", exact=True).wait_for()
+                    evidence["failed_cookie_roundtrip_blocks_ui"] = await page.locator("[data-workspace-name]").count() == 0
+                finally:
+                    app.state.probe_drop_cookie = False
+                    await blocked.close()
+                unsupported = await profile("unsupported-locks")
+                try:
+                    page = await unsupported.new_page()
+                    await page.add_init_script("Object.defineProperty(navigator, 'locks', {value: undefined})")
+                    await page.goto(origin)
+                    await page.get_by_text("Use Chrome with trusted HTTPS to open this workspace.", exact=True).wait_for()
+                    evidence["unsupported_locks_blocks_ui"] = await page.locator("[data-workspace-name]").count() == 0
+                finally:
+                    await unsupported.close()
                 print(json.dumps({"stage": "bootstrap", **evidence}), flush=True)
             await a.close()
             a = await profile("profile-a")
@@ -147,6 +174,8 @@ async def probe(root):
         "restart_saved_meeting": True, "lost_cookie_mutation_status": 401,
         "new_visit_new_workspace": True, "invalid_cookie_bootstrap_status": 401,
         "without_lock_workspace_count": 2,
+        "failed_cookie_roundtrip_blocks_ui": True,
+        "unsupported_locks_blocks_ui": True,
     }
     evidence["passed"] = all(evidence.get(k) == v for k, v in expected.items())
     evidence["checks"] = len(expected)
@@ -155,6 +184,72 @@ async def probe(root):
         raise SystemExit(1)
 
 
+async def collector_probe(root):
+    """Exercise the actual G2 collector with only TLS and inference stubbed.
+
+    This is a local collector-semantics probe. It MUST NOT supply deployed evidence:
+    production TLS is not trusted here and this runner does not establish speech quality.
+    """
+    from moss_transcribe_diarize.phase2_acceptance_browser import BrowserCampaign, BrowserMeasurementError
+
+    phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version
+    fixture = root / "collector.wav"
+    with wave.open(str(fixture), "wb") as audio:
+        audio.setnchannels(1)
+        audio.setsampwidth(2)
+        audio.setframerate(16000)
+        audio.writeframes(b"\0\0" * 16000)
+
+    class Runner:
+        model_path = "semantic-probe-only"
+
+        def transcribe(self, path, **kwargs):
+            return SimpleNamespace(text="[0][S01]saved collector sentinel[1]")
+
+    async with running(root / "collector.sqlite3", file_runner=Runner()) as (app, port):
+        campaign = BrowserCampaign(
+            {"https_origin": "https://localhost", "file_fixture": str(fixture),
+             "chrome_binary": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"},
+            repo=Path.cwd(), work=root,
+        )
+        campaign.origin = f"http://localhost:{port}"
+        loop = asyncio.get_running_loop()
+
+        def control(command, _unused):
+            assert command == "accounts.list"
+            return asyncio.run_coroutine_threadsafe(app.state.phase2_store.list_accounts(), loop).result(10)
+
+        with patch("moss_transcribe_diarize.phase2_acceptance_browser._trusted_tls_identity", return_value={"trusted": False}):
+            result = await asyncio.to_thread(campaign.browser_workspace_identity, control)
+        expected = {
+            "first_tabs": 2, "created_workspaces": 2, "same_profile_owner": True,
+            "first_tab_lock_contention_observed": True,
+            "profiles_isolated": True, "foreign_meeting_status": 404,
+            "mutation_without_cookie_status": 401, "invalid_cookie_bootstrap_status": 401,
+            "cross_origin_status": 403, "browser_restart_session_survived": True,
+            "history_survived_restart": True, "nonempty_saved_history": True,
+        }
+        assert all(result.get(key) == value for key, value in expected.items()), result
+        assert result["tls_trusted_without_interstitial"] is False
+        print(json.dumps({"collector_semantics": "pass", "checks": len(expected), "deployed_qualification": False}), flush=True)
+        original_html = phase2._bootstrap_html
+        def without_lock(*, unavailable):
+            return original_html(unavailable=unavailable).replace(
+                "navigator.locks.request('moss-workspace-bootstrap', async () => {",
+                "(async () => {",
+            ).replace("  });\n  location.replace", "  })();\n  location.replace")
+        rejected = False
+        with patch("moss_transcribe_diarize.phase2_acceptance_browser._trusted_tls_identity", return_value={"trusted": False}), patch.object(phase2, "_bootstrap_html", without_lock):
+            try:
+                await asyncio.to_thread(campaign.browser_workspace_identity, control)
+            except BrowserMeasurementError as exc:
+                assert str(exc) == "First tabs did not serialize bootstrap"
+                rejected = True
+        assert rejected
+        print(json.dumps({"collector_removed_lock_mutation": "rejected", "deployed_qualification": False}), flush=True)
+
+
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="moss-browser-prototype-") as scratch:
         asyncio.run(probe(Path(scratch)))
+        asyncio.run(collector_probe(Path(scratch)))

@@ -689,7 +689,6 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
             "dependency_projection_sha256": "e" * 64,
             "sqlite_runtime": "3.53.4",
             "aiosqlite": "0.22.1",
-            "authlib": "1.7.2",
             "manifest": {
                 "schema": "moss-account-candidate.v1",
                 "activation_state": "staged_inert",
@@ -761,7 +760,7 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
             ]
         },
         "same_account_convergence": {"clients": 2, "observations": 4, "mismatches": 0},
-        "real_google_oauth": {"provider": "google", "real_external_accounts": True, "allowed_completed": 1, "denied_completed": 1, "denied_accounts_created": 0, "tls_trusted_without_interstitial": True, "tls_identity": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"}, "browser_restart_session_survived": True, "history_survived_restart": True, "callback_url": acceptance.GOOGLE_CALLBACK_URL, "callback_observations": 2, "cookie_contract": {"cookie_secure": True, "cookie_http_only": True, "cookie_same_site": "Lax"}},
+        "browser_workspace_identity": {"first_tabs": 2, "first_tab_lock_contention_observed": True, "created_workspaces": 2, "same_profile_owner": True, "profiles_isolated": True, "foreign_meeting_status": 404, "mutation_without_cookie_status": 401, "invalid_cookie_bootstrap_status": 401, "cross_origin_status": 403, "nonempty_saved_history": True, "tls_trusted_without_interstitial": True, "tls_identity": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"}, "browser_restart_session_survived": True, "history_survived_restart": True, "workspace_url": acceptance.G7_PRODUCTION_ORIGIN + "/", "cookie_contract": {"cookie_secure": True, "cookie_http_only": True, "cookie_same_site": "Lax", "javascript_cannot_read_cookie": True}},
         "revocation_lifecycle": {"cases": 4, "failures": 0, "late_commits": 0, "stale_authority_revived": 0, "durable_prefix_preserved": True, "partial_audio_playable": True},
         "meeting_modes_history_restart": {"modes": ["live", "file", "multi_file", "url", "serial_batch"], "same_account_clients": 2, "history_mismatches": 0, "restart_failures": 0, "one_item_failure_isolated": True, "submissions": {"single_file": 1, "multi_file": 2, "url": 2, "serial_batch": 6, "browser_closed_after_accept": 1, "accepted_failure": 1, "input_boundary_rejection": 1}},
         "crash_recovery": {"cases": 2, "nonempty_durable_prefix": True, "lost_commits": 0, "durable_document_mismatches": 0, "audio_prefix_failures": 0, "process_replaced": True, "resumed_capture": 0, "non_interrupted_active_rows": 0},
@@ -839,6 +838,78 @@ def _report(layer: str, sha: str, wheel: str) -> dict[str, object]:
         for predicate_id in predicate_ids:
             predicates.append({"gate": gate, "id": predicate_id, **_case(), "raw": _raw(predicate_id, sha, wheel)})
     return {"schema": acceptance.OBSERVATION_SCHEMA, "layer": layer, "candidate_sha": sha, "predicates": predicates}
+
+
+@pytest.mark.parametrize("field,value", [
+    ("first_tabs", 1), ("created_workspaces", 3), ("same_profile_owner", False),
+    ("first_tab_lock_contention_observed", False),
+    ("profiles_isolated", False), ("foreign_meeting_status", 200),
+    ("mutation_without_cookie_status", 200), ("invalid_cookie_bootstrap_status", 200),
+    ("cross_origin_status", 200), ("nonempty_saved_history", False),
+    ("tls_trusted_without_interstitial", False),
+    ("browser_restart_session_survived", False), ("history_survived_restart", False),
+    ("workspace_url", "https://other.example/"),
+    ("cookie_contract.cookie_secure", False), ("cookie_contract.cookie_http_only", False),
+    ("cookie_contract.cookie_same_site", "None"),
+    ("cookie_contract.javascript_cannot_read_cookie", False),
+    ("tls_identity.trusted", False), ("tls_identity.subject", ""),
+    ("tls_identity.subject_alt_names", []), ("tls_identity.not_after", ""),
+])
+def test_browser_workspace_gate_rejects_each_missing_invariant(field, value):
+    raw = _raw("browser_workspace_identity", "a" * 40, "unused")
+    def valid():
+        return acceptance._validate_raw_predicate(
+            "browser_workspace_identity", {"raw": raw},
+            candidate_sha="a" * 40, candidate_tree="b" * 40,
+            uv_lock_sha256="c" * 64, fixtures=FIXTURES,
+            wheel_record_projection_sha256="d" * 64,
+            dependency_projection_sha256="e" * 64,
+        )
+    assert valid()
+    target = raw
+    parts = field.split(".")
+    for part in parts[:-1]:
+        target = target[part]
+    target[parts[-1]] = value
+    assert not valid()
+    del target[parts[-1]]
+    assert not valid()
+
+
+@pytest.mark.parametrize("mutation", ["schema", "sha", "missing_paths", "missing_audio", "relative_path"])
+def test_revocation_snapshot_refuses_unbound_candidate_state(monkeypatch, tmp_path, mutation):
+    from moss_transcribe_diarize import phase2_acceptance_external as external
+    from moss_transcribe_diarize.phase2_cutover import RESTORE_PLAN_SCHEMA
+    plan = {
+        "schema": RESTORE_PLAN_SCHEMA, "candidate_sha": "a" * 40,
+        "candidate_state_paths": {
+            "database": str(tmp_path / "database.sqlite3"),
+            "meeting_audio": str(tmp_path / "audio"),
+        },
+    }
+    path = tmp_path / "restore-plan.json"
+    path.write_text(json.dumps(plan))
+    campaign = external.FixedAccountCampaign(
+        candidate_sha="a" * 40, config={"cutover_restore_plan": str(path)},
+    )
+    calls = []
+    monkeypatch.setattr(external, "_read_revocation_snapshot", lambda *args: calls.append(args) or {})
+    assert campaign._revocation_snapshot("owner", ("meeting",)) == {}
+    assert len(calls) == 1
+    if mutation == "schema":
+        plan["schema"] = "other"
+    elif mutation == "sha":
+        plan["candidate_sha"] = "b" * 40
+    elif mutation == "missing_paths":
+        del plan["candidate_state_paths"]
+    elif mutation == "missing_audio":
+        del plan["candidate_state_paths"]["meeting_audio"]
+    else:
+        plan["candidate_state_paths"]["database"] = "relative.sqlite3"
+    path.write_text(json.dumps(plan))
+    with pytest.raises(external.ExternalMeasurementError):
+        campaign._revocation_snapshot("owner", ("meeting",))
+    assert len(calls) == 1
 
 
 def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only():
@@ -1002,8 +1073,8 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     assert "deployed:G4:eight_session_overload:failed" in errors
 
     report = _report("deployed", sha, wheel)
-    oauth = next(item for item in report["predicates"] if item["id"] == "real_google_oauth")
-    oauth["raw"]["callback_url"] = "https://other.example/auth/google/callback"
+    oauth = next(item for item in report["predicates"] if item["id"] == "browser_workspace_identity")
+    oauth["raw"]["workspace_url"] = "https://other.example/"
     operator = next(item for item in report["predicates"] if item["id"] == "operator_control")
     operator["raw"]["interrupt_probe"]["admitted_item_processed_events"] = 1
     outcomes, errors = acceptance.evaluate_external_report(
@@ -1018,7 +1089,7 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     )
     assert outcomes["G2"] is False
     assert outcomes["G6"] is False
-    assert "deployed:G2:real_google_oauth:failed" in errors
+    assert "deployed:G2:browser_workspace_identity:failed" in errors
     assert "deployed:G6:operator_control:failed" in errors
 
     report = _report("deployed", sha, wheel)
@@ -1402,7 +1473,6 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
                     "sha256": "e" * 64,
                     "packages": [
                         {"name": "aiosqlite", "version": "0.22.1"},
-                        {"name": "Authlib", "version": "1.7.2"},
                     ],
                 },
                 "sqlite_runtime": "3.53.4",
@@ -1633,21 +1703,22 @@ def test_real_g1_and_g2_producers_cross_fixed_client_and_browser_seams(
         "mismatches": 0,
     }
 
-    oauth = _raw("real_google_oauth", "a" * 40, "unused")
+    oauth = _raw("browser_workspace_identity", "a" * 40, "unused")
 
     class Browser:
-        def real_google_oauth(self, control):
+        def browser_workspace_identity(self, control):
             assert control("status") == {"ok": True}
             return oauth
 
     campaign._browser = Browser()
     monkeypatch.setattr(external, "_control", lambda *args, **kwargs: {"ok": True})
-    assert campaign.real_google_oauth() == oauth
-    assert Path("browser/oauth-counts.json") in campaign.safe_artifacts
+    assert campaign.browser_workspace_identity() == oauth
+    assert Path("browser/workspace-identity.json") in campaign.safe_artifacts
 
 
+@pytest.mark.parametrize("regression", [None, "failed", "interrupted", "empty_transcript", "global_revoke", "changed_peer"])
 def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durable_prefix(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, regression,
 ):
     a_sentinel = tmp_path / "a-sentinel"
     b_sentinel = tmp_path / "b-sentinel"
@@ -1658,6 +1729,7 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
     fixture = tmp_path / "fixture.wav"
     fixture.write_bytes(b"fixture")
     audio_bodies = {"audio-a": b"mp3-alpha", "audio-b": b"mp3-bravo"}
+    peer_saved = {"id": "peer-file", "status": "completed", "transcript": {"segments": [{"text": "saved peer"}]}}
 
     class Client:
         def __init__(self, owner: str) -> None:
@@ -1666,19 +1738,36 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
 
         def json(self, method: str, path: str, expected: int, **kwargs: object):
             del method, expected, kwargs
+            if self.logged_out and path != "/api/workspace/bootstrap":
+                raise external.ExternalMeasurementError("Workspace HTTP returned 401")
+            if path.endswith("peer-file"):
+                result = copy.deepcopy(peer_saved)
+                if regression == "changed_peer":
+                    result["transcript"]["segments"][0]["text"] = "wrong"
+                return result, _Response(200)
+            if path == "/api/auth/session":
+                return {"workspace_id": "owner-b"}, _Response(200)
+            if path == "/api/workspace/bootstrap":
+                response = _Response(200)
+                response.cookies = {external.SESSION_COOKIE: "new-browser-credential"}
+                return {"workspace_id": "new-owner"}, response
+            if path.endswith("b-file"):
+                return {"status": "active"}, _Response(200)
             if path.endswith("live-b"):
                 return {
                     "id": "live-b",
                     "status": "active",
-                    "transcript": {"version": 1, "segments": [{"text": "durable"}]},
+                    "transcript_version": 1,
+                    "transcript": {"segments": [{"text": "durable"}]},
                 }, _Response(200)
             return {}, _Response(200)
 
         def request(self, method: str, path: str, **kwargs: object):
-            del kwargs
-            if method == "POST" and path == "/auth/logout":
-                self.logged_out = True
-                return _Response(303)
+            cookie = kwargs.get("headers", {}).get("Cookie")
+            if cookie == "":
+                return _Response(401)
+            if cookie == external.SESSION_COOKIE + "=new-browser-credential":
+                return _Response(404)
             if self.logged_out:
                 return _Response(401)
             if "/audio/download" in path:
@@ -1706,7 +1795,6 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
         server_log=str(empty),
         llm_prompt_log=str(empty),
         file_fixture=str(fixture),
-        account_b_email="b@example.com",
     )
     clients = {name: Client(name[0]) for name in ("a", "a_peer", "b", "b_peer")}
     campaign._clients.update(clients)
@@ -1748,39 +1836,36 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
     monkeypatch.setattr(
         campaign,
         "_await_meeting_terminal",
-        lambda meeting_id, timeout=1800: {"id": meeting_id, "status": "completed"},
+        lambda meeting_id, timeout=1800: (
+            {**peer_saved, "status": regression} if regression in {"failed", "interrupted"}
+            else {**peer_saved, "transcript": {"segments": []}} if regression == "empty_transcript"
+            else copy.deepcopy(peer_saved)
+        ),
     )
 
     def control(_socket: Path, command: str, email=None, **kwargs: object):
         del email, kwargs
         if command == "accounts.revoke":
             clients["b"].logged_out = clients["b_peer"].logged_out = True
+            if regression == "global_revoke":
+                clients["a"].logged_out = clients["a_peer"].logged_out = True
             return {"revoked": True}
-        if command == "accounts.allow":
-            return {"allowed": True}
         return {}
 
-    class Browser:
-        def fresh_sign_in_history(self, profile: str, ids: tuple[str, ...], **kwargs: object):
-            del profile, kwargs
-            return {
-                "signed_in": True,
-                "fresh_cookie_present": True,
-                "history": {meeting_id: True for meeting_id in ids},
-                "states": {
-                    "live-b": {
-                        "status": "interrupted",
-                        "audio_state": "partial",
-                        "transcript_version": 1,
-                    },
-                    "b-file": {"status": "interrupted"},
-                },
-                "durable_transcript_matches": True,
-                "partial_audio_playable": True,
-            }
-
-    campaign._browser = Browser()
+    monkeypatch.setattr(campaign, "_revocation_snapshot", lambda owner, ids: {
+        "live-b": {
+            "status": "interrupted", "version": 1,
+            "document_json": json.dumps({"segments": [{"text": "durable"}]}),
+            "audio_state": "partial", "audio_decodes": True,
+            "audio_bytes": b"measured-audio", "byte_count": len(b"measured-audio"),
+        },
+        "b-file": {"status": "interrupted"},
+    })
     monkeypatch.setattr(external, "_control", control)
+    if regression is not None:
+        with pytest.raises(external.ExternalMeasurementError):
+            campaign.revocation_lifecycle()
+        return
     revoked = campaign.revocation_lifecycle()
     assert revoked["failures"] == 0
     assert revoked["late_commits"] == 0

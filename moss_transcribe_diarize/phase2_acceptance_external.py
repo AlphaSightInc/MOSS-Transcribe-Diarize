@@ -15,6 +15,7 @@ import math
 import os
 import shutil
 import socket
+import sqlite3
 import ssl
 import stat
 import subprocess
@@ -229,6 +230,42 @@ def _owner_state_digest(payload: Mapping[str, object]) -> bytes:
             projection, sort_keys=True, separators=(",", ":"), ensure_ascii=False
         ).encode("utf-8")
     ).digest()
+
+
+def _read_revocation_snapshot(database: Path, audio_root: Path, owner: str, meeting_ids: tuple[str, ...]):
+    # mode=ro includes committed WAL state. No immutable=1 shortcut or writable store.
+    connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("BEGIN")
+        result = {}
+        for meeting_id in meeting_ids:
+            row = connection.execute(
+                """SELECT m.status, t.version, t.document_json,
+                          a.state AS audio_state, a.relative_path, a.byte_count
+                   FROM meetings m LEFT JOIN meeting_transcripts t
+                     ON t.account_id=m.account_id AND t.meeting_id=m.meeting_id
+                   LEFT JOIN meeting_audio a
+                     ON a.account_id=m.account_id AND a.meeting_id=m.meeting_id
+                   WHERE m.account_id=? AND m.meeting_id=?""", (owner, meeting_id),
+            ).fetchone()
+            if row is None:
+                raise ExternalMeasurementError("Test-owned meeting is absent")
+            item = dict(row)
+            path = None if item["relative_path"] is None else (audio_root / item["relative_path"]).resolve()
+            if path is not None and not path.is_relative_to((audio_root / owner / meeting_id).resolve()):
+                raise ExternalMeasurementError("Test audio escaped its meeting directory")
+            item["audio_bytes"] = b"" if path is None or not path.is_file() else path.read_bytes()
+            decoded = subprocess.run(
+                ["ffmpeg", "-nostdin", "-v", "error", "-i", "pipe:0", "-f", "s16le", "-ac", "1", "-ar", "16000", "pipe:1"],
+                input=item["audio_bytes"], capture_output=True, timeout=30,
+            ) if item["audio_bytes"] else None
+            item["audio_decodes"] = bool(decoded and decoded.returncode == 0 and decoded.stdout)
+            result[meeting_id] = item
+        return result
+    finally:
+        connection.close()
+
 
 
 class AccountHttpClient:
@@ -575,7 +612,6 @@ class FixedAccountCampaign:
                 "active_pointer_resolves_to_release": True,
             },
             "aiosqlite": self._dependency_version(dependency, "aiosqlite"),
-            "authlib": self._dependency_version(dependency, "Authlib"),
             "process": {"pid": pid, "cwd": cwd, "exe": exe, "argv": argv},
             "toolchain": toolchain,
             "accelerator": accelerator,
@@ -968,103 +1004,114 @@ class FixedAccountCampaign:
             finally:
                 browser.close()
 
-    def real_google_oauth(self) -> dict[str, object]:
-        result = self.browser.real_google_oauth(
-            lambda command, email=None: _control(self.operator_socket, command, email)
+    def browser_workspace_identity(self) -> dict[str, object]:
+        result = self.browser.browser_workspace_identity(
+            lambda command, account_id=None: _control(self.operator_socket, command, account_id)
         )
-        self._artifact_json("browser/oauth-counts.json", result)
+        self._artifact_json("browser/workspace-identity.json", result)
         return result
 
-    def revocation_lifecycle(self) -> dict[str, object]:
-        failures = 0
-        late_commits = 0
-        stale_revived = 0
+    def _revocation_snapshot(self, owner: str, meeting_ids: tuple[str, ...]):
+        # Cutover prepare proves these disposable roots empty before test admission.
+        # Read only exact test-created IDs; this is not a product-content interface.
+        plan_path = Path(self._text("cutover_restore_plan")).expanduser().resolve()
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        from .phase2_cutover import RESTORE_PLAN_SCHEMA
+        if plan.get("schema") != RESTORE_PLAN_SCHEMA or plan.get("candidate_sha") != self.candidate_sha:
+            raise ExternalMeasurementError("Revocation snapshot is not bound to this candidate")
+        paths = plan.get("candidate_state_paths")
+        if not isinstance(paths, dict):
+            raise ExternalMeasurementError("Disposable candidate state paths are unavailable")
+        if any(not isinstance(paths.get(key), str) or not paths[key] for key in ("database", "meeting_audio")):
+            raise ExternalMeasurementError("Disposable candidate state paths are unavailable")
+        database, audio_root = Path(paths["database"]), Path(paths["meeting_audio"])
+        if not database.is_absolute() or not audio_root.is_absolute():
+            raise ExternalMeasurementError("Candidate state paths must be absolute")
+        return _read_revocation_snapshot(database, audio_root, owner, meeting_ids)
 
-        # Ordinary sign-out owns only one Sign-in session. An already-accepted File Meeting keeps
-        # running and the primary same-Account session remains readable.
+    def revocation_lifecycle(self) -> dict[str, object]:
+        failures = late_commits = stale_revived = 0
         fixture = Path(self._text("file_fixture")).expanduser()
+        # Cookie loss does not revoke a stored workspace or cancel accepted files.
         peer_file_id = self._submit_file_for(self.a_peer, fixture)
-        logout = self.a_peer.request("POST", "/auth/logout")
-        if logout.status_code != 303:
-            failures += 1
-        if self.a_peer.request("GET", "/api/meetings").status_code != 401:
+        if self.a_peer.request("GET", "/api/meetings", headers={"Cookie": ""}).status_code != 401:
             failures += 1
         if self.a.request("GET", "/api/meetings").status_code != 200:
             failures += 1
-        try:
-            self._await_meeting_terminal(peer_file_id)
-        except ExternalMeasurementError:
-            failures += 1
-
+        peer_saved = self._await_meeting_terminal(peer_file_id)
+        if (
+            peer_saved.get("status") != "completed"
+            or not isinstance(peer_saved.get("transcript"), dict)
+            or not peer_saved["transcript"].get("segments")
+        ):
+            raise ExternalMeasurementError("Cookie loss did not preserve completed File speech")
+        identity, _ = self.b.json("GET", "/api/auth/session", 200)
+        owner = identity.get("workspace_id")
+        if not isinstance(owner, str) or not owner:
+            raise ExternalMeasurementError("Revocation workspace identity is unavailable")
         live_id = self._new_live_id("b")
-        b_file_id = self._submit_file_for(self.b, fixture)
         self._seed_live_transcript("b", live_id, 2)
         before, _ = self.b.json("GET", f"/api/meetings/{live_id}", 200)
         before_transcript = before.get("transcript")
-        before_version = (
-            int(before_transcript.get("version", 0))
-            if isinstance(before_transcript, dict)
-            else 0
-        )
+        before_version = int(before.get("transcript_version", 0))
         if before_version <= 0 or not isinstance(before_transcript, dict) or not before_transcript.get("segments"):
-            raise ExternalMeasurementError("revoke probe lacks a durable transcript prefix")
-        email = self._text("account_b_email").strip().lower()
-        revoked = _control(self.operator_socket, "accounts.revoke", email)
+            raise ExternalMeasurementError("Revoke probe lacks a durable transcript prefix")
+        # Submit last so the gate observes active File work, not an earlier completion.
+        b_file_id = self._submit_file_for(self.b, fixture)
+        file_before, _ = self.b.json("GET", f"/api/meetings/{b_file_id}", 200)
+        if file_before.get("status") != "active":
+            raise ExternalMeasurementError("Revoke fixture did not expose active File work")
+        revoked = _control(self.operator_socket, "accounts.revoke", owner)
         if not isinstance(revoked, dict) or revoked.get("revoked") is not True:
-            failures += 1
+            raise ExternalMeasurementError("Workspace revocation did not complete")
+        # A workspace-scoped revoke must not disable or change the surviving owner.
+        peer_after, _ = self.a.json("GET", f"/api/meetings/{peer_file_id}", 200)
+        if peer_after != peer_saved:
+            raise ExternalMeasurementError("Revocation changed the unrelated workspace")
+        settled = self._revocation_snapshot(owner, (live_id, b_file_id))
         for client in (self.b, self.b_peer):
             if client.request("GET", "/api/meetings").status_code != 401:
                 failures += 1
         late = self.b.request(
-            "POST",
-            f"/api/live/sessions/{live_id}/frames",
+            "POST", f"/api/live/sessions/{live_id}/frames",
             json=AccountCookieLiveReplayService._lane_payload(
                 AudioFrame(0, b"\0\0" * 8_000, 8_000, LIVE_SAMPLE_RATE),
-                lane="system",
-                timestamp_ns=0,
-                silent=False,
+                lane="system", timestamp_ns=0, silent=False,
             ),
         )
         if late.status_code != 401:
             late_commits += 1
-
-        _control(self.operator_socket, "accounts.allow", email)
-        fresh = self.browser.fresh_sign_in_history(
-            "account_b_browser_profile",
-            (live_id, b_file_id),
-            expected_transcripts={live_id: before_transcript},
-        )
-        if fresh.get("signed_in") is not True or fresh.get("fresh_cookie_present") is not True:
-            failures += 1
-        history = fresh.get("history")
-        if not isinstance(history, dict) or not all(history.values()):
-            failures += 1
-        states = fresh.get("states")
-        live_state = states.get(live_id) if isinstance(states, dict) else None
-        file_state = states.get(b_file_id) if isinstance(states, dict) else None
-        if not isinstance(live_state, dict) or live_state.get("status") != "interrupted":
-            failures += 1
-        if not isinstance(live_state, dict) or live_state.get("audio_state") != "partial":
-            failures += 1
-        if not isinstance(file_state, dict) or file_state.get("status") != "interrupted":
-            failures += 1
-        if (
-            isinstance(live_state, dict)
-            and isinstance(live_state.get("transcript_version"), int)
-            and live_state["transcript_version"] > before_version
-        ):
-            late_commits += 1
+        fresh, response = self.b.json("POST", "/api/workspace/bootstrap", 200, headers={"Cookie": ""})
+        credential = response.cookies.get(SESSION_COOKIE)
+        if not credential or fresh.get("workspace_id") == owner:
+            raise ExternalMeasurementError("Fresh bootstrap restored revoked ownership")
+        for meeting_id in (live_id, b_file_id):
+            if self.b.request(
+                "GET", f"/api/meetings/{meeting_id}",
+                headers={"Cookie": f"{SESSION_COOKIE}={credential}"},
+            ).status_code != 404:
+                failures += 1
         if self.b.request("GET", "/api/meetings").status_code != 401:
             stale_revived += 1
+        after = self._revocation_snapshot(owner, (live_id, b_file_id))
+        late_commits += int(settled != after)
+        live_state, file_state = after[live_id], after[b_file_id]
+        failures += int(live_state["status"] != "interrupted")
+        failures += int(file_state["status"] != "interrupted")
+        prefix_preserved = (
+            live_state["version"] == before_version
+            and json.loads(live_state["document_json"]) == before_transcript
+        )
+        partial_audio = (
+            live_state["audio_state"] == "partial" and live_state["audio_decodes"]
+            and len(live_state["audio_bytes"]) == live_state["byte_count"]
+        )
         self._live.pop("b", None)
         return {
-            "cases": 6,
-            "failures": failures,
-            "late_commits": late_commits,
+            "cases": 6, "failures": failures, "late_commits": late_commits,
             "stale_authority_revived": stale_revived,
-            "durable_prefix_preserved": fresh.get("durable_transcript_matches") is True,
-            "partial_audio_playable": fresh.get("partial_audio_playable") is True,
-            "fresh_history_states": states,
+            "durable_prefix_preserved": prefix_preserved,
+            "partial_audio_playable": bool(partial_audio),
         }
 
     def operator_control(self) -> dict[str, object]:
@@ -1104,12 +1151,12 @@ class FixedAccountCampaign:
             count_mismatches += int(not isinstance(file, dict) or file.get("active") != file_count)
         if isinstance(status_accounts, list) and isinstance(account_rows, list):
             allowlist = {
-                item.get("email"): item.get("enabled")
+                item.get("account_id"): item.get("enabled")
                 for item in account_rows
                 if isinstance(item, dict)
             }
             count_mismatches += sum(
-                allowlist.get(item.get("email")) != item.get("enabled")
+                allowlist.get(item.get("account_id")) != item.get("enabled")
                 for item in status_accounts
                 if isinstance(item, dict)
             )
