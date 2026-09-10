@@ -109,6 +109,12 @@ DETERMINISTIC_COMMANDS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...]
 )
 
 REQUIRED_PYTHON_TEST_FILES = (
+    "tests/phase2/test_tls_renewal.py",
+    "tests/phase2/test_completion_qualification.py",
+    "tests/phase2/test_final_summary.py",
+    "tests/phase2/test_manual_speaker_voiceprints.py",
+    "tests/phase2/test_voiceprint_bank_operations.py",
+    "tests/phase2/test_voiceprint_matching.py",
     "tests/phase2/test_acceptance_setup.py",
     "tests/phase2/test_acceptance_journal.py",
     "tests/phase2/test_attended_g7_canary.py",
@@ -156,11 +162,15 @@ REQUIRED_FRONTEND_TEST_FILES = (
     "frontend/src/App.test.tsx",
     "frontend/src/api/meetings.test.ts",
     "frontend/src/api/mossPoller.test.ts",
+    "frontend/src/api/speakers.test.ts",
     "frontend/src/capture/captureClient.test.ts",
     "frontend/src/components/ControlPanel.test.tsx",
+    "frontend/src/components/FinalSummary.test.tsx",
     "frontend/src/components/MeetingHistory.test.tsx",
     "frontend/src/components/TranscriptPane.test.tsx",
+    "frontend/src/components/VoiceprintBank.test.tsx",
     "frontend/src/components/laneMeter.test.ts",
+    "frontend/src/lib/finalSummary.test.ts",
     "frontend/src/lib/keyboardShortcuts.test.ts",
     "frontend/src/lib/meetingHistory.test.ts",
     "frontend/src/lib/mergeTranscript.test.ts",
@@ -173,8 +183,8 @@ REQUIRED_FRONTEND_TEST_FILES = (
 )
 # These baselines are raised with each committed load-bearing suite.  Falling below them means a
 # test was removed or ceased collection.
-MINIMUM_PYTHON_TESTS = 1068
-MINIMUM_FRONTEND_TESTS = 121
+MINIMUM_PYTHON_TESTS = 1182
+MINIMUM_FRONTEND_TESTS = 153
 
 EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
     "deployed": {
@@ -198,6 +208,38 @@ EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
         "G10": ("account_product_regression", "transcript_pane_fidelity"),
     },
 }
+
+
+def required_gates(wave: int) -> tuple[str, ...]:
+    if wave not in (1, 2, 3):
+        raise ValueError("wave must be 1, 2 or 3")
+    return (*CORE_GATES, *(("G8",) if wave >= 2 else ()), *(("G9",) if wave >= 3 else ()))
+
+
+def external_requirements(layer: str, wave: int = 1) -> dict[str, tuple[str, ...]]:
+    required_gates(wave)
+    result = dict(EXTERNAL_REQUIREMENTS[layer])
+    if wave >= 2:
+        result["G8"] = ("voiceprint_production_rule", "voiceprint_workspace_behavior")
+    if wave >= 3:
+        result["G9"] = ("browser_final_summary",)
+    return result
+
+
+def deterministic_commands(wave: int):
+    extra = []
+    if wave >= 2:
+        extra.append(("voiceprint-lifecycle", ("{python}", "-m", "pytest", "-q",
+            "tests/phase2/test_manual_speaker_voiceprints.py", "tests/phase2/test_voiceprint_bank_operations.py",
+            "tests/phase2/test_voiceprint_matching.py", "tests/test_live_provider_bundle.py"), ("G8",)))
+    if wave >= 3:
+        extra.extend((
+            ("final-summary-storage", ("{python}", "-m", "pytest", "-q", "tests/phase2/test_final_summary.py"), ("G9",)),
+            ("final-summary-browser-worker", ("npm", "--prefix", "frontend", "test", "--", "--run",
+                "src/lib/finalSummary.test.ts", "src/components/FinalSummary.test.tsx"), ("G9",)),
+            ("final-summary-real-cors", ("{python}", "prototypes/client-configured-llm/final_browser_probe.py"), ("G9",)),
+        ))
+    return (*DETERMINISTIC_COMMANDS, *extra)
 
 QUALITY_BOUNDS = {
     "immediate_wer": ("max", 0.166655),
@@ -2009,8 +2051,9 @@ def evaluate_external_report(
     fixtures: Mapping[str, str],
     wheel_record_projection_sha256: str,
     dependency_projection_sha256: str,
+    wave: int = 1,
 ) -> tuple[dict[str, bool], list[str]]:
-    outcomes = {gate: False for gate in CORE_GATES}
+    outcomes = {gate: False for gate in required_gates(wave)}
     if payload is None:
         return outcomes, [f"{layer}_unmeasured"]
     predicates = payload.get("predicates")
@@ -2022,7 +2065,7 @@ def evaluate_external_report(
         if isinstance(item, dict)
     }
     errors: list[str] = []
-    for gate, required in EXTERNAL_REQUIREMENTS[layer].items():
+    for gate, required in external_requirements(layer, wave).items():
         gate_passed = True
         for predicate_id in required:
             predicate = indexed.get((gate, predicate_id))
@@ -2031,16 +2074,20 @@ def evaluate_external_report(
                 gate_passed = False
                 continue
             passed = _predicate_passes(predicate)
-            passed = passed and _validate_raw_predicate(
-                predicate_id,
-                predicate,
-                candidate_sha=candidate_sha,
-                candidate_tree=candidate_tree,
-                uv_lock_sha256=uv_lock_sha256,
-                fixtures=fixtures,
-                wheel_record_projection_sha256=wheel_record_projection_sha256,
-                dependency_projection_sha256=dependency_projection_sha256,
-            )
+            if gate in {"G8", "G9"}:
+                from .phase2_acceptance_completion import validate_completion_observation
+                passed = passed and validate_completion_observation(predicate_id, predicate.get("raw"))
+            else:
+                passed = passed and _validate_raw_predicate(
+                    predicate_id,
+                    predicate,
+                    candidate_sha=candidate_sha,
+                    candidate_tree=candidate_tree,
+                    uv_lock_sha256=uv_lock_sha256,
+                    fixtures=fixtures,
+                    wheel_record_projection_sha256=wheel_record_projection_sha256,
+                    dependency_projection_sha256=dependency_projection_sha256,
+                )
             if predicate_id == "four_session_capacity":
                 passed = passed and _validate_capacity(predicate)
             elif predicate_id == "eight_session_overload":
@@ -2191,19 +2238,15 @@ def _final_gate_table(
     wave: int,
 ) -> dict[str, object]:
     rows: dict[str, object] = {}
-    for gate in CORE_GATES:
+    for gate in required_gates(wave):
         layers = {
             "deterministic": bool(deterministic.get(gate)),
             "deployed": bool(deployed.get(gate)),
             "pre_admission": bool(pre_admission.get(gate)),
         }
         rows[gate] = {"layers": layers, "passed": not identity_errors and all(layers.values())}
-    if wave >= 2:
-        rows["G8"] = {"layers": {layer: False for layer in LAYERS}, "passed": False, "reason": "unmeasured"}
-    if wave >= 3:
-        rows["G9"] = {"layers": {layer: False for layer in LAYERS}, "passed": False, "reason": "unmeasured"}
     rows["G7"] = {"status": "UNCLAIMED", "passed": False, "owner": "Issue #23"}
-    required = [*CORE_GATES, *(() if wave == 1 else ("G8",)), *(() if wave < 3 else ("G9",))]
+    required = list(required_gates(wave))
     return {
         "gates": rows,
         "required": required,
@@ -2257,15 +2300,16 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
         bundle.write("content-boundaries.json", forbidden_summary)
         errors.extend(forbidden_errors)
         identity_errors.extend(forbidden_errors)
+        commands = deterministic_commands(wave)
         deterministic_requirements = {
-            gate: {name for name, _, gates in DETERMINISTIC_COMMANDS if gate in gates}
-            for gate in CORE_GATES
+            gate: {name for name, _, gates in commands if gate in gates}
+            for gate in required_gates(wave)
         }
-        deterministic_passes = {gate: set() for gate in CORE_GATES}
+        deterministic_passes = {gate: set() for gate in required_gates(wave)}
         command_results: list[CommandResult] = []
         deterministic_errors: list[str] = []
         if not identity_errors:
-            for name, template, gates in DETERMINISTIC_COMMANDS:
+            for name, template, gates in commands:
                 argv = tuple(value.format(python=sys.executable) for value in template)
                 result, command_errors = execute_deterministic_command(
                     bundle=bundle,
@@ -2299,7 +2343,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
 
         deterministic = {
             gate: deterministic_passes[gate] == deterministic_requirements[gate]
-            for gate in CORE_GATES
+            for gate in required_gates(wave)
         }
 
         collector_errors: list[str] = []
@@ -2334,6 +2378,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                     forbidden=forbidden,
                     environment={
                         "MOSS_ACCEPTANCE_LAYER": layer,
+                        "MOSS_ACCEPTANCE_WAVE": str(wave),
                         "MOSS_ACCEPTANCE_CANDIDATE_SHA": str(candidate["git_sha"]),
                         "MOSS_ACCEPTANCE_RAW_DIR": str(raw_dir),
                         # Data-only configuration. No report, raw state, argv, or executable is
@@ -2371,6 +2416,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                     forbidden=forbidden,
                     environment={
                         "MOSS_ACCEPTANCE_LAYER": layer,
+                        "MOSS_ACCEPTANCE_WAVE": str(wave),
                         "MOSS_ACCEPTANCE_CANDIDATE_SHA": str(candidate["git_sha"]),
                         "MOSS_ACCEPTANCE_WHEEL_SHA256": str(candidate["wheel"]["sha256"]),
                         "MOSS_ACCEPTANCE_REPORT_PATH": str(report_path),
@@ -2410,6 +2456,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                 )
         deployed, deployed_errors = evaluate_external_report(
             deployed_report,
+            wave=wave,
             layer="deployed",
             candidate_sha=str(candidate["git_sha"]),
             candidate_tree=str(candidate["git_tree"]),
@@ -2420,6 +2467,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
         )
         pre_admission, pre_errors = evaluate_external_report(
             pre_report,
+            wave=wave,
             layer="pre_admission",
             candidate_sha=str(candidate["git_sha"]),
             candidate_tree=str(candidate["git_tree"]),

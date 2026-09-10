@@ -22,6 +22,7 @@ def main() -> int:
     if not isinstance(config, dict):
         raise SystemExit("measurement config must be an object")
     state = measure_layer(
+        wave=int(os.environ.get("MOSS_ACCEPTANCE_WAVE", "1")),
         layer=_required("MOSS_ACCEPTANCE_LAYER"),
         candidate_sha=_required("MOSS_ACCEPTANCE_CANDIDATE_SHA"),
         config=config,

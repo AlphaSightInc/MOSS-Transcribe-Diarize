@@ -1993,6 +1993,18 @@ class FixedAccountCampaign:
         )
         return result
 
+    def voiceprint_production_rule(self) -> dict[str, object]:
+        from .phase2_acceptance_completion import measure_voiceprint_rule
+        return measure_voiceprint_rule(self)
+
+    def voiceprint_workspace_behavior(self) -> dict[str, object]:
+        from .phase2_acceptance_completion import measure_voiceprint_workspace
+        return measure_voiceprint_workspace(self)
+
+    def browser_final_summary(self) -> dict[str, object]:
+        from .phase2_acceptance_summary import measure_browser_summary
+        return measure_browser_summary(self)
+
     def eight_session_overload(self) -> dict[str, object]:
         result = self._run_live_load(
             sessions=8,

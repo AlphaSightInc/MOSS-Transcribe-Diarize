@@ -7,6 +7,7 @@ Wants=network-online.target moss-vllm.service
 Type=simple
 EnvironmentFile=%h/.config/moss-transcribe-diarize/moss-account.env
 ExecStart=%h/.local/share/moss-transcribe-diarize/account-current/bin/mtd-account-web
+ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=120

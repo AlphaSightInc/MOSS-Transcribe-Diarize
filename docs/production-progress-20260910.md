@@ -212,23 +212,55 @@ Full regression: **1164 Python passed, 2 skipped, 37 subtests passed**, 62.24 s;
 every individual core/G8/G9 layer, rejecting a green aggregate with missing/failed
 rows. Four falsifiers prove restoration without admission. No cutover executed.
 
-## C8 — Remaining sequence
+## C8 — Completion-wave collectors and certificate operation
 
-1. Finish real G8 measurement/evaluation for the integrated W2 source.
-   Preserve the separate accepted evidence boundaries: causal matching uses at least
-   1 s live evidence; enrollment uses the quality-gated album centroid at 2 s. Do not
-   silently substitute the enrollment observation seam for causal match evidence.
-2. Reuse the standing voice-profile bench and its accepted rule. The production
-   worktree lacks ignored bench assets. Located both 55 MB development corpora and
-   the working Python 3.12.12/ONNX Runtime 1.28.0 bench environment in the original
-   worktree; reuse those assets without altering the original checkout. No fresh
-   run completed as recorded in C6. This is development evidence only.
-3. Implement W3 optional browser-direct AI settings/calls and version-bound summary
-   persistence; never persist endpoint, model, API key or prompt on the server.
-4. Trusted HTTPS and renewal; staged installation, final integrated G8/G9 producers,
-   quality/load/overload and restart/rollback evidence.
-5. After quiet hours, attended Chrome microphone + shared-audio canary. Only then
-   final production deployment approval/admission.
+G8/G9 now have fixed production-path producers and wave-aware evaluators. Missing
+prerequisites remain explicitly unmeasured. G8 combines fresh accepted model/rule
+observations with actual Live enrollment/matching/bank behavior. A real HTTP/runtime
+test with distinct synthetic vectors exercises fresh empty label maps, same-label
+neighbor preservation and exact deletion. G9 uses actual browser requests to a separate
+HTTPS controlled provider, real 60/120/240-second retry delays, cancellation, recorded
+lifecycle events, and held external requests overlapping the existing 600-second
+four-session load. Capacity is independently reduced with the unchanged existing bars.
 
-No manual action is required for these completed source checkpoints. DNS credential provisioning and the attended
-canary remain later manual prerequisites; never put credentials in chat.
+Reviewer corrections: require explicit known/unknown rule observations; derive speaker
+IDs from canonical rows rather than optional name maps; preserve a same-label second
+profile; configure AI before testing history; settle a cancelled provider response and
+reject subsequent old-attempt result writes; require actual lifecycle events. Nonfinite
+retry timings also fail. UI exposes attempt identity so the collector cannot mistake an
+old failed state for a new attempt. Real deployed G8/G9 have **not** been executed.
+
+Trusted-certificate renewal uses existing lego v5 DNS-01 tooling/private credential
+files. New SIGHUP TLS reload prepares the replacement context before publishing it to
+new handshakes; no model/web restart. Prototype measured old/new/after-invalid serials
+01/02/02 and a surviving held HTTP request, same PID/listener. Absorbed into production
+and an isolated real-TLS regression. Script tests exercise check/staging/issuance/renewal,
+no secret output, no service action before renewal, no restart, and missing-secret refusal.
+Actual DNS issuance/renewal is not claimed: both required private files remain absent.
+
+Final source regression: **1182 Python passed, 2 skipped, 37 subtests passed** (69.01 s);
+**153 frontend passed / 21 files**, type-check/build pass. Real browser privacy probe
+rerun **8/8**; its explicit synthetic transcript/self-signed test-provider limits remain.
+`uv lock --check` and `git diff --check` pass. An additional broad root discovery found
+3 archived research failures (old-commit binding and 2 absent ignored archive fixtures),
+with 1288 passes; no historical contract or missing-input check was weakened.
+
+Fresh service observation: legacy batch/Live/model PIDs 329307/329393/169937 unchanged,
+zero restarts; batch root, Live runtime, model health/models/metrics returned 200.
+Live availability check still required a certificate exception. No capture, playback,
+volume change, service activation/restart, host reboot, or first production launch.
+
+## C9 — Exact remaining boundary
+
+1. Privately provision the DNS key/contact file; issue trusted HTTPS and validate actual
+   LAN/tailnet name resolution. Instructions: `production-handoff-20260910.md` M1/A1.
+2. Stage the final immutable candidate; execute full same-candidate quality, four-session
+   capacity, eight-session overload, G8/G9 and restart/rollback campaigns. Source green
+   is not deployed acceptance. Test workspaces are disposable, not production data.
+3. User resumes the actual Chrome microphone/tab/entire-screen canary; no audio tests
+   until requested. Coordinate shared-host cold boot separately if required.
+4. Only complete evidence permits first production admission. Enable qualified renewal
+   timer and verify served certificate identity without process restart afterward.
+
+No login/token copying is needed. The agent owns the remaining infrastructure execution;
+human work is private DNS provisioning and real browser/OS capture permission choices.

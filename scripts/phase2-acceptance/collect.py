@@ -18,6 +18,7 @@ def _required(name: str) -> str:
 
 def main() -> int:
     payload = collect_layer(
+        wave=int(os.environ.get("MOSS_ACCEPTANCE_WAVE", "1")),
         layer=_required("MOSS_ACCEPTANCE_LAYER"),
         candidate_sha=_required("MOSS_ACCEPTANCE_CANDIDATE_SHA"),
         raw_dir=Path(_required("MOSS_ACCEPTANCE_RAW_DIR")),

@@ -7,6 +7,7 @@ binds its canonical SQLite database, and hands the configured certificate to Uvi
 from __future__ import annotations
 
 import argparse
+import asyncio
 from pathlib import Path
 from typing import Sequence
 
@@ -149,7 +150,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         live_helper_lease_seconds=args.live_helper_lease_seconds,
         control_socket_path=Path(args.control_socket).expanduser(),
     )
-    uvicorn.run(
+    from .tls_reload import serve_with_certificate_reload
+
+    config = uvicorn.Config(
         app,
         host=args.host,
         port=args.port,
@@ -158,6 +161,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         proxy_headers=False,
         access_log=False,
     )
+    asyncio.run(serve_with_certificate_reload(config), loop_factory=config.get_loop_factory())
 
 
 if __name__ == "__main__":

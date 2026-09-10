@@ -458,10 +458,24 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
 
     monkeypatch.setattr(phase2_web_cli, "create_phase2_app", fake_create_app)
 
+    class FakeConfig(dict):
+        def get_loop_factory(self):
+            seen["uvicorn_loop_selected"] = True
+            return None
+
     class FakeUvicorn:
         @staticmethod
-        def run(received_app: object, **kwargs: object) -> None:
-            seen["uvicorn"] = {"app": received_app, **kwargs}
+        def Config(received_app: object, **kwargs: object):
+            seen["uvicorn"] = FakeConfig(app=received_app, **kwargs)
+            return seen["uvicorn"]
+
+    from moss_transcribe_diarize.app import tls_reload
+
+    async def fake_serve(config):
+        assert config is seen["uvicorn"]
+        seen["reload_enabled"] = True
+
+    monkeypatch.setattr(tls_reload, "serve_with_certificate_reload", fake_serve)
 
     monkeypatch.setitem(sys.modules, "uvicorn", FakeUvicorn)
     phase2_web_cli.main(
@@ -512,6 +526,8 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "proxy_headers": False,
         "access_log": False,
     }
+    assert seen["reload_enabled"] is True
+    assert seen["uvicorn_loop_selected"] is True
 
 
 def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer(

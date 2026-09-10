@@ -12,14 +12,12 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
-import ssl
 import subprocess
 import tempfile
-import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from playwright.async_api import async_playwright
+from moss_transcribe_diarize.phase2_acceptance_summary import SummaryProbeProvider
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("workspace_bench", ROOT / "prototypes/phase2-account-lifecycle/browser_workspace_probe.py")
@@ -34,37 +32,16 @@ async def run(root):
     cert, key = root / "probe.crt", root / "probe.key"
     subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(cert),
                     "-days", "1", "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost"], check=True, capture_output=True)
-    calls, preflights, moss_writes = [], [], []
-    origin = ""
-    class Provider(BaseHTTPRequestHandler):
-        def log_message(self, *_): pass
-        def do_OPTIONS(self):
-            preflights.append(dict(self.headers))
-            self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Access-Control-Allow-Methods", "POST")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-            self.end_headers()
-        def do_POST(self):
-            body = self.rfile.read(int(self.headers["Content-Length"]))
-            calls.append({"body": body.decode(), "headers": dict(self.headers), "path": self.path})
-            result = {"summary": "Synthetic supported briefing", "topics": [{"title": "Synthetic topic", "description": "Test result"}],
-                      "details": [{"title": "Test evidence", "description": "Supported", "timestamp": "00:00:02"}], "speaker_background": [], "data_references": []}
-            encoded = json.dumps({"choices": [{"message": {"content": json.dumps(result)}}]}).encode()
-            self.send_response(200)
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(encoded)))
-            self.end_headers(); self.wfile.write(encoded)
-    provider = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.load_cert_chain(cert, key)
-    provider.socket = context.wrap_socket(provider.socket, server_side=True)
-    thread = threading.Thread(target=provider.serve_forever, daemon=True); thread.start()
-    endpoint = f"https://localhost:{provider.server_port}"
+    moss_writes = []
+    provider = SummaryProbeProvider(origin="http://localhost:1", certificate=cert, key=key)
+    provider.__enter__()
+    calls, preflights = provider.calls, provider.preflights
+    endpoint = provider.endpoint("okay")
     evidence = {"muted": True, "sqlite": sqlite3.sqlite_version, "synthetic_transcripts": True, "provider_tls_trust_verified": False, "deployed_qualification": False}
     try:
         async with bench.running(root / "probe.sqlite3") as (app, port):
             origin = f"http://localhost:{port}"
+            provider.origin = origin
             async with async_playwright() as p:
                 browser = await p.chromium.launch(channel="chrome", headless=True, args=["--mute-audio"])
                 try:
@@ -93,9 +70,9 @@ async def run(root):
                         await page.get_by_role("button", name="Retry summary", exact=True).click()
                         await page.locator('[data-summary-state="current"]').wait_for(timeout=15000)
                     evidence["real_preflight_and_post"] = len(preflights) == len(calls) == 2
-                    evidence["separate_payloads"] = all(f"ONLY-OWNER-{i}-TRANSCRIPT" in call["body"] and f"ONLY-OWNER-{1-i}-TRANSCRIPT" not in call["body"] for i, call in enumerate(calls))
+                    evidence["separate_payloads"] = all(f"ONLY-OWNER-{i}-TRANSCRIPT".encode() in call["body"] and f"ONLY-OWNER-{1-i}-TRANSCRIPT".encode() not in call["body"] for i, call in enumerate(calls))
                     evidence["no_owner_meeting_ids_or_ambient_credentials"] = all(
-                        not any(value in call["body"] for value in [*owners, *ids]) and "Cookie" not in call["headers"] and "Referer" not in call["headers"] for call in calls)
+                        not any(value.encode() in call["body"] for value in [*owners, *ids]) and "Cookie" not in call["headers"] and "Referer" not in call["headers"] for call in calls)
                     writes = "\n".join(moss_writes)
                     evidence["settings_never_sent_to_moss"] = not any(value in writes for value in [endpoint, "probe-model-", "probe-secret-", "probe-prompt-"])
                     foreign = await pages[1].evaluate("async id => (await fetch('/api/meetings/'+id+'/summary')).status", ids[0])
@@ -110,7 +87,7 @@ async def run(root):
                 finally:
                     await browser.close()
     finally:
-        provider.shutdown(); provider.server_close(); thread.join()
+        provider.__exit__()
     checks = {k: v for k, v in evidence.items() if k not in {"muted", "sqlite", "synthetic_transcripts", "provider_tls_trust_verified", "deployed_qualification"}}
     evidence["passed"] = sum(v is True for v in checks.values()); evidence["total"] = len(checks)
     print(json.dumps(evidence, indent=2))

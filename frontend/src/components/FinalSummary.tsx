@@ -79,7 +79,7 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
     catch (cause) { setError(cause instanceof Error ? cause.message : "Cancel failed."); }
   };
   const result = artifact?.state === "current" ? artifact.document : null;
-  return <section className="history-state-card" aria-label="Final summary" data-summary-state={artifact?.state ?? "off"}>
+  return <section className="history-state-card" aria-label="Final summary" data-summary-state={artifact?.state ?? "off"} data-summary-attempt={artifact?.attempt_id}>
     <h3>Final summary</h3>
     <p role="status">{loading ? "Loading saved summary…" : artifact ? `${artifact.state.replace("_", " ")} · transcript v${artifact.source_version}` : "No saved summary. Opening history does not call AI."}</p>
     {active(artifact) && <p>Keep the worker tab open. If it was closed, Cancel this attempt, then Retry here.</p>}

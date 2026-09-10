@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Mapping
 
-from .phase2_acceptance import EXTERNAL_REQUIREMENTS, OBSERVATION_SCHEMA, _write_all
+from .phase2_acceptance import EXTERNAL_REQUIREMENTS, OBSERVATION_SCHEMA, _write_all, external_requirements
 
 
 RAW_SCHEMA = "moss-phase2-raw-observation.v1"
@@ -24,7 +24,7 @@ def _artifact_name(layer: str, gate: str, predicate_id: str) -> str:
 
 
 def collect_layer(
-    *, layer: str, candidate_sha: str, raw_dir: Path
+    *, layer: str, candidate_sha: str, raw_dir: Path, wave: int = 1
 ) -> dict[str, object]:
     if layer not in EXTERNAL_REQUIREMENTS:
         raise ValueError(f"unsupported observation layer: {layer}")
@@ -35,7 +35,7 @@ def collect_layer(
     predicates: list[dict[str, object]] = []
     artifacts: list[dict[str, object]] = []
     expected_names: set[str] = set()
-    for gate, ids in EXTERNAL_REQUIREMENTS[layer].items():
+    for gate, ids in external_requirements(layer, wave).items():
         for predicate_id in ids:
             name = _artifact_name(layer, gate, predicate_id)
             expected_names.add(name)

@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
-from .phase2_acceptance import EXTERNAL_REQUIREMENTS, _write_all
+from .phase2_acceptance import EXTERNAL_REQUIREMENTS, _write_all, external_requirements
 from .phase2_acceptance_collect import RAW_SCHEMA, _artifact_name
 from .phase2_acceptance_external import ExternalMeasurementError, FixedAccountCampaign
 
@@ -32,6 +32,9 @@ class MeasurementPrerequisite:
 # committed product paths, not caller-selected commands.  The same family may satisfy multiple
 # predicates, but every predicate keeps its own raw denominator.
 PREDICATE_FAMILY: Mapping[str, str] = {
+    "voiceprint_production_rule": "production-voiceprint-bench",
+    "voiceprint_workspace_behavior": "account-live-voiceprints",
+    "browser_final_summary": "browser-direct-summary-and-live-load",
     "installed_candidate_identity": "account-http-uds",
     "zero_work_end": "account-http-uds",
     "cross_owner_matrix": "account-http-uds",
@@ -51,6 +54,28 @@ PREDICATE_FAMILY: Mapping[str, str] = {
 }
 
 PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
+    "voiceprint_production_rule": (MeasurementPrerequisite("voiceprint_assets", "standing voiceprint model and two development corpora"),),
+    "voiceprint_workspace_behavior": (
+        MeasurementPrerequisite("https_origin", "trusted candidate origin"),
+        MeasurementPrerequisite("account_a_cookie_file", "disposable workspace A"),
+        MeasurementPrerequisite("account_b_cookie_file", "disposable workspace B"),
+        MeasurementPrerequisite("account_a_peer_cookie_file", "same-workspace peer"),
+        MeasurementPrerequisite("quality_corpus", "real speech input"),
+    ),
+    "browser_final_summary": (
+        MeasurementPrerequisite("https_origin", "trusted candidate origin"),
+        MeasurementPrerequisite("summary_probe_cert", "trusted hostname certificate for separate-port fake provider"),
+        MeasurementPrerequisite("summary_probe_key", "private key for separate-port fake provider"),
+        MeasurementPrerequisite("chrome_binary", "Chrome executable"),
+        MeasurementPrerequisite("account_a_cookie_file", "disposable workspace A"),
+        MeasurementPrerequisite("account_b_cookie_file", "disposable workspace B"),
+        MeasurementPrerequisite("account_a_sentinel_file", "workspace A load sentinel"),
+        MeasurementPrerequisite("account_b_sentinel_file", "workspace B load sentinel"),
+        MeasurementPrerequisite("file_fixture", "real speech File input"),
+        MeasurementPrerequisite("quality_corpus", "real speech load input"),
+        MeasurementPrerequisite("operator_socket", "candidate operator socket"),
+        MeasurementPrerequisite("vllm_metrics_url", "model metrics for non-interference"),
+    ),
     "installed_candidate_identity": (
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
         MeasurementPrerequisite("account_a_cookie_file", "Account A Sign-in session cookie"),
@@ -266,6 +291,7 @@ def measure_layer(
     candidate_sha: str,
     config: Mapping[str, object] | None,
     raw_dir: Path,
+    wave: int = 1,
 ) -> dict[str, object]:
     """Create one fresh raw directory; never consume caller-authored observations.
 
@@ -292,11 +318,11 @@ def measure_layer(
     predicates: list[dict[str, object]] = []
     required = [
         (gate, predicate_id)
-        for gate, predicate_ids in EXTERNAL_REQUIREMENTS[layer].items()
+        for gate, predicate_ids in external_requirements(layer, wave).items()
         for predicate_id in predicate_ids
         if predicate_id not in {"zero_work_end", "revocation_lifecycle"}
     ]
-    for gate, predicate_ids in EXTERNAL_REQUIREMENTS[layer].items():
+    for gate, predicate_ids in external_requirements(layer, wave).items():
         if "revocation_lifecycle" in predicate_ids:
             required.append((gate, "revocation_lifecycle"))
     required.append(("G0", "zero_work_end"))

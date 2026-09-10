@@ -1,0 +1,8 @@
+[Unit]
+Description=MOSS DNS-01 certificate renewal without restarting recordings
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash %h/.local/share/moss-transcribe-diarize/certificate-ops/manage-certificate.sh --renew
+UMask=0077
+TimeoutStartSec=10min
