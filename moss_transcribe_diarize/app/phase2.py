@@ -1,4 +1,4 @@
-"""The Account product's ownership, persistence, and sign-in foundation."""
+"""Browser-private workspace ownership and persistence."""
 
 from __future__ import annotations
 
@@ -11,22 +11,18 @@ import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, AsyncIterator, Mapping, Protocol
+from typing import Any, AsyncIterator, Mapping
 
 from starlette.requests import Request
 
 from .phase2_audio import MeetingAudioArtifactSurvives, MeetingAudioCleanupError
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 REQUIRED_SQLITE_RUNTIME = "3.53.4"
-OAUTH_COOKIE = "__Host-moss_oauth"
 SESSION_COOKIE = "__Host-moss_session"
-OAUTH_COOKIE_MAX_AGE = 10 * 60
 SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
 GOOGLE_CALLBACK_URL = "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861/auth/google/callback"
-GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
-GOOGLE_ISSUERS = ("https://accounts.google.com", "accounts.google.com")
 DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )
@@ -40,32 +36,20 @@ class SqliteRuntimeError(RuntimeError):
     """The Account process is not linked to the one accepted SQLite runtime."""
 
 
-class GoogleOidcRejected(ValueError):
-    """Google/Authlib rejected the temporary authorization transaction."""
-
-
 class AccountRevoked(PermissionError):
     """An Account lost authority before an owner-bound mutation committed."""
 
 
 @dataclass(frozen=True, slots=True)
-class GoogleIdentity:
-    account_id: str
-    email: str
-    display_name: str
-
-
-@dataclass(frozen=True, slots=True)
 class Account:
     account_id: str
-    email: str
     display_name: str
     authority_generation: int
 
 
 @dataclass(frozen=True, slots=True)
 class AccountRevokeTarget:
-    email: str
+    account_id: str
     exists: bool
     account: Account | None
 
@@ -133,107 +117,6 @@ class Meeting:
         }
 
 
-class GoogleOidc(Protocol):
-    async def begin(self, request: Any) -> Any: ...
-
-    async def complete(self, request: Any) -> GoogleIdentity: ...
-
-
-class AuthlibGoogleOidc:
-    """Authlib's OIDC verifier, kept at the one external-identity boundary.
-
-    Authlib persists state, nonce, and the generated S256 code verifier in the signed
-    temporary Starlette session.  The token returned by Google stays local to ``complete``;
-    only the verified identity below crosses into MOSS persistence.
-    """
-
-    def __init__(
-        self,
-        *,
-        remote: Any,
-        callback_url: str = GOOGLE_CALLBACK_URL,
-        client_id: str | None = None,
-    ):
-        self._remote = remote
-        self._callback_url = callback_url
-        self._client_id = client_id if client_id is not None else remote.client_id
-
-    @classmethod
-    def configured(
-        cls,
-        *,
-        client_id: str,
-        client_secret: str,
-        callback_url: str = GOOGLE_CALLBACK_URL,
-    ) -> "AuthlibGoogleOidc":
-        try:
-            from authlib.integrations.starlette_client import OAuth
-        except ImportError as exc:  # pragma: no cover - package dependency is definitive.
-            raise RuntimeError("Install Authlib 1.7.2 to enable Google sign-in.") from exc
-
-        oauth = OAuth()
-        oauth.register(
-            name="google",
-            client_id=client_id,
-            client_secret=client_secret,
-            server_metadata_url=GOOGLE_DISCOVERY_URL,
-            client_kwargs={
-                "scope": "openid profile email",
-                "code_challenge_method": "S256",
-            },
-        )
-        return cls(
-            remote=oauth.create_client("google"),
-            callback_url=callback_url,
-            client_id=client_id,
-        )
-
-    async def begin(self, request: Any) -> Any:
-        return await self._remote.authorize_redirect(
-            request,
-            self._callback_url,
-            prompt="select_account",
-            access_type="online",
-        )
-
-    async def complete(self, request: Any) -> GoogleIdentity:
-        try:
-            token = await self._remote.authorize_access_token(
-                request,
-                leeway=0,
-                claims_options={
-                    "iss": {"values": list(GOOGLE_ISSUERS)},
-                    "aud": {"value": self._client_id},
-                },
-            )
-            claims = token["userinfo"]
-        except Exception as exc:  # Authlib raises provider-specific OAuth/JWT errors.
-            raise GoogleOidcRejected("Google could not verify this sign-in.") from exc
-
-        if not isinstance(claims, Mapping):
-            raise GoogleOidcRejected("Google returned no verified identity.")
-        account_id = claims.get("sub")
-        email = claims.get("email")
-        display_name = claims.get("name")
-        if not isinstance(account_id, str) or not account_id.strip():
-            raise GoogleOidcRejected("Google returned no verified subject.")
-        if not isinstance(email, str) or not normalize_email(email):
-            raise GoogleOidcRejected("Google returned no email.")
-        if claims.get("email_verified") is not True:
-            raise GoogleOidcRejected("Google email is not verified.")
-        return GoogleIdentity(
-            account_id=account_id,
-            email=normalize_email(email),
-            display_name=display_name if isinstance(display_name, str) else "",
-        )
-
-
-def normalize_email(value: str) -> str:
-    """The exact-email policy's only normalization; aliases deliberately remain distinct."""
-
-    return value.strip().lower()
-
-
 class Phase2Store:
     """One SQLite connection hidden behind AccountWorkspace ownership operations."""
 
@@ -264,7 +147,7 @@ class Phase2Store:
         store = cls(connection)
         try:
             # An old database is refused as found.  In particular, do not ask SQLite to switch
-            # journal modes before proving that this file is schema v1: WAL setup itself mutates
+            # journal modes before proving that this file is schema v2: WAL setup itself mutates
             # a pre-existing database and can create sidecar files.
             version = await store.user_version()
             if existed and version != SCHEMA_VERSION:
@@ -318,16 +201,8 @@ class Phase2Store:
     async def _initialize_schema(self) -> None:
         await self._connection.executescript(
             """
-            CREATE TABLE account_allowlist (
-                email TEXT PRIMARY KEY,
-                enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
-                bound_account_id TEXT,
-                created_at_ms INTEGER NOT NULL,
-                updated_at_ms INTEGER NOT NULL
-            );
             CREATE TABLE accounts (
                 account_id TEXT PRIMARY KEY,
-                email TEXT NOT NULL UNIQUE,
                 display_name TEXT NOT NULL,
                 enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
                 authority_generation INTEGER NOT NULL,
@@ -449,7 +324,7 @@ class Phase2Store:
             );
             CREATE INDEX sign_in_sessions_account ON sign_in_sessions(account_id);
             CREATE INDEX meetings_account_created ON meetings(account_id, created_at_ms DESC);
-            PRAGMA user_version = 1;
+            PRAGMA user_version = 2;
             """
         )
         await self._connection.commit()
@@ -473,35 +348,13 @@ class Phase2Store:
         async with self._write_lock:
             yield
 
-    async def allow_email(self, email: str) -> None:
-        normalized = _required_email(email)
-        now = _now_ms()
-        async with self._mutation():
-            await self._connection.execute(
-                """
-                INSERT INTO account_allowlist(email, enabled, bound_account_id, created_at_ms, updated_at_ms)
-                VALUES (?, 1, NULL, ?, ?)
-                ON CONFLICT(email) DO UPDATE SET enabled = 1, updated_at_ms = excluded.updated_at_ms
-                """,
-                (normalized, now, now),
-            )
-
-    async def list_allowlist(self) -> list[dict[str, object]]:
-        async with self._external_read():
-            cursor = await self._connection.execute(
-                "SELECT email, enabled FROM account_allowlist ORDER BY email"
-            )
-            rows = await cursor.fetchall()
-            await cursor.close()
-        return [{"email": row["email"], "enabled": bool(row["enabled"])} for row in rows]
-
     async def operator_snapshot(self) -> dict[str, object]:
         """Read durable operator aggregates once; Account content never crosses this seam."""
 
         async with self._external_read():
             cursor = await self._connection.execute(
                 """
-                SELECT a.email, a.display_name, a.enabled,
+                SELECT a.account_id, a.display_name, a.enabled,
                        (SELECT COUNT(*) FROM sign_in_sessions s
                         WHERE s.account_id = a.account_id) AS sign_in_sessions,
                        (SELECT COUNT(*) FROM meetings m
@@ -535,14 +388,14 @@ class Phase2Store:
                         WHERE ma.account_id = a.account_id
                           AND ma.state = 'unavailable') AS audio_unavailable_count
                 FROM accounts a
-                ORDER BY a.email
+                ORDER BY a.account_id
                 """
             )
             accounts = [dict(row) for row in await cursor.fetchall()]
             await cursor.close()
             cursor = await self._connection.execute(
                 """
-                SELECT a.email, m.meeting_id, m.mode, m.status,
+                SELECT a.account_id, m.meeting_id, m.mode, m.status,
                        m.created_at_ms
                 FROM meetings m
                 JOIN accounts a ON a.account_id = m.account_id
@@ -579,28 +432,19 @@ class Phase2Store:
             await cursor.close()
         return row is not None
 
-    async def revoke_email(self, email: str) -> bool:
+    async def revoke_account(self, account_id: str) -> bool:
         """Direct store primitive retained for offline recovery/tests, not the host CLI."""
 
-        target = await self.account_revoke_target(email)
+        target = await self.account_revoke_target(account_id)
         return await self.finalize_account_revoke(target)
 
-    async def account_revoke_target(self, email: str) -> AccountRevokeTarget:
-        normalized = _required_email(email)
+    async def account_revoke_target(self, account_id: str) -> AccountRevokeTarget:
+        if not account_id:
+            raise ValueError("Workspace ID is required.")
         async with self._external_read():
             cursor = await self._connection.execute(
-                "SELECT bound_account_id FROM account_allowlist WHERE email = ?", (normalized,)
-            )
-            row = await cursor.fetchone()
-            await cursor.close()
-            if row is None:
-                return AccountRevokeTarget(normalized, False, None)
-            account_id = row["bound_account_id"]
-            if account_id is None:
-                return AccountRevokeTarget(normalized, True, None)
-            cursor = await self._connection.execute(
                 """
-                SELECT account_id, email, display_name, authority_generation
+                SELECT account_id, display_name, authority_generation
                 FROM accounts WHERE account_id = ? AND enabled = 1
                 """,
                 (account_id,),
@@ -608,13 +452,12 @@ class Phase2Store:
             account_row = await cursor.fetchone()
             await cursor.close()
         if account_row is None:
-            return AccountRevokeTarget(normalized, True, None)
+            return AccountRevokeTarget(account_id, False, None)
         return AccountRevokeTarget(
-            normalized,
+            account_id,
             True,
             Account(
                 account_id=account_row["account_id"],
-                email=account_row["email"],
                 display_name=account_row["display_name"],
                 authority_generation=int(account_row["authority_generation"]),
             ),
@@ -642,15 +485,6 @@ class Phase2Store:
                     raise RuntimeError(
                         "Account revoke requires every Meeting to be durably terminal."
                     )
-                # An Account may have changed email after more than one allowed callback. A
-                # revoke is Account authority, so another already-bound email cannot restore it.
-                await self._connection.execute(
-                    """
-                    UPDATE account_allowlist SET enabled = 0, updated_at_ms = ?
-                    WHERE bound_account_id = ?
-                    """,
-                    (now, account.account_id),
-                )
                 cursor = await self._connection.execute(
                     """
                     UPDATE accounts
@@ -668,12 +502,16 @@ class Phase2Store:
                 await self._connection.execute(
                     "DELETE FROM sign_in_sessions WHERE account_id = ?", (account.account_id,)
                 )
-            else:
-                await self._connection.execute(
-                    "UPDATE account_allowlist SET enabled = 0, updated_at_ms = ? WHERE email = ?",
-                    (now, target.email),
-                )
             return True
+
+    async def list_accounts(self) -> list[dict[str, object]]:
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                "SELECT account_id, enabled FROM accounts ORDER BY account_id"
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        return [{"account_id": row["account_id"], "enabled": bool(row["enabled"])} for row in rows]
 
     async def recover_active_meetings(
         self,
@@ -911,77 +749,34 @@ class Phase2Store:
             )
             return cursor.rowcount == 1
 
-    async def admit(self, identity: GoogleIdentity) -> tuple[Account, str] | None:
-        """Atomically bind an allowed verified subject and issue its opaque MOSS session."""
+    async def bootstrap_browser(self, session_id: str | None) -> tuple[Account, str]:
+        """Open this browser's workspace, or atomically create its first owner/credential.
 
-        email = _required_email(identity.email)
-        account_id = identity.account_id.strip()
-        if not account_id:
-            raise ValueError("Google subject is required.")
+        Only explicit bootstrap calls this method. In-flight work never creates an owner
+        when its credential disappears. Invalid existing credentials do not revive ownership.
+        """
+
+        if session_id:
+            account = await self.account_for_session(session_id)
+            if account is None:
+                raise AccountRevoked("Workspace credential is no longer valid.")
+            return account, session_id
+        account = Account(secrets.token_urlsafe(24), "This browser", 0)
+        session_id = secrets.token_urlsafe(32)
         now = _now_ms()
         async with self._mutation():
-            cursor = await self._connection.execute(
-                "SELECT enabled, bound_account_id FROM account_allowlist WHERE email = ?", (email,)
+            await self._connection.execute(
+                """INSERT INTO accounts(
+                    account_id, display_name, enabled, authority_generation,
+                    created_at_ms, updated_at_ms
+                ) VALUES (?, ?, 1, 0, ?, ?)""",
+                (account.account_id, account.display_name, now, now),
             )
-            allowlist = await cursor.fetchone()
-            await cursor.close()
-            if allowlist is None or not bool(allowlist["enabled"]):
-                return None
-            bound_account_id = allowlist["bound_account_id"]
-            if bound_account_id is not None and bound_account_id != account_id:
-                return None
-
-            cursor = await self._connection.execute(
-                "SELECT account_id FROM accounts WHERE email = ?", (email,)
-            )
-            email_owner = await cursor.fetchone()
-            await cursor.close()
-            if email_owner is not None and email_owner["account_id"] != account_id:
-                return None
-
-            cursor = await self._connection.execute(
-                "SELECT account_id, authority_generation FROM accounts WHERE account_id = ?",
-                (account_id,),
-            )
-            account_row = await cursor.fetchone()
-            await cursor.close()
-            if account_row is None:
-                authority_generation = 0
-                await self._connection.execute(
-                    """
-                    INSERT INTO accounts(
-                        account_id, email, display_name, enabled, authority_generation,
-                        created_at_ms, updated_at_ms
-                    )
-                    VALUES (?, ?, ?, 1, ?, ?, ?)
-                    """,
-                    (account_id, email, identity.display_name, authority_generation, now, now),
-                )
-            else:
-                authority_generation = int(account_row["authority_generation"])
-                await self._connection.execute(
-                    """
-                    UPDATE accounts SET email = ?, display_name = ?, enabled = 1, updated_at_ms = ?
-                    WHERE account_id = ?
-                    """,
-                    (email, identity.display_name, now, account_id),
-                )
-            if bound_account_id is None:
-                await self._connection.execute(
-                    "UPDATE account_allowlist SET bound_account_id = ?, updated_at_ms = ? WHERE email = ?",
-                    (account_id, now, email),
-                )
-            session_id = secrets.token_urlsafe(32)
             await self._connection.execute(
                 "INSERT INTO sign_in_sessions(session_id, account_id, created_at_ms) VALUES (?, ?, ?)",
-                (session_id, account_id, now),
+                (session_id, account.account_id, now),
             )
-            return Account(
-                account_id=account_id,
-                email=email,
-                display_name=identity.display_name,
-                authority_generation=authority_generation,
-            ), session_id
+        return account, session_id
 
     async def account_for_session(self, session_id: str | None) -> Account | None:
         if not session_id:
@@ -989,7 +784,7 @@ class Phase2Store:
         async with self._external_read():
             cursor = await self._connection.execute(
                 """
-                SELECT a.account_id, a.email, a.display_name, a.authority_generation
+                SELECT a.account_id, a.display_name, a.authority_generation
                 FROM sign_in_sessions s
                 JOIN accounts a ON a.account_id = s.account_id
                 WHERE s.session_id = ? AND a.enabled = 1
@@ -1002,19 +797,9 @@ class Phase2Store:
             return None
         return Account(
             account_id=row["account_id"],
-            email=row["email"],
             display_name=row["display_name"],
             authority_generation=int(row["authority_generation"]),
         )
-
-    async def revoke_session(self, session_id: str | None) -> bool:
-        if not session_id:
-            return False
-        async with self._mutation():
-            cursor = await self._connection.execute(
-                "DELETE FROM sign_in_sessions WHERE session_id = ?", (session_id,)
-            )
-            return cursor.rowcount == 1
 
     def workspace(self, account: Account) -> "AccountWorkspace":
         return AccountWorkspace(self, account)
@@ -1776,8 +1561,6 @@ class MeetingHandle:
 def create_phase2_app(
     *,
     database_path: str | Path,
-    oidc: GoogleOidc,
-    oauth_cookie_secret: str,
     file_runner: Any | None = None,
     file_work_root: str | Path | None = None,
     file_inference_options: Mapping[str, object] | None = None,
@@ -1796,16 +1579,11 @@ def create_phase2_app(
             FileResponse,
             HTMLResponse,
             JSONResponse,
-            RedirectResponse,
             Response,
             StreamingResponse,
         )
-        from starlette.middleware.sessions import SessionMiddleware
     except ImportError as exc:  # pragma: no cover - package dependency is definitive.
-        raise RuntimeError("Install FastAPI and itsdangerous to run the Phase-2 app.") from exc
-
-    if not oauth_cookie_secret:
-        raise ValueError("oauth_cookie_secret is required.")
+        raise RuntimeError("Install FastAPI to run the Phase-2 app.") from exc
 
     from .phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
     from .phase2_file import (
@@ -1953,14 +1731,18 @@ def create_phase2_app(
             response = await call_next(request)
             response.headers["X-MOSS-Candidate-SHA"] = packaged_candidate["git_sha"]
             return response
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=oauth_cookie_secret,
-        session_cookie=OAUTH_COOKIE,
-        max_age=OAUTH_COOKIE_MAX_AGE,
-        same_site="lax",
-        https_only=True,
-    )
+    @app.middleware("http")
+    async def workspace_request_boundary(request: Request, call_next: Any):
+        # Browser writes must originate here. Cookie possession remains the owner
+        # authority; this also prevents cross-site creation of unwanted workspaces.
+        origin = request.headers.get("origin")
+        expected_origin = f"{request.url.scheme}://{request.url.netloc}"
+        if request.method not in {"GET", "HEAD", "OPTIONS"} and origin is not None and origin != expected_origin:
+            return JSONResponse({"detail": "Same-origin request required."}, status_code=403)
+        response = await call_next(request)
+        if request.url.path == "/" or request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
     frontend_dir = Path(__file__).resolve().parent / "frontend_assets"
     required_live_assets = ("app.js", "styles.css", "worklets/lane-framer.js")
     invalid_live_assets = (
@@ -2010,7 +1792,7 @@ def create_phase2_app(
 
     @app.exception_handler(AccountRevoked)
     async def account_revoked(_: Request, __: AccountRevoked):
-        return JSONResponse({"detail": "Sign in required."}, status_code=401)
+        return JSONResponse({"detail": "Workspace credential is unavailable."}, status_code=401)
 
     @app.exception_handler(AccountLifecycleUnavailable)
     async def account_lifecycle_unavailable(_: Request, __: AccountLifecycleUnavailable):
@@ -2021,19 +1803,8 @@ def create_phase2_app(
             request.cookies.get(SESSION_COOKIE)
         )
         if account is None:
-            raise HTTPException(status_code=401, detail="Sign in required.")
+            raise HTTPException(status_code=401, detail="Workspace credential is unavailable.")
         return account
-
-    def clear_oauth_transaction(request: Request, response: Response) -> Response:
-        request.session.clear()
-        response.delete_cookie(
-            OAUTH_COOKIE,
-            path="/",
-            secure=True,
-            httponly=True,
-            samesite="lax",
-        )
-        return response
 
     def set_session_cookie(response: Response, session_id: str) -> Response:
         response.set_cookie(
@@ -2063,14 +1834,10 @@ def create_phase2_app(
             request.cookies.get(SESSION_COOKIE)
         )
         if account is None:
-            state = request.query_params.get("auth")
-            if state == "revoked" or request.cookies.get(SESSION_COOKIE):
-                return HTMLResponse(_signed_out_html("revoked"), headers={"Cache-Control": "no-store"})
-            if state == "denied":
-                return HTMLResponse(_signed_out_html("denied"), headers={"Cache-Control": "no-store"})
-            if state == "error":
-                return HTMLResponse(_signed_out_html("error"), headers={"Cache-Control": "no-store"})
-            return HTMLResponse(_signed_out_html("signed-out"), headers={"Cache-Control": "no-store"})
+            return HTMLResponse(
+                _bootstrap_html(unavailable=bool(request.cookies.get(SESSION_COOKIE))),
+                headers={"Cache-Control": "no-store"},
+            )
         workspace = request.app.state.phase2_store.workspace(account)
         meetings = await workspace.list_meetings()
         response = HTMLResponse(
@@ -2079,56 +1846,20 @@ def create_phase2_app(
         )
         return set_session_cookie(response, request.cookies[SESSION_COOKIE])
 
-    @app.get("/auth/google")
-    async def google_start(request: Request):
-        return await oidc.begin(request)
-
-    @app.get("/auth/google/callback")
-    async def google_callback(request: Request):
-        try:
-            identity = await oidc.complete(request)
-        except GoogleOidcRejected:
-            return clear_oauth_transaction(request, RedirectResponse("/?auth=error", status_code=303))
-        try:
-            admitted = await request.app.state.phase2_store.admit(identity)
-        except Exception:
-            response = JSONResponse({"detail": "Sign-in could not be saved."}, status_code=500)
-            return clear_oauth_transaction(request, response)
-        if admitted is None:
-            return clear_oauth_transaction(request, RedirectResponse("/?auth=denied", status_code=303))
-        _, session_id = admitted
-        response = clear_oauth_transaction(request, RedirectResponse("/", status_code=303))
-        return set_session_cookie(response, session_id)
-
-    @app.post("/auth/logout")
-    async def logout(request: Request):
-        try:
-            await request.app.state.phase2_lifecycle.logout(
-                request.cookies.get(SESSION_COOKIE)
-            )
-        except AccountRevoked:
-            raise
-        except AccountLifecycleUnavailable:
-            raise
-        except Exception:
-            return JSONResponse(
-                {"detail": "Live Meetings could not be stopped; you remain signed in."},
-                status_code=503,
-            )
-        response = RedirectResponse("/", status_code=303)
-        response.delete_cookie(
-            SESSION_COOKIE,
-            path="/",
-            secure=True,
-            httponly=True,
-            samesite="lax",
+    @app.post("/api/workspace/bootstrap")
+    async def bootstrap_workspace(request: Request):
+        account, session_id = await request.app.state.phase2_store.bootstrap_browser(
+            request.cookies.get(SESSION_COOKIE)
         )
-        return response
+        return set_session_cookie(
+            JSONResponse({"workspace_id": account.account_id, "display_name": account.display_name}),
+            session_id,
+        )
 
     @app.get("/api/auth/session")
     async def auth_session(request: Request):
         account = await require_account(request)
-        response = JSONResponse({"email": account.email, "display_name": account.display_name})
+        response = JSONResponse({"workspace_id": account.account_id, "display_name": account.display_name})
         return set_session_cookie(response, request.cookies[SESSION_COOKIE])
 
     @app.get("/api/meetings")
@@ -2265,13 +1996,6 @@ def create_phase2_app(
     return app
 
 
-def _required_email(value: str) -> str:
-    normalized = normalize_email(value)
-    if not normalized:
-        raise ValueError("email is required.")
-    return normalized
-
-
 def _now_ms() -> int:
     return int(time.time() * 1000)
 
@@ -2315,19 +2039,35 @@ def _meeting_audio_from_row(row: Any) -> MeetingAudio | None:
     )
 
 
-def _signed_out_html(state: str) -> str:
-    if state == "revoked":
-        message = "Access revoked — partial meeting preserved. Sign in with an allowed Google account."
-    elif state == "denied":
-        message = "Account not allowed — use another Google account or contact the operator."
-    elif state == "error":
-        message = "Google sign-in could not be verified. Start again."
-    else:
-        message = "Sign in to open your private Account workspace."
+def _bootstrap_html(*, unavailable: bool) -> str:
+    message = (
+        "Workspace unavailable. Existing work has not been reassigned. Contact the operator."
+        if unavailable else "Opening this browser's workspace…"
+    )
+    script = "" if unavailable else """
+<script>
+const status = document.querySelector('[data-workspace-status]');
+(async () => {
+  if (!navigator.locks) throw new Error('Use Chrome with trusted HTTPS to open this workspace.');
+  await navigator.locks.request('moss-workspace-bootstrap', async () => {
+    const current = await fetch('/api/auth/session', {cache: 'no-store'});
+    if (current.status === 401) {
+      const created = await fetch('/api/workspace/bootstrap', {method: 'POST'});
+      if (!created.ok) throw new Error('Workspace unavailable. Contact the operator.');
+      const verified = await fetch('/api/auth/session', {cache: 'no-store'});
+      if (!verified.ok) throw new Error('Allow cookies for this site, then reload.');
+    } else if (!current.ok) {
+      throw new Error('Workspace unavailable. Reload when the server is ready.');
+    }
+  });
+  location.replace('/');
+})().catch(error => { status.textContent = error.message; });
+</script>"""
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title></head>
-<body><main data-auth-state=\"{state}\"><h1>MOSS</h1><p>{message}</p>
-<a data-action=\"google-sign-in\" href=\"/auth/google\">Sign in with Google</a></main></body></html>"""
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MOSS</title></head>
+<body><main data-auth-state="bootstrap"><h1>MOSS</h1><p data-workspace-status>{message}</p>
+<p>History belongs to this browser profile. Clearing site data loses automatic access.</p>
+<noscript>Enable JavaScript to open this browser's workspace.</noscript></main>{script}</body></html>"""
 
 
 def _workspace_html(
@@ -2353,8 +2093,8 @@ def _workspace_html(
     )
     return f"""<!doctype html>
 <html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title>{live_head}</head>
-<body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-account-email>{html.escape(account.email)}</span>
-<form action=\"/auth/logout\" method=\"post\"><button>Sign out</button></form></header>
+<body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span>
+<small>History stays with this browser profile. Clearing site data loses automatic access.</small></header>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
 <section data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
 <form data-file-upload=\"form\"><input name=\"file\" type=\"file\" multiple>

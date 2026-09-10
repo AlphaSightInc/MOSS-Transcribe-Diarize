@@ -11,10 +11,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     create_phase2_app,
 )
@@ -41,7 +42,6 @@ from moss_transcribe_diarize.app.live_service_runtime import LiveServiceRuntime
 
 FIXED_NOW = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
 FORBIDDEN_SENTINELS = (
-    "google-sub-sentinel",
     "meeting-title-sentinel",
     "transcript-sentinel",
     "private/audio/sentinel.mp3",
@@ -173,7 +173,7 @@ def _active_live_source() -> dict[str, object]:
     return {
         "accounts": [
             {
-                "email": "person@example.com",
+                "account_id": "person@example.com",
                 "display_name": "Person",
                 "enabled": 1,
                 "sign_in_sessions": 1,
@@ -192,7 +192,7 @@ def _active_live_source() -> dict[str, object]:
         ],
         "active_meetings": [
             {
-                "email": "person@example.com",
+                "account_id": "person@example.com",
                 "meeting_id": "active-live-id",
                 "mode": "live",
                 "status": "active",
@@ -205,14 +205,7 @@ def _active_live_source() -> dict[str, object]:
 
 async def _seed_content_store(database: Path) -> tuple[Phase2Store, str, str]:
     store = await Phase2Store.open(database)
-    await store.allow_email("person@example.com")
-    admitted = await store.admit(
-        GoogleIdentity(
-            account_id="google-sub-sentinel",
-            email="person@example.com",
-            display_name="Person",
-        )
-    )
+    admitted = await seed_workspace(store, "workspace-a")
     assert admitted is not None
     account, _ = admitted
     workspace = store.workspace(account)
@@ -321,7 +314,7 @@ def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: 
                 "backpressured_meetings": 0,
             }
             account = status["accounts"][0]
-            assert account["email"] == "person@example.com"
+            assert account["account_id"] == "workspace-a"
             assert account["sign_in_sessions"] == 2
             assert account["active_meetings"] == {"live": 1, "file": 1}
             assert account["logical"] == {
@@ -371,7 +364,7 @@ def test_transition_journal_deduplicates_bounds_and_restarts_without_history(
         assert len(journal.lines) == 1
         live.queues["live_canonical"] = 1
         await operator.snapshot(
-            operator_mutation="accounts.allow",
+            operator_mutation="accounts.revoke",
             mutation_outcome="succeeded",
         )
         codes = [json.loads(line)["code"] for line in journal.lines]
@@ -487,7 +480,7 @@ def test_allowlist_serializer_rejects_content_fields_and_human_uses_same_project
                 "retryable": False,
                 "occurrence_count": 1,
                 "context": {
-                    "command": "accounts.allow",
+                    "command": "accounts.revoke",
                     "outcome": "succeeded",
                     "state": "summary sentinel",
                 },
@@ -497,16 +490,12 @@ def test_allowlist_serializer_rejects_content_fields_and_human_uses_same_project
 
 def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: Path):
     class FailingLifecycle:
-        async def allow_account(self, email: str):
+        async def revoke_account(self, email: str):
             del email
             raise ValueError("raw failure with transcript-sentinel")
 
         async def list_accounts(self):
             return []
-
-        async def revoke_account(self, email: str):  # pragma: no cover - wrong command.
-            del email
-            raise AssertionError
 
     async def exercise() -> None:
         socket = Path("/tmp") / f"moss-i19-failure-{os.getpid()}-{time.time_ns()}.sock"
@@ -525,7 +514,7 @@ def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: P
         await server.start()
         try:
             with pytest.raises(Phase2ControlError, match="invalid_request"):
-                await request_control(socket, "accounts.allow", "person@example.com")
+                await request_control(socket, "accounts.revoke", "person@example.com")
             status = await request_control(socket, "status")
             assert status["latest_error"] == {
                 "occurred_at_utc": "2026-08-28T12:00:00.000Z",
@@ -535,7 +524,7 @@ def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: P
                 "terminal": False,
                 "retryable": True,
                 "occurrence_count": 1,
-                "context": {"command": "accounts.allow"},
+                "context": {"command": "accounts.revoke"},
             }
             injected = json.loads(json.dumps(status))
             injected["latest_error"]["context"]["state"] = "summary sentinel"
@@ -756,8 +745,8 @@ def test_runtime_exception_class_code_keeps_uds_status_available_and_safe(
 
 def test_post_mutation_observation_failure_does_not_rewrite_account_result(tmp_path: Path):
     class Lifecycle:
-        async def allow_account(self, email: str):
-            return {"email": email, "enabled": True}
+        async def revoke_account(self, email: str):
+            return True
 
     class FailedObservation:
         async def snapshot(self, **kwargs: object):
@@ -771,9 +760,9 @@ def test_post_mutation_observation_failure_does_not_rewrite_account_result(tmp_p
         try:
             assert await request_control(
                 socket,
-                "accounts.allow",
+                "accounts.revoke",
                 "person@example.com",
-            ) == {"email": "person@example.com", "enabled": True}
+            ) == {"account_id": "person@example.com", "revoked": True}
         finally:
             await server.stop()
 
@@ -788,8 +777,6 @@ def test_status_uses_existing_private_socket_and_cli_human_json(
     socket = Path("/tmp") / f"moss-i19-{os.getpid()}-{time.time_ns()}.sock"
     app = create_phase2_app(
         database_path=database,
-        oidc=_NoOidc(),
-        oauth_cookie_secret="test-only-cookie-secret",
         meeting_audio_root=tmp_path / "meetings",
         control_socket_path=socket,
     )
@@ -816,14 +803,7 @@ def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellati
     async def provision(database: Path) -> None:
         store = await Phase2Store.open(database)
         try:
-            await store.allow_email("person@example.com")
-            assert await store.admit(
-                GoogleIdentity(
-                    account_id="account-a",
-                    email="person@example.com",
-                    display_name="Person",
-                )
-            ) is not None
+            assert await seed_workspace(store, "account-a") is not None
         finally:
             await store.close()
 
@@ -832,8 +812,6 @@ def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellati
     socket = Path("/tmp") / f"moss-i19-shutdown-{os.getpid()}-{time.time_ns()}.sock"
     app = create_phase2_app(
         database_path=database,
-        oidc=_NoOidc(),
-        oauth_cookie_secret="test-only-cookie-secret",
         meeting_audio_root=tmp_path / "meetings",
         control_socket_path=socket,
     )
@@ -856,7 +834,7 @@ def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellati
             try:
                 request_result.append(
                     asyncio.run(
-                        request_control(socket, "accounts.revoke", "person@example.com")
+                        request_control(socket, "accounts.revoke", "account-a")
                     )
                 )
             except BaseException as exc:
@@ -899,14 +877,7 @@ def test_lifespan_observes_held_live_shutdown_failure_before_final_status(
     async def provision(database: Path):
         store = await Phase2Store.open(database)
         try:
-            await store.allow_email("person@example.com")
-            admitted = await store.admit(
-                GoogleIdentity(
-                    account_id="account-a",
-                    email="person@example.com",
-                    display_name="Person",
-                )
-            )
+            admitted = await seed_workspace(store, "account-a")
             assert admitted is not None
             return admitted[0]
         finally:
@@ -918,8 +889,6 @@ def test_lifespan_observes_held_live_shutdown_failure_before_final_status(
     runtime = _ShutdownRuntime()
     app = create_phase2_app(
         database_path=database,
-        oidc=_NoOidc(),
-        oauth_cookie_secret="test-only-cookie-secret",
         live_runtime_factory=lambda: runtime,
         live_helper_lease_seconds=30.0,
         meeting_audio_root=tmp_path / "meetings",

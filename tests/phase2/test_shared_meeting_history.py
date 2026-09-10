@@ -4,22 +4,16 @@ import asyncio
 import sqlite3
 from pathlib import Path
 
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
 )
 
-
-class NeverOidc:
-    async def begin(self, request):  # pragma: no cover - stored sessions bypass OIDC.
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):  # pragma: no cover - stored sessions bypass OIDC.
-        raise AssertionError("OIDC must not run")
 
 
 def set_session(client: TestClient, session_id: str | None) -> None:
@@ -31,8 +25,6 @@ def set_session(client: TestClient, session_id: str | None) -> None:
 def make_app(database: Path):
     return create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="history-test-cookie-secret",
     )
 
 
@@ -44,10 +36,7 @@ def test_workspace_order_is_active_first_then_terminal_newest_with_id_tie_break(
     async def exercise() -> None:
         store = await Phase2Store.open(database)
         try:
-            await store.allow_email("owner@example.com")
-            admitted = await store.admit(
-                GoogleIdentity("owner-sub", "owner@example.com", "Owner")
-            )
+            admitted = await seed_workspace(store, "owner-sub")
             assert admitted is not None
             account, _ = admitted
             rows = (
@@ -95,17 +84,9 @@ def test_same_account_rename_converges_restarts_and_foreign_id_is_zero_mutation(
     async def provision() -> tuple[str, str, str, str]:
         store = await Phase2Store.open(database)
         try:
-            await store.allow_email("owner@example.com")
-            await store.allow_email("foreign@example.com")
-            owner_first = await store.admit(
-                GoogleIdentity("owner-sub", "owner@example.com", "Owner")
-            )
-            owner_second = await store.admit(
-                GoogleIdentity("owner-sub", "owner@example.com", "Owner")
-            )
-            foreign = await store.admit(
-                GoogleIdentity("foreign-sub", "foreign@example.com", "Foreign")
-            )
+            owner_first = await seed_workspace(store, "owner-sub")
+            owner_second = await seed_workspace(store, "owner-sub")
+            foreign = await seed_workspace(store, "foreign-sub")
             assert owner_first is not None and owner_second is not None and foreign is not None
             handle = await store.workspace(owner_first[0]).create_meeting("file")
             await handle.commit_transcript(

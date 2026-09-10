@@ -46,13 +46,13 @@ DEFAULT_PROFILE = Path.home() / ".config" / "moss-transcribe-diarize" / "phase2-
 DETERMINISTIC_COMMANDS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("python", ("{python}", "-m", "pytest", "-q", "tests/"), CORE_GATES),
     (
-        "logout-stop-failure-contract",
+        "browser-workspace-credential-contract",
         (
             "{python}",
             "-m",
             "pytest",
             "-q",
-            "tests/phase2/test_owner_bound_live_meeting.py::test_logout_stop_failure_keeps_cookie_session_and_reopens_creation",
+            "tests/phase2/test_browser_workspace.py::test_revoked_owner_cannot_write_or_be_restored_by_fresh_browser",
         ),
         ("G2",),
     ),
@@ -102,7 +102,8 @@ REQUIRED_PYTHON_TEST_FILES = (
     "tests/phase2/test_account_deployment_surface.py",
     "tests/phase2/test_account_file_ingress.py",
     "tests/phase2/test_file_mp3_artifact.py",
-    "tests/phase2/test_google_account_workspace.py",
+    "tests/phase2/test_workspace_lifecycle.py",
+    "tests/phase2/test_browser_workspace.py",
     "tests/phase2/test_legacy_surface_absence.py",
     "tests/phase2/test_multi_file_url_meetings.py",
     "tests/phase2/test_operator_status.py",
@@ -132,10 +133,10 @@ REQUIRED_PYTHON_TEST_CASES = (
     "tests.phase2.test_atomic_cutover.test_safe_stopped_is_not_published_when_marker_and_listener_stop_are_unverified",
     "tests.phase2.test_atomic_cutover.test_snapshot_inventory_refuses_an_unruled_extra_role_before_effects",
     "tests.phase2.test_atomic_cutover.test_system_safe_stop_requires_successful_stop_inactive_units_and_closed_listeners",
-    "tests.phase2.test_google_account_workspace.test_authlib_172_offline_prototype_rejects_signed_claim_failures_before_admission",
-    "tests.phase2.test_google_account_workspace.test_unverified_or_disallowed_callback_leaves_no_account_or_session",
-    "tests.phase2.test_google_account_workspace.test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation",
-    "tests.phase2.test_owner_bound_live_meeting.test_logout_stop_failure_keeps_cookie_session_and_reopens_creation",
+    "tests.phase2.test_browser_workspace.test_browser_http_bootstrap_is_explicit_private_and_same_origin",
+    "tests.phase2.test_browser_workspace.test_old_schema_is_refused_without_changing_bytes_or_creating_sidecars",
+    "tests.phase2.test_workspace_lifecycle.test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation",
+    "tests.phase2.test_browser_workspace.test_revoked_owner_cannot_write_or_be_restored_by_fresh_browser",
 )
 REQUIRED_FRONTEND_TEST_FILES = (
     "frontend/src/App.test.tsx",

@@ -10,7 +10,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from .phase2 import AuthlibGoogleOidc, DEFAULT_PHASE2_DATABASE_PATH, create_phase2_app
+from .phase2 import DEFAULT_PHASE2_DATABASE_PATH, create_phase2_app
 from .phase2_audio import DEFAULT_PHASE2_MEETING_AUDIO_ROOT
 from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
 from .phase2_control import DEFAULT_PHASE2_CONTROL_SOCKET_PATH
@@ -31,9 +31,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=str(DEFAULT_PHASE2_CONTROL_SOCKET_PATH),
         help="Mode-0600 host-local Account control socket.",
     )
-    parser.add_argument("--google-client-id", required=True)
-    parser.add_argument("--google-client-secret-file", required=True)
-    parser.add_argument("--oauth-cookie-secret-file", required=True)
     parser.add_argument("--tls-certfile", required=True)
     parser.add_argument("--tls-keyfile", required=True)
     parser.add_argument("--backend", choices=["hf", "vllm"], default="hf")
@@ -73,17 +70,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7861)
     return parser.parse_args(argv)
-
-
-def _secret_from_file(path_text: str, *, flag: str) -> str:
-    path = Path(path_text).expanduser()
-    try:
-        secret = path.read_text(encoding="utf-8").strip()
-    except OSError as exc:
-        raise SystemExit(f"{flag} could not be read: {path}: {exc.strerror}") from exc
-    if not secret:
-        raise SystemExit(f"{flag} must contain a non-empty value.")
-    return secret
 
 
 def _build_file_runner(args: argparse.Namespace):
@@ -147,18 +133,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     configure_operator_journal()
     file_runner = _build_file_runner(args)
     live_runtime_factory = _build_live_runtime_factory(args, file_runner)
-    oidc = AuthlibGoogleOidc.configured(
-        client_id=args.google_client_id,
-        client_secret=_secret_from_file(
-            args.google_client_secret_file, flag="--google-client-secret-file"
-        ),
-    )
     app = create_phase2_app(
         database_path=Path(args.database).expanduser(),
-        oidc=oidc,
-        oauth_cookie_secret=_secret_from_file(
-            args.oauth_cookie_secret_file, flag="--oauth-cookie-secret-file"
-        ),
         file_runner=file_runner,
         file_work_root=Path(args.file_work_root).expanduser(),
         meeting_audio_root=Path(args.meeting_audio_root).expanduser(),

@@ -43,7 +43,7 @@ _STATUS_KEYS = frozenset(
         "batch",
         "backpressured_meetings",
         "accounts",
-        "email",
+        "account_id",
         "display_name",
         "enabled",
         "sign_in_sessions",
@@ -259,7 +259,7 @@ class Phase2OperatorStatus:
             mode = _string(row, "mode")
             created_at_ms = _integer(row, "created_at_ms")
             meeting = {
-                "email": _string(row, "email"),
+                "account_id": _string(row, "account_id"),
                 "meeting_id": meeting_id,
                 "mode": mode,
                 "lifecycle": _string(row, "status"),
@@ -328,7 +328,7 @@ class Phase2OperatorStatus:
 
     def _account(self, row: Mapping[str, object]) -> dict[str, object]:
         return {
-            "email": _string(row, "email"),
+            "account_id": _string(row, "account_id"),
             "display_name": _string(row, "display_name"),
             "enabled": bool(row.get("enabled")),
             "sign_in_sessions": _integer(row, "sign_in_sessions"),
@@ -620,7 +620,7 @@ def render_operator_status(payload: Mapping[str, object]) -> str:
         logical = _mapping(row["logical"])
         audio = _mapping(row["audio"])
         lines.append(
-            f"  {row['email']} | {row['display_name']} | enabled={str(row['enabled']).lower()} "
+            f"  {row['account_id']} | {row['display_name']} | enabled={str(row['enabled']).lower()} "
             f"sessions={row['sign_in_sessions']} active_live={active['live']} "
             f"active_file={active['file']} meetings={logical['meetings']} "
             f"transcripts={logical['transcripts']} voiceprints={logical['voiceprints']} "
@@ -633,7 +633,7 @@ def render_operator_status(payload: Mapping[str, object]) -> str:
         row = _mapping(meeting)
         parts = [
             f"  {row['meeting_id']}",
-            str(row["email"]),
+            str(row["account_id"]),
             str(row["mode"]),
             str(row["lifecycle"]),
             str(row["started_at_utc"]),
@@ -755,7 +755,7 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
         _exact_keys(
             account,
             {
-                "email",
+                "account_id",
                 "display_name",
                 "enabled",
                 "sign_in_sessions",
@@ -765,7 +765,7 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
             },
             "Account status",
         )
-        if not isinstance(account["email"], str) or not isinstance(
+        if not isinstance(account["account_id"], str) or not isinstance(
             account["display_name"], str
         ):
             raise OperatorProjectionError("Operator Account identity is invalid.")
@@ -795,7 +795,7 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
     for value in meetings:
         meeting = _mapping(value)
         base = {
-            "email",
+            "account_id",
             "meeting_id",
             "mode",
             "lifecycle",
@@ -845,7 +845,7 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
                 raise OperatorProjectionError("Operator backpressure state is invalid.")
         else:
             raise OperatorProjectionError("Operator active Meeting mode is invalid.")
-        for key in ("email", "meeting_id", "lifecycle", "started_at_utc"):
+        for key in ("account_id", "meeting_id", "lifecycle", "started_at_utc"):
             if not isinstance(meeting[key], str):
                 raise OperatorProjectionError("Operator active Meeting field is invalid.")
         if meeting["lifecycle"] != "active":
@@ -908,8 +908,7 @@ def _validate_safe_error(error: Mapping[str, object], *, latest: bool) -> None:
         if set(context) not in (set(), {"command"}):
             raise OperatorProjectionError("Operator safe-error context is not allowlisted.")
         if "command" in context and context["command"] not in {
-            "accounts.allow",
-            "accounts.revoke",
+                        "accounts.revoke",
             "meetings.interrupt",
             "unknown",
         }:
@@ -995,8 +994,7 @@ def _validate_event_scope(event: Mapping[str, object]) -> None:
             _safe_token(context["state"], "event error code")
     elif kind == "operator_mutation":
         if context["command"] not in {
-            "accounts.allow",
-            "accounts.revoke",
+                        "accounts.revoke",
             "meetings.interrupt",
         }:
             raise OperatorProjectionError("Operator mutation command is invalid.")

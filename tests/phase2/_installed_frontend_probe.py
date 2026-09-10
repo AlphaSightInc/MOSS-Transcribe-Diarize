@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 import sys
 from types import SimpleNamespace
 
-from fastapi.responses import RedirectResponse
 from fastapi.testclient import TestClient
 
 import moss_transcribe_diarize.app.phase2 as phase2
@@ -15,16 +13,6 @@ import moss_transcribe_diarize.app.phase2 as phase2
 # This smoke isolates wheel assets, not the Linux runtime. The retained runtime probe exercises
 # the same wheel under exact SQLite 3.53.4 and separately proves wrong-runtime refusal.
 phase2.REQUIRED_SQLITE_RUNTIME = phase2.sqlite3.sqlite_version
-
-
-class WheelOidc:
-    async def begin(self, request):
-        del request
-        return RedirectResponse("/auth/google/callback", status_code=302)
-
-    async def complete(self, request):
-        del request
-        return phase2.GoogleIdentity("wheel-browser", "person@example.com", "Person")
 
 
 class IdleLiveRuntime:
@@ -47,19 +35,9 @@ class IdleLiveRuntime:
         raise AssertionError((session_id, reason))
 
 
-async def allow(database: Path) -> None:
-    store = await phase2.Phase2Store.open(database)
-    try:
-        await store.allow_email("person@example.com")
-    finally:
-        await store.close()
-
-
 def live_app(database: Path, runtime: IdleLiveRuntime):
     return phase2.create_phase2_app(
         database_path=database,
-        oidc=WheelOidc(),
-        oauth_cookie_secret="wheel-smoke-cookie-secret",
         live_runtime_factory=lambda: runtime,
         live_helper_lease_seconds=30,
     )
@@ -72,10 +50,10 @@ def main() -> None:
     assets = Path(phase2.__file__).resolve().parent / "frontend_assets"
     runtime = IdleLiveRuntime()
 
-    asyncio.run(allow(database))
     app = live_app(database, runtime)
     with TestClient(app, base_url="https://moss.test", follow_redirects=True) as client:
-        workspace = client.get("/auth/google")
+        assert client.post("/api/workspace/bootstrap").status_code == 200
+        workspace = client.get("/")
         assert workspace.status_code == 200
         assert 'data-workspace-section="live"' in workspace.text
         for relative in ("app.js", "styles.css", "worklets/lane-framer.js"):
@@ -107,8 +85,6 @@ def main() -> None:
                 raise AssertionError("incomplete Live assets must refuse startup")
             phase2.create_phase2_app(
                 database_path=database.with_name("file-only.sqlite3"),
-                oidc=WheelOidc(),
-                oauth_cookie_secret="wheel-smoke-cookie-secret",
             )
         finally:
             path.parent.mkdir(parents=True, exist_ok=True)

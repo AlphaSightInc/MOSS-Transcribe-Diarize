@@ -4,12 +4,13 @@ import asyncio
 import collections
 from pathlib import Path
 
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 import pytest
 
 from moss_transcribe_diarize.app import phase2_file
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -24,15 +25,6 @@ from moss_transcribe_diarize.app.phase2_file import (
 DiskUsage = collections.namedtuple("usage", "total used free")
 
 
-class NeverOidc:
-    async def begin(self, request):
-        del request
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):
-        del request
-        raise AssertionError("OIDC must not run")
-
 
 class NeverRunner:
     model_path = "upload-admission-test"
@@ -45,10 +37,7 @@ class NeverRunner:
 async def _provision(database: Path) -> str:
     store = await Phase2Store.open(database)
     try:
-        await store.allow_email("owner@example.com")
-        admitted = await store.admit(
-            GoogleIdentity("upload-owner", "owner@example.com", "Owner")
-        )
+        admitted = await seed_workspace(store, "upload-owner")
         assert admitted is not None
         return admitted[1]
     finally:
@@ -135,8 +124,6 @@ def test_account_file_route_maps_prebody_refusal_without_meeting_or_stage(tmp_pa
     work_root = tmp_path / "file-work"
     app = create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="upload-admission-secret",
         file_runner=NeverRunner(),
         file_work_root=work_root,
     )

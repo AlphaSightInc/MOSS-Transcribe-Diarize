@@ -1,7 +1,6 @@
 """One Account authority lifecycle composed from existing Meeting owners.
 
-The module hides admission counts, enumeration, quiescence, and authority ordering. HTTP
-logout and the host-local control adapter cross the same interface; neither can mutate the
+The module hides admission counts, enumeration, quiescence, and authority ordering. The host-local control adapter crosses this interface rather than mutating the
 store directly around process-owned Live/File work.
 """
 
@@ -11,7 +10,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
-from .phase2 import Account, AccountRevoked, Phase2Store, normalize_email
+from .phase2 import Account, AccountRevoked, Phase2Store
 
 
 class AccountLifecycleUnavailable(RuntimeError):
@@ -78,14 +77,12 @@ class AccountLifecycle:
         files: Any | None,
         audio_archive: Any | None = None,
         live_audio_stages: Any | None = None,
-        normal_stop_deadline: float = 5.0,
     ) -> None:
         self._store = store
         self._live = live
         self._files = files
         self._audio_archive = audio_archive
         self._live_audio_stages = live_audio_stages
-        self._normal_stop_deadline = normal_stop_deadline
         self._live_control: Any | None = None
         self._session_gates: dict[str, _DrainGate] = {}
         self._account_gates: dict[tuple[str, int], _DrainGate] = {}
@@ -106,14 +103,14 @@ class AccountLifecycle:
         """Admit, resolve that exact session, and release after owned-work registration."""
 
         if not session_id:
-            raise AccountRevoked("Sign in required.")
+            raise AccountRevoked("Workspace credential is unavailable.")
         session_gate = await self._gate(self._session_gates, session_id)
         await session_gate.enter()
         account_gate: _DrainGate | None = None
         try:
             account = await self._store.account_for_session(session_id)
             if account is None:
-                raise AccountRevoked("Sign in required.")
+                raise AccountRevoked("Workspace credential is unavailable.")
             account_key = (account.account_id, account.authority_generation)
             account_gate = await self._gate(self._account_gates, account_key)
             await account_gate.enter()
@@ -124,43 +121,12 @@ class AccountLifecycle:
         finally:
             await session_gate.leave()
 
-    async def logout(self, session_id: str | None) -> bool:
-        """Normally Stop this browser's Live bindings, then revoke only its session."""
-
-        if not session_id:
-            raise AccountRevoked("Sign in required.")
-        account = await self._store.account_for_session(session_id)
-        if account is None:
-            raise AccountRevoked("Sign in required.")
-        account_gate = await self._gate(
-            self._account_gates,
-            (account.account_id, account.authority_generation),
-        )
-        await account_gate.enter()
-        session_gate = await self._gate(self._session_gates, session_id)
-        owns_close = False
-        try:
-            await session_gate.close()
-            owns_close = True
-            await session_gate.drain()
-            await self._stop_origin_live(session_id)
-            revoked = await self._store.revoke_session(session_id)
-            if not revoked:
-                raise AccountLifecycleSettlementError("Sign-in session changed during logout.")
-            return True
-        except BaseException:
-            if owns_close:
-                await session_gate.reopen()
-            raise
-        finally:
-            await account_gate.leave()
-
-    async def revoke_account(self, email: str) -> bool:
+    async def revoke_account(self, account_id: str) -> bool:
         """Claim Account settlement as service work before transport can be cancelled."""
 
         task = asyncio.create_task(
-            self._revoke_account(email),
-            name=f"phase2-account-revoke-{normalize_email(email)}",
+            self._revoke_account(account_id),
+            name=f"phase2-account-revoke-{account_id}",
         )
         self._revoke_tasks.add(task)
         task.add_done_callback(self._revoke_done)
@@ -241,10 +207,10 @@ class AccountLifecycle:
         if not task.cancelled():
             task.exception()
 
-    async def _revoke_account(self, email: str) -> bool:
+    async def _revoke_account(self, account_id: str) -> bool:
         """Quiesce owned process work, then durably fence the Account generation."""
 
-        target = await self._store.account_revoke_target(email)
+        target = await self._store.account_revoke_target(account_id)
         account = target.account
         if account is None:
             return await self._store.finalize_account_revoke(target)
@@ -288,32 +254,8 @@ class AccountLifecycle:
         # A cancelled client/handler no longer awaits the service-owned result.
         task.exception()
 
-    async def allow_account(self, email: str) -> dict[str, object]:
-        normalized = normalize_email(email)
-        if not normalized:
-            raise ValueError("email is required.")
-        await self._store.allow_email(normalized)
-        return {"email": normalized, "enabled": True}
-
     async def list_accounts(self) -> list[dict[str, object]]:
-        return await self._store.list_allowlist()
-
-    async def _stop_origin_live(self, session_id: str) -> None:
-        if self._live is None:
-            return
-        if self._live_control is None:
-            raise AccountLifecycleSettlementError("Live transport control is unavailable.")
-        for binding in self._live.bindings_for_origin(session_id):
-            try:
-                await self._live_control.stop(
-                    binding,
-                    binding.handle.meeting_id,
-                    self._normal_stop_deadline,
-                )
-            except Exception as exc:
-                raise AccountLifecycleSettlementError(
-                    "Live Meeting could not complete normal Stop."
-                ) from exc
+        return await self._store.list_accounts()
 
     async def _interrupt_account_live(self, bindings: tuple[Any, ...]) -> None:
         if self._live is None:

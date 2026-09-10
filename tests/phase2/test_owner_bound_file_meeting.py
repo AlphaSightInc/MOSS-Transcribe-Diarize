@@ -12,12 +12,13 @@ import wave
 from pathlib import Path
 from types import SimpleNamespace
 
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 import pytest
 
 from moss_transcribe_diarize.app import phase2_file
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -28,13 +29,6 @@ from moss_transcribe_diarize.app.phase2_admin import (
 )
 from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
 
-
-class NeverOidc:
-    async def begin(self, request):  # pragma: no cover - these tests use stored MOSS sessions.
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):  # pragma: no cover - these tests use stored MOSS sessions.
-        raise AssertionError("OIDC must not run")
 
 
 class ControlledRunner:
@@ -90,14 +84,11 @@ async def provision(database: Path) -> dict[str, str]:
     try:
         sessions: dict[str, str] = {}
         for subject, email in (
-            ("sub-a", "a@example.com"),
-            ("sub-b", "b@example.com"),
+            ("sub-a", "sub-a"),
+            ("sub-b", "sub-b"),
         ):
-            await store.allow_email(email)
-            _, sessions[subject] = await store.admit(GoogleIdentity(subject, email, subject))
-        _, sessions["sub-a-second"] = await store.admit(
-            GoogleIdentity("sub-a", "a@example.com", "sub-a")
-        )
+            _, sessions[subject] = await seed_workspace(store, subject)
+        _, sessions["sub-a-second"] = await seed_workspace(store, "sub-a")
         return sessions
     finally:
         await store.close()
@@ -112,8 +103,6 @@ def make_app(
 ):
     return create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="test-cookie-secret",
         file_runner=runner,
         file_work_root=work_root,
         control_socket_path=control_socket,
@@ -187,7 +176,7 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
     assert list((tmp_path / "file-work").glob("**/*")) == []
 
 
-def test_logout_does_not_cancel_accepted_file_work(tmp_path: Path):
+def test_lost_browser_cookie_does_not_cancel_accepted_file_work(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     runner = ControlledRunner()
@@ -200,8 +189,7 @@ def test_logout_does_not_cancel_accepted_file_work(tmp_path: Path):
             files={"file": ("meeting.wav", b"accepted", "audio/wav")},
         ).json()["id"]
         assert runner.started.wait(timeout=2)
-        logout = client.post("/auth/logout", follow_redirects=False)
-        assert logout.status_code == 303
+        client.cookies.clear()
         assert client.get("/api/auth/session").status_code == 401
         runner.release.set()
         session(client, sessions["sub-a-second"])
@@ -233,7 +221,7 @@ def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: 
 
         def revoke() -> None:
             outcome["result"] = asyncio.run(
-                execute_admin(socket, "revoke", "a@example.com")
+                execute_admin(socket, "revoke", "sub-a")
             )
 
         worker = threading.Thread(target=revoke)
@@ -254,7 +242,7 @@ def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: 
         runner.release.set()
         worker.join(timeout=5)
         assert not worker.is_alive()
-        assert outcome["result"] == {"email": "a@example.com", "revoked": True}
+        assert outcome["result"] == {"account_id": "sub-a", "revoked": True}
         assert client.get("/api/auth/session").status_code == 401
 
     connection = sqlite3.connect(database)
@@ -492,7 +480,7 @@ def test_control_shutdown_joins_service_owned_file_revoke_and_runner(tmp_path: P
     def revoke() -> None:
         try:
             outcome["result"] = asyncio.run(
-                execute_admin(socket, "revoke", "a@example.com")
+                execute_admin(socket, "revoke", "sub-a")
             )
         except BaseException as exc:
             outcome["error"] = exc
@@ -601,7 +589,7 @@ def test_revocation_fences_late_file_result_commit(tmp_path: Path):
 
         def revoke() -> None:
             outcome["result"] = asyncio.run(
-                execute_admin(socket, "revoke", "a@example.com")
+                execute_admin(socket, "revoke", "sub-a")
             )
 
         worker = threading.Thread(target=revoke)
@@ -615,7 +603,7 @@ def test_revocation_fences_late_file_result_commit(tmp_path: Path):
         worker.join(timeout=5)
         assert not worker.is_alive()
         assert outcome == {
-            "result": {"email": "a@example.com", "revoked": True}
+            "result": {"account_id": "sub-a", "revoked": True}
         }
         assert client.get(f"/api/meetings/{meeting_id}").status_code == 401
 
@@ -644,8 +632,7 @@ def test_each_owner_bound_commit_versions_and_restart_retains_last_document(tmp_
     async def commit_twice() -> str:
         store = await Phase2Store.open(database)
         try:
-            await store.allow_email("a@example.com")
-            account, _ = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
+            account, _ = await seed_workspace(store, "sub-a")
             meeting = await store.workspace(account).create_meeting("file")
             assert await meeting.commit_transcript({"segments": [{"text": "first"}]}) == 1
             assert await meeting.commit_transcript({"segments": [{"text": "second"}]}) == 2
@@ -880,8 +867,6 @@ def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
     runner.release.set()
     app = create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="test-cookie-secret",
         file_runner=runner,
         file_work_root=tmp_path / "file-work",
         file_inference_options={

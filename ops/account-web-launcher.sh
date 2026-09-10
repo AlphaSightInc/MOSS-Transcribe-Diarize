@@ -8,7 +8,6 @@ SQLITE_PREFIX="${HOME}/.local/share/moss-transcribe-diarize/sqlite-3.53.4"
 MODEL_DIR="${HOME}/.local/share/moss-transcribe-diarize/model"
 
 required=(
-  MOSS_GOOGLE_CLIENT_ID MOSS_GOOGLE_CLIENT_SECRET_FILE MOSS_OAUTH_COOKIE_SECRET_FILE
   MOSS_TLS_CERTFILE MOSS_TLS_KEYFILE MOSS_LIVE_PROVIDER_MANIFEST
   MOSS_LIVE_HELPER_LEASE_SECONDS MOSS_PHASE2_DATABASE MOSS_PHASE2_CONTROL_SOCKET
   MOSS_FILE_WORK_ROOT MOSS_MEETING_AUDIO_ROOT
@@ -25,9 +24,6 @@ export LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PAT
 exec "${RUNTIME_DIR}/bin/python" -I -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "${MOSS_PHASE2_DATABASE}" \
   --control-socket "${MOSS_PHASE2_CONTROL_SOCKET}" \
-  --google-client-id "${MOSS_GOOGLE_CLIENT_ID}" \
-  --google-client-secret-file "${MOSS_GOOGLE_CLIENT_SECRET_FILE}" \
-  --oauth-cookie-secret-file "${MOSS_OAUTH_COOKIE_SECRET_FILE}" \
   --tls-certfile "${MOSS_TLS_CERTFILE}" \
   --tls-keyfile "${MOSS_TLS_KEYFILE}" \
   --backend vllm \

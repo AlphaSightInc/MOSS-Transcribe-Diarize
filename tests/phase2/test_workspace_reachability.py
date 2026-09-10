@@ -38,7 +38,6 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentitySnapshot,
 )
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     create_phase2_app,
 )
@@ -56,16 +55,6 @@ def _chrome() -> Path:
         if candidate.is_file():
             return candidate
     pytest.skip("Chrome/Chromium is required for the workspace reachability regression.")
-
-
-class _BrowserOidc:
-    async def begin(self, request):
-        del request
-        return RedirectResponse("/auth/google/callback?code=local-browser", status_code=302)
-
-    async def complete(self, request):
-        del request
-        return GoogleIdentity("browser-owner", "person@example.com", "Person")
 
 
 class _SpeechProvider:
@@ -220,6 +209,7 @@ class _ChromePage:
             [
                 str(chrome),
                 "--headless=new",
+                "--mute-audio",
                 "--no-sandbox",
                 "--disable-gpu",
                 "--ignore-certificate-errors",
@@ -404,24 +394,9 @@ def _stop_server(server: uvicorn.Server, thread: threading.Thread) -> None:
     assert not thread.is_alive()
 
 
-async def _provision(database: Path) -> None:
-    store = await Phase2Store.open(database)
-    try:
-        await store.allow_email("person@example.com")
-        admitted = await store.admit(
-            GoogleIdentity("browser-owner", "person@example.com", "Person")
-        )
-        assert admitted is not None
-        handle = await store.workspace(admitted[0]).create_meeting("file")
-        await handle.record_audio_unavailable()
-        await handle.finish("completed")
-    finally:
-        await store.close()
-
-
 def _create_active_meeting(base_url: str) -> tuple[httpx.Client, str]:
     client = httpx.Client(base_url=base_url, verify=False, follow_redirects=True)
-    response = client.get("/auth/google")
+    response = client.post("/api/workspace/bootstrap")
     assert response.status_code == 200
     created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
     assert created.status_code == 201
@@ -444,7 +419,7 @@ def _create_active_meeting(base_url: str) -> tuple[httpx.Client, str]:
     raise AssertionError("Active browser Meeting did not publish its transcript.")
 
 
-def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
+def test_real_bundle_same_workspace_views_converge_and_remain_read_only(
     tmp_path: Path,
 ) -> None:
     chrome = _chrome()
@@ -453,11 +428,8 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
         / "moss_transcribe_diarize/app/frontend_assets/app.js"
     ).is_file()
     database = tmp_path / "moss.sqlite3"
-    asyncio.run(_provision(database))
     app = create_phase2_app(
         database_path=database,
-        oidc=_BrowserOidc(),
-        oauth_cookie_secret="browser-test-cookie-secret",
         live_runtime_factory=_runtime,
         live_helper_lease_seconds=30,
     )
@@ -466,15 +438,29 @@ def test_real_bundle_two_same_account_browsers_converge_and_remain_read_only(
     controller = None
     try:
         controller, meeting_id = _create_active_meeting(base_url)
+        async def unavailable_audio_fixture():
+            store = await Phase2Store.open(database)
+            try:
+                owner = await store.account_for_session(controller.cookies["__Host-moss_session"])
+                handle = await store.workspace(owner).create_meeting("file")
+                await handle.record_audio_unavailable()
+                await handle.finish("failed")
+            finally:
+                await store.close()
+
+        # Active Live audio has no final state yet. Exercise the unavailable label
+        # with a separate terminal meeting that actually has unavailable audio.
+        asyncio.run(unavailable_audio_fixture())
         measured = asyncio.run(
             _exercise_two_browsers(
                 chrome=chrome,
                 tmp_path=tmp_path,
                 base_url=base_url,
                 meeting_id=meeting_id,
+                credential=controller.cookies["__Host-moss_session"],
             )
         )
-        assert measured["distinct_sessions"] is True
+        assert measured["distinct_sessions"] is False
         assert measured["desktop_order"] == ["file", "live", "history"]
         assert measured["mobile_order"] == ["file", "live", "history"]
         assert measured["desktop_history_visible"] is True
@@ -503,23 +489,32 @@ async def _exercise_two_browsers(
     tmp_path: Path,
     base_url: str,
     meeting_id: str,
+    credential: str,
 ) -> dict[str, object]:
     first = await _ChromePage.launch(
         chrome=chrome,
         profile=tmp_path / "chrome-first",
-        url=f"{base_url}/auth/google",
+        url="about:blank",
         width=1280,
         height=720,
     )
     second = await _ChromePage.launch(
         chrome=chrome,
         profile=tmp_path / "chrome-second",
-        url=f"{base_url}/auth/google",
+        url="about:blank",
         width=390,
         height=844,
         mobile=True,
     )
     try:
+        # Seed the same browser credential into desktop/mobile rendering fixtures.
+        # Separate-profile privacy is tested by browser_workspace_probe.py.
+        for page in (first, second):
+            await page.command("Network.setCookie", {
+                "name": "__Host-moss_session", "value": credential, "url": base_url,
+                "path": "/", "secure": True, "httpOnly": True, "sameSite": "Lax",
+            })
+            await page.command("Page.navigate", {"url": base_url})
         ready = "document.querySelector('[data-auth-state=\"signed-in\"]') && document.querySelector('[data-boot=\"ready\"]')"
         await first.wait(ready)
         await second.wait(ready)

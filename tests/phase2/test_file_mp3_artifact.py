@@ -12,12 +12,13 @@ import wave
 from pathlib import Path
 from types import SimpleNamespace
 
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 import numpy as np
 import pytest
 
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -29,13 +30,6 @@ from moss_transcribe_diarize.app.phase2_audio import (
 )
 from moss_transcribe_diarize.app.phase2_admin import execute as execute_admin
 
-
-class NeverOidc:
-    async def begin(self, request):  # pragma: no cover - stored sessions only.
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):  # pragma: no cover - stored sessions only.
-        raise AssertionError("OIDC must not run")
 
 
 class ImmediateRunner:
@@ -90,9 +84,8 @@ async def provision(database: Path) -> dict[str, str]:
     store = await Phase2Store.open(database)
     try:
         sessions: dict[str, str] = {}
-        for subject, email in (("sub-a", "a@example.com"), ("sub-b", "b@example.com")):
-            await store.allow_email(email)
-            _, sessions[subject] = await store.admit(GoogleIdentity(subject, email, subject))
+        for subject, email in (("sub-a", "sub-a"), ("sub-b", "sub-b")):
+            _, sessions[subject] = await seed_workspace(store, subject)
         return sessions
     finally:
         await store.close()
@@ -257,8 +250,6 @@ def make_app(
 ):
     return create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="test-cookie-secret",
         file_runner=runner or ImmediateRunner(),
         file_work_root=work_root,
         meeting_audio_root=audio_root,
@@ -312,7 +303,7 @@ def test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial(tmp_pat
 
         def revoke() -> None:
             outcome["result"] = asyncio.run(
-                execute_admin(socket, "revoke", "a@example.com")
+                execute_admin(socket, "revoke", "sub-a")
             )
 
         worker = threading.Thread(target=revoke)
@@ -321,7 +312,7 @@ def test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial(tmp_pat
         release_finish.set()
         assert not worker.is_alive()
         assert outcome == {
-            "result": {"email": "a@example.com", "revoked": True}
+            "result": {"account_id": "sub-a", "revoked": True}
         }
 
     connection = sqlite3.connect(database)
@@ -453,7 +444,7 @@ def test_file_completion_publishes_private_exact_mp3_and_owner_whole_download(tm
         async def revoke() -> None:
             store = await Phase2Store.open(database)
             try:
-                assert await store.revoke_email("a@example.com") is True
+                assert await store.revoke_account("sub-a") is True
             finally:
                 await store.close()
 

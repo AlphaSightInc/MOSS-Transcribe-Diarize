@@ -60,9 +60,6 @@ REQUIRED_SNAPSHOT_ROLES = frozenset(
 )
 REQUIRED_ACCOUNT_PROFILE_KEYS = frozenset(
     {
-        "MOSS_GOOGLE_CLIENT_ID",
-        "MOSS_GOOGLE_CLIENT_SECRET_FILE",
-        "MOSS_OAUTH_COOKIE_SECRET_FILE",
         "MOSS_TLS_CERTFILE",
         "MOSS_TLS_KEYFILE",
         "MOSS_LIVE_PROVIDER_MANIFEST",
@@ -427,8 +424,6 @@ def _candidate_state_paths(account_profile: Mapping[str, str]) -> dict[str, Path
     if len(set(paths.values())) != len(paths):
         raise CutoverRefused("candidate state paths must be distinct")
     for key in (
-        "MOSS_GOOGLE_CLIENT_SECRET_FILE",
-        "MOSS_OAUTH_COOKIE_SECRET_FILE",
         "MOSS_TLS_CERTFILE",
         "MOSS_TLS_KEYFILE",
         "MOSS_LIVE_PROVIDER_MANIFEST",

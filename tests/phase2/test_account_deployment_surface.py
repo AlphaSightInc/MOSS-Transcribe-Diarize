@@ -127,8 +127,8 @@ def test_deployment_has_one_tls_account_web_unit_and_no_legacy_profile():
     assert "454e45f61c6bd75b7420e7190732dea03ce6639c63ada47bbc592f67fc340338" in sqlite_build
     assert "--port 7861" in account_launcher
     assert "MOSS_PHASE2_DATABASE" in account_launcher
-    assert "MOSS_GOOGLE_CLIENT_SECRET_FILE" in account_launcher
-    assert "MOSS_OAUTH_COOKIE_SECRET_FILE" in account_launcher
+    assert "MOSS_GOOGLE_CLIENT_SECRET_FILE" not in account_launcher
+    assert "MOSS_OAUTH_COOKIE_SECRET_FILE" not in account_launcher
     assert "UNITS=\"moss-vllm.service moss-web.service\"" in install
     assert ".config/moss-transcribe-diarize" in install
     assert "service profile must be mode 0600" in install
@@ -215,7 +215,7 @@ def test_account_shell_entrypoints_parse_without_running_or_loading_models():
         text=True,
     )
     assert helped.returncode == 0, helped.stderr
-    assert "--google-client-id" in helped.stdout
+    assert "--google-client-id" not in helped.stdout
     assert "--live-provider-manifest" in helped.stdout
     cutover_help = subprocess.run(
         [sys.executable, "-I", "-m", "moss_transcribe_diarize.app.phase2_cutover_cli", "--help"],
@@ -609,7 +609,7 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
         check=False, capture_output=True, text=True,
     )
     assert direct.returncode == 0, direct.stderr
-    assert "--google-client-id" in direct.stdout
+    assert "--google-client-id" not in direct.stdout
 
     # The stage transfers only these pip-generated script paths.  Wheel-owned
     # package members and the replacement launchers retain separate authorities.
@@ -753,9 +753,6 @@ def test_staged_launcher_transfer_preserves_verified_wheel_projection(tmp_path: 
         "HOME": str(fake_home),
         "PYTHONHOME": str(ROOT),
         "PYTHONPATH": str(ROOT),
-        "MOSS_GOOGLE_CLIENT_ID": "client",
-        "MOSS_GOOGLE_CLIENT_SECRET_FILE": str(tmp_path / "google-secret"),
-        "MOSS_OAUTH_COOKIE_SECRET_FILE": str(tmp_path / "cookie-secret"),
         "MOSS_TLS_CERTFILE": str(tmp_path / "cert"),
         "MOSS_TLS_KEYFILE": str(tmp_path / "key"),
         "MOSS_LIVE_PROVIDER_MANIFEST": str(tmp_path / "provider"),

@@ -1,4 +1,4 @@
-"""Host-local exact-email admission commands for the Phase-2 persistence seam."""
+"""Host-local browser-workspace lifecycle commands for the Phase-2 persistence seam."""
 
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ from .phase2_control import DEFAULT_PHASE2_CONTROL_SOCKET_PATH, request_control
 from .phase2_operator import render_operator_status
 
 
-async def execute(socket: str | Path, command: str, email: str | None = None) -> object:
-    if command not in {"allow", "revoke", "list"}:
+async def execute(socket: str | Path, command: str, account_id: str | None = None) -> object:
+    if command not in {"revoke", "list"}:
         raise ValueError(f"Unknown accounts command: {command}")
-    if command != "list" and email is None:
-        raise ValueError("EMAIL is required.")
-    return await request_control(socket, f"accounts.{command}", email)
+    if command != "list" and account_id is None:
+        raise ValueError("WORKSPACE_ID is required.")
+    return await request_control(socket, f"accounts.{command}", account_id)
 
 
 async def execute_status(socket: str | Path) -> object:
@@ -44,10 +44,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     commands = parser.add_subparsers(dest="area", required=True)
     accounts = commands.add_parser("accounts")
     account_commands = accounts.add_subparsers(dest="command", required=True)
-    allow = account_commands.add_parser("allow")
-    allow.add_argument("email", metavar="EMAIL")
     revoke = account_commands.add_parser("revoke")
-    revoke.add_argument("email", metavar="EMAIL")
+    revoke.add_argument("account_id", metavar="WORKSPACE_ID")
     account_commands.add_parser("list")
     meetings = commands.add_parser("meetings")
     meeting_commands = meetings.add_subparsers(dest="command", required=True)
@@ -65,7 +63,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     if args.area == "accounts":
-        result = asyncio.run(execute(args.socket, args.command, getattr(args, "email", None)))
+        result = asyncio.run(execute(args.socket, args.command, getattr(args, "account_id", None)))
         print(json.dumps(result, sort_keys=True))
         return
     if args.area == "status":

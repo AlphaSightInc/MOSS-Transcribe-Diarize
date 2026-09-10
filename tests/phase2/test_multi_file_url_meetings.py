@@ -13,24 +13,18 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
+from _browser_workspace_fixtures import seed_workspace
+
 from fastapi.testclient import TestClient
 import pytest
 
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
 )
 from moss_transcribe_diarize.app.phase2_url import UrlAcquisitionRejected, UrlMediaAcquirer
 
-
-class NeverOidc:
-    async def begin(self, request):  # pragma: no cover - stored sessions only.
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):  # pragma: no cover - stored sessions only.
-        raise AssertionError("OIDC must not run")
 
 
 class RecordingRunner:
@@ -79,14 +73,9 @@ async def provision(database: Path) -> dict[str, str]:
     store = await Phase2Store.open(database)
     try:
         sessions: dict[str, str] = {}
-        for subject, email in (("sub-a", "a@example.com"), ("sub-b", "b@example.com")):
-            await store.allow_email(email)
-            _, sessions[subject] = await store.admit(
-                GoogleIdentity(subject, email, subject)
-            )
-        _, sessions["sub-a-second"] = await store.admit(
-            GoogleIdentity("sub-a", "a@example.com", "sub-a")
-        )
+        for subject, email in (("sub-a", "sub-a"), ("sub-b", "sub-b")):
+            _, sessions[subject] = await seed_workspace(store, subject)
+        _, sessions["sub-a-second"] = await seed_workspace(store, "sub-a")
         return sessions
     finally:
         await store.close()
@@ -95,8 +84,6 @@ async def provision(database: Path) -> dict[str, str]:
 def make_app(database: Path, runner: object, work_root: Path, acquirer: object):
     return create_phase2_app(
         database_path=database,
-        oidc=NeverOidc(),
-        oauth_cookie_secret="test-cookie-secret",
         file_runner=runner,
         file_work_root=work_root,
         url_acquirer=acquirer,

@@ -127,28 +127,20 @@ class Phase2ControlServer:
         if not isinstance(request, dict):
             raise ValueError("invalid control request")
         command = request.get("command")
-        email = request.get("email")
+        account_id = request.get("account_id")
         meeting_id = request.get("meeting_id")
         if (
             command == "status"
-            and email is None
+            and account_id is None
             and meeting_id is None
             and self._operator is not None
         ):
             return await self._operator.snapshot()
-        if command == "accounts.list" and email is None and meeting_id is None:
+        if command == "accounts.list" and account_id is None and meeting_id is None:
             return await self._lifecycle.list_accounts()
-        if command == "accounts.allow" and isinstance(email, str) and meeting_id is None:
+        if command == "accounts.revoke" and isinstance(account_id, str) and meeting_id is None:
             try:
-                result = await self._lifecycle.allow_account(email)
-            except Exception as exc:
-                await self._observe_mutation(command, "failed", _error_code(exc))
-                raise
-            await self._observe_mutation(command, "succeeded", None)
-            return result
-        if command == "accounts.revoke" and isinstance(email, str) and meeting_id is None:
-            try:
-                revoked = await self._lifecycle.revoke_account(email)
+                revoked = await self._lifecycle.revoke_account(account_id)
             except Exception as exc:
                 await self._observe_mutation(command, "failed", _error_code(exc))
                 raise
@@ -157,8 +149,8 @@ class Phase2ControlServer:
                 "succeeded" if revoked else "no_change",
                 None,
             )
-            return {"email": email.strip().lower(), "revoked": revoked}
-        if command == "meetings.interrupt" and email is None and isinstance(meeting_id, str):
+            return {"account_id": account_id, "revoked": revoked}
+        if command == "meetings.interrupt" and account_id is None and isinstance(meeting_id, str):
             try:
                 interrupted = await self._lifecycle.interrupt_meeting(meeting_id)
             except Exception as exc:
@@ -187,14 +179,14 @@ class Phase2ControlServer:
                 )
             except Exception:
                 # Observability is not Account authority. A post-mutation projection failure
-                # cannot turn a committed allow/revoke into a false command failure.
+                # cannot turn a committed revoke into a false command failure.
                 LOGGER.error("Operator mutation observation failed.")
 
 
 async def request_control(
     path: str | Path,
     command: str,
-    email: str | None = None,
+    account_id: str | None = None,
     *,
     meeting_id: str | None = None,
 ) -> object:
@@ -205,8 +197,8 @@ async def request_control(
     except OSError as exc:
         raise Phase2ControlError("Phase-2 product control is unavailable.") from exc
     request = {"command": command}
-    if email is not None:
-        request["email"] = email
+    if account_id is not None:
+        request["account_id"] = account_id
     if meeting_id is not None:
         request["meeting_id"] = meeting_id
     try:

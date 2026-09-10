@@ -43,16 +43,6 @@ RETIRED_SENTINELS = (
 )
 
 
-class NeverOidc:
-    async def begin(self, request):
-        del request
-        raise AssertionError("OIDC must not run")
-
-    async def complete(self, request):
-        del request
-        raise AssertionError("OIDC must not run")
-
-
 def _retired_hits(payload: str) -> tuple[str, ...]:
     return tuple(value for value in RETIRED_SENTINELS if value in payload)
 
@@ -60,8 +50,6 @@ def _retired_hits(payload: str) -> tuple[str, ...]:
 def test_only_account_routes_and_allowlisted_static_assets_are_reachable(tmp_path: Path):
     app = create_phase2_app(
         database_path=tmp_path / "moss.sqlite3",
-        oidc=NeverOidc(),
-        oauth_cookie_secret="cookie-secret",
     )
     retired_requests = (
         ("get", "/studio"),
