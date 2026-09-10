@@ -311,12 +311,12 @@ class AccountHttpClient:
 def _control(
     socket_path: Path,
     command: str,
-    email: str | None = None,
+    account_id: str | None = None,
     *,
     meeting_id: str | None = None,
 ) -> object:
     return asyncio.run(
-        request_control(socket_path, command, email, meeting_id=meeting_id)
+        request_control(socket_path, command, account_id, meeting_id=meeting_id)
     )
 
 
@@ -699,12 +699,15 @@ class FixedAccountCampaign:
                 if case_id.startswith("invalid_session"):
                     client = invalid
                 elif case_id.startswith("revoked"):
-                    # A second same-Account Sign-in session is revoked by ordinary logout; the
-                    # primary Account session remains valid for the before/after owner projection.
+                    # Revoke a disposable third workspace, never a peer tab of A/B.
                     if case_id == "revoked_session_meeting":
-                        logout = self.revoked_probe.request("POST", "/auth/logout")
-                        if logout.status_code != 303:
-                            raise ExternalMeasurementError("logout did not revoke the peer session")
+                        identity, _ = self.revoked_probe.json("GET", "/api/auth/session", 200)
+                        owner = identity.get("workspace_id")
+                        if not isinstance(owner, str) or not owner:
+                            raise ExternalMeasurementError("Revocation probe identity is unavailable")
+                        revoked = _control(self.operator_socket, "accounts.revoke", owner)
+                        if not isinstance(revoked, dict) or revoked.get("revoked") is not True:
+                            raise ExternalMeasurementError("Disposable probe revocation failed")
                     client = self.revoked_probe
                 response = client.request(method, actual, **kwargs)
                 after_payload, _ = self.a.json("GET", f"/api/meetings/{meeting_id}", 200)

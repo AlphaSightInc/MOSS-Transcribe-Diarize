@@ -73,7 +73,22 @@ build pass; `npm audit --json` reports zero vulnerabilities. Built assets unchan
 Automatic attempt-owned credentials/log collection and migration of the remaining
 Google-era lifecycle probes are still required before W1 qualification can run.
 
-## C3 — Remaining sequence
+## C3 — Automatic attempt setup
+
+- Cutover creates an attempt-private qualification profile using six real HTTP
+  bootstraps (three independent workspaces per evidence layer). Peer tabs share the
+  same cookie. Four distinct title sentinels and all cookies are mode 0600.
+- No copied tokens, Google login, pre-signed-in profiles, synthetic database authority
+  or OAuth secret prerequisites. Wrong candidate/origin/TLS and attempt reuse fail.
+- G1 revokes a disposable third workspace through the existing operator control,
+  not the removed logout endpoint. The eventual attended canary creates its own
+  fresh browser profile; capture has not been run during quiet hours.
+- Setup, cutover and qualification tests: 102 passed before the canary cleanup.
+  The existing setup prototype was absorbed onto production helper functions.
+- Remaining operational qualification work: collect actual service journals instead
+  of requiring hand-made log files; migrate retired Google-era standalone probes.
+
+## C4 — Remaining sequence
 
 1. Complete W1 deployed browser/lifecycle qualification producers and replace
    superseded prototype invocations; run full Python/frontend gates.

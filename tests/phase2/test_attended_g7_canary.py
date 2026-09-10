@@ -109,8 +109,6 @@ def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_eviden
 ):
     chrome = tmp_path / "chrome"
     chrome.write_bytes(b"chrome")
-    browser_profile = tmp_path / "profile"
-    browser_profile.mkdir()
     profile = tmp_path / "acceptance.json"
     profile.write_text(
         json.dumps(
@@ -119,7 +117,6 @@ def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_eviden
                     "pre_admission": {
                         "https_origin": g7.G7_PRODUCTION_ORIGIN,
                         "chrome_binary": str(chrome),
-                        "allowed_google_browser_profile": str(browser_profile),
                         "caller_authored_result": "ignored",
                     }
                 }

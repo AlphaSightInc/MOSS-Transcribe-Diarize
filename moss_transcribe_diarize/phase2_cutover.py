@@ -724,6 +724,10 @@ class SystemCutoverOps:
         attempt: Path,
     ) -> Path:
         qualification = attempt / "qualification"
+        from .phase2_acceptance_setup import prepare_acceptance_profile
+        acceptance_profile = prepare_acceptance_profile(
+            source=self.profile.acceptance_profile, attempt=attempt, candidate_sha=candidate_sha,
+        )
         subprocess.run(
             ("git", "clone", "--quiet", "--no-local", str(artifacts.checkout), str(qualification)),
             check=True,
@@ -756,6 +760,8 @@ class SystemCutoverOps:
                 "1",
                 "--output",
                 str(output),
+                "--profile",
+                str(acceptance_profile),
             ),
             cwd=qualification,
             env=environment,

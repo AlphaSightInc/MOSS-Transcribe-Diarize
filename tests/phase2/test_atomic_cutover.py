@@ -492,6 +492,7 @@ def test_candidate_readiness_requires_exact_http_release(monkeypatch, tmp_path, 
 
 
 def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, tmp_path):
+    from moss_transcribe_diarize import phase2_acceptance_setup as setup
     fixture = _cutover_fixture(monkeypatch, tmp_path)
     ops = SystemCutoverOps(
         profile=load_cutover_profile(fixture["profile"]), artifacts=None, account_profile={}
@@ -505,11 +506,19 @@ def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, 
         return subprocess.CompletedProcess(argv, 0)
     monkeypatch.setattr(cutover.subprocess, "run", run)
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    prepared = tmp_path / "attempt/acceptance-private/profile.json"
+    setup_calls = []
+    monkeypatch.setattr(setup, "prepare_acceptance_profile", lambda **kwargs: setup_calls.append(kwargs) or prepared)
     ops.run_qualification(artifacts=artifacts, candidate_sha=fixture["candidate"]["git_sha"], attempt=tmp_path / "attempt")
     assert calls[-1][1]["env"]["PATH"] == f"{artifacts.release}/bin:/usr/bin:/bin"
     assert calls[-2][0] == ("npm", "--prefix", "frontend", "ci")
     assert calls[-2][1]["cwd"] == tmp_path / "attempt/qualification"
     assert calls[-2][1]["check"] is True
+    assert calls[-1][0][-2:] == ("--profile", str(prepared))
+    assert setup_calls == [{
+        "source": fixture["acceptance_profile"], "attempt": tmp_path / "attempt",
+        "candidate_sha": fixture["candidate"]["git_sha"],
+    }]
 
 
 def test_activation_pointer_replace_is_fsynced_before_install_returns(

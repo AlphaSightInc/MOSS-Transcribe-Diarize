@@ -55,7 +55,6 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentitySnapshot,
 )
 from moss_transcribe_diarize.app.phase2 import (
-    GoogleIdentity,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -166,16 +165,6 @@ def wait_for_server(url: str, process: subprocess.Popen[str]) -> None:
     raise RuntimeError(f"Timed out waiting for {url}: {last_error}")
 
 
-class _UnusedOidc:
-    async def begin(self, request):
-        del request
-        raise AssertionError("the fidelity probe uses a pre-provisioned Account session")
-
-    async def complete(self, request):
-        del request
-        raise AssertionError("the fidelity probe uses a pre-provisioned Account session")
-
-
 class _NoSpeech:
     def observe(self, *, frame: AudioFrame, start_sample: int, end_sample: int):
         del frame, start_sample, end_sample
@@ -252,12 +241,7 @@ def _ui_runtime() -> LiveServiceRuntime:
 async def _provision_account(database: Path, fixture: list[dict[str, Any]]) -> str:
     store = await Phase2Store.open(database)
     try:
-        await store.allow_email("fidelity@example.com")
-        admitted = await store.admit(
-            GoogleIdentity("account-ui-fidelity", "fidelity@example.com", "Fidelity")
-        )
-        assert admitted is not None
-        account, session_id = admitted
+        account, session_id = await store.bootstrap_browser(None)
         handle = await store.workspace(account).create_meeting("file")
         await handle.rename("LiveTranscribe")
         document = {
@@ -316,8 +300,6 @@ def start_candidate_account(
     session_id = asyncio.run(_provision_account(database, fixture))
     app = create_phase2_app(
         database_path=database,
-        oidc=_UnusedOidc(),
-        oauth_cookie_secret="account-ui-fidelity-cookie-secret",
         live_runtime_factory=_ui_runtime,
         live_helper_lease_seconds=30,
         file_work_root=directory / "file-work",

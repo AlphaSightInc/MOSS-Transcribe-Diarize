@@ -1660,12 +1660,12 @@ def test_real_g1_and_g2_producers_cross_fixed_client_and_browser_seams(
             del method, expected, kwargs
             if path.startswith("/api/meetings/meeting-a"):
                 return dict(owner_state), _Response(200, owner_state)
+            if path == "/api/auth/session":
+                return {"workspace_id": "disposable-probe"}, _Response(200)
             return {"meetings": []}, _Response(200, {"meetings": []})
 
         def request(self, method: str, path: str, **kwargs: object):
             del kwargs
-            if method == "POST" and path == "/auth/logout":
-                return _Response(303)
             if method == "PUT" and path.endswith("/title"):
                 return _Response(200)
             if self.status == 200:
@@ -1692,7 +1692,10 @@ def test_real_g1_and_g2_producers_cross_fixed_client_and_browser_seams(
         }
     )
     monkeypatch.setattr(external.httpx, "Client", lambda **kwargs: Client(401))
+    revoked_owners = []
+    monkeypatch.setattr(external, "_control", lambda socket, command, owner: revoked_owners.append((command, owner)) or {"revoked": True})
     matrix = campaign.cross_owner_matrix()
+    assert revoked_owners == [("accounts.revoke", "disposable-probe")]
     assert [item["id"] for item in matrix["cases"]] == list(
         acceptance.G1_CROSS_OWNER_MATRIX
     )

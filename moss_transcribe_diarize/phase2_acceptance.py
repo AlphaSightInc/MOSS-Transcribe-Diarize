@@ -215,11 +215,8 @@ REQUIRED_CONTENT_BOUNDARY_ROLES = (
     "account_a_sentinel",
     "account_b_sentinel",
     "account_a_session_cookie",
-    "account_a_peer_session_cookie",
     "account_b_session_cookie",
-    "account_b_peer_session_cookie",
-    "google_client_secret",
-    "moss_cookie_signing_secret",
+    "account_revoked_probe_session_cookie",
 )
 G1_CROSS_OWNER_MATRIX: Mapping[str, tuple[str, str, int]] = {
     "meeting_read_foreign": ("GET", "/api/meetings/{foreign_meeting_id}", 404),
@@ -589,9 +586,20 @@ def _load_forbidden_values(
     for label, path in sensitive_paths:
         if path not in configured_paths:
             errors.append(f"measurement_boundary_unruled:{label}")
-    cookie_paths = [path for label, path in sensitive_paths if label.endswith("_cookie_file")]
-    if len(set(cookie_paths)) != len(cookie_paths):
-        errors.append("measurement_cookie_files_not_distinct")
+    owners = []
+    if isinstance(measurements, dict):
+        for layer in ("deployed", "pre_admission"):
+            config = measurements.get(layer)
+            if not isinstance(config, dict):
+                continue
+            for role in ("a", "b", "revoked_probe"):
+                path = config.get(f"account_{role}_cookie_file")
+                if isinstance(path, str):
+                    owners.append(Path(path).expanduser().resolve())
+                if role != "revoked_probe" and config.get(f"account_{role}_peer_cookie_file") != path:
+                    errors.append(f"measurement_peer_cookie_not_shared:{layer}:{role}")
+    if len(set(owners)) != len(owners):
+        errors.append("measurement_owner_cookie_files_not_distinct")
     summary = {
         "roles": sorted(configured),
         "count": len(values),

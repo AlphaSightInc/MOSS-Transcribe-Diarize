@@ -11,6 +11,7 @@ import json
 import stat
 import subprocess
 import sys
+import tempfile
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -405,14 +406,11 @@ def run_attended_g7_canary(
     if origin != G7_PRODUCTION_ORIGIN:
         raise AttendedCanaryError("attended G7 requires the exact production HTTPS origin")
     chrome = Path(_required_text(config, "chrome_binary")).expanduser().resolve()
-    profile = Path(
-        _required_text(config, "allowed_google_browser_profile")
-    ).expanduser().resolve()
-    if not chrome.is_file() or not profile.is_dir():
+    if not chrome.is_file():
         raise AttendedCanaryError("attended Chrome prerequisites are unavailable")
 
     scenarios: list[dict[str, object]] = []
-    with _playwright_manager() as playwright:
+    with tempfile.TemporaryDirectory(prefix="moss-attended-browser-") as profile, _playwright_manager() as playwright:
         context = playwright.chromium.launch_persistent_context(
             str(profile), executable_path=str(chrome), headless=False
         )
