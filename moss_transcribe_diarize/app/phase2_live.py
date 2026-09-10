@@ -8,8 +8,10 @@ then and only then advances the memory-backed snapshot/event projection read by 
 from __future__ import annotations
 
 import asyncio
+import logging
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field, replace
-from typing import Any, Mapping
+from typing import Any, AsyncIterator, Mapping
 
 from starlette.requests import Request
 
@@ -28,6 +30,9 @@ from .live_transport import (
     attach_live_routes,
 )
 from .phase2 import Account, AccountRevoked, SESSION_COOKIE
+
+
+_LOG = logging.getLogger("moss_transcribe_diarize.phase2.speaker_identity")
 
 
 class LiveMeetingNotFound(KeyError):
@@ -85,6 +90,9 @@ class _LiveBinding:
     unrecorded_cleanup_required: bool = False
     raw_stop_attempt: _RawStopAttempt | None = None
     terminal_settlement_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    speaker_mutation_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    speaker_labels: dict[str, str] = field(default_factory=dict)
+    speaker_label_revision: int = 0
     changed: asyncio.Condition = field(default_factory=asyncio.Condition)
 
 
@@ -93,6 +101,16 @@ class _RawStopIntent:
     binding: _LiveBinding
     attempt: _RawStopAttempt
     released: bool = False
+
+
+@dataclass(slots=True)
+class _ManualSpeakerMutation:
+    document: dict[str, object]
+    evidence: object | None
+    transcript_version: int | None = None
+
+    def mark_committed(self, transcript_version: int) -> None:
+        self.transcript_version = transcript_version
 
 
 class Phase2LiveMeetings:
@@ -112,6 +130,17 @@ class Phase2LiveMeetings:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._accepting_publications = False
         self._publication_observer = self._observe_raw
+        self._speaker_identity: Any | None = None
+
+    def bind_speaker_identity(self, identity: Any) -> None:
+        if self._speaker_identity is not None and self._speaker_identity is not identity:
+            raise RuntimeError("Account Speaker Identity is already bound.")
+        self._speaker_identity = identity
+
+    def unbind_speaker_identity(self, identity: Any) -> None:
+        if self._speaker_identity is not identity:
+            raise RuntimeError("Account Speaker Identity binding does not match.")
+        self._speaker_identity = None
 
     def start(self) -> None:
         self._loop = asyncio.get_running_loop()
@@ -419,6 +448,56 @@ class Phase2LiveMeetings:
             raise ValueError("since_seq must be at least -1.")
         return tuple(event for event in binding.public_events if event.seq >= since_seq)
 
+    @asynccontextmanager
+    async def manual_speaker(
+        self,
+        handle: Any,
+        speaker_id: str,
+        label: str,
+    ) -> AsyncIterator[_ManualSpeakerMutation]:
+        """Lock one owner-bound active Speaker through durable naming publication."""
+
+        binding = self._bindings.get(handle.meeting_id)
+        if binding is None or binding.owner_key != handle.owner_key:
+            raise LiveMeetingNotFound(handle.meeting_id)
+        async with binding.speaker_mutation_lock:
+            snapshot = binding.public_snapshot
+            if (
+                snapshot is None
+                or binding.authority_closing
+                or binding.capture_fenced
+                or binding.terminal_persisted
+                or snapshot.session.status != "active"
+            ):
+                raise LiveMeetingNotFound(handle.meeting_id)
+            canonical = snapshot.session.identity_snapshot.canonical_speakers
+            if speaker_id not in canonical:
+                raise LiveMeetingNotFound(speaker_id)
+            labels = dict(binding.speaker_labels)
+            labels[speaker_id] = label
+            observations = self.runtime._identity_observations(handle.meeting_id)
+            evidence = next(
+                (
+                    item
+                    for item in observations
+                    if getattr(item, "speaker_label", None) == speaker_id
+                ),
+                None,
+            )
+            mutation = _ManualSpeakerMutation(
+                document=_transcript_document(snapshot, labels),
+                evidence=evidence,
+            )
+            yield mutation
+            if mutation.transcript_version is None:
+                raise RuntimeError("Manual Speaker naming did not commit durable truth.")
+            binding.speaker_labels = labels
+            binding.speaker_label_revision += 1
+            binding.durable_document = mutation.document
+            binding.durable_version = mutation.transcript_version
+            async with binding.changed:
+                binding.changed.notify_all()
+
     def _observe_raw(
         self,
         meeting_id: str,
@@ -464,36 +543,64 @@ class Phase2LiveMeetings:
                 # marked running. This one raw intermediate is not a durable/public ending;
                 # the next queued publication carries running or a terminal refusal.
                 continue
-            document = _transcript_document(publication.snapshot)
-            try:
-                terminal = _durable_terminal_status(
-                    publication.snapshot,
-                    finalizer_configured=self.runtime._terminal_finalizer is not None,
-                )
-                document_changed = document != binding.durable_document
-                if terminal is not None:
-                    await self._settle_terminal(
-                        binding,
+            await self._observe_speaker_identity(binding)
+            fence_reason = None
+            terminal_published = False
+            async with binding.speaker_mutation_lock:
+                document = _transcript_document(publication.snapshot, binding.speaker_labels)
+                try:
+                    terminal = _durable_terminal_status(
                         publication.snapshot,
-                        publication.events,
-                        terminal,
+                        finalizer_configured=self.runtime._terminal_finalizer is not None,
                     )
-                    continue
-                elif document_changed:
-                    binding.durable_version = await binding.handle.commit_transcript(document)
-                    binding.durable_document = document
-            except AccountRevoked:
-                await self._fence(binding, "meeting_authority_revoked")
+                    document_changed = document != binding.durable_document
+                    if terminal is not None:
+                        await self._settle_terminal(
+                            binding,
+                            publication.snapshot,
+                            publication.events,
+                            terminal,
+                        )
+                        terminal_published = True
+                    elif document_changed:
+                        binding.durable_version = await binding.handle.commit_transcript(document)
+                        binding.durable_document = document
+                except AccountRevoked:
+                    fence_reason = "meeting_authority_revoked"
+                except Exception:
+                    fence_reason = "transcript_persistence_failed"
+
+                if fence_reason is None and not terminal_published:
+                    binding.public_snapshot = publication.snapshot
+                    binding.public_events = publication.events
+                    binding.public_event_high_water = publication.event_high_water
+                    async with binding.changed:
+                        binding.changed.notify_all()
+            if fence_reason is not None:
+                await self._fence(binding, fence_reason)
                 continue
-            except Exception:
-                await self._fence(binding, "transcript_persistence_failed")
+            if terminal_published:
+                await self._clear_pending_identity(binding)
                 continue
 
-            binding.public_snapshot = publication.snapshot
-            binding.public_events = publication.events
-            binding.public_event_high_water = publication.event_high_water
-            async with binding.changed:
-                binding.changed.notify_all()
+    async def _observe_speaker_identity(self, binding: _LiveBinding) -> None:
+        identity = self._speaker_identity
+        if identity is None:
+            return
+        try:
+            observations = self.runtime._identity_observations(binding.handle.meeting_id)
+            await identity.observe(binding.handle, observations)
+        except AccountRevoked:
+            await identity.clear_meeting(binding.handle)
+        except Exception:
+            _LOG.warning(
+                "manual Voiceprint pending enrollment failed",
+                exc_info=True,
+            )
+
+    async def _clear_pending_identity(self, binding: _LiveBinding) -> None:
+        if self._speaker_identity is not None:
+            await self._speaker_identity.clear_meeting(binding.handle)
 
     async def _settle_audio(
         self,
@@ -546,7 +653,7 @@ class Phase2LiveMeetings:
                 document = (
                     binding.durable_document
                     if terminal_snapshot is None
-                    else _transcript_document(terminal_snapshot)
+                    else _transcript_document(terminal_snapshot, binding.speaker_labels)
                 )
             if recover or terminal_snapshot is None:
                 await self._recover_terminal_locked(
@@ -818,6 +925,7 @@ class Phase2LiveMeetings:
         document_override: dict[str, object] | None = None,
         recover_audio: bool = False,
     ) -> None:
+        await self._clear_pending_identity(binding)
         if binding.terminal_persisted:
             return
         stop_attempt = binding.raw_stop_attempt
@@ -979,6 +1087,8 @@ class _Phase2LiveTransportAdapter:
             fields={
                 "meeting_transcript_version": binding.durable_version,
                 "persistence_failure": binding.persistence_failure,
+                "speaker_labels": dict(binding.speaker_labels),
+                "speaker_label_revision": binding.speaker_label_revision,
             },
         )
 
@@ -1055,8 +1165,12 @@ def attach_phase2_live_routes(
     return control
 
 
-def _transcript_document(snapshot: LiveServiceSnapshot) -> dict[str, object]:
+def _transcript_document(
+    snapshot: LiveServiceSnapshot,
+    speaker_labels: Mapping[str, str] | None = None,
+) -> dict[str, object]:
     canonical = snapshot.session.identity_snapshot.canonical_speakers
+    labels = {} if speaker_labels is None else speaker_labels
     sample_rate = snapshot.descriptor.sample_rate
     return {
         "segments": [
@@ -1064,7 +1178,11 @@ def _transcript_document(snapshot: LiveServiceSnapshot) -> dict[str, object]:
                 "id": f"seg_{index:04d}",
                 "start": segment.start_sample / sample_rate,
                 "end": segment.end_sample / sample_rate,
-                "speaker": published_speaker_label(segment.canonical_speaker, canonical),
+                "speaker": (
+                    labels[segment.canonical_speaker]
+                    if segment.canonical_speaker in labels
+                    else published_speaker_label(segment.canonical_speaker, canonical)
+                ),
                 "text": segment.text,
             }
             for index, segment in enumerate(snapshot.session.effective_transcript, start=1)

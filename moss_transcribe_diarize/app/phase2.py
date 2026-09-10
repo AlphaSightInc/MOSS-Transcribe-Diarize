@@ -414,6 +414,8 @@ class Phase2Store:
                 account_id TEXT NOT NULL,
                 voiceprint_id TEXT NOT NULL,
                 label TEXT NOT NULL,
+                embedder_id TEXT NOT NULL,
+                embedding_dimension INTEGER NOT NULL CHECK(embedding_dimension > 0),
                 revision INTEGER NOT NULL,
                 created_at_ms INTEGER NOT NULL,
                 updated_at_ms INTEGER NOT NULL,
@@ -1451,6 +1453,12 @@ class AccountWorkspace:
         self._store = store
         self._account = account
 
+    @property
+    def owner_key(self) -> tuple[str, int]:
+        """Captured Account authority for deeper owner-bound modules."""
+
+        return self._account.account_id, self._account.authority_generation
+
     async def list_meetings(self) -> list[Meeting]:
         return await self._store._list_meetings(
             self._account.account_id,
@@ -1815,6 +1823,7 @@ def create_phase2_app(
         admit_file_upload,
     )
     from .phase2_lifecycle import AccountLifecycleUnavailable
+    from .phase2_speaker_identity import AccountSpeakerIdentity, SpeakerIdentityNotFound
 
     resolved_work_root = Path(file_work_root or DEFAULT_PHASE2_FILE_WORK_ROOT).expanduser()
     audio_archive = file_audio_archive or MeetingAudioArchive(
@@ -1868,6 +1877,7 @@ def create_phase2_app(
         control_server = None
         operator_status = None
         lifecycle = None
+        speaker_identity = None
         try:
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
@@ -1878,6 +1888,10 @@ def create_phase2_app(
             app.state.phase2_store = store
             app.state.phase2_file_tasks = file_tasks
             app.state.phase2_audio_archive = audio_archive
+            speaker_identity = AccountSpeakerIdentity(store, phase2_live)
+            app.state.phase2_speaker_identity = speaker_identity
+            if phase2_live is not None:
+                phase2_live.bind_speaker_identity(speaker_identity)
             from .phase2_lifecycle import AccountLifecycle
 
             lifecycle = AccountLifecycle(
@@ -1928,7 +1942,11 @@ def create_phase2_app(
                     await lifecycle.shutdown()
                 try:
                     if phase2_live is not None:
-                        await phase2_live.shutdown()
+                        try:
+                            await phase2_live.shutdown()
+                        finally:
+                            if speaker_identity is not None:
+                                phase2_live.unbind_speaker_identity(speaker_identity)
                     if file_tasks is not None:
                         await file_tasks.stop()
                 finally:
@@ -2221,6 +2239,40 @@ def create_phase2_app(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"id": meeting_id, "title": normalized, "title_source": "manual"}
+
+    @app.put("/api/meetings/{meeting_id}/speakers/{speaker_id}/name")
+    async def name_meeting_speaker(
+        meeting_id: str,
+        speaker_id: str,
+        request: Request,
+    ):
+        account = await require_account(request)
+        workspace = request.app.state.phase2_store.workspace(account)
+        handle = await workspace.open_meeting(meeting_id)
+        if handle is None or phase2_live is None:
+            raise HTTPException(status_code=404, detail="Meeting Speaker not found.")
+        try:
+            payload = await request.json()
+            label = payload.get("label") if isinstance(payload, dict) else None
+            if not isinstance(label, str):
+                raise ValueError("Speaker label is required.")
+            result = await request.app.state.phase2_speaker_identity.bank(
+                workspace
+            ).name_speaker(handle, speaker_id, label)
+        except SpeakerIdentityNotFound as exc:
+            raise HTTPException(status_code=404, detail="Meeting Speaker not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return result.to_dict()
+
+    @app.get("/api/voiceprints")
+    async def list_voiceprints(request: Request):
+        account = await require_account(request)
+        workspace = request.app.state.phase2_store.workspace(account)
+        voiceprints = await request.app.state.phase2_speaker_identity.bank(
+            workspace
+        ).list_voiceprints()
+        return {"voiceprints": [voiceprint.to_dict() for voiceprint in voiceprints]}
 
     @app.get("/api/meetings/{meeting_id}/audio/download")
     async def download_meeting_audio(meeting_id: str, request: Request):
