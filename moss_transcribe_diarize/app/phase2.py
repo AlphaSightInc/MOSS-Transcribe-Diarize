@@ -2006,6 +2006,30 @@ def create_phase2_app(
         ).list_voiceprints()
         return {"voiceprints": [voiceprint.to_dict() for voiceprint in voiceprints]}
 
+    @app.put("/api/voiceprints/{voiceprint_id}/name")
+    async def rename_voiceprint(voiceprint_id: str, request: Request):
+        account = await require_account(request)
+        bank = request.app.state.phase2_speaker_identity.bank(request.app.state.phase2_store.workspace(account))
+        try:
+            payload = await request.json()
+            label = payload.get("label") if isinstance(payload, dict) else None
+            if not isinstance(label, str):
+                raise ValueError("Voiceprint label is required.")
+            return await bank.rename_voiceprint(voiceprint_id, label)
+        except SpeakerIdentityNotFound as exc:
+            raise HTTPException(status_code=404, detail="Voiceprint not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.delete("/api/voiceprints/{voiceprint_id}")
+    async def delete_voiceprint(voiceprint_id: str, request: Request):
+        account = await require_account(request)
+        bank = request.app.state.phase2_speaker_identity.bank(request.app.state.phase2_store.workspace(account))
+        try:
+            return await bank.delete_voiceprint(voiceprint_id)
+        except SpeakerIdentityNotFound as exc:
+            raise HTTPException(status_code=404, detail="Voiceprint not found.") from exc
+
     @app.get("/api/meetings/{meeting_id}/audio/download")
     async def download_meeting_audio(meeting_id: str, request: Request):
         account = await require_account(request)

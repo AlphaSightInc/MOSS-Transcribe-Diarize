@@ -7,10 +7,12 @@ import json
 import math
 import secrets
 import struct
+from contextlib import asynccontextmanager, nullcontext
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 from .phase2 import AccountRevoked, _now_ms
+from .phase2_voiceprint_match import VoiceprintProfile, match_voiceprint, normalized_mean
 
 
 # ADR-0009 fixes this floor from the measured production album. It is not inferred here.
@@ -29,6 +31,7 @@ class Voiceprint:
     embedding_dimension: int
     revision: int
     sample_count: int
+    compatibility: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -38,6 +41,7 @@ class Voiceprint:
             "embedding_dimension": self.embedding_dimension,
             "revision": self.revision,
             "sample_count": self.sample_count,
+            **({"compatibility": self.compatibility} if self.compatibility is not None else {}),
         }
 
 
@@ -84,6 +88,10 @@ class AccountSpeakerIdentity:
         self._pending: dict[tuple[str, int, str, str], _PendingEnrollment] = {}
         self._lock = asyncio.Lock()
         self._naming_tasks: set[asyncio.Task[ManualNameResult]] = set()
+        # Prepared matches never survive process exit; startup interrupts Live.
+        self._bank_revisions: dict[tuple[str, int], int] = {}
+        self._manual_speakers: set[tuple[str, int, str, str]] = set()
+        self._auto_links: dict[tuple[str, int, str, str], tuple[str, str] | None] = {}
 
     async def shutdown(self) -> None:
         """Join accepted naming before Live settlement or SQLite shutdown."""
@@ -134,6 +142,7 @@ class AccountSpeakerIdentity:
                 continue
             if await self._complete_pending(intent, evidence):
                 completed += 1
+                self._advance_revision(owner_key)
             self._pending.pop(key, None)
         return completed
 
@@ -199,7 +208,7 @@ class AccountSpeakerIdentity:
                 normalized,
             ) as active:
                 evidence = _eligible_evidence(active.evidence)
-                voiceprint_id, transcript_version = await self._persist_manual_name(
+                voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
                     owner_key,
                     handle.meeting_id,
                     speaker_id,
@@ -225,6 +234,10 @@ class AccountSpeakerIdentity:
         else:
             self._pending.pop(key, None)
             enrollment = "enrolled"
+        self._advance_revision(owner_key)
+        self._manual_speakers.add(key)
+        if was_linked:
+            await self._change_voiceprint_locked(owner_key, voiceprint_id, normalized, exclude_meeting=handle.meeting_id)
         return ManualNameResult(
             meeting_id=handle.meeting_id,
             speaker_id=speaker_id,
@@ -242,7 +255,7 @@ class AccountSpeakerIdentity:
         label: str,
         document: Mapping[str, object],
         evidence: _EligibleEvidence | None,
-    ) -> tuple[str | None, int]:
+    ) -> tuple[str | None, int, bool]:
         account_id, authority_generation = owner_key
         document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
         now = _now_ms()
@@ -271,6 +284,7 @@ class AccountSpeakerIdentity:
             speaker_row = await speaker_cursor.fetchone()
             await speaker_cursor.close()
             voiceprint_id = None if speaker_row is None else speaker_row["voiceprint_id"]
+            was_linked = voiceprint_id is not None
 
             if voiceprint_id is not None:
                 await self._rename_linked_voiceprint(
@@ -349,6 +363,7 @@ class AccountSpeakerIdentity:
             return (
                 None if voiceprint_id is None else str(voiceprint_id),
                 int(version_row["version"]),
+                was_linked,
             )
 
     async def _complete_pending(
@@ -506,6 +521,193 @@ class AccountSpeakerIdentity:
             (account_id, voiceprint_id, sample_id, vector, meeting_id, now),
         )
 
+    def _advance_revision(self, owner_key: tuple[str, int]) -> int:
+        revision = self._bank_revisions.get(owner_key, 0) + 1
+        self._bank_revisions[owner_key] = revision
+        return revision
+
+    async def _profiles(self, owner_key):
+        async with self._store._external_read():
+            cursor = await self._store._connection.execute(
+                "SELECT v.voiceprint_id,v.label,v.embedder_id,v.embedding_dimension,s.vector "
+                "FROM voiceprints v JOIN accounts a USING(account_id) "
+                "JOIN voiceprint_samples s USING(account_id,voiceprint_id) "
+                "WHERE v.account_id=? AND a.enabled=1 AND a.authority_generation=? ORDER BY v.voiceprint_id,s.sample_id",
+                owner_key,
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        grouped = {}
+        for row in rows:
+            profile_id = str(row["voiceprint_id"])
+            group = grouped.setdefault(profile_id, (row, []))
+            blob = row["vector"]
+            dimension = int(row["embedding_dimension"])
+            group[1].append(struct.unpack(f"<{dimension}f", blob) if len(blob) == dimension * 4 else ())
+        profiles = []
+        for profile_id, (row, samples) in grouped.items():
+            vector = normalized_mean(samples)
+            if vector is not None:
+                profiles.append(VoiceprintProfile(profile_id, str(row["label"]), str(row["embedder_id"]), vector))
+        return tuple(profiles)
+
+    async def prepare_matches(self, handle, observations):
+        """Freeze a bounded group; a bank change invalidates it before publication."""
+        async with self._lock:
+            profiles = await self._profiles(handle.owner_key)
+            return (handle.owner_key, self._bank_revisions.get(handle.owner_key, 0), tuple(
+                (observation.speaker_label, match_voiceprint(observation, profiles)) for observation in observations
+            ))
+
+    @asynccontextmanager
+    async def publication(self, handle, observations, *, prepared=None):
+        """Keep bank revision stable through durable transcript/publication.
+
+        The publisher holds this lock before its binding lock. A delete/rename
+        therefore either wins before preparation or waits until this publication
+        is durable; an explicitly prepared stale group yields no changes.
+        """
+        async with self._lock:
+            if prepared is None:
+                profiles = await self._profiles(handle.owner_key) if observations else ()
+                decisions = tuple((o.speaker_label, match_voiceprint(o, profiles)) for o in observations)
+            else:
+                owner, revision, decisions = prepared
+                if owner != handle.owner_key or revision != self._bank_revisions.get(owner, 0):
+                    yield {}
+                    return
+            changes = {}
+            pending_links = {}
+            for speaker_id, profile in decisions:
+                key = _pending_key(handle.owner_key, handle.meeting_id, speaker_id)
+                if key in self._manual_speakers:
+                    continue
+                link = None if profile is None else (profile.voiceprint_id, profile.label)
+                if self._auto_links.get(key) == link:
+                    continue
+                changes[speaker_id] = None if profile is None else profile.label
+                pending_links[key] = link
+            if pending_links:
+                async with self._store._mutation():
+                    cursor = await self._store._connection.execute(
+                        "SELECT 1 FROM meetings m JOIN accounts a USING(account_id) "
+                        "WHERE m.account_id=? AND m.meeting_id=? AND m.status='active' "
+                        "AND a.enabled=1 AND a.authority_generation=?",
+                        (handle.owner_key[0], handle.meeting_id, handle.owner_key[1]),
+                    )
+                    allowed = await cursor.fetchone()
+                    await cursor.close()
+                    if allowed is None:
+                        raise AccountRevoked("Meeting authority is revoked or interrupted.")
+                    for key, link in pending_links.items():
+                        if link is None:
+                            await self._store._connection.execute(
+                                "DELETE FROM meeting_speakers WHERE account_id=? AND meeting_id=? AND speaker_id=?",
+                                (key[0], key[2], key[3]),
+                            )
+                        else:
+                            await self._store._connection.execute(
+                                "INSERT INTO meeting_speakers(account_id,meeting_id,speaker_id,label,voiceprint_id) "
+                                "VALUES(?,?,?,?,?) ON CONFLICT(account_id,meeting_id,speaker_id) DO UPDATE SET "
+                                "label=excluded.label,voiceprint_id=excluded.voiceprint_id",
+                                (key[0], key[2], key[3], link[1], link[0]),
+                            )
+            yield changes
+            self._auto_links.update(pending_links)
+
+    async def _change_voiceprint(self, owner_key, voiceprint_id, label):
+        task = asyncio.create_task(self._change_voiceprint_serial(owner_key, voiceprint_id, label),
+                                   name="phase2-voiceprint-mutation")
+        self._naming_tasks.add(task)
+        task.add_done_callback(self._naming_done)
+        return await asyncio.shield(task)
+
+    async def _change_voiceprint_serial(self, owner_key, voiceprint_id, label):
+        async with self._lock:
+            return await self._change_voiceprint_locked(owner_key, voiceprint_id, label)
+
+    async def _change_voiceprint_locked(self, owner_key, voiceprint_id, label, *, exclude_meeting=None):
+        if label is not None:
+            label = label.strip()
+            if not label:
+                raise ValueError("Voiceprint label must not be empty.")
+        account_id, generation = owner_key
+        async with self._store._external_read():
+            cursor = await self._store._connection.execute(
+                "SELECT v.voiceprint_id FROM voiceprints v JOIN accounts a USING(account_id) "
+                "WHERE v.account_id=? AND v.voiceprint_id=? AND a.enabled=1 AND a.authority_generation=?",
+                (account_id, voiceprint_id, generation),
+            )
+            found = await cursor.fetchone()
+            await cursor.close()
+            if found is None:
+                raise SpeakerIdentityNotFound(voiceprint_id)
+            cursor = await self._store._connection.execute(
+                "SELECT meeting_id,speaker_id FROM meeting_speakers WHERE account_id=? AND voiceprint_id=?",
+                (account_id, voiceprint_id),
+            )
+            links = await cursor.fetchall()
+            await cursor.close()
+        changes = {}
+        # Deleting the biometric profile unlinks it, not the user's recorded name.
+        # Future recognition cannot use it; stopped and manually recorded text stays.
+        if label is not None:
+            for link in links:
+                if str(link["meeting_id"]) == exclude_meeting:
+                    continue
+                changes.setdefault(str(link["meeting_id"]), {})[str(link["speaker_id"])] = label
+        projection = nullcontext([]) if self._active_meetings is None else self._active_meetings.voiceprint_labels(owner_key, changes)
+        async with projection as publications:
+            now = _now_ms()
+            async with self._store._mutation():
+                cursor = await self._store._connection.execute(
+                    "SELECT 1 FROM accounts WHERE account_id=? AND enabled=1 AND authority_generation=?",
+                    owner_key,
+                )
+                authorized = await cursor.fetchone()
+                await cursor.close()
+                if authorized is None:
+                    raise AccountRevoked("Workspace authority is revoked.")
+                if label is None:
+                    await self._store._connection.execute(
+                        "UPDATE meeting_speakers SET voiceprint_id=NULL WHERE account_id=? AND voiceprint_id=?",
+                        (account_id, voiceprint_id),
+                    )
+                    await self._store._connection.execute(
+                        "DELETE FROM voiceprint_samples WHERE account_id=? AND voiceprint_id=?", (account_id, voiceprint_id)
+                    )
+                    await self._store._connection.execute(
+                        "DELETE FROM voiceprints WHERE account_id=? AND voiceprint_id=?", (account_id, voiceprint_id)
+                    )
+                else:
+                    await self._rename_linked_voiceprint(account_id, voiceprint_id, label, now)
+                    for publication in publications:
+                        meeting_id = publication.handle.meeting_id
+                        await self._store._connection.execute(
+                            "UPDATE meeting_speakers SET label=? WHERE account_id=? AND meeting_id=? AND voiceprint_id=?",
+                            (label, account_id, meeting_id, voiceprint_id),
+                        )
+                        cursor = await self._store._connection.execute(
+                            "UPDATE meeting_transcripts SET document_json=?,version=version+1,updated_at_ms=? "
+                            "WHERE account_id=? AND meeting_id=? RETURNING version",
+                            (json.dumps(publication.document, ensure_ascii=False, separators=(",", ":")), now, account_id, meeting_id),
+                        )
+                        row = await cursor.fetchone()
+                        await cursor.close()
+                        if row is None:
+                            raise SpeakerIdentityNotFound(meeting_id)
+                        publication.transcript_version = int(row["version"])
+            for link in links:
+                key = _pending_key(owner_key, str(link["meeting_id"]), str(link["speaker_id"]))
+                pending = self._pending.get(key)
+                if pending is not None:
+                    if label is None:
+                        self._pending.pop(key, None)
+                    else:
+                        self._pending[key] = _PendingEnrollment(owner_key, pending.meeting_id, pending.speaker_id, label)
+            revision = self._advance_revision(owner_key)
+        return {"id": voiceprint_id, "label": label, "deleted": label is None, "bank_revision": revision}
+
     async def _list_voiceprints(
         self,
         owner_key: tuple[str, int],
@@ -531,6 +733,8 @@ class AccountSpeakerIdentity:
             )
             rows = await cursor.fetchall()
             await cursor.close()
+        runtime = getattr(self._active_meetings, "runtime", None)
+        current_embedder = getattr(runtime, "_voiceprint_embedder_identity", None)
         return [
             Voiceprint(
                 voiceprint_id=str(row["voiceprint_id"]),
@@ -539,6 +743,9 @@ class AccountSpeakerIdentity:
                 embedding_dimension=int(row["embedding_dimension"]),
                 revision=int(row["revision"]),
                 sample_count=int(row["sample_count"]),
+                compatibility=(None if current_embedder is None else "compatible"
+                    if (str(row["embedder_id"]), int(row["embedding_dimension"])) == current_embedder
+                    else "re_enrollment_required"),
             )
             for row in rows
         ]
@@ -570,6 +777,12 @@ class AccountVoiceprintBank:
 
     async def list_voiceprints(self) -> list[Voiceprint]:
         return await self._identity._list_voiceprints(self._owner_key)
+
+    async def rename_voiceprint(self, voiceprint_id: str, label: str):
+        return await self._identity._change_voiceprint(self._owner_key, voiceprint_id, label)
+
+    async def delete_voiceprint(self, voiceprint_id: str):
+        return await self._identity._change_voiceprint(self._owner_key, voiceprint_id, None)
 
 
 def _eligible_evidence(observation: object | None) -> _EligibleEvidence | None:

@@ -301,7 +301,7 @@ def build_live_runtime_factory(
     identity_encoder = _identity_encoder(config)
 
     def factory() -> LiveServiceRuntime:
-        return LiveServiceRuntime(
+        runtime = LiveServiceRuntime(
             descriptor=descriptor,
             endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config(config.endpoint_config)),
             speech_provider_factory=lambda: _speech_provider(config),
@@ -326,6 +326,11 @@ def build_live_runtime_factory(
             # No finalizer, no terminal pass, and every meeting reads `not_started`.
             terminal_finalizer=terminal_finalizer,
         )
+        runtime._voiceprint_embedder_identity = (
+            (f"{identity_encoder.spec.provider}:{identity_encoder.spec.revision}", config.runtime.embedding_dimension)
+            if identity_encoder is not None else None
+        )
+        return runtime
 
     return factory
 
@@ -720,6 +725,33 @@ class WeSpeakerLiveEvidenceProvider:
         self._reconcile_committed_vectors(base_snapshot)
         if self._sweeper is not None:
             self._sweeper.sweep_now()
+
+    def match_observations(self, *, base_snapshot: LiveIdentitySnapshot) -> tuple[LiveSpeakerJournalObservation, ...]:
+        """Original committed causal units, not the 2 s enrollment album.
+
+        Read while the runtime publication lock pins this snapshot. Do not pop or
+        reconcile: the established album/sweeper lifecycle owns those mutations.
+        """
+        diagnostics = dict(base_snapshot.diagnostics)
+        if diagnostics.get("status") != "prepared":
+            return ()
+        span_id = int(diagnostics["span_id"])
+        pending = self._pending_vectors.get(span_id, {})
+        spec = self.encoder.spec
+        observations = []
+        for assignment in diagnostics.get("assignments", "").split(","):
+            if "->" not in assignment:
+                continue
+            local, canonical = assignment.split("->", 1)
+            if local not in pending or canonical not in base_snapshot.canonical_speakers:
+                continue
+            vector, seconds = pending[local]
+            observations.append(LiveSpeakerJournalObservation(
+                speaker_label=canonical, centroid=vector, sample_seconds=seconds,
+                exemplar_count=0, provisional=False,
+                embedder_id=f"{spec.provider}:{spec.revision}", embedder_state_sha=spec.state_sha256,
+            ))
+        return tuple(observations)
 
     def journal_observations(self) -> tuple[LiveSpeakerJournalObservation, ...]:
         """Project the completed album into immutable, encoder-pinned observations."""

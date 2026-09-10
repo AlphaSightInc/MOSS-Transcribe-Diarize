@@ -159,10 +159,36 @@ backend slice. Manual naming is not yet wired into the user interface.
   failure); rerunning after build completed passed. Build and asset-consuming
   backend tests must run sequentially.
 
-## C6 — Remaining sequence
+## C6 — Voiceprint recognition and bank operations
 
-1. Finish W2 on the integrated manual-naming backend/UI: bank UI, opaque-ID bank rename/delete,
-   bank-revision fencing, compatible-entry matching and real G8 measurement/evaluation.
+Implemented private opaque-ID bank rename/delete and UI; compatible-entry matching
+uses original causal evidence, not enrollment centroids. Manual labels win; recognition
+never enrolls. Changes propagate only to linked active meetings; stopped history stays
+literal. Delete removes samples/links, preserves recorded names, and fences prepared
+matches by bank revision. Incompatible entries show a re-enrollment explanation.
+
+Stress: 32 simultaneous renames converge; cancelling a client at a held real COMMIT
+still completes accepted work. Reviewer found an uncaught matching-database failure
+that killed the publisher and stranded Stop. Reproduced red, fixed the failure boundary,
+then verified interruption, a surviving publisher and bounded Stop.
+
+Fresh production encoder/rule bench: causal known **441/470 correct, 29 abstentions,
+zero wrong**; unknown **470/470 abstentions**. Terminal album known **14/14 correct**;
+unknown **14/14 abstentions**. Two development corpora, not blind or deployed G8 proof.
+Command: standing bench `voice-profile-matching/measure_production_rule.py` with the
+original checkout's ignored `data` assets; report `/tmp/moss-production-rule-20260910.json`.
+Prototype decision: `prototypes/phase2-account-lifecycle/BANK_REVISION_NOTES.md`.
+
+Full Python: **1148 passed, 2 skipped, 37 subtests passed**, 67.48 s.
+Frontend: **138 passed**, type-check/build pass. Builds ran before backend tests.
+Read-only host refresh: batch, Live and vLLM services active, zero service restarts;
+batch root, Live runtime and model health/models/metrics returned 200. Live certificate
+verification was explicitly disabled for availability measurement: trusted TLS remains
+unqualified. No service changes or playback.
+
+## C7 — Remaining sequence
+
+1. Finish real G8 measurement/evaluation for the integrated W2 source.
    Preserve the separate accepted evidence boundaries: causal matching uses at least
    1 s live evidence; enrollment uses the quality-gated album centroid at 2 s. Do not
    silently substitute the enrollment observation seam for causal match evidence.
@@ -170,7 +196,7 @@ backend slice. Manual naming is not yet wired into the user interface.
    worktree lacks ignored bench assets. Located both 55 MB development corpora and
    the working Python 3.12.12/ONNX Runtime 1.28.0 bench environment in the original
    worktree; reuse those assets without altering the original checkout. No fresh
-   run yet. Cache replay is development evidence only.
+   run completed as recorded in C6. This is development evidence only.
 3. Implement W3 optional browser-direct AI settings/calls and version-bound summary
    persistence; never persist endpoint, model, API key or prompt on the server.
 4. Trusted HTTPS and renewal; staged installation, final integrated G8/G9 producers,

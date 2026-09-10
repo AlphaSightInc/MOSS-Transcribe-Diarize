@@ -634,6 +634,27 @@ def _score_span(provider, *, span_id, seconds, base_snapshot):
     )
 
 
+def test_causal_match_observation_preserves_original_one_second_unit_without_reembedding():
+    encoder = _ScriptedEncoder([[1., 0.], [0., 1.]])
+    encoder.spec = SimpleNamespace(provider="wespeaker", revision="pinned", state_sha256="ab" * 32)
+    provider = WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum())
+    _score_span(provider, span_id=1, seconds=1., base_snapshot=LiveIdentitySnapshot())
+    prepared = _prepared_snapshot(span_id=1, assignments="S01->speaker-0001",
+                                  canonical_speakers=("speaker-0001",), version=1)
+    first = provider.match_observations(base_snapshot=prepared)
+    assert len(first) == 1
+    assert first[0].centroid == (1., 0.)
+    assert first[0].sample_seconds == 1.
+    assert first[0].exemplar_count == 0
+    assert first[0].provisional is False
+    assert provider.journal_observations() == ()  # no enrollment album yet
+    assert provider.match_observations(base_snapshot=prepared) == first
+    assert len(encoder.calls) == 1
+    _score_span(provider, span_id=2, seconds=2., base_snapshot=prepared)
+    assert first[0].centroid == (1., 0.)  # frozen across subsequent inference
+    assert provider.match_observations(base_snapshot=prepared) == ()  # prior unit consumed by album owner
+
+
 def test_a_short_span_labels_against_the_album_but_never_overwrites_it():
     """ADR-0002 step 1, at the seam the overwrite policy lived on.
 

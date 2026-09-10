@@ -811,6 +811,11 @@ class LiveServiceRuntime:
                 return None
             return snapshot
 
+    def _identity_match_observations(self, session_id: str) -> tuple[object, ...]:
+        """Original causal units pinned to the current publication, without re-embedding."""
+        with self._lock:
+            return tuple(self._get(session_id).coordinator.match_observations())
+
     def _identity_observations(self, session_id: str) -> tuple[object, ...]:
         """Return this live session's immutable, in-memory album observations."""
 

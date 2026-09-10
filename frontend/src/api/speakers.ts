@@ -5,6 +5,34 @@ export interface SpeakerNameResult {
   enrollment: "pending" | "enrolled";
 }
 
+export interface Voiceprint {
+  id: string;
+  label: string;
+  sample_count: number;
+  compatibility?: "compatible" | "re_enrollment_required";
+}
+
+export async function listVoiceprints(): Promise<Voiceprint[]> {
+  const response = await fetch("/api/voiceprints", { cache: "no-store", credentials: "same-origin" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(typeof payload?.detail === "string" ? payload.detail : "Could not load voiceprints.");
+  if (!Array.isArray(payload?.voiceprints) || payload.voiceprints.some((v: Voiceprint) =>
+    typeof v?.id !== "string" || typeof v?.label !== "string" || typeof v?.sample_count !== "number")) {
+    throw new Error("Voiceprint list is invalid.");
+  }
+  return payload.voiceprints;
+}
+
+export async function changeVoiceprint(id: string, label: string | null): Promise<void> {
+  const response = await fetch(`/api/voiceprints/${encodeURIComponent(id)}${label === null ? "" : "/name"}`, {
+    method: label === null ? "DELETE" : "PUT", credentials: "same-origin",
+    ...(label === null ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) })
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(typeof payload?.detail === "string" ? payload.detail : "Voiceprint change failed.");
+  if (payload?.id !== id || payload?.deleted !== (label === null)) throw new Error("Voiceprint change response is invalid.");
+}
+
 export async function nameMeetingSpeaker(
   meetingId: string,
   speakerId: string,

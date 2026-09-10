@@ -1,5 +1,6 @@
 import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
+import { VoiceprintBank } from "./components/VoiceprintBank";
 import { sessionStatus, sessionStatusLine } from "./state/session";
 
 /** The sole Account-owned Live surface mounted inside the authenticated workspace. */
@@ -38,6 +39,7 @@ export function App() {
           </div>
           <div className="panel-body">
             <ControlPanel />
+            <VoiceprintBank />
           </div>
         </aside>
 

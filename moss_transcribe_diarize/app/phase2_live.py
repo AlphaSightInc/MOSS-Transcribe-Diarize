@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field, replace
 from typing import Any, AsyncIterator, Mapping
 
@@ -51,6 +51,8 @@ class LiveMeetingTerminal(RuntimeError):
 class _RawPublication:
     snapshot: LiveServiceSnapshot
     events: tuple[LiveServiceEvent, ...]
+    causal_observations: tuple[object, ...] = ()
+    album_observations: tuple[object, ...] = ()
 
     @property
     def event_high_water(self) -> int:
@@ -112,6 +114,14 @@ class _ManualSpeakerMutation:
 
     def mark_committed(self, transcript_version: int) -> None:
         self.transcript_version = transcript_version
+
+
+@dataclass(slots=True)
+class _SpeakerLabelPublication:
+    handle: Any
+    labels: dict[str, str]
+    document: dict[str, object]
+    transcript_version: int | None = None
 
 
 class Phase2LiveMeetings:
@@ -452,6 +462,47 @@ class Phase2LiveMeetings:
         return tuple(event for event in binding.public_events if event.seq >= since_seq)
 
     @asynccontextmanager
+    async def voiceprint_labels(self, owner_key, changes):
+        """Hold exact-ID active labels through one durable bank mutation.
+
+        Identity -> binding -> SQLite is the shared lock order. Stopped/closing
+        views are frozen, including when Stop was accepted while acquiring locks.
+        """
+        async with AsyncExitStack() as stack:
+            publications = []
+            bindings = []
+            for meeting_id, speaker_changes in sorted(changes.items()):
+                binding = self._bindings.get(meeting_id)
+                if binding is None or binding.owner_key != owner_key:
+                    continue
+                await stack.enter_async_context(binding.speaker_mutation_lock)
+                snapshot = binding.public_snapshot
+                if (snapshot is None or binding.authority_closing or binding.capture_fenced
+                    or binding.terminal_persisted or binding.speaker_identity_closed
+                    or snapshot.session.status != "active"):
+                    continue
+                labels = dict(binding.speaker_labels)
+                for speaker_id, label in speaker_changes.items():
+                    if label is None:
+                        labels.pop(speaker_id, None)
+                    else:
+                        labels[speaker_id] = label
+                publications.append(_SpeakerLabelPublication(
+                    binding.handle, labels, _transcript_document(snapshot, labels)
+                ))
+                bindings.append(binding)
+            yield publications
+            for binding, publication in zip(bindings, publications):
+                if publication.transcript_version is None:
+                    raise RuntimeError("Voiceprint label publication was not committed.")
+                binding.speaker_labels = publication.labels
+                binding.speaker_label_revision += 1
+                binding.durable_document = publication.document
+                binding.durable_version = publication.transcript_version
+                async with binding.changed:
+                    binding.changed.notify_all()
+
+    @asynccontextmanager
     async def manual_speaker(
         self,
         handle: Any,
@@ -513,13 +564,19 @@ class Phase2LiveMeetings:
         loop = self._loop
         if loop is None:
             return
-        loop.call_soon_threadsafe(self._accept_raw, meeting_id, snapshot, events)
+        # Capture immutable evidence while the runtime callback still pins its
+        # snapshot. Reading it later from the queue could see a different span.
+        causal = self.runtime._identity_match_observations(meeting_id) if self._speaker_identity is not None else ()
+        album = self.runtime._identity_observations(meeting_id) if self._speaker_identity is not None else ()
+        loop.call_soon_threadsafe(self._accept_raw, meeting_id, snapshot, events, causal, album)
 
     def _accept_raw(
         self,
         meeting_id: str,
         snapshot: LiveServiceSnapshot,
         events: tuple[LiveServiceEvent, ...],
+        causal_observations: tuple[object, ...] = (),
+        album_observations: tuple[object, ...] = (),
     ) -> None:
         if not self._accepting_publications:
             return
@@ -530,7 +587,7 @@ class Phase2LiveMeetings:
         if high_water <= binding.raw_event_high_water:
             return
         binding.raw_event_high_water = high_water
-        binding.queue.put_nowait(_RawPublication(snapshot=snapshot, events=events))
+        binding.queue.put_nowait(_RawPublication(snapshot, events, causal_observations, album_observations))
 
     async def _publish(self, binding: _LiveBinding) -> None:
         while True:
@@ -552,14 +609,41 @@ class Phase2LiveMeetings:
                 finalizer_configured=self.runtime._terminal_finalizer is not None,
             )
             if terminal is None:
-                await self._observe_speaker_identity(binding)
+                await self._observe_speaker_identity(binding, publication.album_observations)
             else:
                 binding.speaker_identity_closed = True
                 await self._clear_pending_identity(binding)
             fence_reason = None
             terminal_published = False
-            async with binding.speaker_mutation_lock:
-                document = _transcript_document(publication.snapshot, binding.speaker_labels)
+            async with AsyncExitStack() as stack:
+                changes = {}
+                if self._speaker_identity is not None and not binding.authority_closing:
+                    try:
+                        changes = await stack.enter_async_context(self._speaker_identity.publication(
+                            binding.handle,
+                            publication.album_observations if terminal == "completed" else publication.causal_observations,
+                        ))
+                    except AccountRevoked:
+                        await stack.aclose()
+                        await self._fence(binding, "meeting_authority_revoked")
+                        continue
+                    except Exception:
+                        # Preparation now includes private-bank reads/link commits.
+                        # Failure must settle capture, not kill this worker and
+                        # strand Stop. Unwind identity locks before cleanup.
+                        await stack.aclose()
+                        await self._fence(binding, "transcript_persistence_failed")
+                        continue
+                await stack.enter_async_context(binding.speaker_mutation_lock)
+                if binding.publication_fenced or binding.capture_fenced:
+                    continue
+                labels = dict(binding.speaker_labels)
+                for speaker_id, label in changes.items():
+                    if label is None:
+                        labels.pop(speaker_id, None)
+                    else:
+                        labels[speaker_id] = label
+                document = _transcript_document(publication.snapshot, labels)
                 try:
                     document_changed = document != binding.durable_document
                     if terminal is not None:
@@ -568,6 +652,7 @@ class Phase2LiveMeetings:
                             publication.snapshot,
                             publication.events,
                             terminal,
+                            document_override=document,
                         )
                         terminal_published = True
                     elif document_changed:
@@ -578,6 +663,9 @@ class Phase2LiveMeetings:
                 except Exception:
                     fence_reason = "transcript_persistence_failed"
 
+                if fence_reason is None and binding.durable_document == document and labels != binding.speaker_labels:
+                    binding.speaker_labels = labels
+                    binding.speaker_label_revision += 1
                 if fence_reason is None and not terminal_published:
                     binding.public_snapshot = publication.snapshot
                     binding.public_events = publication.events
@@ -591,12 +679,13 @@ class Phase2LiveMeetings:
                 await self._clear_pending_identity(binding)
                 continue
 
-    async def _observe_speaker_identity(self, binding: _LiveBinding) -> None:
+    async def _observe_speaker_identity(self, binding: _LiveBinding, observations=None) -> None:
         identity = self._speaker_identity
         if identity is None or binding.speaker_identity_closed or binding.authority_closing:
             return
         try:
-            observations = self.runtime._identity_observations(binding.handle.meeting_id)
+            if observations is None:
+                observations = self.runtime._identity_observations(binding.handle.meeting_id)
             await identity.observe(binding.handle, observations)
         except AccountRevoked:
             await identity.clear_meeting(binding.handle)

@@ -61,6 +61,13 @@ class FakeActiveMeetings:
         self.meetings: dict[str, _FakeActiveMeeting] = {}
         self.evidence_reads = 0
 
+    @asynccontextmanager
+    async def voiceprint_labels(self, owner_key, changes):
+        # These enrollment-unit fixtures never link a profile across meetings.
+        # Real multi-meeting propagation is exercised through HTTP/runtime tests.
+        assert not changes
+        yield []
+
     def add(
         self,
         handle,
