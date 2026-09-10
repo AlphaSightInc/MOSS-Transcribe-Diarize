@@ -7,6 +7,7 @@ export interface MeetingSegment {
   start: number;
   end: number;
   speaker: string;
+  speaker_entity_id?: string;
   text: string;
 }
 
@@ -124,6 +125,7 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
         typeof segment.start !== "number" ||
         typeof segment.end !== "number" ||
         typeof segment.speaker !== "string" ||
+        (segment.speaker_entity_id !== undefined && typeof segment.speaker_entity_id !== "string") ||
         typeof segment.text !== "string"
       ) {
         throw new Error("Meeting transcript segment is invalid.");
@@ -133,6 +135,7 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
         start: segment.start,
         end: segment.end,
         speaker: segment.speaker,
+        ...(typeof segment.speaker_entity_id === "string" ? { speaker_entity_id: segment.speaker_entity_id } : {}),
         text: segment.text
       };
     })

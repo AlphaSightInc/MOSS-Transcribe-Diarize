@@ -12,6 +12,9 @@ export const sessionTranscriptItems = signal<MergedTranscriptItem[]>([]);
 export const transcriptSearchQuery = signal("");
 export const transcript = computed(() => sessionTranscriptItems.value);
 export const sessionId = signal<string | null>(null);
+// Page-local capture ownership, not an account credential. Reload/history observers
+// stay read-only even though tabs in this browser share workspace authority.
+export const captureMeetingId = signal<string | null>(null);
 export const sessionMode = signal<SessionMode>("live");
 export const sessionState = signal("idle");
 export const sessionStatus = signal<SessionLifecycle>("idle");
@@ -49,6 +52,7 @@ export function clearSessionDisplay(): void {
 }
 
 export function resetSessionState(): void {
+  captureMeetingId.value = null;
   sessionId.value = null;
   sessionMode.value = "live";
   sessionState.value = "idle";

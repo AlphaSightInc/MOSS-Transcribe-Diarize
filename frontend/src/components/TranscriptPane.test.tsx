@@ -3,7 +3,7 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { replaceTranscript, resetSessionState, sessionId } from "../state/session";
+import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
 import { TranscriptPane } from "./TranscriptPane";
 
 describe("TranscriptPane", () => {
@@ -26,7 +26,7 @@ describe("TranscriptPane", () => {
     vi.useRealTimers();
   });
 
-  it("renders generic speaker labels and a provisional row from transcript state", () => {
+  it("renders display names and a provisional row without exposing canonical IDs", () => {
     act(() => {
       render(<TranscriptPane />, root);
       replaceTranscript([
@@ -52,16 +52,107 @@ describe("TranscriptPane", () => {
     });
 
     expect([...root.querySelectorAll(".legend-chip-name")].map((node) => node.textContent)).toEqual([
-      "SPEAKER_01",
-      "SPEAKER_02"
+      "Named person",
+      "Another name"
     ]);
     expect([...root.querySelectorAll(".utt-speaker-label")].map((node) => node.textContent)).toEqual([
-      "SPEAKER_01",
-      "SPEAKER_02"
+      "Named person",
+      "Another name"
     ]);
     expect(root.querySelector(".utt[data-state='provisional'] .prov")).not.toBeNull();
     expect(root.querySelector(".utt[data-state='provisional'] .live-caret")).not.toBeNull();
     expect(root.querySelector("button.utt-speaker")).toBeNull();
+  });
+
+  function showSpeakers(originating = true): void {
+    act(() => {
+      sessionId.value = "meeting/one";
+      captureMeetingId.value = originating ? "meeting/one" : null;
+      sessionStatus.value = "active";
+      render(<TranscriptPane />, root);
+      replaceTranscript(["a", "b"].map((id, index) => ({
+        start: index, end: index + 1, text: `Words from ${id}`,
+        speaker: `S0${index + 1}`, speaker_entity_id: `canonical/${id}`,
+        display_name: "Alex", state: "confirmed" as const
+      })));
+    });
+  }
+
+  it("keeps an explicitly chosen generic-looking name literal in view and copy", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    showSpeakers();
+    act(() => replaceTranscript([{ start: 0, end: 1, text: "Hello", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "SPEAKER_07", state: "confirmed" }]));
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("SPEAKER_07");
+    await act(async () => root.querySelector<HTMLButtonElement>("button[title='Copy']")!.click());
+    expect(writeText).toHaveBeenCalledWith("[00:00:00] SPEAKER_07:\nHello");
+  });
+
+  it("keeps duplicate names separate and saves the chosen canonical speaker only", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      meeting_id: "meeting/one", speaker_id: "canonical/b", label: "Sam", enrollment: "enrolled"
+    })));
+    vi.stubGlobal("fetch", fetcher);
+    showSpeakers();
+    expect(root.querySelectorAll(".utt")).toHaveLength(2);
+    expect(root.querySelectorAll(".legend-chip")).toHaveLength(2);
+    act(() => root.querySelectorAll<HTMLButtonElement>(".legend-chip")[1].click());
+    const input = root.querySelector<HTMLInputElement>("#speaker-name-input")!;
+    act(() => {
+      input.value = "  Sam  ";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    expect(fetcher).toHaveBeenCalledWith("/api/meetings/meeting%2Fone/speakers/canonical%2Fb/name", expect.objectContaining({
+      method: "PUT", credentials: "same-origin", body: JSON.stringify({ label: "Sam" })
+    }));
+    await vi.waitFor(() => expect(root.textContent).toContain("Voiceprint saved privately"));
+    expect(root.querySelector("dialog")).toBeNull();
+    // No optimistic identity mutation: the authoritative poll supplies the label.
+    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Alex", "Alex"]);
+  });
+
+  it("keeps observers, terminal meetings and provisional-only speakers read-only", () => {
+    showSpeakers(false);
+    expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip")].every(button => button.disabled)).toBe(true);
+    act(() => {
+      captureMeetingId.value = "meeting/one";
+      sessionStatus.value = "closed";
+    });
+    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
+    act(() => {
+      sessionStatus.value = "active";
+      replaceTranscript([{ start: 0, end: 1, text: "preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "S01", state: "provisional" }]);
+    });
+    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
+  });
+
+  it("preserves committed unattributed text but never offers to name S00", () => {
+    showSpeakers();
+    act(() => replaceTranscript([{ start: 0, end: 1, text: "Unattributed speech", speaker: "S00", speaker_entity_id: "S00", display_name: "S00", state: "confirmed" }]));
+    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("S00");
+    expect(root.querySelector(".utt-text")?.textContent).toBe("Unattributed speech");
+  });
+
+  it.each(["pending", "error"])("explains %s naming without losing the input", async (outcome) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(outcome === "error"
+      ? { detail: "Meeting Speaker not found." }
+      : { meeting_id: "meeting/one", speaker_id: "canonical/a", label: "Alex", enrollment: "pending" }),
+    { status: outcome === "error" ? 404 : 200 })));
+    showSpeakers();
+    act(() => root.querySelector<HTMLButtonElement>(".legend-chip")!.click());
+    await act(async () => {
+      root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    if (outcome === "error") {
+      await vi.waitFor(() => expect(root.querySelector("[role='alert']")?.textContent).toBe("Meeting Speaker not found."));
+      expect(root.querySelector<HTMLInputElement>("#speaker-name-input")?.value).toBe("Alex");
+    } else {
+      await vi.waitFor(() => expect(root.textContent).toContain("before Stop"));
+    }
   });
 
   it("searches rendered transcript rows and cycles actual matches", () => {

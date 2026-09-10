@@ -122,6 +122,21 @@ describe("MeetingHistory", () => {
     expect(window.sessionStorage.length).toBe(0);
   });
 
+  it("keeps two saved speakers with the same name separate in history", async () => {
+    const completed = meeting({ transcript: { segments: [
+      { id: "one", start: 0, end: 1, speaker: "Alex", speaker_entity_id: "canonical-a", text: "First" },
+      { id: "two", start: 1, end: 2, speaker: "Alex", speaker_entity_id: "canonical-b", text: "Second" }
+    ] } });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(response({ meetings: [completed] })).mockResolvedValueOnce(response(completed)));
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="meeting-a"]')).not.toBeNull());
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-a"]')!.click());
+    await vi.waitFor(() => expect(root.querySelectorAll(".utt")).toHaveLength(2));
+    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Alex", "Alex"]);
+    expect(transcript.value.map(item => item.speaker_entity_id)).toEqual(["canonical-a", "canonical-b"]);
+    expect(root.textContent).not.toContain("canonical-a");
+  });
+
   it("opens Account history into the transcript pane and exports all three formats", async () => {
     const completed = meeting({ id: "export-meeting", title: "Export source" });
     vi.stubGlobal(

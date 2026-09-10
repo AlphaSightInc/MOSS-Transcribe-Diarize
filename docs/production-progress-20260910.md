@@ -137,16 +137,40 @@ Post-merge full regression: **1141 passed, 2 skipped, 37 subtests passed**, 64.9
 Frontend remains **121/121**, type-check/build passed; no frontend changes in this
 backend slice. Manual naming is not yet wired into the user interface.
 
-## C5 — Remaining sequence
+## C5 — Manual-naming user interface
 
-1. Finish W2 on the integrated manual-naming backend: UI, opaque-ID bank rename/delete,
+- Active capture page speaker chips open a name dialog. No extra login or enrollment
+  recording; the saved/pending response explains the private voiceprint outcome.
+  Reload/history observers, stopped meetings, previews and unattributed S00 rows
+  cannot initiate naming.
+- Label-only revisions redraw cached canonical rows without waiting for new speech
+  or resetting the speech cursor. Duplicate names stay distinct in Live/history;
+  display names feed search/copy/export. Explicit generic-looking names remain literal.
+- Saved Live rows retain canonical IDs alongside labels; unattributed rows omit the
+  absent ID. Adversarial review caught and corrected null-ID history rejection and
+  impossible S00 naming controls. Original transcript text remains intact.
+- Four-state prototype absorbed into production poller/tests. Muted headless Chrome
+  confirmed modal interaction, exact selected-ID PUT, pending text and observer
+  disabling using explicitly synthetic state/mock response, not device capture.
+- Full Python before the final unattributed-row correction: **1141 passed, 2 skipped,
+  37 subtests passed**, 63.77 s. After that correction: **59 focused Python tests
+  pass; 136 frontend tests pass**, type-check/build pass. An initial parallel
+  build/test run hit Vite's temporary asset deletion (58 passed, one missing-assets
+  failure); rerunning after build completed passed. Build and asset-consuming
+  backend tests must run sequentially.
+
+## C6 — Remaining sequence
+
+1. Finish W2 on the integrated manual-naming backend/UI: bank UI, opaque-ID bank rename/delete,
    bank-revision fencing, compatible-entry matching and real G8 measurement/evaluation.
    Preserve the separate accepted evidence boundaries: causal matching uses at least
    1 s live evidence; enrollment uses the quality-gated album centroid at 2 s. Do not
    silently substitute the enrollment observation seam for causal match evidence.
 2. Reuse the standing voice-profile bench and its accepted rule. The production
-   worktree currently lacks its ignored model/corpus/runtime assets; locate/reuse the
-   existing originals before a fresh run. Cache replay is development evidence only.
+   worktree lacks ignored bench assets. Located both 55 MB development corpora and
+   the working Python 3.12.12/ONNX Runtime 1.28.0 bench environment in the original
+   worktree; reuse those assets without altering the original checkout. No fresh
+   run yet. Cache replay is development evidence only.
 3. Implement W3 optional browser-direct AI settings/calls and version-bound summary
    persistence; never persist endpoint, model, API key or prompt on the server.
 4. Trusted HTTPS and renewal; staged installation, final integrated G8/G9 producers,

@@ -5,7 +5,7 @@ import {
   type CaptureLane,
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
-import { resetSessionState } from "../state/session";
+import { captureMeetingId, resetSessionState } from "../state/session";
 import {
   clearSessionReattach,
   loadSessionReattach,
@@ -66,6 +66,7 @@ export function ControlPanel() {
   };
 
   const handleTerminal = (terminalMessage: string, clearSaved: boolean) => {
+    captureMeetingId.value = null;
     if (clearSaved) clearSessionReattach(sessionReattachStorage());
     pollerRef.current?.stop();
     pollerRef.current = null;
@@ -160,6 +161,7 @@ export function ControlPanel() {
         }
       });
       pollerRef.current = poller;
+      captureMeetingId.value = session.id;
       transition("active");
       setMessage("Capture active. Keep both lane meters moving.");
       poller.start();
@@ -174,6 +176,7 @@ export function ControlPanel() {
     const client = clientRef.current;
     if (!client || phase !== "active") return;
     transition("stopping");
+    captureMeetingId.value = null;
     setMessage("Stopping capture and finalizing transcript...");
     try {
       await client.stop(5);
@@ -254,6 +257,7 @@ export function ControlPanel() {
     }
 
     return () => {
+      captureMeetingId.value = null;
       document.removeEventListener(LIVE_MEETING_OBSERVE_EVENT, observeHistoryMeeting);
       pollerRef.current?.stop();
       void clientRef.current?.close().catch(() => undefined);
@@ -273,7 +277,7 @@ export function ControlPanel() {
       data-observer-mode={reattached ? "read-only" : "none"}
     >
       <div className="label">Capture</div>
-      <p className="capture-security-note">Bound to your signed-in Account; no capture key is needed.</p>
+      <p className="capture-security-note">Private to this browser; no sign-in or capture key is needed.</p>
 
       <label className="field-label" htmlFor="audio-route">Listening setup</label>
       <div className="field">

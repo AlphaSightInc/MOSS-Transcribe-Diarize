@@ -119,6 +119,8 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   let unchangedSnapshotNoProgressRounds = 0;
   const revisedSpanIds = new Set<number>();
   let priorProvisional: { generation: number; items: TranscriptItem[] } | null = null;
+  let lastRenderedItems: TranscriptItem[] = [];
+  let speakerLabelRevision = 0;
 
   function endpoint(path: "snapshot" | "events", cursor: number): string {
     const encodedSessionId = encodeURIComponent(options.sessionId);
@@ -177,6 +179,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
       const captureHealth = parseCaptureHealth(snapshotPayload);
       const ingressAcceptedSamples = parseIngressAcceptedSamples(snapshotPayload);
       const snapshot = parseSnapshot(snapshotPayload);
+      const labelState = parseSpeakerLabels(snapshotPayload);
       const ingressAdvanced =
         ingressAcceptedSamples !== null &&
         lastIngressAcceptedSamples !== null &&
@@ -221,9 +224,10 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
             snapshot.persistenceFailure,
           status_line: snapshot.statusLine
         });
-        dispatch(renderedSnapshot.event);
+        lastRenderedItems = renderedSnapshot.event.items;
+        dispatch({ ...renderedSnapshot.event, items: applySpeakerLabels(lastRenderedItems, labelState.labels) });
         if (renderedSnapshot.relabelEvent) {
-          dispatch(renderedSnapshot.relabelEvent);
+          dispatch({ ...renderedSnapshot.relabelEvent, items: applySpeakerLabels(lastRenderedItems, labelState.labels) });
         }
         priorProvisional = renderedSnapshot.provisional
           ? {
@@ -253,6 +257,21 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         });
       }
 
+      // Naming has its own revision: speech can remain unchanged while a user
+      // names a speaker. Re-render cached canonical rows once, without resetting
+      // the speech cursor or treating display names as speaker identity.
+      if (!snapshot && labelState.revision !== speakerLabelRevision) {
+        dispatch({
+          type: "transcript_update",
+          session_id: options.sessionId,
+          seq: consumedSequence,
+          timestamp: new Date().toISOString(),
+          items: applySpeakerLabels(lastRenderedItems, labelState.labels),
+          metadata: { operation: "snapshot" }
+        });
+      }
+      speakerLabelRevision = labelState.revision;
+
       for (const event of consumedEvents) {
         const referenceEvent = mapRuntimeEvent(
           event,
@@ -260,7 +279,9 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
           identityFinalizationSeen || identityFinalizationArrived
         );
         if (referenceEvent) {
-          dispatch(referenceEvent);
+          dispatch("items" in referenceEvent
+            ? { ...referenceEvent, items: applySpeakerLabels(referenceEvent.items, labelState.labels) }
+            : referenceEvent);
         }
       }
       identityFinalizationSeen ||= identityFinalizationArrived;
@@ -352,6 +373,22 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
     poll,
     cursors: () => ({ snapshotVersion, eventSequence }),
     running: () => running
+  };
+}
+
+function applySpeakerLabels(items: readonly TranscriptItem[], labels: Readonly<Record<string, string>>): TranscriptItem[] {
+  return items.map((item) => ({
+    ...item,
+    display_name: labels[item.speaker_entity_id] ?? item.speaker
+  }));
+}
+
+function parseSpeakerLabels(payload: unknown): { revision: number; labels: Record<string, string> } {
+  const response = record(payload, "snapshot response");
+  const labels = record(response.speaker_labels ?? {}, "speaker labels");
+  return {
+    revision: requiredNonNegativeNumber(response.speaker_label_revision ?? 0, "speaker label revision"),
+    labels: Object.fromEntries(Object.entries(labels).map(([id, label]) => [id, requiredString(label, "speaker label")]))
   };
 }
 

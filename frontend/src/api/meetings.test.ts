@@ -47,6 +47,16 @@ describe("Account Meeting API", () => {
     const fetcher = vi.fn().mockResolvedValue(response({ meetings: [{ ...payload, title_source: "unknown" }] }));
     await expect(listMeetings(fetcher)).rejects.toThrow("Meeting response is invalid.");
   });
+
+  it("loads attributed and unattributed Live rows without inventing canonical ownership", async () => {
+    const mixed = { ...payload, transcript: { segments: [
+      { id: "one", start: 0, end: 1, speaker: "Alex", speaker_entity_id: "canonical-a", text: "Named speech" },
+      { id: "two", start: 1, end: 2, speaker: "S00", text: "Unattributed speech" }
+    ] } };
+    const fetcher = vi.fn().mockResolvedValue(response({ meetings: [mixed] }));
+    expect(await listMeetings(fetcher)).toEqual([mixed]);
+    expect((await listMeetings(fetcher))[0].transcript?.segments[1]).not.toHaveProperty("speaker_entity_id");
+  });
 });
 
 function response(body: unknown, status = 200): Response {

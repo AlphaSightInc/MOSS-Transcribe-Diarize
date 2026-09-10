@@ -17,6 +17,44 @@ describe("MOSS session poller", () => {
     resetSessionState();
   });
 
+  it("renders label-only revisions once, preserves duplicate identities and retains the speech cursor", async () => {
+    let round = 0;
+    const dispatched: WsEvent[] = [];
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/events")) return jsonResponse({ events: [] });
+      round += 1;
+      return jsonResponse({
+        unchanged: round > 1,
+        speaker_label_revision: round === 1 ? 0 : round < 4 ? 1 : 2,
+        speaker_labels: round === 1 ? {} : round < 4
+          ? { "canonical-a": "Alex", "canonical-b": "Alex" } : { "canonical-a": "Alex" },
+        snapshot: round > 1 ? null : {
+          session_id: "meeting", descriptor: { sample_rate: 16_000 },
+          session: { status: "active", version: 7, failure_reason: null, label_revision_version: 0,
+            identity_snapshot: { canonical_speakers: ["canonical-a", "canonical-b"] },
+            committed: [{ span_id: 1, start_sample: 0, transcript: "[0][S01]First[1][1][S02]Second[2]", revised_transcript: null }],
+            provisional: null }
+        },
+        // No new speech/event is required for the first label-only render.
+      });
+    }) as typeof fetch;
+    const poller = createMossSessionPoller({ sessionId: "meeting", fetch: fetcher,
+      dispatch: event => { dispatched.push(event); dispatchWsEvent(event); } });
+    await poller.poll();
+    await poller.poll();
+    expect(transcript.value.map(item => [item.speaker_entity_id, item.display_name])).toEqual([
+      ["canonical-a", "Alex"], ["canonical-b", "Alex"]
+    ]);
+    expect(poller.cursors().snapshotVersion).toBe(7);
+    const renders = () => dispatched.filter(event => event.type === "transcript_update").length;
+    expect(renders()).toBe(2);
+    await poller.poll();
+    expect(renders()).toBe(2);
+    await poller.poll();
+    expect(renders()).toBe(3);
+    expect(transcript.value[1].display_name).toBe("S02");
+  });
+
   it.each([
     [
       "a canonical silence span",

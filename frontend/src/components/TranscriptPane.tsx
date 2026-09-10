@@ -1,5 +1,6 @@
 import { Fragment, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { nameMeetingSpeaker } from "../api/speakers";
 import {
   buildTranscriptExportText,
   formatTranscriptClockTime,
@@ -21,16 +22,15 @@ import {
   buildTranscriptSearchResults,
   type TranscriptSearchPart
 } from "../lib/transcriptSearch";
-import { sessionId, sessionTitle, transcript, transcriptSearchQuery } from "../state/session";
+import { captureMeetingId, sessionId, sessionStatus, sessionTitle, transcript, transcriptSearchQuery } from "../state/session";
 import { autoscroll } from "../state/ui";
 
 interface TranscriptLegendEntry {
   colorToken: string;
   legendKey: string;
   visibleLabel: string;
-  // The reference renders an unidentified speaker as a distinct `is-unidentified` chip rather
-  // than hiding it. Naming one is Phase 2, but the state is real and MOSS produces it, so the
-  // chip renders -- this pane is measured against the reference and is not an exempt region.
+  speakerId: string;
+  committed: boolean;
   isUnidentified: boolean;
 }
 
@@ -90,11 +90,18 @@ export function TranscriptPane() {
   const [activeSearchMatchIndex, setActiveSearchMatchIndex] = useState(0);
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+  const [namingTarget, setNamingTarget] = useState<TranscriptLegendEntry | null>(null);
+  const [speakerName, setSpeakerName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [namingMessage, setNamingMessage] = useState<string | null>(null);
+  const [namingError, setNamingError] = useState<string | null>(null);
+  const namingDialogRef = useRef<HTMLDialogElement | null>(null);
+  const namingInputRef = useRef<HTMLInputElement | null>(null);
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
-  const genericSpeakerNames = fullTranscriptItems.map((item) => ({
-    display_name: item.speaker
+  const genericSpeakerNames = fullTranscriptItems.filter(item => item.display_name === item.speaker).map((item) => ({
+    display_name: item.display_name
   }));
   const consecutiveSpeakerMap = buildConsecutiveSpeakerMap(genericSpeakerNames);
   const speakerColorMap = buildSpeakerColorMap(fullTranscriptItems);
@@ -102,7 +109,7 @@ export function TranscriptPane() {
   const searchResults = buildTranscriptSearchResults(
     allTurns,
     searchQuery,
-    (turn) => resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap)
+    (turn) => visibleSpeakerName(turn, consecutiveSpeakerMap)
   );
   const activeSearchMatchId =
     searchResults.matchCount > 0
@@ -110,12 +117,57 @@ export function TranscriptPane() {
       : -1;
   const transcriptAvailable = allTurns.length > 0;
   const activeSessionId = sessionId.value;
+  const canNameSpeakers = activeSessionId !== null && captureMeetingId.value === activeSessionId && sessionStatus.value === "active";
   const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
     consecutiveSpeakerMap,
     speakerColorMap
   );
+
+  useEffect(() => {
+    setNamingTarget(null);
+    setNamingMessage(null);
+    setNamingError(null);
+  }, [activeSessionId, canNameSpeakers]);
+
+  useEffect(() => {
+    if (!namingTarget) return;
+    const dialog = namingDialogRef.current;
+    if (!dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    namingInputRef.current?.focus();
+    namingInputRef.current?.select();
+    return () => {
+      if (dialog.open && typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      previousFocus?.focus();
+    };
+  }, [namingTarget]);
+
+  async function saveSpeakerName(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!namingTarget || !activeSessionId || !canNameSpeakers || savingName) return;
+    const meetingId = activeSessionId;
+    setSavingName(true);
+    setNamingError(null);
+    try {
+      const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim());
+      if (sessionId.value !== meetingId || captureMeetingId.value !== meetingId) return;
+      setNamingMessage(result.enrollment === "enrolled"
+        ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
+        : `Saved ${result.label}. Voiceprint will save when enough clear speech arrives before Stop.`);
+      setNamingTarget(null);
+    } catch (error) {
+      if (sessionId.value === meetingId && captureMeetingId.value === meetingId) {
+        setNamingError(error instanceof Error ? error.message : "Speaker naming failed.");
+      }
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   useEffect(() => {
     if (findOpen) {
@@ -179,7 +231,7 @@ export function TranscriptPane() {
 
   async function handleCopy(): Promise<void> {
     const text = buildTranscriptExportText(allTurns, (turn) =>
-      resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap)
+      visibleSpeakerName(turn, consecutiveSpeakerMap)
     );
     try {
       await copyTextToClipboard(text);
@@ -197,7 +249,7 @@ export function TranscriptPane() {
     triggerTranscriptExportDownload(serializeTranscriptExport(
       format,
       allTurns,
-      (turn) => resolveVisibleSpeakerLabel(turn.speaker, consecutiveSpeakerMap),
+      (turn) => visibleSpeakerName(turn, consecutiveSpeakerMap),
       { sessionId: activeSessionId, exportedAt: new Date() }
     ));
   }
@@ -235,7 +287,15 @@ export function TranscriptPane() {
             key={entry.legendKey}
             type="button"
             className={`legend-chip${entry.isUnidentified ? " is-unidentified" : ""}`}
-            disabled
+            disabled={!canNameSpeakers || !entry.committed || entry.speakerId === "S00"}
+            aria-label={`Name speaker ${entry.visibleLabel}`}
+            title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Speaker naming is available on the active capture page"}
+            onClick={() => {
+              setNamingTarget(entry);
+              setSpeakerName(entry.visibleLabel);
+              setNamingError(null);
+              setNamingMessage(null);
+            }}
           >
             <span
               className="legend-chip-dot"
@@ -252,6 +312,25 @@ export function TranscriptPane() {
           <div className="transcript-view-placeholder" />
         </div>
       </div>
+
+      {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
+      {namingTarget ? (
+        <dialog ref={namingDialogRef} className="history-dialog" aria-labelledby="speaker-name-title"
+          onCancel={() => setNamingTarget(null)}>
+          <form onSubmit={(event) => void saveSpeakerName(event)}>
+            <h3 id="speaker-name-title">Name speaker</h3>
+            <label htmlFor="speaker-name-input">Display name</label>
+            <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
+              disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
+            <p className="hint">Applies to this speaker throughout the active meeting. Enough clear speech also saves a private voiceprint. People may share the same name.</p>
+            {namingError ? <p role="alert">{namingError}</p> : null}
+            <div className="history-dialog-actions">
+              <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>
+              <button className="history-toolbar-btn" type="submit" disabled={savingName || !speakerName.trim()}>{savingName ? "Saving…" : "Save name"}</button>
+            </div>
+          </form>
+        </dialog>
+      ) : null}
 
       <div className="tr-body-wrap">
         <div className="tr-floating-tools" id="tr-floating-tools">
@@ -458,6 +537,17 @@ export function TranscriptPane() {
   );
 }
 
+function visibleSpeakerName(
+  item: { speaker: string; display_name: string },
+  consecutiveSpeakerMap: ReadonlyMap<string, string>
+): string {
+  // A user may choose a label that looks like a generic speaker tag. Names are
+  // literal display text, not input to automatic numbering.
+  return item.display_name !== item.speaker
+    ? item.display_name
+    : resolveVisibleSpeakerLabel(item.speaker, consecutiveSpeakerMap);
+}
+
 function buildLegendEntries(
   items: typeof transcript.value,
   consecutiveSpeakerMap: ReadonlyMap<string, string>,
@@ -470,15 +560,19 @@ function buildLegendEntries(
       continue;
     }
 
-    const visibleLabel = resolveVisibleSpeakerLabel(item.speaker, consecutiveSpeakerMap);
-    const legendKey = buildSpeakerLegendKey(item.speaker, visibleLabel);
+    const visibleLabel = visibleSpeakerName(item, consecutiveSpeakerMap);
+    const legendKey = buildSpeakerLegendKey(item.speaker_entity_id, visibleLabel);
     if (!entries.has(legendKey)) {
       entries.set(legendKey, {
         legendKey,
         visibleLabel,
+        speakerId: item.speaker_entity_id,
+        committed: item.state !== "provisional",
         isUnidentified: isUnidentifiedSpeakerLabel(visibleLabel),
         colorToken: resolveSpeakerColorToken(item.speaker, speakerColorMap)
       });
+    } else if (item.state !== "provisional") {
+      entries.get(legendKey)!.committed = true;
     }
   }
 

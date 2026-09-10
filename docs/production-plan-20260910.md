@@ -70,6 +70,14 @@ Fix R2's exact isolated-process check with regression coverage. Repair acceptanc
 
 Review and integrate existing ticket-24 work without rebasing or discarding edits. Keep voiceprint ownership within the browser workspace, labels display-only, and enrollment/matching on the accepted production path. Implement real G8 measurement/evaluation, including changes to the new owner schema. Reuse the standing voiceprint/diarization bench.
 
+Measured display seam: speech and manual-label revisions are independent. Apply a
+label-only revision to cached canonical rows without resetting the speech cursor;
+retain canonical speaker IDs beside labels in saved Live transcripts. Duplicate
+names stay separate in Live view, history and export. Naming is available on the
+originating active capture page; reload/history observers remain read-only. See
+`prototypes/phase2-account-lifecycle/SPEAKER_LABELS_NOTES.md` for the falsifier and
+production-path test commands. This does not qualify the still-pending matching bank.
+
 **Exit:** manual naming, bank operations, matching, persistence and isolation meet existing G8 requirements; no placeholder `unmeasured` gate or invented threshold.
 
 ### A5 — Implement Wave 3 with browser-only external AI

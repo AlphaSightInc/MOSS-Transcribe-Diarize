@@ -618,6 +618,25 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
         assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 401
 
 
+def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
+    from moss_transcribe_diarize.app.phase2_live import _transcript_document
+
+    snapshot = SimpleNamespace(
+        descriptor=SimpleNamespace(sample_rate=16000),
+        session=SimpleNamespace(
+            identity_snapshot=SimpleNamespace(canonical_speakers=("canonical-a",)),
+            effective_transcript=(
+                SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech"),
+                SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech"),
+            ),
+        ),
+    )
+    assert _transcript_document(snapshot, {"canonical-a": "Alex"}) == {"segments": [
+        {"id": "seg_0001", "start": 0.0, "end": 1.0, "speaker_entity_id": "canonical-a", "speaker": "Alex", "text": "Named speech"},
+        {"id": "seg_0002", "start": 1.0, "end": 2.0, "speaker": "S00", "text": "Unattributed speech"},
+    ]}
+
+
 def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprint(
     tmp_path: Path,
 ):
@@ -651,6 +670,7 @@ def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprin
         assert isinstance(named.json()["voiceprint_id"], str)
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["transcript"]["segments"][0]["speaker"] == "Alex"
+        assert meeting["transcript"]["segments"][0]["speaker_entity_id"] == "speaker-0001"
         live = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
         assert live["speaker_labels"] == {"speaker-0001": "Alex"}
         assert live["speaker_label_revision"] == 1
@@ -689,6 +709,7 @@ def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprin
         assert stopped.status_code == 200
         final_meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert final_meeting["transcript"]["segments"][0]["speaker"] == "Alex"
+        assert final_meeting["transcript"]["segments"][0]["speaker_entity_id"] == "speaker-0001"
         assert client.get("/api/voiceprints").json() == owner_bank
 
 

@@ -1190,6 +1190,8 @@ def _transcript_document(
                 "id": f"seg_{index:04d}",
                 "start": segment.start_sample / sample_rate,
                 "end": segment.end_sample / sample_rate,
+                **({"speaker_entity_id": segment.canonical_speaker}
+                   if segment.canonical_speaker is not None else {}),
                 "speaker": (
                     labels[segment.canonical_speaker]
                     if segment.canonical_speaker in labels

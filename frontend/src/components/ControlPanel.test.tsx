@@ -3,6 +3,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storageKeys } from "../lib/persistence";
+import { captureMeetingId } from "../state/session";
 
 const mocks = vi.hoisted(() => {
   const poller = {
@@ -84,6 +85,7 @@ describe("ControlPanel reattach", () => {
     });
 
     expect(mocks.poller.start).toHaveBeenCalledOnce();
+    expect(captureMeetingId.value).toBeNull();
     expect(mocks.createMossSessionPoller).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: "session-42"
@@ -204,11 +206,13 @@ describe("ControlPanel reattach", () => {
     await act(async () => button("Share audio")?.click());
     await act(async () => button("Start capture")?.click());
     expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
+    expect(captureMeetingId.value).toBe("account-live-meeting");
     expect(mocks.poller.start).toHaveBeenCalledOnce();
 
     await act(async () => mocks.pollerOptions?.onTerminal?.("Sign in required."));
 
     expect(mocks.captureClose).toHaveBeenCalledOnce();
+    expect(captureMeetingId.value).toBeNull();
     expect(mocks.poller.stop).toHaveBeenCalledOnce();
     expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
     expect(root.querySelector('[role="status"]')?.textContent).toBe("Sign in required.");

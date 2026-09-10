@@ -335,8 +335,8 @@ function transcriptItems(meeting: Meeting): TranscriptItem[] {
     start: segment.start,
     end: segment.end,
     text: segment.text,
-    speaker: segment.speaker,
-    speaker_entity_id: segment.speaker,
+    speaker: segment.speaker_entity_id ?? segment.speaker,
+    speaker_entity_id: segment.speaker_entity_id ?? segment.speaker,
     display_name: segment.speaker,
     state: meeting.status === "active" ? "confirmed" : "final",
     segment_id: segment.id ?? null
