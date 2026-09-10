@@ -88,6 +88,28 @@ Google-era lifecycle probes are still required before W1 qualification can run.
 - Remaining operational qualification work: collect actual service journals instead
   of requiring hand-made log files; migrate retired Google-era standalone probes.
 
+Standalone probe migration: lifecycle and Live-owner benches now bootstrap browser
+workspaces, retain drain/commit/audio/cancellation/interruption assertions, and reject
+old handles after a new unrelated browser visit. Normal Stop preserves credentials;
+same-browser tabs share authority, while read-only observation remains page-local UI
+state. Both probes pass with explicitly reported host SQLite 3.50.4. Operator status
+uses workspace IDs and passes. Added browser/bootstrap and revocation-snapshot probes
+to the required deterministic command set; no deployed gate removed.
+
+Service log automation: read-only host measurement proved real cursor-bearing records
+for all three current service journals. Qualification now reads fixed web/vLLM journal
+windows around sentinel/operator/load experiments; no caller-made log files or invented
+server external-AI prompt log. Missing baseline, failed reads, malformed/wrong-unit
+records and missing source observations fail. Empty tails are accepted only after a
+real readable baseline cursor. Ten journal-reader tests plus 88 qualification tests
+pass. Only flags/counts enter evidence, not log messages.
+
+W1 source checkpoint: full Python **1129 passed, 2 skipped, 37 subtests passed**
+(62.85 s); frontend **121/121**, type-check and build pass. All seven original
+standalone deterministic probes pass; the added browser/revocation probes pass as
+recorded above. Fidelity probe imports and CLI start without retired Google classes.
+These are development/source results, not trusted-TLS deployed qualification.
+
 ## C4 — Remaining sequence
 
 1. Complete W1 deployed browser/lifecycle qualification producers and replace

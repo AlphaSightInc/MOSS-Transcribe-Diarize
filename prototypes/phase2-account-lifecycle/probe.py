@@ -22,14 +22,9 @@ from typing import AsyncIterator
 
 from moss_transcribe_diarize.app.phase2 import (
     AccountRevoked,
-    GoogleIdentity,
     MeetingAudio,
     Phase2Store,
 )
-
-
-EMAIL = "owner@example.com"
-OTHER_EMAIL = "other@example.com"
 
 
 class ScopeDraining(RuntimeError):
@@ -117,16 +112,16 @@ async def gate_probe() -> dict[str, object]:
     async with session.admit():
         reopen_admitted = True
 
-    logout_entered = asyncio.Event()
-    release_logout = asyncio.Event()
+    normal_stop_entered = asyncio.Event()
+    release_normal_stop = asyncio.Event()
 
-    async def logout() -> None:
+    async def normal_stop() -> None:
         async with account.admit():
-            logout_entered.set()
-            await release_logout.wait()
+            normal_stop_entered.set()
+            await release_normal_stop.wait()
 
-    logout_task = asyncio.create_task(logout())
-    await logout_entered.wait()
+    normal_stop_task = asyncio.create_task(normal_stop())
+    await normal_stop_entered.wait()
     revoke_task = asyncio.create_task(account.close_and_drain())
     await asyncio.sleep(0)
     concurrent_rejected = None
@@ -136,8 +131,8 @@ async def gate_probe() -> dict[str, object]:
     except ScopeDraining as exc:
         concurrent_rejected = type(exc).__name__
     revoke_waited = not revoke_task.done()
-    release_logout.set()
-    await logout_task
+    release_normal_stop.set()
+    await normal_stop_task
     await revoke_task
 
     return {
@@ -150,9 +145,9 @@ async def gate_probe() -> dict[str, object]:
             "state": failure_gate.state,
             "active": failure_gate.active,
         },
-        "logout_failure_reopen_admitted": reopen_admitted,
-        "revoke_waited_for_logout": revoke_waited,
-        "concurrent_logout": concurrent_rejected,
+        "normal_stop_failure_reopen_admitted": reopen_admitted,
+        "revoke_waited_for_normal_stop": revoke_waited,
+        "concurrent_normal_stop": concurrent_rejected,
         "account_gate": {"state": account.state, "active": account.active},
     }
 
@@ -321,9 +316,7 @@ async def committed_mutation_fence_probe(path: Path) -> dict[str, object]:
     queued_document = {"segments": [{"text": "queued but never admitted"}]}
     store = await Phase2Store.open(path)
     try:
-        await store.allow_email(EMAIL)
-        admitted = await store.admit(GoogleIdentity("commit-owner", EMAIL, "Owner"))
-        assert admitted is not None
+        admitted = await store.bootstrap_browser(None)
         account, _ = admitted
         handle = await store.workspace(account).create_meeting("live")
         queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue()
@@ -515,11 +508,9 @@ class ControlledMeeting:
 async def provision(path: Path):
     store = await Phase2Store.open(path)
     try:
-        await store.allow_email(EMAIL)
-        first = await store.admit(GoogleIdentity("owner-sub", EMAIL, "Owner"))
-        second = await store.admit(GoogleIdentity("owner-sub", EMAIL, "Owner"))
-        await store.allow_email(OTHER_EMAIL)
-        other = await store.admit(GoogleIdentity("other-sub", OTHER_EMAIL, "Other"))
+        first = await store.bootstrap_browser(None)
+        second = await store.bootstrap_browser(first[1])
+        other = await store.bootstrap_browser(None)
         assert first is not None and second is not None and other is not None
         return store, first, second, other
     except BaseException:
@@ -583,7 +574,6 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         controlled = [
             ControlledMeeting(first, session),
             ControlledMeeting(second, session),
-            ControlledMeeting(observed, observer_session),
         ]
 
         settled = await stop_origin(controlled, session)
@@ -592,15 +582,14 @@ async def ordering_probe(path: Path) -> dict[str, object]:
             handle.meeting_id: (await handle.snapshot()).status
             for handle in (first, second)
         }
-        logout_revoked = await store.revoke_session(session)
-        observer_status_after_logout = (await observed.snapshot()).status
-        origin_valid_after_logout = await store.account_for_session(session) is not None
-        observer_valid_after_logout = (
+        observer_status_after_normal_stop = (await observed.snapshot()).status
+        origin_valid_after_normal_stop = await store.account_for_session(session) is not None
+        observer_valid_after_normal_stop = (
             await store.account_for_session(observer_session) is not None
         )
 
         failing = await workspace.create_meeting("live")
-        admitted = await store.admit(GoogleIdentity("owner-sub", EMAIL, "Owner"))
+        admitted = await store.bootstrap_browser(session)
         assert admitted is not None
         failing_session = admitted[1]
         failure = None
@@ -676,7 +665,7 @@ async def ordering_probe(path: Path) -> dict[str, object]:
             if (await handle.snapshot()).status == "active":
                 await handle.record_audio_unavailable()
                 await handle.finish("interrupted")
-        await store.revoke_email(EMAIL)
+        await store.revoke_account(account.account_id)
 
         late = "unexpected-success"
         try:
@@ -684,8 +673,7 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         except AccountRevoked:
             late = "AccountRevoked"
 
-        await store.allow_email(EMAIL)
-        fresh = await store.admit(GoogleIdentity("owner-sub", EMAIL, "Owner"))
+        fresh = await store.bootstrap_browser(None)
         assert fresh is not None
         fresh_account, fresh_session = fresh
         stale = "unexpected-success"
@@ -696,16 +684,15 @@ async def ordering_probe(path: Path) -> dict[str, object]:
         fresh_handle = await store.workspace(fresh_account).create_meeting("live")
 
         result = {
-            "logout": {
+            "normal_stop": {
                 "settled": settled,
                 "expected_settled": expected_settled,
                 "settled_statuses": settled_statuses,
-                "session_revoked": logout_revoked,
-                "origin_valid": origin_valid_after_logout,
-                "observer_valid": observer_valid_after_logout,
-                "observer_meeting": observer_status_after_logout,
+                "origin_valid": origin_valid_after_normal_stop,
+                "observer_valid": observer_valid_after_normal_stop,
+                "observer_meeting": observer_status_after_normal_stop,
             },
-            "logout_failure": {
+            "normal_stop_failure": {
                 "error": failure,
                 "session_valid": failing_session_valid_after_failure,
             },
@@ -729,7 +716,8 @@ async def ordering_probe(path: Path) -> dict[str, object]:
                 ],
                 "old_generation": old_generation,
                 "fresh_generation": fresh_account.authority_generation,
-                "stale_after_reallow": stale,
+                "fresh_owner_is_new": fresh_account.account_id != account.account_id,
+                "stale_after_new_visit": stale,
                 "fresh_session_valid": (
                     await store.account_for_session(fresh_session) is not None
                 ),
@@ -750,7 +738,7 @@ async def main() -> None:
     contract = {
         "structural_question": (
             "How can admitted Meeting creation and terminal settlement finish while captured "
-            "authority is valid, before logout or Account revoke removes that authority?"
+            "authority is valid, before workspace revocation removes that authority?"
         ),
         "minimum_primitives": [
             {
@@ -793,8 +781,8 @@ async def main() -> None:
         ],
         "invariants": [
             "admission spans authority resolution through task or binding registration",
-            "logout settles only Live Meetings originated by one Sign-in session",
-            "logout failure keeps that session valid and reopens only its session gate",
+            "normal Stop settles only the explicitly selected Live Meetings",
+            "Stop failure keeps browser authority valid and reopens its drain gate",
             "Account revoke settles all owned work before generation/session mutation",
             "interruption downgrades verified complete audio by state only before terminal status",
             "cleanup uncertainty leaves Meeting active and durable Account authority unchanged",
@@ -806,7 +794,7 @@ async def main() -> None:
             "handler or client cancellation cannot cancel an accepted Account settlement",
             "product lifespan joins accepted revoke settlement before Live, File, or Store shutdown",
             "Account interruption persists the synchronized durable transcript, never still-queued raw words",
-            "old handles never revive after reallow and other Accounts never mutate",
+            "old handles never revive after a new browser visit and other Accounts never mutate",
         ],
         "assumptions_unknowns": [
             "Live and File terminal/audio algorithms are settled by Issues 13, 16, and 17",
@@ -815,12 +803,12 @@ async def main() -> None:
         ],
         "falsifier": (
             "A drain misses a pre-admitted registration; a failed creator leaks the count; "
-            "logout failure revokes authority; revoke leaves active owned work; late/stale work "
+            "normal_stop failure revokes authority; revoke leaves active owned work; late/stale work "
             "commits; complete audio stays available after interruption; cleanup uncertainty "
             "becomes terminal; terminal audio is orphaned or cancelled; authority changes before "
             "its worker joins; handler cancellation abandons Live/File cleanup; a real COMMIT is "
-            "cancelled before binding convergence; queued post-fence text commits; reallow reuses "
-            "the old generation; or another Account changes."
+            "cancelled before binding convergence; queued post-fence text commits; a new browser visit restores "
+            "the old owner; or another workspace changes."
         ),
         "tool_decisions": [
             {
@@ -874,15 +862,15 @@ async def main() -> None:
         and gate["drain_waited_for_registration"] is True
         and gate["new_admission"] == "ScopeDraining"
         and gate["create_failure_gate"] == {"state": "open", "active": 0}
-        and gate["logout_failure_reopen_admitted"] is True
-        and gate["revoke_waited_for_logout"] is True
-        and gate["concurrent_logout"] == "ScopeDraining"
-        and ordering["logout"]["settled"] == ordering["logout"]["expected_settled"]
-        and set(ordering["logout"]["settled_statuses"].values()) == {"completed"}
-        and ordering["logout"]["origin_valid"] is False
-        and ordering["logout"]["observer_valid"] is True
-        and ordering["logout"]["observer_meeting"] == "active"
-        and ordering["logout_failure"]["session_valid"] is True
+        and gate["normal_stop_failure_reopen_admitted"] is True
+        and gate["revoke_waited_for_normal_stop"] is True
+        and gate["concurrent_normal_stop"] == "ScopeDraining"
+        and ordering["normal_stop"]["settled"] == ordering["normal_stop"]["expected_settled"]
+        and set(ordering["normal_stop"]["settled_statuses"].values()) == {"completed"}
+        and ordering["normal_stop"]["origin_valid"] is True
+        and ordering["normal_stop"]["observer_valid"] is True
+        and ordering["normal_stop"]["observer_meeting"] == "active"
+        and ordering["normal_stop_failure"]["session_valid"] is True
         and audio_boundary["downgraded"] is True
         and audio_boundary["meeting_status"] == "interrupted"
         and audio_boundary["audio"] == preserved_audio
@@ -997,9 +985,8 @@ async def main() -> None:
         }
         and ordering["revoke"]["late_commit"] == "AccountRevoked"
         and ordering["revoke"]["old_sessions_valid"] == [False, False]
-        and ordering["revoke"]["fresh_generation"]
-        == ordering["revoke"]["old_generation"] + 1
-        and ordering["revoke"]["stale_after_reallow"] == "AccountRevoked"
+        and ordering["revoke"]["fresh_owner_is_new"] is True
+        and ordering["revoke"]["stale_after_new_visit"] == "AccountRevoked"
         and ordering["other_account"] == {"session_valid": True, "meeting": "active"}
     )
     state["verdict"] = {
@@ -1007,8 +994,8 @@ async def main() -> None:
         "derived_from": {
             "gate_results": gate,
             "authority_results": {
-                "logout": ordering["logout"],
-                "logout_failure": ordering["logout_failure"],
+                "normal_stop": ordering["normal_stop"],
+                "normal_stop_failure": ordering["normal_stop_failure"],
                 "audio_boundary": audio_boundary,
                 "unregistered_recovery": ordering["unregistered_recovery"],
                 "publication_fence": publication_fence,

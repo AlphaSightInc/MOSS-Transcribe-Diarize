@@ -123,7 +123,7 @@ def _active_payload() -> dict[str, object]:
     return {
         "accounts": [
             {
-                "email": "person@example.com",
+                "account_id": "browser-workspace",
                 "display_name": "Person",
                 "enabled": 1,
                 "sign_in_sessions": 1,
@@ -147,7 +147,7 @@ def _active_payload() -> dict[str, object]:
         ],
         "active_meetings": [
             {
-                "email": "person@example.com",
+                "account_id": "browser-workspace",
                 "meeting_id": "opaque-meeting-id",
                 "mode": "live",
                 "status": "active",

@@ -18,7 +18,6 @@ from typing import Any
 from moss_transcribe_diarize.app.phase2 import (
     Account,
     AccountRevoked,
-    GoogleIdentity,
     Phase2Store,
 )
 
@@ -716,7 +715,7 @@ async def _probe_external_auth(store: Phase2Store, session_id: str) -> str | Non
     async with store._write_lock:
         cursor = await store._connection.execute(
             """
-            SELECT a.email
+            SELECT a.account_id
             FROM sign_in_sessions s
             JOIN accounts a ON a.account_id = s.account_id
             WHERE s.session_id = ? AND a.enabled = 1
@@ -725,7 +724,7 @@ async def _probe_external_auth(store: Phase2Store, session_id: str) -> str | Non
         )
         row = await cursor.fetchone()
         await cursor.close()
-    return None if row is None else str(row["email"])
+    return None if row is None else str(row["account_id"])
 
 
 async def held_terminal_read_isolation_probe(
@@ -936,13 +935,9 @@ async def run() -> None:
         counts = SqlCounts()
         await store._connection.set_trace_callback(counts.observe)
         try:
-            await store.allow_email("a@example.com")
-            await store.allow_email("b@example.com")
-            admitted_a = await store.admit(GoogleIdentity("sub-a", "a@example.com", "A"))
-            admitted_a_observer = await store.admit(
-                GoogleIdentity("sub-a", "a@example.com", "A")
-            )
-            admitted_b = await store.admit(GoogleIdentity("sub-b", "b@example.com", "B"))
+            admitted_a = await store.bootstrap_browser(None)
+            admitted_a_observer = await store.bootstrap_browser(admitted_a[1])
+            admitted_b = await store.bootstrap_browser(None)
             assert admitted_a is not None
             assert admitted_a_observer is not None
             assert admitted_b is not None
@@ -1011,7 +1006,7 @@ async def run() -> None:
             assert rollback_reads["results_after_transaction"]["list"] == (
                 rollback_reads["results_after_transaction"]["snapshot"]
             )
-            assert rollback_reads["results_after_transaction"]["auth"] == "a@example.com"
+            assert rollback_reads["results_after_transaction"]["auth"] == account_a.account_id
             assert commit_reads["results_after_transaction"]["snapshot"] == {
                 "status": "completed",
                 "version": 2,
@@ -1020,7 +1015,7 @@ async def run() -> None:
             assert commit_reads["results_after_transaction"]["list"] == (
                 commit_reads["results_after_transaction"]["snapshot"]
             )
-            assert commit_reads["results_after_transaction"]["auth"] == "a@example.com"
+            assert commit_reads["results_after_transaction"]["auth"] == account_a.account_id
             print(
                 json.dumps(
                     {
@@ -1377,7 +1372,9 @@ async def run() -> None:
                 foreign_read=foreign_read,
                 foreign_mutation=foreign_mutation,
             )
-            assert (observer_mutation, foreign_read, foreign_mutation) == (403, 404, 404)
+            # Same-browser tabs share authority; read-only observation is page-local UI
+            # state, independently exercised above, not a second login credential.
+            assert (observer_mutation, foreign_read, foreign_mutation) == (200, 404, 404)
             assert binding.snapshot["transcript_version"] == 2
 
             # The store primitive no longer owns interruption: the lifecycle
@@ -1386,7 +1383,7 @@ async def run() -> None:
             for owned in (terminal_handle, read_isolation_handle, finalizer_handle, handle):
                 if (await owned.snapshot()).status == "active":
                     await owned.finish("interrupted")
-            assert await store.revoke_email("a@example.com") is True
+            assert await store.revoke_account(account_a.account_id) is True
             controlled_commit.release(3)
             await bridge.wait_fenced()
             counts.reset()

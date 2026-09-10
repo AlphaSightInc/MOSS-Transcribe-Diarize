@@ -3,10 +3,6 @@
     "deployed": {
       "https_origin": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
       "operator_socket": "/run/user/1000/moss-transcribe-diarize/phase2-control.sock",
-      "operator_journal": "/home/USER/.local/state/moss-transcribe-diarize/operator-journal.jsonl",
-      "server_log": "/home/USER/.local/state/moss-transcribe-diarize/moss-web.log",
-      "vllm_log": "/home/USER/.local/state/moss-transcribe-diarize/moss-vllm.log",
-      "llm_prompt_log": "/home/USER/.local/state/moss-transcribe-diarize/llm-prompts.log",
       "candidate_manifest": "/home/USER/.local/share/moss-transcribe-diarize/candidate-manifests/CANDIDATE.json",
       "quality_corpus": "/home/USER/.local/share/moss-transcribe-diarize/qualification-corpus",
       "vllm_metrics_url": "http://127.0.0.1:8000/metrics",
@@ -20,10 +16,6 @@
     "pre_admission": {
       "https_origin": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
       "operator_socket": "/run/user/1000/moss-transcribe-diarize/phase2-control.sock",
-      "operator_journal": "/home/USER/.local/state/moss-transcribe-diarize/operator-journal.jsonl",
-      "server_log": "/home/USER/.local/state/moss-transcribe-diarize/moss-web.log",
-      "vllm_log": "/home/USER/.local/state/moss-transcribe-diarize/moss-vllm.log",
-      "llm_prompt_log": "/home/USER/.local/state/moss-transcribe-diarize/llm-prompts.log",
       "candidate_manifest": "/home/USER/.local/share/moss-transcribe-diarize/candidate-manifests/CANDIDATE.json",
       "quality_corpus": "/home/USER/.local/share/moss-transcribe-diarize/qualification-corpus",
       "vllm_metrics_url": "http://127.0.0.1:8000/metrics",

@@ -72,6 +72,16 @@ DETERMINISTIC_COMMANDS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...]
         ("G1", "G3", "G4"),
     ),
     (
+        "prototype-browser-workspace",
+        ("{python}", "prototypes/phase2-account-lifecycle/browser_workspace_probe.py"),
+        ("G1", "G2"),
+    ),
+    (
+        "prototype-revocation-snapshot",
+        ("{python}", "prototypes/phase2-account-lifecycle/revocation_snapshot_probe.py"),
+        ("G2", "G5"),
+    ),
+    (
         "prototype-operator-interrupt",
         ("{python}", "prototypes/phase2-operator-interrupt/probe.py"),
         ("G5", "G6"),
@@ -99,6 +109,8 @@ DETERMINISTIC_COMMANDS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...]
 )
 
 REQUIRED_PYTHON_TEST_FILES = (
+    "tests/phase2/test_acceptance_setup.py",
+    "tests/phase2/test_acceptance_journal.py",
     "tests/phase2/test_attended_g7_canary.py",
     "tests/phase2/test_atomic_cutover.py",
     "tests/phase2/test_account_deployment_surface.py",
@@ -264,7 +276,7 @@ G1_SENTINEL_SURFACES = {
     "operator_status",
     "operator_journal",
     "server_logs",
-    "llm_prompt_log",
+    "inference_logs",
 }
 
 
@@ -1659,6 +1671,23 @@ def _validate_raw_predicate(
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
         return False
+    if predicate_id in {"sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"}:
+        sources = raw.get("journal_sources")
+        units = {"moss-web.service"} if predicate_id == "operator_control" else {"moss-web.service", "moss-vllm.service"}
+        if (
+            not isinstance(sources, list) or len(sources) != len(units)
+            or any(not isinstance(item, dict) for item in sources)
+            or {item.get("unit") for item in sources} != units
+            or any(
+                item.get("source") != "systemd-user-journal"
+                or item.get("baseline_cursor_observed") is not True
+                or item.get("read_succeeded") is not True
+                or type(item.get("entries")) is not int or item["entries"] < 0
+                or type(item.get("bytes")) is not int or item["bytes"] < 0
+                for item in sources
+            )
+        ):
+            return False
     if predicate_id == "installed_candidate_identity":
         process = raw.get("process")
         manifest = raw.get("manifest")

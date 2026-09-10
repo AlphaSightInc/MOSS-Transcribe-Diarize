@@ -51,6 +51,7 @@ from .phase2_acceptance_replay import (
 from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
 from .installed_candidate import validated_candidate_artifacts
+from .phase2_acceptance_journal import ServiceJournalWindow
 
 
 class ExternalMeasurementError(RuntimeError):
@@ -335,7 +336,6 @@ class FixedAccountCampaign:
         self._live: dict[str, str] = {}
         self._meetings: dict[str, list[str]] = defaultdict(list)
         self._browser: object | None = None
-        self._journal_start = self._optional_size("operator_journal")
         self._safe_artifacts: set[Path] = set()
 
     def _artifact_root(self) -> Path:
@@ -378,14 +378,9 @@ class FixedAccountCampaign:
             os.close(descriptor)
         self._safe_artifacts.add(relative_path)
 
-    def _optional_size(self, key: str) -> int:
-        value = self.config.get(key)
-        if not isinstance(value, str) or not value:
-            return 0
-        try:
-            return Path(value).expanduser().stat().st_size
-        except OSError:
-            return 0
+    @staticmethod
+    def _journal_window(unit: str) -> ServiceJournalWindow:
+        return ServiceJournalWindow(unit)
 
     def _text(self, key: str) -> str:
         value = self.config.get(key)
@@ -739,6 +734,8 @@ class FixedAccountCampaign:
         return {"clients": 2, "observations": observations, "mismatches": mismatches}
 
     def sentinel_absence(self) -> dict[str, object]:
+        web_journal = self._journal_window("moss-web.service")
+        inference_journal = self._journal_window("moss-vllm.service")
         a_sentinel = Path(self._text("account_a_sentinel_file")).read_bytes().strip()
         b_sentinel = Path(self._text("account_b_sentinel_file")).read_bytes().strip()
         if not a_sentinel or not b_sentinel:
@@ -868,19 +865,20 @@ class FixedAccountCampaign:
             len(all_values),
             sum(status.lower().count(value.lower()) for value in all_values),
         )
-        for surface, key in (
-            ("operator_journal", "operator_journal"),
-            ("server_logs", "server_log"),
-            ("llm_prompt_log", "llm_prompt_log"),
+        web_log = web_journal.read().lower()
+        inference_log = inference_journal.read().lower()
+        for surface, content in (
+            ("operator_journal", web_log),
+            ("server_logs", web_log),
+            ("inference_logs", inference_log),
         ):
-            path = Path(self._text(key)).expanduser()
-            content = path.read_bytes().lower()
             surfaces[surface] = (
                 len(all_values),
                 sum(content.count(value.lower()) for value in all_values),
             )
         return {
             "audio_sentinel_checks": audio_checks,
+            "journal_sources": [web_journal.observation(), inference_journal.observation()],
             "surfaces": [
                 {
                     "id": name,
@@ -1118,6 +1116,7 @@ class FixedAccountCampaign:
         }
 
     def operator_control(self) -> dict[str, object]:
+        journal_window = self._journal_window("moss-web.service")
         mode = stat.S_IMODE(self.operator_socket.stat().st_mode)
         status_before = _control(self.operator_socket, "status")
         if not isinstance(status_before, dict):
@@ -1133,7 +1132,6 @@ class FixedAccountCampaign:
             status_before,
             forbidden,
         )
-        journal_path = Path(self._text("operator_journal")).expanduser()
         capacity = status_before.get("capacity")
         active = status_before.get("active_meetings")
         status_accounts = status_before.get("accounts")
@@ -1308,8 +1306,7 @@ class FixedAccountCampaign:
                 except Exception:
                     pass
 
-        journal = journal_path.read_bytes()
-        new_journal = journal[self._journal_start :]
+        journal = journal_window.read()
         status = json.dumps(status_before, sort_keys=True).encode()
         result = {
             "socket_mode": f"{mode:04o}",
@@ -1320,13 +1317,14 @@ class FixedAccountCampaign:
             "count_mismatches": count_mismatches,
             "status_surfaces": status_surfaces,
             "interrupt_probe": interrupt_probe,
+            "journal_sources": [journal_window.observation()],
         }
         self._artifact_json(
             "operator/content-free-counts.json",
             {
                 "result": result,
                 "status_bytes_observed": len(status),
-                "journal_bytes_observed": len(new_journal),
+                "journal_bytes_observed": len(journal),
                 "accounts_observed": len(status_accounts)
                 if isinstance(status_accounts, list)
                 else None,
@@ -2060,9 +2058,9 @@ class FixedAccountCampaign:
         web_pid = _unit_pid(str(self.config.get("web_unit") or "moss-web.service"))
         vllm_pid = _unit_pid(str(self.config.get("vllm_unit") or "moss-vllm.service"))
         rss_before = _process_tree_rss(web_pid) + _process_tree_rss(vllm_pid)
-        log_offsets = {
-            key: Path(str(self.config[key])).expanduser().stat().st_size
-            for key in ("server_log", "vllm_log")
+        log_windows = {
+            "server_log": self._journal_window("moss-web.service"),
+            "vllm_log": self._journal_window("moss-vllm.service"),
         }
         barrier = threading.Barrier(sessions)
         lock = threading.Lock()
@@ -2284,13 +2282,10 @@ class FixedAccountCampaign:
         )
         logs = b""
         log_byte_counts: dict[str, int] = {}
-        for key in ("server_log", "vllm_log"):
-            path = Path(str(self.config[key])).expanduser()
-            with path.open("rb") as source:
-                source.seek(log_offsets[key])
-                tail = source.read()
-                log_byte_counts[key] = len(tail)
-                logs += tail.lower()
+        for key, window in log_windows.items():
+            tail = window.read()
+            log_byte_counts[key] = len(tail)
+            logs += tail.lower()
         oom_errors = logs.count(b"out of memory") + logs.count(b"cuda oom")
         accelerator_errors = logs.count(b"accelerator error") + logs.count(b"cuda error")
         result = {
@@ -2316,6 +2311,7 @@ class FixedAccountCampaign:
             "vllm_gpu_cache_samples": cache_samples,
             "vllm_gpu_cache_use": max(cache_samples),
             "oom_errors": oom_errors,
+            "journal_sources": [window.observation() for window in log_windows.values()],
             "accelerator_errors": accelerator_errors,
             "sequence_gaps": sequence_gaps,
             "dropped_canonical_commits": dropped_commits,

@@ -93,7 +93,22 @@ def _campaign(tmp_path: Path, **config: str) -> external.FixedAccountCampaign:
         "operator_journal": str(journal),
         **config,
     }
-    return external.FixedAccountCampaign(candidate_sha="a" * 40, config=values)
+    campaign = external.FixedAccountCampaign(candidate_sha="a" * 40, config=values)
+    class JournalStub:
+        def __init__(self, unit):
+            self.unit = unit
+            self.path = Path(values.get("server_log" if unit == "moss-web.service" else "vllm_log", str(journal)))
+            self.offset = self.path.stat().st_size if self.path.exists() else 0
+            self.content = b""
+        def read(self):
+            self.content = self.path.read_bytes()[self.offset:] if self.path.exists() else b""
+            return self.content
+        def observation(self):
+            return {"source": "systemd-user-journal", "unit": self.unit,
+                    "baseline_cursor_observed": True, "read_succeeded": True,
+                    "entries": len(self.content.splitlines()), "bytes": len(self.content)}
+    campaign._journal_window = JournalStub
+    return campaign
 
 
 def _case() -> dict[str, object]:
@@ -829,7 +844,15 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
         "account_product_regression": {"suites": [{"collected": 1, "executed": 1, "passed": 1, "failed": 0, "skipped": 0, "unmeasured": 0} for _ in range(4)]},
         "transcript_pane_fidelity": {"viewports": [{"width": 1440, "height": 900, "total_difference": 0.02, "largest_connected_difference": 0.01}, {"width": 1280, "height": 800, "total_difference": 0.02, "largest_connected_difference": 0.01}], "reference_identity": {"head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70", "clean": True}},
     }
-    return values[predicate_id]
+    raw = values[predicate_id]
+    if predicate_id in {"sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"}:
+        units = ["moss-web.service"] if predicate_id == "operator_control" else ["moss-web.service", "moss-vllm.service"]
+        raw["journal_sources"] = [
+            {"source": "systemd-user-journal", "unit": unit, "baseline_cursor_observed": True,
+             "read_succeeded": True, "entries": 0, "bytes": 0}
+            for unit in units
+        ]
+    return raw
 
 
 def _report(layer: str, sha: str, wheel: str) -> dict[str, object]:
@@ -910,6 +933,27 @@ def test_revocation_snapshot_refuses_unbound_candidate_state(monkeypatch, tmp_pa
     with pytest.raises(external.ExternalMeasurementError):
         campaign._revocation_snapshot("owner", ("meeting",))
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize("predicate_id", ["sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"])
+@pytest.mark.parametrize("field,value", [
+    ("unit", "unrelated.service"), ("source", "caller-log-file"),
+    ("baseline_cursor_observed", False), ("read_succeeded", False),
+    ("entries", -1), ("bytes", -1),
+])
+def test_log_dependent_gates_reject_unproven_service_journal(predicate_id, field, value):
+    raw = _raw(predicate_id, "a" * 40, "unused")
+    def valid():
+        return acceptance._validate_raw_predicate(
+            predicate_id, {"raw": raw}, candidate_sha="a" * 40, candidate_tree="b" * 40,
+            uv_lock_sha256="c" * 64, fixtures=FIXTURES,
+            wheel_record_projection_sha256="d" * 64, dependency_projection_sha256="e" * 64,
+        )
+    assert valid()
+    raw["journal_sources"][0][field] = value
+    assert not valid()
+    del raw["journal_sources"]
+    assert not valid()
 
 
 def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only():

@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import socket
+import shutil
 import sqlite3
 import tempfile
 import wave
@@ -209,7 +210,7 @@ async def collector_probe(root):
     async with running(root / "collector.sqlite3", file_runner=Runner()) as (app, port):
         campaign = BrowserCampaign(
             {"https_origin": "https://localhost", "file_fixture": str(fixture),
-             "chrome_binary": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"},
+             "chrome_binary": shutil.which("google-chrome") or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"},
             repo=Path.cwd(), work=root,
         )
         campaign.origin = f"http://localhost:{port}"

@@ -79,9 +79,6 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("operator_socket", "service-owned operator socket"),
         MeasurementPrerequisite("account_a_sentinel_file", "Account A sentinel"),
         MeasurementPrerequisite("account_b_sentinel_file", "Account B sentinel"),
-        MeasurementPrerequisite("operator_journal", "content-free operator journal"),
-        MeasurementPrerequisite("server_log", "server log"),
-        MeasurementPrerequisite("llm_prompt_log", "LLM prompt log"),
         MeasurementPrerequisite("chrome_binary", "Chrome executable"),
     ),
     "same_account_convergence": (
@@ -120,8 +117,6 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("vllm_metrics_url", "host-local vLLM metrics"),
         MeasurementPrerequisite("account_a_sentinel_file", "Account A sentinel"),
         MeasurementPrerequisite("account_b_sentinel_file", "Account B sentinel"),
-        MeasurementPrerequisite("server_log", "Account server log"),
-        MeasurementPrerequisite("vllm_log", "vLLM log"),
     ),
     "eight_session_overload": (
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
@@ -131,8 +126,6 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("quality_corpus", "frozen real-human-speech corpus"),
         MeasurementPrerequisite("account_a_sentinel_file", "Account A sentinel"),
         MeasurementPrerequisite("account_b_sentinel_file", "Account B sentinel"),
-        MeasurementPrerequisite("server_log", "Account server log"),
-        MeasurementPrerequisite("vllm_log", "vLLM log"),
     ),
     "quality_corpus": (
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
@@ -151,7 +144,6 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
         MeasurementPrerequisite("account_a_cookie_file", "Account A Sign-in session cookie"),
         MeasurementPrerequisite("operator_socket", "service-owned operator socket"),
-        MeasurementPrerequisite("operator_journal", "content-free operator journal"),
         MeasurementPrerequisite("quality_corpus", "frozen real-human-speech corpus"),
     ),
     "revocation_lifecycle": (
