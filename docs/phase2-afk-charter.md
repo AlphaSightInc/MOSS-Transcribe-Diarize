@@ -1,5 +1,9 @@
 # Phase 2 AFK charter — authority, product contract, sequencing, and acceptance gates
 
+## September 10 binding amendment
+
+[ADR-0013](adr/0013-browser-workspace-production-completion.md) and the [approved completion plan](production-plan-20260910.md) supersede the historical Google-person admission and separate production-wave release requirements below. Browser-private workspaces are automatic, with no login or Reset/Sign-out UI. A new explicitly versioned greenfield owner schema replaces Google/email/allowlist assumptions; existing incompatible data is preserved. All three waves must pass on the final integrated candidate before first production launch. Internal test installations remain allowed, with no added access gate. External AI configuration/credentials stay browser-only; durable summary results remain server-owned through their meeting, without copying provider settings into provenance. Privately stored DNS-only credentials are approved for certificate automation. All unrelated quality, isolation, lifecycle, merge-only, audio and capacity requirements below remain binding. Historical Google-specific acceptance predicates must be replaced by measured browser-bootstrap/ownership predicates, not waived as green.
+
 This is the binding implementation handoff for Phase 2. It records planning decisions; it does
 **not** claim that Phase-2 product code, deployment, or certification exists. AFK implementation
 tickets must cite the applicable Phase-2 ADRs and this charter section. A builder may choose local

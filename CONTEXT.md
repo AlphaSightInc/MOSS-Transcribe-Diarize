@@ -2,18 +2,17 @@
 
 ## Multi-user Ownership
 
-- **Account**: Authenticated identity for one known-team member. One MOSS deployment may
-  serve many accounts.
+- **Browser workspace**: A private collection of meetings belonging to one browser profile,
+  opened automatically without identifying a human. Different profiles have separate histories.
+- **Account**: The ownership principal of one Browser workspace, not a verified human identity.
 - **Deployment operator**: Cooperating person who owns the MOSS server and manages its
   service and storage outside the Account content interface. Administrative authority grants
   no Meeting ownership; when using MOSS, this person acts through an ordinary Account.
-- **Account ID**: Stable, server-derived identity of one Account. Email, display name,
-  browser, and client-supplied values cannot establish or change it.
-- **Allowlist entry**: Operator approval for one exact verified Google email to enter MOSS.
-  It is admission policy, not identity; Account ID remains the Google `sub`.
+- **Account ID**: Stable, server-assigned identity of one Browser workspace. It is a locator,
+  not an access credential or a physical-device identifier.
 - **Disabled Account**: Account whose operator admission has been revoked. Its sign-in
   sessions stop proving access, but its meetings and artifacts remain owned and are not
-  transferred. Re-admission with the same Account ID restores access to that Account.
+  transferred. Creating a fresh Browser workspace does not restore access to the disabled one.
 - **Meeting owner**: The single account that starts a meeting and exclusively owns its
   content and derived artifacts. A meeting has no co-owner, and another account cannot
   access it.
@@ -34,13 +33,14 @@
   matching Meeting Speaker. It is not identity and need not be unique; distinct Voiceprints may
   share labels such as `anonymous`.
   _Avoid_: Account name, profile identity
-- **Sign-in session**: Revocable proof that one browser is acting for one account. It
-  carries no ownership; revoking it does not change the account or its meetings.
+- **Browser credential**: Automatically issued proof that one browser may access one workspace.
+  Losing it loses automatic access, not the server's saved meeting records.
+- **Sign-in session**: A Browser credential's association with its Account; no human sign-in
+  ceremony is involved. Revoking it does not transfer or delete its meetings.
 - **Access client**: A browser or device holding a sign-in session. It is not an owner,
   and a client-supplied identifier cannot establish authority.
-- **Account history**: The complete set of meetings owned by one account. Every active
-  sign-in session for that account sees the same history; browsers and devices do not
-  partition it.
+- **Account history**: The complete set of meetings owned by one Browser workspace. Tabs of
+  that browser profile share it; another browser/profile gets a separate workspace.
 - **Operational metadata**: Non-content facts the Deployment operator may read across
   Accounts solely to judge service health and capacity. It may identify an Account or Meeting
   and describe lifecycle, capture, queue, error, and storage state, but never contains a
