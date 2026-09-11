@@ -260,8 +260,12 @@ def test_window_failure_identifies_condition_and_extent_without_content(tmp_path
     runner = WindowedRunner(Decoder(), duration_probe=lambda p: 600, window_extractor=extract)
     with pytest.raises(WindowTranscriptionError) as caught:
         runner.transcribe(tmp_path / "input.wav")
-    assert caught.value.to_dict() == {"condition": condition, "window_index": 1,
-                                     "start_seconds": 120.0, "end_seconds": 270.0}
+    expected = {"condition": condition, "window_index": 1,
+                "start_seconds": 120.0, "end_seconds": 270.0}
+    if condition in ("decoder_exception", "extraction_exception"):
+        expected.update(exception_type="RuntimeError" if condition == "decoder_exception" else "OSError",
+                        exception_message="[redacted: unstructured exception message]")
+    assert caught.value.to_dict() == expected
     assert "SECRET" not in str(caught.value) and "PRIVATE" not in str(caught.value)
 
 
@@ -277,5 +281,51 @@ def test_typed_decoder_empty_outcome_keeps_cause_on_short_and_long_tapes(tmp_pat
     with pytest.raises(WindowTranscriptionError) as caught:
         runner.transcribe(tmp_path / "input.wav")
     assert caught.value.to_dict() == {"condition": condition, "window_index": 0,
-                                     "start_seconds": 0.0, "end_seconds": min(seconds, 150)}
+                                     "start_seconds": 0.0, "end_seconds": min(seconds, 150),
+                                     "exception_type": "EmptyTranscriptionError", "exception_message": condition}
     assert "SECRET" not in str(caught.value)
+
+
+def test_terminal_prompt_error_survives_window_and_event_projection(tmp_path):
+    import wave
+    from moss_transcribe_diarize.app.runner_composition import build_terminal_finalizer
+    from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+    from moss_transcribe_diarize.phase2_acceptance_external import _diagnostic_event
+
+    class NoNetworkRunner(VllmRunner):
+        def _post_multipart(self, *args, **kwargs):
+            pytest.fail('missing prompt must fail before HTTP')
+
+    source = tmp_path / 'input.wav'
+    with wave.open(str(source), 'wb') as wav:
+        wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(16000)
+        wav.writeframes(b'\0\0' * 40000)
+    runner = WindowedRunner(NoNetworkRunner(base_url='http://unused/v1', model='test'),
+                            duration_probe=lambda p: 2.5)
+    finalizer = build_terminal_finalizer(runner=runner, prompt=None, max_length=16384,
+        max_new_tokens=12000, decoding='greedy', temperature=1., max_length_cap=16384)
+    with pytest.raises(WindowTranscriptionError) as caught:
+        runner.transcribe(source, **finalizer.transcribe_kwargs)
+    details = caught.value.to_dict()
+    assert details['exception_type'] == 'AttributeError'
+    assert details['exception_message'] == "'NoneType' object has no attribute 'strip'"
+    projected = _diagnostic_event({'kind': 'terminal_finalization_failed',
+                                  'payload': {'window_failure': details}})
+    assert projected['window_failure'] == details
+
+
+@pytest.mark.parametrize('error', [RuntimeError('PRIVATE transcript Bearer SECRET'),
+                                  OSError('PRIVATE path'),
+                                  AttributeError('PRIVATE transcript')])
+def test_wrapped_exception_diagnostics_do_not_copy_arbitrary_content(tmp_path, error):
+    class Decoder:
+        model_path = 'test'
+        def transcribe(self, *args, **kwargs):
+            raise error
+    runner = WindowedRunner(Decoder(), duration_probe=lambda p: 2.5)
+    with pytest.raises(WindowTranscriptionError) as caught:
+        runner.transcribe(tmp_path / 'input.wav')
+    details = caught.value.to_dict()
+    assert details['exception_type'] == type(error).__name__
+    assert details['exception_message'] == '[redacted: unstructured exception message]'
+    assert 'PRIVATE' not in str(details) and 'SECRET' not in str(details)

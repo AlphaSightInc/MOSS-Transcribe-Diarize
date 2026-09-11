@@ -711,7 +711,9 @@ def test_silent_tail_reaches_window_decoder_and_retains_empty_condition(tmp_path
     payload = final.accounting.to_dict()
     assert payload["outcome"] == "decode_failed"
     assert payload["window_failure"] == {"condition": "no_generated_tokens", "window_index": 2,
-                                         "start_seconds": 240.0, "end_seconds": 390.0}
+                                         "start_seconds": 240.0, "end_seconds": 390.0,
+                                         "exception_type": "EmptyTranscriptionError",
+                                         "exception_message": "no_generated_tokens"}
     payload["window_failure"]["text"] = "PRIVATE"
     retained = _diagnostic_event({"kind": "terminal_finalization_failed", "payload": payload})
     assert "PRIVATE" not in str(retained)

@@ -2596,7 +2596,8 @@ def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
     window_failure = payload.get("window_failure")
     row["window_failure"] = (
         {key: window_failure.get(key) for key in
-         ("condition", "window_index", "start_seconds", "end_seconds")}
+         ("condition", "window_index", "start_seconds", "end_seconds",
+          "exception_type", "exception_message") if key in window_failure}
         if isinstance(window_failure, dict) else None
     )
     row["failure_code"] = failure.get("code")

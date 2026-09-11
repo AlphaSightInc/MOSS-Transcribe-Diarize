@@ -880,9 +880,9 @@ class TerminalTranscriptFinalizer:
             try:
                 result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
             except Exception as exc:
-                # Only the exception's *type* is recorded. A runner's message may quote the
-                # answer it rejected, and plan §7.4 says terminal events carry counts and
-                # names -- never a word of the meeting.
+                # Raw runner messages may quote the rejected answer. Keep the reason's
+                # type; WindowTranscriptionError separately provides content-free wrapped
+                # exception details, never a word of the meeting.
                 from .windowed_transcription import WindowTranscriptionError
 
                 refusal = self._refused(

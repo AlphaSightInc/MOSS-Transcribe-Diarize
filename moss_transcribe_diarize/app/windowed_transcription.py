@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -24,16 +25,21 @@ class WindowTranscriptionError(RuntimeError):
 
     def __init__(self, message: str, *, condition: str = "checkpoint_error",
                  window_index: int | None = None, start_seconds: float | None = None,
-                 end_seconds: float | None = None):
+                 end_seconds: float | None = None, exception: Exception | None = None):
         super().__init__(message)
         self.condition = condition
         self.window_index = window_index
         self.start_seconds = start_seconds
         self.end_seconds = end_seconds
+        self.exception_type = type(exception).__name__ if exception is not None else None
+        self.exception_message = _exception_message(exception) if exception is not None else None
 
     def to_dict(self) -> dict[str, object]:
-        return {"condition": self.condition, "window_index": self.window_index,
-                "start_seconds": self.start_seconds, "end_seconds": self.end_seconds}
+        result = {"condition": self.condition, "window_index": self.window_index,
+                  "start_seconds": self.start_seconds, "end_seconds": self.end_seconds}
+        if self.exception_type is not None:
+            result.update(exception_type=self.exception_type, exception_message=self.exception_message)
+        return result
 
 
 class RunnerDelegate(Protocol):
@@ -197,9 +203,9 @@ class WindowedRunner:
         try:
             return self.delegate.transcribe(audio, **kwargs)
         except EmptyTranscriptionError as exc:
-            raise _window_error(window, exc.cause.value) from exc
+            raise _window_error(window, exc.cause.value, exc) from exc
         except Exception as exc:
-            raise _window_error(window, "decoder_exception") from exc
+            raise _window_error(window, "decoder_exception", exc) from exc
 
     def _transcribe_windows(
         self,
@@ -257,7 +263,7 @@ class WindowedRunner:
                         duration_seconds=window.duration,
                     )
                 except Exception as exc:
-                    raise _window_error(window, "extraction_exception") from exc
+                    raise _window_error(window, "extraction_exception", exc) from exc
                 result = self._decode_window(window_audio, window, child_kwargs)
 
                 segments = parse_transcript(result.text)
@@ -485,12 +491,32 @@ def _with_window_metadata(
     )
 
 
-def _window_error(window: WindowPlan, condition: str) -> WindowTranscriptionError:
+def _exception_message(exc: Exception) -> str:
+    """Retain structural diagnostics, never arbitrary decoder bodies or transcript text.
+
+    Python attribute errors expose names, so the observed prompt=None failure can be
+    retained exactly. Arbitrary messages have no content boundary and are labelled redacted.
+    """
+    message = str(exc)
+    if isinstance(exc, AttributeError) and re.fullmatch(
+        r"'[A-Za-z_][A-Za-z_0-9]*' object has no attribute '[A-Za-z_][A-Za-z_0-9]*'", message
+    ):
+        return message
+    if isinstance(exc, EmptyTranscriptionError):
+        return exc.cause.value
+    if isinstance(exc, subprocess.CalledProcessError):
+        return f"subprocess exited with status {exc.returncode}"
+    if isinstance(exc, OSError) and exc.errno is not None:
+        return f"[Errno {exc.errno}] {os.strerror(exc.errno)}"
+    return "[redacted: unstructured exception message]"
+
+
+def _window_error(window: WindowPlan, condition: str, exception: Exception | None = None) -> WindowTranscriptionError:
     return WindowTranscriptionError(
         f"window {window.index} ({_format_transcript_seconds(window.start)}-"
         f"{_format_transcript_seconds(window.end)}s) {condition}",
         condition=condition, window_index=window.index,
-        start_seconds=window.start, end_seconds=window.end,
+        start_seconds=window.start, end_seconds=window.end, exception=exception,
     )
 
 
