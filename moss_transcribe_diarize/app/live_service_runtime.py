@@ -24,6 +24,7 @@ from .live_coordinator import (
     SpeechSignalProvider,
 )
 from .live_endpoint import EndpointPolicy, EndpointPolicyError
+from .live_identity import unattributed_transcript
 from .live_lane_contract import LiveV2Descriptor
 from .live_span_bounds import LiveTranscriptDisposition
 from .live_transcript_convergence import (
@@ -34,6 +35,7 @@ from .live_transcript_convergence import (
 from .live_session import (
     AudioFrame,
     FrameAck,
+    FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveSession,
     LiveSessionBackpressure,
@@ -1472,6 +1474,34 @@ class LiveServiceRuntime:
                 if state.terminal_failure is None:
                     self._mark_ready_locked(state)
 
+    def _publish_canonical_preview(
+        self, state: _RuntimeSession, span: FrozenSpan, transcript: str,
+    ) -> None:
+        """Publish only the next frozen span, with no identity claim, under the runtime lock."""
+        with self._lock:
+            snapshot = state.session.snapshot()
+            if (
+                state.terminal_failure is not None
+                or snapshot.status not in ("active", "closing")
+                or span.epoch != state.session.epoch
+                or span.start_sample != snapshot.committed_samples
+                or not snapshot.pending_span_ids
+                or snapshot.pending_span_ids[0] != span.id
+            ):
+                return
+            preview = unattributed_transcript(transcript, sample_count=span.sample_count)
+            if not preview:
+                return
+            epoch, generation, start = state.session.begin_provisional()
+            state.session.publish_provisional(
+                epoch=epoch, generation=generation, start_sample=start,
+                end_sample=span.end_sample, transcript=preview,
+            )
+            self._record_event(state, "canonical_preview", {
+                "span_id": span.id, "start_sample": span.start_sample,
+                "end_sample": span.end_sample,
+            })
+
     def _process_in_flight_item(
         self,
         state: _RuntimeSession,
@@ -1486,7 +1516,9 @@ class LiveServiceRuntime:
                     if state.terminal_failure is not None:
                         return
                     work = state.coordinator.capture_work_item(item, span_index=span_index)
-                prepared = state.coordinator.prepare_work_item(work)
+                prepared = state.coordinator.prepare_work_item(
+                    work, on_decoded=lambda span, text: self._publish_canonical_preview(state, span, text),
+                )
                 with self._lock:
                     if state.terminal_failure is not None:
                         return

@@ -30,7 +30,7 @@ describe("MOSS session poller", () => {
           ? { "canonical-a": "Alex", "canonical-b": "Alex" } : { "canonical-a": "Alex" },
         snapshot: round > 1 ? null : {
           session_id: "meeting", descriptor: { sample_rate: 16_000 },
-          session: { status: "active", version: 7, failure_reason: null, label_revision_version: 0,
+          session: { committed_samples: 0, status: "active", version: 7, failure_reason: null, label_revision_version: 0,
             identity_snapshot: { canonical_speakers: ["canonical-a", "canonical-b"] },
             committed: [{ span_id: 1, start_sample: 0, transcript: "[0][S01]First[1][1][S02]Second[2]", revised_transcript: null }],
             provisional: null }
@@ -85,7 +85,7 @@ describe("MOSS session poller", () => {
           snapshot: {
             session_id: "session-empty-text",
             descriptor: { sample_rate: 16_000 },
-            session: {
+            session: { committed_samples: 0,
               status: "active",
               version: 4,
               failure_reason: null,
@@ -129,7 +129,7 @@ describe("MOSS session poller", () => {
           snapshot: {
             session_id: "session-non-text",
             descriptor: { sample_rate: 16_000 },
-            session: {
+            session: { committed_samples: 0,
               status: "active",
               version: 4,
               failure_reason: null,
@@ -164,7 +164,7 @@ describe("MOSS session poller", () => {
           snapshot: {
             session_id: "session-7",
             descriptor: { sample_rate: 16_000 },
-            session: {
+            session: { committed_samples: 0,
               status: "active",
               version: 3 + snapshotRequests,
               failure_reason: null,
@@ -289,7 +289,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-7",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "active",
             version: 3 + snapshotRequests,
             failure_reason: null,
@@ -324,6 +324,47 @@ describe("MOSS session poller", () => {
     );
   });
 
+  it.each([
+    ["one segment", "active", 16_000, "[0][S01]hello world[1]", ["hello world"]],
+    ["multiple segments", "active", 16_000, "[0][S01]hello[0.4][0.6][S02]world[1]", ["hello", "world"]],
+    ["empty committed span", "active", 16_000, "", []],
+    ["not yet committed", "active", 0, "", ["hello world"]],
+    ["aborted", "aborted", 0, "", []],
+    ["failed", "failed", 0, "", []],
+  ])("retires preview by audio frontier: %s", async (_name, status, boundary, text, expected) => {
+    let round = 0;
+    const onError = vi.fn();
+    const poller = createMossSessionPoller({
+      sessionId: "preview", onError,
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) return jsonResponse({ events: [] });
+        round += 1;
+        return jsonResponse({ unchanged: false, snapshot: {
+          session_id: "preview", descriptor: { sample_rate: 16_000 },
+          session: {
+            status: round === 1 ? "active" : status, version: round,
+            committed_samples: round === 1 ? 0 : boundary,
+            identity_snapshot: { canonical_speakers: ["speaker-1", "speaker-2"] },
+            label_revision_version: 0, failure_reason: null,
+            committed: round > 1 && boundary ? [{ span_id: 1, start_sample: 0, transcript: text, revised_transcript: null }] : [],
+            provisional: round === 1 ? { generation: 1, start_sample: 0, end_sample: 16_000,
+              transcript: "[0][S00]hello world[1]" } : null,
+          },
+        }});
+      }) as typeof fetch,
+    });
+    await poller.poll();
+    expect(transcript.value.map(item => item.text)).toEqual(["hello world"]);
+    await poller.poll();
+    expect(onError).not.toHaveBeenCalled();
+    expect(transcript.value.map(item => item.text)).toEqual(expected);
+    if (boundary) expect(transcript.value.every(item => item.state !== "provisional")).toBe(true);
+    if (_name === "multiple segments") {
+      expect(transcript.value.map(item => item.speaker_entity_id)).toEqual(["speaker-1", "speaker-2"]);
+    }
+    poller.stop();
+  });
+
   it("marks the retained preview stale once the provisional lane goes away", async () => {
     let snapshotRequests = 0;
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
@@ -335,7 +376,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-7",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "active",
             version: 3 + snapshotRequests,
             failure_reason: null,
@@ -401,7 +442,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-7",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "active",
             version: 5,
             failure_reason: null,
@@ -458,7 +499,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-stale-cursor",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: freshSnapshotRequests === 1 ? "active" : "closed",
             version: freshSnapshotRequests === 1 ? 153 : 332,
             failure_reason: null,
@@ -514,7 +555,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-flat-stale-cursor",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: freshSnapshotRequests === 1 ? "closing" : "closed",
             version: freshSnapshotRequests === 1 ? 153 : 332,
             failure_reason: null,
@@ -573,7 +614,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-event-progress",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "closing",
             version: 153,
             failure_reason: null,
@@ -625,7 +666,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-health",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "active",
             version: 4,
             failure_reason: null,
@@ -710,7 +751,7 @@ describe("MOSS session poller", () => {
         snapshot: {
           session_id: "session-finalizing",
           descriptor: { sample_rate: 16_000 },
-          session: {
+          session: { committed_samples: 0,
             status: "closed",
             finalization_status: final ? "final" : "running",
             version: snapshotRequests,
@@ -785,7 +826,7 @@ describe("MOSS session poller", () => {
           snapshot: {
             session_id: "session-persistence-fenced",
             descriptor: { sample_rate: 16_000 },
-            session: {
+            session: { committed_samples: 0,
               status: "closed",
               finalization_status: "running",
               version: 8,

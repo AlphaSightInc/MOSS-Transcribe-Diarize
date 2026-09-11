@@ -44,6 +44,7 @@ interface MossSnapshot {
   status: SessionLifecycle;
   version: number;
   sampleRate: number;
+  committedSamples: number;
   failureReason: string | null;
   terminalFailureReason: string | null;
   persistenceFailure: string | null;
@@ -435,10 +436,13 @@ function renderSnapshot(
   // reference marks a preview stale in place (`operation: "stale"`, lane `provisional`) and
   // keeps no dimmed copy of superseded text — emitting both rendered the same words twice, once
   // dim and once bright, and every superseded generation accumulated without bound.
-  // Stale rows are therefore emitted only while there is no current preview to replace them.
+  // Keep stale rows only ahead of the committed AUDIO boundary, while still live.
+  // A commit may replace a preview with multiple text segments or no text at all.
   const staleProvisional =
-    !provisional && previousProvisional
-      ? previousProvisional.items.map((item) => ({ ...item, provisional_stale: true }))
+    !provisional && previousProvisional && (snapshot.status === "active" || snapshot.status === "closing")
+      ? previousProvisional.items
+          .filter((item) => Math.round(item.end * snapshot.sampleRate) > snapshot.committedSamples)
+          .map((item) => ({ ...item, provisional_stale: true }))
       : [];
   const items = [...committed, ...staleProvisional, ...currentProvisional];
   const relabeled =
@@ -621,6 +625,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     status: lifecycle(session.status),
     version: requiredNonNegativeNumber(session.version, "snapshot version"),
     sampleRate: requiredPositiveNumber(descriptor.sample_rate, "snapshot sample_rate"),
+    committedSamples: requiredNonNegativeNumber(session.committed_samples, "committed samples"),
     failureReason: optionalString(session.failure_reason),
     terminalFailureReason: parseTerminalFailureReason(snapshot.terminal_failure),
     persistenceFailure: optionalString(response.persistence_failure),

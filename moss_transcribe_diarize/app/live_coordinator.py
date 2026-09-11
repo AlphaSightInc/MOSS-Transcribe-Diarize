@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol
 
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
@@ -513,7 +513,10 @@ class LiveCoordinator:
             raise LiveCoordinatorError("canonical work batch must contain at least one span.")
         return work
 
-    def prepare_work_item(self, work: CoordinatorWorkInput) -> CoordinatorPreparedWork:
+    def prepare_work_item(
+        self, work: CoordinatorWorkInput, *,
+        on_decoded: Callable[[FrozenSpan, str], None] | None = None,
+    ) -> CoordinatorPreparedWork:
         span = work.span
         pcm = work.pcm
         try:
@@ -537,6 +540,10 @@ class LiveCoordinator:
                 empty_reason=empty_reason,
                 decode_salvage=_decode_salvage(inferred),
             )
+        if on_decoded is not None:
+            # The runtime owns publication/lifecycle synchronization; this seam only
+            # hands it already-decoded words before the existing identity operation.
+            on_decoded(span, transcript)
         preparation = self.identity_preparer.prepare(
             span=span,
             pcm=pcm,

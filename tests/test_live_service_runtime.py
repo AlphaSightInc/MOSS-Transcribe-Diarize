@@ -1418,3 +1418,28 @@ def test_events_accepts_the_cursor_before_the_first_event_and_refuses_anything_l
     assert [event.seq for event in runtime.events(created.session_id, since_seq=0)] == [0]
     with pytest.raises(ValueError, match="at least -1"):
         runtime.events(created.session_id, since_seq=-2)
+
+
+def test_canonical_preview_requires_current_epoch_and_next_frozen_prefix():
+    runtime = _runtime(speech=(True, True, True), scheduler=_ManualCanonicalPumpScheduler())
+    created = runtime.create()
+    for index in range(3):
+        runtime.accept_frame(created.session_id, _frame(index))
+    state = runtime._sessions[created.session_id]
+    with runtime._lock:
+        first = state.session.freeze_until(1000, reason="test")
+        second = state.session.freeze_until(2000, reason="test")
+    original_version = state.session.snapshot().version
+    for invalid in (second, dataclasses.replace(first, epoch=first.epoch + 1),
+                    dataclasses.replace(first, start_sample=1)):
+        runtime._publish_canonical_preview(state, invalid, "[0][S01]future[0.01]")
+        assert state.session.snapshot().version == original_version
+        assert state.session.snapshot().provisional is None
+    runtime._publish_canonical_preview(state, first, "[0][S01]first[0.01][0.02][S02]second[0.03]")
+    assert state.session.snapshot().provisional.transcript == "[0][S00]first[0.01][0.02][S00]second[0.03]"
+    assert state.session.snapshot().identity_snapshot.canonical_speakers == ()
+    asyncio.run(runtime.abort(created.session_id, reason="test abort"))
+    version = state.session.snapshot().version
+    runtime._publish_canonical_preview(state, first, "[0][S01]late[0.01]")
+    assert state.session.snapshot().version == version
+    assert state.session.snapshot().provisional is None
