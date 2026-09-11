@@ -228,7 +228,7 @@ export function watchCreatedMeeting(id: string, refreshHistory = false): () => v
       if (meeting.status !== "active") return;
     } catch {
       // No automatic inference retry after an unknown admission/persistence outcome.
-      if (optedIn) document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: id, error: "Automatic summary unavailable. Open this meeting and use Retry." } }));
+      if (optedIn) document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: id, error: "Automatic summary unavailable. Open this meeting to try generating a summary again." } }));
       return;
     }
     timer = setTimeout(() => void poll(), 2000);

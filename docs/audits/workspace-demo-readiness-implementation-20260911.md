@@ -99,3 +99,23 @@ selector changes or D5 summary changes. This is cosmetic, not a workflow change.
 
 D6 validation: existing geometry, upload-flow and locator/sentinel tests passed
 (16 tests); final combined-suite validation is recorded in the integration audit.
+
+## D5 — Summary actions and plain-language status
+
+No saved attempt now offers **Generate summary**, failed/cancelled attempts offer
+**Retry summary**, and a saved successful summary offers **Regenerate summary**.
+Status copy describes progress instead of transcript versions, explains that only
+finished transcripts can be summarized, and identifies the browser tab that must
+stay open. Existing completed-meeting eligibility, cancellation, provider execution
+and final-only semantics remain unchanged. No in-pane toggle or global CSS added.
+
+The UI and `browser_final_summary` predicate change together: the action is selected
+by `final-summary-generate` test ID inside the exact Final summary region, independent
+of all three labels. Built-browser tests use that actual predicate helper through
+Generate/Retry/Regenerate/cancelled states, check a unique enabled match, and confirm
+changed wording does not break it. Existing summary tests retain orphan cancellation
+and read-only history coverage; new tests cover completed/active/failed eligibility.
+
+Feature validation: 165 frontend tests passed; typecheck/build passed; 16 built-browser
+geometry/upload/locator tests passed. Combined staging validation follows in the
+integration report. This supersedes the earlier decision to defer D5.

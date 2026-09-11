@@ -45,3 +45,17 @@ it("history reads only, renders saved content as text and exposes orphan cancell
   expect(root.textContent).toContain("Regenerate summary");
   expect(fetcher.mock.calls).toHaveLength(1);
 });
+
+
+it.each(["completed", "active", "failed"])("keeps summary eligibility final-only for a %s meeting", async status => {
+  const fetcher = vi.fn(async () => new Response(JSON.stringify({ summary: null })));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => render(<FinalSummary meeting={{ ...meeting, status: status as Meeting["status"] }} />, root));
+  await vi.waitFor(() => expect(root.textContent).toContain("No summary yet"));
+  const action = root.querySelector<HTMLButtonElement>('[data-testid="final-summary-generate"]')!;
+  expect(action.textContent).toBe("Generate summary");
+  expect(action.disabled).toBe(status !== "completed");
+  expect(root.textContent).toContain("finished transcript");
+  expect(root.textContent).not.toContain("transcript v");
+  expect(fetcher.mock.calls).toHaveLength(1);
+});

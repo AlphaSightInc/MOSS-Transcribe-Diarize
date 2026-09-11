@@ -3,10 +3,11 @@ from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 import pytest
-from playwright.sync_api import Error, sync_playwright
+from playwright.sync_api import Error, sync_playwright, expect
 
 from moss_transcribe_diarize.app.phase2 import Meeting, _workspace_html
 from moss_transcribe_diarize.phase2_acceptance_browser import _meeting_opener
+from moss_transcribe_diarize.phase2_acceptance_summary import _summary_action
 from moss_transcribe_diarize.phase2_acceptance_external import FixedAccountCampaign, ExternalMeasurementError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -51,6 +52,29 @@ def test_meeting_locator_ignores_server_fallback_and_nav():
             assert opener.count() == 1
             opener.click()
             page.get_by_role('region', name='Final summary', exact=True).wait_for()
+            # Use the acceptance predicate's actual selector against the built UI.
+            action = _summary_action(page)
+            expect(action).to_have_count(1)
+            expect(action).to_have_text('Generate summary')
+            expect(action).to_be_enabled()
+            for state, label in [('failed', 'Retry summary'), ('current', 'Regenerate summary'),
+                                 ('cancelled', 'Retry summary')]:
+                page.evaluate("""state => document.dispatchEvent(new CustomEvent('llm_status', {
+                    detail: {meeting_id: 'audit-meeting', artifact: {
+                        state, attempt_id: 'summary-a', source_version: 1, artifact_version: 1,
+                        error_code: null, document: state === 'current' ? {
+                            summary: 'Saved summary', topics: [], details: [],
+                            speaker_background: [], data_references: []
+                        } : null
+                    }}
+                }))""", state)
+                expect(action).to_have_count(1)
+                expect(action).to_have_text(label)
+                expect(action).to_be_enabled()
+            # Wording is not part of the predicate contract.
+            action.evaluate("button => button.textContent = 'Different wording'")
+            expect(_summary_action(page)).to_have_count(1)
+
             page.get_by_role('button', name='Voiceprints', exact=True).click()
             assert page.get_by_role('button', name='Refresh', exact=True).count() == 2
             history = page.get_by_role('region', name='Meeting history', exact=True)

@@ -23,6 +23,10 @@ from .phase2_acceptance_browser import _add_cookie, _trusted_tls_identity, _meet
 from .phase2_acceptance_completion import validate_completion_observation
 
 
+def _summary_action(page):
+    return page.get_by_role("region", name="Final summary", exact=True).get_by_test_id("final-summary-generate")
+
+
 class SummaryProbeProvider:
     """Fixed fake provider with real CORS, delivery errors and held responses."""
     def __init__(self, *, origin: str, certificate: Path, key: Path):
@@ -146,7 +150,7 @@ def measure_browser_summary(campaign):
                     def start(page):
                         region = page.get_by_role("region", name="Final summary", exact=True)
                         previous_attempt = region.get_attribute("data-summary-attempt")
-                        region.get_by_role("button", name="Retry summary", exact=True).or_(region.get_by_role("button", name="Regenerate summary", exact=True)).click()
+                        _summary_action(page).click()
                         page.wait_for_function("previous => { const id=document.querySelector('[data-summary-state]')?.dataset.summaryAttempt; return id && id !== previous; }", arg=previous_attempt)
                     def state(page, wanted, timeout=30000):
                         page.locator(f'[data-summary-state="{wanted}"]').wait_for(timeout=timeout)

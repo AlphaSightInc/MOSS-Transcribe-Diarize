@@ -67,10 +67,10 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
   }, [meeting.id]);
 
   const retry = async () => {
-    if (!summaryEnabled()) { setError("Configure Optional AI summaries above, then Retry."); return; }
+    if (!summaryEnabled()) { setError("Configure Optional AI summaries above, then start your summary."); return; }
     setBusy(true); setError("");
     try { await finalSummaryWorker.enqueue(meeting); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Summary failed. Refresh, then Cancel/Retry if needed."); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Summary failed. Refresh, then cancel any unfinished attempt before trying again."); }
     finally { setBusy(false); }
   };
   const cancel = async () => {
@@ -81,12 +81,12 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
   const result = artifact?.state === "current" ? artifact.document : null;
   return <section className="history-state-card" aria-label="Final summary" data-summary-state={artifact?.state ?? "off"} data-summary-attempt={artifact?.attempt_id}>
     <h3>Final summary</h3>
-    <p role="status">{loading ? "Loading saved summary…" : artifact ? `${artifact.state.replace("_", " ")} · transcript v${artifact.source_version}` : "No saved summary. Opening history does not call AI."}</p>
-    {active(artifact) && <p>Keep the worker tab open. If it was closed, Cancel this attempt, then Retry here.</p>}
+    <p role="status">{loading ? "Loading saved summary…" : artifact ? ({ queued: "Summary is waiting to start.", generating: "Generating summary…", retry_wait: "The provider is unavailable. Waiting to try again…", current: "Summary ready.", failed: "Summary could not be generated.", cancelled: "Summary cancelled." }[artifact.state]) : "No summary yet. Opening a meeting does not generate one."}</p>
+    <p>Summaries use only the finished transcript. {meeting.status !== "completed" ? "Finish transcription before generating a summary." : active(artifact) ? "Keep the browser tab where you started this summary open until it finishes. If you closed it, cancel this attempt and retry here." : "Keep this browser tab open while generating a summary."}</p>
     {artifact?.error_code && <p>Summary failed: {artifact.error_code.replaceAll("_", " ")}. Transcription and audio are unaffected.</p>}
     {error && <p role="alert">{error}</p>}
     {active(artifact) ? <button type="button" className="history-action-btn" onClick={() => void cancel()}>Cancel summary</button>
-      : <button type="button" className="history-action-btn" disabled={loading || busy || meeting.status !== "completed"} onClick={() => void retry()}>{result ? "Regenerate summary" : "Retry summary"}</button>}
+      : <button type="button" className="history-action-btn" data-testid="final-summary-generate" disabled={loading || busy || meeting.status !== "completed"} onClick={() => void retry()}>{result ? "Regenerate summary" : artifact ? "Retry summary" : "Generate summary"}</button>}
     {result && <div data-final-summary>
       <p>{result.summary}</p>
       {result.topics.map((topic, index) => <section key={index}><h4>{topic.title}</h4><p>{topic.description}</p></section>)}
