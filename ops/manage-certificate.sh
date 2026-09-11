@@ -9,7 +9,7 @@ config_dir="${linux_user_dir}/.config/moss-transcribe-diarize"
 runtime_root="${linux_user_dir}/.local/share/moss-transcribe-diarize"
 lego_binary="${linux_user_dir}/.local/bin/lego"
 hostname=ga0-alienware-rtx4070ti.tailnet.aisight.us
-credential="${config_dir}/ns1-api-key"
+credential="${config_dir}/netlify-token"
 profile="${config_dir}/certificate.env"
 for private_file in "${credential}" "${profile}"; do
   [ -s "${private_file}" ] && [ "$(stat -c '%a' "${private_file}")" = 600 ] || { echo "Missing/non-private certificate prerequisite: ${private_file}" >&2; exit 1; }
@@ -19,8 +19,8 @@ done
 : "${MOSS_ACME_EMAIL:?Set MOSS_ACME_EMAIL in the private certificate.env file}"
 [ -x "${lego_binary}" ] || { echo 'lego is not installed' >&2; exit 1; }
 case "$("${lego_binary}" --version)" in 'lego version 5.'*) ;; *) echo 'lego v5 required' >&2; exit 1 ;; esac
-unset NS1_API_KEY
-export NS1_API_KEY_FILE="${credential}"
+unset NETLIFY_TOKEN
+export NETLIFY_TOKEN_FILE="${credential}"
 if [ "${mode}" = --check ]; then
   echo 'Certificate prerequisites present; no DNS request or service change performed.'
   exit 0
@@ -40,9 +40,13 @@ certificate="${certificate_root}/certificates/${hostname}.crt"
 if [ "${mode}" = --renew ] && [ ! -s "${certificate}" ]; then
   echo 'Issue and qualify the production certificate before enabling renewal.' >&2; exit 1
 fi
+# The host resolves the capture hostname through Headscale MagicDNS, which answers SOA
+# queries with NOTIMP. Public resolvers are required for apex determination against the
+# real aisight.us zone; without them lego cannot find the zone to write the TXT record.
 # lego v5: run handles both issuance and due renewal; do not force needless renewal.
 "${lego_binary}" run --accept-tos --email "${MOSS_ACME_EMAIL}" --domains "${hostname}" \
-  --dns ns1 --server "${server}" --path "${certificate_root}" --no-random-sleep
+  --dns netlify --dns.resolvers 1.1.1.1:53,8.8.8.8:53 \
+  --server "${server}" --path "${certificate_root}" --no-random-sleep
 chmod 0600 "${certificate_root}/certificates/${hostname}.key"
 if [ "${mode}" != --renew ]; then
   echo "Certificate operation complete: ${certificate}; no service changed."

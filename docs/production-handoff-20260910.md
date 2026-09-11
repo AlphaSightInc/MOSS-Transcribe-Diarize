@@ -57,9 +57,9 @@ existing fixed `pytest -q tests/` command, with exact denominators in the progre
 
 Do **not** paste any key into chat, a command argument, Git, or an acceptance report.
 
-1. In the existing NS1 account, create a dedicated key for DNS-01. Restrict it to the
-   applicable `aisight.us` zone and required TXT-record operations; use record-level
-   restrictions if your account supports them. Do not change A records, delegate the
+1. `aisight.us` is served by Netlify DNS (its `dns[1-4].p06.nsone.net` nameservers are
+   Netlify's NS1-backed infrastructure, not a direct NS1 account). Create a Netlify
+   personal access token for DNS-01 in the account that manages the zone. Do not change A records, delegate the
    domain, expose a public app port, or change Headscale. The challenge name is
    `_acme-challenge.ga0-alienware-rtx4070ti.tailnet.aisight.us`.
 2. Open the Ubuntu WSL terminal on the existing Windows host, as `devcontainers`.
@@ -68,13 +68,13 @@ Do **not** paste any key into chat, a command argument, Git, or an acceptance re
    ```sh
    umask 077
    mkdir -p /home/devcontainers/.config/moss-transcribe-diarize
-   nano /home/devcontainers/.config/moss-transcribe-diarize/ns1-api-key
+   nano /home/devcontainers/.config/moss-transcribe-diarize/netlify-token
    ```
 
    Paste only the new key into the file; save and exit. Then:
 
    ```sh
-   chmod 600 /home/devcontainers/.config/moss-transcribe-diarize/ns1-api-key
+   chmod 600 /home/devcontainers/.config/moss-transcribe-diarize/netlify-token
    nano /home/devcontainers/.config/moss-transcribe-diarize/certificate.env
    ```
 
@@ -93,8 +93,8 @@ Do **not** paste any key into chat, a command argument, Git, or an acceptance re
 3. Tell the agent **“certificate files ready”**. Do not send their contents. The agent
    will validate permissions without displaying either value and perform the rest.
 
-The already installed ACME tool is lego 5.3.1. It supports `NS1_API_KEY_FILE`, so the key
-need not appear in shell arguments. [Official NS1 instructions](https://go-acme.github.io/lego/dns/ns1/).
+The already installed ACME tool is lego 5.3.1. It supports `NETLIFY_TOKEN_FILE`, so the key
+need not appear in shell arguments. [Official Netlify instructions](https://go-acme.github.io/lego/dns/netlify/).
 Publicly trusted issuance publishes certificate/hostname metadata; it does not expose
 the private MOSS port or meeting content.
 
