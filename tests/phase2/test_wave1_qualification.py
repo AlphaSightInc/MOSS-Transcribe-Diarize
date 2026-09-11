@@ -2435,6 +2435,17 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         def descriptor(self):
             return Descriptor()
 
+        def events(self, session_id):
+            from moss_transcribe_diarize.app.live_service_runtime import LiveServiceEvent
+            return [LiveServiceEvent(
+                seq=9, session_id=session_id, kind="terminal_finalization_failed",
+                snapshot_version=12, payload={
+                    "runtime_monotonic_ns": 1234, "outcome": "decode_failed",
+                    "reason": "WindowTranscriptionError", "refusal": "decode_failed",
+                    "text": "PRIVATE TRANSCRIPT", "credential": "SECRET COOKIE",
+                },
+            )]
+
     class Capture:
         def __init__(self, adapter: object, **kwargs: object) -> None:
             del adapter, kwargs
@@ -2479,15 +2490,15 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
 
     def replay(*, out_dir: Path, **kwargs: object) -> None:
         del kwargs
-        if stop_failure:
-            from moss_transcribe_diarize.live_service_replay import ServiceReplayTransportFailure
-            raise ServiceReplayTransportFailure("controlled Stop failure")
         trace = out_dir / "run-001" / "trace.jsonl"
         trace.parent.mkdir(parents=True)
         trace.write_text(
             json.dumps({"kind": "session_created", "session_id": "private-id"}) + "\n",
             encoding="utf-8",
         )
+        if stop_failure:
+            from moss_transcribe_diarize.live_service_replay import ServiceReplayTransportFailure
+            raise ServiceReplayTransportFailure("controlled Stop failure")
 
     campaign = _campaign(
         tmp_path,
@@ -2520,6 +2531,25 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         with pytest.raises(ServiceReplayTransportFailure, match="controlled Stop failure"):
             campaign.quality_corpus()
         assert Path("quality/content-free-metrics.json") not in campaign.safe_artifacts
+        from moss_transcribe_diarize.phase2_acceptance_measure import _snapshot_campaign_artifacts
+        import shutil
+        raw_dir = tmp_path / "retained-raw"
+        raw_dir.mkdir()
+        copied = _snapshot_campaign_artifacts(campaign, raw_dir)
+        shutil.rmtree(campaign.artifact_root)
+        diagnostic = next(raw_dir / "artifacts" / path for path in copied
+                          if path.endswith("terminal-diagnostics.json"))
+        text = diagnostic.read_text()
+        assert "PRIVATE TRANSCRIPT" not in text and "SECRET COOKIE" not in text
+        evidence = json.loads(text)
+        assert evidence["session_ids"] == ["private-id"]
+        assert evidence["stop_requested_monotonic_ns"] == 1
+        event = evidence["events"][0]
+        assert event["session_id"] == "private-id"
+        assert event["seq"] == 9 and event["runtime_monotonic_ns"] == 1234
+        assert event["outcome"] == "decode_failed"
+        assert event["reason"] == "WindowTranscriptionError"
+        assert event["refusal"] == "decode_failed"
         return
     result = campaign.quality_corpus()
     assert result["cases"] == 6

@@ -1913,27 +1913,34 @@ class FixedAccountCampaign:
                 )
                 run_dir = work / f"pass-{pass_number}" / str(case_id)
                 run_dir.parent.mkdir(mode=0o700, exist_ok=True)
-                run_service_replay(
-                    service=captured,
-                    audio_path=audio,
-                    out_dir=run_dir,
-                    pace=1.0,
-                    max_pacing_lag=3.0,
-                    runs=1,
-                    expect_revision=identity[0],
-                    expect_provider_hash=identity[1],
-                    expect_config_hash=identity[2],
-                )
                 trace = run_dir / "run-001" / "trace.jsonl"
-                if "post_stop_final" not in captured.captures:
-                    for line in trace.read_text(encoding="utf-8").splitlines():
-                        row = json.loads(line)
-                        if row.get("kind") == "terminal" and isinstance(row.get("snapshot"), dict):
-                            from .live_service_replay import _snapshot_from_dict
+                try:
+                    run_service_replay(
+                        service=captured,
+                        audio_path=audio,
+                        out_dir=run_dir,
+                        pace=1.0,
+                        max_pacing_lag=3.0,
+                        runs=1,
+                        expect_revision=identity[0],
+                        expect_provider_hash=identity[1],
+                        expect_config_hash=identity[2],
+                    )
+                    trace = run_dir / "run-001" / "trace.jsonl"
+                    if "post_stop_final" not in captured.captures:
+                        for line in trace.read_text(encoding="utf-8").splitlines():
+                            row = json.loads(line)
+                            if row.get("kind") == "terminal" and isinstance(row.get("snapshot"), dict):
+                                from .live_service_replay import _snapshot_from_dict
 
-                            captured._capture(
-                                "post_stop_final", _snapshot_from_dict(row["snapshot"])
-                            )
+                                captured._capture(
+                                    "post_stop_final", _snapshot_from_dict(row["snapshot"])
+                                )
+                finally:
+                    self._artifact_json(
+                        f"quality/pass-{pass_number}/{case_id}/terminal-diagnostics.json",
+                        _quality_terminal_diagnostics(trace, adapter, captured),
+                    )
                 required_surfaces = (
                     "pre_stop_immediate",
                     "pre_stop_settled",
@@ -2372,46 +2379,11 @@ class FixedAccountCampaign:
                     ],
                     "own_marker_present": output["own_marker_present"],
                     "foreign_markers_absent": output["foreign_markers_absent"],
+                    "session_id": output["session_id"],
                     "events": [
-                        {
-                            "kind": event.get("kind"),
-                            "runtime_monotonic_ns": (event.get("payload") or {}).get(
-                                "runtime_monotonic_ns"
-                            ),
-                            "canonical_decode_elapsed_sec": (
-                                event.get("payload") or {}
-                            ).get("canonical_decode_elapsed_sec"),
-                            "frozen_span_duration_sec": (
-                                event.get("payload") or {}
-                            ).get("frozen_span_duration_sec"),
-                            "rolling_decode_elapsed_sec": (
-                                event.get("payload") or {}
-                            ).get("rolling_decode_elapsed_sec"),
-                            "decode_failure": (event.get("payload") or {}).get(
-                                "decode_failure"
-                            ),
-                            "windows_failed": (event.get("payload") or {}).get(
-                                "windows_failed"
-                            ),
-                            "stale_completions": (event.get("payload") or {}).get(
-                                "stale_completions"
-                            ),
-                            "submitted": (event.get("payload") or {}).get("submitted"),
-                            "admitted": (event.get("payload") or {}).get("admitted"),
-                            "item_id": (event.get("payload") or {}).get("item_id"),
-                            "outcome": (event.get("payload") or {}).get("outcome"),
-                            "reason": (event.get("payload") or {}).get("reason"),
-                        }
+                        _diagnostic_event(event)
                         for event in output["events"]
-                        if event.get("kind")
-                        in {
-                            "canonical_queued",
-                            "canonical_started",
-                            "canonical_processed",
-                            "rolling_decode_queued",
-                            "rolling_decode_completed",
-                            "terminal_finalization_failed",
-                        }
+                        if event.get("kind") in _DIAGNOSTIC_EVENT_KINDS
                     ],
                 }
                 for output in sorted(outputs, key=lambda item: int(item["ordinal"]))
@@ -2596,6 +2568,74 @@ def _verify_quality_inputs(
             }
         )
     return identities
+
+
+# Explicit projection: never retain transcripts, HTTP bodies, credentials, or failure messages.
+_DIAGNOSTIC_EVENT_KINDS = frozenset({
+    "canonical_queued", "canonical_started", "canonical_processed",
+    "rolling_decode_queued", "rolling_decode_completed", "stop_requested",
+    "session_closed", "terminal_failure", "session_aborted",
+    "terminal_finalization_started", "terminal_finalization_completed",
+    "terminal_finalization_failed",
+})
+_DIAGNOSTIC_PAYLOAD_FIELDS = (
+    "runtime_monotonic_ns", "canonical_decode_elapsed_sec", "frozen_span_duration_sec",
+    "rolling_decode_elapsed_sec", "decode_failure", "windows_failed", "stale_completions",
+    "submitted", "admitted", "item_id", "outcome", "reason", "refusal",
+    "submission_refusal", "finalization_status", "applied", "end_sample",
+    "accepted_samples", "accounted_samples", "rolling_through_sample",
+    "rolling_status", "rolling_windows_completed", "rolling_windows_failed",
+)
+
+
+def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
+    payload = event.get("payload") or {}
+    row = {key: event.get(key) for key in ("kind", "seq", "session_id", "snapshot_version")}
+    row.update({key: payload.get(key) for key in _DIAGNOSTIC_PAYLOAD_FIELDS})
+    failure = payload.get("failure") or {}
+    row["failure_code"] = failure.get("code")
+    row["failure_kind"] = failure.get("kind")
+    return row
+
+
+def _quality_terminal_diagnostics(trace: Path, adapter: Any, captured: Any) -> dict[str, object]:
+    """Preserve the failed replay's status evidence before its workspace is deleted."""
+    rows = []
+    if trace.is_file():
+        rows = [json.loads(line) for line in trace.read_text().splitlines()]
+    session_ids = sorted({row["session_id"] for row in rows if row.get("kind") == "session_created"})
+    events = {
+        (row["event"]["session_id"], row["event"]["seq"]): row["event"]
+        for row in rows if row.get("kind") == "service_event"
+    }
+    read_errors = []
+    for session_id in session_ids:
+        try:
+            # Replay may raise before draining its final events into the trace.
+            for event in adapter.events(session_id):
+                events[(session_id, event.seq)] = event.to_dict()
+        except Exception as exc:
+            read_errors.append({"session_id": session_id, "error_type": type(exc).__name__})
+    return {
+        "session_ids": session_ids,
+        "stop_requested_monotonic_ns": captured.stop_requested_monotonic_ns,
+        "events": [_diagnostic_event(event) for _, event in sorted(events.items())
+                   if event.get("kind") in _DIAGNOSTIC_EVENT_KINDS],
+        "event_read_errors": read_errors,
+        "replay_terminal": [
+            {key: row.get(key) for key in ("seq", "status", "failure_kind")}
+            for row in rows if row.get("kind") == "terminal"
+        ],
+        "surfaces": {
+            name: {
+                "session_id": capture["snapshot"].get("session_id"),
+                "observed_monotonic_ns": capture.get("observed_monotonic_ns"),
+                "status": capture["snapshot"].get("session", {}).get("status"),
+                "finalization_status": capture["snapshot"].get("session", {}).get("finalization_status"),
+                "pending_work_items": capture["snapshot"].get("pending_work_items"),
+            } for name, capture in captured.captures.items()
+        },
+    }
 
 
 def _wav_duration(path: Path) -> float:

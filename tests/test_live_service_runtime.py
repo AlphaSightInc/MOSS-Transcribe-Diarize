@@ -670,6 +670,12 @@ def test_runtime_stop_closes_endpoint_and_drains_exact_accounting():
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert "canonical_processed" in event_kinds
     assert event_kinds[-1] == "session_closed"
+    assert event_kinds.index("stop_requested") < event_kinds.index("session_closed")
+    events = runtime.events(created.session_id)
+    timestamps = [event.payload["runtime_monotonic_ns"] for event in events
+                  if event.kind in {"stop_requested", "session_closed"}]
+    assert timestamps == sorted(timestamps)
+    assert all(value > 0 for value in timestamps)
 
 
 def test_stop_with_positive_deadline_yields_while_worker_is_in_flight():

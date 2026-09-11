@@ -853,6 +853,7 @@ class LiveServiceRuntime:
         end_time = loop.time() + max(0.0, float(deadline))
         with self._lock:
             state = self._get(session_id)
+            self._record_event(state, "stop_requested", {})
         try:
             # `stop_endpoint` submits the final open partition and had no capacity
             # preflight, so stopping while the canonical queue was full raised straight
@@ -1589,6 +1590,8 @@ class LiveServiceRuntime:
                     self._mark_ready_locked(state)
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
+        if kind.startswith("terminal_") or kind in {"stop_requested", "session_closed", "session_aborted"}:
+            payload = {"runtime_monotonic_ns": self._monotonic_ns(), **payload}
         event = LiveServiceEvent(
             seq=state.next_event_seq,
             session_id=state.session_id,

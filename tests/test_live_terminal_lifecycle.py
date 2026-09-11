@@ -250,6 +250,19 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
         failed = _payload(runtime, session_id, "terminal_finalization_failed")
         self.assertEqual((failed["outcome"], failed["reason"]), ("decode_failed", "RuntimeError"))
         self.assertEqual((failed["applied"], failed["finalization_status"]), (False, "failed"))
+        from moss_transcribe_diarize.phase2_acceptance_external import _diagnostic_event
+        kinds = ("stop_requested", "session_closed", "terminal_finalization_started",
+                 "terminal_finalization_failed")
+        events = [event for event in runtime.events(session_id) if event.kind in kinds]
+        self.assertEqual(tuple(event.kind for event in events), kinds)
+        rows = [_diagnostic_event(event.to_dict()) for event in events]
+        self.assertTrue(all(row["session_id"] == session_id for row in rows))
+        self.assertEqual([row["seq"] for row in rows], sorted(row["seq"] for row in rows))
+        times = [row["runtime_monotonic_ns"] for row in rows]
+        self.assertTrue(all(value > 0 for value in times))
+        self.assertEqual(times, sorted(times))
+        self.assertEqual(rows[-1]["reason"], "RuntimeError")
+        self.assertEqual(rows[-1]["refusal"], failed.get("refusal"))
         # Failing is still an ending: the audio does not outlive the pass that needed it.
         self.assertIn("session_tape_released", _kinds(runtime, session_id))
         self.assertIsNone(runtime.snapshot(session_id).terminal_failure)
