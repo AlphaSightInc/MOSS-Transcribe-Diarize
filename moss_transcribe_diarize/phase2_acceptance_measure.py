@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -208,6 +210,38 @@ def _write_json_once(path: Path, payload: object) -> None:
         os.close(descriptor)
 
 
+def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, str]:
+    """Keep diagnostics, never browser call logs, subprocess output or frame locals."""
+    if isinstance(exc, subprocess.CalledProcessError):
+        command = exc.cmd[0] if isinstance(exc.cmd, (list, tuple)) else "subprocess"
+        message = f"{command} exited with status {exc.returncode}"
+    elif isinstance(exc, OSError):
+        message = str(exc)  # OS error plus filenames, not file contents.
+    else:
+        message = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+        # Playwright headers may contain selectors/text; full call logs contain DOM.
+        if type(exc).__module__.startswith("playwright."):
+            message = re.sub(r'''"[^"\n]*"|'[^'\n]*'|`[^`\n]*`''', "[redacted]", message)
+    boundaries = config.get("content_boundary_files", {})
+    if isinstance(boundaries, dict):
+        for path in boundaries.values():
+            try:
+                value = Path(path).expanduser().read_text().strip()
+            except (OSError, UnicodeError):
+                message = "Diagnostic withheld: content-boundary file unavailable"
+                break
+            if value:
+                message = message.replace(value, "[redacted]")
+    trace = exc.__traceback__
+    while trace is not None and trace.tb_next is not None:
+        trace = trace.tb_next
+    operation = (
+        f"{Path(trace.tb_frame.f_code.co_filename).name}:{trace.tb_lineno}:{trace.tb_frame.f_code.co_name}"
+        if trace is not None else type(exc).__name__
+    )
+    return {"failure_message": message, "failure_operation": operation}
+
+
 def _snapshot_campaign_artifacts(
     campaign: FixedAccountCampaign | None, raw_dir: Path
 ) -> tuple[str, ...]:
@@ -397,6 +431,7 @@ def measure_layer(
                         "raw": {
                             "measurement_state": "FAIL",
                             "failure_code": type(exc).__name__,
+                            **_failure_details(exc, layer_config),
                         },
                     }
                     state_name = "FAIL"

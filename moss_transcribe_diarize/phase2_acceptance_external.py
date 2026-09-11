@@ -33,7 +33,7 @@ import httpx
 
 from .app.phase2 import SESSION_COOKIE
 from .app.phase2_audio import MeetingAudioArchive
-from .app.phase2_control import request_control
+from .app.phase2_control import Phase2ControlError, request_control
 from .app.phase2_operator import render_operator_status, serialize_operator_payload
 from .concurrency_evidence import (
     canonical_lifecycle_fairness,
@@ -288,7 +288,7 @@ class AccountHttpClient:
             return self._client.request(method, path, **kwargs)
         except httpx.HTTPError as exc:
             raise ExternalMeasurementError(
-                f"Account HTTP transport failed: {type(exc).__name__}"
+                f"Account HTTP {method} {path.split('?')[0]} transport failed: {type(exc).__name__}"
             ) from exc
 
     def json(self, method: str, path: str, expected: int, **kwargs: object) -> tuple[dict[str, Any], httpx.Response]:
@@ -316,9 +316,12 @@ def _control(
     *,
     meeting_id: str | None = None,
 ) -> object:
-    return asyncio.run(
-        request_control(socket_path, command, account_id, meeting_id=meeting_id)
-    )
+    try:
+        return asyncio.run(
+            request_control(socket_path, command, account_id, meeting_id=meeting_id)
+        )
+    except Phase2ControlError as exc:
+        raise Phase2ControlError(f"Control {command} at {socket_path}: {exc}") from exc
 
 
 class FixedAccountCampaign:
@@ -536,9 +539,20 @@ class FixedAccountCampaign:
             ]
         except OSError as exc:
             raise ExternalMeasurementError("Account web process identity is unreadable") from exc
+        if len(argv) < 4:
+            raise ExternalMeasurementError("Account web process is outside the manifested release")
+        invoked = Path(argv[0])
+        # Resolve the activation directory separately from the interpreter file:
+        # different release venvs can symlink to the same base Python executable.
+        interpreter = {
+            "invoked": argv[0],
+            "release_path": str(invoked.parent.resolve() / invoked.name),
+            "executable": str(invoked.resolve()),
+        }
         if (
-            len(argv) < 4
-            or Path(argv[0]).resolve() != (release / "bin/python").resolve()
+            interpreter["release_path"] != str(release / "bin/python")
+            or interpreter["executable"] != str((release / "bin/python").resolve())
+            or interpreter["executable"] != exe
             or argv[1:4] != ["-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]
         ):
             raise ExternalMeasurementError("Account web process is outside the manifested release")
@@ -607,7 +621,7 @@ class FixedAccountCampaign:
                 "active_pointer_resolves_to_release": True,
             },
             "aiosqlite": self._dependency_version(dependency, "aiosqlite"),
-            "process": {"pid": pid, "cwd": cwd, "exe": exe, "argv": argv},
+            "process": {"pid": pid, "cwd": cwd, "exe": exe, "argv": argv, "interpreter": interpreter},
             "toolchain": toolchain,
             "accelerator": accelerator,
             "tls": tls,

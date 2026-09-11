@@ -721,7 +721,7 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                 "installed_units_match_manifest": True,
                 "active_pointer_resolves_to_release": True,
             },
-            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "argv": ["/srv/release/bin/python", "-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
+            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "interpreter": {"invoked": "/srv/release/bin/python", "release_path": "/srv/release/bin/python", "executable": "/usr/bin/python3.12"}, "argv": ["/srv/release/bin/python", "-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
             "toolchain": {name: "version" for name in ("chrome", "node", "npm", "ffmpeg", "ffprobe")},
             "accelerator": {"vllm": "1", "torch": "1", "cuda": "1"},
             "tls": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"},
@@ -1465,8 +1465,9 @@ def test_fixed_measurement_runs_every_candidate_owned_producer_then_cleanup_and_
     assert stat.S_IMODE(copied.stat().st_mode) == 0o600
 
 
+@pytest.mark.parametrize("failure", [RuntimeError("injected producer failure"), FileNotFoundError(2, "No such file or directory", "/tmp/missing-browser")])
 def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, failure,
 ):
     calls: list[str] = []
 
@@ -1489,7 +1490,7 @@ def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
             def run() -> dict[str, object]:
                 calls.append(name)
                 if name == "operator_control":
-                    raise RuntimeError("injected producer failure")
+                    raise failure
                 return {"producer": name}
 
             return run
@@ -1509,6 +1510,9 @@ def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
     assert state["qualified"] is False
     assert state["counts"]["failed"] == 1
     assert calls[-3:] == ["cleanup", "zero_work_end", "close"]
+    record = json.loads(next((tmp_path / "attempt/raw").glob("*operator_control*.json")).read_text())["raw"]
+    assert record["failure_message"] == str(failure)
+    assert record["failure_operation"].endswith(":run")
 
 
 def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
@@ -1525,7 +1529,9 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     admin_launcher.write_bytes(b"reviewed admin\n")
     cutover_launcher.write_bytes(b"reviewed cutover\n")
     vllm_launcher.write_bytes(b"reviewed vllm\n")
-    (release_bin / "python").write_bytes(b"runtime\n")
+    shared_python = tmp_path / "python3.12"
+    shared_python.write_bytes(b"runtime\n")
+    (release_bin / "python").symlink_to(shared_python)
     checkout = tmp_path / "checkout"
     unit_sources = checkout / "ops/systemd"
     unit_sources.mkdir(parents=True)
@@ -1638,7 +1644,7 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
         external.os,
         "readlink",
         lambda path: (
-            "/release/current"
+            str(shared_python)
             if str(path) in {"/proc/123/cwd", "/proc/123/exe"}
             else original_readlink(path)
         ),
@@ -1648,7 +1654,7 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     def read_bytes(path: Path) -> bytes:
         if str(path) == "/proc/123/cmdline":
             return (
-                str(release_bin / "python").encode()
+                str(pointer / "bin/python").encode()
                 + b"\0-I\0-m\0moss_transcribe_diarize.app.phase2_web_cli\0"
             )
         return original_read_bytes(path)
@@ -1663,20 +1669,35 @@ def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
     assert identity["candidate_sha"] == "a" * 40
     assert identity["process"] == {
         "pid": 123,
-        "cwd": "/release/current",
-        "exe": "/release/current",
+        "cwd": str(shared_python),
+        "exe": str(shared_python),
+        "interpreter": {"invoked": str(pointer / "bin/python"), "release_path": str(release_bin / "python"), "executable": str(shared_python)},
         "argv": [
-            str(release_bin / "python"),
+            str(pointer / "bin/python"),
             "-I",
             "-m",
             "moss_transcribe_diarize.app.phase2_web_cli",
         ],
     }
     assert identity["manifest"]["installed_units_match_manifest"] is True
+    raw = _raw("installed_candidate_identity", "a" * 40, "wheel")
+    raw["process"] = identity["process"]
+    raw["manifest"]["release"] = str(release)
+    for name in ("release_launcher", "release_admin_launcher", "release_cutover_launcher", "release_vllm_launcher"):
+        raw["manifest"][name] = raw["manifest"][name].replace("/srv/release", str(release))
+    assert acceptance._validate_raw_predicate(
+        "installed_candidate_identity", {"raw": raw}, candidate_sha="a" * 40,
+        candidate_tree="c" * 40, uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    foreign_bin = tmp_path / "foreign-release/bin"
+    foreign_bin.mkdir(parents=True)
+    (foreign_bin / "python").symlink_to(shared_python)
     approved_argv = identity["process"]["argv"]
     for refused_argv in (
         [approved_argv[0], "-m", approved_argv[3]],
         [str(tmp_path / "foreign-python"), *approved_argv[1:]],
+        [str(foreign_bin / "python"), *approved_argv[1:]],
         [*approved_argv[:3], "moss_transcribe_diarize.app.phase1_web_cli"],
     ):
         def refused_cmdline(path: Path) -> bytes:
@@ -3266,3 +3287,43 @@ def test_driver_verdict_counts_wave_commands_including_unmeasured(monkeypatch, t
     assert counts["commands_failed"] == (0 if refused else 1)
     assert counts["commands_passed"] + counts["commands_failed"] == counts["commands_executed"]
     assert counts["commands_collected"] == sum(counts[f"commands_{key}"] for key in ("executed", "skipped", "unmeasured"))
+
+
+def test_predicate_diagnostics_remove_credentials_browser_dom_and_subprocess_output(tmp_path):
+    from playwright.sync_api import Error
+    secret = tmp_path / "session.cookie"
+    secret.write_text("PRIVATE_COOKIE")
+    config = {"content_boundary_files": {"account_a_session_cookie": str(secret)}}
+    error = Error('Locator.click: locator("PRIVATE_TRANSCRIPT") failed PRIVATE_COOKIE\nCall log:\nPRIVATE_DOM')
+    raw = measurement._failure_details(error, config)
+    assert "Locator.click" in raw["failure_message"]
+    assert all(value not in json.dumps(raw) for value in ("PRIVATE_COOKIE", "PRIVATE_TRANSCRIPT", "PRIVATE_DOM"))
+    error = subprocess.CalledProcessError(1, ["browser", "PRIVATE_ARGUMENT"], output="PRIVATE_STDOUT", stderr="PRIVATE_STDERR")
+    assert measurement._failure_details(error, config)["failure_message"] == "browser exited with status 1"
+
+
+@pytest.mark.parametrize("fault", [None, "other_release", "missing_resolution", "different_exe", "different_module"])
+def test_identity_evaluator_uses_recorded_resolution_without_host_files(fault):
+    raw = _raw("installed_candidate_identity", "a" * 40, "wheel")
+    process = raw["process"]
+    process["argv"][0] = "/offline/account-current/bin/python"
+    process["interpreter"]["invoked"] = process["argv"][0]
+    if fault == "other_release": process["interpreter"]["release_path"] = "/srv/other-release/bin/python"
+    elif fault == "missing_resolution": del process["interpreter"]
+    elif fault == "different_exe": process["exe"] = "/usr/bin/other-python"
+    elif fault == "different_module": process["argv"][3] = "another.module"
+    assert acceptance._validate_raw_predicate(
+        "installed_candidate_identity", {"raw": raw}, candidate_sha="a" * 40,
+        candidate_tree="c" * 40, uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    ) is (fault is None)
+
+
+def test_control_diagnostic_names_operation_and_socket(monkeypatch, tmp_path):
+    async def unavailable(*args, **kwargs):
+        raise external.Phase2ControlError("Phase-2 product control is unavailable.")
+    monkeypatch.setattr(external, "request_control", unavailable)
+    socket_path = tmp_path / "operator.sock"
+    with pytest.raises(external.Phase2ControlError) as failure:
+        external._control(socket_path, "status")
+    assert str(failure.value) == f"Control status at {socket_path}: Phase-2 product control is unavailable."

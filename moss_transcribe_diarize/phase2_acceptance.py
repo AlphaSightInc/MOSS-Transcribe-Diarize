@@ -1784,7 +1784,10 @@ def _validate_raw_predicate(
             and all(isinstance(process.get(key), str) and process[key] for key in ("cwd", "exe"))
             and isinstance(process.get("argv"), list)
             and len(process["argv"]) >= 4
-            and process["argv"][0] == f"{manifest['release']}/bin/python"
+            and isinstance(process.get("interpreter"), dict)
+            and process["interpreter"].get("invoked") == process["argv"][0]
+            and process["interpreter"].get("release_path") == f"{manifest['release']}/bin/python"
+            and process["interpreter"].get("executable") == process["exe"]
             and process["argv"][1:4]
             == ["-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]
             and isinstance(descriptor, dict)
@@ -2142,7 +2145,7 @@ def _cross_layer_identity_errors(
         "descriptor",
     )
     errors = [f"cross_layer_identity_mismatch:{field}" for field in fields if first.get(field) != second.get(field)]
-    for field in ("cwd", "exe", "argv"):
+    for field in ("cwd", "exe", "argv", "interpreter"):
         first_process = first.get("process")
         second_process = second.get("process")
         if not (

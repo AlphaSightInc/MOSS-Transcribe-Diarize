@@ -195,3 +195,39 @@ that any external predicate will pass once it can execute.
 
 Full regression after these fixes: 1,200 passed, 2 skipped, 37 subtests passed
 (69.79 seconds). Lock and diff checks passed.
+
+
+## 2026-09-11 predicate diagnostics and activation-symlink identity
+
+Question: which production operation failed, and does the observed interpreter
+belong to the manifested release when startup uses `account-current`?
+Primitives: a content-free exception diagnostic, the raw invocation, the resolved
+release-local interpreter path, and its final executable target. The latter two
+cannot be collapsed: different release venvs can share one base Python executable.
+Invariants: preserve exception type and useful operation/path; exclude browser DOM,
+subprocess payloads and known credentials; retain exact release and module checks.
+Falsifiers: missing file paths remain invisible, sensitive exception content enters
+raw evidence, a valid activation alias fails, or another release sharing Python passes.
+
+Diagnostic regressions first failed twice for absent `failure_message`; both pass
+after retaining message plus source filename/line/function. Browser call-log/quoted
+text, subprocess arguments/output and configured credential/sentinel values are
+excluded. Control failures identify command/socket; HTTP failures identify method
+and route without query strings. The tests do not authorize retaining response bodies.
+
+The actual identity collector test uses a real activation symlink and a real Python
+symlink shared by two release directories. It retains raw argv and records
+`interpreter.invoked`, `release_path` (resolve the directory, retain `bin/python`),
+and `executable` (resolve the file too). The collector checks these against the
+manifest and `/proc` executable before returning evidence. The evaluator compares
+only this recorded evidence, without needing access to the observed host filesystem.
+A foreign release, wrong interpreter/module, or missing resolution cannot pass.
+Cross-layer identity also compares the interpreter evidence.
+
+First focused module run: 99 passed. Additional tests exercise offline evaluation
+and the control-socket diagnostic. Command:
+`.venv/bin/python -m pytest -q tests/phase2/test_wave1_qualification.py`.
+Quality-corpus behavior and thresholds are unchanged; no host measurement is claimed.
+
+Full regression: 1,208 passed, 2 skipped, 37 subtests passed (73.58 seconds).
+Lock and diff checks passed.
