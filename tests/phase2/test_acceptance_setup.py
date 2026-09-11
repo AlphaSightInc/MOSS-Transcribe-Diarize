@@ -8,23 +8,45 @@ from fastapi.testclient import TestClient
 
 from moss_transcribe_diarize.app.phase2 import SESSION_COOKIE, create_phase2_app
 from moss_transcribe_diarize import phase2_acceptance_setup as setup
-from moss_transcribe_diarize.phase2_acceptance import _load_forbidden_values
+from moss_transcribe_diarize.phase2_acceptance import REQUIRED_CONTENT_BOUNDARY_ROLES, _load_forbidden_values
 from moss_transcribe_diarize.phase2_cutover import RESTORE_PLAN_SCHEMA
 
 
 def inputs(root):
-    source = root / "source.json"
-    source.write_text(json.dumps({"measurements": {
-        layer: {"https_origin": setup.G7_PRODUCTION_ORIGIN}
-        for layer in ("deployed", "pre_admission")
-    }}))
-    source.chmod(0o600)
     attempt = root / "attempt"
+    source = root / "source.json"
+    template = Path(__file__).resolve().parents[2] / "scripts/phase2-acceptance/profile.example.json"
+    source.write_text(template.read_text().replace(
+        "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt", str(attempt),
+    ))
+    source.chmod(0o600)
     attempt.mkdir()
     (attempt / "restore-plan.json").write_text(json.dumps({
         "schema": RESTORE_PLAN_SCHEMA, "candidate_sha": "a" * 40,
     }))
     return source, attempt
+
+
+def test_shipped_template_declares_every_measurement_content_boundary(tmp_path):
+    source, _ = inputs(tmp_path)
+    profile = json.loads(source.read_text())
+    forbidden = profile.get("forbidden_files")
+    assert isinstance(forbidden, dict)
+    assert set(forbidden) == {
+        prefix + role
+        for prefix in ("", "pre_admission_")
+        for role in REQUIRED_CONTENT_BOUNDARY_ROLES
+    }
+    assert len(set(forbidden.values())) == 10
+    for layer, config in profile["measurements"].items():
+        prefix = "" if layer == "deployed" else "pre_admission_"
+        for role in ("a", "b", "revoked_probe"):
+            assert config[f"account_{role}_cookie_file"] == forbidden[f"{prefix}account_{role}_session_cookie"]
+            if role != "revoked_probe":
+                assert config[f"account_{role}_peer_cookie_file"] == config[f"account_{role}_cookie_file"]
+                assert config[f"account_{role}_sentinel_file"] == forbidden[f"{prefix}account_{role}_sentinel"]
+        assert all(value in forbidden.values() for key, value in config.items()
+                   if key.endswith(("_cookie_file", "_sentinel_file")))
 
 
 def test_attempt_setup_uses_real_bootstrap_private_files_and_shared_peer_cookies(monkeypatch, tmp_path):
@@ -38,6 +60,8 @@ def test_attempt_setup_uses_real_bootstrap_private_files_and_shared_peer_cookies
     path = setup.prepare_acceptance_profile(source=source, attempt=attempt, candidate_sha="a" * 40)
     assert path.stat().st_mode & 0o777 == 0o600
     profile = json.loads(path.read_text())
+    declared = json.loads(source.read_text())
+    assert profile["forbidden_files"] == declared["forbidden_files"]
     values, _, errors = _load_forbidden_values(profile)
     assert errors == []
     assert len(values) == 10  # six distinct credentials and four title sentinels

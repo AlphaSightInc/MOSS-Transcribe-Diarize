@@ -1,4 +1,16 @@
 {
+  "forbidden_files": {
+    "account_a_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-a.cookie",
+    "account_a_sentinel": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-a.sentinel",
+    "account_b_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-b.cookie",
+    "account_b_sentinel": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-b.sentinel",
+    "account_revoked_probe_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-revoked_probe.cookie",
+    "pre_admission_account_a_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-a.cookie",
+    "pre_admission_account_a_sentinel": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-a.sentinel",
+    "pre_admission_account_b_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-b.cookie",
+    "pre_admission_account_b_sentinel": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-b.sentinel",
+    "pre_admission_account_revoked_probe_session_cookie": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-revoked_probe.cookie"
+  },
   "measurements": {
     "deployed": {
       "https_origin": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
@@ -14,7 +26,14 @@
       "url_fixture": "https://www.youtube.com/watch?v=Rtfl-EiTCFQ",
       "meeting_audio_root": "/home/USER/.local/share/moss-transcribe-diarize/meeting-audio",
       "chrome_binary": "/usr/bin/google-chrome",
-      "live_transcribe_reference": "/home/USER/.local/share/moss-transcribe-diarize/LiveTranscribe"
+      "live_transcribe_reference": "/home/USER/.local/share/moss-transcribe-diarize/LiveTranscribe",
+      "account_a_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-a.cookie",
+      "account_a_peer_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-a.cookie",
+      "account_a_sentinel_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-a.sentinel",
+      "account_b_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-b.cookie",
+      "account_b_peer_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-b.cookie",
+      "account_b_sentinel_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-b.sentinel",
+      "account_revoked_probe_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/deployed/account-revoked_probe.cookie"
     },
     "pre_admission": {
       "https_origin": "https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861",
@@ -30,7 +49,14 @@
       "url_fixture": "https://www.youtube.com/watch?v=Rtfl-EiTCFQ",
       "meeting_audio_root": "/home/USER/.local/share/moss-transcribe-diarize/meeting-audio",
       "chrome_binary": "/usr/bin/google-chrome",
-      "live_transcribe_reference": "/home/USER/.local/share/moss-transcribe-diarize/LiveTranscribe"
+      "live_transcribe_reference": "/home/USER/.local/share/moss-transcribe-diarize/LiveTranscribe",
+      "account_a_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-a.cookie",
+      "account_a_peer_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-a.cookie",
+      "account_a_sentinel_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-a.sentinel",
+      "account_b_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-b.cookie",
+      "account_b_peer_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-b.cookie",
+      "account_b_sentinel_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-b.sentinel",
+      "account_revoked_probe_cookie_file": "/home/USER/.local/share/moss-transcribe-diarize/qualification-attempt/acceptance-private/pre_admission/account-revoked_probe.cookie"
     }
   },
   "cutover_rehearsal": {
