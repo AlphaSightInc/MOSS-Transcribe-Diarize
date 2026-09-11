@@ -66,6 +66,14 @@ Fix R2's exact isolated-process check with regression coverage. Repair acceptanc
 
 **Exit:** installed app starts without Google configuration; automated acceptance starts without human login/token copying; focused and full Wave-1 regressions pass with exact counts.
 
+Candidate HTTPS readiness uses installed system trust roots first. Only a certificate
+verification failure permits retry against the configured certificate for self-signed
+deployments; both paths retain hostname verification and the exact candidate SHA
+check. This fallback is not browser-trusted HTTPS qualification under D2. Readiness
+timeouts retain their last error, and failed attempts retain error type plus message
+in the journal/result. Local real-TLS evidence: `prototypes/phase2-cutover/NOTES.md`.
+
+
 ### A4 — Implement Wave 2 on the proven workspace model
 
 Review and integrate existing ticket-24 work without rebasing or discarding edits. Keep voiceprint ownership within the browser workspace, labels display-only, and enrollment/matching on the accepted production path. Implement real G8 measurement/evaluation, including changes to the new owner schema. Reuse the standing voiceprint/diarization bench.

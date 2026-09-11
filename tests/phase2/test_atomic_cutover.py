@@ -444,8 +444,10 @@ def test_http_readiness_retries_only_unavailable_live_services(monkeypatch, tmp_
     else:
         with pytest.raises(RuntimeError, match={
             "dead": "stopped", "malformed": "malformed", "timeout": "timed out"
-        }[outcome]):
+        }[outcome]) as failure:
             ops._wait_for_http("moss-web.service", observe)
+        if outcome == "timeout":
+            assert "not listening" in str(failure.value)
         assert len(observations) == {"dead": 0, "malformed": 1, "timeout": 3}[outcome]
 
 
@@ -490,7 +492,7 @@ def test_candidate_readiness_requires_exact_http_release(monkeypatch, tmp_path, 
     else:
         with pytest.raises(RuntimeError, match="wrong release"):
             ops._candidate_status("candidate")
-    assert contexts == [{"cafile": "trusted-cert"}]
+    assert contexts == [{}]
 
 
 def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, tmp_path):
@@ -1250,3 +1252,20 @@ def test_cutover_journal_completes_short_writes_and_rejects_sequence_damage(
     journal.path.write_text(json.dumps(damaged) + "\n", encoding="utf-8")
     with pytest.raises(CutoverUnsafe, match="journal"):
         journal.read()
+
+
+def test_failed_phase_preserves_message_in_journal_and_result(monkeypatch, tmp_path):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = FakeCutoverOps(fixture)
+    message = "candidate HTTP unavailable: certificate issuer is not trusted"
+    def fail(_artifacts):
+        raise RuntimeError(message)
+    monkeypatch.setattr(ops, "start_candidate", fail)
+    run = CutoverRun.prepare(profile_path=fixture["profile"], attempt=tmp_path / "attempt", terminal="restored", ops=ops)
+    result = run.run()
+    assert result.terminal == "restored"
+    assert result.error == "RuntimeError"
+    assert result.error_message == message
+    failure = next(row for row in run.journal.read() if row["phase"] == "failure_observed")
+    assert failure["error_message"] == message
+    assert json.loads((run.attempt / "result.json").read_text())["error_message"] == message

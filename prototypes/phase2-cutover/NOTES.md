@@ -132,3 +132,37 @@ event-held Stop. **RED: 1 new terminal publication admitted during the join;
 GREEN: 0**, with capture authority still open until Stop completes. No sleeps or
 latency threshold select the outcome. The 56 Live owner-binding regressions pass
 on both Mac and Linux, including rejected pre-auth entrants joining an owner Stop.
+
+
+## 2026-09-11 candidate TLS trust and failure diagnostics
+
+Structural question: can candidate readiness accept a CA-issued leaf/intermediate
+chain without treating that chain as its own root of trust?
+Primitives: installed trust roots, the configured self-signed certificate, verified
+hostname and candidate SHA. Each establishes a distinct part of endpoint identity.
+Invariant: full certificate and hostname verification remains enabled; a wrong SHA
+is refused. Falsifier: a valid CA chain fails or an invalid hostname/SHA passes.
+
+The production `_candidate_status` method was exercised against disposable real
+HTTPS servers. A private test root supplied through OpenSSL's `SSL_CERT_FILE`
+models an installed trust anchor; the served chain contains leaf and intermediate,
+not the root. Before the fix, the CA chain failed with `unable to get issuer
+certificate`; the self-signed endpoint succeeded. After system-trust-first with a
+certificate-verification-only fallback, both succeed, and both reject wrong
+hostnames and wrong release identities (six real-TLS cases). Context assertions
+retain `CERT_REQUIRED` and hostname checking. No host or global trust store changed.
+
+The probe is absorbed into `tests/phase2/test_candidate_tls.py`. The failure-message
+regression first failed because `CutoverResult` discarded the message; it now checks
+both the attempt journal and result JSON after restoration. Timeout retains its
+last readiness error. Messages do not include HTTP response bodies or runtime
+payloads; the existing error type remains separately available.
+
+One command:
+`.venv/bin/python -m pytest -q tests/phase2/test_candidate_tls.py tests/phase2/test_atomic_cutover.py`
+
+The first post-fix focused run passed 45 tests. The full suite, including additional
+connection-failure and timeout-message regressions, passed 1,191 tests with 2 skips
+and 37 subtests (75.90 seconds). Public-CA host readiness and production
+qualification remain the host runner's measurement.
+Phase-1 runtime views retain their explicit self-signed certificate trust.

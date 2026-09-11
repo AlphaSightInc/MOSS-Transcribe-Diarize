@@ -116,6 +116,7 @@ class CutoverResult:
     g7: str = "UNCLAIMED"
     admitted: bool = False
     error: str | None = None
+    error_message: str | None = None
 
 
 def result_payload(result: CutoverResult) -> dict[str, object]:
@@ -666,20 +667,33 @@ class SystemCutoverOps:
                 return
             except RuntimeViewUnavailable as exc:
                 if time.monotonic() >= deadline:
-                    raise RuntimeError(f"web HTTP readiness timed out: {unit}") from exc
+                    raise RuntimeError(f"web HTTP readiness timed out: {unit}: {exc}") from exc
                 time.sleep(1)
 
     def _candidate_status(self, candidate_sha: str) -> None:
-        context = ssl.create_default_context(cafile=self.account_profile["MOSS_TLS_CERTFILE"])
         request = urllib.request.Request(
             G7_PRODUCTION_ORIGIN, headers={"Cache-Control": "no-store"}
         )
         try:
-            with urllib.request.urlopen(request, timeout=10, context=context) as response:
+            try:
+                response = urllib.request.urlopen(
+                    request, timeout=10, context=ssl.create_default_context()
+                )
+            except (OSError, urllib.error.URLError) as exc:
+                reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+                if not isinstance(reason, ssl.SSLCertVerificationError):
+                    raise
+                # Legacy self-signed deployments still require full verification
+                # against their configured certificate, including the hostname.
+                response = urllib.request.urlopen(
+                    request, timeout=10,
+                    context=ssl.create_default_context(cafile=self.account_profile["MOSS_TLS_CERTFILE"]),
+                )
+            with response:
                 if response.headers.get("X-MOSS-Candidate-SHA") != candidate_sha:
                     raise RuntimeError("candidate HTTP response has the wrong release identity")
         except (OSError, urllib.error.URLError) as exc:
-            raise RuntimeViewUnavailable("candidate HTTP unavailable") from exc
+            raise RuntimeViewUnavailable(f"candidate HTTP unavailable: {exc}") from exc
 
     def install_candidate(self, artifacts: CandidateArtifacts) -> None:
         self.activation.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -1297,12 +1311,13 @@ class CutoverRun:
                 return result
             except BaseException as exc:
                 self._record_restore_phase(
-                    "failure_observed", error=type(exc).__name__
+                    "failure_observed", error=type(exc).__name__, error_message=str(exc)
                 )
                 return self._restore_locked(
                     original=original,
                     cause=type(exc).__name__,
                     error=type(exc).__name__,
+                    error_message=str(exc),
                 )
 
     def restore(self) -> CutoverResult:
@@ -1398,6 +1413,7 @@ class CutoverRun:
         original: OriginalState,
         cause: str,
         error: str | None,
+        error_message: str | None = None,
     ) -> CutoverResult:
         journal_available = self._record_restore_phase(
             "restore_started", cause=cause
@@ -1434,13 +1450,14 @@ class CutoverRun:
             if not self._all_restored_open(self.ops.runtime_statuses()):
                 raise CutoverUnsafe("restored Phase-1 runtime views are not open and zero")
         except BaseException as exc:
-            return self._safe_stopped(type(exc).__name__)
+            return self._safe_stopped(type(exc).__name__, error_message=str(exc))
         if not journal_available:
             raise CutoverUnsafe(
                 "Phase-1 restored but the cutover journal is unavailable"
             )
         result = CutoverResult(
-            "restored", str(self.attempt), self.candidate_sha, error=error
+            "restored", str(self.attempt), self.candidate_sha, error=error,
+            error_message=error_message,
         )
         try:
             self._publish_terminal(
@@ -1454,7 +1471,7 @@ class CutoverRun:
             ) from exc
         return result
 
-    def _safe_stopped(self, reason: str) -> CutoverResult:
+    def _safe_stopped(self, reason: str, *, error_message: str | None = None) -> CutoverResult:
         marker_error: BaseException | None = None
         try:
             self.ops.enable_phase1_block()
@@ -1477,7 +1494,8 @@ class CutoverRun:
                 "SAFE_STOPPED state cannot be verified: marker and web listeners must be inactive"
             )
         result = CutoverResult(
-            "SAFE_STOPPED", str(self.attempt), self.candidate_sha, error=reason
+            "SAFE_STOPPED", str(self.attempt), self.candidate_sha, error=reason,
+            error_message=error_message,
         )
         try:
             last_phase = self.journal.last_phase()
@@ -1492,6 +1510,7 @@ class CutoverRun:
                     phase="SAFE_STOPPED",
                     fields={
                         "reason": reason,
+                        "error_message": error_message,
                         "g7": "UNCLAIMED",
                         "admitted": False,
                     },
