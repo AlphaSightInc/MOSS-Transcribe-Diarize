@@ -2522,12 +2522,12 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
             "errors": sorted(set(all_errors)),
             "commands": [asdict(item) for item in command_results],
             "denominators": {
-                "commands_collected": len(DETERMINISTIC_COMMANDS),
+                "commands_collected": len(commands),
                 "commands_executed": len(command_results),
                 "commands_passed": sum(item.returncode == 0 and item.forbidden_matches == 0 for item in command_results),
                 "commands_failed": sum(item.returncode != 0 or item.forbidden_matches != 0 for item in command_results),
                 "commands_skipped": 0,
-                "commands_unmeasured": len(DETERMINISTIC_COMMANDS) - len(command_results),
+                "commands_unmeasured": len(commands) - len(command_results),
                 "test_suites": {
                     item.name: item.denominators
                     for item in command_results

@@ -161,3 +161,37 @@ Phase-1 deployment; it does not activate either. Real Google OAuth, deployed fou
 quality campaigns, production TLS, installed-host identity, and the production-origin canary remain
 **unmeasured**. The prototype uses complete synthetic observations only to falsify the reducer; they
 are not release evidence and cannot claim G7.
+
+
+## 2026-09-11 caller-owned workspaces and wave command counts
+
+Question: can the external collector enter a workspace already created by its
+caller, without accepting stale raw observations? The existing primitives are
+parent workspace, exclusively created raw directory, selected wave command list,
+and executed command results. Their boundaries do not require a new policy.
+
+Invariants: the parent is private (0700); raw must not already exist; collected
+commands equal executed plus skipped plus unmeasured, all nonnegative. A failed
+executed command still belongs to the executed denominator. Falsifiers are a
+caller-created parent causing refusal, existing raw data being accepted/changed,
+or a wave extension making executed exceed collected.
+
+Production-path regressions measured RED: 7 failed / 3 passed. The collector
+refused the parent path before reaching raw creation, and Waves 2/3 used the
+14-command base denominator instead of their selected 15/18-command lists.
+The correction tolerates an existing parent and enforces its mode; raw creation
+remains strict. Verdict counts use the same selected list the driver executes.
+
+Focused qualification tests: 108 passed. The tests run the actual collector with
+missing prerequisites (still explicitly unmeasured), preserve existing raw data,
+and exercise the real driver/verdict writer for all three waves. Command execution
+and packaging are stubbed only to isolate accounting; no qualification is claimed.
+Completed command counts are 14 = 14 + 0 + 0, 15 = 15 + 0 + 0, and 18 = 18 + 0 + 0.
+Refused runs retain all 14/15/18 commands as unmeasured, with zero executed/skipped.
+
+Command: `.venv/bin/python -m pytest -q tests/phase2/test_wave1_qualification.py tests/phase2/test_completion_qualification.py`.
+Host execution remains the host runner's measurement; these fixes do not establish
+that any external predicate will pass once it can execute.
+
+Full regression after these fixes: 1,200 passed, 2 skipped, 37 subtests passed
+(69.79 seconds). Lock and diff checks passed.

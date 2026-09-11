@@ -303,7 +303,8 @@ def measure_layer(
     if layer not in EXTERNAL_REQUIREMENTS:
         raise ValueError(f"unsupported observation layer: {layer}")
     raw_dir = raw_dir.resolve()
-    os.mkdir(raw_dir.parent, mode=0o700)
+    os.makedirs(raw_dir.parent, mode=0o700, exist_ok=True)
+    os.chmod(raw_dir.parent, 0o700)
     os.mkdir(raw_dir, mode=0o700)
     layer_config: Mapping[str, object] = config if isinstance(config, Mapping) else {}
     campaign: FixedAccountCampaign | None = None

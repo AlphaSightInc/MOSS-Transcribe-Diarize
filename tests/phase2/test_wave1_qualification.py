@@ -1340,16 +1340,21 @@ def test_candidate_owned_collector_derives_fresh_report_and_binds_raw_artifacts(
         collect_layer(layer="deployed", candidate_sha=sha, raw_dir=raw_dir)
 
 
+@pytest.mark.parametrize("parent_exists", [False, True])
 def test_fixed_measurement_creates_raw_itself_and_missing_prerequisites_are_unmeasured(
-    tmp_path: Path,
+    tmp_path: Path, parent_exists,
 ):
     raw_dir = tmp_path / "fresh-workspace" / "raw"
+    if parent_exists:
+        raw_dir.parent.mkdir(mode=0o755)
     state = measure_layer(
         layer="deployed",
         candidate_sha="a" * 40,
         config={},
         raw_dir=raw_dir,
     )
+    assert raw_dir.parent.stat().st_mode & 0o777 == 0o700
+    assert raw_dir.stat().st_mode & 0o777 == 0o700
     assert state["qualified"] is False
     assert state["counts"] == {
         "required": 16,
@@ -3207,3 +3212,57 @@ def test_cutover_rehearsal_requires_exact_isolated_restore_order(tmp_path: Path)
             original_fixture=ROOT / "tests/fixtures/phase2_cutover_original.json",
             candidate_manifest=candidate,
         )
+
+
+@pytest.mark.parametrize("layer", ["deployed", "pre_admission"])
+def test_measurement_refuses_existing_raw_directory_before_observation(tmp_path, layer):
+    raw_dir = tmp_path / "workspace" / "raw"
+    raw_dir.mkdir(parents=True)
+    retained = raw_dir / "old-observation.json"
+    retained.write_text("existing evidence")
+    with pytest.raises(FileExistsError) as error:
+        measure_layer(layer=layer, candidate_sha="a" * 40, config={}, raw_dir=raw_dir)
+    assert Path(error.value.filename) == raw_dir
+    assert list(raw_dir.iterdir()) == [retained]
+    assert retained.read_text() == "existing evidence"
+
+
+@pytest.mark.parametrize("wave,expected", [(1, 14), (2, 15), (3, 18)])
+@pytest.mark.parametrize("refused", [False, True])
+def test_driver_verdict_counts_wave_commands_including_unmeasured(monkeypatch, tmp_path, wave, expected, refused):
+    # Stub command execution and packaging only: this proves verdict accounting,
+    # not the measured predicates or qualification of a candidate.
+    sha = "abcdef0" + "1" * 33
+    candidate = {"git_sha": sha, "git_tree": "b" * 40, "uv_lock_sha256": "c" * 64,
+                 "dirty": refused, "runtime": {"sqlite": acceptance.REQUIRED_SQLITE, "aiosqlite": "0.22.1"},
+                 "fixtures": {}, "dependency_projection": {"sha256": "d" * 64}}
+    monkeypatch.setattr(acceptance, "discover_candidate", lambda repo: candidate)
+    monkeypatch.setattr(acceptance, "build_candidate_wheel", lambda **kwargs: (
+        {"record_verified": True, "record_projection_sha256": "e" * 64}, []))
+    monkeypatch.setattr(acceptance, "_git", lambda *args: "")
+    executed = []
+    def execute(**kwargs):
+        executed.append(kwargs["name"])
+        # A failed executed command still belongs in the executed denominator.
+        return acceptance.CommandResult(kwargs["name"], kwargs["argv"], int(len(executed) == 1), 0, 0, 0, 0), []
+    monkeypatch.setattr(acceptance, "execute_deterministic_command", execute)
+    boundaries = {}
+    for role in acceptance.REQUIRED_CONTENT_BOUNDARY_ROLES:
+        path = tmp_path / role
+        path.write_text(role)
+        path.chmod(0o600)
+        boundaries[role] = str(path)
+    profile = tmp_path / "profile.json"
+    profile.write_text(json.dumps({"forbidden_files": boundaries}))
+    profile.chmod(0o600)
+    output = tmp_path / f"evidence/phase2/wave-{wave}/20260911T120000Z-abcdef0"
+    assert acceptance.run_acceptance(wave=wave, output=output, repo=tmp_path, profile_path=profile) == 1
+    verdict = json.loads((output / "verdict.json").read_text())
+    counts = verdict["denominators"]
+    assert counts["commands_collected"] == expected
+    assert counts["commands_executed"] == (0 if refused else expected) == len(executed)
+    assert counts["commands_skipped"] == 0
+    assert counts["commands_unmeasured"] == (expected if refused else 0)
+    assert counts["commands_failed"] == (0 if refused else 1)
+    assert counts["commands_passed"] + counts["commands_failed"] == counts["commands_executed"]
+    assert counts["commands_collected"] == sum(counts[f"commands_{key}"] for key in ("executed", "skipped", "unmeasured"))
