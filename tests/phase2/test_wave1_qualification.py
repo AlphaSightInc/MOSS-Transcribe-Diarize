@@ -721,7 +721,7 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                 "installed_units_match_manifest": True,
                 "active_pointer_resolves_to_release": True,
             },
-            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "argv": ["/srv/release/bin/python", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
+            "process": {"pid": 7, "cwd": "/srv/moss", "exe": "/usr/bin/python3.12", "argv": ["/srv/release/bin/python", "-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]},
             "toolchain": {name: "version" for name in ("chrome", "node", "npm", "ffmpeg", "ffprobe")},
             "accelerator": {"vllm": "1", "torch": "1", "cuda": "1"},
             "tls": {"trusted": True, "subject": "CN=moss", "subject_alt_names": ["moss.example"], "not_after": "Jan 1 00:00:00 2028 GMT"},
@@ -1063,6 +1063,44 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
         item for item in report["predicates"] if item["id"] == "installed_candidate_identity"
     )
     del identity["raw"]["manifest"]["release_admin_launcher_sha256"]
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G0"] is False
+    assert "deployed:G0:installed_candidate_identity:failed" in errors
+
+    # The launcher runs `<release>/bin/python -I -m ...`; a different interpreter must not
+    # satisfy the installed-candidate identity even when every hash matches.
+    report = _report("deployed", sha, wheel)
+    identity = next(
+        item for item in report["predicates"] if item["id"] == "installed_candidate_identity"
+    )
+    identity["raw"]["process"]["argv"][0] = "/usr/bin/python3.12"
+    outcomes, errors = acceptance.evaluate_external_report(
+        report,
+        layer="deployed",
+        candidate_sha=sha,
+        candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64,
+        fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64,
+        dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G0"] is False
+    assert "deployed:G0:installed_candidate_identity:failed" in errors
+
+    report = _report("deployed", sha, wheel)
+    identity = next(
+        item for item in report["predicates"] if item["id"] == "installed_candidate_identity"
+    )
+    identity["raw"]["process"]["argv"][3] = "moss_transcribe_diarize.app.web_cli"
     outcomes, errors = acceptance.evaluate_external_report(
         report,
         layer="deployed",

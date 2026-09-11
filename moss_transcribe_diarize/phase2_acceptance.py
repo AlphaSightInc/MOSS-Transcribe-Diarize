@@ -1783,10 +1783,10 @@ def _validate_raw_predicate(
             and process["pid"] > 0
             and all(isinstance(process.get(key), str) and process[key] for key in ("cwd", "exe"))
             and isinstance(process.get("argv"), list)
-            and len(process["argv"]) >= 3
+            and len(process["argv"]) >= 4
             and process["argv"][0] == f"{manifest['release']}/bin/python"
-            and process["argv"][1:3]
-            == ["-m", "moss_transcribe_diarize.app.phase2_web_cli"]
+            and process["argv"][1:4]
+            == ["-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli"]
             and isinstance(descriptor, dict)
             and descriptor.get("source_revision") == candidate_sha
             and all(
