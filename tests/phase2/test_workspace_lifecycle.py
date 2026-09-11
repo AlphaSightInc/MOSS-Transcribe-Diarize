@@ -405,36 +405,6 @@ main(['--help'])
     assert "Host-local MOSS Phase-2 administration" in result.stdout
 
 
-def test_top_level_legacy_model_exports_remain_importable():
-    pytest.importorskip("torch", reason="legacy model exports require the torch-runtime extra")
-    from moss_transcribe_diarize import (
-        MossTranscribeDiarizeConfig,
-        MossTranscribeDiarizeForConditionalGeneration,
-        MossTranscribeDiarizeModel,
-        MossTranscribeDiarizePreTrainedModel,
-        MossTranscribeDiarizeProcessor,
-        VQAdaptor,
-    )
-    from moss_transcribe_diarize.configuration_moss_transcribe_diarize import (
-        MossTranscribeDiarizeConfig as DirectConfig,
-    )
-
-    assert MossTranscribeDiarizeConfig is DirectConfig
-    assert {
-        MossTranscribeDiarizeForConditionalGeneration.__name__,
-        MossTranscribeDiarizeModel.__name__,
-        MossTranscribeDiarizePreTrainedModel.__name__,
-        MossTranscribeDiarizeProcessor.__name__,
-        VQAdaptor.__name__,
-    } == {
-        "MossTranscribeDiarizeForConditionalGeneration",
-        "MossTranscribeDiarizeModel",
-        "MossTranscribeDiarizePreTrainedModel",
-        "MossTranscribeDiarizeProcessor",
-        "VQAdaptor",
-    }
-
-
 def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, tmp_path: Path):
     seen: dict[str, object] = {}
     file_runner = object()

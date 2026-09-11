@@ -151,9 +151,9 @@ def assert_built_reader(snapshots):
     source_map = json.loads((assets / 'app.js.map').read_text())
     index = next(i for i, name in enumerate(source_map['sources']) if name.endswith('/api/mossPoller.ts'))
     assert source_map['sourcesContent'][index] == (root / 'frontend/src/api/mossPoller.ts').read_text()
-    chrome = Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     with sync_playwright() as p:
-        browser = p.chromium.launch(**({'executable_path': str(chrome)} if chrome.exists() else {}))
+        from tests.phase2.browser_support import require_browser
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
         try:
             page = browser.new_page()
             current = 0

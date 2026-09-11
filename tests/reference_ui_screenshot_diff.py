@@ -66,18 +66,9 @@ DEFAULT_REFERENCE_FRONTEND = Path("/Users/gao/Desktop/AI_Projects/LiveTranscribe
 DEFAULT_FIXTURE = REPOSITORY_ROOT / "tests/fixtures/reference_ui_screenshot_fixture.json"
 DEFAULT_CONFIG = REPOSITORY_ROOT / "tests/fixtures/reference_ui_screenshot_diff.json"
 READY_TIMEOUT_SECONDS = 30
-CHROME_CANDIDATES = (
-    Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-    Path("/usr/bin/google-chrome"),
-    Path("/usr/bin/chromium"),
-)
-
-
-def chrome_executable() -> Path:
-    for candidate in CHROME_CANDIDATES:
-        if candidate.is_file():
-            return candidate
-    raise FileNotFoundError("Chrome/Chromium is required for the Account UI fidelity probe.")
+def chrome_executable(playwright) -> Path:
+    from tests.phase2.browser_support import require_browser
+    return require_browser(playwright)
 
 
 def parse_args() -> argparse.Namespace:
@@ -688,7 +679,7 @@ def main() -> int:
             try:
                 with sync_playwright() as playwright:
                     browser: Browser = playwright.chromium.launch(
-                        executable_path=str(chrome_executable())
+                        executable_path=str(chrome_executable(playwright))
                     )
                     try:
                         viewport_results: list[dict[str, Any]] = []

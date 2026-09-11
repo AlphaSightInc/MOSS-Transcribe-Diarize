@@ -12,13 +12,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.mark.parametrize('viewport', [{'width': 1280, 'height': 800}, {'width': 390, 'height': 844}])
 def test_header_and_pane_dimensions_survive_demo_changes(viewport):
-    chrome = Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     meeting = Meeting('demo-file', 'file', 'A long customer meeting title ' * 12, 'completed', 1,
                       transcript={'segments': [{'start': 0, 'end': 1, 'speaker': 'S01', 'text': 'Demo words'}]})
     html = _workspace_html(SimpleNamespace(display_name='Demo'), [meeting], live_enabled=True)
     dimensions = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(**({'executable_path': str(chrome)} if chrome.exists() else {}))
+        from tests.phase2.browser_support import require_browser
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
         try:
             for baseline in (True, False):
                 page = browser.new_page(viewport=viewport)
