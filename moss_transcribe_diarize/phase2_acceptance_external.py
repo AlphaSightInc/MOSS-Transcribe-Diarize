@@ -1415,7 +1415,7 @@ class FixedAccountCampaign:
         )
         stopped = self.a.request("POST", f"/api/live/sessions/{live_id}/stop")
         if stopped.status_code != 200:
-            raise ExternalMeasurementError("Live Meeting did not Stop")
+            raise ExternalMeasurementError(f"Live Meeting did not Stop: HTTP {stopped.status_code} (request deadline=0 seconds)")
         self._await_meeting_terminal(live_id)
         self._meetings["file"].extend(file_ids)
         self._meetings["url"].extend(successful_url_ids)
@@ -1972,6 +1972,7 @@ class FixedAccountCampaign:
                             "settled": scored["pre_stop_settled"],
                             "final": scored["post_stop_final"],
                         },
+                        "surface_observations": _quality_surface_observations(captured.captures),
                         "event_counts": {
                             "service": len(events),
                             "trace": len(trace_rows),
@@ -2600,21 +2601,19 @@ def _wav_duration(path: Path) -> float:
 
 
 def _probe_mp3(payload: bytes) -> dict[str, object]:
-    process = subprocess.run(
-        (
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "stream=codec_name,sample_rate,channels,bit_rate:format=duration,bit_rate",
-            "-of",
-            "json",
-            "pipe:0",
-        ),
-        input=payload,
-        capture_output=True,
-        check=False,
-    )
+    # MP3 duration needs seeking; a successful probe of pipe:0 can omit it.
+    with tempfile.NamedTemporaryFile(suffix=".mp3") as audio:
+        audio.write(payload)
+        audio.flush()
+        process = subprocess.run(
+            (
+                "ffprobe", "-v", "error", "-show_entries",
+                "stream=codec_name,sample_rate,channels,bit_rate:format=duration,bit_rate",
+                "-of", "json", audio.name,
+            ),
+            capture_output=True,
+            check=False,
+        )
     if process.returncode:
         raise ExternalMeasurementError("ffprobe rejected owner MP3")
     try:
@@ -2848,7 +2847,8 @@ def _vllm_cache_use(url: str) -> float:
         raise ExternalMeasurementError("vLLM metrics returned an error")
     candidates: list[float] = []
     for line in response.text.splitlines():
-        if line.startswith("#") or "gpu_cache_usage_perc" not in line:
+        metric_name = line.split("{", 1)[0].split(" ", 1)[0]
+        if metric_name not in {"vllm:kv_cache_usage_perc", "vllm:gpu_cache_usage_perc"}:
             continue
         try:
             candidates.append(float(line.rsplit(" ", 1)[1]))
@@ -2888,6 +2888,27 @@ def _mean(rows: list[dict[str, object]], surface: str, field: str) -> float:
     if not values or not all(math.isfinite(value) for value in values):
         raise ExternalMeasurementError("quality scorer returned non-finite output")
     return sum(values) / len(values)
+
+
+def _quality_surface_observations(captures: Mapping[str, Any]) -> dict[str, object]:
+    """Retain timing and completion state without exporting transcript content."""
+    observations = {}
+    for name in ("pre_stop_immediate", "pre_stop_settled", "post_stop_final"):
+        capture = captures[name]
+        snapshot = capture["snapshot"]
+        session = snapshot.get("session", {})
+        observations[name] = {
+            "finalization_status": session.get("finalization_status"),
+            "pending_work_items": snapshot.get("pending_work_items"),
+            "pending_span_count": len(session.get("pending_span_ids", [])),
+            "accepted_samples": session.get("accepted_samples"),
+            "accounted_samples": session.get("accounted_samples"),
+            "canonical_through_sample": session.get("canonical_through_sample"),
+            "text_revision_version": session.get("text_revision_version"),
+            "observed_monotonic_ns": capture.get("observed_monotonic_ns"),
+            "wait": capture.get("wait"),
+        }
+    return observations
 
 
 def _quality_projection(
@@ -2938,6 +2959,7 @@ def _quality_projection(
                 "duration_seconds": row["duration_seconds"],
                 "windows": row["windows"],
                 "metrics": row["metrics"],
+                "surface_observations": row.get("surface_observations"),
             }
             for row in rows
         ],

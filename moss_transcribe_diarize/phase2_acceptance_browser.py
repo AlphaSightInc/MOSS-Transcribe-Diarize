@@ -285,7 +285,7 @@ class BrowserCampaign:
                     "[data-workspace-section]",
                     "items => items.map(item => item.getAttribute('data-workspace-section'))",
                 )
-                checks.append(order == ["file", "live", "history"])
+                checks.append(order == ["file", "live", "history", "voiceprints"])
                 suites.append(_suite("desktop-semantic-accessibility", checks))
 
                 active = page.locator(f'[data-open-meeting="{meeting_id}"]')

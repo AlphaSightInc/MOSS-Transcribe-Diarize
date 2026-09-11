@@ -1983,8 +1983,9 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
     assert revoked["durable_prefix_preserved"] is True
 
 
+@pytest.mark.parametrize("stop_status", [200, 409])
 def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, stop_status: int,
 ):
     fixture = tmp_path / "fixture.wav"
     fixture.write_bytes(b"fixture")
@@ -2034,7 +2035,7 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
         def request(self, method: str, path: str, **kwargs: object):
             del kwargs
             if method == "POST" and path.endswith("/stop"):
-                return _Response(200)
+                return _Response(stop_status)
             return _Response(200)
 
         def close(self) -> None:
@@ -2075,6 +2076,10 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
         "run",
         lambda *args, **kwargs: SimpleNamespace(returncode=0),
     )
+    if stop_status != 200:
+        with pytest.raises(external.ExternalMeasurementError, match=r"Live Meeting did not Stop: HTTP 409 .*deadline=0"):
+            campaign.meeting_modes_history_restart()
+        return
     result = campaign.meeting_modes_history_restart()
     assert result["one_item_failure_isolated"] is True
     assert result["submissions"] == {
@@ -2383,8 +2388,9 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     assert result["process_replaced"] is True
 
 
+@pytest.mark.parametrize("stop_failure", [False, True])
 def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_seam(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, stop_failure: bool,
 ):
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -2461,6 +2467,9 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
 
     def replay(*, out_dir: Path, **kwargs: object) -> None:
         del kwargs
+        if stop_failure:
+            from moss_transcribe_diarize.live_service_replay import ServiceReplayTransportFailure
+            raise ServiceReplayTransportFailure("controlled Stop failure")
         trace = out_dir / "run-001" / "trace.jsonl"
         trace.parent.mkdir(parents=True)
         trace.write_text(
@@ -2494,11 +2503,18 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
             for case_id in sorted(acceptance.QUALITY_CASE_IDS)
         ],
     )
+    if stop_failure:
+        from moss_transcribe_diarize.live_service_replay import ServiceReplayTransportFailure
+        with pytest.raises(ServiceReplayTransportFailure, match="controlled Stop failure"):
+            campaign.quality_corpus()
+        assert Path("quality/content-free-metrics.json") not in campaign.safe_artifacts
+        return
     result = campaign.quality_corpus()
     assert result["cases"] == 6
     assert result["passes"] == 2
     assert result["sessions"] == 12
     assert len(result["per_case"]) == 12
+    assert set(result["per_case"][0]["surface_observations"]) == {"pre_stop_immediate", "pre_stop_settled", "post_stop_final"}
     assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
 
 
@@ -3327,3 +3343,82 @@ def test_control_diagnostic_names_operation_and_socket(monkeypatch, tmp_path):
     with pytest.raises(external.Phase2ControlError) as failure:
         external._control(socket_path, "status")
     assert str(failure.value) == f"Control status at {socket_path}: Phase-2 product control is unavailable."
+
+
+def test_quality_numeric_failures_are_reported_without_weakening_bounds():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    for name, (comparison, bound) in acceptance.QUALITY_BOUNDS.items():
+        quality["raw"]["macro"][name] = bound + (0.01 if comparison == "max" else -0.01)
+    outcomes, errors = acceptance.evaluate_external_report(
+        report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert "deployed:G4:quality_corpus:failed" in errors
+    details = [error for error in errors if "quality_corpus:reported " in error]
+    assert len(details) == 8
+    for name, (comparison, bound) in acceptance.QUALITY_BOUNDS.items():
+        assert any(f"reported {name}=" in detail and f"{bound:.12g}" in detail for detail in details)
+    assert "exceeds maximum" in " ".join(details)
+    assert "below minimum" in " ".join(details)
+
+
+def test_quality_surface_diagnostics_preserve_failed_finalization_without_transcript():
+    snapshots = {name: {"snapshot": {"pending_work_items": 0, "session": {
+        "finalization_status": "failed", "pending_span_ids": [2],
+        "accepted_samples": 16000, "accounted_samples": 8000,
+        "text_revision_version": 3, "effective_transcript": [{"text": "private words"}],
+    }}, "wait": {"polls": 0, "drained": True}} for name in
+        ("pre_stop_immediate", "pre_stop_settled", "post_stop_final")}
+    observed = external._quality_surface_observations(snapshots)
+    assert observed["post_stop_final"]["finalization_status"] == "failed"
+    assert observed["pre_stop_settled"]["pending_span_count"] == 1
+    assert observed["pre_stop_settled"]["accounted_samples"] == 8000
+    assert "private words" not in json.dumps(observed)
+
+
+@pytest.mark.parametrize("name", ["vllm:kv_cache_usage_perc", "vllm:gpu_cache_usage_perc"])
+def test_cache_usage_reads_real_engine_gauges(monkeypatch, name):
+    monkeypatch.setattr(external.httpx, "get", lambda *args, **kwargs: SimpleNamespace(status_code=200,
+        text=f'# HELP {name} Cache usage\n{name}{{engine="0"}} 0.25\n{name}{{engine="1"}} 0.75\n'))
+    assert external._vllm_cache_use("http://127.0.0.1:8000/metrics") == 0.75
+
+
+@pytest.mark.parametrize("body", ["# no cache gauge\nvllm:num_requests_running 3\n", 'vllm:kv_cache_usage_perc{engine="0"} NaN\n'])
+def test_cache_usage_still_refuses_absent_or_nonfinite_gauges(monkeypatch, body):
+    monkeypatch.setattr(external.httpx, "get", lambda *args, **kwargs: SimpleNamespace(status_code=200, text=body))
+    with pytest.raises(external.ExternalMeasurementError):
+        external._vllm_cache_use("http://127.0.0.1:8000/metrics")
+
+
+@pytest.mark.parametrize("duration", ["0.576000", None])
+def test_mp3_probe_uses_private_seekable_file_and_still_requires_duration(monkeypatch, duration):
+    paths = []
+    def probe(argv, **kwargs):
+        path = Path(argv[-1])
+        paths.append(path)
+        assert path.is_file()
+        assert path.read_bytes() == b"mp3 fixture"
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        assert "input" not in kwargs
+        format_row = {} if duration is None else {"duration": duration}
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"streams": [{"codec_name": "mp3", "sample_rate": "16000", "channels": 1, "bit_rate": "48000"}], "format": format_row}))
+    monkeypatch.setattr(external.subprocess, "run", probe)
+    if duration is None:
+        with pytest.raises(external.ExternalMeasurementError, match="incomplete"):
+            external._probe_mp3(b"mp3 fixture")
+    else:
+        assert external._probe_mp3(b"mp3 fixture")["duration_seconds"] == float(duration)
+    assert paths and all(not path.exists() for path in paths)
+
+
+def test_mp3_probe_reports_duration_for_real_encoded_audio(tmp_path):
+    path = tmp_path / "audio.mp3"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono", "-t", "0.5", "-codec:a", "libmp3lame", "-b:a", "48k", str(path)], check=True)
+    measured = external._probe_mp3(path.read_bytes())
+    assert measured["codec"] == "mp3"
+    assert measured["sample_rate_hz"] == 16000
+    assert measured["channels"] == 1
+    assert measured["duration_seconds"] > 0

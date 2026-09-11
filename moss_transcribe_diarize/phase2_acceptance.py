@@ -1393,6 +1393,24 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
     )
 
 
+def _quality_failure_details(predicate: Mapping[str, object]) -> list[str]:
+    """Explain reported numeric misses without changing validation or any bound."""
+    raw = predicate.get("raw")
+    metrics = raw.get("macro") if isinstance(raw, dict) else None
+    if not isinstance(metrics, dict):
+        return ["quality macro is absent; inspect retained collection failure"]
+    details = []
+    for name, (comparison, bound) in QUALITY_BOUNDS.items():
+        value = metrics.get(name)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            details.append(f"reported {name} is missing or non-finite")
+        elif comparison == "max" and value > bound:
+            details.append(f"reported {name}={value:.12g} exceeds maximum {bound:.12g}")
+        elif comparison == "min" and value < bound:
+            details.append(f"reported {name}={value:.12g} is below minimum {bound:.12g}")
+    return details or ["quality observation failed structural, provenance, or macro consistency validation"]
+
+
 def _validate_quality(predicate: Mapping[str, object]) -> bool:
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
@@ -2099,6 +2117,8 @@ def evaluate_external_report(
                 passed = passed and _validate_quality(predicate)
             if not passed:
                 errors.append(f"{layer}:{gate}:{predicate_id}:failed")
+                if predicate_id == "quality_corpus":
+                    errors.extend(f"{layer}:{gate}:{predicate_id}:{detail}" for detail in _quality_failure_details(predicate))
                 gate_passed = False
         outcomes[gate] = gate_passed
     return outcomes, errors
