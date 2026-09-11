@@ -1209,3 +1209,11 @@ describe("browser capture frame contract", () => {
     expect(fetchSpy).toHaveBeenCalledOnce();
   });
 });
+
+it("accepts only the explicit retryable Stop-pending response", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ code: "stop_in_progress", retryable: true }, { status: 202 })));
+  await expect(stopCaptureSession({ id: "m" }, 5)).resolves.toBeUndefined();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({}, { status: 202 })));
+  await expect(stopCaptureSession({ id: "m" }, 5)).rejects.toThrow("invalid pending response");
+  vi.unstubAllGlobals();
+});

@@ -284,10 +284,13 @@
   authenticated JSON/HTTP interface. It executes the real built `mtd-capture`
   binary resolved from the Swift package bin path rather than an assumed build
   configuration. Portal timing constants are fixed and documented: the
-  5-second stop-drain deadline is the only value the portal sends in a stop
-  request body, while a 10-second poll request timeout and an independent
-  10-second control request timeout bound every browser fetch, each aborted on
-  its own controller. Rendered events share one finite cap of 200
+  5-second Stop wait is the value the portal sends in a stop request body.
+  It bounds the caller's wait, not the server-owned drain: an expired wait returns
+  HTTP 202 (`stop_in_progress`, retryable), and snapshot polling observes completion.
+  Abort and genuine failures still terminalize. The account capture client allows
+  the requested wait plus one second of transport grace for its Stop response.
+  The local integration portal retains separate 10-second poll and control request
+  timeouts, each aborted on its own controller. Rendered events share one finite cap of 200
   enforced as three separately checked bounds — the rendered identity set,
   `renderedEventOrder`, and the events DOM row count. Final means the terminal
   snapshot or event, not durable portal history or artifacts. Local green proves

@@ -361,6 +361,7 @@ class Phase2LiveMeetings:
         async with binding.changed:
             await binding.changed.wait_for(
                 lambda: binding.public_event_high_water >= target
+                or binding.terminal_persisted
                 or (binding.capture_fenced and binding.persistence_failure is not None)
             )
         return binding

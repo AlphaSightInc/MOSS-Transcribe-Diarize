@@ -59,7 +59,7 @@ SALVAGED_DISPOSITION = LiveTranscriptDisposition.SALVAGED.value
 # meeting is over. A client that stops polling on exactly these values -- and on nothing
 # else -- stops on every way a live session can end: a clean stop, an explicit abort, the
 # session's own failure, and the runtime terminal failures (provider error, helper lease
-# expiry, stop-deadline overrun) that the session object itself is never told about.
+# expiry) that the session object itself is never told about.
 # `snapshot.terminal_failure` says *why*; it is detail, not the signal to stop.
 #
 # Two things make that true and both are load-bearing: `_snapshot` projects a runtime
@@ -67,6 +67,10 @@ SALVAGED_DISPOSITION = LiveTranscriptDisposition.SALVAGED.value
 # terminal snapshot as "unchanged" -- terminality does not move the version counter, so a
 # gate that hid it would leave a caught-up reader polling a dead session forever.
 LIVE_TERMINAL_SESSION_STATUSES = frozenset({"closed", "aborted", "failed"})
+
+
+class LiveServiceStopPending(TimeoutError):
+    """The caller stopped waiting; the server still owns the drain."""
 
 
 class LiveServiceFailureKind(str, Enum):
@@ -495,6 +499,7 @@ class _RuntimeSession:
     # the only moment it is knowable -- `stop_rolling` is called under the lock in the
     # middle of `stop`, and the pass itself starts minutes of decoding later.
     terminal_plan: TerminalDecodePlan | None = None
+    stop_task: asyncio.Task[LiveServiceSnapshot] | None = None
 
 
 @dataclass(slots=True)
@@ -662,6 +667,8 @@ class LiveServiceRuntime:
         with self._lock:
             state = self._get(session_id)
             self._raise_terminal(state)
+            if state.stop_task is not None:
+                raise LiveSessionClosed("live session is stopping; no new frames are accepted.")
             queue_depth = self._pending_work_items(state)
             required_work_items = 0
             if (
@@ -851,18 +858,38 @@ class LiveServiceRuntime:
             }
 
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
-        loop = asyncio.get_running_loop()
-        end_time = loop.time() + max(0.0, float(deadline))
         with self._lock:
             state = self._get(session_id)
-            self._record_event(state, "stop_requested", {})
+            self._raise_terminal(state)
+            if state.stop_task is None or state.stop_task.cancelled():
+                self._record_event(state, "stop_requested", {})
+                state.stop_task = asyncio.create_task(self._finish_stop(state))
+                # Genuine failures are recorded by _finish_stop even if no caller remains.
+                state.stop_task.add_done_callback(lambda task: None if task.cancelled() else task.exception())
+            task = state.stop_task
+        # Let a zero-wait request finish an already drained session normally.
+        await asyncio.sleep(0)
+        if task.done():
+            return task.result()
+        try:
+            return await asyncio.wait_for(asyncio.shield(task), timeout=max(0.0, float(deadline)))
+        except TimeoutError as exc:
+            if task.done():
+                return task.result()  # A genuine worker TimeoutError remains a failure.
+            raise LiveServiceStopPending(
+                "live service stop deadline expired; drain continues on the server."
+            ) from exc
+
+    async def _finish_stop(self, state: _RuntimeSession) -> LiveServiceSnapshot:
+        loop = asyncio.get_running_loop()
+        end_time = float("inf")
         try:
             # `stop_endpoint` submits the final open partition and had no capacity
             # preflight, so stopping while the canonical queue was full raised straight
             # into the handler below and terminalized the session -- losing the tail span
             # on the most ordinary path there is (a user clicking Stop under load).
             # A full queue at stop is a pacing condition, not a session fault: drain and
-            # retry within the caller's deadline, and only then time out.
+            # retry in the server-owned drain, independently of each caller's wait.
             while True:
                 with self._lock:
                     self._raise_terminal(state)

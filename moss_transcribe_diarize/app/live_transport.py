@@ -47,6 +47,7 @@ from .live_service_runtime import (
     LiveServiceFailureKind,
     LiveServiceRuntime,
     LiveServiceSnapshot,
+    LiveServiceStopPending,
 )
 from .live_session import (
     AudioFrame,
@@ -246,11 +247,15 @@ class LiveTransportControl:
             stopped = await self._adapter.stop(authority, session_id, remaining, intent)
             self.release(session_id)
             release_on_error = False
-            await self._adapter.publication(
-                authority,
-                session_id,
-                wait_for_durability=True,
-            )
+            publication = asyncio.create_task(self._adapter.publication(
+                authority, session_id, wait_for_durability=True,
+            ))
+            try:
+                await asyncio.wait_for(publication, timeout=max(0.0, end_time - loop.time()))
+            except TimeoutError as exc:
+                if not publication.cancelled():
+                    raise
+                raise LiveServiceStopPending("Stop is still finalizing; poll the session for completion.") from exc
             return LiveTransportStopResult(stopped, v2_snapshot)
         finally:
             self._adapter.release_stop(intent)
@@ -661,6 +666,12 @@ def attach_live_routes(
             return JSONResponse(failure, status_code=status)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except LiveServiceStopPending as exc:
+            published = await adapter.publication(authority, session_id, wait_for_durability=False)
+            return JSONResponse({
+                "detail": str(exc), "code": "stop_in_progress", "retryable": True,
+                "snapshot": None if published is None else published.to_dict(),
+            }, status_code=202)
         except TimeoutError as exc:
             published = await adapter.publication(
                 authority,

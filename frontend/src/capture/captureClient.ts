@@ -354,7 +354,7 @@ export function makeV2Frame(
  * Ask the server to finish a session while its capture authority is still valid.
  *
  * `deadlineSeconds` is deliberately supplied by the caller: drain time is a
- * server-side operational policy, not a browser-capture geometry constant.
+ * bounded wait for server completion, not a deadline that cancels server work.
  */
 export async function stopCaptureSession(
   session: CaptureSession,
@@ -373,6 +373,14 @@ export async function stopCaptureSession(
   };
   if (signal) request.signal = signal;
   const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, request);
+  if (response.status === 202) {
+    const pending = await response.json();
+    if (pending?.code !== "stop_in_progress" || pending?.retryable !== true) {
+      throw new Error("session stop returned an invalid pending response");
+    }
+    // Capture closes locally; the existing session poller waits for finalization.
+    return;
+  }
   if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
 }
 
@@ -580,7 +588,7 @@ export class CaptureClient {
       } finally {
         heartbeatDeadline.cancel();
       }
-      const stopDeadline = requestDeadline(TERMINAL_REQUEST_TIMEOUT_MS);
+      const stopDeadline = requestDeadline(Math.ceil(remainingDeadline * 1_000) + TERMINAL_REQUEST_TIMEOUT_MS);
       try {
         await stopCaptureSession(
           session,

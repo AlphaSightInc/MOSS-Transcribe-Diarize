@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
       return poller;
     }),
     captureClose: vi.fn().mockResolvedValue(undefined),
+    captureStop: vi.fn().mockResolvedValue(undefined),
     replaceLane: vi.fn().mockResolvedValue(undefined),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
@@ -55,6 +56,7 @@ vi.mock("../capture/captureClient", () => ({
     replaceLane = mocks.replaceLane;
     createSession = mocks.createSession;
     close = mocks.captureClose;
+    stop = mocks.captureStop;
   }
 }));
 
@@ -218,6 +220,21 @@ describe("ControlPanel reattach", () => {
 
     expect(mocks.createMossSessionPoller).not.toHaveBeenCalled();
     expect(root.querySelector('[data-capture-phase="configuring"]')).not.toBeNull();
+  });
+
+  it("keeps polling while an accepted Stop is still draining", async () => {
+    await act(async () => { render(<ControlPanel />, root); });
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    await act(async () => button("Enable microphone")?.click());
+    await act(async () => button("Share audio")?.click());
+    await act(async () => button("Start capture")?.click());
+    await act(async () => button("Stop and finalize")?.click());
+    expect(mocks.captureStop).toHaveBeenCalledWith(5);
+    expect(root.querySelector('[data-capture-phase="stopping"]')).not.toBeNull();
+    expect(mocks.poller.stop).not.toHaveBeenCalled();
+    expect(root.textContent).toContain("Waiting for the transcript to finish");
+    await act(async () => mocks.pollerOptions?.onTerminal?.("Transcript finalized."));
+    expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
   });
 
   it.each(["Sign in required.", "helper_lease_expired", "canonical decode failed"])("stops without automatically recreating a terminal capture: %s", async (reason) => {

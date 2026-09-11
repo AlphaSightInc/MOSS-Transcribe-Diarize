@@ -188,7 +188,10 @@ export function ControlPanel() {
     captureMeetingId.value = null;
     setMessage("Stopping capture and finalizing transcript...");
     try {
+      // Five seconds bounds local frame delivery and this request's wait only.
+      // A 202 leaves the existing poller running while the server finishes draining.
       await client.stop(5);
+      if (phaseRef.current === "stopping") setMessage("Capture stopped. Waiting for the transcript to finish…");
     } catch (error) {
       transition("error");
       setMessage(errorMessage(error));

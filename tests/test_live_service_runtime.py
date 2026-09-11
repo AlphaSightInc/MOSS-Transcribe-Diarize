@@ -9,7 +9,6 @@ import time
 import unittest
 from dataclasses import dataclass
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 
@@ -29,13 +28,13 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     _TransientCanonicalPumpScheduler,
     hash_config,
 )
-from moss_transcribe_diarize.app import live_service_runtime as runtime_module
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
+    LiveSessionClosed,
 )
 
 
@@ -238,11 +237,6 @@ class SelectiveFailingDecoder(RecordingDecoder):
         if pcm.startswith(b"x"):
             raise RuntimeError("simulated canonical decoder failure.")
         return super().transcribe_pcm(span=span, pcm=pcm)
-
-
-class SameTickLoop:
-    def time(self) -> float:
-        return 100.0
 
 
 class InterleavingWorkChangedEvent(threading.Event):
@@ -945,26 +939,24 @@ def test_stop_and_abort_serialize_events_with_in_flight_worker(operation: str):
     assert sum(event.kind == "terminal_failure" for event in events) <= 1
 
 
-def test_zero_deadline_rejects_pending_work_before_decode_when_clock_has_not_advanced():
+def test_zero_deadline_leaves_queued_tail_resumable():
     decoder = RecordingDecoder()
-    runtime = _runtime(speech=(True,), decoder=decoder)
+    runtime = _runtime(speech=(True,), decoder=decoder, scheduler=_ManualCanonicalPumpScheduler())
     created = runtime.create()
     runtime.accept_frame(created.session_id, _frame(0))
 
-    with patch.object(runtime_module.asyncio, "get_running_loop", return_value=SameTickLoop()):
-        with pytest.raises(TimeoutError, match="deadline expired"):
-            asyncio.run(runtime.stop(created.session_id, deadline=0.0))
+    with pytest.raises(TimeoutError, match="deadline expired"):
+        asyncio.run(runtime.stop(created.session_id, deadline=0.0))
 
     snapshot = runtime.snapshot(created.session_id)
     assert decoder.calls == []
     assert snapshot.session.accepted_samples == 1000
     assert snapshot.session.accounted_samples == 0
     assert snapshot.pending_work_items == 1
-    assert snapshot.terminal_failure is not None
-    assert snapshot.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert snapshot.terminal_failure is None
 
 
-def test_stop_timeout_fences_late_in_flight_canonical_result():
+def test_stop_timeout_preserves_late_in_flight_canonical_result():
     scheduler = _TransientCanonicalPumpScheduler()
     decoder = BlockingDecoder()
     runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
@@ -977,8 +969,7 @@ def test_stop_timeout_fences_late_in_flight_canonical_result():
         asyncio.run(runtime.stop(created.session_id, deadline=0.0))
 
     timed_out = runtime.snapshot(created.session_id)
-    assert timed_out.terminal_failure is not None
-    assert timed_out.terminal_failure.kind == LiveServiceFailureKind.TRANSPORT_PACING
+    assert timed_out.terminal_failure is None
     assert timed_out.session.accepted_samples == 2000
     assert timed_out.session.accounted_samples == 0
 
@@ -989,11 +980,11 @@ def test_stop_timeout_fences_late_in_flight_canonical_result():
         time.sleep(0.001)
 
     fenced = runtime.snapshot(created.session_id)
-    assert fenced.session.accounted_samples == 0
-    assert fenced.session.committed == ()
+    assert fenced.session.accounted_samples == 2000
+    assert fenced.session.committed
     event_kinds = [event.kind for event in runtime.events(created.session_id)]
     assert "canonical_started" in event_kinds
-    assert "canonical_processed" not in event_kinds
+    assert "canonical_processed" in event_kinds
     assert "session_closed" not in event_kinds
 
 
@@ -1443,3 +1434,57 @@ def test_canonical_preview_requires_current_epoch_and_next_frozen_prefix():
     runtime._publish_canonical_preview(state, first, "[0][S01]late[0.01]")
     assert state.session.snapshot().version == version
     assert state.session.snapshot().provisional is None
+
+
+@pytest.mark.parametrize('ending', ['retry', 'automatic', 'abort', 'failure'])
+def test_expired_stop_keeps_server_drain_alive(ending):
+    async def exercise():
+        scheduler = _TransientCanonicalPumpScheduler()
+        decoder = BlockingDecoder()
+        if ending == 'failure':
+            original_decode = decoder.transcribe_pcm
+            def fail_after_release(**kwargs):
+                original_decode(**kwargs)
+                raise RuntimeError('genuine provider failure after wait expired')
+            decoder.transcribe_pcm = fail_after_release
+        runtime = _runtime(speech=(True, False), decoder=decoder, scheduler=scheduler)
+        created = runtime.create()
+        runtime.accept_frame(created.session_id, _frame(0))
+        runtime.accept_frame(created.session_id, _frame(1))
+        assert decoder.entered.wait(timeout=1)
+        try:
+            with pytest.raises(TimeoutError, match='stop deadline expired'):
+                await runtime.stop(created.session_id, deadline=0.01)
+            pending = runtime.snapshot(created.session_id)
+            assert pending.terminal_failure is None
+            assert pending.session.status in {'active', 'closing'}
+            with pytest.raises(LiveSessionClosed, match='stopping'):
+                runtime.accept_frame(created.session_id, _frame(2))
+            assert runtime.snapshot(created.session_id).terminal_failure is None
+            if ending == 'abort':
+                await runtime.abort(created.session_id, 'operator aborted while stopping')
+            decoder.release.set()
+            if ending == 'retry':
+                await runtime.stop(created.session_id, deadline=1)
+            for _ in range(200):
+                snapshot = runtime.snapshot(created.session_id)
+                if not scheduler.worker_count and snapshot.session.status in {'closed', 'aborted', 'failed'}:
+                    break
+                await asyncio.sleep(0.005)
+            if ending == 'failure':
+                assert snapshot.session.status == 'failed'
+                assert 'genuine provider failure' in snapshot.terminal_failure.message
+            elif ending == 'abort':
+                assert snapshot.session.status == 'aborted'
+                assert snapshot.session.accounted_samples == 0
+                assert not any(e.kind in {'canonical_processed', 'session_closed'} for e in runtime.events(created.session_id))
+            else:
+                assert snapshot.session.status == 'closed'
+                assert snapshot.session.accepted_samples == snapshot.session.accounted_samples == 2000
+                assert sum(e.kind == 'session_closed' for e in runtime.events(created.session_id)) == 1
+                previews = [e.payload['span_id'] for e in runtime.events(created.session_id) if e.kind == 'canonical_preview']
+                assert len(previews) == len(set(previews))
+                assert snapshot.terminal_failure is None
+        finally:
+            decoder.release.set()
+    asyncio.run(exercise())

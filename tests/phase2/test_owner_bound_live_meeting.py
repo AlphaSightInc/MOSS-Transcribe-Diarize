@@ -560,7 +560,7 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         assert stopped.json()["raw_terminal_status"] == "closed"
         assert stopped.json()["snapshot"]["session"]["status"] == "closed"
         assert stopped.json()["snapshot"]["session"]["finalization_status"] == "final"
@@ -706,7 +706,7 @@ def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprin
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         final_meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert final_meeting["transcript"]["segments"][0]["speaker"] == "Alex"
         assert final_meeting["transcript"]["segments"][0]["speaker_entity_id"] == "speaker-0001"
@@ -943,7 +943,7 @@ def test_stop_tail_persistence_failure_fences_pending_finalizer_on_last_durable_
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         failed = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
         assert failed["persistence_failure"] == "transcript_persistence_failed"
         assert failed["snapshot"]["session"]["status"] == "closed"
@@ -2179,7 +2179,7 @@ def test_live_stage_bound_degrades_normal_stop_to_partial_without_losing_transcr
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
         assert meeting["transcript"]["segments"][0]["text"] == "owner live words"
@@ -2226,7 +2226,7 @@ def test_terminal_audio_cleanup_precedes_atomic_final_transcript_and_status(tmp_
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         assert observed == [("active", "owner live words", "atomic terminal words")]
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert (meeting["status"], meeting["transcript"]["segments"][0]["text"]) == (
@@ -2535,7 +2535,7 @@ def test_live_encode_failure_preserves_transcript_and_finishes_audio_unavailable
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
         assert meeting["transcript"]["segments"][0]["text"] == "owner live words"
@@ -2572,7 +2572,7 @@ def test_live_stage_create_refusal_preserves_transcript_and_finishes_unavailable
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
         assert meeting["transcript"]["segments"][0]["text"] == "owner live words"
@@ -2628,7 +2628,7 @@ def test_transient_live_stage_cleanup_failure_recovers_truth_and_finishes_interr
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         failed = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
         assert failed["persistence_failure"] == "audio_terminal_recovery_failed"
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
@@ -2675,7 +2675,7 @@ def test_persistent_live_stage_cleanup_failure_stays_active_until_startup_recove
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         failed = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
         assert failed["persistence_failure"] == "audio_terminal_recovery_failed"
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
@@ -3288,7 +3288,7 @@ def test_revoke_after_mp3_publish_cleans_or_fences_unrecorded_artifact(
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         meeting_dir = tmp_path / "meetings" / "sub-a" / meeting_id
         assert archive.publication_cleanup_attempts == 1
         assert archive.recovery_cleanup_attempts == 2
@@ -3367,7 +3367,7 @@ def test_revoke_after_audio_settlement_downgrades_before_terminal_publication(
             f"/api/live/sessions/{meeting_id}/stop",
             json={"deadline": 2.0},
         )
-        assert stopped.status_code == 200
+        assert stopped.status_code == 200, stopped.text
         assert binding.terminal_persisted is True
         assert binding.persistence_failure == "meeting_authority_revoked"
 
@@ -3542,3 +3542,55 @@ def test_terminal_transcript_and_status_roll_back_or_commit_as_one_tuple(tmp_pat
             await store.close()
 
     asyncio.run(exercise())
+
+
+@pytest.mark.parametrize('retry', [False, True])
+def test_http_stop_timeout_is_pending_and_finishes_durably(tmp_path, retry):
+    database = tmp_path / 'moss.sqlite3'
+    sessions = asyncio.run(provision(database))
+    entered, release = threading.Event(), threading.Event()
+    app = make_app(database, decoder_factory=lambda: HeldDecoder(entered, release))
+    with TestClient(app, base_url='https://moss.test') as client:
+        session(client, sessions['a'])
+        meeting_id = client.post('/api/live/sessions').json()['id']
+        feed_two_lane_span(client, meeting_id)
+        assert entered.wait(1)
+        try:
+            pending = client.post(f'/api/live/sessions/{meeting_id}/stop', json={})
+            assert pending.status_code == 202
+            assert pending.json()['code'] == 'stop_in_progress'
+            assert pending.json()['retryable'] is True
+            assert app.state.phase2_live.runtime.snapshot(meeting_id).terminal_failure is None
+            if retry:
+                timer = threading.Timer(0.05, release.set)
+                timer.start()
+                try:
+                    completed = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 2})
+                    assert completed.status_code == 200, completed.text
+                finally:
+                    timer.cancel()
+            else:
+                release.set()
+            final = wait_snapshot(client, meeting_id, lambda body: body['snapshot']['session']['status'] == 'closed')
+            assert final['snapshot']['terminal_failure'] is None
+            assert client.get(f'/api/meetings/{meeting_id}').json()['status'] == 'completed'
+        finally:
+            release.set()
+
+
+def test_http_stop_bounds_wait_for_terminal_finalizer(tmp_path):
+    database = tmp_path / 'moss.sqlite3'
+    sessions = asyncio.run(provision(database))
+    scheduler = _ManualTerminalScheduler()
+    app = make_app(database, terminal_text='[0][S01]final words[0.000375]', terminal_scheduler=scheduler)
+    with TestClient(app, base_url='https://moss.test') as client:
+        session(client, sessions['a'])
+        meeting_id = client.post('/api/live/sessions').json()['id']
+        feed_two_lane_span(client, meeting_id)
+        pending = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 0.05})
+        assert pending.status_code == 202, pending.text
+        assert pending.json()['code'] == 'stop_in_progress'
+        assert scheduler.pending == 1
+        assert scheduler.run_one()
+        final = wait_snapshot(client, meeting_id, lambda body: body['snapshot']['session']['finalization_status'] == 'final')
+        assert final['snapshot']['terminal_failure'] is None
