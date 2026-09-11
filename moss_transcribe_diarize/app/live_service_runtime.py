@@ -5,6 +5,7 @@ import hashlib
 import inspect
 import json
 import logging
+import math
 import threading
 import time
 import uuid
@@ -281,6 +282,20 @@ class LiveServiceEvent:
 
 
 @dataclass(frozen=True, slots=True)
+class LiveDraft:
+    """Reader-only words; deliberately outside LiveSnapshot and its quality surfaces."""
+    generation: int
+    start_sample: int
+    end_sample: int
+    transcript: str
+    authority: str = "draft"
+
+    def __post_init__(self) -> None:
+        if self.authority != "draft":
+            raise ValueError("draft text requires draft authority.")
+
+
+@dataclass(frozen=True, slots=True)
 class LiveServiceSnapshot:
     session_id: str
     descriptor: LiveServiceDescriptor
@@ -288,6 +303,8 @@ class LiveServiceSnapshot:
     pending_work_items: int
     terminal_failure: LiveServiceFailureRecord | None = None
     schema_version: int = LIVE_SERVICE_SCHEMA_VERSION
+    draft: LiveDraft | None = None
+    draft_stats: Mapping[str, int | float] | None = None
 
     def __post_init__(self) -> None:
         if self.schema_version != LIVE_SERVICE_SCHEMA_VERSION:
@@ -297,7 +314,11 @@ class LiveServiceSnapshot:
         _non_negative(self.pending_work_items, "pending_work_items")
 
     def to_dict(self) -> dict[str, Any]:
-        return _jsonable(asdict(self))
+        payload = _jsonable(asdict(self))
+        if self.draft_stats is None:
+            payload.pop("draft")
+            payload.pop("draft_stats")
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -500,6 +521,11 @@ class _RuntimeSession:
     # middle of `stop`, and the pass itself starts minutes of decoding later.
     terminal_plan: TerminalDecodePlan | None = None
     stop_task: asyncio.Task[LiveServiceSnapshot] | None = None
+    draft: LiveDraft | None = None
+    draft_last_tick: int = 0
+    draft_stats: dict[str, int] = field(default_factory=lambda: dict(
+        ticks=0, started=0, skipped=0, published=0, stale=0, errors=0,
+    ))
 
 
 @dataclass(slots=True)
@@ -545,11 +571,22 @@ class LiveServiceRuntime:
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
         rolling_decoder_factory: Callable[[], Any] | None = None,
         terminal_finalizer: Any | None = None,
+        draft_lane_seconds: float | None = None,
+        draft_decoder_factory: Callable[[], Any] | None = None,
         session_id_factory: Callable[[], str] | None = None,
         _canonical_scheduler: _CanonicalPumpScheduler | None = None,
         _terminal_scheduler: _TerminalScheduler | None = None,
         monotonic_ns: Callable[[], int] | None = None,
     ):
+        if draft_lane_seconds is not None and (
+            not math.isfinite(draft_lane_seconds) or not 0 < draft_lane_seconds <= 2.5
+        ):
+            raise ValueError("draft_lane_seconds must be positive and at most 2.5 seconds.")
+        if draft_lane_seconds is not None and draft_decoder_factory is None:
+            raise ValueError("enabled draft lane requires a bounded draft decoder.")
+        self._draft_lane_seconds = draft_lane_seconds
+        self._draft_decoder_factory = draft_decoder_factory
+        self._draft_in_flight = False
         self.descriptor = descriptor
         self._endpoint_policy_factory = endpoint_policy_factory
         self._speech_provider_factory = speech_provider_factory
@@ -771,6 +808,7 @@ class LiveServiceRuntime:
             # canonical span, and `_mark_ready_locked` reads the arbiter itself rather than
             # trusting a caller's list of what it thinks it admitted.
             self._mark_ready_locked(state)
+            self._maybe_start_draft_locked(state)
             return LiveServiceFrameResult(
                 ack=ack,
                 queued_item_ids=result.queued_item_ids,
@@ -806,6 +844,7 @@ class LiveServiceRuntime:
             snapshot = self._snapshot(state)
             if (
                 since_version is not None
+                and self._draft_lane_seconds is None
                 and snapshot.session.version <= since_version
                 # Terminality is fenced *outside* the session's version counter: `_fail`
                 # records the failure on the runtime while the session object -- which owns
@@ -1298,7 +1337,81 @@ class LiveServiceRuntime:
             session=session,
             pending_work_items=self._pending_work_items(state),
             terminal_failure=state.terminal_failure,
+            draft=self._visible_draft_locked(state, session),
+            draft_stats=(
+                {"lane_seconds": self._draft_lane_seconds, **state.draft_stats}
+                if self._draft_lane_seconds is not None else None
+            ),
         )
+
+    def _visible_draft_locked(self, state: _RuntimeSession, session: LiveSnapshot) -> LiveDraft | None:
+        draft = state.draft
+        if draft is not None and (
+            session.status != "active" or state.stop_task is not None
+            or state.terminal_failure is not None
+            or session.committed_samples != draft.start_sample
+            or session.provisional is not None
+        ):
+            state.draft = None
+        return state.draft
+
+    def _maybe_start_draft_locked(self, state: _RuntimeSession) -> None:
+        if self._draft_lane_seconds is None:
+            return
+        snapshot = state.session.snapshot()
+        cadence = max(1, round(self._draft_lane_seconds * LIVE_SAMPLE_RATE))
+        if snapshot.accepted_samples - state.draft_last_tick < cadence:
+            return
+        state.draft_last_tick = snapshot.accepted_samples
+        stats = state.draft_stats
+        stats["ticks"] += 1
+        start, end = snapshot.committed_samples, snapshot.accepted_samples
+        cap = min(state.descriptor.bounds.hard_cap_samples or 40000, 40000)
+        # A single draft across this runtime; no canonical worker slot or arbiter queue.
+        # Already-running provider requests cannot be preempted. Measure that contention.
+        if (
+            self._draft_in_flight or snapshot.status != "active" or state.stop_task is not None
+            or state.terminal_failure is not None or snapshot.provisional is not None
+            or not 0 < end - start <= cap
+            or any(self._pending_work_items(other) for other in self._sessions.values())
+        ):
+            stats["skipped"] += 1
+            return
+        span = FrozenSpan(stats["ticks"], state.session.epoch, start, end, "draft")
+        pcm = state.coordinator._pcm.extract(start, end)
+        self._draft_in_flight = True
+        stats["started"] += 1
+        threading.Thread(
+            target=self._decode_draft, args=(state, span, pcm),
+            name="moss-draft", daemon=True,
+        ).start()
+
+    def _decode_draft(self, state: _RuntimeSession, span: FrozenSpan, pcm: bytes) -> None:
+        try:
+            result = self._draft_decoder_factory().transcribe_pcm(span=span, pcm=pcm)
+            text = unattributed_transcript(result.transcript, sample_count=span.sample_count)
+            with self._lock:
+                snapshot = state.session.snapshot()
+                if (
+                    state.terminal_failure is not None or state.stop_task is not None
+                    or snapshot.status != "active" or span.epoch != state.session.epoch
+                    or snapshot.committed_samples != span.start_sample
+                    or snapshot.provisional is not None
+                ):
+                    state.draft_stats["stale"] += 1
+                    return
+                state.draft = LiveDraft(span.id, span.start_sample, span.end_sample, text) if text else None
+                state.draft_stats["published"] += 1
+                self._record_event(state, "draft_published", {
+                    "start_sample": span.start_sample, "end_sample": span.end_sample,
+                })
+        except Exception:
+            # Optional text may fail independently. Never leak provider text or fail canonical work.
+            with self._lock:
+                state.draft_stats["errors"] += 1
+        finally:
+            with self._lock:
+                self._draft_in_flight = False
 
     def _pending_work_items(self, state: _RuntimeSession) -> int:
         in_flight = self._in_flight_canonical_counts.get(state.session_id, 0)

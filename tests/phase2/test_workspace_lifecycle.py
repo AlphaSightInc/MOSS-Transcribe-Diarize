@@ -560,6 +560,7 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
     assert isinstance(canonical_runner, LiveRunner)
     assert canonical_runner is not file_runner
     assert kwargs == {
+        "draft_lane_seconds": None,
         "terminal_finalizer": (
             "terminal",
             {

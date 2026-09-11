@@ -270,6 +270,7 @@ def build_live_runtime_factory(
     runner: Any,
     *,
     terminal_finalizer: Any | None = None,
+    draft_lane_seconds: float | None = None,
 ) -> Callable[[], LiveServiceRuntime]:
     preflight = config.preflight()
     if not preflight.available:
@@ -325,6 +326,11 @@ def build_live_runtime_factory(
             # runner -- the manifest describes the live provider, not the file pipeline.
             # No finalizer, no terminal pass, and every meeting reads `not_started`.
             terminal_finalizer=terminal_finalizer,
+            draft_lane_seconds=draft_lane_seconds,
+            draft_decoder_factory=(lambda: RunnerBoundedWavInference(
+                runner, max_samples=min(40000, int(config.decoder_config["max_samples"])),
+                max_new_tokens=286,
+            )) if draft_lane_seconds is not None else None,
         )
         runtime._voiceprint_embedder_identity = (
             (f"{identity_encoder.spec.provider}:{identity_encoder.spec.revision}", config.runtime.embedding_dimension)

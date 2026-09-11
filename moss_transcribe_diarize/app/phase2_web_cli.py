@@ -69,6 +69,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=float,
         help="Positive capture heartbeat lease; expiry interrupts the Live Meeting.",
     )
+    parser.add_argument("--live-draft-lane-seconds", type=float, default=None,
+                        help="Optional reader-only draft cadence; omitted means off.")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7861)
     parser.add_argument("--llm-upstreams", default=os.environ.get("MOSS_LLM_UPSTREAMS", ""),
@@ -113,6 +115,7 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     return build_live_runtime_factory(
         config,
         live_runner,
+        draft_lane_seconds=getattr(args, "live_draft_lane_seconds", None),
         terminal_finalizer=build_terminal_finalizer(
             runner=file_runner,
             prompt=args.prompt,

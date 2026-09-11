@@ -22,6 +22,7 @@ from .app.live_service_runtime import (
     LiveServiceFrameResult,
     LiveServiceRuntime,
     LiveServiceSnapshot,
+    LiveDraft,
 )
 from .app.live_lane_contract import LiveV2Descriptor
 from .app.live_session import (
@@ -901,6 +902,8 @@ def _snapshot_from_dict(payload: dict[str, Any]) -> LiveServiceSnapshot:
         pending_work_items=int(payload["pending_work_items"]),
         terminal_failure=None if payload.get("terminal_failure") is None else _failure_from_dict(payload["terminal_failure"]),
         schema_version=int(payload.get("schema_version", 1)),
+        draft=LiveDraft(**payload["draft"]) if payload.get("draft") is not None else None,
+        draft_stats=payload.get("draft_stats"),
     )
 
 

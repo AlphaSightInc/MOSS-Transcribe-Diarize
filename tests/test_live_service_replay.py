@@ -25,6 +25,7 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceRtfFailure,
     LiveServiceRuntime,
     LiveServiceSnapshot,
+    LiveDraft,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
@@ -955,6 +956,8 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
         finalization_status="running",
     )
     return LiveServiceSnapshot(
+        draft=LiveDraft(3, 39840, 40000, "[0][S00]draft[0.01]"),
+        draft_stats={"ticks": 3, "started": 2, "skipped": 1},
         session_id="session-round-trip",
         descriptor=descriptor,
         session=session,
@@ -974,6 +977,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
 _PINNED_FIELDS = frozenset(
     {
         ("LiveServiceSnapshot", "schema_version"),
+        ("LiveDraft", "authority"),
         ("LiveServiceDescriptor", "schema_version"),
         ("LiveServiceDescriptor", "live_protocol_version"),
         ("LiveServiceDescriptor", "sample_rate"),

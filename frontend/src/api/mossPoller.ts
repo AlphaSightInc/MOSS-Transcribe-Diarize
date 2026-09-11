@@ -55,6 +55,7 @@ interface MossSnapshot {
   canonicalSpeakers: string[];
   committed: MossCanonicalCommit[];
   provisional: MossProvisionalSuffix | null;
+  draft: (MossProvisionalSuffix & { endSample: number }) | null;
 }
 
 interface MossRuntimeEvent {
@@ -452,7 +453,16 @@ function renderSnapshot(
           .filter((item) => Math.round(item.end * snapshot.sampleRate) > snapshot.committedSamples)
           .map((item) => ({ ...item, provisional_stale: true }))
       : [];
-  const items = [...committed, ...staleProvisional, ...currentProvisional];
+  // Drafts are ephemeral, never retained as stale canonical previews. The audio frontier,
+  // including an empty commit, retires them; a canonical preview supersedes them immediately.
+  const draft = snapshot.draft;
+  const draftItems = draft && snapshot.status === "active" && !provisional &&
+    staleProvisional.length === 0 && draft.startSample === snapshot.committedSamples
+    ? transcriptItemsFromMossText(draft.transcript, draft.startSample, snapshot.sampleRate, [], {
+        state: "provisional", segmentIdPrefix: `draft:${draft.generation}:`, provisionalStale: false
+      })
+    : [];
+  const items = [...committed, ...staleProvisional, ...currentProvisional, ...draftItems];
   const relabeled =
     snapshot.labelRevisionVersion > previousLabelRevisionVersion ||
     snapshot.committed.some(
@@ -647,6 +657,12 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     committed: Array.isArray(session.committed)
       ? session.committed.map(parseCanonicalCommit)
       : fail("snapshot committed"),
+    draft: snapshot.draft === null || snapshot.draft === undefined ? null : (() => {
+      const draft = record(snapshot.draft, "draft");
+      if (draft.authority !== "draft") return fail("draft authority");
+      return { ...parseProvisionalSuffix(draft),
+        endSample: requiredNonNegativeNumber(draft.end_sample, "draft end sample") };
+    })(),
     provisional: session.provisional === null || session.provisional === undefined
       ? null
       : parseProvisionalSuffix(session.provisional)

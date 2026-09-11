@@ -451,6 +451,7 @@ class Phase2LiveMeetings:
         )
         if (
             since_version is not None
+            and snapshot.draft_stats is None
             and snapshot.session.version <= since_version
             and not terminal
         ):
