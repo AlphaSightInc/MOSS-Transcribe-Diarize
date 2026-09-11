@@ -1567,7 +1567,7 @@ class FixedAccountCampaign:
             transcript = before.get("transcript")
             durable_prefix = (
                 isinstance(transcript, dict)
-                and int(transcript.get("version", 0)) > 0
+                and int(before.get("transcript_version", 0)) > 0
                 and bool(transcript.get("segments"))
             )
             if durable_prefix:

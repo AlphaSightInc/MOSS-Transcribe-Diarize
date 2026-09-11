@@ -2264,8 +2264,9 @@ def test_browser_batch_selector_executes_fixed_six_item_and_detached_contract(
     assert result["detached"] == {"status": 201, "meeting_id": "detached"}
 
 
+@pytest.mark.parametrize("prefix_fault", [None, "zero_version", "empty_segments", "nested_version_only"])
 def test_real_crash_producer_compares_recovered_bytes_to_production_archive_oracle(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, prefix_fault,
 ):
     corpus = tmp_path / "corpus"
     case = corpus / "case"
@@ -2321,12 +2322,18 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
             del args, kwargs
             return {}
 
-    before = {
-        "id": "crash",
-        "status": "active",
-        "transcript": {"version": 1, "segments": [{"text": "durable"}]},
-        "audio": {"state": "unavailable"},
-    }
+    from moss_transcribe_diarize.app.phase2 import Meeting
+    before = Meeting(
+        meeting_id="crash", mode="live", title=None, status="active", created_at_ms=1,
+        transcript={"segments": [{"text": "durable"}]}, transcript_version=1,
+    ).to_dict()
+    if prefix_fault == "zero_version":
+        before["transcript_version"] = 0
+    elif prefix_fault == "empty_segments":
+        before["transcript"]["segments"] = []
+    elif prefix_fault == "nested_version_only":
+        before.pop("transcript_version")
+        before["transcript"]["version"] = 1
     after = {
         **before,
         "status": "interrupted",
@@ -2381,6 +2388,11 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     monkeypatch.setattr(external.subprocess, "run", run)
     monkeypatch.setattr(external.time, "sleep", lambda seconds: None)
     monkeypatch.setattr(campaign, "_await_service", lambda timeout=60: None)
+    if prefix_fault:
+        with pytest.raises(external.ExternalMeasurementError, match="did not establish a durable prefix"):
+            campaign.crash_recovery()
+        assert restarted is False
+        return
     result = campaign.crash_recovery()
     assert result["audio_prefix_failures"] == 0
     assert result["durable_document_mismatches"] == 0

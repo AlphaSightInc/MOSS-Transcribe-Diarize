@@ -296,8 +296,11 @@ class BrowserCampaign:
                 suites.append(_suite("desktop-semantic-accessibility", checks))
 
                 active = _meeting_opener(page, meeting_id)
-                if active.count() != 1:
-                    raise BrowserMeasurementError("active observer Meeting is absent from history")
+                active_count = active.count()
+                if active_count != 1:
+                    raise BrowserMeasurementError(
+                        f"active observer Meeting expected 1 interactive history card; observed {active_count}"
+                    )
                 poll_requests = 0
 
                 def observed(request: Any) -> None:
