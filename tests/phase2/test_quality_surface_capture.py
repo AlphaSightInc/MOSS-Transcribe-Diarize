@@ -107,3 +107,34 @@ def test_failed_finalization_returned_by_stop_is_rejected(harness, state):
     with pytest.raises(ServiceReplayFailure, match="final.*" + state):
         asyncio.run(capture.stop("meeting", 5))
     assert "post_stop_final" not in capture.captures
+
+
+@pytest.mark.parametrize("failure", ["settle_timeout", "nonfinal_stop"])
+def test_strict_capture_failure_aborts_through_real_replay(harness, tmp_path, failure):
+    from moss_transcribe_diarize.live_service_replay import run_service_replay
+    from tests.test_live_service_replay import (
+        RecordingService, ScriptedClock, _descriptor, _runtime, _write_wav,
+    )
+    module, _ = harness
+    descriptor = _descriptor(frame_samples=400)
+    inner = RecordingService(_runtime(
+        descriptor=descriptor, speech=(False,), session_ids=("strict-capture",),
+    ))
+    capture = module.SurfaceCaptureService(inner, settle_timeout=0, poll_seconds=.25)
+    if failure == "settle_timeout":
+        # An admitted rolling item still pending after canonical work drained.
+        capture._pending_rolling.add(42)
+    audio = tmp_path / 'input.wav'
+    _write_wav(audio, samples=400)
+    clock = ScriptedClock()
+    with pytest.raises(ServiceReplayFailure, match="settle timed out|final capture requires"):
+        run_service_replay(
+            service=capture, audio_path=audio, out_dir=tmp_path/'out', pace=1.0,
+            max_pacing_lag=.5, runs=1, expect_revision=descriptor.source_revision,
+            expect_provider_hash=descriptor.provider_manifest_hash,
+            expect_config_hash=descriptor.config_hashes.combined_config_hash,
+            monotonic=clock.monotonic, sleep=clock.sleep,
+        )
+    assert len(inner.abort_reasons) == 1
+    assert inner.snapshot("strict-capture").session.status in {"aborted", "closed"}
+    assert "post_stop_final" not in capture.captures
