@@ -1415,7 +1415,10 @@ class FixedAccountCampaign:
         )
         stopped = self.a.request("POST", f"/api/live/sessions/{live_id}/stop")
         if stopped.status_code != 200:
-            raise ExternalMeasurementError(f"Live Meeting did not Stop: HTTP {stopped.status_code} (request deadline=0 seconds)")
+            # Report only what the refusal actually said -- the cause is still unestablished.
+            raise ExternalMeasurementError(
+                f"Live Meeting did not Stop: HTTP {stopped.status_code} {stopped.content[:200]!r}"
+            )
         self._await_meeting_terminal(live_id)
         self._meetings["file"].extend(file_ids)
         self._meetings["url"].extend(successful_url_ids)

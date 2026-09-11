@@ -2077,7 +2077,7 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
         lambda *args, **kwargs: SimpleNamespace(returncode=0),
     )
     if stop_status != 200:
-        with pytest.raises(external.ExternalMeasurementError, match=r"Live Meeting did not Stop: HTTP 409 .*deadline=0"):
+        with pytest.raises(external.ExternalMeasurementError, match=r"Live Meeting did not Stop: HTTP 409 b?['\"]"):
             campaign.meeting_modes_history_restart()
         return
     result = campaign.meeting_modes_history_restart()
