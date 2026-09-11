@@ -30,3 +30,31 @@ output gets no repair inference.
 - View/history clients do not call automatically; explicit Retry makes that client the worker.
 - Models, providers, languages, blind holdouts, and semantic quality beyond the measured V15 tuning
   set remain unmeasured rather than product promises.
+
+## 2026-09-11 — Configured key-less tailnet relay (user-approved amendment)
+
+The initiating browser still owns the summary attempt, prompt, cancellation, validation,
+and final-result persistence. External HTTPS providers keep the direct browser request,
+credentials-omitted policy and existing delivery retries unchanged.
+
+For explicitly configured key-less tailnet models, an authenticated same-origin relay
+now forwards a transient completion request. This amends the original “no proxy” decision
+only for the config-listed models: the browser cannot supply an upstream URL. The server
+does not journal request/response content, retain prompts, synchronize browser settings,
+or forward workspace cookies. Discovery is config-only, with no upstream model call.
+
+Fresh browser settings default to the first relay model if discovery is nonempty;
+saved external or explicitly disabled settings remain selected. The next listed model
+is tried once only on a relay 502 `empty_content`, `upstream_error`, or
+`upstream_unreachable`. It remains the same generating attempt; invalid summary JSON
+does not trigger repair inference. Successful model identity appears in the worker
+tab's status event, not in persistent summary provenance.
+
+The browser's default relay timeout is 200 seconds, leaving delivery time beyond the
+server's 180-second timeout. Configured provider URLs allow only the declared tailnet
+domain, loopback, or 100.64.0.0/10. Redirects are not followed. No deployment, new model
+quality, or host configuration is implied by the local tests.
+
+Measured prototype and integration record:
+`prototypes/client-configured-llm/relay-NOTES.md`. Operator configuration:
+`docs/llm-relay.md`.

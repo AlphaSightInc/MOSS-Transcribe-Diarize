@@ -2,14 +2,23 @@ import { useEffect, useState } from "preact/hooks";
 import type { Meeting } from "../api/meetings";
 import {
   clearSummarySettings, defaultSettings, finalSummaryWorker, loadSummarySettings,
-  saveSummarySettings, summaryApi, summaryEnabled, SUMMARY_CHANGED,
-  type SummaryArtifact, type SummarySettings
+  saveSummarySettings, summaryApi, summaryEnabled, SUMMARY_CHANGED, initializeRelaySettings, RELAY_ENDPOINT,
+  type SummaryArtifact, type SummarySettings, type RelayModel
 } from "../lib/finalSummary";
 
 export function FinalSummarySettings() {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState(loadSummarySettings);
   const [message, setMessage] = useState("");
+  const [models, setModels] = useState<RelayModel[]>([]);
+  useEffect(() => {
+    let disposed = false;
+    void initializeRelaySettings().then(list => {
+      if (!disposed) { setModels(list); setSettings(loadSummarySettings()); }
+    });
+    return () => { disposed = true; };
+  }, []);
+  const relay = settings.endpoint === RELAY_ENDPOINT;
   const field = (key: keyof SummarySettings, value: string) => setSettings(current => ({ ...current, [key]: key === "timeoutSeconds" ? Number(value) : value }));
   return <section className="history-state-card" aria-label="Browser AI settings">
     <button type="button" className="history-action-btn" onClick={() => { setOpen(!open); setSettings(loadSummarySettings()); }}>
@@ -20,17 +29,34 @@ export function FinalSummarySettings() {
       try { saveSummarySettings(settings); setMessage("Saved in this browser only. Keep the creating tab open until its summary finishes."); }
       catch (error) { setMessage(error instanceof Error ? error.message : "Could not save browser settings."); }
     }}>
-      <p>No setup needed for transcription. When enabled, this browser sends each new meeting's final transcript directly to your provider. MOSS stores only the finished summary. Provider CORS and trusted HTTPS are required.</p>
-      <p>The API key is stored in this browser's site data, not on the MOSS server. Use a restricted key on a trusted browser profile.</p>
-      {([ ["endpoint", "Provider HTTPS URL"], ["model", "Model"], ["apiKey", "API key (optional)"], ["language", "Output language (blank preserves prompt)"] ] as const).map(([key, label]) =>
-        <label style={{ display: "block", marginBlock: "0.5rem" }} key={key}>{label}<input style={{ display: "block", width: "100%" }} type={key === "apiKey" ? "password" : "text"}
-          autoComplete="off" value={settings[key]} onInput={event => field(key, event.currentTarget.value)} /></label>)}
+      <label>Provider<select aria-label="Provider" value={relay ? "relay" : "external"} onChange={event => {
+        const useRelay = event.currentTarget.value === "relay";
+        setSettings(current => ({ ...current, endpoint: useRelay ? RELAY_ENDPOINT : "",
+          model: useRelay ? models[0]?.id ?? "" : "", apiKey: "", timeoutSeconds: useRelay ? 200 : 120 }));
+      }}>
+        <option value="relay" disabled={!models.length}>Server relay (tailnet models)</option>
+        <option value="external">External HTTPS provider</option>
+      </select></label>
+      {relay ? <>
+        <p>This browser sends the final transcript through MOSS to a configured tailnet model. No API key is needed. Keep the creating tab open until its summary finishes.</p>
+        <label>Relay model<select aria-label="Relay model" value={settings.model} onChange={event => field("model", event.currentTarget.value)}>
+          {models.map(model => <option key={model.id} value={model.id}>{model.id} · {model.upstream}</option>)}
+        </select></label>
+        <p>If this model fails, the next listed model is tried once.</p>
+      </> : <>
+        <p>No setup needed for transcription. When enabled, this browser sends each new meeting's final transcript directly to your provider. MOSS stores only the finished summary. Provider CORS and trusted HTTPS are required.</p>
+        <p>The API key is stored in this browser's site data, not on the MOSS server. Use a restricted key on a trusted browser profile.</p>
+        {([ ["endpoint", "Provider HTTPS URL"], ["model", "Model"], ["apiKey", "API key (optional)"] ] as const).map(([key, label]) =>
+          <label style={{ display: "block", marginBlock: "0.5rem" }} key={key}>{label}<input style={{ display: "block", width: "100%" }} type={key === "apiKey" ? "password" : "text"}
+            autoComplete="off" value={settings[key]} onInput={event => field(key, event.currentTarget.value)} /></label>)}
+      </>}
+      <label style={{ display: "block" }}>Output language (blank preserves prompt)<input value={settings.language} onInput={event => field("language", event.currentTarget.value)} /></label>
       <label>Request timeout (seconds)<input type="number" step="1" min="1" value={settings.timeoutSeconds} onInput={event => field("timeoutSeconds", event.currentTarget.value)} /></label>
       <label style={{ display: "block" }}>Final-summary prompt<textarea style={{ display: "block", width: "100%" }} rows={8} value={settings.prompt} onInput={event => field("prompt", event.currentTarget.value)} /></label>
-      <p>Delivery retries only: 60, 120, 240 seconds. Invalid output is not retried or repaired. Blank URL or model disables new calls.</p>
+      {!relay && <p>Delivery retries only: 60, 120, 240 seconds. Invalid output is not retried or repaired. Blank URL or model disables new calls.</p>}
       <button type="submit" className="history-action-btn">Save on this browser</button>{" "}
       <button type="button" className="history-action-btn" onClick={() => { setSettings(current => ({ ...current, prompt: defaultSettings().prompt })); }}>Restore default prompt</button>{" "}
-      <button type="button" className="history-action-btn" onClick={() => { clearSummarySettings(); setSettings(defaultSettings()); setMessage("Browser settings cleared. Cancel any running summary separately."); }}>Clear settings</button>
+      <button type="button" className="history-action-btn" onClick={() => { clearSummarySettings(); saveSummarySettings(defaultSettings()); setSettings(defaultSettings()); setMessage("Browser settings cleared. Cancel any running summary separately."); }}>Clear settings</button>
     </form>}
     {message && <p role="status">{message}</p>}
   </section>;
@@ -43,6 +69,7 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [producedModel, setProducedModel] = useState("");
   useEffect(() => {
     let disposed = false;
     let pending = false;
@@ -53,12 +80,16 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
       catch (cause) { if (!disposed) setError(cause instanceof Error ? cause.message : "Summary unavailable."); }
       finally { pending = false; if (!disposed) setLoading(false); }
     };
-    setArtifact(null); setLoading(true); setError("");
+    setArtifact(null); setLoading(true); setError(""); setProducedModel("");
     void refresh();
     const changed = (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (detail?.meeting_id !== meeting.id) return;
-      if (detail.artifact) { setArtifact(detail.artifact); setLoading(false); }
+      if (detail.artifact) {
+        setArtifact(detail.artifact); setLoading(false);
+        if (detail.artifact.state === "current" && typeof detail.model === "string") setProducedModel(detail.model);
+        else if (detail.artifact.state !== "current") setProducedModel("");
+      }
       if (detail.error) setError(detail.error);
     };
     document.addEventListener(SUMMARY_CHANGED, changed);
@@ -81,7 +112,7 @@ export function FinalSummary({ meeting }: { meeting: Meeting }) {
   const result = artifact?.state === "current" ? artifact.document : null;
   return <section className="history-state-card" aria-label="Final summary" data-summary-state={artifact?.state ?? "off"} data-summary-attempt={artifact?.attempt_id}>
     <h3>Final summary</h3>
-    <p role="status">{loading ? "Loading saved summary…" : artifact ? ({ queued: "Summary is waiting to start.", generating: "Generating summary…", retry_wait: "The provider is unavailable. Waiting to try again…", current: "Summary ready.", failed: "Summary could not be generated.", cancelled: "Summary cancelled." }[artifact.state]) : "No summary yet. Opening a meeting does not generate one."}</p>
+    <p role="status">{loading ? "Loading saved summary…" : artifact ? ({ queued: "Summary is waiting to start.", generating: "Generating summary…", retry_wait: "The provider is unavailable. Waiting to try again…", current: "Summary ready.", failed: "Summary could not be generated.", cancelled: "Summary cancelled." }[artifact.state]) : "No summary yet. Opening a meeting does not generate one."}{artifact?.state === "current" && producedModel ? ` · ${producedModel}` : ""}</p>
     <p>Summaries use only the finished transcript. {meeting.status !== "completed" ? "Finish transcription before generating a summary." : active(artifact) ? "Keep the browser tab where you started this summary open until it finishes. If you closed it, cancel this attempt and retry here." : "Keep this browser tab open while generating a summary."}</p>
     {artifact?.error_code && <p>Summary failed: {artifact.error_code.replaceAll("_", " ")}. Transcription and audio are unaffected.</p>}
     {error && <p role="alert">{error}</p>}

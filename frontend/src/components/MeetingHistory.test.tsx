@@ -12,6 +12,12 @@ import { resetSessionState, sessionTitle, sessionId, sessionMode, transcript } f
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 
+// These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
+vi.mock("../lib/finalSummary", async importOriginal => ({
+  ...await importOriginal<typeof import("../lib/finalSummary")>(),
+  initializeRelaySettings: async () => []
+}));
+
 const now = Date.now();
 
 function meeting(overrides: Partial<Meeting> = {}): Meeting {

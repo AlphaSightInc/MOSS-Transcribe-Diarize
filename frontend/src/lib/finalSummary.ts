@@ -23,6 +23,25 @@ const SETTINGS_KEY = "moss.browser-final-summary.v1";
 export const SUMMARY_CHANGED = "llm_status";
 export const SUMMARY_RESULT = "llm_summary_update";
 export const MEETING_CREATED = "moss:meeting-created";
+export const RELAY_ENDPOINT = "/api/llm/chat/completions";
+export interface RelayModel { id: string; upstream: string; }
+export async function fetchRelayModels(fetcher: typeof fetch = fetch): Promise<RelayModel[]> {
+  try {
+    const response = await fetcher("/api/llm/models", { credentials: "same-origin" });
+    if (!response.ok) return [];
+    const result = await response.json();
+    return Array.isArray(result.data) ? result.data.filter((m: RelayModel) =>
+      typeof m?.id === "string" && m.id.trim() && typeof m.upstream === "string") : [];
+  } catch { return []; }
+}
+export async function initializeRelaySettings(fetcher: typeof fetch = fetch): Promise<RelayModel[]> {
+  const models = await fetchRelayModels(fetcher);
+  // Existing external/disabled settings remain an explicit browser choice.
+  if (models.length && window.localStorage.getItem(SETTINGS_KEY) === null) {
+    saveSummarySettings({ ...defaultSettings(), endpoint: RELAY_ENDPOINT, model: models[0].id, timeoutSeconds: 200 });
+  }
+  return models;
+}
 export const RETRY_DELAYS = [60_000, 120_000, 240_000] as const;
 export const defaultSettings = (): SummarySettings => ({ endpoint: "", model: "", apiKey: "", prompt: defaultPrompt, language: "", timeoutSeconds: 120 });
 
@@ -38,14 +57,14 @@ export function validateSettings(value: SummarySettings): SummarySettings {
     if (typeof value[key] !== "string") throw new Error("Invalid browser AI setting.");
   }
   if (!Number.isFinite(value.timeoutSeconds) || value.timeoutSeconds <= 0) throw new Error("Timeout must be positive.");
-  if (value.endpoint.trim()) {
+  if (value.endpoint.trim() && value.endpoint.trim() !== RELAY_ENDPOINT) {
     const url = new URL(value.endpoint.trim());
     if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
       throw new Error("Use a trusted HTTPS provider URL without credentials, query or fragment.");
     }
     if (url.origin === location.origin) throw new Error("Use an external provider, not the MOSS server.");
   }
-  return { endpoint: value.endpoint.trim(), model: value.model.trim(), apiKey: value.apiKey,
+  return { endpoint: value.endpoint.trim(), model: value.model.trim(), apiKey: value.endpoint.trim() === RELAY_ENDPOINT ? "" : value.apiKey,
     prompt: value.prompt, language: value.language, timeoutSeconds: value.timeoutSeconds };
 }
 export function saveSummarySettings(value: SummarySettings): void {
@@ -86,7 +105,7 @@ export function validateSummary(value: unknown, duration: number): SummaryDocume
 
 export function providerBody(meeting: Meeting, settings: SummarySettings): string {
   if (meeting.status !== "completed" || !meeting.transcript?.segments.some(s => s.text.trim())) throw new Error("Finalized speech is required.");
-  return JSON.stringify({ model: settings.model, stream: false, messages: [
+  return JSON.stringify({ model: settings.model, ...(settings.endpoint === RELAY_ENDPOINT ? {} : { stream: false }), messages: [
     { role: "system", content: `${settings.prompt}${settings.language.trim() ? `\nWrite the final briefing in ${settings.language.trim()}.` : ""}` },
     { role: "user", content: JSON.stringify({ segments: meeting.transcript.segments.map(s => ({ start: s.start, end: s.end, speaker: s.speaker, text: s.text })) }) }
   ] });
@@ -99,10 +118,10 @@ export async function summaryApi(id: string, init?: RequestInit, attempt?: strin
   return init ? value as SummaryArtifact : value.summary as SummaryArtifact | null;
 }
 const jsonInit = (method: string, value: unknown): RequestInit => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
-function publish(id: string, artifact: SummaryArtifact): void {
-  document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: id, artifact } }));
+function publish(id: string, artifact: SummaryArtifact, model?: string): void {
+  document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: id, artifact, ...(model ? { model } : {}) } }));
   if (artifact.state === "current") {
-    document.dispatchEvent(new CustomEvent(SUMMARY_RESULT, { detail: { meeting_id: id, artifact } }));
+    document.dispatchEvent(new CustomEvent(SUMMARY_RESULT, { detail: { meeting_id: id, artifact, ...(model ? { model } : {}) } }));
     document.dispatchEvent(new Event("moss:refresh-meeting-history"));
   }
 }
@@ -144,11 +163,11 @@ export class FinalSummaryWorker {
 
   private async run(meeting: Meeting, settings: SummarySettings, body: string, attempt: SummaryArtifact, controller: AbortController): Promise<void> {
     const signal = controller.signal;
-    const update = async (state: SummaryArtifact["state"], extra = {}) => {
+    const update = async (state: SummaryArtifact["state"], extra = {}, model?: string) => {
       if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
       const result = (await summaryApi(meeting.id, jsonInit("PUT", { state, ...extra }), attempt.attempt_id, this.fetcher))!;
       if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
-      publish(meeting.id, result);
+      publish(meeting.id, result, model);
     };
     // Same-workspace tabs can cancel a worker while its provider request is pending.
     let checking = false;
@@ -162,24 +181,35 @@ export class FinalSummaryWorker {
       finally { checking = false; }
     }, 2000);
     try {
-      for (let delivery = 0; delivery < 4; delivery++) {
-        await update("generating");
+      const relay = settings.endpoint === RELAY_ENDPOINT;
+      const models = relay ? await fetchRelayModels(this.fetcher) : [];
+      const index = models.findIndex(model => model.id === settings.model);
+      const fallback = index >= 0 ? models[index + 1]?.id : undefined;
+      let model = settings.model;
+      for (let delivery = 0; delivery < (relay ? 2 : 4); delivery++) {
+        // Relay fallback stays in the same generating attempt; no duplicate state transition.
+        if (!relay || delivery === 0) await update("generating", {}, model);
         const request = new AbortController();
         const abort = () => request.abort();
         signal.addEventListener("abort", abort, { once: true });
         const timer = setTimeout(() => request.abort(), settings.timeoutSeconds * 1000);
         let content: unknown;
         let retry = false;
+        let relayFallback = false;
         let failure = "delivery_failed";
         try {
           const response = await this.fetcher(summaryUrl(settings.endpoint), {
-            method: "POST", credentials: "omit", redirect: "error", referrerPolicy: "no-referrer",
-            headers: { "Content-Type": "application/json", ...(settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {}) },
-            body, signal: request.signal
+            method: "POST", credentials: relay ? "same-origin" : "omit", redirect: "error", referrerPolicy: "no-referrer",
+            headers: { "Content-Type": "application/json", ...(!relay && settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {}) },
+            body: relay ? JSON.stringify({ ...JSON.parse(body), model }) : body, signal: request.signal
           });
           if (!response.ok) {
             retry = response.status === 408 || response.status === 429 || response.status >= 500;
             failure = retry ? "delivery_failed" : "request_rejected";
+            if (relay && response.status === 502) {
+              const error = await response.json().catch(() => ({}));
+              relayFallback = ["empty_content", "upstream_error", "upstream_unreachable"].includes(error.detail);
+            }
           } else {
             try { content = (await response.json()).choices?.[0]?.message?.content; }
             catch { failure = request.signal.aborted ? "delivery_failed" : "invalid_output"; retry = request.signal.aborted; }
@@ -193,8 +223,12 @@ export class FinalSummaryWorker {
           try {
             result = validateSummary(JSON.parse(content), Math.max(0, ...meeting.transcript!.segments.map(s => s.end)));
           } catch { await update("failed", { error_code: "invalid_output" }); return; }
-          await update("current", { document: result });
+          await update("current", { document: result }, model);
           return;
+        }
+        if (relay) {
+          if (delivery === 0 && fallback && relayFallback) { model = fallback; continue; }
+          await update("failed", { error_code: failure }, model); return;
         }
         if (!retry || delivery === 3) { await update("failed", { error_code: failure }); return; }
         await update("retry_wait");

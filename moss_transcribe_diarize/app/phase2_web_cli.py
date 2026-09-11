@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 from typing import Sequence
 
@@ -70,6 +71,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7861)
+    parser.add_argument("--llm-upstreams", default=os.environ.get("MOSS_LLM_UPSTREAMS", ""),
+                        help="JSON list of key-less tailnet LLM upstreams; defaults to MOSS_LLM_UPSTREAMS.")
     return parser.parse_args(argv)
 
 
@@ -129,6 +132,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit("Install uvicorn to run mtd-phase2-web.") from exc
 
     args = parse_args(argv)
+    from .phase2_llm import parse_upstreams
+    parse_upstreams(args.llm_upstreams)
     from .phase2_operator import configure_operator_journal
 
     configure_operator_journal()
@@ -149,6 +154,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         live_runtime_factory=live_runtime_factory,
         live_helper_lease_seconds=args.live_helper_lease_seconds,
         control_socket_path=Path(args.control_socket).expanduser(),
+        llm_upstreams=args.llm_upstreams,
     )
     from .tls_reload import serve_with_certificate_reload
 

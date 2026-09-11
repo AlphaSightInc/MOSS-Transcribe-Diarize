@@ -4,7 +4,7 @@ import type { Meeting } from "../api/meetings";
 import {
   FinalSummaryWorker, defaultSettings, loadSummarySettings, saveSummarySettings,
   clearSummarySettings, summaryEnabled, providerBody, validateSummary, validateSettings,
-  watchCreatedMeeting, abortableWait, type SummaryArtifact
+  watchCreatedMeeting, abortableWait, type SummaryArtifact, RELAY_ENDPOINT, initializeRelaySettings, SUMMARY_CHANGED
 } from "./finalSummary";
 
 const result = { summary: "Grounded", topics: [{ title: "Title", description: "Reason" }], details: [{ title: "Evidence", description: "Fact", timestamp: "00:00:04" }], speaker_background: [], data_references: [] };
@@ -20,7 +20,8 @@ function harness(provider: (url: string, init: RequestInit) => Promise<Response>
   let attempts = 0;
   const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    if (url.startsWith("https://provider.test")) return provider(url, init!);
+    if (url.startsWith("https://provider.test") || url === RELAY_ENDPOINT) return provider(url, init!);
+    if (url === "/api/llm/models") return response({ data: [{ id: "primary", upstream: "macstudio" }, { id: "fallback", upstream: "rtx4090" }] });
     mossCalls.push({ url, init });
     const id = url.split("/")[3];
     const body = JSON.parse(String(init?.body ?? "null"));
@@ -31,6 +32,8 @@ function harness(provider: (url: string, init: RequestInit) => Promise<Response>
     if (init?.method === "PUT") {
       const current = artifacts.get(id)!;
       if (url.split("/").at(-1) !== current.attempt_id || ["current", "cancelled", "failed"].includes(current.state)) return response({}, 409);
+      const allowed: Record<string, string[]> = { queued: ["generating", "failed", "cancelled"], generating: ["retry_wait", "current", "failed", "cancelled"], retry_wait: ["generating", "failed", "cancelled"] };
+      if (!allowed[current.state]?.includes(body.state)) return response({}, 409);
       const value = { ...current, ...body };
       artifacts.set(id, value); return response(value);
     }
@@ -160,4 +163,62 @@ it("never starts a browser watcher while settings are blank", () => {
   const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
   watchCreatedMeeting("history-id")();
   expect(fetcher).not.toHaveBeenCalled();
+});
+
+
+it("allows only the exact same-origin relay endpoint and never stores a relay key", () => {
+  expect(validateSettings({ ...settings(), endpoint: RELAY_ENDPOINT }).apiKey).toBe("");
+  for (const endpoint of ["/api/other", "//elsewhere.test/api/llm/chat/completions", RELAY_ENDPOINT + "?url=evil"]) {
+    expect(() => validateSettings({ ...settings(), endpoint })).toThrow();
+  }
+  const body = JSON.parse(providerBody(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT }));
+  expect(Object.keys(body).sort()).toEqual(["messages", "model"]);
+});
+
+it("defaults fresh settings to the first relay model but preserves explicit external settings", async () => {
+  const fetcher = vi.fn(async () => response({ data: [{ id: "primary", upstream: "macstudio" }] }));
+  await initializeRelaySettings(fetcher);
+  expect(loadSummarySettings()).toMatchObject({ endpoint: RELAY_ENDPOINT, model: "primary", apiKey: "", timeoutSeconds: 200 });
+  saveSummarySettings(settings());
+  await initializeRelaySettings(fetcher);
+  expect(loadSummarySettings()).toEqual(settings());
+});
+
+it.each(["empty_content", "upstream_unreachable", "upstream_error"])("falls back once on relay %s and names the successful model", async reason => {
+  const calls: { body: Record<string, unknown>; init: RequestInit }[] = [];
+  const events: unknown[] = [];
+  const listener = (event: Event) => events.push((event as CustomEvent).detail);
+  document.addEventListener(SUMMARY_CHANGED, listener);
+  const h = harness(async (_url, init) => {
+    calls.push({ body: JSON.parse(String(init.body)), init });
+    return calls.length === 1 ? response({ detail: reason }, 502) : answer();
+  });
+  const wait = vi.fn();
+  try {
+    await new FinalSummaryWorker(h.fetcher, wait).enqueue(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT, model: "primary" });
+    expect(calls.map(c => c.body.model)).toEqual(["primary", "fallback"]);
+    expect(calls[0].body.messages).toEqual(calls[1].body.messages);
+    expect(calls[0].init.credentials).toBe("same-origin");
+    expect(calls[0].init.headers).toEqual({ "Content-Type": "application/json" });
+    expect(wait).not.toHaveBeenCalled();
+    expect(h.artifacts.get(meeting().id)?.state).toBe("current");
+    expect(events).toContainEqual(expect.objectContaining({ model: "fallback", artifact: expect.objectContaining({ state: "current" }) }));
+    expect(JSON.stringify(h.mossCalls)).not.toContain("fallback"); // Model stays out of durable summary updates.
+  } finally { document.removeEventListener(SUMMARY_CHANGED, listener); }
+});
+
+it("stops after the relay fallback fails, without four delivery retry rounds", async () => {
+  let calls = 0;
+  const h = harness(async () => { calls++; return response({ detail: "empty_content" }, 502); });
+  const wait = vi.fn();
+  await new FinalSummaryWorker(h.fetcher, wait).enqueue(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT, model: "primary" });
+  expect(calls).toBe(2); expect(wait).not.toHaveBeenCalled();
+  expect(h.artifacts.get(meeting().id)?.state).toBe("failed");
+});
+
+it.each([404, 401, 400])("does not switch relay models for HTTP %s", async status => {
+  let calls = 0;
+  const h = harness(async () => { calls++; return response({ detail: "unknown_model" }, status); });
+  await new FinalSummaryWorker(h.fetcher).enqueue(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT, model: "primary" });
+  expect(calls).toBe(1);
 });

@@ -4,7 +4,7 @@ import { act } from "preact/test-utils";
 import { beforeEach, afterEach, it, vi, expect } from "vitest";
 import { FinalSummary, FinalSummarySettings } from "./FinalSummary";
 import type { Meeting } from "../api/meetings";
-import { loadSummarySettings, SUMMARY_CHANGED } from "../lib/finalSummary";
+import { loadSummarySettings, SUMMARY_CHANGED, RELAY_ENDPOINT } from "../lib/finalSummary";
 
 let root: HTMLDivElement;
 const meeting: Meeting = { id: "a", mode: "file", title: null, title_source: "automatic", status: "completed", created_at_ms: 0,
@@ -16,8 +16,8 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => render(null, root)); root.remove(); vi.unstubAllGlobals(); });
 
-it("saves settings without any server request and clears the key", async () => {
-  const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+it("saves external settings without sending them to the server and clears the key", async () => {
+  const fetcher = vi.fn(async () => new Response(JSON.stringify({ data: [] }))); vi.stubGlobal("fetch", fetcher);
   await act(async () => render(<FinalSummarySettings />, root));
   await act(async () => root.querySelector<HTMLButtonElement>("button")!.click());
   const inputs = root.querySelectorAll<HTMLInputElement>("input");
@@ -25,7 +25,7 @@ it("saves settings without any server request and clears the key", async () => {
     act(() => { inputs[index].value = value; inputs[index].dispatchEvent(new Event("input", { bubbles: true })); });
   }
   await act(async () => { root.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
-  expect(loadSummarySettings().apiKey).toBe("secret"); expect(fetcher).not.toHaveBeenCalled();
+  expect(loadSummarySettings().apiKey).toBe("secret"); expect(fetcher).toHaveBeenCalledExactlyOnceWith("/api/llm/models", { credentials: "same-origin" });
   await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Clear settings")!.click());
   expect(loadSummarySettings().apiKey).toBe("");
 });
@@ -58,4 +58,34 @@ it.each(["completed", "active", "failed"])("keeps summary eligibility final-only
   expect(root.textContent).toContain("finished transcript");
   expect(root.textContent).not.toContain("transcript v");
   expect(fetcher.mock.calls).toHaveLength(1);
+});
+
+it("shows the default relay, configured model dropdown, and no URL or key inputs", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: [
+    { id: "primary", upstream: "macstudio" }, { id: "fallback", upstream: "rtx4090" }
+  ] }))));
+  await act(async () => render(<FinalSummarySettings />, root));
+  await vi.waitFor(() => expect(loadSummarySettings().endpoint).toBe(RELAY_ENDPOINT));
+  await act(async () => root.querySelector<HTMLButtonElement>("button")!.click());
+  expect(root.textContent).toContain("Server relay (tailnet models)");
+  const selects = root.querySelectorAll<HTMLSelectElement>("select");
+  expect(selects[0].value).toBe("relay");
+  expect([...selects[1].options].map(o => o.value)).toEqual(["primary", "fallback"]);
+  expect(root.querySelector('input[type="password"]')).toBeNull();
+  await act(async () => { selects[1].value = "fallback"; selects[1].dispatchEvent(new Event("change", { bubbles: true })); });
+  await act(async () => { root.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+  expect(loadSummarySettings().model).toBe("fallback");
+  await act(async () => { selects[0].value = "external"; selects[0].dispatchEvent(new Event("change", { bubbles: true })); });
+  expect(root.textContent).toContain("Provider HTTPS URL");
+  expect(root.querySelector('input[type="password"]')).not.toBeNull();
+});
+
+it("names the model that produced the summary in its status line", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ summary: null }))));
+  await act(async () => render(<FinalSummary meeting={meeting} />, root));
+  await act(async () => { document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: {
+    meeting_id: "a", model: "fallback", artifact: { state: "current", attempt_id: "a", source_version: 1, artifact_version: 1,
+      error_code: null, document: { summary: "Done", topics: [], details: [], speaker_background: [], data_references: [] } }
+  } })); });
+  expect(root.querySelector('[role="status"]')?.textContent).toContain("fallback");
 });

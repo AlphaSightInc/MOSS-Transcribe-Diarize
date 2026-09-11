@@ -1577,6 +1577,7 @@ def create_phase2_app(
     meeting_audio_root: str | Path | None = None,
     file_audio_archive: Any | None = None,
     control_socket_path: str | Path | None = None,
+    llm_upstreams: str | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -1841,6 +1842,8 @@ def create_phase2_app(
 
     from .phase2_summary import attach_summary_routes
     attach_summary_routes(app, require_account)
+    from .phase2_llm import attach_llm_routes
+    attach_llm_routes(app, require_account, llm_upstreams)
 
     if phase2_live is not None:
         from .phase2_live import attach_phase2_live_routes

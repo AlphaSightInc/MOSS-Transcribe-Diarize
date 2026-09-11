@@ -37,5 +37,6 @@ exec "${RUNTIME_DIR}/bin/python" -I -m moss_transcribe_diarize.app.phase2_web_cl
   --live-helper-lease-seconds "${MOSS_LIVE_HELPER_LEASE_SECONDS}" \
   --host 0.0.0.0 \
   --port 7861 \
+  --llm-upstreams "${MOSS_LLM_UPSTREAMS:-}" \
   --max-len "${MOSS_MAX_MODEL_LEN:-16384}" \
   --max-new-tokens "${MOSS_MAX_NEW_TOKENS:-12000}"
