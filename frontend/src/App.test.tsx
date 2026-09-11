@@ -20,5 +20,6 @@ describe("Account application shell", () => {
     expect(root.querySelector('input[type="password"]')).toBeNull();
     expect(root.querySelector('input[type="file"]')).toBeNull();
     expect(root.querySelector('.history-panel')).toBeNull();
+    expect(root.querySelector('[aria-label="Private voiceprints"]')).toBeNull();
   });
 });

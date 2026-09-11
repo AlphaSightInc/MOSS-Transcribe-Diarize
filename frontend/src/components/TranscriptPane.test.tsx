@@ -61,7 +61,7 @@ describe("TranscriptPane", () => {
     ]);
     expect(root.querySelector(".utt[data-state='provisional'] .prov")).not.toBeNull();
     expect(root.querySelector(".utt[data-state='provisional'] .live-caret")).not.toBeNull();
-    expect(root.querySelector("button.utt-speaker")).toBeNull();
+    expect(root.querySelectorAll("button.utt-speaker")).toHaveLength(2);
   });
 
   function showSpeakers(originating = true): void {
@@ -96,7 +96,7 @@ describe("TranscriptPane", () => {
     showSpeakers();
     expect(root.querySelectorAll(".utt")).toHaveLength(2);
     expect(root.querySelectorAll(".legend-chip")).toHaveLength(2);
-    act(() => root.querySelectorAll<HTMLButtonElement>(".legend-chip")[1].click());
+    act(() => root.querySelectorAll<HTMLButtonElement>(".utt-speaker")[1].click());
     const input = root.querySelector<HTMLInputElement>("#speaker-name-input")!;
     act(() => {
       input.value = "  Sam  ";
@@ -127,6 +127,33 @@ describe("TranscriptPane", () => {
       replaceTranscript([{ start: 0, end: 1, text: "preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "S01", state: "provisional" }]);
     });
     expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
+  });
+
+  it("explains why a row cannot be named", () => {
+    showSpeakers(false);
+    act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
+    expect(root.querySelector('[role="status"]')?.textContent).toContain("active capture page");
+    expect(root.querySelector("dialog")).toBeNull();
+    act(() => {
+      captureMeetingId.value = "meeting/one";
+      replaceTranscript([{ start: 0, end: 1, text: "Preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "Alex", state: "provisional" }]);
+    });
+    act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
+    expect(root.querySelector('[role="status"]')?.textContent).toContain("committed");
+    expect(root.querySelector("dialog")).toBeNull();
+  });
+
+  it("merges committed prose and marks only canonical speaker changes as new blocks", () => {
+    showSpeakers();
+    act(() => replaceTranscript([
+      { start: 0, end: 1, text: "First sentence.", speaker: "S01", speaker_entity_id: "a", display_name: "Alex", state: "confirmed" },
+      { start: 1, end: 2, text: "Second sentence.", speaker: "S01", speaker_entity_id: "a", display_name: "Alex", state: "confirmed" },
+      { start: 2, end: 3, text: "Preview", speaker: "S01", speaker_entity_id: "b", display_name: "Alex", state: "provisional" },
+      { start: 3, end: 4, text: "Other speaker", speaker: "S01", speaker_entity_id: "b", display_name: "Alex", state: "confirmed" }
+    ]));
+    expect(root.querySelectorAll(".utt")).toHaveLength(3);
+    expect(root.querySelector(".utt-text")?.textContent).toBe("First sentence. Second sentence.");
+    expect([...root.querySelectorAll(".utt")].map(row => row.getAttribute("data-new-speaker"))).toEqual(["true", "true", "false"]);
   });
 
   it("preserves committed unattributed text but never offers to name S00", () => {

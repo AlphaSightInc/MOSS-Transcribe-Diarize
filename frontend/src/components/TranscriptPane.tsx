@@ -147,6 +147,21 @@ export function TranscriptPane() {
     };
   }, [namingTarget]);
 
+  function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
+    const reason = !canNameSpeakers
+      ? "Speaker naming is available on the active capture page."
+      : !entry || !entry.committed
+        ? "Wait until this speaker has committed speech before naming."
+        : entry.speakerId === "S00"
+          ? "This speech has no identified speaker yet."
+          : null;
+    setNamingError(null);
+    setNamingMessage(reason);
+    if (reason || !entry) return;
+    setNamingTarget(entry);
+    setSpeakerName(entry.visibleLabel);
+  }
+
   async function saveSpeakerName(event: Event): Promise<void> {
     event.preventDefault();
     if (!namingTarget || !activeSessionId || !canNameSpeakers || savingName) return;
@@ -273,14 +288,10 @@ export function TranscriptPane() {
       </header>
 
       <div className="tr-legend" id="legend">
-        {/* Speaker rename is Phase 2, so the toggle opens nothing -- but the badge carries the
-            live speaker count, which is real information the reference shows here. */}
-        <button type="button" className="tr-speakers-toggle" aria-expanded="false" disabled>
-          <span># Speakers</span>
-          <span className="tr-speakers-count" id="tr-speakers-count">
-            A
-          </span>
-        </button>
+        <span className="tr-speakers-label">
+          <span>Speakers</span>
+          <span className="tr-speakers-count" id="tr-speakers-count">{legendEntries.length}</span>
+        </span>
 
         {legendEntries.map((entry) => (
           <button
@@ -290,12 +301,7 @@ export function TranscriptPane() {
             disabled={!canNameSpeakers || !entry.committed || entry.speakerId === "S00"}
             aria-label={`Name speaker ${entry.visibleLabel}`}
             title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Speaker naming is available on the active capture page"}
-            onClick={() => {
-              setNamingTarget(entry);
-              setSpeakerName(entry.visibleLabel);
-              setNamingError(null);
-              setNamingMessage(null);
-            }}
+            onClick={() => openSpeakerName(entry)}
           >
             <span
               className="legend-chip-dot"
@@ -386,7 +392,7 @@ export function TranscriptPane() {
             <span className="mini-switch-track" aria-hidden="true">
               <span className="mini-switch-thumb" />
             </span>
-            <span className="mini-switch-label">Export</span>
+            <span className="mini-switch-label">Export transcript</span>
           </button>
         </div>
 
@@ -496,18 +502,19 @@ export function TranscriptPane() {
                 <article
                   key={`${turn.segment_ids.join(",")}-${turn.start}-${index}`}
                   className="utt"
-                  data-continuation={String(previousTurn?.speaker === turn.speaker)}
-                  data-new-speaker={String(index === 0 || previousTurn?.speaker !== turn.speaker)}
+                  data-continuation={String(previousTurn?.speaker_entity_id === turn.speaker_entity_id)}
+                  data-new-speaker={String(index === 0 || previousTurn?.speaker_entity_id !== turn.speaker_entity_id)}
                   data-preview-stale={String(turn.state === "provisional" && turn.provisional_stale)}
                   data-state={turn.state}
                   style={{ "--sp": colorToken } as JSX.CSSProperties}
                 >
                   <div className="utt-meta">
-                    <span className="utt-speaker">
+                    <button type="button" className="utt-speaker" aria-label={`Name speaker ${speakerLabel}`}
+                      onClick={() => openSpeakerName(legendEntries.find(entry => entry.speakerId === turn.speaker_entity_id))}>
                       <span className="utt-speaker-label">
                         {renderSearchParts(speakerParts, activeSearchMatchId)}
                       </span>
-                    </span>
+                    </button>
                     <div className="utt-time">{formatTranscriptClockTime(turn.start)}</div>
                   </div>
                   <p className="utt-text">

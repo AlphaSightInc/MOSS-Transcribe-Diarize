@@ -2165,7 +2165,7 @@ def _workspace_html(
         '<link rel="stylesheet" href="/static/styles.css">'
     )
     live_body = (
-        '<section data-workspace-section="live" data-live-capture="account">'
+        '<section id="workspace-live" data-workspace-section="live" data-live-capture="account">'
         '<h2 class="phase2-workspace-heading">Live transcription</h2><div id="app"></div></section>'
         if live_enabled
         else ""
@@ -2174,14 +2174,20 @@ def _workspace_html(
 <html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title>{live_head}</head>
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span>
 <small>History stays with this browser profile. Clearing site data loses automatic access.</small></header>
+<nav class="workspace-nav" aria-label="Workspace">
+<a href="#workspace-file">Files &amp; URLs</a>
+{('<a href="#workspace-live">Live / Transcript &amp; export</a>' if live_enabled else '')}
+<a href="#workspace-history">Meeting history</a><a href="#workspace-voiceprints">Voiceprints</a>
+</nav>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
-<section data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
-<form data-file-upload=\"form\"><input name=\"file\" type=\"file\" multiple>
+<section id=\"workspace-file\" data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
+<form data-file-upload=\"form\"><label>Audio or video files<input name=\"file\" type=\"file\" multiple></label>
 <label>Media URLs, one per line<textarea name=\"urls\"></textarea></label>
 <button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p></section>
 {live_body}
-<section data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
+<section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
+<section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section>
 </section></main>
 <script type="module" src="/static/app.js"></script>
 <script>

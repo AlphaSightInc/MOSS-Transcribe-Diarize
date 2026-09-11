@@ -1,5 +1,6 @@
 import { render } from "preact";
 import { App } from "./App";
+import { VoiceprintBank } from "./components/VoiceprintBank";
 import { MeetingHistory } from "./components/MeetingHistory";
 import "./styles/index.css";
 import { MEETING_CREATED, watchCreatedMeeting } from "./lib/finalSummary";
@@ -21,6 +22,9 @@ if (historyRoot) {
   historyRoot.setAttribute("data-history-boot", "ready");
 }
 
-if (!root && !historyRoot) {
+const voiceprintRoot = document.getElementById("voiceprint-bank-app");
+if (voiceprintRoot) render(<VoiceprintBank />, voiceprintRoot);
+
+if (!root && !historyRoot && !voiceprintRoot) {
   throw new Error("Missing MOSS application root");
 }

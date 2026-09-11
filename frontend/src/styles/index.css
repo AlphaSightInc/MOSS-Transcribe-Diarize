@@ -1392,29 +1392,14 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
-.tr-speakers-toggle {
-  appearance: none;
-  background: transparent;
-  border: 1px solid transparent;
+.tr-speakers-label {
   padding: 4px 8px 4px 10px;
-  border-radius: 7px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font: inherit;
-  cursor: pointer;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease;
 }
 
-.tr-speakers-toggle:hover,
-.tr-speakers-toggle[aria-expanded="true"] {
-  background: var(--surface);
-  border-color: var(--line);
-}
-
-.tr-speakers-toggle:focus-visible,
 .legend-chip:focus-visible,
 .mini-btn:focus-visible,
 .utt-speaker:focus-visible,
@@ -1857,7 +1842,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: 96px 1fr;
   gap: 18px;
-  padding: 10px 0;
+  padding: 0;
   position: relative;
   animation: fadein 0.35s ease;
 }
@@ -1875,7 +1860,7 @@ textarea:focus {
 }
 
 .utt + .utt {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .utt[data-new-speaker="true"] {
@@ -3536,3 +3521,12 @@ textarea:focus {
     width: 100%;
   }
 }
+
+/* Continuations keep the reference columns without repeated metadata or segment gaps. */
+.utt[data-continuation="true"] .utt-meta { display: none; }
+.utt[data-continuation="true"] .utt-text { grid-column: -2 / -1; }
+.workspace-nav { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 18px; padding: 12px 18px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.workspace-nav a { color: var(--ink); }
+.phase2-workspace [data-workspace-section] { scroll-margin-top: 70px; }
+.phase2-workspace [data-workspace-section="file"],
+.phase2-workspace [data-workspace-section="voiceprints"] { padding: 18px; }

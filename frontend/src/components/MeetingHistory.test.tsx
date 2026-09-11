@@ -177,6 +177,8 @@ describe("MeetingHistory", () => {
       expect(root.querySelector("#tr-body")?.textContent).toContain("first words")
     );
 
+    expect(root.querySelector('a[href="#transcript-panel"]')?.textContent).toBe("View selected transcript and export");
+    expect(root.querySelector("#transcript-panel")).not.toBeNull();
     for (const label of ["Markdown (.md)", "Plain text (.txt)", "JSON (.json)"]) {
       act(() => {
         root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.click();

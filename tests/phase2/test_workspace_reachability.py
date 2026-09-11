@@ -461,8 +461,8 @@ def test_real_bundle_same_workspace_views_converge_and_remain_read_only(
             )
         )
         assert measured["distinct_sessions"] is False
-        assert measured["desktop_order"] == ["file", "live", "history"]
-        assert measured["mobile_order"] == ["file", "live", "history"]
+        assert measured["desktop_order"] == ["file", "live", "history", "voiceprints"]
+        assert measured["mobile_order"] == ["file", "live", "history", "voiceprints"]
         assert measured["desktop_history_visible"] is True
         assert measured["mobile_history_visible"] is True
         assert measured["mobile_inner_width"] <= 768

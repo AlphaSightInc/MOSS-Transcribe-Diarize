@@ -182,6 +182,7 @@ export function MeetingHistory() {
         </div>
 
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
+        {selected ? <p className="hint"><a href="#transcript-panel">View selected transcript and export</a></p> : null}
         {selected?.status === "completed" && <FinalSummary key={selected.id} meeting={selected} />}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
