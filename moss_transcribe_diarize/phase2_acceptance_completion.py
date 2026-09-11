@@ -1,6 +1,8 @@
 """Concrete completion-wave measurements; no caller-authored pass reports."""
 from __future__ import annotations
 
+from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
+
 import json
 import math
 import subprocess
@@ -118,7 +120,7 @@ def measure_voiceprint_workspace(campaign):
         profiles_created.append(duplicate_id)
         bank, _ = a.json("GET", "/api/voiceprints", 200)
         duplicate_row = next(row for row in bank["voiceprints"] if row["id"] == duplicate_id)
-        a.json("POST", f"/api/live/sessions/{first}/stop", 200, json={"deadline": 60.0})
+        a.json("POST", f"/api/live/sessions/{first}/stop", 200, json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})
         frozen, _ = a.json("GET", f"/api/meetings/{first}", 200)
         campaign._summary_voiceprint_meeting = first
         a.json("PUT", f"/api/voiceprints/{profile}/name", 200, json={"label": "Renamed qualification speaker"})

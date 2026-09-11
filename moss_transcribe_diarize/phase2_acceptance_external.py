@@ -7,6 +7,8 @@ projection, and success predicate itself; it never consumes a caller-authored ob
 
 from __future__ import annotations
 
+from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
+
 import asyncio
 import hashlib
 import importlib.util
@@ -705,6 +707,8 @@ class FixedAccountCampaign:
                     kwargs["json"] = (
                         {"title": "foreign mutation"} if "title" in actual else {}
                     )
+                if case_id == "live_stop_foreign":
+                    kwargs["json"] = {"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS}
                 if case_id.startswith("invalid_session"):
                     client = invalid
                 elif case_id.startswith("revoked"):
@@ -1421,7 +1425,8 @@ class FixedAccountCampaign:
                 if meeting_id != accepted_failure_id
             )
         )
-        stopped = self.a.request("POST", f"/api/live/sessions/{live_id}/stop")
+        stopped = self.a.request("POST", f"/api/live/sessions/{live_id}/stop",
+                                 json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})
         if stopped.status_code != 200:
             # Report only what the refusal actually said -- the cause is still unestablished.
             raise ExternalMeasurementError(
@@ -2186,7 +2191,7 @@ class FixedAccountCampaign:
                         if response.status_code != 404:
                             failures.append("CrossOwnerProbe")
                         cross_sentinel_deliveries += foreign_matches
-                stopped = asyncio.run(adapter.stop(session_id, time.monotonic() + 300))
+                stopped = asyncio.run(adapter.stop(session_id, ACCEPTANCE_STOP_DEADLINE_SECONDS))
                 terminal = True
                 events = adapter.events(session_id)
                 payloads = [event.to_dict() for event in events]

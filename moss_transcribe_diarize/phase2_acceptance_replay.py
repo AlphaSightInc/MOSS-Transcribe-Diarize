@@ -25,6 +25,9 @@ from .live_service_replay import (
 )
 
 
+# Matches ControlPanel.stopCapture -> CaptureClient.stop(5), in seconds, not a timestamp.
+ACCEPTANCE_STOP_DEADLINE_SECONDS = 5.0
+
 SESSION_COOKIE = "__Host-moss_session"
 HELPER_SCHEMA = "moss-live-helper-health.v1"
 

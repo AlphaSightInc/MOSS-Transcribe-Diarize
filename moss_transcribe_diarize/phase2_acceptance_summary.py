@@ -6,6 +6,8 @@ trusted certificate. Only content-free observations leave this measurement proce
 """
 from __future__ import annotations
 
+from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
+
 import json
 import re
 import ssl
@@ -99,7 +101,7 @@ def measure_browser_summary(campaign):
     second = b_created["id"]
     try:
         campaign._seed_live_transcript("b", second, 1)
-        campaign.b.json("POST", f"/api/live/sessions/{second}/stop", 200, json={"deadline": 60.0})
+        campaign.b.json("POST", f"/api/live/sessions/{second}/stop", 200, json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})
     except BaseException:
         campaign.b.request("POST", f"/api/live/sessions/{second}/abort", json={})
         raise
