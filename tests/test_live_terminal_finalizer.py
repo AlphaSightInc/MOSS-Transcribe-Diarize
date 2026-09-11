@@ -674,3 +674,45 @@ class TerminalFinalizerSessionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_silent_tail_reaches_window_decoder_and_retains_empty_condition(tmp_path):
+    """Deterministic silence probe; it does not assert what a real model will emit."""
+    from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
+    from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptionError, EmptyTranscriptCause
+    from moss_transcribe_diarize.phase2_acceptance_external import _diagnostic_event
+    from tests.test_windowed_transcription import result
+    # Received audio, not padding: 150 seconds nonzero followed by 450 seconds silence.
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=600 * SECOND * 2)
+    tape.append(start_sample=0, pcm=b"\x01\x00" * (150 * SECOND))
+    tape.append(start_sample=150 * SECOND, pcm=b"\0\0" * (450 * SECOND))
+    assert tape.read(start_sample=240 * SECOND, end_sample=390 * SECOND) == b"\0\0" * (150 * SECOND)
+    calls = []
+    class Decoder:
+        model_path = "silence-probe"
+        def transcribe(self, path, **kwargs):
+            with wave.open(str(path)) as handle:
+                pcm = handle.readframes(handle.getnframes())
+            calls.append((len(pcm) // 2, any(pcm)))
+            if not any(pcm):
+                raise EmptyTranscriptionError("PRIVATE", cause=EmptyTranscriptCause.NO_GENERATED_TOKENS)
+            return result("[0][S01]speech[1]")
+    def extract(source, destination, *, start_seconds, duration_seconds):
+        with wave.open(str(source)) as src:
+            src.setpos(int(start_seconds * SECOND))
+            pcm = src.readframes(int(duration_seconds * SECOND))
+        with wave.open(str(destination), "wb") as dst:
+            dst.setnchannels(1); dst.setsampwidth(2); dst.setframerate(SECOND); dst.writeframes(pcm)
+    runner = WindowedRunner(Decoder(), duration_probe=lambda p: 600, window_extractor=extract)
+    final = TerminalTranscriptFinalizer(runner=runner).finalize(
+        plan=plan_for(600 * SECOND), tape=tape, base_text_revision_version=0,
+    )
+    assert calls == [(150 * SECOND, True), (150 * SECOND, True), (150 * SECOND, False)]
+    payload = final.accounting.to_dict()
+    assert payload["outcome"] == "decode_failed"
+    assert payload["window_failure"] == {"condition": "no_generated_tokens", "window_index": 2,
+                                         "start_seconds": 240.0, "end_seconds": 390.0}
+    payload["window_failure"]["text"] = "PRIVATE"
+    retained = _diagnostic_event({"kind": "terminal_finalization_failed", "payload": payload})
+    assert "PRIVATE" not in str(retained)
+    assert retained["window_failure"]["condition"] == "no_generated_tokens"

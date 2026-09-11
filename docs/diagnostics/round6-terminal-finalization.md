@@ -69,3 +69,35 @@ unsuccessful. Qualification requiring a genuine final surface still correctly fa
 Validation: 219 tests passed across the three acceptance/runtime/replay files and three
 terminal lifecycle/finalizer/boundary files (plus their subtests). No host operations,
 cutover, service restart, admission, qualification run, gate change or identity-policy change.
+
+## Follow-up: structured window failures and silence hypothesis
+
+`WindowTranscriptionError.to_dict()` now carries `condition`, `window_index`,
+`start_seconds`, and `end_seconds`. Conditions distinguish extraction exceptions,
+decoder exceptions, no generated tokens, empty text, and unparseable text. Typed empty
+outcomes raised inside `VllmRunner` retain their specific cause instead of becoming a
+generic decoder exception. Both the single-window and multi-window delegate paths attach
+window coordinates. Terminal accounting and the content-free collector projection retain
+this object as `window_failure`, without exception messages or decoder text.
+
+The tape appends acknowledged mixed PCM regardless of speech classification. It does not
+filter out silence, fill gaps, or expand short recordings to its configured byte capacity.
+The 19,200,000-byte configuration is a limit, not a padded length. Capacity collection
+constructs its 600 seconds by repeating the source clip with a modulo offset. Consequently,
+windows starting at 240, 360, or 480 seconds are not automatically silent tails of a short
+fixture. Quality replay uses each WAV's actual samples rather than filling the tape limit.
+
+A supported meeting can nevertheless contain a long real pause. Window planning depends
+only on duration, not speech presence. A deterministic test appends 150 seconds of nonzero
+received PCM and 450 seconds of received zero PCM; the production tape/finalizer/window
+path submits three windows before a controlled decoder reports no tokens on the entirely
+silent third window (index 2, 240–390 seconds). Accounting returns `decode_failed` with
+`window_failure.condition=no_generated_tokens` and the exact interval. The collector
+retains those fields while excluding injected private text.
+
+This proves the reachable mechanism: a legitimately speechless window which yields empty
+output is currently treated as failure. It does not prove that round-six audio had such a
+window or that the real model emitted zero tokens. Zero tokens or empty output alone are
+not proof of silence; silently accepting all empty answers would also conceal lost speech.
+No silence detection, empty-window acceptance, window size, identity policy or gate was
+changed. Fix design remains pending this distinction; no new qualification was run.

@@ -238,3 +238,44 @@ def test_empty_or_unparseable_window_fails_whole_job(tmp_path, bad_result):
 def test_contract_constants_are_150_second_window_and_120_second_stride():
     assert WindowedRunner.window_seconds == 150
     assert WindowedRunner.stride_seconds == 120
+
+
+@pytest.mark.parametrize("condition", [
+    "extraction_exception", "decoder_exception", "no_generated_tokens", "empty_text", "unparseable_text",
+])
+def test_window_failure_identifies_condition_and_extent_without_content(tmp_path, condition):
+    class Decoder:
+        model_path = "test"
+        def transcribe(self, path, **kwargs):
+            if Path(path).name == "window-0000.wav":
+                return result("[0][S01]hello[1]")
+            if condition == "decoder_exception":
+                raise RuntimeError("SECRET response")
+            return result("" if condition == "empty_text" else "PRIVATE unparseable text",
+                          generated_tokens=0 if condition == "no_generated_tokens" else 5)
+    def extract(source, destination, **kwargs):
+        if condition == "extraction_exception" and kwargs["start_seconds"] == 120:
+            raise OSError("SECRET path")
+        Path(destination).write_bytes(b"wav")
+    runner = WindowedRunner(Decoder(), duration_probe=lambda p: 600, window_extractor=extract)
+    with pytest.raises(WindowTranscriptionError) as caught:
+        runner.transcribe(tmp_path / "input.wav")
+    assert caught.value.to_dict() == {"condition": condition, "window_index": 1,
+                                     "start_seconds": 120.0, "end_seconds": 270.0}
+    assert "SECRET" not in str(caught.value) and "PRIVATE" not in str(caught.value)
+
+
+@pytest.mark.parametrize("seconds", [50, 600])
+@pytest.mark.parametrize("condition", ["no_generated_tokens", "empty_text", "unparseable_text"])
+def test_typed_decoder_empty_outcome_keeps_cause_on_short_and_long_tapes(tmp_path, seconds, condition):
+    from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptionError, EmptyTranscriptCause
+    class Decoder:
+        model_path = "test"
+        def transcribe(self, *args, **kwargs):
+            raise EmptyTranscriptionError("SECRET", cause=EmptyTranscriptCause(condition), text="PRIVATE")
+    runner = WindowedRunner(Decoder(), duration_probe=lambda p: seconds, window_extractor=RecordingExtractor())
+    with pytest.raises(WindowTranscriptionError) as caught:
+        runner.transcribe(tmp_path / "input.wav")
+    assert caught.value.to_dict() == {"condition": condition, "window_index": 0,
+                                     "start_seconds": 0.0, "end_seconds": min(seconds, 150)}
+    assert "SECRET" not in str(caught.value)

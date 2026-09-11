@@ -666,6 +666,7 @@ class TerminalFinalizationAccounting:
     rolling_status: str
     window_seconds: float | None
     stride_seconds: float | None
+    window_failure: dict[str, object] | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -694,6 +695,7 @@ class TerminalFinalizationAccounting:
             "rolling_status": self.rolling_status,
             "window_seconds": self.window_seconds,
             "stride_seconds": self.stride_seconds,
+            "window_failure": self.window_failure,
         }
 
 
@@ -881,7 +883,9 @@ class TerminalTranscriptFinalizer:
                 # Only the exception's *type* is recorded. A runner's message may quote the
                 # answer it rejected, and plan §7.4 says terminal events carry counts and
                 # names -- never a word of the meeting.
-                return self._refused(
+                from .windowed_transcription import WindowTranscriptionError
+
+                refusal = self._refused(
                     plan,
                     TerminalOutcome.DECODE_FAILED,
                     exc.__class__.__name__,
@@ -889,6 +893,13 @@ class TerminalTranscriptFinalizer:
                     tape_samples=tape_samples,
                     decode_elapsed_sec=time.monotonic() - started,
                 )
+                if isinstance(exc, WindowTranscriptionError):
+                    from dataclasses import replace
+
+                    refusal = replace(refusal, accounting=replace(
+                        refusal.accounting, window_failure=exc.to_dict(),
+                    ))
+                return refusal
             elapsed_sec = time.monotonic() - started
 
         segments, local_speakers, mapping, resolution = self._segments_of(

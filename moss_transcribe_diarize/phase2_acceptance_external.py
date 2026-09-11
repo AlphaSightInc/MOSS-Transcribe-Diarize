@@ -2593,6 +2593,12 @@ def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
     row = {key: event.get(key) for key in ("kind", "seq", "session_id", "snapshot_version")}
     row.update({key: payload.get(key) for key in _DIAGNOSTIC_PAYLOAD_FIELDS})
     failure = payload.get("failure") or {}
+    window_failure = payload.get("window_failure")
+    row["window_failure"] = (
+        {key: window_failure.get(key) for key in
+         ("condition", "window_index", "start_seconds", "end_seconds")}
+        if isinstance(window_failure, dict) else None
+    )
     row["failure_code"] = failure.get("code")
     row["failure_kind"] = failure.get("kind")
     return row

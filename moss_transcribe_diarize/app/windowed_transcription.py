@@ -16,10 +16,24 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_t
 from .ffmpeg import detect_ffmpeg, probe_media
 from .model_runner import StatusCallback, TranscriptionResult
 from .speaker_identity import IdentityResolver
+from .transcription_outcome import EmptyTranscriptionError
 
 
 class WindowTranscriptionError(RuntimeError):
-    """Raised when any child window cannot produce a complete parent result."""
+    """Content-free condition and window coordinates; never a decoder response."""
+
+    def __init__(self, message: str, *, condition: str = "checkpoint_error",
+                 window_index: int | None = None, start_seconds: float | None = None,
+                 end_seconds: float | None = None):
+        super().__init__(message)
+        self.condition = condition
+        self.window_index = window_index
+        self.start_seconds = start_seconds
+        self.end_seconds = end_seconds
+
+    def to_dict(self) -> dict[str, object]:
+        return {"condition": self.condition, "window_index": self.window_index,
+                "start_seconds": self.start_seconds, "end_seconds": self.end_seconds}
 
 
 class RunnerDelegate(Protocol):
@@ -157,7 +171,7 @@ class WindowedRunner:
             stride_seconds=float(self.stride_seconds),
         )
         if len(windows) == 1:
-            result = self.delegate.transcribe(source, **kwargs)
+            result = self._decode_window(source, windows[0], kwargs)
             return _with_window_metadata(
                 result,
                 window_count=1,
@@ -178,6 +192,14 @@ class WindowedRunner:
                 identity_contract=self.identity_resolver.contract(),
             )
         return self._transcribe_windows(source, windows, kwargs, checkpoint)
+
+    def _decode_window(self, audio: Path, window: WindowPlan, kwargs: dict) -> TranscriptionResult:
+        try:
+            return self.delegate.transcribe(audio, **kwargs)
+        except EmptyTranscriptionError as exc:
+            raise _window_error(window, exc.cause.value) from exc
+        except Exception as exc:
+            raise _window_error(window, "decoder_exception") from exc
 
     def _transcribe_windows(
         self,
@@ -200,9 +222,9 @@ class WindowedRunner:
         for result in prefix_results:
             segments = parse_transcript(result.text)
             if result.generated_tokens <= 0:
-                raise WindowTranscriptionError("checkpoint record returned zero generated tokens")
+                raise _window_error(windows[len(segments_by_window)], "no_generated_tokens")
             if not result.text.strip() or not segments:
-                raise WindowTranscriptionError("checkpoint record returned zero parsed segments")
+                raise _window_error(windows[len(segments_by_window)], "unparseable_text")
             segments_by_window.append(segments)
             window_audio_paths.append(None)
             prompt_tokens += result.prompt_len
@@ -234,17 +256,17 @@ class WindowedRunner:
                         start_seconds=window.start,
                         duration_seconds=window.duration,
                     )
-                    result = self.delegate.transcribe(window_audio, **child_kwargs)
                 except Exception as exc:
-                    raise _window_error(window, f"failed: {exc}") from exc
+                    raise _window_error(window, "extraction_exception") from exc
+                result = self._decode_window(window_audio, window, child_kwargs)
 
                 segments = parse_transcript(result.text)
                 if result.generated_tokens <= 0:
-                    raise _window_error(window, "returned zero generated tokens")
+                    raise _window_error(window, "no_generated_tokens")
                 if not result.text.strip():
-                    raise _window_error(window, "returned empty transcript text")
+                    raise _window_error(window, "empty_text")
                 if not segments:
-                    raise _window_error(window, "returned zero parsed segments")
+                    raise _window_error(window, "unparseable_text")
 
                 if checkpoint is not None:
                     checkpoint.commit_window(window, result, possibly_truncated=_hit_token_cap(result, kwargs.get("max_new_tokens")))
@@ -422,7 +444,7 @@ def _stitch_segments(windows: list[WindowPlan], local_results: list[list[Transcr
     output: list[AbsoluteSegment] = []
     for window, segments in zip(windows, local_results, strict=True):
         if not segments:
-            raise _window_error(window, "returned zero parsed segments")
+            raise _window_error(window, "unparseable_text")
         for segment in segments:
             absolute = AbsoluteSegment(
                 start=window.start + segment.start,
@@ -463,10 +485,12 @@ def _with_window_metadata(
     )
 
 
-def _window_error(window: WindowPlan, message: str) -> WindowTranscriptionError:
+def _window_error(window: WindowPlan, condition: str) -> WindowTranscriptionError:
     return WindowTranscriptionError(
         f"window {window.index} ({_format_transcript_seconds(window.start)}-"
-        f"{_format_transcript_seconds(window.end)}s) {message}"
+        f"{_format_transcript_seconds(window.end)}s) {condition}",
+        condition=condition, window_index=window.index,
+        start_seconds=window.start, end_seconds=window.end,
     )
 
 
