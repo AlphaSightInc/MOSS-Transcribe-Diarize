@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "filename": "meeting-dumLBBk3DZ5hoKU4LeZkP9rV.mp3",
+  "duration": 50.0,
+  "source_duration": 50.0,
+  "artifact": "download.mp3",
+  "decodable": true,
+  "screenshot": "row-07.png",
+  "status": "PASS",
+  "seconds": 0.293,
+  "network": "network.jsonl",
+  "row": 7
+}

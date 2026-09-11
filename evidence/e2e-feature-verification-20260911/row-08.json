@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "filename": "meeting-0n3T5oKMSXbAHB7KlnyLdKp8.partial.mp3",
+  "duration": 11.436,
+  "source_duration": 50.0,
+  "artifact": "interrupted.partial.mp3",
+  "decodable": true,
+  "meeting": "0n3T5oKMSXbAHB7KlnyLdKp8",
+  "status_received": "interrupted",
+  "screenshot": "row-08.png",
+  "status": "PASS",
+  "seconds": 31.781,
+  "network": "network.jsonl",
+  "row": 8
+}

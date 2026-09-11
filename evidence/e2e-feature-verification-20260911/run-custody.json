@@ -1,0 +1,19 @@
+{
+  "origin": "https://127.0.0.1:17861",
+  "decoder_origin": "http://127.0.0.1:18000/v1",
+  "initial_http_status": 200,
+  "decoder_http_status": 200,
+  "server_checkout_observed": "b76b5b5c",
+  "initial_server_revision": "f038bd57 reported by operator; not independently pinned before initial upload/URL runs",
+  "external_database_reset": "During guard work, original two meeting IDs absent from current local-stack database; preserved artifacts remain",
+  "admitted_requests": {
+    "/api/meetings/file": 1,
+    "/api/meetings/url": 1,
+    "/api/live/sessions": 7
+  },
+  "initial_start_utc": "2026-09-11T23:23:15.220561+00:00",
+  "last_network_utc": "2026-09-11T23:46:37.689407+00:00",
+  "passes": 10,
+  "failures": 2,
+  "browser_credentials": "Not included; browser-state.json and browser profiles remain local outside repository"
+}

@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "first_visible_seconds": 3.825472875032574,
+  "stop_to_terminal_seconds": 2.1870940420776606,
+  "meeting": "4XEDDwdaowqbw63xwSsE3s95",
+  "status_received": "completed",
+  "segments": 3,
+  "meters": [
+    "Microphone level 18%",
+    "Shared audio level 18%"
+  ],
+  "artifact": "meeting-4XEDDwdaowqbw63xwSsE3s95.json",
+  "screenshot": "row-04.png",
+  "status": "PASS",
+  "seconds": 21.297,
+  "network": "network.jsonl",
+  "row": 4
+}

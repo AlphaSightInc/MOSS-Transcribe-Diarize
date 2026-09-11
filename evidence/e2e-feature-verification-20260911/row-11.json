@@ -1,0 +1,24 @@
+{
+  "header_visible": true,
+  "header_box": {
+    "x": 686.984375,
+    "y": 6.6875,
+    "width": 160.46875,
+    "height": 33.5
+  },
+  "ok": true,
+  "title_matches": true,
+  "mode": "Live",
+  "panel_box": {
+    "x": 310,
+    "y": 0.1875,
+    "width": 1112,
+    "height": 1068.5
+  },
+  "selected": "4XEDDwdaowqbw63xwSsE3s95",
+  "screenshot": "row-11.png",
+  "status": "PASS",
+  "seconds": 0.244,
+  "network": "network.jsonl",
+  "row": 11
+}

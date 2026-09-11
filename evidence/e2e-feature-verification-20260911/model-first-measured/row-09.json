@@ -1,0 +1,27 @@
+{
+  "ok": false,
+  "attempts": [
+    {
+      "requested_model": "qwen/qwen3.6-35b-a3b",
+      "state": "failed",
+      "error_code": "invalid_output",
+      "status_names_requested_model": false,
+      "rendered": false,
+      "artifact": "summary-macstudio.json"
+    },
+    {
+      "requested_model": "qwen38-27b-mtp",
+      "state": "failed",
+      "error_code": "delivery_failed",
+      "status_names_requested_model": false,
+      "rendered": false,
+      "artifact": "summary-rtx4090.json"
+    }
+  ],
+  "fallback_note": "Both configured models exercised directly; natural 502 fallback recorded if produced, never injected.",
+  "screenshot": "row-09.png",
+  "status": "FAIL",
+  "seconds": 24.42,
+  "network": "network.jsonl",
+  "row": 9
+}

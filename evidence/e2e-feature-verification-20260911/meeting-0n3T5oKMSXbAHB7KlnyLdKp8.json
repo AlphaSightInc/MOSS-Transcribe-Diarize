@@ -1,0 +1,39 @@
+{
+  "id": "0n3T5oKMSXbAHB7KlnyLdKp8",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "interrupted",
+  "created_at_ms": 1789170304478,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.26,
+        "end": 5.77,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina."
+      },
+      {
+        "id": "seg_0002",
+        "start": 5.77,
+        "end": 10,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "He is a libertarian, anarcho-capitalist, and economist."
+      }
+    ]
+  },
+  "transcript_version": 7,
+  "audio": {
+    "state": "partial",
+    "relative_path": "gF8V8wGJN-J9u_aArPDMCqb0UwsQOalB/0n3T5oKMSXbAHB7KlnyLdKp8/audio.partial.mp3",
+    "byte_count": 69381,
+    "duration_ms": 11436,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}

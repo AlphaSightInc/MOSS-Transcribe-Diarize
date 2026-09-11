@@ -1,0 +1,10 @@
+{
+  "signed_in": true,
+  "boot_ready": true,
+  "fresh_profile": true,
+  "screenshot": "row-01.png",
+  "status": "PASS",
+  "seconds": 0.239,
+  "network": "network.jsonl",
+  "row": 1
+}
