@@ -286,13 +286,18 @@ def test_typed_decoder_empty_outcome_keeps_cause_on_short_and_long_tapes(tmp_pat
     assert "SECRET" not in str(caught.value)
 
 
-def test_terminal_prompt_error_survives_window_and_event_projection(tmp_path):
+def test_structural_decoder_error_survives_window_and_event_projection(tmp_path):
     import wave
     from moss_transcribe_diarize.app.runner_composition import build_terminal_finalizer
     from moss_transcribe_diarize.app.vllm_runner import VllmRunner
     from moss_transcribe_diarize.phase2_acceptance_external import _diagnostic_event
 
     class NoNetworkRunner(VllmRunner):
+        def _build_fields(self, **kwargs):
+            # Preserve the diagnostics regression after fixing the real missing prompt.
+            absent = None
+            return absent.strip()
+
         def _post_multipart(self, *args, **kwargs):
             pytest.fail('missing prompt must fail before HTTP')
 

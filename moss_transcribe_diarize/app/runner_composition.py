@@ -11,6 +11,16 @@ from pathlib import Path
 from typing import Any
 
 
+def resolve_prompt(prompt: str | None, default_prompt: str | None = None) -> str:
+    """Resolve omitted/blank prompts identically for live, File and terminal requests."""
+    from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+
+    for value in (prompt, default_prompt):
+        if value is not None and value.strip():
+            return value
+    return DEFAULT_PROMPT
+
+
 def resolve_inference_options(
     *,
     prompt: str | None,
@@ -27,7 +37,7 @@ def resolve_inference_options(
 ) -> dict[str, Any]:
     """Resolve one decode's overrides against the deployed inference configuration."""
 
-    prompt_value = default_prompt if prompt is None or not prompt.strip() else prompt
+    prompt_value = resolve_prompt(prompt, default_prompt)
     max_length_value = default_max_length if max_length is None else int(max_length)
     max_new_tokens_value = (
         default_max_new_tokens if max_new_tokens is None else int(max_new_tokens)

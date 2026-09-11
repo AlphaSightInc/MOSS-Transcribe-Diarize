@@ -134,6 +134,9 @@ def plan_windows(duration_seconds: float, *, window_seconds: float = 150.0, stri
 
 
 class WindowedRunner:
+    # Dense-speech estimate: 3 words/s * 150 s * 1.5 tokens/word = 675 text
+    # tokens, before speaker/timestamp formatting. The deployed 12000-token cap
+    # leaves substantial headroom; this estimate is not a measured worst-case bound.
     window_seconds = 150
     stride_seconds = 120
 

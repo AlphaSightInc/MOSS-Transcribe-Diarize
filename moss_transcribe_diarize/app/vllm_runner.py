@@ -15,6 +15,7 @@ from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT, load_audio_i
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 
 from .model_runner import StatusCallback, TranscriptionResult, generation_progress
+from .runner_composition import resolve_prompt
 from .transcription_outcome import (
     EmptyTranscriptCause,
     EmptyTranscriptionError,
@@ -64,7 +65,7 @@ class VllmRunner:
         self,
         audio_path: str | Path,
         *,
-        prompt: str = DEFAULT_PROMPT,
+        prompt: str | None = DEFAULT_PROMPT,
         max_length: int = 131072,
         max_new_tokens: int = 2048,
         decoding: str = "greedy",
@@ -127,14 +128,14 @@ class VllmRunner:
     def _build_fields(
         self,
         *,
-        prompt: str,
+        prompt: str | None,
         max_new_tokens: int,
         decoding: str,
         temperature: float | None,
     ) -> dict[str, str]:
         return {
             "model": self.model_path,
-            "prompt": prompt.strip() or DEFAULT_PROMPT,
+            "prompt": resolve_prompt(prompt).strip(),
             "response_format": "json",
             "stream": "true",
             "stream_include_usage": "true",
