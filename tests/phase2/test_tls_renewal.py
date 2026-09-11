@@ -32,7 +32,7 @@ def test_certificate_command_uses_private_dns_file_and_never_restarts(tmp_path, 
     user_dir = tmp_path / "operator"
     binary_dir = tmp_path / "bin"; binary_dir.mkdir()
     config = user_dir / ".config/moss-transcribe-diarize"; config.mkdir(parents=True)
-    (config / "ns1-api-key").write_text("dummy-private-key")
+    (config / "netlify-token").write_text("dummy-private-key")
     (config / "certificate.env").write_text("MOSS_ACME_EMAIL=operator@example.test\n")
     hostname = "ga0-alienware-rtx4070ti.tailnet.aisight.us"
     certs = user_dir / ".local/share/moss-transcribe-diarize/acme/production/certificates"
@@ -47,11 +47,14 @@ with open(os.environ["TLS_TEST_LOG"], "a") as output:
 if name == "getent": print("operator:x:1000:1000::" + os.environ["TLS_TEST_USER_DIR"] + ":/bin/bash")
 elif name == "stat": print("600")
 elif name == "lego":
-    assert os.environ.get("NS1_API_KEY") is None
+    assert os.environ.get("NETLIFY_TOKEN") is None
     if args == ["--version"]: print("lego version 5.3.1 linux/amd64")
     else:
-        assert pathlib.Path(os.environ["NS1_API_KEY_FILE"]).read_text() == "dummy-private-key"
-        assert args[0] == "run" and args[args.index("--dns")+1] == "ns1"
+        assert pathlib.Path(os.environ["NETLIFY_TOKEN_FILE"]).read_text() == "dummy-private-key"
+        assert args[0] == "run" and args[args.index("--dns")+1] == "netlify"
+        # Headscale MagicDNS answers SOA with NOTIMP, so lego must be pointed at public
+        # resolvers or it cannot find the zone to write the challenge record.
+        assert args[args.index("--dns.resolvers")+1] == "1.1.1.1:53,8.8.8.8:53"
         certs = pathlib.Path(args[args.index("--path")+1]) / "certificates"; certs.mkdir(parents=True, exist_ok=True)
         for suffix in ("crt", "key"): (certs / (args[args.index("--domains")+1] + "." + suffix)).write_text("fixture")
 elif name == "systemctl":
@@ -68,7 +71,7 @@ elif name == "timeout": sys.exit(subprocess.run(args[1:]).returncode)
     lego.write_text(command); lego.chmod(0o700)
     env = {**os.environ, "PATH": str(binary_dir) + os.pathsep + os.environ["PATH"],
            "TLS_TEST_LOG": str(log), "TLS_TEST_USER_DIR": str(user_dir)}
-    env.pop("NS1_API_KEY", None)
+    env.pop("NETLIFY_TOKEN", None)
     result = subprocess.run(["bash", str(ROOT / "ops/manage-certificate.sh"), mode], env=env, capture_output=True, text=True, timeout=20)
     assert result.returncode == 0, result.stderr
     assert "dummy-private-key" not in result.stdout + result.stderr + log.read_text()
