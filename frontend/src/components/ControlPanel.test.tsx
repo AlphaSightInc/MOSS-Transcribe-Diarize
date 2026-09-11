@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
       return poller;
     }),
     captureClose: vi.fn().mockResolvedValue(undefined),
+    createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
@@ -50,7 +51,7 @@ vi.mock("../capture/captureClient", () => ({
     startMicrophone = vi.fn(async () => this.options.onMeter?.("microphone", 0.5));
     requestDisplayMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
     attachDisplayMedia = vi.fn(async () => this.options.onMeter?.("system", 0.5));
-    createSession = vi.fn().mockResolvedValue({ id: "account-live-meeting" });
+    createSession = mocks.createSession;
     close = mocks.captureClose;
   }
 }));
@@ -193,7 +194,7 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[data-capture-phase="configuring"]')).not.toBeNull();
   });
 
-  it("stops active Account capture visibly when polling receives revoked 401", async () => {
+  it.each(["Sign in required.", "helper_lease_expired", "canonical decode failed"])("stops without automatically recreating a terminal capture: %s", async (reason) => {
     await act(async () => {
       render(<ControlPanel />, root);
     });
@@ -209,13 +210,15 @@ describe("ControlPanel reattach", () => {
     expect(captureMeetingId.value).toBe("account-live-meeting");
     expect(mocks.poller.start).toHaveBeenCalledOnce();
 
-    await act(async () => mocks.pollerOptions?.onTerminal?.("Sign in required."));
+    await act(async () => mocks.pollerOptions?.onTerminal?.(reason));
+    await act(async () => { await Promise.resolve(); });
+    expect(mocks.createSession).toHaveBeenCalledTimes(1);
 
     expect(mocks.captureClose).toHaveBeenCalledOnce();
     expect(captureMeetingId.value).toBeNull();
     expect(mocks.poller.stop).toHaveBeenCalledOnce();
     expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
-    expect(root.querySelector('[role="status"]')?.textContent).toBe("Sign in required.");
+    expect(root.querySelector('[role="status"]')?.textContent).toBe(reason);
     expect(button("Stop and finalize")).toBeUndefined();
     expect(button("Reset capture")).toBeTruthy();
   });
