@@ -13,9 +13,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_meeting_locator_ignores_server_fallback_and_nav():
-    chrome = Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     with sync_playwright() as p:
-        browser = p.chromium.launch(**({'executable_path': str(chrome)} if chrome.exists() else {}))
+        candidates = (
+            Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+            Path('/usr/bin/google-chrome'),
+            Path('/usr/bin/chromium'),
+            Path(p.chromium.executable_path),
+        )
+        chrome = next((candidate for candidate in candidates if candidate.is_file()), None)
+        if chrome is None:
+            pytest.skip("Chrome/Chromium executable is absent; the built-workspace locator regression requires a browser.")
+        browser = p.chromium.launch(executable_path=str(chrome))
         try:
             meeting = Meeting('audit-meeting', 'file', 'Audit title', 'completed', 1,
                               transcript={'segments': []})
