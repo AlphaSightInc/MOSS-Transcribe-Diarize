@@ -57,7 +57,7 @@ async def run(root):
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     await page.get_by_role("button", name="Refresh", exact=True).click()
                     await page.locator(f'[data-open-meeting="{meeting.meeting_id}"]').click()
-                    await page.get_by_role("button", name="Retry summary", exact=True).click()
+                    await page.get_by_test_id("final-summary-generate").click()
                     await page.locator('[data-summary-state="current"]').wait_for(timeout=10000)
                     checks["one_fallback"] = [c["model"] for c in calls] == ["primary-model", "fallback-model"]
                     checks["status_names_model"] = "fallback-model" in await page.locator('[aria-label="Final summary"] [role="status"]').inner_text()

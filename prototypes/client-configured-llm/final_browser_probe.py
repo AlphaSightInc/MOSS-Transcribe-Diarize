@@ -59,7 +59,7 @@ async def run(root):
                         await page.locator('[data-history-boot="ready"]').wait_for()
                         await page.get_by_role("button", name="Refresh", exact=True).click()
                         await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
-                        await page.get_by_role("button", name="Retry summary", exact=True).wait_for()
+                        await page.get_by_test_id("final-summary-generate").wait_for()
                     evidence["history_causes_zero_provider_requests"] = len(calls) == 0
                     for index, page in enumerate(pages):
                         await page.get_by_role("button", name="Optional AI summaries · off", exact=True).click()
@@ -67,7 +67,7 @@ async def run(root):
                                              ("API key (optional)", f"probe-secret-{index}"), ("Final-summary prompt", f"probe-prompt-{index}")):
                             await page.get_by_label(label, exact=True).fill(value)
                         await page.get_by_role("button", name="Save on this browser", exact=True).click()
-                        await page.get_by_role("button", name="Retry summary", exact=True).click()
+                        await page.get_by_test_id("final-summary-generate").click()
                         await page.locator('[data-summary-state="current"]').wait_for(timeout=15000)
                     evidence["real_preflight_and_post"] = len(preflights) == len(calls) == 2
                     evidence["separate_payloads"] = all(f"ONLY-OWNER-{i}-TRANSCRIPT".encode() in call["body"] and f"ONLY-OWNER-{1-i}-TRANSCRIPT".encode() not in call["body"] for i, call in enumerate(calls))

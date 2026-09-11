@@ -64,3 +64,14 @@ source-commit pin and absent archived corpus. Those three legacy failures are un
 to this relay and were left intact. The complete product suite is `pytest tests`, followed
 by frontend, typecheck/build, and both browser probes. G9 predicate contract tests run in
 that product suite; deployed G9 load/TLS qualification is outside this task.
+
+Rebase integration: the shared branch now labels a first request “Generate summary”.
+Both browser probes use its stable `final-summary-generate` test identifier; their
+behavioral/privacy assertions remain unchanged.
+
+Final local validation after integration with `91b37bb6`:
+- `pytest tests -q -rs`: 1326 passed, 2 skipped (unprovisioned real corpora), 37 subtests passed.
+- Frontend: 193 tests passed across 23 files; typecheck and production build passed.
+- Relay browser probe: 7/7; external HTTPS/CORS browser probe: 8/8.
+- `browser_final_summary` predicate contract tests passed within the Python suite;
+  deployed capacity/TLS qualification remains unmeasured.
