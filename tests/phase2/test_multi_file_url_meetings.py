@@ -107,52 +107,51 @@ def await_terminal(client: TestClient, meeting_id: str, status: str) -> dict[str
 
 
 def execute_submission_script(workspace_html: str) -> dict[str, object]:
-    match = re.search(r"<script>(.*)</script>", workspace_html, flags=re.DOTALL)
-    assert match is not None
-    harness = r"""
-const fs = require('node:fs');
-const vm = require('node:vm');
-let submitListener = null;
-let reloads = 0;
-const calls = [];
-const created = [];
-const statusFixture = {textContent: ''};
-const formFixture = {
-  elements: {
-    file: {files: [{name: 'one.wav'}, {name: 'two.wav'}]},
-    urls: {value: 'https://media.test/http-failure\nhttps://media.test/good'},
-  },
-  addEventListener: (_name, listener) => { submitListener = listener; },
-};
-globalThis.document = {
-  querySelector: (selector) => selector.includes('form') ? formFixture
-    : selector.includes('status') ? statusFixture : null,
-  querySelectorAll: () => [],
-  dispatchEvent: (event) => { if (event.type === 'moss:meeting-created') created.push(event.detail.meeting_id); },
-};
-globalThis.CustomEvent = class { constructor(type, options) { this.type = type; this.detail = options.detail; } };
-globalThis.FormData = class { append() {} };
-globalThis.fetch = async (path) => {
-  calls.push(path);
-  if (calls.length === 2) throw new Error('network failure');
-  return {ok: calls.length !== 3, json: async () => ({id: `accepted-${calls.length}`})};
-};
-globalThis.location = {reload: () => { reloads += 1; }};
-vm.runInThisContext(fs.readFileSync(0, 'utf8'));
-(async () => {
-  await submitListener({preventDefault() {}});
-  process.stdout.write(JSON.stringify({calls, created, status: statusFixture.textContent, reloads}));
-})().catch((error) => { console.error(error); process.exit(1); });
-"""
-    result = subprocess.run(
-        ["node", "-e", harness],
-        input=match.group(1),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-    return json.loads(result.stdout)
+    """Exercise the shipped bundle after moving submission out of inline HTML."""
+    from urllib.parse import urlsplit
+    from playwright.sync_api import sync_playwright, expect
+    root = Path(__file__).resolve().parents[2]
+    chrome = Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+    calls = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(**({'executable_path': str(chrome)} if chrome.exists() else {}))
+        try:
+            page = browser.new_page()
+            page.add_init_script("window.created=[]; document.addEventListener('moss:meeting-created', e=>window.created.push(e.detail.meeting_id));")
+            def route(r):
+                path = urlsplit(r.request.url).path
+                if path == '/':
+                    r.fulfill(body=workspace_html, content_type='text/html')
+                elif path.startswith('/static/'):
+                    asset = root / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+                    r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                elif r.request.method == 'POST' and path in ('/api/meetings/file', '/api/meetings/url'):
+                    calls.append(path)
+                    if len(calls) == 2: r.abort()
+                    elif len(calls) == 3: r.fulfill(status=400, json={'detail': 'Unsupported media URL'})
+                    else: r.fulfill(json={'id': f'accepted-{len(calls)}'})
+                elif path.startswith('/api/meetings/'):
+                    r.fulfill(json={'id': path.rsplit('/', 1)[-1], 'mode': 'file', 'title': 'Import',
+                        'title_source': 'automatic', 'status': 'completed', 'created_at_ms': 1,
+                        'transcript_version': 0, 'transcript': None, 'audio': None})
+                else: r.fulfill(json={'meetings': [], 'voiceprints': []})
+            page.route('**/*', route)
+            page.goto('http://upload.test')
+            page.locator('[data-history-boot="ready"]').wait_for()
+            page.locator('input[name="file"]').set_input_files([
+                {'name': 'one.wav', 'mimeType': 'audio/wav', 'buffer': b'one'},
+                {'name': 'two.wav', 'mimeType': 'audio/wav', 'buffer': b'two'},
+            ])
+            page.locator('textarea[name="urls"]').fill('https://media.test/http-failure\nhttps://media.test/good')
+            page.get_by_role('button', name='Transcribe files and URLs', exact=True).click()
+            expect(page.locator('[data-file-upload="status"]')).to_contain_text('2 accepted; 2 need attention.')
+            expect(page.locator('[data-file-upload="results"] li')).to_have_count(4)
+            expect(page.locator('[data-file-upload="results"]')).to_contain_text('Unsupported media URL')
+            expect(page.locator('[data-file-upload="results"]')).to_contain_text('history before retrying')
+            return {'calls': calls, 'created': page.evaluate('window.created'),
+                    'status': page.locator('[data-file-upload="status"]').inner_text()}
+        finally:
+            browser.close()
 
 
 def test_mixed_serial_items_are_independent_and_owner_bound(tmp_path: Path):
@@ -172,10 +171,7 @@ def test_mixed_serial_items_are_independent_and_owner_bound(tmp_path: Path):
         assert 'id="voiceprint-bank-app"' in workspace
         assert 'type="file" multiple' in workspace
         assert '<textarea name="urls">' in workspace
-        assert "async function submitItem" in workspace
-        assert "catch" in workspace
-        assert "for (const file of files)" in workspace
-        assert "for (const url of urls)" in workspace
+        assert 'data-file-upload="results"' in workspace
         assert execute_submission_script(workspace) == {
             "calls": [
                 "/api/meetings/file",
@@ -183,8 +179,7 @@ def test_mixed_serial_items_are_independent_and_owner_bound(tmp_path: Path):
                 "/api/meetings/url",
                 "/api/meetings/url",
             ],
-            "status": "2 accepted; 2 rejected. Accepted work continues on the server.",
-            "reloads": 1,
+            "status": "2 accepted; 2 need attention. Accepted work continues on the server.",
             "created": ["accepted-1", "accepted-4"],
         }
 

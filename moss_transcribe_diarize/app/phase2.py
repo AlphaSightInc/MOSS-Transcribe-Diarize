@@ -2183,54 +2183,14 @@ def _workspace_html(
 <section id=\"workspace-file\" data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
 <form data-file-upload=\"form\"><label>Audio or video files<input name=\"file\" type=\"file\" multiple></label>
 <label>Media URLs, one per line<textarea name=\"urls\"></textarea></label>
-<button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\"></p></section>
+<button type=\"submit\">Transcribe files and URLs</button></form><p data-file-upload=\"status\" role=\"status\"></p><ul data-file-upload=\"results\"></ul></section>
 {live_body}
 <section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
 <section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section>
 </section></main>
 <script type="module" src="/static/app.js"></script>
-<script>
-const uploadForm = document.querySelector('[data-file-upload="form"]');
-const uploadStatus = document.querySelector('[data-file-upload="status"]');
-async function submitItem(path, options) {{
-  try {{
-    const response = await fetch(path, options);
-    if (!response.ok) return false;
-    const meeting = await response.json();
-    document.dispatchEvent(new CustomEvent('moss:meeting-created', {{detail: {{meeting_id: meeting.id}}}}));
-    return true;
-  }} catch {{
-    return false;
-  }}
-}}
-uploadForm.addEventListener('submit', async (event) => {{
-  event.preventDefault();
-  const files = Array.from(uploadForm.elements.file.files);
-  const urls = uploadForm.elements.urls.value.split(/\\r?\\n/).map(value => value.trim()).filter(Boolean);
-  let accepted = 0;
-  let failed = 0;
-  for (const file of files) {{
-    uploadStatus.textContent = `Submitting ${{accepted + failed + 1}} of ${{files.length + urls.length}}…`;
-    const body = new FormData();
-    body.append('file', file, file.name);
-    (await submitItem('/api/meetings/file', {{method: 'POST', body}})) ? accepted++ : failed++;
-  }}
-  for (const url of urls) {{
-    uploadStatus.textContent = `Submitting ${{accepted + failed + 1}} of ${{files.length + urls.length}}…`;
-    (await submitItem('/api/meetings/url', {{
-      method: 'POST',
-      headers: {{'Content-Type': 'application/json'}},
-      body: JSON.stringify({{url}}),
-    }})) ? accepted++ : failed++;
-  }}
-  uploadStatus.textContent = `${{accepted}} accepted; ${{failed}} rejected. Accepted work continues on the server.`;
-  if (accepted > 0) {{
-    if (document.querySelector('[data-history-boot="ready"]')) document.dispatchEvent(new Event('moss:refresh-meeting-history'));
-    else location.reload();
-  }}
-}});
-</script></body></html>"""
+</body></html>"""
 
 
 def _meeting_history_card(meeting: Meeting) -> str:

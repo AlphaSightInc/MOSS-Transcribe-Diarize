@@ -5,7 +5,7 @@ import {
   type CaptureLane,
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
-import { captureMeetingId, resetSessionState } from "../state/session";
+import { captureMeetingId, resetSessionState, sessionTitle } from "../state/session";
 import { watchCreatedMeeting } from "../lib/finalSummary";
 import {
   clearSessionReattach,
@@ -37,9 +37,10 @@ export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 export function ControlPanel() {
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [phase, setPhase] = useState<CapturePhase>("idle");
+  const [connected, setConnected] = useState({ microphone: false, system: false });
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
   const [message, setMessage] = useState(
-    "Enable the microphone, then share system audio to start a private Live Meeting."
+    "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio."
   );
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
@@ -57,11 +58,12 @@ export function ControlPanel() {
     setMeters(next);
     if (next.microphone > 0 && next.system > 0 && phaseRef.current === "configuring") {
       transition("ready");
-      setMessage("Both lanes carry audio. Start capture when ready.");
+      setMessage("Both sources are receiving sound. Start capture when ready.");
     }
   };
 
   const reportPreSessionFailure = (failure: PreSessionCaptureFailure) => {
+    setConnected({ microphone: false, system: false });
     transition("error");
     setMessage(`${failure.lane}: ${failure.code}`);
   };
@@ -76,6 +78,7 @@ export function ControlPanel() {
     if (client) void client.close().catch(() => undefined);
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
+    setConnected({ microphone: false, system: false });
     transition("terminal");
     setMessage(terminalMessage);
     requestMeetingHistoryRefresh();
@@ -96,6 +99,7 @@ export function ControlPanel() {
     try {
       await client.prepare();
       await client.startMicrophone(audioRoute === "speakers");
+      setConnected(current => ({ ...current, microphone: true }));
       setMessage("Microphone connected. Share a browser tab, window, or screen with audio.");
     } catch (error) {
       transition("error");
@@ -107,17 +111,18 @@ export function ControlPanel() {
     const client = clientRef.current;
     if (!client || phase === "stopping") return;
     const displayRequest = client.requestDisplayMedia();
-    setMessage(meters.system > 0 ? "Choose a replacement audio surface." : "Choose a surface and enable share audio.");
+    setMessage(connected.system ? "Choose a replacement audio surface." : "Choose a surface and enable share audio.");
     try {
       const stream = await displayRequest;
-      if (metersRef.current.system > 0) {
+      if (connected.system) {
         metersRef.current = { ...metersRef.current, system: 0 };
         setMeters(metersRef.current);
         await client.replaceLane("system", stream, stream.getTracks());
       } else {
         await client.attachDisplayMedia(stream);
       }
-      setMessage("Shared-audio lane connected; waiting for non-zero signal.");
+      setConnected(current => ({ ...current, system: true }));
+      setMessage("Shared audio connected. Play sound in the shared tab and speak into the microphone.");
     } catch (error) {
       setMessage(errorMessage(error));
       if (phaseRef.current !== "active") transition("error");
@@ -136,7 +141,8 @@ export function ControlPanel() {
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
-      setMessage("Microphone replaced; waiting for non-zero signal.");
+      setConnected(current => ({ ...current, microphone: true }));
+      setMessage("Microphone replaced. Speak to check its sound level.");
     } catch (error) {
       setMessage(errorMessage(error));
       if (phaseRef.current !== "active") transition("error");
@@ -149,6 +155,7 @@ export function ControlPanel() {
     transition("configuring");
     setMessage("Creating live session...");
     resetSessionState();
+    sessionTitle.value = "";
     try {
       const session = await client.createSession();
       watchCreatedMeeting(session.id);
@@ -165,7 +172,7 @@ export function ControlPanel() {
       pollerRef.current = poller;
       captureMeetingId.value = session.id;
       transition("active");
-      setMessage("Capture active. Keep both lane meters moving.");
+      setMessage("Recording microphone and shared audio.");
       poller.start();
       requestMeetingHistoryRefresh();
     } catch (error) {
@@ -203,9 +210,11 @@ export function ControlPanel() {
     }
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
+    setConnected({ microphone: false, system: false });
     resetSessionState();
+    sessionTitle.value = "";
     transition("idle");
-    setMessage("Enable the microphone, then share system audio to start a private Live Meeting.");
+    setMessage("Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.");
   };
 
   useEffect(() => {
@@ -271,6 +280,18 @@ export function ControlPanel() {
   const canStart = phase === "ready" && meters.microphone > 0 && meters.system > 0;
   const canReplace = phase === "ready" || phase === "active";
 
+  const readiness = !connected.microphone
+    ? "Next: enable your microphone."
+    : !connected.system
+      ? "Next: Share audio, choose a tab, and enable audio sharing in the browser chooser."
+      : meters.microphone <= 0 && meters.system <= 0
+        ? "Next: speak into your microphone and play sound in the shared tab. Both sources must register sound to start."
+        : meters.microphone <= 0
+          ? "Next: speak into your microphone. Shared audio is receiving sound."
+          : meters.system <= 0
+            ? "Next: play sound in the shared tab. Your microphone is receiving sound."
+            : "Both sources are receiving sound. Start capture when ready.";
+
   return (
     <section
       className="control-section capture-supervisor"
@@ -278,7 +299,8 @@ export function ControlPanel() {
       data-capture-phase={phase}
       data-observer-mode={reattached ? "read-only" : "none"}
     >
-      <div className="label">Capture</div>
+      <div className="label">Capture · Microphone + shared audio</div>
+      <p className="hint">Both sources are required to start. Microphone-only capture is not available.</p>
       <p className="capture-security-note">Private to this browser; no sign-in or capture key is needed.</p>
 
       <label className="field-label" htmlFor="audio-route">Listening setup</label>
@@ -295,13 +317,17 @@ export function ControlPanel() {
         </select>
       </div>
       <p className="hint">
-        Speakers enable echo cancellation; headphones preserve the microphone signal.
+        How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
       </p>
 
       <div className="capture-meters" aria-label="Capture lane meters">
-        <LaneMeter label="Microphone" value={meters.microphone} />
-        <LaneMeter label="Shared audio" value={meters.system} />
+        <LaneMeter label="Microphone" value={meters.microphone} connected={connected.microphone} observer={reattached} />
+        <LaneMeter label="Shared audio" value={meters.system} connected={connected.system} observer={reattached} />
       </div>
+
+      {!reattached && (phase === "idle" || phase === "configuring" || phase === "ready") ? (
+        <p className="hint" data-capture-readiness>{readiness}</p>
+      ) : null}
 
       {!configured && !reattached ? (
         <button
@@ -319,7 +345,7 @@ export function ControlPanel() {
             Switch mic
           </button>
           <button type="button" className="btn" onClick={() => void shareAudio()}>
-            {meters.system > 0 ? "Reshare audio" : "Share audio"}
+            {connected.system ? "Reshare audio" : "Share audio"}
           </button>
         </div>
       ) : null}
@@ -364,11 +390,11 @@ export function laneMeterPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(((db + 60) / 60) * 100)));
 }
 
-function LaneMeter({ label, value }: { label: string; value: number }) {
+function LaneMeter({ label, value, connected, observer }: { label: string; value: number; connected: boolean; observer: boolean }) {
   const level = laneMeterPercent(value);
   return (
     <div className="capture-meter">
-      <span>{label}</span>
+      <span>{label}<small style={{ display: "block" }}>{observer ? "Captured in another tab" : !connected ? "Not connected" : value > 0 ? "Connected · receiving sound" : "Connected · quiet"}</small></span>
       <span className="capture-meter-track" aria-label={`${label} level ${level}%`}>
         <span style={{ width: `${level}%` }} />
       </span>

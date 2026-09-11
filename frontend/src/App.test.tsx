@@ -2,10 +2,23 @@
 
 import { render } from "preact";
 import { afterEach, describe, expect, it } from "vitest";
+import { resetSessionState, sessionTitle, sessionMode } from "./state/session";
 import { App } from "./App";
 
 describe("Account application shell", () => {
-  afterEach(() => document.body.replaceChildren());
+  afterEach(() => { document.body.replaceChildren(); resetSessionState(); sessionTitle.value = ""; });
+
+  it("uses MOSS until a meeting is selected and shows its actual mode", () => {
+    const root = document.createElement("div");
+    document.body.append(root);
+    render(<App />, root);
+    expect(root.querySelector(".session-title")?.textContent).toBe("MOSS");
+    sessionTitle.value = "Customer review";
+    sessionMode.value = "file";
+    render(<App />, root);
+    expect(root.querySelector(".session-title")?.textContent).toBe("Customer review");
+    expect(root.querySelector(".session-chip")?.textContent).toBe("File / URL");
+  });
 
   it("renders one Account Live surface without a second authority or File job UI", () => {
     const root = document.createElement("div");

@@ -18,10 +18,12 @@ import {
 } from "../lib/meetingHistory";
 import {
   LIVE_MEETING_OBSERVE_EVENT,
+  OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
 import {
   resetSessionState,
+  sessionId,
   sessionMode,
   sessionStatus,
   sessionTitle
@@ -62,9 +64,9 @@ export function MeetingHistory() {
       const previous = selectedRef.current;
       const repaired = reconcileSelectedMeeting(next, selectedRef.current);
       replaceSelection(repaired);
-      if (repaired) {
+      if (repaired && sessionId.value === repaired.id) {
         publishMeeting(repaired, false);
-      } else if (previous) {
+      } else if (!repaired && previous && sessionId.value === previous.id) {
         resetSessionState();
         sessionTitle.value = "";
       }
@@ -110,24 +112,35 @@ export function MeetingHistory() {
     };
   }, [renameTarget]);
 
-  const selectMeeting = async (meeting: Meeting) => {
+  const selectMeeting = async (meetingId: string) => {
     if (
       sessionStatus.value === "active" &&
       sessionMode.value === "live" &&
-      selectedRef.current?.id !== meeting.id
+      selectedRef.current?.id !== meetingId
     ) {
       setError("Stop the current capture before opening another Meeting.");
       return;
     }
     setError(null);
     try {
-      const opened = await openMeeting(meeting.id);
+      const opened = await openMeeting(meetingId);
       replaceSelection(opened);
       publishMeeting(opened, true);
+      const panel = document.getElementById("transcript-panel");
+      panel?.scrollIntoView?.({ block: "start" });
     } catch (cause) {
       setError(errorMessage(cause));
     }
   };
+
+  useEffect(() => {
+    const open = (event: Event) => {
+      const id = (event as CustomEvent).detail?.meetingId;
+      if (typeof id === "string") void selectMeeting(id);
+    };
+    document.addEventListener(OPEN_MEETING_EVENT, open);
+    return () => document.removeEventListener(OPEN_MEETING_EVENT, open);
+  }, []);
 
   const submitRename = async (event: Event) => {
     event.preventDefault();
@@ -145,7 +158,7 @@ export function MeetingHistory() {
       if (selectedRef.current?.id === renamed.id) {
         const nextSelected = update(selectedRef.current);
         replaceSelection(nextSelected);
-        sessionTitle.value = renamed.title;
+        if (sessionId.value === renamed.id) sessionTitle.value = renamed.title;
       }
       setRenameTarget(null);
       setRenameTitle("");
@@ -182,7 +195,7 @@ export function MeetingHistory() {
         </div>
 
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
-        {selected ? <p className="hint"><a href="#transcript-panel">View selected transcript and export</a></p> : null}
+        {selected ? <p className="hint" role="status">Selected: {meetingTitle(selected)}. <a href="#transcript-panel">View selected transcript and export</a></p> : null}
         {selected?.status === "completed" && <FinalSummary key={selected.id} meeting={selected} />}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
@@ -210,7 +223,7 @@ export function MeetingHistory() {
                       className="history-card-hitbox"
                       data-open-meeting={meeting.id}
                       aria-pressed={selected?.id === meeting.id}
-                      onClick={() => void selectMeeting(meeting)}
+                      onClick={() => void selectMeeting(meeting.id)}
                     >
                       <span className="history-card-headline">
                         <span className="history-card-copy">

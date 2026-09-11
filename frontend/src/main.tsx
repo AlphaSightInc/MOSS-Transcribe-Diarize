@@ -1,3 +1,4 @@
+import { bindFileUpload } from "./lib/fileUpload";
 import { render } from "preact";
 import { App } from "./App";
 import { VoiceprintBank } from "./components/VoiceprintBank";
@@ -9,6 +10,8 @@ document.addEventListener(MEETING_CREATED, event => {
   const id = (event as CustomEvent).detail?.meeting_id;
   if (typeof id === "string") watchCreatedMeeting(id, true);
 });
+
+bindFileUpload();
 
 const root = document.getElementById("app");
 

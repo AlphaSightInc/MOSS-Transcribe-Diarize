@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
       return poller;
     }),
     captureClose: vi.fn().mockResolvedValue(undefined),
+    replaceLane: vi.fn().mockResolvedValue(undefined),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
@@ -51,6 +52,7 @@ vi.mock("../capture/captureClient", () => ({
     startMicrophone = vi.fn(async () => this.options.onMeter?.("microphone", 0.5));
     requestDisplayMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
     attachDisplayMedia = vi.fn(async () => this.options.onMeter?.("system", 0.5));
+    replaceLane = mocks.replaceLane;
     createSession = mocks.createSession;
     close = mocks.captureClose;
   }
@@ -121,6 +123,30 @@ describe("ControlPanel reattach", () => {
     act(() => mocks.captureOptions?.onPreflightStatus?.(remedy));
 
     expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
+  });
+
+  it("distinguishes connections from sound and never enables microphone-only Start", async () => {
+    await act(async () => render(<ControlPanel />, root));
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    expect(root.textContent).toContain("Microphone-only capture is not available");
+    expect(root.textContent).toContain("Not connected");
+    await act(async () => button("Enable microphone")!.click());
+    await vi.waitFor(() => expect(root.textContent).toContain("Connected · receiving sound"));
+    expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("Share audio");
+    expect(button("Start capture")).toBeUndefined();
+    act(() => mocks.captureOptions!.onMeter!("microphone", 0));
+    expect(root.textContent).toContain("Connected · quiet");
+    await act(async () => button("Share audio")!.click());
+    await vi.waitFor(() => expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("speak into your microphone"));
+    expect(button("Start capture")).toBeUndefined();
+    act(() => mocks.captureOptions!.onMeter!("microphone", .5));
+    expect(button("Start capture")!.disabled).toBe(false);
+    act(() => mocks.captureOptions!.onMeter!("system", 0));
+    expect(button("Start capture")!.disabled).toBe(true);
+    expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("play sound in the shared tab");
+    await act(async () => button("Reshare audio")!.click());
+    expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), expect.any(Array));
+    expect(mocks.createSession).not.toHaveBeenCalled();
   });
 
   it("starts Account capture without rendering or requiring another credential", async () => {

@@ -5,9 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Meeting } from "../api/meetings";
 import {
   LIVE_MEETING_OBSERVE_EVENT,
+  OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
-import { resetSessionState, sessionTitle, transcript } from "../state/session";
+import { resetSessionState, sessionTitle, sessionId, sessionMode, transcript } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 
@@ -46,6 +47,31 @@ describe("MeetingHistory", () => {
     resetSessionState();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("brings an explicitly opened import into view but leaves background refresh in place", async () => {
+    const selected = meeting({ id: "imported", title: "Imported review" });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));
+    const panel = document.createElement("section");
+    panel.id = "transcript-panel";
+    const scroll = vi.fn();
+    panel.scrollIntoView = scroll;
+    document.body.append(panel);
+    const history = root;
+    await act(async () => render(<MeetingHistory />, history));
+    await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: "imported" } })); });
+    await vi.waitFor(() => expect(scroll).toHaveBeenCalledOnce());
+    expect(history.textContent).toContain("Selected: Imported review");
+    await act(async () => { document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT)); });
+    expect(scroll).toHaveBeenCalledOnce();
+    sessionId.value = "new-live";
+    sessionMode.value = "live";
+    sessionTitle.value = "Current live meeting";
+    await act(async () => { document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT)); });
+    expect(sessionTitle.value).toBe("Current live meeting");
+    expect(sessionMode.value).toBe("live");
+    expect(scroll).toHaveBeenCalledOnce();
+    panel.remove();
   });
 
   it("renders one Active group before terminal dates and filters locally", async () => {

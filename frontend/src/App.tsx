@@ -1,6 +1,6 @@
 import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
-import { sessionStatus, sessionStatusLine } from "./state/session";
+import { sessionStatus, sessionStatusLine, sessionTitle, sessionMode } from "./state/session";
 
 /** The sole Account-owned Live surface mounted inside the authenticated workspace. */
 export function App() {
@@ -22,10 +22,10 @@ export function App() {
           <span>{statusLabel}</span>
         </span>
 
-        <div className="session-meta" aria-live="polite">
-          <span className="session-title">LiveTranscribe</span>
+        <div className="session-meta" aria-live="polite" style={{ flexWrap: "nowrap", minWidth: 0 }}>
+          <span className="session-title" title={sessionTitle.value || "MOSS"}>{sessionTitle.value || "MOSS"}</span>
           <span className="session-dot" aria-hidden="true" />
-          <span className="session-chip">Live</span>
+          <span className="session-chip">{sessionMode.value === "live" ? "Live" : "File / URL"}</span>
         </div>
 
         <div className="top-right" />
