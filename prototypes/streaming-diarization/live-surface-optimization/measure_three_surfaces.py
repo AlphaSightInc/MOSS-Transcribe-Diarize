@@ -194,8 +194,15 @@ class SurfaceCaptureService:
         self.poll_seconds = poll_seconds
         self.captures: dict[str, dict[str, Any]] = {}
         self.stop_requested_monotonic_ns: int | None = None
+        self._next_event_seq = 0
+        self._pending_rolling: set[int] = set()
 
     def _capture(self, name: str, snapshot) -> None:
+        if name == "post_stop_final" and (
+            snapshot is None or snapshot.session.finalization_status != "final"
+        ):
+            status = None if snapshot is None else snapshot.session.finalization_status
+            raise replay.ServiceReplayFailure(f"final capture requires final terminal state; observed {status}")
         if snapshot is None or name in self.captures:
             return
         self.captures[name] = {
@@ -218,7 +225,18 @@ class SurfaceCaptureService:
         return self.inner.accept_frame(session_id, frame)
 
     def events(self, session_id, since_seq=0):
-        return self.inner.events(session_id, since_seq=since_seq)
+        events = self.inner.events(session_id, since_seq=since_seq)
+        for event in events:
+            if event.seq < self._next_event_seq:
+                continue
+            if event.seq != self._next_event_seq:
+                raise replay.ServiceReplayFailure("settle rolling event history has a gap")
+            self._next_event_seq = event.seq + 1
+            if event.kind == "rolling_decode_queued" and event.payload.get("admitted") is True:
+                self._pending_rolling.add(int(event.payload["item_id"]))
+            elif event.kind == "rolling_decode_completed":
+                self._pending_rolling.discard(int(event.payload["item_id"]))
+        return events
 
     def snapshot(self, session_id, since_version=None):
         snapshot = self.inner.snapshot(session_id, since_version=since_version)
@@ -236,7 +254,25 @@ class SurfaceCaptureService:
         wait_started = time.monotonic()
         settled = immediate
         polls = 0
-        while settled is not None and settled.pending_work_items and time.monotonic() - wait_started < self.settle_timeout:
+        while True:
+            if settled is None:
+                raise replay.ServiceReplayFailure("settle snapshot is unavailable")
+            # Replay drains events continuously during ingress; finish tracking rolling
+            # admissions/completions here without changing canonical backpressure counts.
+            self.events(session_id, since_seq=self._next_event_seq)
+            if settled.pending_work_items == 0 and not self._pending_rolling:
+                # Completion may have happened after the snapshot above. Capture the
+                # document after observing its completion, never the earlier snapshot.
+                settled = self.inner.snapshot(session_id)
+                if settled is None:
+                    raise replay.ServiceReplayFailure("settle snapshot is unavailable")
+                if settled.pending_work_items == 0:
+                    break
+            if time.monotonic() - wait_started >= self.settle_timeout:
+                raise replay.ServiceReplayFailure(
+                    f"settle timed out after {self.settle_timeout:g}s: "
+                    f"canonical={settled.pending_work_items}, rolling={len(self._pending_rolling)}"
+                )
             time.sleep(self.poll_seconds)
             polls += 1
             settled = self.inner.snapshot(session_id)
@@ -245,11 +281,14 @@ class SurfaceCaptureService:
             "seconds": round(time.monotonic() - wait_started, 6),
             "polls": polls,
             "timeout_seconds": self.settle_timeout,
-            "drained": settled is not None and settled.pending_work_items == 0,
+            "drained": True,
+            "pending_rolling_work_items": len(self._pending_rolling),
         }
         self.stop_requested_monotonic_ns = time.monotonic_ns()
         stopped = await self.inner.stop(session_id, deadline)
         self._capture("stop_return", stopped)
+        if stopped.session.finalization_status in replay.TERMINAL_FINALIZATION_SETTLED:
+            self._capture("post_stop_final", stopped)
         return stopped
 
     async def abort(self, session_id, reason):

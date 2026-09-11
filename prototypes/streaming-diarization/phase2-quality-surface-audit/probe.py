@@ -29,6 +29,8 @@ MODEL = 'OpenMOSS-Team/MOSS-Transcribe-Diarize'
 
 def capture_probe(harness, snapshots):
     class Inner:
+        def events(self, session_id, since_seq=0):
+            return ()
         async def stop(self, session_id, deadline):
             raise ServiceReplayTransportFailure('controlled Stop failure')
         def snapshot(self, session_id):
