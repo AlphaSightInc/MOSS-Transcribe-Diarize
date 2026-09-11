@@ -67,11 +67,6 @@ def test_draft_is_unlabelled_and_outside_every_quality_capture(tmp_path):
     assert '[S00]' in after.draft.transcript
     assert dataclasses.asdict(before.session) == dataclasses.asdict(after.session)
     assert after.session.identity_snapshot.version == 0
-    from moss_transcribe_diarize.live_speaker_accuracy import hypothesis_from_live_snapshot
-    for surface in ('pre_stop_immediate', 'pre_stop_settled', 'post_stop_final'):
-        assert hypothesis_from_live_snapshot({'snapshot': before.to_dict()}, corpus_start_sample=0,
-            corpus_duration_sec=.0625) == hypothesis_from_live_snapshot(
-                {'snapshot': after.to_dict()}, corpus_start_sample=0, corpus_duration_sec=.0625) == ()
     # The exact evaluator used by immediate, settled and final captures only sees LiveSnapshot.
     _write_evaluator(tmp_path / 'before', before.session)
     _write_evaluator(tmp_path / 'after', after.session)
@@ -173,3 +168,30 @@ def test_account_projection_does_not_suppress_draft_at_same_canonical_version():
     snapshot = r.snapshot(sid)
     binding = SimpleNamespace(public_snapshot=snapshot, capture_fenced=False)
     assert Phase2LiveMeetings.snapshot(None, binding, since_version=snapshot.session.version) is snapshot
+
+
+def test_draft_generation_replaces_previous_words_without_retaining_stale_copy():
+    r, _, sid = runtime(RecordingDecoder())
+    r.accept_frame(sid, _frame(0)); finished(r)
+    first = r.snapshot(sid).to_dict()
+    r.accept_frame(sid, _frame(1)); finished(r)
+    second = r.snapshot(sid).to_dict()
+    rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+    assert [len(items) for items in rows] == [1, 1]
+    assert rows[0][0]['segment_id'] != rows[1][0]['segment_id']
+    assert not rows[1][0].get('provisional_stale')
+
+
+def test_queued_canonical_in_another_session_skips_draft_tick():
+    decoder = RecordingDecoder()
+    r, scheduler, sid = runtime(decoder)
+    other = r.create().session_id
+    # A complete canonical span is queued, not yet running.
+    r.accept_frame(other, _frame(0, samples=4000))
+    r.accept_frame(sid, _frame(0))
+    assert decoder.calls == []
+    assert r.snapshot(sid).draft_stats['skipped'] == 1
+    scheduler.run_one()
+    r.accept_frame(sid, _frame(1)); finished(r)
+    assert r.snapshot(sid).draft is not None
+    assert r.snapshot(other).draft is None

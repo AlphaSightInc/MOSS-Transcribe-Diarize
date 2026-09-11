@@ -1,0 +1,243 @@
+{
+  "single-off": {
+    "probes": 1,
+    "audio_seconds": 50.0,
+    "decoder_requests": 31,
+    "draft_requests": 0,
+    "non_draft_requests": 31,
+    "requests_per_audio_second": 0.62,
+    "draft_ticks": 0,
+    "skipped_ticks": 0,
+    "skipped_fraction": null,
+    "coverage_p50_s": [
+      1.8
+    ],
+    "coverage_p95_s": [
+      2.94
+    ],
+    "first_text_latency_s": [
+      2.91
+    ],
+    "first_text": [
+      {
+        "wall_after_start_s": 3.75,
+        "audio_start_s": 0.84
+      }
+    ],
+    "label_coverage_p50_s": [
+      2.256
+    ],
+    "label_coverage_p95_s": [
+      6.549
+    ],
+    "wer_vs_reference": [
+      0.0885
+    ],
+    "legacy_sequence_match_error": [
+      0.0708
+    ],
+    "final_finalization": [
+      "final"
+    ]
+  },
+  "single-on": {
+    "probes": 1,
+    "audio_seconds": 50.0,
+    "decoder_requests": 64,
+    "draft_requests": 33,
+    "non_draft_requests": 31,
+    "requests_per_audio_second": 1.28,
+    "draft_ticks": 50,
+    "skipped_ticks": 17,
+    "skipped_fraction": 0.34,
+    "coverage_p50_s": [
+      0.77
+    ],
+    "coverage_p95_s": [
+      2.32
+    ],
+    "first_text_latency_s": [
+      1.552
+    ],
+    "first_text": [
+      {
+        "wall_after_start_s": 2.392,
+        "audio_start_s": 0.84
+      }
+    ],
+    "label_coverage_p50_s": [
+      2.143
+    ],
+    "label_coverage_p95_s": [
+      6.292
+    ],
+    "wer_vs_reference": [
+      0.0885
+    ],
+    "legacy_sequence_match_error": [
+      0.0708
+    ],
+    "final_finalization": [
+      "final"
+    ]
+  },
+  "two-off": {
+    "probes": 2,
+    "audio_seconds": 100.0,
+    "decoder_requests": 62,
+    "draft_requests": 0,
+    "non_draft_requests": 62,
+    "requests_per_audio_second": 0.62,
+    "draft_ticks": 0,
+    "skipped_ticks": 0,
+    "skipped_fraction": null,
+    "coverage_p50_s": [
+      2.23,
+      2.16
+    ],
+    "coverage_p95_s": [
+      3.36,
+      3.4
+    ],
+    "first_text_latency_s": [
+      2.459,
+      2.036
+    ],
+    "first_text": [
+      {
+        "wall_after_start_s": 3.299,
+        "audio_start_s": 0.84
+      },
+      {
+        "wall_after_start_s": 2.876,
+        "audio_start_s": 0.84
+      }
+    ],
+    "label_coverage_p50_s": [
+      2.652,
+      2.568
+    ],
+    "label_coverage_p95_s": [
+      6.807,
+      7.145
+    ],
+    "wer_vs_reference": [
+      0.0885,
+      0.0885
+    ],
+    "legacy_sequence_match_error": [
+      0.0708,
+      0.0708
+    ],
+    "final_finalization": [
+      "final",
+      "final"
+    ]
+  },
+  "two-on": {
+    "probes": 2,
+    "audio_seconds": 100.0,
+    "decoder_requests": 36,
+    "draft_requests": 5,
+    "non_draft_requests": 31,
+    "requests_per_audio_second": 0.36,
+    "draft_ticks": 100,
+    "skipped_ticks": 95,
+    "skipped_fraction": 0.95,
+    "coverage_p50_s": [
+      27.57,
+      22.14
+    ],
+    "coverage_p95_s": [
+      45.72,
+      45.27
+    ],
+    "first_text_latency_s": [
+      1.834,
+      0.327
+    ],
+    "first_text": [
+      {
+        "wall_after_start_s": 2.674,
+        "audio_start_s": 0.84
+      },
+      {
+        "wall_after_start_s": 1.167,
+        "audio_start_s": 0.84
+      }
+    ],
+    "label_coverage_p50_s": [
+      28.394,
+      22.462
+    ],
+    "label_coverage_p95_s": [
+      46.037,
+      45.588
+    ],
+    "wer_vs_reference": [
+      null,
+      null
+    ],
+    "legacy_sequence_match_error": [
+      null,
+      null
+    ],
+    "final_finalization": [
+      "not_started",
+      "not_started"
+    ]
+  },
+  "two-on-portal": {
+    "probes": 2,
+    "audio_seconds": 100.0,
+    "decoder_requests": 83,
+    "draft_requests": 21,
+    "non_draft_requests": 62,
+    "requests_per_audio_second": 0.83,
+    "draft_ticks": 100,
+    "skipped_ticks": 79,
+    "skipped_fraction": 0.79,
+    "coverage_p50_s": [
+      1.3,
+      1.72
+    ],
+    "coverage_p95_s": [
+      3.17,
+      3.36
+    ],
+    "first_text_latency_s": [
+      0.547,
+      2.252
+    ],
+    "first_text": [
+      {
+        "wall_after_start_s": 1.387,
+        "audio_start_s": 0.84
+      },
+      {
+        "wall_after_start_s": 3.092,
+        "audio_start_s": 0.84
+      }
+    ],
+    "label_coverage_p50_s": [
+      2.589,
+      2.539
+    ],
+    "label_coverage_p95_s": [
+      7.261,
+      6.894
+    ],
+    "wer_vs_reference": [
+      0.0885,
+      0.0885
+    ],
+    "legacy_sequence_match_error": [
+      0.0708,
+      0.0708
+    ],
+    "final_finalization": [
+      "final",
+      "final"
+    ]
+  }
+}

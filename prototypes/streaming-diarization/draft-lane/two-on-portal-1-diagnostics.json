@@ -1,0 +1,1895 @@
+{
+  "terminal_failure": {},
+  "events": [
+    {
+      "seq": 3,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 2,
+      "payload": {
+        "start_sample": 0,
+        "end_sample": 16000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 6,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 4,
+      "payload": {
+        "start_sample": 0,
+        "end_sample": 32000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 9,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 5,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2271285741502416
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 10,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 5,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2271285741699000,
+        "queue_wait_ms": 0.196584
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 12,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 7,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2271286120939625,
+        "queue_wait_ms": 0.196584,
+        "canonical_processing_elapsed_ms": 379.240625,
+        "queued_to_processed_ms": 379.437209,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 0,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 40000,
+        "canonical_decode_elapsed_sec": 0.1013879170641303,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.04055516682565212,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 22,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 16,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 10,
+      "payload": {
+        "start_sample": 40000,
+        "end_sample": 64000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 20,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 12,
+      "payload": {
+        "item_id": 1,
+        "runtime_monotonic_ns": 2271288252580833
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 21,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 12,
+      "payload": {
+        "item_id": 1,
+        "runtime_monotonic_ns": 2271288252748333,
+        "queue_wait_ms": 0.1675
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 24,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 15,
+      "payload": {
+        "item_id": 1,
+        "runtime_monotonic_ns": 2271288816317458,
+        "queue_wait_ms": 0.1675,
+        "canonical_processing_elapsed_ms": 563.569125,
+        "queued_to_processed_ms": 563.736625,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 1,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 80000,
+        "canonical_decode_elapsed_sec": 0.16684299986809492,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.06673719994723797,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 25,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 29,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 17,
+      "payload": {
+        "item_id": 2,
+        "runtime_monotonic_ns": 2271289744985500
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 30,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 17,
+      "payload": {
+        "item_id": 2,
+        "runtime_monotonic_ns": 2271289745178333,
+        "queue_wait_ms": 0.192833
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 32,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 19,
+      "payload": {
+        "item_id": 2,
+        "runtime_monotonic_ns": 2271290013504625,
+        "queue_wait_ms": 0.192833,
+        "canonical_processing_elapsed_ms": 268.326292,
+        "queued_to_processed_ms": 268.519125,
+        "batch_index": 0,
+        "batch_size": 2,
+        "span_id": 2,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 94720,
+        "canonical_decode_elapsed_sec": 0.12415808299556375,
+        "frozen_span_sample_count": 14720,
+        "frozen_span_duration_sec": 0.92,
+        "canonical_decode_rtf": 0.13495443803865623,
+        "canonical_decode_token_cap": 149,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 18,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 34,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 21,
+      "payload": {
+        "item_id": 2,
+        "runtime_monotonic_ns": 2271290160325041,
+        "queue_wait_ms": 0.192833,
+        "canonical_processing_elapsed_ms": 415.146708,
+        "queued_to_processed_ms": 415.339541,
+        "batch_index": 1,
+        "batch_size": 2,
+        "span_id": 3,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 100480,
+        "canonical_decode_elapsed_sec": 0.1243722909130156,
+        "frozen_span_sample_count": 5760,
+        "frozen_span_duration_sec": 0.36,
+        "canonical_decode_rtf": 0.3454785858694878,
+        "canonical_decode_token_cap": 100,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 19,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 38,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 24,
+      "payload": {
+        "start_sample": 100480,
+        "end_sample": 128000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 42,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 26,
+      "payload": {
+        "item_id": 3,
+        "runtime_monotonic_ns": 2271292261467000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 44,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 27,
+      "payload": {
+        "item_id": 3,
+        "runtime_monotonic_ns": 2271292819239000,
+        "queue_wait_ms": 557.772
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 47,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 30,
+      "payload": {
+        "item_id": 3,
+        "runtime_monotonic_ns": 2271293391017000,
+        "queue_wait_ms": 557.772,
+        "canonical_processing_elapsed_ms": 571.778,
+        "queued_to_processed_ms": 1129.55,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 4,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 140480,
+        "canonical_decode_elapsed_sec": 0.1737769590690732,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.06951078362762927,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 25,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 50,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 32,
+      "payload": {
+        "start_sample": 140480,
+        "end_sample": 176000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 53,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 33,
+      "payload": {
+        "item_id": 4,
+        "runtime_monotonic_ns": 2271294755804541
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 55,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 34,
+      "payload": {
+        "item_id": 4,
+        "runtime_monotonic_ns": 2271295265053833,
+        "queue_wait_ms": 509.249292
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 57,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 36,
+      "payload": {
+        "item_id": 4,
+        "runtime_monotonic_ns": 2271295735713958,
+        "queue_wait_ms": 509.249292,
+        "canonical_processing_elapsed_ms": 470.660125,
+        "queued_to_processed_ms": 979.909417,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 5,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 180480,
+        "canonical_decode_elapsed_sec": 0.1013874588534236,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.04055498354136944,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 21,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 61,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "rolling_decode_completed",
+      "snapshot_version": 39,
+      "payload": {
+        "item_id": 5,
+        "outcome": "applied",
+        "window_index": 0,
+        "start_sample": 0,
+        "end_sample": 160000,
+        "window_samples": 160000,
+        "owned_start_sample": 0,
+        "owned_end_sample": 160000,
+        "owned_samples": 160000,
+        "queue_wait_ms": 330.909917,
+        "queued_to_completed_ms": 654.667708,
+        "runtime_monotonic_ns": 2271296390462166,
+        "rolling_decode_elapsed_sec": 0.3226319160312414,
+        "rolling_decode_rtf": 0.032263191603124144,
+        "rolling_decode_token_cap": 938,
+        "rolling_decode_capped": false,
+        "rolling_decode_generated_tokens": 72,
+        "decode_failure": null,
+        "proposed": true,
+        "applied": true,
+        "refusal": null,
+        "revised_segments": 3,
+        "rolling_status": "rolling",
+        "windows_planned": 1,
+        "windows_completed": 1,
+        "windows_failed": 0,
+        "proposal_refusals": 0,
+        "last_proposal_refusal": null,
+        "stale_completions": 0,
+        "decoded_audio_samples": 160000,
+        "retained_samples": 48000,
+        "retained_high_water_samples": 192000,
+        "admission_refusals": 0,
+        "normalization_merged_segments": 0,
+        "normalization_dropped_segments": 0,
+        "normalization_displaced_samples": 0
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 66,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 41,
+      "payload": {
+        "item_id": 6,
+        "runtime_monotonic_ns": 2271297260547916
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 67,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 41,
+      "payload": {
+        "item_id": 6,
+        "runtime_monotonic_ns": 2271297718753958,
+        "queue_wait_ms": 458.206042
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 70,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 42,
+      "payload": {
+        "item_id": 7,
+        "runtime_monotonic_ns": 2271297745884333
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 72,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 44,
+      "payload": {
+        "item_id": 6,
+        "runtime_monotonic_ns": 2271298152364458,
+        "queue_wait_ms": 458.206042,
+        "canonical_processing_elapsed_ms": 433.6105,
+        "queued_to_processed_ms": 891.816542,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 6,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 220480,
+        "canonical_decode_elapsed_sec": 0.10141074983403087,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.040564299933612345,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 23,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 74,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 45,
+      "payload": {
+        "item_id": 7,
+        "runtime_monotonic_ns": 2271298317287583,
+        "queue_wait_ms": 571.40325
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 75,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 46,
+      "payload": {
+        "item_id": 7,
+        "runtime_monotonic_ns": 2271298414548500,
+        "queue_wait_ms": 571.40325,
+        "canonical_processing_elapsed_ms": 97.260917,
+        "queued_to_processed_ms": 668.664167,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 7,
+        "submitted": true,
+        "identity_status": "empty_span",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": "decoder_returned_unparseable_transcript",
+        "committed_samples": 221120,
+        "canonical_decode_elapsed_sec": 0.09641358302906156,
+        "frozen_span_sample_count": 640,
+        "frozen_span_duration_sec": 0.04,
+        "canonical_decode_rtf": 2.410339575726539,
+        "canonical_decode_token_cap": 72,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 23,
+        "canonical_decode_salvage": "refused_gate",
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 78,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 48,
+      "payload": {
+        "start_sample": 221120,
+        "end_sample": 256000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 81,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 49,
+      "payload": {
+        "item_id": 8,
+        "runtime_monotonic_ns": 2271299740509333
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 82,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 49,
+      "payload": {
+        "item_id": 8,
+        "runtime_monotonic_ns": 2271299740691166,
+        "queue_wait_ms": 0.181833
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 85,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 52,
+      "payload": {
+        "item_id": 8,
+        "runtime_monotonic_ns": 2271300272133583,
+        "queue_wait_ms": 0.181833,
+        "canonical_processing_elapsed_ms": 531.442417,
+        "queued_to_processed_ms": 531.62425,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 8,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 261120,
+        "canonical_decode_elapsed_sec": 0.12395570799708366,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.04958228319883347,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 24,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 88,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 54,
+      "payload": {
+        "start_sample": 261120,
+        "end_sample": 288000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 92,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 56,
+      "payload": {
+        "item_id": 9,
+        "runtime_monotonic_ns": 2271302251116333
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 93,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 56,
+      "payload": {
+        "item_id": 9,
+        "runtime_monotonic_ns": 2271302251334708,
+        "queue_wait_ms": 0.218375
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 97,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 58,
+      "payload": {
+        "item_id": 10,
+        "runtime_monotonic_ns": 2271302744091833
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 98,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 59,
+      "payload": {
+        "item_id": 9,
+        "runtime_monotonic_ns": 2271302757289375,
+        "queue_wait_ms": 0.218375,
+        "canonical_processing_elapsed_ms": 505.954667,
+        "queued_to_processed_ms": 506.173042,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 9,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 301120,
+        "canonical_decode_elapsed_sec": 0.19149083411321044,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.07659633364528418,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 23,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 99,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 59,
+      "payload": {
+        "item_id": 10,
+        "runtime_monotonic_ns": 2271303220662875,
+        "queue_wait_ms": 476.571042
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 102,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 62,
+      "payload": {
+        "item_id": 10,
+        "runtime_monotonic_ns": 2271303324103791,
+        "queue_wait_ms": 476.571042,
+        "canonical_processing_elapsed_ms": 103.440916,
+        "queued_to_processed_ms": 580.011958,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 10,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 307360,
+        "canonical_decode_elapsed_sec": 0.10224374989047647,
+        "frozen_span_sample_count": 6240,
+        "frozen_span_duration_sec": 0.39,
+        "canonical_decode_rtf": 0.26216346125763196,
+        "canonical_decode_token_cap": 102,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 18,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 105,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 64,
+      "payload": {
+        "start_sample": 307360,
+        "end_sample": 336000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 109,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 66,
+      "payload": {
+        "item_id": 11,
+        "runtime_monotonic_ns": 2271305256292833
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 111,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 67,
+      "payload": {
+        "item_id": 11,
+        "runtime_monotonic_ns": 2271305847477000,
+        "queue_wait_ms": 591.184167
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 114,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 70,
+      "payload": {
+        "item_id": 11,
+        "runtime_monotonic_ns": 2271306413064333,
+        "queue_wait_ms": 591.184167,
+        "canonical_processing_elapsed_ms": 565.587333,
+        "queued_to_processed_ms": 1156.7715,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 11,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 347360,
+        "canonical_decode_elapsed_sec": 0.1588218337856233,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.06352873351424933,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 24,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 117,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "rolling_decode_completed",
+      "snapshot_version": 72,
+      "payload": {
+        "item_id": 12,
+        "outcome": "applied",
+        "window_index": 1,
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "window_samples": 160000,
+        "owned_start_sample": 160000,
+        "owned_end_sample": 320000,
+        "owned_samples": 160000,
+        "queue_wait_ms": 254.031334,
+        "queued_to_completed_ms": 480.670834,
+        "runtime_monotonic_ns": 2271306893821500,
+        "rolling_decode_elapsed_sec": 0.2256904998794198,
+        "rolling_decode_rtf": 0.02256904998794198,
+        "rolling_decode_token_cap": 938,
+        "rolling_decode_capped": false,
+        "rolling_decode_generated_tokens": 54,
+        "decode_failure": null,
+        "proposed": true,
+        "applied": true,
+        "refusal": null,
+        "revised_segments": 2,
+        "rolling_status": "rolling",
+        "windows_planned": 2,
+        "windows_completed": 2,
+        "windows_failed": 0,
+        "proposal_refusals": 0,
+        "last_proposal_refusal": null,
+        "stale_completions": 0,
+        "decoded_audio_samples": 320000,
+        "retained_samples": 56000,
+        "retained_high_water_samples": 208000,
+        "admission_refusals": 0,
+        "normalization_merged_segments": 0,
+        "normalization_dropped_segments": 0,
+        "normalization_displaced_samples": 0
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 120,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 73,
+      "payload": {
+        "start_sample": 347360,
+        "end_sample": 384000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 123,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 74,
+      "payload": {
+        "item_id": 13,
+        "runtime_monotonic_ns": 2271307760179333
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 125,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 75,
+      "payload": {
+        "item_id": 13,
+        "runtime_monotonic_ns": 2271308280007416,
+        "queue_wait_ms": 519.828083
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 128,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 78,
+      "payload": {
+        "item_id": 13,
+        "runtime_monotonic_ns": 2271308801192750,
+        "queue_wait_ms": 519.828083,
+        "canonical_processing_elapsed_ms": 521.185334,
+        "queued_to_processed_ms": 1041.013417,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 12,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 387360,
+        "canonical_decode_elapsed_sec": 0.12403870886191726,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.0496154835447669,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 29,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 130,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 79,
+      "payload": {
+        "start_sample": 387360,
+        "end_sample": 416000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 134,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 81,
+      "payload": {
+        "item_id": 14,
+        "runtime_monotonic_ns": 2271310240722541
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 135,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 81,
+      "payload": {
+        "item_id": 14,
+        "runtime_monotonic_ns": 2271310240916625,
+        "queue_wait_ms": 0.194084
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 138,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 84,
+      "payload": {
+        "item_id": 14,
+        "runtime_monotonic_ns": 2271310743000333,
+        "queue_wait_ms": 0.194084,
+        "canonical_processing_elapsed_ms": 502.083708,
+        "queued_to_processed_ms": 502.277792,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 13,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 427360,
+        "canonical_decode_elapsed_sec": 0.09919354086741805,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.03967741634696722,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 22,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 142,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 87,
+      "payload": {
+        "start_sample": 427360,
+        "end_sample": 464000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 145,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 88,
+      "payload": {
+        "item_id": 15,
+        "runtime_monotonic_ns": 2271312741043666
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 146,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 88,
+      "payload": {
+        "item_id": 15,
+        "runtime_monotonic_ns": 2271312741293833,
+        "queue_wait_ms": 0.250167
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 148,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 90,
+      "payload": {
+        "item_id": 15,
+        "runtime_monotonic_ns": 2271313229975666,
+        "queue_wait_ms": 0.250167,
+        "canonical_processing_elapsed_ms": 488.681833,
+        "queued_to_processed_ms": 488.932,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 14,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 467360,
+        "canonical_decode_elapsed_sec": 0.14634270826354623,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.05853708330541849,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 22,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 151,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 91,
+      "payload": {
+        "item_id": 16,
+        "runtime_monotonic_ns": 2271313255170791
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 152,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 91,
+      "payload": {
+        "item_id": 16,
+        "runtime_monotonic_ns": 2271313674387625,
+        "queue_wait_ms": 419.216834
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 155,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 94,
+      "payload": {
+        "item_id": 16,
+        "runtime_monotonic_ns": 2271313762588583,
+        "queue_wait_ms": 419.216834,
+        "canonical_processing_elapsed_ms": 88.200958,
+        "queued_to_processed_ms": 507.417792,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 15,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 476480,
+        "canonical_decode_elapsed_sec": 0.08662795787677169,
+        "frozen_span_sample_count": 9120,
+        "frozen_span_duration_sec": 0.57,
+        "canonical_decode_rtf": 0.15197887346802053,
+        "canonical_decode_token_cap": 118,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 18,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 157,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 95,
+      "payload": {
+        "start_sample": 476480,
+        "end_sample": 496000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 162,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 98,
+      "payload": {
+        "item_id": 17,
+        "runtime_monotonic_ns": 2271315756161916
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 163,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 98,
+      "payload": {
+        "item_id": 17,
+        "runtime_monotonic_ns": 2271316251476416,
+        "queue_wait_ms": 495.3145
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 166,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 101,
+      "payload": {
+        "item_id": 17,
+        "runtime_monotonic_ns": 2271316685268208,
+        "queue_wait_ms": 495.3145,
+        "canonical_processing_elapsed_ms": 433.791792,
+        "queued_to_processed_ms": 929.106292,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 16,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 516480,
+        "canonical_decode_elapsed_sec": 0.11042733304202557,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.044170933216810225,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 23,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 169,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "rolling_decode_completed",
+      "snapshot_version": 103,
+      "payload": {
+        "item_id": 18,
+        "outcome": "applied",
+        "window_index": 2,
+        "start_sample": 320000,
+        "end_sample": 480000,
+        "window_samples": 160000,
+        "owned_start_sample": 320000,
+        "owned_end_sample": 480000,
+        "owned_samples": 160000,
+        "queue_wait_ms": 273.407041,
+        "queued_to_completed_ms": 522.242333,
+        "runtime_monotonic_ns": 2271317207627833,
+        "rolling_decode_elapsed_sec": 0.24751383299008012,
+        "rolling_decode_rtf": 0.02475138329900801,
+        "rolling_decode_token_cap": 938,
+        "rolling_decode_capped": false,
+        "rolling_decode_generated_tokens": 59,
+        "decode_failure": null,
+        "proposed": true,
+        "applied": true,
+        "refusal": null,
+        "revised_segments": 2,
+        "rolling_status": "rolling",
+        "windows_planned": 3,
+        "windows_completed": 3,
+        "windows_failed": 0,
+        "proposal_refusals": 0,
+        "last_proposal_refusal": null,
+        "stale_completions": 0,
+        "decoded_audio_samples": 480000,
+        "retained_samples": 56000,
+        "retained_high_water_samples": 208000,
+        "admission_refusals": 0,
+        "normalization_merged_segments": 0,
+        "normalization_dropped_segments": 0,
+        "normalization_displaced_samples": 0
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 175,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 106,
+      "payload": {
+        "item_id": 19,
+        "runtime_monotonic_ns": 2271318244653000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 176,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 106,
+      "payload": {
+        "item_id": 19,
+        "runtime_monotonic_ns": 2271318244915583,
+        "queue_wait_ms": 0.262583
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 179,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 109,
+      "payload": {
+        "item_id": 19,
+        "runtime_monotonic_ns": 2271318767643125,
+        "queue_wait_ms": 0.262583,
+        "canonical_processing_elapsed_ms": 522.727542,
+        "queued_to_processed_ms": 522.990125,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 17,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 556480,
+        "canonical_decode_elapsed_sec": 0.12970520928502083,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.051882083714008334,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 25,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 185,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 113,
+      "payload": {
+        "item_id": 20,
+        "runtime_monotonic_ns": 2271320741160958
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 186,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 113,
+      "payload": {
+        "item_id": 20,
+        "runtime_monotonic_ns": 2271320741379750,
+        "queue_wait_ms": 0.218792
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 189,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 116,
+      "payload": {
+        "item_id": 20,
+        "runtime_monotonic_ns": 2271321277635916,
+        "queue_wait_ms": 0.218792,
+        "canonical_processing_elapsed_ms": 536.256166,
+        "queued_to_processed_ms": 536.474958,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 18,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 596480,
+        "canonical_decode_elapsed_sec": 0.12167062517255545,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.04866825006902218,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 23,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 192,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 118,
+      "payload": {
+        "start_sample": 596480,
+        "end_sample": 624000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 196,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 120,
+      "payload": {
+        "item_id": 21,
+        "runtime_monotonic_ns": 2271323257232041
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 198,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 121,
+      "payload": {
+        "item_id": 21,
+        "runtime_monotonic_ns": 2271323783318208,
+        "queue_wait_ms": 526.086167
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 201,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 124,
+      "payload": {
+        "item_id": 21,
+        "runtime_monotonic_ns": 2271324305086375,
+        "queue_wait_ms": 526.086167,
+        "canonical_processing_elapsed_ms": 521.768167,
+        "queued_to_processed_ms": 1047.854334,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 19,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 636480,
+        "canonical_decode_elapsed_sec": 0.1192576251924038,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.04770305007696152,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 26,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 204,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 126,
+      "payload": {
+        "start_sample": 636480,
+        "end_sample": 672000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 207,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 127,
+      "payload": {
+        "item_id": 22,
+        "runtime_monotonic_ns": 2271325745950041
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 208,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 127,
+      "payload": {
+        "item_id": 22,
+        "runtime_monotonic_ns": 2271325746278125,
+        "queue_wait_ms": 0.328084
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 211,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 130,
+      "payload": {
+        "item_id": 22,
+        "runtime_monotonic_ns": 2271326356146125,
+        "queue_wait_ms": 0.328084,
+        "canonical_processing_elapsed_ms": 609.868,
+        "queued_to_processed_ms": 610.196084,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 20,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 676480,
+        "canonical_decode_elapsed_sec": 0.19594787526875734,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.07837915010750293,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 24,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 215,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "rolling_decode_completed",
+      "snapshot_version": 133,
+      "payload": {
+        "item_id": 23,
+        "outcome": "applied",
+        "window_index": 3,
+        "start_sample": 480000,
+        "end_sample": 640000,
+        "window_samples": 160000,
+        "owned_start_sample": 480000,
+        "owned_end_sample": 640000,
+        "owned_samples": 160000,
+        "queue_wait_ms": 603.622625,
+        "queued_to_completed_ms": 899.150292,
+        "runtime_monotonic_ns": 2271327255425375,
+        "rolling_decode_elapsed_sec": 0.2942567910067737,
+        "rolling_decode_rtf": 0.029425679100677372,
+        "rolling_decode_token_cap": 938,
+        "rolling_decode_capped": false,
+        "rolling_decode_generated_tokens": 59,
+        "decode_failure": null,
+        "proposed": true,
+        "applied": true,
+        "refusal": null,
+        "revised_segments": 2,
+        "rolling_status": "rolling",
+        "windows_planned": 4,
+        "windows_completed": 4,
+        "windows_failed": 0,
+        "proposal_refusals": 0,
+        "last_proposal_refusal": null,
+        "stale_completions": 0,
+        "decoded_audio_samples": 640000,
+        "retained_samples": 64000,
+        "retained_high_water_samples": 208000,
+        "admission_refusals": 0,
+        "normalization_merged_segments": 0,
+        "normalization_dropped_segments": 0,
+        "normalization_displaced_samples": 0
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 217,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 133,
+      "payload": {
+        "start_sample": 676480,
+        "end_sample": 704000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 221,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 135,
+      "payload": {
+        "item_id": 24,
+        "runtime_monotonic_ns": 2271328250785500
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 222,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 135,
+      "payload": {
+        "item_id": 24,
+        "runtime_monotonic_ns": 2271328251025583,
+        "queue_wait_ms": 0.240083
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 225,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 138,
+      "payload": {
+        "item_id": 24,
+        "runtime_monotonic_ns": 2271328800222875,
+        "queue_wait_ms": 0.240083,
+        "canonical_processing_elapsed_ms": 549.197292,
+        "queued_to_processed_ms": 549.437375,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 21,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 716480,
+        "canonical_decode_elapsed_sec": 0.14729420887306333,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.05891768354922533,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 25,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 229,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 141,
+      "payload": {
+        "start_sample": 716480,
+        "end_sample": 752000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 232,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 142,
+      "payload": {
+        "item_id": 25,
+        "runtime_monotonic_ns": 2271330744967458
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 233,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 142,
+      "payload": {
+        "item_id": 25,
+        "runtime_monotonic_ns": 2271330745194583,
+        "queue_wait_ms": 0.227125
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 236,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 145,
+      "payload": {
+        "item_id": 25,
+        "runtime_monotonic_ns": 2271331335635625,
+        "queue_wait_ms": 0.227125,
+        "canonical_processing_elapsed_ms": 590.441042,
+        "queued_to_processed_ms": 590.668167,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 22,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 756480,
+        "canonical_decode_elapsed_sec": 0.19431083323433995,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.07772433329373599,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 24,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 239,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "draft_published",
+      "snapshot_version": 147,
+      "payload": {
+        "start_sample": 756480,
+        "end_sample": 784000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 243,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 149,
+      "payload": {
+        "item_id": 26,
+        "runtime_monotonic_ns": 2271332766941041
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 244,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 149,
+      "payload": {
+        "item_id": 26,
+        "runtime_monotonic_ns": 2271332767177166,
+        "queue_wait_ms": 0.236125
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 246,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_queued",
+      "snapshot_version": 149,
+      "payload": {
+        "item_id": 27,
+        "runtime_monotonic_ns": 2271332767651166,
+        "reason": "stop"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 248,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 151,
+      "payload": {
+        "item_id": 26,
+        "runtime_monotonic_ns": 2271333219770541,
+        "queue_wait_ms": 0.236125,
+        "canonical_processing_elapsed_ms": 452.593375,
+        "queued_to_processed_ms": 452.8295,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 23,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 796480,
+        "canonical_decode_elapsed_sec": 0.11802241578698158,
+        "frozen_span_sample_count": 40000,
+        "frozen_span_duration_sec": 2.5,
+        "canonical_decode_rtf": 0.047208966314792634,
+        "canonical_decode_token_cap": 286,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 21,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 249,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_started",
+      "snapshot_version": 151,
+      "payload": {
+        "item_id": 27,
+        "runtime_monotonic_ns": 2271333689886500,
+        "queue_wait_ms": 922.235334
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 250,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "canonical_processed",
+      "snapshot_version": 152,
+      "payload": {
+        "item_id": 27,
+        "runtime_monotonic_ns": 2271333819544125,
+        "queue_wait_ms": 922.235334,
+        "canonical_processing_elapsed_ms": 129.657625,
+        "queued_to_processed_ms": 1051.892959,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 24,
+        "submitted": true,
+        "identity_status": "empty_span",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": "decoder_returned_unparseable_transcript",
+        "committed_samples": 800000,
+        "canonical_decode_elapsed_sec": 0.12847291631624103,
+        "frozen_span_sample_count": 3520,
+        "frozen_span_duration_sec": 0.22,
+        "canonical_decode_rtf": 0.5839678014374592,
+        "canonical_decode_token_cap": 88,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 13,
+        "canonical_decode_salvage": "refused_gate",
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 252,
+      "session_id": "7q3SjgDNSH73ngHETUnVASBV",
+      "kind": "rolling_decode_completed",
+      "snapshot_version": 153,
+      "payload": {
+        "item_id": 28,
+        "outcome": "applied",
+        "window_index": 4,
+        "start_sample": 640000,
+        "end_sample": 800000,
+        "window_samples": 160000,
+        "owned_start_sample": 640000,
+        "owned_end_sample": 800000,
+        "owned_samples": 160000,
+        "queue_wait_ms": 86.029292,
+        "queued_to_completed_ms": 360.792375,
+        "runtime_monotonic_ns": 2271334180476291,
+        "rolling_decode_elapsed_sec": 0.27364258375018835,
+        "rolling_decode_rtf": 0.027364258375018834,
+        "rolling_decode_token_cap": 938,
+        "rolling_decode_capped": false,
+        "rolling_decode_generated_tokens": 60,
+        "decode_failure": null,
+        "proposed": true,
+        "applied": true,
+        "refusal": null,
+        "revised_segments": 2,
+        "rolling_status": "rolling",
+        "windows_planned": 5,
+        "windows_completed": 5,
+        "windows_failed": 0,
+        "proposal_refusals": 0,
+        "last_proposal_refusal": null,
+        "stale_completions": 0,
+        "decoded_audio_samples": 800000,
+        "retained_samples": 0,
+        "retained_high_water_samples": 208000,
+        "admission_refusals": 0,
+        "normalization_merged_segments": 0,
+        "normalization_dropped_segments": 0,
+        "normalization_displaced_samples": 0
+      },
+      "schema_version": 1
+    }
+  ]
+}

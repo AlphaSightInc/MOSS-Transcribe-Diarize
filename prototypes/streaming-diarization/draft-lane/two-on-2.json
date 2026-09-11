@@ -1,0 +1,366 @@
+{
+  "base": "https://127.0.0.1:17862",
+  "session": "il0_kOik3YJW_LdlfSabvlQ3",
+  "frames": 100,
+  "cadence_s": 0.5,
+  "snapshots": 744,
+  "snapshot_keys": [
+    "status",
+    "epoch",
+    "version",
+    "accepted_samples",
+    "accounted_samples",
+    "retained_samples",
+    "committed_samples",
+    "committed_prefix_hash",
+    "identity_snapshot",
+    "committed",
+    "provisional",
+    "next_frame_sequence",
+    "frozen_until_sample",
+    "pending_span_ids",
+    "failure_reason",
+    "label_revision_version",
+    "text_revision_version",
+    "canonical_through_sample",
+    "effective_transcript",
+    "finalization_status"
+  ],
+  "first_text": {
+    "wall_after_start_s": 1.167,
+    "audio_start_s": 0.84
+  },
+  "first_text_latency_s": 0.327,
+  "segment_latency_p50_s": 12.007,
+  "segment_latency_p95_s": 46.321,
+  "segment_count": 13,
+  "label_delay_p50_s": 14.917,
+  "labelled_segments": 12,
+  "final_status": "failed",
+  "final_finalization": "not_started",
+  "speakers_final": [
+    "None",
+    "speaker-0001"
+  ],
+  "latency_by_audio_position": [
+    [
+      0.84,
+      0.33
+    ],
+    [
+      2.57,
+      1.57
+    ],
+    [
+      5.08,
+      1.95
+    ],
+    [
+      5.92,
+      1.43
+    ],
+    [
+      6.28,
+      3.0
+    ],
+    [
+      8.78,
+      2.42
+    ],
+    [
+      11.28,
+      12.01
+    ],
+    [
+      13.82,
+      17.09
+    ],
+    [
+      16.32,
+      22.82
+    ],
+    [
+      18.82,
+      26.79
+    ],
+    [
+      21.78,
+      37.12
+    ],
+    [
+      24.28,
+      41.73
+    ],
+    [
+      26.95,
+      46.32
+    ]
+  ],
+  "started_monotonic": 2270861.64144675,
+  "ended_monotonic": 2270941.372134583,
+  "audio_seconds": 50.0,
+  "draft_stats": {
+    "lane_seconds": 1.0,
+    "ticks": 50,
+    "started": 4,
+    "skipped": 46,
+    "published": 4,
+    "stale": 0,
+    "errors": 0
+  },
+  "coverage_latency_by_bucket": [
+    [
+      0.5,
+      0.17
+    ],
+    [
+      1.0,
+      0.73
+    ],
+    [
+      1.5,
+      1.08
+    ],
+    [
+      2.5,
+      1.14
+    ],
+    [
+      3.0,
+      0.64
+    ],
+    [
+      3.5,
+      1.32
+    ],
+    [
+      4.0,
+      0.82
+    ],
+    [
+      5.0,
+      1.53
+    ],
+    [
+      5.5,
+      1.35
+    ],
+    [
+      6.0,
+      2.78
+    ],
+    [
+      6.5,
+      2.28
+    ],
+    [
+      7.0,
+      1.78
+    ],
+    [
+      7.5,
+      1.28
+    ],
+    [
+      8.0,
+      0.78
+    ],
+    [
+      8.5,
+      2.2
+    ],
+    [
+      9.0,
+      1.7
+    ],
+    [
+      9.5,
+      1.2
+    ],
+    [
+      10.0,
+      0.7
+    ],
+    [
+      11.0,
+      11.79
+    ],
+    [
+      11.5,
+      11.29
+    ],
+    [
+      12.0,
+      10.79
+    ],
+    [
+      12.5,
+      10.29
+    ],
+    [
+      13.5,
+      16.91
+    ],
+    [
+      14.0,
+      16.41
+    ],
+    [
+      14.5,
+      15.91
+    ],
+    [
+      15.0,
+      15.41
+    ],
+    [
+      15.5,
+      14.91
+    ],
+    [
+      16.0,
+      22.64
+    ],
+    [
+      16.5,
+      22.14
+    ],
+    [
+      17.0,
+      21.64
+    ],
+    [
+      17.5,
+      21.14
+    ],
+    [
+      18.5,
+      26.61
+    ],
+    [
+      19.0,
+      32.87
+    ],
+    [
+      19.5,
+      32.37
+    ],
+    [
+      20.0,
+      31.87
+    ],
+    [
+      20.5,
+      31.37
+    ],
+    [
+      21.0,
+      30.87
+    ],
+    [
+      21.5,
+      36.9
+    ],
+    [
+      22.0,
+      36.4
+    ],
+    [
+      22.5,
+      35.9
+    ],
+    [
+      23.0,
+      35.4
+    ],
+    [
+      23.5,
+      34.9
+    ],
+    [
+      24.0,
+      41.51
+    ],
+    [
+      24.5,
+      41.01
+    ],
+    [
+      25.0,
+      40.51
+    ],
+    [
+      25.5,
+      40.01
+    ],
+    [
+      26.0,
+      39.51
+    ],
+    [
+      26.5,
+      46.27
+    ],
+    [
+      27.0,
+      45.77
+    ],
+    [
+      27.5,
+      45.27
+    ],
+    [
+      28.0,
+      44.77
+    ]
+  ],
+  "coverage_p50_s": 22.14,
+  "coverage_p95_s": 45.27,
+  "coverage_max_s": 46.27,
+  "label_coverage_p50_s": 22.462,
+  "label_coverage_p95_s": 45.588,
+  "steady_state_p50_s": 17.09,
+  "steady_state_p95_s": 46.32,
+  "tail_buckets_after_stop": [
+    [
+      11.28,
+      12.01
+    ],
+    [
+      13.82,
+      17.09
+    ],
+    [
+      16.32,
+      22.82
+    ],
+    [
+      18.82,
+      26.79
+    ],
+    [
+      21.78,
+      37.12
+    ],
+    [
+      24.28,
+      41.73
+    ],
+    [
+      26.95,
+      46.32
+    ]
+  ],
+  "wer_vs_reference": null,
+  "coverage_observed_steady_buckets": 44,
+  "terminal_failure": {
+    "kind": "transport_pacing",
+    "code": "aborted",
+    "retryable": false,
+    "detail": {
+      "session_id": "il0_kOik3YJW_LdlfSabvlQ3",
+      "reason": "helper_lease_expired",
+      "lane_failures": {}
+    }
+  }
+}

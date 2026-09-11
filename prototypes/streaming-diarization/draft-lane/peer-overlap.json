@@ -1,0 +1,42 @@
+{
+  "basis": "Failed-arm UTC reconstructed from same-machine monotonic timestamps using current wall-clock offset; not originally captured UTC.",
+  "failed_arm_approximate_utc": [
+    "2026-09-11T23:43:53.936005+00:00",
+    "2026-09-11T23:45:13.982296+00:00"
+  ],
+  "peer_source_commit": "2b5eb340",
+  "peer_custody_path": "evidence/e2e-feature-verification-20260911/run-custody.json",
+  "peer_network_path": "evidence/e2e-feature-verification-20260911/network.jsonl",
+  "shared_decoder_origin": "http://127.0.0.1:18000/v1",
+  "overlapping_peer_network_records": 196,
+  "overlapping_peer_frame_responses": 38,
+  "selected_peer_activity": [
+    {
+      "t": 1789170282.984163,
+      "row": 9,
+      "method": "POST",
+      "path": "/api/llm/chat/completions",
+      "status": 200,
+      "model": "qwen/qwen3.6-35b-a3b",
+      "response_artifact": "relay-response-1789170282-1.json"
+    },
+    {
+      "t": 1789170302.70177,
+      "row": 9,
+      "method": "POST",
+      "path": "/api/llm/chat/completions",
+      "status": 502,
+      "model": "qwen38-27b-mtp",
+      "response_artifact": "relay-response-1789170302-2.json",
+      "reason_code": "empty_content"
+    },
+    {
+      "t": 1789170304.4897091,
+      "row": 10,
+      "method": "POST",
+      "path": "/api/live/sessions",
+      "status": 201
+    }
+  ],
+  "conclusion": "The failed arm was not an isolated two-session experiment. Provider occupancy and causal contribution are unmeasured."
+}

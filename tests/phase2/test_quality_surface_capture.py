@@ -138,3 +138,22 @@ def test_strict_capture_failure_aborts_through_real_replay(harness, tmp_path, fa
     assert len(inner.abort_reasons) == 1
     assert inner.snapshot("strict-capture").session.status in {"aborted", "closed"}
     assert "post_stop_final" not in capture.captures
+
+
+@pytest.mark.parametrize('surface', ['pre_stop_immediate', 'pre_stop_settled', 'post_stop_final'])
+def test_quality_capture_scores_identically_with_reader_only_draft(harness, surface):
+    from dataclasses import replace
+    from tests.test_live_service_replay import _rich_service_snapshot
+    module, _ = harness
+    with_draft = _rich_service_snapshot()
+    if surface == 'post_stop_final':
+        with_draft = replace(with_draft, session=replace(with_draft.session, finalization_status='final'))
+    without_draft = replace(with_draft, draft=None, draft_stats=None)
+    captures = []
+    for value in (without_draft, with_draft):
+        capture = module.SurfaceCaptureService(None, settle_timeout=3, poll_seconds=.25)
+        capture._capture(surface, value)
+        captures.append(module.transcript_rows(capture.captures[surface]['snapshot'], 2.5))
+    assert captures[0]  # Non-empty canonical evidence, not a vacuous empty comparison.
+    assert captures[0] == captures[1]
+    assert all(row['text'] != 'draft' for row in captures[1])
