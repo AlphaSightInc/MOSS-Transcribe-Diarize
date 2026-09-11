@@ -87,3 +87,15 @@ The full application Python suite result is recorded below when complete.
 Final application validation: `.venv/bin/python -m pytest -q tests` — 1,255 passed,
 2 skipped, 37 subtests passed. `git diff --check` clean. Built CSS unchanged;
 no global CSS or transcript-pane source changes. Production not merged or pushed.
+
+## D6 — Outer-shell finish
+
+The upload form now uses the existing field-label, field and primary-button styles,
+with a locally bounded 680 px form width and 16 px field spacing. The browser-history note uses the existing muted color to give the account name
+visual priority without changing font metrics.
+No header padding, font size, line height or pane dimensions are changed. All styling
+is applied to these outer-shell elements; no global CSS, transcript changes,
+selector changes or D5 summary changes. This is cosmetic, not a workflow change.
+
+D6 validation: existing geometry, upload-flow and locator/sentinel tests passed
+(16 tests); final combined-suite validation is recorded in the integration audit.
