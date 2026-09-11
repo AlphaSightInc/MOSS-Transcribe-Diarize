@@ -34,6 +34,13 @@ REFERENCE_HEAD = "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70"
 ACCEPTED_FAILURE_URL = "https://127.0.0.1:1/phase2-acceptance-failure"
 
 
+def _meeting_opener(page, meeting_id):
+    """Select the interactive card, excluding server-rendered fallback cards."""
+    return page.get_by_role("region", name="Meeting history", exact=True).locator(
+        f'[data-open-meeting="{meeting_id}"]'
+    )
+
+
 def _trusted_tls_identity(origin: str) -> dict[str, object]:
     parsed = urlsplit(origin)
     if parsed.scheme != "https" or not parsed.hostname:
@@ -288,7 +295,7 @@ class BrowserCampaign:
                 checks.append(order == ["file", "live", "history", "voiceprints"])
                 suites.append(_suite("desktop-semantic-accessibility", checks))
 
-                active = page.locator(f'[data-open-meeting="{meeting_id}"]')
+                active = _meeting_opener(page, meeting_id)
                 if active.count() != 1:
                     raise BrowserMeasurementError("active observer Meeting is absent from history")
                 poll_requests = 0
@@ -357,9 +364,7 @@ class BrowserCampaign:
                 )
                 export_page = export_context.new_page()
                 _wait_workspace(export_page, self.origin)
-                export_page.locator(
-                    f'[data-open-meeting="{export_meeting_id}"]'
-                ).click()
+                _meeting_opener(export_page, export_meeting_id).click()
                 export_page.wait_for_selector('#transcript-panel')
                 export_checks: list[bool] = []
                 for label, suffix in (
@@ -602,9 +607,7 @@ class BrowserCampaign:
                             harness.prepare_page(reference_page, fixture, is_reference=True)
                             candidate_page.wait_for_selector('[data-auth-state="signed-in"]')
                             candidate_page.wait_for_selector('[data-boot="ready"]')
-                            candidate_page.locator(
-                                f'[data-open-meeting="{meeting_id}"]'
-                            ).click()
+                            _meeting_opener(candidate_page, meeting_id).click()
                             candidate_page.wait_for_function(
                                 "tail => document.querySelector('#tr-body')?.textContent.includes(tail)",
                                 arg=fixture[-1]["text"],

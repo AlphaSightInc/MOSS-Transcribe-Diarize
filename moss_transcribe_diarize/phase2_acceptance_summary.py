@@ -7,6 +7,7 @@ trusted certificate. Only content-free observations leave this measurement proce
 from __future__ import annotations
 
 import json
+import re
 import ssl
 import threading
 import time
@@ -18,7 +19,7 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 
 from .phase2_acceptance import _validate_capacity
-from .phase2_acceptance_browser import _add_cookie, _trusted_tls_identity
+from .phase2_acceptance_browser import _add_cookie, _trusted_tls_identity, _meeting_opener
 from .phase2_acceptance_completion import validate_completion_observation
 
 
@@ -131,17 +132,17 @@ def measure_browser_summary(campaign):
                         page.evaluate("window.__summaryEvents=[]; for (const name of ['llm_status','llm_summary_update']) document.addEventListener(name, e=>window.__summaryEvents.push({type:name,state:e.detail.artifact?.state}));")
 
                     def select(page, meeting):
-                        page.get_by_role("button", name="Refresh", exact=True).click()
-                        page.locator(f'[data-open-meeting="{meeting}"]').click()
+                        page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
+                        _meeting_opener(page, meeting).click()
                         page.get_by_role("region", name="Final summary", exact=True).wait_for()
                     def configure(page, owner, mode):
                         region = page.get_by_role("region", name="Browser AI settings", exact=True)
-                        if region.locator("form").count() == 0: region.locator("button").first.click()
+                        if region.locator("form").count() == 0: region.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
                         for label, value in (("Provider HTTPS URL", provider.endpoint(mode)), ("Model", f"g9-model-{owner}"),
                             ("API key (optional)", f"g9-private-key-{owner}"), ("Final-summary prompt", f"g9-private-prompt-{owner}"),
                             ("Request timeout (seconds)", "2400")):
-                            page.get_by_label(label, exact=True).fill(value)
-                        page.get_by_role("button", name="Save on this browser", exact=True).click()
+                            region.get_by_label(label, exact=True).fill(value)
+                        region.get_by_role("button", name="Save on this browser", exact=True).click()
                     def start(page):
                         region = page.get_by_role("region", name="Final summary", exact=True)
                         previous_attempt = region.get_attribute("data-summary-attempt")

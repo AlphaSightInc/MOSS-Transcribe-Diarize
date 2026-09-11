@@ -981,8 +981,15 @@ class FixedAccountCampaign:
         path.chmod(0o600)
         client = self.a if owner == "a" else self.b
         meeting_id = self._submit_file_for(client, path)
-        meeting = self._await_meeting_terminal_for(client, meeting_id)
-        if token.lower() not in json.dumps(meeting).encode().lower():
+        self._await_meeting_terminal_for(client, meeting_id)
+        # Upload filenames are not Meeting titles. Install the marker explicitly,
+        # then verify the owner's durable title rather than arbitrary JSON text.
+        client.json(
+            "PUT", f"/api/meetings/{meeting_id}/title", 200,
+            json={"title": token.decode("ascii")},
+        )
+        meeting, _ = client.json("GET", f"/api/meetings/{meeting_id}", 200)
+        if meeting.get("title") != token.decode("ascii"):
             raise ExternalMeasurementError("audio sentinel title is absent from owner state")
         download = client.request("GET", f"/api/meetings/{meeting_id}/audio/download")
         if download.status_code != 200 or not download.content:
@@ -991,6 +998,7 @@ class FixedAccountCampaign:
 
     def _rendered_body(self, cookie_file: Path, meeting_id: str) -> bytes:
         from playwright.sync_api import sync_playwright
+        from .phase2_acceptance_browser import _meeting_opener
 
         chrome = Path(self._text("chrome_binary")).expanduser().resolve()
         with sync_playwright() as playwright:
@@ -1013,7 +1021,7 @@ class FixedAccountCampaign:
                 page.goto(self.origin, wait_until="networkidle")
                 page.wait_for_selector('[data-auth-state="signed-in"]')
                 page.wait_for_selector('[data-boot="ready"]')
-                page.locator(f'[data-open-meeting="{meeting_id}"]').click()
+                _meeting_opener(page, meeting_id).click()
                 page.wait_for_selector("#transcript-panel")
                 return page.locator("body").inner_text().encode("utf-8")
             finally:
