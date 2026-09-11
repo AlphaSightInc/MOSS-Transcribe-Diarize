@@ -374,6 +374,8 @@ class BrowserCampaign:
                     ("Markdown (.md)", ".md"),
                     ("Plain text (.txt)", ".txt"),
                     ("JSON (.json)", ".json"),
+                    ("SubRip (.srt)", ".srt"),
+                    ("WebVTT (.vtt)", ".vtt"),
                 ):
                     export_page.get_by_title("Export transcript").click()
                     with export_page.expect_download() as download:

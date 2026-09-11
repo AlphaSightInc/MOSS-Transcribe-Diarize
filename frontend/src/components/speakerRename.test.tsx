@@ -42,7 +42,7 @@ it.each([".utt-speaker", ".legend-chip"])("renames from %s across repeated rows,
   const assertNames = () => {
     expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other", "After"]);
     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
-    for (const format of ["md", "txt", "json"] as const) {
+    for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
       const file = serializeTranscriptExport(format, groupSegmentsIntoTurns(transcript.value), t => t.display_name,
         { sessionId: "m", exportedAt: new Date(0) });
       expect(file.content).toContain("After"); expect(file.content).not.toContain("Before");

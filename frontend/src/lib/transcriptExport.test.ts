@@ -99,3 +99,25 @@ function makeTurn(
     ...overrides
   };
 }
+
+
+it.each(["srt", "vtt"] as const)("exports valid %s cues with millisecond rollover and literal speaker/text", format => {
+  const turns = [makeTurn(59.9996, "Old", " <b>Hello</b> & yes\r\n\r\nNext line ", { end: 3600.0124 }),
+    makeTurn(4000, "Old", "  "), makeTurn(4001.1234, "Old", "Second", { end: 4001.1234 })];
+  const file = serializeTranscriptExport(format, turns, () => "Alex & Sam", { sessionId: "m", exportedAt: new Date(0) });
+  const separator = format === "srt" ? "," : ".";
+  expect(file.filename.endsWith(`.${format}`)).toBe(true);
+  expect(file.mediaType).toBe(format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8");
+  expect(file.content).toBe((format === "vtt" ? "WEBVTT\n\n" : "") +
+    `1\n00:01:00${separator}000 --> 01:00:00${separator}012\nAlex &amp; Sam: &lt;b&gt;Hello&lt;/b&gt; &amp; yes\nNext line\n\n` +
+    `2\n01:06:41${separator}123 --> 01:06:41${separator}124\nAlex &amp; Sam: Second\n`);
+});
+
+it.each(["srt", "vtt"] as const)("keeps %s empty and provisional exports syntactically valid", format => {
+  const identity = { sessionId: "m", exportedAt: new Date(0) };
+  expect(serializeTranscriptExport(format, [], () => "Alex", identity).content).toBe(format === "vtt" ? "WEBVTT\n\n" : "");
+  const content = serializeTranscriptExport(format, [makeTurn(0, "Alex", "Words", { state: "provisional" })], t => t.display_name, identity).content;
+  expect(content).toContain("Provisional attribution");
+  expect(content).toContain("Alex: Words");
+  expect(content).toMatch(format === "vtt" ? /^WEBVTT\n\nNOTE / : /^1\n00:00:00,000 --> 00:00:01,000\n/);
+});

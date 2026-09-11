@@ -1,6 +1,6 @@
 import type { TranscriptTurn } from "./mergeTranscript";
 
-export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json"] as const;
+export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
 
 const PROVISIONAL_ATTRIBUTION_CAVEAT =
@@ -67,6 +67,20 @@ export function serializeTranscriptExport(
   const rows = buildExportRows(turns, resolveLabel);
   const provisionalAttribution = hasProvisionalAttribution(turns);
   const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
+  if (format === "srt" || format === "vtt") {
+    const cues = turns.filter(turn => turn.text.trim()).map((turn, index) => {
+      const start = Math.max(0, Math.round(turn.start * 1000));
+      const end = Math.max(start + 1, Math.round(turn.end * 1000));
+      const text = subtitleText(turn.text.trim());
+      const label = subtitleText(resolveExportLabel(turn, resolveLabel)).replace(/\n/g, " ");
+      const provisional = format === "srt" && turn.state !== "final" ? "[Provisional attribution] " : "";
+      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${provisional}${label}: ${text}`;
+    }).join("\n\n");
+    const header = format === "vtt"
+      ? `WEBVTT\n\n${provisionalAttribution ? `NOTE ${TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT}\n\n` : ""}` : "";
+    return { content: `${header}${cues}${cues ? "\n" : ""}`, filename,
+      mediaType: format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8" };
+  }
   if (format === "md") {
     return {
       content: prependProvisionalAttributionCaveat(
@@ -163,4 +177,16 @@ function prependProvisionalAttributionCaveat(
     return content;
   }
   return content ? `${caveat}\n\n${content}` : caveat;
+}
+
+
+function subtitleTime(milliseconds: number, format: "srt" | "vtt"): string {
+  const seconds = Math.floor(milliseconds / 1000);
+  return `${formatTranscriptClockTime(seconds)}${format === "srt" ? "," : "."}${String(milliseconds % 1000).padStart(3, "0")}`;
+}
+
+function subtitleText(text: string): string {
+  // Blank lines delimit cues; escape markup so transcript words remain literal.
+  return text.replace(/\r\n?/g, "\n").replace(/\n[ \t]*\n+/g, "\n")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

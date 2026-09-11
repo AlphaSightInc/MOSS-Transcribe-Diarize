@@ -30,3 +30,29 @@ that established API behavior is not a cheap UI addition.
 
 A validation: 174 frontend tests passed; typecheck/build passed; 21 built-browser /
 preview / locator / upload / geometry checks passed.
+
+## B — SRT and VTT
+
+Both formats are now in the serializer and export menu. Each nonempty turn becomes
+one numbered cue with its current display label prefixed to its words. Conversion
+rounds total milliseconds before splitting hours/minutes/seconds, so rollover is
+correct. SRT uses commas; WebVTT uses dots and a WEBVTT header. A turn shorter than
+the one-millisecond output resolution receives a one-millisecond cue. Blank lines
+inside text are folded to avoid accidentally ending the cue; markup is escaped to
+keep literal transcript words. Empty turns do not produce empty cues.
+
+The formats preserve provisional attribution honestly: SRT marks affected cues;
+WebVTT uses a NOTE outside cue payloads. Existing md/txt/json behavior is unchanged.
+The acceptance export loop adds SubRip (.srt) and WebVTT (.vtt) in the same commit;
+other acceptance selectors are untouched.
+
+Tests cover exact timing/rollover/escaping, empty and provisional exports, every menu
+format's download filename, and the acknowledged rename in all five formats.
+Additionally, real serializer output was read by local ffprobe: both formats parsed
+with cue start 60.000000 seconds and duration 1.123000 seconds for input
+59.9996–61.1234 seconds. No host or paid provider used.
+
+Final frontend validation: 182 tests passed across 23 files; typecheck/build passed.
+Final Python application validation: 1,283 passed, 2 skipped, 37 subtests passed,
+21 warnings, 92.77 seconds. This includes 02045d0c diagnostics and 2935de6a terminal-prompt
+fix; their added tests explain the increase from the earlier 1,273 baseline.

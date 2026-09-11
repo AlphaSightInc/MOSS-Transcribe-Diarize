@@ -264,7 +264,10 @@ describe("TranscriptPane", () => {
     expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
   });
 
-  it("downloads an export named with the active session id and ISO timestamp", () => {
+  it.each([
+    ["Markdown (.md)", "md"], ["Plain text (.txt)", "txt"], ["JSON (.json)", "json"],
+    ["SubRip (.srt)", "srt"], ["WebVTT (.vtt)", "vtt"]
+  ])("downloads %s with the active session id and ISO timestamp", (label, format) => {
     const downloadedNames: string[] = [];
     const createObjectUrl = vi.fn(() => "blob:transcript-export");
     const revokeObjectUrl = vi.fn();
@@ -298,16 +301,16 @@ describe("TranscriptPane", () => {
     act(() => {
       exportButton.click();
     });
-    const markdownItem = root.querySelector<HTMLButtonElement>("[role='menuitem']");
+    const markdownItem = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")].find(item => item.textContent === label);
     if (!markdownItem) {
-      throw new Error("Missing Markdown export item");
+      throw new Error(`Missing ${label} export item`);
     }
     act(() => {
       markdownItem.click();
       vi.runAllTimers();
     });
 
-    expect(downloadedNames).toEqual(["transcript-session-42-2026-08-18T20:00:16.182Z.md"]);
+    expect(downloadedNames).toEqual([`transcript-session-42-2026-08-18T20:00:16.182Z.${format}`]);
     expect(createObjectUrl).toHaveBeenCalledOnce();
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:transcript-export");
   });

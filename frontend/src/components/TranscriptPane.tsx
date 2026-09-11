@@ -407,7 +407,9 @@ export function TranscriptPane() {
             {([
               ["md", "Markdown (.md)"],
               ["txt", "Plain text (.txt)"],
-              ["json", "JSON (.json)"]
+              ["json", "JSON (.json)"],
+              ["srt", "SubRip (.srt)"],
+              ["vtt", "WebVTT (.vtt)"]
             ] as const).map(([format, label]) => (
               <button
                 key={format}
