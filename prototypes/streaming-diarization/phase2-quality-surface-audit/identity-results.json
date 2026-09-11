@@ -1,0 +1,93 @@
+{
+  "status": "blocked_before_replay",
+  "source_revision": "9fa8ee851529b324fffdb7e4591bc9b8ba1978fc",
+  "fresh_provider_requests": 0,
+  "constraints": [
+    "no host operations",
+    "unchanged QUALITY_BOUNDS, _validate_quality, identity policy"
+  ],
+  "cases": {
+    "mono_javier_intro_50s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    },
+    "interview_bill_ackman_60s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    },
+    "interview_keyu_jin_60s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    },
+    "interview_adam_frank_180s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    },
+    "discussion_jamie_dimon_180s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    },
+    "discussion_rtfl_90s": {
+      "status": "unmeasured",
+      "speaker_count": null,
+      "diarization_error_rate": null,
+      "matched_speaker_accuracy": null,
+      "time_speaker_attribution": null,
+      "reference_speech_der": null,
+      "reason": "Replay not started: local decoder unavailable; no frozen speaker labels substituted."
+    }
+  },
+  "recorded_at": "2026-09-11T18:48:14.226394+00:00",
+  "completed_cases": 0,
+  "requested_cases": 6,
+  "blocker": "No usable local MOSS decoder endpoint established; deployment host operations prohibited. Fresh identity/provider corpus replay was not run.",
+  "evidence": [
+    {
+      "check": "local TCP listeners and nginx configuration",
+      "finding": "No listener on port 18000. Port 8000 routes to model_a; /opt/homebrew/etc/nginx/lmstudio-cluster-dynamic.conf defines model_a with only 127.0.0.1:1 down."
+    },
+    {
+      "check": "local identity manifest",
+      "finding": "WeSpeaker identity model and manifest are available. They do not supply MOSS canonical transcription output."
+    },
+    {
+      "check": "evidence/live-policy-sweep-20260825/moss/shadow-cache/pass-A.json",
+      "finding": "117 cached decodes: 61 ten-second windows and 56 fifteen-second windows. This is not a complete canonical decode cache for the six-case live runtime."
+    },
+    {
+      "check": "prototypes/streaming-diarization/proto_real_replay.py",
+      "finding": "Existing identity bench constructs spans using reference speaker labels; running it would not meet the requested fresh provider replay."
+    }
+  ],
+  "missing": [
+    "Fresh canonical and rolling provider output through the live runtime for each case",
+    "Settled and genuinely final captures using the strict capture implementation",
+    "Four requested speaker metrics per case and observed speaker count for mono_javier_intro_50s"
+  ],
+  "next_step": "Use the already-running round 6 retained per-case results when supplied locally, or run the independent replay once a local MOSS decoder is available. No additional host run was started."
+}
