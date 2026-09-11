@@ -6,6 +6,7 @@ import type {
   TranscriptRefinementCompleteMetadata,
   WsEvent
 } from "./types";
+import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { dispatchWsEvent } from "./ws";
 
 const CAPTURING_POLL_DELAY_MS = 250;
@@ -139,7 +140,24 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
     }, delay);
   }
 
+  function onSpeakerNamed(event: Event): void {
+    if ((event as CustomEvent).detail?.meetingId !== options.sessionId || !running) return;
+    // A response begun before the acknowledged rename must not restore old labels.
+    stop();
+    snapshotVersion = 0;
+    start();
+  }
+
+  function start(): void {
+    if (running) return;
+    running = true;
+    if (typeof document !== "undefined") document.addEventListener(SPEAKER_NAMED_EVENT, onSpeakerNamed);
+    if (inFlight) { restartPending = true; return; }
+    void poll();
+  }
+
   function stop(): void {
+    if (typeof document !== "undefined") document.removeEventListener(SPEAKER_NAMED_EVENT, onSpeakerNamed);
     generation += 1;
     running = false;
     restartPending = false;
@@ -359,17 +377,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
   }
 
   return {
-    start() {
-      if (running) {
-        return;
-      }
-      running = true;
-      if (inFlight) {
-        restartPending = true;
-        return;
-      }
-      void poll();
-    },
+    start,
     stop,
     poll,
     cursors: () => ({ snapshotVersion, eventSequence }),

@@ -110,8 +110,9 @@ describe("TranscriptPane", () => {
     }));
     await vi.waitFor(() => expect(root.textContent).toContain("Voiceprint saved privately"));
     expect(root.querySelector("dialog")).toBeNull();
-    // No optimistic identity mutation: the authoritative poll supplies the label.
-    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Alex", "Alex"]);
+    // Apply the acknowledged name immediately while preserving the other identity.
+    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
+    expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
   });
 
   it("keeps observers, terminal meetings and provisional-only speakers read-only", () => {

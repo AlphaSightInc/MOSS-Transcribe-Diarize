@@ -1,4 +1,5 @@
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { changeVoiceprint, listVoiceprints, type Voiceprint } from "../api/speakers";
 
 export function VoiceprintBank() {
@@ -23,6 +24,13 @@ export function VoiceprintBank() {
       if (current === generation.current) setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!open) return;
+    const changed = () => void refresh();
+    document.addEventListener(SPEAKER_NAMED_EVENT, changed);
+    return () => document.removeEventListener(SPEAKER_NAMED_EVENT, changed);
+  }, [open]);
 
   async function save(event: Event) {
     event.preventDefault();

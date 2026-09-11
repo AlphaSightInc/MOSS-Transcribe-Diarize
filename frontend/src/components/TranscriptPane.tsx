@@ -1,5 +1,6 @@
 import { Fragment, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker } from "../api/speakers";
 import {
   buildTranscriptExportText,
@@ -22,7 +23,7 @@ import {
   buildTranscriptSearchResults,
   type TranscriptSearchPart
 } from "../lib/transcriptSearch";
-import { captureMeetingId, sessionId, sessionStatus, sessionTitle, transcript, transcriptSearchQuery } from "../state/session";
+import { captureMeetingId, sessionId, sessionStatus, sessionTitle, sessionTranscriptItems, transcript, transcriptSearchQuery } from "../state/session";
 import { autoscroll } from "../state/ui";
 
 interface TranscriptLegendEntry {
@@ -171,6 +172,11 @@ export function TranscriptPane() {
     try {
       const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim());
       if (sessionId.value !== meetingId || captureMeetingId.value !== meetingId) return;
+      // The response acknowledges a durable display label, not a new identity.
+      sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
+        item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
+      document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
+      requestMeetingHistoryRefresh();
       setNamingMessage(result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
         : `Saved ${result.label}. Voiceprint will save when enough clear speech arrives before Stop.`);

@@ -5,3 +5,5 @@ export const MEETING_HISTORY_REFRESH_EVENT = "moss:refresh-meeting-history";
 export function requestMeetingHistoryRefresh(): void {
   document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
 }
+
+export const SPEAKER_NAMED_EVENT = "moss:speaker-named";
