@@ -1,0 +1,159 @@
+{
+  "source_revision": "3a641f06d363d0d4b6dc0ec7d36fe9d4f74bf868",
+  "measured_sessions": 12,
+  "expected_sessions": 12,
+  "failed_attempts": [
+    {
+      "case_id": "discussion_rtfl_90s",
+      "mode": "mono",
+      "error": "settle timed out after 30s: canonical=0, rolling=1"
+    }
+  ],
+  "attempt_count": 13,
+  "macro": {
+    "mono": {
+      "pre_stop_immediate": 0.16665549999999998,
+      "pre_stop_settled": 0.13709733333333332,
+      "post_stop_final": 0.09507416666666667
+    },
+    "account": {
+      "pre_stop_immediate": 0.167831,
+      "pre_stop_settled": 0.13637866666666668,
+      "post_stop_final": 0.09170533333333333
+    }
+  },
+  "checks": [
+    {
+      "case_id": "mono_javier_intro_50s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 5,
+      "decoded_audio_samples": 800000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "mono_javier_intro_50s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 5,
+      "decoded_audio_samples": 800000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_bill_ackman_60s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 6,
+      "decoded_audio_samples": 960000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_bill_ackman_60s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 6,
+      "decoded_audio_samples": 960000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_keyu_jin_60s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 6,
+      "decoded_audio_samples": 960000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_keyu_jin_60s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 6,
+      "decoded_audio_samples": 960000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_adam_frank_180s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 18,
+      "decoded_audio_samples": 2880000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "interview_adam_frank_180s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 18,
+      "decoded_audio_samples": 2880000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "discussion_jamie_dimon_180s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 18,
+      "decoded_audio_samples": 2880000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "discussion_jamie_dimon_180s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 18,
+      "decoded_audio_samples": 2880000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "discussion_rtfl_90s",
+      "mode": "account",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 8,
+      "decoded_audio_samples": 1280000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    },
+    {
+      "case_id": "discussion_rtfl_90s",
+      "mode": "mono",
+      "same_window_geometry_as_campaign": true,
+      "window_count": 8,
+      "decoded_audio_samples": 1280000,
+      "event_sequence_complete": true,
+      "all_windows_decoded_and_applied": true,
+      "settle_drained_before_stop": true,
+      "terminal_genuinely_final": true
+    }
+  ]
+}
