@@ -1,8 +1,28 @@
 # WSL maintenance wrapper
 
-**UNTESTED ON WINDOWS until 2.1 validates it after recovery.** No `pwsh` was found
-on the development Mac, so neither PowerShell syntax parsing nor Windows execution
-has been performed. This is staged maintenance code, not a validated recovery tool.
+**Windows dry-run refusal/non-mutation validated, 2026-09-12 08:48 EDT.**
+Both `-Action compact-check -DryRun` and `-Action set-sparse -DryRun` executed
+under Windows PowerShell as `gyauo`, without cmdlet, path or elevation errors.
+Both returned **exit 1**, correctly refusing existing unknown `wsl.exe` launchers
+(PIDs 85800 and 58692, parent chain 106140 → 85800 → 58692):
+
+```text
+FAILED: Dry-run refusal: unknown WSL launchers require their owner to close them.
+```
+
+Each JSONL log contains only `started` (`dry_run=true`), two `launcher` records,
+and `failed` (`RuntimeException`). No `shutdown_requested`, task mutation,
+`action_started`, or `restart_task_reenabled` records occurred. Source inspection
+confirms the dry branch cannot call shutdown, task/process changes or `wsl --manage`;
+it only writes its log and acquires/releases a temporary mutex. Both MinerU tasks
+remained enabled/running, and VM process IDs/start times were identical before/after.
+Logs: `D:\wsl\moss-dryrun-logs\wsl-maintenance-20260912T084824521-70860.jsonl`
+and `wsl-maintenance-20260912T084825939-88188.jsonl` in the same directory.
+
+**Successful dry-run plan and destructive maintenance paths remain unvalidated.**
+The runtime's legacy `validation=untested_on_windows` field remains unchanged;
+this scoped verification does not validate live sparse/move operations. No process
+was stopped or allowlist broadened to make a dry-run pass.
 
 `wsl-maintenance.ps1` handles the host's two known restart sources: the
 `MinerU-WSL-Keepalive` / `MinerU-Windows-Watchdog` scheduled tasks and attributable
@@ -121,7 +141,7 @@ must then inspect/re-enable both tasks manually. Do not run concurrent maintenan
 Logs are timestamped `wsl-maintenance-<date>-<pid>.jsonl`; exit 0 means the selected
 checks passed (or a dry-run plan completed), not that the host is qualified.
 
-## 2.1 validation after recovery — pending
+## Further validation — pending beyond dry-run refusal
 
 Parse only, without invoking script functions or maintenance:
 

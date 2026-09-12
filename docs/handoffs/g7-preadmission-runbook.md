@@ -85,6 +85,13 @@ no shutdown, task change, relocation or reclamation was performed for this doc u
 
 ## Host hygiene — canonical origin after WSL restart
 
+**Final handback snapshot, 2026-09-12 08:46 EDT:** VHDX
+`D:\wsl\Ubuntu\ext4.vhdx`, **612,482,678,784 bytes**; C: **622.06 GB free**,
+D: **171.84 GB free**; vLLM baseline **PID 324**, model endpoint **200**.
+Both MinerU tasks **enabled/running**; Phase-1 both views **open, zero work**,
+tailnet **200**. `moss-canonical-host.service` is installed and reboot-verified.
+Record a fresh baseline after any subsequent authorized restart.
+
 Keep WSL hosts regeneration enabled. It maintains the machine's generated localhost,
 hostname and IPv6 entries; disabling it is unnecessary for one MOSS alias.
 
