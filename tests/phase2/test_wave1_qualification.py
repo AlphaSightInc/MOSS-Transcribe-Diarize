@@ -237,7 +237,9 @@ def _capacity_raw() -> dict[str, object]:
     }
 
 
-def _overload_raw() -> dict[str, object]:
+def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_000) -> dict[str, object]:
+    frames = int(duration_seconds * 16_000 / 8_000)
+    samples = frames * 8_000
     value = _capacity_raw()
     template = value["session_observations"]
     sessions = []
@@ -247,9 +249,9 @@ def _overload_raw() -> dict[str, object]:
             {
                 "session_ordinal": ordinal,
                 "account_ordinal": 1 if ordinal % 2 else 2,
-                "frames": 60,
-                "accepted_samples": 480_000,
-                "accounted_samples": 480_000,
+                "frames": frames,
+                "accepted_samples": samples,
+                "accounted_samples": samples,
             }
         )
         for event in item["events"]:
@@ -285,11 +287,11 @@ def _overload_raw() -> dict[str, object]:
         {
             "sessions": 8,
             "accounts": 2,
-            "requested_duration_seconds": 30,
-            "duration_seconds": 30,
+            "requested_duration_seconds": duration_seconds,
+            "duration_seconds": duration_seconds,
             "campaign_interval": {
                 "started_monotonic_ns": 1_000_000_000,
-                "finished_monotonic_ns": 31_000_000_000,
+                "finished_monotonic_ns": int((1 + duration_seconds) * 1_000_000_000),
             },
             "session_observations": sessions,
             "wrong_owner_observations": [
@@ -299,7 +301,7 @@ def _overload_raw() -> dict[str, object]:
                     "status": 404,
                     "foreign_matches": 0,
                 }
-                for sequence in range(60)
+                for sequence in range(frames)
                 for ordinal in range(1, 9)
             ],
             "isolation_failures": 0,
@@ -309,6 +311,8 @@ def _overload_raw() -> dict[str, object]:
             "dispatch_skew": fairness["maximum_contended_pair_dispatch_skew"],
             "sequence_gaps": 0,
             "cross_account_sentinel_deliveries": 0,
+            "backpressure_workload": {"lane_capacity_samples": capacity_samples, "frame_samples": 8000,
+                                      "frames_per_session": frames, "audio_seconds_per_session": duration_seconds},
             "backpressure_observation": {
                 "observed_429": True,
                 "peer_progress": True,
@@ -443,7 +447,7 @@ def test_capacity_rtf_excludes_stop_tail_and_overload_backpressure_is_campaign_b
     assert acceptance._validate_overload({"raw": overload}) is False
 
     overload = _overload_raw()
-    overload["backpressure_observation"]["retry_monotonic_ns"] = 32_000_000_000
+    overload["backpressure_observation"]["retry_monotonic_ns"] = overload["campaign_interval"]["finished_monotonic_ns"] + 1
     assert acceptance._validate_overload({"raw": overload}) is False
 
 
@@ -3562,3 +3566,23 @@ def test_outer_acceptance_failure_never_retains_exception_content(tmp_path, monk
     assert diagnostic['error'] == 'RuntimeError' and diagnostic['qualified'] is False
     assert 'PRIVATE' not in capsys.readouterr().err
     assert all(b'PRIVATE' not in path.read_bytes() for path in output.rglob('*') if path.is_file())
+
+
+@pytest.mark.parametrize("duration,capacity,expected", [
+    (30, 960_000, False),
+    (60, 960_000, False),
+    (120, 960_000, False),
+    (120.5, 960_000, True),
+    (121, 960_000, True),
+    (120.5, 1_920_000, False),
+    (240.5, 1_920_000, True),
+])
+def test_overload_duration_must_cover_descriptor_buffer_and_retry_margin(duration, capacity, expected):
+    assert acceptance._validate_overload({"raw": _overload_raw(duration, capacity)}) is expected
+
+
+@pytest.mark.parametrize("field", ["observed_429", "peer_progress", "same_sequence_retry"])
+def test_sufficient_overload_duration_still_requires_each_backpressure_witness(field):
+    raw = _overload_raw()
+    raw["backpressure_observation"][field] = False
+    assert acceptance._validate_overload({"raw": raw}) is False

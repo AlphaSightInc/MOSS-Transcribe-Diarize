@@ -46,6 +46,7 @@ from .phase2_acceptance import (
     G1_CROSS_OWNER_MATRIX,
     G1_SENTINEL_SURFACES,
     QUALIFICATION_URL_FIXTURE,
+    overload_minimum_frames,
 )
 from .phase2_acceptance_replay import (
     AccountCookieLiveReplayService,
@@ -2306,7 +2307,7 @@ class FixedAccountCampaign:
         # whole frame beyond it. Keep peers paced for the same audio duration so
         # the target's refusal/retry occurs inside this eight-session campaign.
         frames = max(math.ceil(30 * LIVE_SAMPLE_RATE / frame_samples),
-                     2 * math.ceil(capacity_samples / frame_samples) + 1)
+                     overload_minimum_frames(capacity_samples, frame_samples))
         duration = frames * frame_samples / LIVE_SAMPLE_RATE
         result = self._run_live_load(
             sessions=8,
@@ -2332,6 +2333,7 @@ class FixedAccountCampaign:
                 "refused_frame_retry_succeeded": backpressure["same_sequence_retry"],
                 "backpressure_observation": backpressure,
                 "backpressure_workload": {"lane_capacity_samples": capacity_samples,
+                                          "frame_samples": frame_samples,
                                           "frames_per_session": frames,
                                           "audio_seconds_per_session": duration},
             }

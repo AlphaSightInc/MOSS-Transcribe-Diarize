@@ -1254,6 +1254,13 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     )
 
 
+def overload_minimum_frames(lane_capacity_samples: int, frame_samples: int) -> int:
+    """Cover one lane buffer, a buffer of drain/retry headroom, and one extra frame."""
+    if lane_capacity_samples <= 0 or frame_samples <= 0:
+        raise ValueError("overload descriptor capacity and frame size must be positive")
+    return 2 * math.ceil(lane_capacity_samples / frame_samples) + 1
+
+
 def _validate_overload(predicate: Mapping[str, object]) -> bool:
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
@@ -1281,7 +1288,12 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         started = int(interval["started_monotonic_ns"])
         finished = int(interval["finished_monotonic_ns"])
         observed = (finished - started) / 1_000_000_000
-        if requested != 30 or observed <= 0 or not math.isclose(
+        workload = raw["backpressure_workload"]
+        frame_samples = int(workload["frame_samples"])
+        minimum_seconds = overload_minimum_frames(
+            int(workload["lane_capacity_samples"]), frame_samples
+        ) * frame_samples / 16_000
+        if requested < minimum_seconds or observed <= 0 or not math.isclose(
             float(raw["duration_seconds"]), observed
         ):
             return False
