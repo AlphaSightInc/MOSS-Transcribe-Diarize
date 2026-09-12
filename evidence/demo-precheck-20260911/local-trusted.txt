@@ -1,0 +1,10 @@
+Workspace: https://127.0.0.1:17863 | expected SHA: cf0dc39812dd699e40d2ac1ee718c0cfd47fc315
+PASS trusted host: HTTP 200, 0.014 s
+FAIL candidate identity: X-MOSS-Candidate-SHA absent; identity unverified
+PASS bootstrap: HTTP 200, 0.008 s
+PASS relay models: both expected models listed, 0.002 s
+Probe macstudio: http://macstudio.tailnet.aisight.us:1234/v1 / qwen/qwen3.6-35b-a3b
+PASS macstudio: HTTP 200, 0.433 s
+Probe rtx4090: http://ga0-rtx4090.tailnet.aisight.us:1235/v1 / qwen38-27b-mtp
+PASS rtx4090: HTTP 200, 0.361 s
+NO-GO: candidate identity (X-MOSS-Candidate-SHA absent; identity unverified)

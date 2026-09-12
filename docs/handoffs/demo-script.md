@@ -2,6 +2,8 @@
 
 **Before guests arrive:** On the MacBook, open Chrome over the tailnet: **https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861**. Have the release owner confirm the host serves the **admitted candidate**. Use your rehearsed profile and headphones/AirPods. Prepare a **30–50-second MP3** and a paused, ad-free YouTube interview passage.
 
+Run **`scripts/demo-precheck.sh EXPECTED_FULL_SHA`** from the repository on the MacBook (use the release owner’s 40-character SHA). Require its final **GO**: trusted host, served identity, both relay models and two sequential 16-token upstream answers within 30 seconds each. **NO-GO** names failures; stop and resolve them. The check creates its own empty workspace, not a meeting.
+
 Check **Voiceprints** contains your enrolled name. On a completed rehearsal meeting, open **Optional AI summaries · configured** (or **· off**): **Provider → Server relay (tailnet models)**. Test each **Relay model** with **Save on this browser**, then **Generate summary** / **Regenerate summary**. Confirm **Summary ready.** names each model: `qwen/qwen3.6-35b-a3b`, then `qwen38-27b-mtp`. This checks both servers, not merely their listing. **Recovery:** fix failed pre-checks before guests arrive; retain the rehearsal meeting as backup.
 
 | Clock | Presenter: do and say | Audience sees / expected timing | One-line recovery |

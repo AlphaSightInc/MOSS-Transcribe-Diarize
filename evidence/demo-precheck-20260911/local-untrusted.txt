@@ -1,0 +1,9 @@
+Workspace: https://127.0.0.1:17863 | expected SHA: cf0dc39812dd699e40d2ac1ee718c0cfd47fc315
+FAIL trusted host: 0.055 s; certificate is not trusted
+FAIL candidate identity: X-MOSS-Candidate-SHA absent; identity unverified
+FAIL bootstrap / relay models: not checked: trusted host check failed
+Probe macstudio: http://macstudio.tailnet.aisight.us:1234/v1 / qwen/qwen3.6-35b-a3b
+PASS macstudio: HTTP 200, 0.532 s
+Probe rtx4090: http://ga0-rtx4090.tailnet.aisight.us:1235/v1 / qwen38-27b-mtp
+PASS rtx4090: HTTP 200, 5.574 s
+NO-GO: trusted host (0.055 s; certificate is not trusted); candidate identity (X-MOSS-Candidate-SHA absent; identity unverified); bootstrap / relay models (not checked: trusted host check failed)
