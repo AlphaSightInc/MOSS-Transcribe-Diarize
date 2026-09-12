@@ -21,6 +21,10 @@ done
 }
 
 export LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+set --
+if [ -n "${MOSS_LIVE_DRAFT_LANE_SECONDS:-}" ]; then
+  set -- --live-draft-lane-seconds "${MOSS_LIVE_DRAFT_LANE_SECONDS}"
+fi
 exec "${RUNTIME_DIR}/bin/python" -I -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "${MOSS_PHASE2_DATABASE}" \
   --control-socket "${MOSS_PHASE2_CONTROL_SOCKET}" \
@@ -39,4 +43,5 @@ exec "${RUNTIME_DIR}/bin/python" -I -m moss_transcribe_diarize.app.phase2_web_cl
   --port 7861 \
   --llm-upstreams "${MOSS_LLM_UPSTREAMS:-}" \
   --max-len "${MOSS_MAX_MODEL_LEN:-16384}" \
-  --max-new-tokens "${MOSS_MAX_NEW_TOKENS:-12000}"
+  --max-new-tokens "${MOSS_MAX_NEW_TOKENS:-12000}" \
+  "$@"

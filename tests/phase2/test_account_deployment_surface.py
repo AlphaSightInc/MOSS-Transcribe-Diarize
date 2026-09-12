@@ -20,6 +20,47 @@ FRONTEND_ASSETS = ROOT / "moss_transcribe_diarize" / "app" / "frontend_assets"
 INSTALLED_FRONTEND_PROBE = Path(__file__).with_name("_installed_frontend_probe.py")
 
 
+@pytest.mark.parametrize("draft_seconds", [None, "", "1.0"])
+def test_account_launcher_optional_draft_lane_preserves_existing_argv(tmp_path: Path, draft_seconds):
+    release = tmp_path / "release"
+    bin_dir = release / "bin"
+    bin_dir.mkdir(parents=True)
+    launcher = bin_dir / "mtd-web"
+    shutil.copy2(OPS / "account-web-launcher.sh", launcher)
+    python = bin_dir / "python"
+    python.write_text('#!/bin/sh\nprintf \'%s\\0\' "$0" "$@"\n')
+    python.chmod(0o755)
+    home = tmp_path / "home"
+    root = home / ".local/share/moss-transcribe-diarize"
+    sqlite = root / "sqlite-3.53.4/lib/libsqlite3.so"
+    sqlite.parent.mkdir(parents=True)
+    sqlite.touch()
+    env = {key: value for key, value in os.environ.items() if not key.startswith("MOSS_")}
+    env.update({
+        "HOME": str(home), "MOSS_TLS_CERTFILE": "cert", "MOSS_TLS_KEYFILE": "key",
+        "MOSS_LIVE_PROVIDER_MANIFEST": "provider", "MOSS_LIVE_HELPER_LEASE_SECONDS": "10",
+        "MOSS_PHASE2_DATABASE": "database", "MOSS_PHASE2_CONTROL_SOCKET": "socket",
+        "MOSS_FILE_WORK_ROOT": "file-work", "MOSS_MEETING_AUDIO_ROOT": "audio",
+    })
+    if draft_seconds is not None:
+        env["MOSS_LIVE_DRAFT_LANE_SECONDS"] = draft_seconds
+    result = subprocess.run(["bash", str(launcher)], env=env, capture_output=True, check=True)
+    expected = [
+        str(python), "-I", "-m", "moss_transcribe_diarize.app.phase2_web_cli",
+        "--database", "database", "--control-socket", "socket", "--tls-certfile", "cert",
+        "--tls-keyfile", "key", "--backend", "vllm", "--model", str(root / "model"),
+        "--vllm-base-url", "http://127.0.0.1:8000/v1",
+        "--vllm-model", "OpenMOSS-Team/MOSS-Transcribe-Diarize", "--vllm-timeout", "1800",
+        "--file-work-root", "file-work", "--meeting-audio-root", "audio",
+        "--live-provider-manifest", "provider", "--live-helper-lease-seconds", "10",
+        "--host", "0.0.0.0", "--port", "7861", "--llm-upstreams", "",
+        "--max-len", "16384", "--max-new-tokens", "12000",
+    ]
+    if draft_seconds:
+        expected += ["--live-draft-lane-seconds", draft_seconds]
+    assert result.stdout == b"\0".join(arg.encode() for arg in expected) + b"\0"
+
+
 def _shell_function(source: str, name: str) -> str:
     start = source.index(f"{name}() {{")
     end = source.index("\n}", start) + 2
