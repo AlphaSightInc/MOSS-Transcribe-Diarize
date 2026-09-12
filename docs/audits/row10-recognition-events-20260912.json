@@ -1,0 +1,693 @@
+[
+  {
+    "seq": 0,
+    "kind": "session_created",
+    "payload": {}
+  },
+  {
+    "seq": 1,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 0,
+      "end_sample": 6976
+    }
+  },
+  {
+    "seq": 2,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 6976,
+      "end_sample": 8000
+    }
+  },
+  {
+    "seq": 3,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 8000,
+      "end_sample": 14976
+    }
+  },
+  {
+    "seq": 4,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 14976,
+      "end_sample": 16000
+    }
+  },
+  {
+    "seq": 5,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 16000,
+      "end_sample": 22976
+    }
+  },
+  {
+    "seq": 6,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 22976,
+      "end_sample": 24000
+    }
+  },
+  {
+    "seq": 7,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 24000,
+      "end_sample": 30976
+    }
+  },
+  {
+    "seq": 8,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 30976,
+      "end_sample": 32000
+    }
+  },
+  {
+    "seq": 9,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 32000,
+      "end_sample": 38976
+    }
+  },
+  {
+    "seq": 10,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 38976,
+      "end_sample": 40000
+    }
+  },
+  {
+    "seq": 11,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 0,
+      "start_sample": 0,
+      "end_sample": 40000,
+      "reason": "hard_cap"
+    }
+  },
+  {
+    "seq": 12,
+    "kind": "canonical_queued",
+    "payload": {
+      "item_id": 0,
+      "runtime_monotonic_ns": 2270935324479041
+    }
+  },
+  {
+    "seq": 13,
+    "kind": "canonical_started",
+    "payload": {
+      "item_id": 0,
+      "runtime_monotonic_ns": 2270935324652708,
+      "queue_wait_ms": 0.173667
+    }
+  },
+  {
+    "seq": 14,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 40000,
+      "end_sample": 46976
+    }
+  },
+  {
+    "seq": 15,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 46976,
+      "end_sample": 48000
+    }
+  },
+  {
+    "seq": 16,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 48000,
+      "end_sample": 54976
+    }
+  },
+  {
+    "seq": 17,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 54976,
+      "end_sample": 56000
+    }
+  },
+  {
+    "seq": 18,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 56000,
+      "end_sample": 62976
+    }
+  },
+  {
+    "seq": 19,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 62976,
+      "end_sample": 64000
+    }
+  },
+  {
+    "seq": 20,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 64000,
+      "end_sample": 70976
+    }
+  },
+  {
+    "seq": 21,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 70976,
+      "end_sample": 72000
+    }
+  },
+  {
+    "seq": 22,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 72000,
+      "end_sample": 78976
+    }
+  },
+  {
+    "seq": 23,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 78976,
+      "end_sample": 80000
+    }
+  },
+  {
+    "seq": 24,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 1,
+      "start_sample": 40000,
+      "end_sample": 80000,
+      "reason": "hard_cap"
+    }
+  },
+  {
+    "seq": 25,
+    "kind": "canonical_queued",
+    "payload": {
+      "item_id": 1,
+      "runtime_monotonic_ns": 2270937828522916
+    }
+  },
+  {
+    "seq": 26,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 80000,
+      "end_sample": 86976
+    }
+  },
+  {
+    "seq": 27,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 86976,
+      "end_sample": 88000
+    }
+  },
+  {
+    "seq": 28,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 88000,
+      "end_sample": 94976
+    }
+  },
+  {
+    "seq": 29,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 2,
+      "start_sample": 80000,
+      "end_sample": 85920,
+      "reason": "end_silence"
+    }
+  },
+  {
+    "seq": 30,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 3,
+      "start_sample": 85920,
+      "end_sample": 91200,
+      "reason": "leading_silence"
+    }
+  },
+  {
+    "seq": 31,
+    "kind": "canonical_queued",
+    "payload": {
+      "item_id": 2,
+      "runtime_monotonic_ns": 2270938392089166
+    }
+  },
+  {
+    "seq": 32,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 94976,
+      "end_sample": 96000
+    }
+  },
+  {
+    "seq": 33,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 96000,
+      "end_sample": 102976
+    }
+  },
+  {
+    "seq": 34,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 102976,
+      "end_sample": 104000
+    }
+  },
+  {
+    "seq": 35,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 104000,
+      "end_sample": 110976
+    }
+  },
+  {
+    "seq": 36,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 110976,
+      "end_sample": 112000
+    }
+  },
+  {
+    "seq": 37,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 112000,
+      "end_sample": 118976
+    }
+  },
+  {
+    "seq": 38,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 118976,
+      "end_sample": 120000
+    }
+  },
+  {
+    "seq": 39,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 120000,
+      "end_sample": 126976
+    }
+  },
+  {
+    "seq": 40,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 126976,
+      "end_sample": 128000
+    }
+  },
+  {
+    "seq": 41,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 128000,
+      "end_sample": 134976
+    }
+  },
+  {
+    "seq": 42,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 4,
+      "start_sample": 91200,
+      "end_sample": 131200,
+      "reason": "hard_cap"
+    }
+  },
+  {
+    "seq": 43,
+    "kind": "canonical_queued",
+    "payload": {
+      "item_id": 3,
+      "runtime_monotonic_ns": 2270940896414541
+    }
+  },
+  {
+    "seq": 44,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 134976,
+      "end_sample": 136000
+    }
+  },
+  {
+    "seq": 45,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 136000,
+      "end_sample": 142976
+    }
+  },
+  {
+    "seq": 46,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 142976,
+      "end_sample": 144000
+    }
+  },
+  {
+    "seq": 47,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 144000,
+      "end_sample": 150976
+    }
+  },
+  {
+    "seq": 48,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 150976,
+      "end_sample": 152000
+    }
+  },
+  {
+    "seq": 49,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 152000,
+      "end_sample": 158976
+    }
+  },
+  {
+    "seq": 50,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 0,
+      "start_sample": 0,
+      "end_sample": 40000
+    }
+  },
+  {
+    "seq": 51,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 0,
+      "runtime_monotonic_ns": 2270942763229750,
+      "queue_wait_ms": 0.173667,
+      "canonical_processing_elapsed_ms": 7438.577042,
+      "span_id": 0,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 7.068335624877363
+    }
+  },
+  {
+    "seq": 52,
+    "kind": "canonical_started",
+    "payload": {
+      "item_id": 1,
+      "runtime_monotonic_ns": 2270942763298083,
+      "queue_wait_ms": 4934.775167
+    }
+  },
+  {
+    "seq": 53,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 158976,
+      "end_sample": 160000
+    }
+  },
+  {
+    "seq": 54,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 160000,
+      "end_sample": 166976
+    }
+  },
+  {
+    "seq": 55,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 1,
+      "start_sample": 40000,
+      "end_sample": 80000
+    }
+  },
+  {
+    "seq": 56,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 1,
+      "runtime_monotonic_ns": 2270943315462791,
+      "queue_wait_ms": 4934.775167,
+      "canonical_processing_elapsed_ms": 552.164708,
+      "span_id": 1,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 0.14794037491083145
+    }
+  },
+  {
+    "seq": 57,
+    "kind": "canonical_started",
+    "payload": {
+      "item_id": 2,
+      "runtime_monotonic_ns": 2270943315571458,
+      "queue_wait_ms": 4923.482292
+    }
+  },
+  {
+    "seq": 58,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 166976,
+      "end_sample": 168000
+    }
+  },
+  {
+    "seq": 59,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 168000,
+      "end_sample": 174976
+    }
+  },
+  {
+    "seq": 60,
+    "kind": "span_frozen",
+    "payload": {
+      "span_id": 5,
+      "start_sample": 131200,
+      "end_sample": 171200,
+      "reason": "hard_cap"
+    }
+  },
+  {
+    "seq": 61,
+    "kind": "canonical_queued",
+    "payload": {
+      "item_id": 4,
+      "runtime_monotonic_ns": 2270943392679833
+    }
+  },
+  {
+    "seq": 62,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 174976,
+      "end_sample": 176000
+    }
+  },
+  {
+    "seq": 63,
+    "kind": "frame_accepted",
+    "payload": {
+      "start_sample": 176000,
+      "end_sample": 182976
+    }
+  },
+  {
+    "seq": 64,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 2,
+      "start_sample": 80000,
+      "end_sample": 85920
+    }
+  },
+  {
+    "seq": 65,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 2,
+      "runtime_monotonic_ns": 2270945287117458,
+      "queue_wait_ms": 4923.482292,
+      "canonical_processing_elapsed_ms": 1971.546,
+      "span_id": 2,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 1.9701906670816243
+    }
+  },
+  {
+    "seq": 66,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 3,
+      "start_sample": 85920,
+      "end_sample": 91200
+    }
+  },
+  {
+    "seq": 67,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 2,
+      "runtime_monotonic_ns": 2270945409893041,
+      "queue_wait_ms": 4923.482292,
+      "canonical_processing_elapsed_ms": 2094.321583,
+      "span_id": 3,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 0.12162566697224975
+    }
+  },
+  {
+    "seq": 68,
+    "kind": "canonical_started",
+    "payload": {
+      "item_id": 3,
+      "runtime_monotonic_ns": 2270945409961750,
+      "queue_wait_ms": 4513.547209
+    }
+  },
+  {
+    "seq": 69,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 4,
+      "start_sample": 91200,
+      "end_sample": 131200
+    }
+  },
+  {
+    "seq": 70,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 3,
+      "runtime_monotonic_ns": 2270945958645375,
+      "queue_wait_ms": 4513.547209,
+      "canonical_processing_elapsed_ms": 548.683625,
+      "span_id": 4,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 0.14944779220968485
+    }
+  },
+  {
+    "seq": 71,
+    "kind": "canonical_started",
+    "payload": {
+      "item_id": 4,
+      "runtime_monotonic_ns": 2270945958742000,
+      "queue_wait_ms": 2566.062167
+    }
+  },
+  {
+    "seq": 72,
+    "kind": "canonical_preview",
+    "payload": {
+      "span_id": 5,
+      "start_sample": 131200,
+      "end_sample": 171200
+    }
+  },
+  {
+    "seq": 73,
+    "kind": "canonical_processed",
+    "payload": {
+      "item_id": 4,
+      "runtime_monotonic_ns": 2270946418677375,
+      "queue_wait_ms": 2566.062167,
+      "canonical_processing_elapsed_ms": 459.935375,
+      "span_id": 5,
+      "submitted": true,
+      "identity_status": "prepared",
+      "identity_reason": null,
+      "canonical_decode_elapsed_sec": 0.12162737501785159
+    }
+  },
+  {
+    "seq": 74,
+    "kind": "rolling_decode_queued",
+    "payload": {
+      "item_id": 5,
+      "start_sample": 0,
+      "end_sample": 160000,
+      "runtime_monotonic_ns": 2270946418760000
+    }
+  },
+  {
+    "seq": 75,
+    "kind": "rolling_decode_completed",
+    "payload": {
+      "item_id": 5,
+      "start_sample": 0,
+      "end_sample": 160000,
+      "queue_wait_ms": 0.063333,
+      "runtime_monotonic_ns": 2270946700953750
+    }
+  },
+  {
+    "seq": 76,
+    "kind": "text_revision_applied",
+    "payload": {
+      "item_id": 5,
+      "start_sample": 0,
+      "end_sample": 160000
+    }
+  },
+  {
+    "seq": 77,
+    "kind": "session_aborted",
+    "payload": {
+      "runtime_monotonic_ns": 2270973825769333
+    }
+  }
+]
