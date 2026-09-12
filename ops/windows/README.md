@@ -5,8 +5,10 @@ on the development Mac, so neither PowerShell syntax parsing nor Windows executi
 has been performed. This is staged maintenance code, not a validated recovery tool.
 
 `wsl-maintenance.ps1` handles the host's two known restart sources: the
-`MinerU-WSL-Keepalive` scheduled task and attributable MOSS tooling launching
-`wsl.exe`. It never runs `wsl.exe -d Ubuntu`, opens a Linux shell, or queries a Linux
+`MinerU-WSL-Keepalive` / `MinerU-Windows-Watchdog` scheduled tasks and attributable
+MOSS tooling launching `wsl.exe`. Recovery found that the two tasks can restart
+Ubuntu (and WslService) within ~20 seconds of shutdown. Both must be temporarily
+disabled/stopped for maintenance and re-enabled afterward. It never runs `wsl.exe -d Ubuntu`, opens a Linux shell, or queries a Linux
 unit to establish offline state. All inspection uses Windows processes, the current
 Windows account's WSL registration and `wsl --list --verbose`.
 
@@ -54,8 +56,10 @@ Phase-1 units or claim their readiness; use the release owner's recovery procedu
   -Acknowledgement 'no cutover attempt is running'
 ```
 
-Parameters: `-Distro` defaults to `Ubuntu`; `-KeepaliveTask` defaults to
-`MinerU-WSL-Keepalive`; `-LogDirectory` defaults to `%LOCALAPPDATA%\MOSS\maintenance`.
+Parameters: `-Distro` defaults to `Ubuntu`; `-KeepaliveTask` currently defaults to
+`MinerU-WSL-Keepalive` only. **The current wrapper does not yet handle the watchdog;
+its task-list patch is pending approval. Do not use it for maintenance until both
+tasks are covered.** `-LogDirectory` defaults to `%LOCALAPPDATA%\MOSS\maintenance`.
 If C: is too full even for a small log, choose a writable directory on a healthy
 Windows drive with `-LogDirectory`. Other actions are `set-sparse`, `move` (requires
 `-Destination`) and `compact-check`.

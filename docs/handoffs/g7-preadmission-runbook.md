@@ -20,6 +20,12 @@ free, before touching Phase-1. `MOSS_MIN_ROOT_FREE_GB` and
 PowerShell can report C: space, the guard prints `windows_c / unavailable` and
 still checks Linux; that is not proof of Windows capacity.
 
+**Shared GPU, measured 04:58 EDT on 2026-09-12:** MinerU's container engine runs
+alongside MOSS on the Alienware's **RTX 4070 Ti SUPER**; combined use was **13,658
+of 16,376 MiB**. vLLM is pinned to `--gpu-memory-utilization 0.30` (about **4.9 GB**),
+so the load gates were measured under that contention. Recommend pausing MinerU
+during client demos if latency matters; the operator decides. Nothing was changed.
+
 **Pull evidence bundles off the host and verify the local copies before pruning
 attempt directories, including before staging invokes automatic pruning.** From
 the repository root in Ubuntu, inspect the plan, then prune only after that export:
@@ -43,14 +49,16 @@ vLLM must restart with a **new PID** and reload its model, and Phase-1 must rest
 and pass the service/readiness checks in the display-maintenance section below.
 Finish recovery of any interrupted cutover with the engineer before another attempt.
 
-On this host, the scheduled task **`MinerU-WSL-Keepalive` auto-restarts Ubuntu**.
-Temporarily disable it and stop any currently running task instance so shutdown
-holds. In Windows PowerShell as the task owner (elevated if required), during the
+On this host, **both `MinerU-WSL-Keepalive` and `MinerU-Windows-Watchdog`**
+automatically restart Ubuntu, and can restart WslService, within **~20 seconds** of
+`wsl --shutdown`. Temporarily disable both and stop their running instances so
+shutdown holds; re-enable both afterward. In Windows PowerShell as the task owner (elevated if required), during the
 agreed maintenance window:
 
 ```powershell
-Disable-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'
-Stop-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'
+$RestartTasks = @('MinerU-WSL-Keepalive', 'MinerU-Windows-Watchdog')
+Get-ScheduledTask -TaskName $RestartTasks | Disable-ScheduledTask
+Get-ScheduledTask -TaskName $RestartTasks | Stop-ScheduledTask
 wsl --shutdown
 wsl --list --running
 ```
@@ -68,8 +76,8 @@ WSL version whose `wsl --help` supports the command:
   location. Choose a drive with enough room for the existing VHDX. Use WSL's move
   command, not a manual move of an attached VHDX.
 
-After the operation, re-enable the task with
-`Enable-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'`, start Ubuntu, and verify
+After the operation, re-enable both tasks with
+`Get-ScheduledTask -TaskName $RestartTasks | Enable-ScheduledTask`, start Ubuntu, and verify
 Phase-1, vLLM/model readiness and both disk budgets before creating an attempt.
 Record the new vLLM PID as that attempt's baseline. These are operator instructions;
 no shutdown, task change, relocation or reclamation was performed for this doc update.
