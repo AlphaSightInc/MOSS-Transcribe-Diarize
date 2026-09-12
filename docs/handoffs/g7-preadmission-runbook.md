@@ -5,12 +5,102 @@ Round 9 is not a passing prerequisite. This command repeats all automated qualif
 recorded exceptions do not bypass its gate checks. Preadmission leaves the candidate serving
 but **does not admit it**.
 
-**Current host blocker (read-only check, 2026-09-11):** Windows user `gyauo` has
-`guiApplications=false` in `%USERPROFILE%\.wslconfig`. Ubuntu has no display variables,
-X display socket or WSLg PulseAudio socket. Opening Windows Terminal does not fix this.
-Have the engineer resolve display/audio and demonstrate real microphone plus both required
-share surfaces before scheduling this run. Do not restart WSL or vLLM: PID **169937** must
-remain unchanged. A working display alone does not prove entire-screen audio capture.
+## Choose a display before booking the attempt
+
+**Read-only findings:** WSLg 1.0.66 is installed but `gyauo` has `guiApplications=false`.
+No VcXsrv, X410, Xming, MobaXterm or PulseAudio matched the top-level Program Files,
+Program Files (x86), local Programs, current-user Store-package or process checks.
+Extended recursive/registry/listener queries stalled; portable or nested installations
+are not excluded. Option A is not verified available.
+**Recommend B on this host.** Prefer A if an existing X server is subsequently located,
+provided its real microphone path works; an X server alone supplies no audio.
+
+`query user` shows `gyauo` in disconnected session 2 (Explorer still running); the console
+has no signed-in user. This does not establish usual habits. Log into/unlock the local
+Windows desktop as `gyauo` before either option and keep it connected throughout G7.
+**What you will see:** your usable Windows desktop; `query user` should show an active
+session, not `Disc`. SSH access is not a substitute.
+
+### A. Windows X server plus Windows audio — preserve running WSL services
+
+Have the engineer start the installed X server on display 0 and permit its WSL connection.
+In the Ubuntu terminal that will run the canary, set:
+
+```bash
+WINDOWS_HOST_IP='ADDRESS_CONFIRMED_BY_ENGINEER'
+export DISPLAY="${WINDOWS_HOST_IP}:0"
+export PULSE_SERVER="tcp:${WINDOWS_HOST_IP}:4713"
+```
+
+This host uses mirrored networking: Windows loopback `127.0.0.1` is an option if the servers
+listen there; do not mistake the LAN router/default gateway for Windows. See
+[Microsoft's networking guidance](https://learn.microsoft.com/en-us/windows/wsl/networking).
+
+Have the engineer configure PulseAudio-for-Windows with TCP access **and a real recording
+source mapped to the Windows microphone**, then demonstrate the microphone meter in Linux
+Chrome. Playback-only PulseAudio is insufficient: the older
+[X410 audio recipe](https://x410.dev/cookbook/wsl/enabling-sound-in-wsl-ubuntu-let-it-sing/)
+explicitly disables recording with `record=0`; do not use that setting for G7. No working
+WSLg-free microphone path was found here. Installation/configuration is separate setup work.
+
+**What you will see:** Linux Chrome on Windows, plus a working microphone. You must still
+verify tab audio and entire-screen audio in that Chrome instance. Neither an X display nor
+PulseAudio playback proves Chrome will provide a shared-audio track. No WSL shutdown is
+needed for A; keep the existing vLLM PID unchanged.
+
+### B. Enable WSLg — recommended, with planned downtime
+
+**Do this only in an agreed maintenance window BEFORE creating any preadmission attempt;
+NEVER during one.** `wsl --shutdown` stops every running WSL distribution and every WSL
+service, including `moss-vllm`, Phase-1 `moss-web` and `moss-live-web`. vLLM's process/PID
+will change on restart; allow minutes for model reload (duration unmeasured).
+The current PID `169937` is not the baseline after this planned restart.
+[Microsoft documents the shutdown scope and setting](https://learn.microsoft.com/en-us/windows/wsl/wsl-config).
+
+In Windows Terminal / PowerShell as `gyauo`, edit the existing file:
+
+```powershell
+notepad "$env:USERPROFILE\.wslconfig"
+```
+
+Change only `guiApplications=false` to `guiApplications=true` under the existing `[wsl2]`;
+keep the custom kernel, memory and networking settings. Save, then run:
+
+```powershell
+wsl --shutdown
+wsl.exe -d Ubuntu -u devcontainers
+```
+
+**What you will see:** existing WSL terminals/services disconnect, then a fresh Ubuntu
+shell. Enabled user services can restart; `moss-web.service` is currently **disabled** for
+automatic startup and needs the explicit start below. User lingering is enabled.
+
+With the engineer confirming Phase-1 configuration and no attempt in progress, run in Ubuntu:
+
+```bash
+systemctl --user start moss-web.service
+systemctl --user is-active moss-web.service moss-live-web.service moss-vllm.service
+systemctl --user show moss-vllm.service -p MainPID
+curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8000/v1/models
+python3 - <<'CHECK'
+import json, pathlib, ssl, urllib.request
+p = pathlib.Path.home() / '.config/moss-transcribe-diarize/moss-cutover.json'
+for v in json.loads(p.read_text())['phase1']['runtime_views']:
+    ctx = ssl.create_default_context(cafile=v['ca_file']) if v.get('ca_file') else None
+    with urllib.request.urlopen(v['origin'] + '/api/runtime', context=ctx, timeout=10) as r:
+        state = json.load(r)['phase1_creation']
+    print(v['name'], state)
+    assert state['state'] == 'open'
+    assert all(state[k] == 0 for k in ('entrants', 'active_jobs', 'queued_jobs', 'active_live_sessions'))
+CHECK
+```
+
+**What you will see:** three `active` lines; a new positive vLLM PID; `/v1/models` lists
+`OpenMOSS-Team/MOSS-Transcribe-Diarize`; both `batch` and `live` are `open` with zero work.
+Wait for model readiness; stop and ask the engineer if any check fails. Then verify WSLg
+sockets below and real microphone/shared audio. Record the new PID in step 2 and preserve
+it throughout the attended attempt. No shutdown or configuration change was performed by
+this read-only review.
 
 ## 1. Open the operator terminal
 
@@ -20,7 +110,7 @@ On the Alienware, sign into Windows as `gyauo`. Keep the desktop unlocked. In Wi
 wsl.exe -d Ubuntu -u devcontainers
 ```
 
-In that Ubuntu terminal:
+In that Ubuntu terminal (the socket test applies to B; for A use its verified TCP display/audio):
 
 ```bash
 whoami
@@ -31,7 +121,8 @@ test -S /tmp/.X11-unix/X0 && test -S /mnt/wslg/PulseServer && echo 'Display/audi
 
 **What you will see:** `devcontainers`, a `/dev/pts/...` terminal, and working WSLg settings
 (normally `DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`, Pulse pointing at `/mnt/wslg/PulseServer`).
-Stop if these are missing. Do not invent environment values to conceal missing servers.
+For B, stop if these are missing. For A, verify its TCP connections instead; WSLg sockets
+and `WAYLAND_DISPLAY` are not required. Do not invent values to conceal missing servers.
 [WSLg supplies these services and variables](https://github.com/microsoft/wslg).
 
 ## 2. Check the release and profiles
@@ -46,6 +137,8 @@ CUTOVER="$RUNTIME/bin/mtd-phase2-cutover"
 PROFILE="$HOME/.config/moss-transcribe-diarize/moss-cutover.json"
 export PYTHONDONTWRITEBYTECODE=1
 systemctl --user show moss-web.service moss-live-web.service moss-vllm.service -p Id -p ActiveState -p MainPID
+VLLM_PID=$(systemctl --user show moss-vllm.service -p MainPID --value)
+printf 'Preserve this vLLM PID: %s\n' "$VLLM_PID"
 "$CUTOVER" run --help
 "$CUTOVER" restore --help
 python3 - "$SHA" <<'PY'
@@ -73,7 +166,7 @@ PY
 if test -L "$ROOT/account-current"; then readlink -e "$ROOT/account-current"; else echo 'No Account activation symlink'; fi
 ```
 
-**What you will see:** active Phase-1 web/live services; active vLLM with PID `169937`;
+**What you will see:** active Phase-1 web/live services; active vLLM with a positive PID recorded in `VLLM_PID`;
 matching profiles at mode `0600`. G7 reads `measurements.pre_admission.https_origin` and
 `chrome_binary`; it does not use the acceptance cookie files to sign Chrome in.
 `account-current` may be absent before cutover—that is correct for the restored host.
@@ -139,11 +232,12 @@ cat "$ATTEMPT/result.json"
 tail -n 3 "$ATTEMPT/journal.jsonl"
 readlink -e "$ROOT/account-current"
 systemctl --user show moss-vllm.service -p ActiveState -p MainPID
+test "$(systemctl --user show moss-vllm.service -p MainPID --value)" = "$VLLM_PID" && echo 'vLLM PID unchanged'
 ```
 
 **What you will see:** success is `attended_g7_complete` (`g7=PASS`), then phase
 `preadmission`, with `admitted=false`. Evidence is `attended-g7.json`; `account-current`
-resolves to `$RUNTIME`, and vLLM remains PID `169937`.
+resolves to `$RUNTIME`, and vLLM matches the pre-attempt `VLLM_PID`.
 
 Failure normally records `failure_observed`, `restore_started`, then `restored`
 (`g7=UNCLAIMED`). Phase-1 resumes and the old symlink state returns, possibly absent.
