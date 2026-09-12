@@ -102,14 +102,14 @@ def measure_voiceprint_workspace(campaign):
     created = []
     profiles_created = []
     def live(clip_index=0):
-        value, _ = a.json("POST", "/api/live/sessions", 201, json={"echo_mode": "speakers"})
-        created.append(value["id"])
-        campaign._seed_live_transcript("a", value["id"], clip_index)
-        meeting, _ = a.json("GET", f"/api/meetings/{value['id']}", 200)
+        meeting_id = campaign._new_live_id("a")
+        created.append(meeting_id)
+        campaign._seed_live_transcript("a", meeting_id, clip_index)
+        meeting, _ = a.json("GET", f"/api/meetings/{meeting_id}", 200)
         # The display-name map is empty before enrollment. Canonical IDs belong
         # to attributed transcript rows, independently of optional names.
         speaker = next(row["speaker_entity_id"] for row in meeting["transcript"]["segments"] if row.get("speaker_entity_id"))
-        return value["id"], speaker
+        return meeting_id, speaker
     try:
         first, speaker = live()
         enrolled, _ = a.json("PUT", f"/api/meetings/{first}/speakers/{speaker}/name", 200, json={"label": "Qualification speaker"})

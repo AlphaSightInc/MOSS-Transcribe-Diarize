@@ -120,11 +120,17 @@ def test_g8_http_collector_handles_empty_name_map_and_same_name_neighbor(tmp_pat
                 response = self.request(method, path, **kwargs)
                 assert response.status_code == expected, response.text
                 return response.json(), response
+        registered = set()
+        def new_live(owner):
+            value, _ = OwnerClient(owner).json("POST", "/api/live/sessions", 201, json={"echo_mode": "speakers"})
+            registered.add(value["id"])
+            return value["id"]
         def seed(owner, meeting, index):
+            assert meeting in registered, "seed requires campaign-owned helper registration"
             assert index == (1 if counter == 3 else 0)
             session(client, credentials[owner]); feed_two_lane_span(client, meeting)
             wait_snapshot(client, meeting, lambda body: body["meeting_transcript_version"] >= 1)
-        campaign = SimpleNamespace(a=OwnerClient("a"), b=OwnerClient("b"), a_peer=OwnerClient("a"), _seed_live_transcript=seed)
+        campaign = SimpleNamespace(a=OwnerClient("a"), b=OwnerClient("b"), a_peer=OwnerClient("a"), _seed_live_transcript=seed, _new_live_id=new_live)
         raw = measure_voiceprint_workspace(campaign)
         assert validate_completion_observation("voiceprint_workspace_behavior", raw)
         assert raw["live_meetings"] == 3
