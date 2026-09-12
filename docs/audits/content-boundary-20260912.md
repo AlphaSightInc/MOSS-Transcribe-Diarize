@@ -93,3 +93,32 @@ without browsers. No frontend behavior or bundle rebuild.
 
 Full logs stay outside the repository: `/tmp/moss-content-boundary-python.log`,
 `/tmp/moss-content-boundary-python.xml`, `/tmp/moss-content-boundary-frontend.log`.
+
+## Follow-up confirmation and removal history
+
+**Timeout metadata:** both synchronous and asynchronous writers retain the predicate,
+stage name and operation, plus the actual `data-auth-state`, `data-boot` and
+`data-history-boot` value arrays when DOM inspection succeeds. Inspection failure
+retains `attributes_error` as an exception type. Existing assertions in
+`tests/phase2/test_browser_timeout_evidence.py` cover stage and status values.
+Neither stage nor boot/auth state was stripped; no restoration or code change was
+needed. **Limitation:** `target` currently repeats the operation (`fill`,
+`wait_for_selector`, `wait_for`); it does not retain a redacted selector role/name
+category. Thus the record is richer than a bare timeout, but selector-category
+context cannot be confirmed. Raw selectors remain excluded because they can contain
+user text. This follow-up is documentation only.
+
+| Removal commit | Files removed from branch tip |
+|---|---|
+| `09539ad72006d756fcece932efe74fbb6d8490b1` — Remove retained content and enforce metadata-only diagnostic boundaries | 402 `evidence/` files and 16 `.npz` embedding caches (418 deletions total); also sanitizes retained artifacts and writers |
+
+This is the sole artifact-removal commit for this audit. The exact deleted paths
+are available with `git diff-tree --no-commit-id --name-only --diff-filter=D -r
+09539ad72006d756fcece932efe74fbb6d8490b1`; the evidence inventory above records
+per-file dispositions.
+
+**History on `private/auto-mvp-0911` still contains the removed content**, including
+in parent `e03d6a31` and earlier commits. Tip deletion does not erase that history.
+**No force-push or history rewrite was performed.** Whether to squash or rewrite
+branch history before any PR to `dev` is the operator's decision; this audit does
+not perform either action. No host operations.
