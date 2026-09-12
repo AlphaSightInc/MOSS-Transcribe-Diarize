@@ -56,19 +56,19 @@ is unchanged and is still exercised after relay initialization.
 
 ## F3 — verification
 
-Code/test commit: `37e6bca4`. Both repaired browser files pass locally with real
+Code/test commit: `139177d6`. Both repaired browser files pass locally with real
 Chrome: **19 passed**. Frontend: **204 passed**, including both delayed-catalog cases.
 
-Full suites then ran in a fresh detached worktree at that commit, clean before and
-after. Its `.venv` and `node_modules` refer to the existing local test dependencies;
+Full suites then ran in a fresh detached worktree at integrated head `057a547c`,
+including the history-observer repair `681d9239`, clean before and after. Its `.venv` and `node_modules` refer to the existing local test dependencies;
 source and fixtures come from the detached checkout. `PLAYWRIGHT_BROWSERS_PATH`
 points to an empty directory. An external `sitecustomize.py` hides only supported
 system-browser file/command discovery; it does not alter pytest, skip handling or
 the required-file policy. The real discovery function confirmed no executable.
 `MOSS_LLM_UPSTREAMS` was set to a loopback fixture catalog (one model, no real relay).
 
-- Full Python: **1,579 passed + 37 subtests, 25 skipped, zero failed**.
-- Exact XML denominator: **1,641 collected, 1,616 executed/passed, 25 skipped,
+- Full Python: **1,580 passed + 37 subtests, 25 skipped, zero failed**.
+- Exact XML denominator: **1,642 collected, 1,617 executed/passed, 25 skipped,
   zero failed/unmeasured** (includes subtests).
 - Skips: **23 optional missing-browser cases**, one unprovisioned operator identity
   corpus and one unprovisioned F-cert corpus.
@@ -77,6 +77,6 @@ the required-file policy. The real discovery function confirmed no executable.
 - Full frontend in the same clean worktree: **204 passed**.
 
 Logs and XML stay outside git; the local scratch root is recorded in
-`/tmp/moss-round13-hoststyle-root`. No content-bearing evidence is added. The later
-commit adding this audit changes documentation only. This is local regression
+`/tmp/moss-round13-hoststyle-root`. No content-bearing evidence is added. The follow-up
+recording these integrated counts changes documentation only. This is local regression
 verification, not a completed host qualification or preadmission.
