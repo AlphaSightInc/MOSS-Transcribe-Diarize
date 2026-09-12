@@ -1996,9 +1996,12 @@ def create_phase2_app(
             label = payload.get("label") if isinstance(payload, dict) else None
             if not isinstance(label, str):
                 raise ValueError("Speaker label is required.")
+            save_voiceprint = payload.get("save_voiceprint", True)
+            if not isinstance(save_voiceprint, bool):
+                raise ValueError("save_voiceprint must be a boolean.")
             result = await request.app.state.phase2_speaker_identity.bank(
                 workspace
-            ).name_speaker(handle, speaker_id, label)
+            ).name_speaker(handle, speaker_id, label, save_voiceprint=save_voiceprint)
         except SpeakerIdentityNotFound as exc:
             raise HTTPException(status_code=404, detail="Meeting Speaker not found.") from exc
         except ValueError as exc:

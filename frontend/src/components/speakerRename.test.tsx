@@ -14,7 +14,7 @@ const root = document.createElement("div");
 document.body.append(root);
 afterEach(() => { act(() => render(null, root)); resetSessionState(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-it.each([".utt-speaker", ".legend-chip"])("renames from %s across repeated rows, legend, history reopen and export", async selector => {
+it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames from %s with save voiceprint=%s across rows, history and export", async (selector, saveVoiceprint) => {
   let name = "Before";
   const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual", mode: "live", status: "active", created_at_ms: 1,
     transcript_version: name === "Before" ? 1 : 2, audio: null, transcript: { segments: ["a", "b", "a"].map((id, i) => ({
@@ -22,8 +22,10 @@ it.each([".utt-speaker", ".legend-chip"])("renames from %s across repeated rows,
     })) } });
   vi.stubGlobal("fetch", vi.fn(async (url, init) => {
     if (String(url).endsWith("/speakers/a/name")) {
-      name = JSON.parse(init.body).label;
-      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: "pending" });
+      const body = JSON.parse(init.body);
+      expect(body).toEqual(saveVoiceprint ? { label: "After" } : { label: "After", save_voiceprint: false });
+      name = body.label;
+      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: saveVoiceprint ? "pending" : "not_requested" });
     }
     return Response.json(String(url) === "/api/meetings" ? { meetings: [meeting()] } : meeting());
   }));
@@ -34,6 +36,9 @@ it.each([".utt-speaker", ".legend-chip"])("renames from %s across repeated rows,
   });
   await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="m"]')).not.toBeNull());
   act(() => root.querySelector<HTMLButtonElement>(selector)!.click());
+  const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
+  expect(checkbox.checked).toBe(true);
+  if (!saveVoiceprint) act(() => checkbox.click());
   act(() => {
     const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
     input.value = "After"; input.dispatchEvent(new Event("input", { bubbles: true }));

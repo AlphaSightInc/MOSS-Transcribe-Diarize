@@ -2,7 +2,7 @@ export interface SpeakerNameResult {
   meeting_id: string;
   speaker_id: string;
   label: string;
-  enrollment: "pending" | "enrolled";
+  enrollment: "pending" | "enrolled" | "not_requested";
 }
 
 export interface Voiceprint {
@@ -37,7 +37,8 @@ export async function nameMeetingSpeaker(
   meetingId: string,
   speakerId: string,
   label: string,
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  saveVoiceprint = true
 ): Promise<SpeakerNameResult> {
   const response = await fetcher(
     `/api/meetings/${encodeURIComponent(meetingId)}/speakers/${encodeURIComponent(speakerId)}/name`,
@@ -45,7 +46,7 @@ export async function nameMeetingSpeaker(
       method: "PUT",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label })
+      body: JSON.stringify(saveVoiceprint ? { label } : { label, save_voiceprint: false })
     }
   );
   const payload = await response.json().catch(() => null);
@@ -53,7 +54,7 @@ export async function nameMeetingSpeaker(
     throw new Error(typeof payload?.detail === "string" ? payload.detail : `Speaker naming failed (${response.status}).`);
   }
   if (payload?.meeting_id !== meetingId || payload?.speaker_id !== speakerId ||
-      typeof payload?.label !== "string" || !["pending", "enrolled"].includes(payload?.enrollment)) {
+      typeof payload?.label !== "string" || !["pending", "enrolled", "not_requested"].includes(payload?.enrollment)) {
     throw new Error("Speaker naming response is invalid.");
   }
   return payload;

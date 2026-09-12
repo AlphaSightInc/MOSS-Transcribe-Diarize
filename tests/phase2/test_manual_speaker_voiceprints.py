@@ -382,3 +382,30 @@ def test_completed_voiceprint_and_sample_survive_store_restart(tmp_path: Path):
             await restarted.close()
 
     asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("prior", ["none", "pending", "enrolled"])
+def test_rename_only_never_enrolls_or_renames_existing_bank(tmp_path: Path, prior):
+    async def exercise():
+        store, workspace, _ = await provision(tmp_path / "rename-only.sqlite3")
+        active = FakeActiveMeetings()
+        identity = AccountSpeakerIdentity(store, active)
+        try:
+            handle, meeting = await active_meeting(workspace, active)
+            bank = identity.bank(workspace)
+            if prior == "enrolled":
+                meeting.observations["speaker-0001"] = evidence("speaker-0001", seconds=2.0)
+            if prior != "none":
+                await bank.name_speaker(handle, "speaker-0001", "Original")
+            before = await bank.list_voiceprints()
+            meeting.observations["speaker-0001"] = evidence("speaker-0001", seconds=3.0)
+            result = await bank.name_speaker(handle, "speaker-0001", "Meeting only", save_voiceprint=False)
+            assert result.enrollment == "not_requested"
+            assert result.voiceprint_id is None
+            assert (await handle.snapshot()).transcript["segments"][0]["speaker"] == "Meeting only"
+            assert await bank.list_voiceprints() == before
+            await identity.observe(handle, tuple(meeting.observations.values()))
+            assert await bank.list_voiceprints() == before
+        finally:
+            await store.close()
+    asyncio.run(exercise())

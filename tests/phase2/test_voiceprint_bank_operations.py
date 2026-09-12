@@ -119,3 +119,27 @@ def test_bank_cancelled_client_and_concurrent_renames_converge_after_commit(tmp_
             profiles = await identity._list_voiceprints(owner)
             assert [(profile.label, profile.sample_count) for profile in profiles] == [(final, 1)]
         client.portal.call(stress)
+
+
+def test_naming_api_explicit_enrollment_choice_and_default(tmp_path: Path):
+    database = tmp_path / "choice.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database, identity_factory=EligibleIdentity)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting = client.post("/api/live/sessions").json()["id"]
+        feed_two_lane_span(client, meeting)
+        wait_snapshot(client, meeting, lambda body: body["meeting_transcript_version"] == 1)
+        url = f"/api/meetings/{meeting}/speakers/speaker-0001/name"
+        renamed = client.put(url, json={"label": "Local", "save_voiceprint": False})
+        assert renamed.status_code == 200
+        assert renamed.json()["enrollment"] == "not_requested"
+        assert client.get("/api/voiceprints").json()["voiceprints"] == []
+        assert client.put(url, json={"label": "Invalid", "save_voiceprint": "false"}).status_code == 400
+        enrolled = client.put(url, json={"label": "Saved", "save_voiceprint": True})
+        assert enrolled.status_code == 200
+        assert enrolled.json()["enrollment"] == "enrolled"
+        default = client.put(url, json={"label": "Default"})
+        assert default.status_code == 200
+        assert default.json()["enrollment"] == "enrolled"
+        assert default.json()["voiceprint_id"] == enrolled.json()["voiceprint_id"]

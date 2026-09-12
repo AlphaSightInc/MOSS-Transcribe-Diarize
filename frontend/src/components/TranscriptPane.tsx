@@ -92,6 +92,7 @@ export function TranscriptPane() {
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
   const [namingTarget, setNamingTarget] = useState<TranscriptLegendEntry | null>(null);
+  const [saveVoiceprint, setSaveVoiceprint] = useState(true);
   const [speakerName, setSpeakerName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [namingMessage, setNamingMessage] = useState<string | null>(null);
@@ -161,6 +162,7 @@ export function TranscriptPane() {
     if (reason || !entry) return;
     setNamingTarget(entry);
     setSpeakerName(entry.visibleLabel);
+    setSaveVoiceprint(true);
   }
 
   async function saveSpeakerName(event: Event): Promise<void> {
@@ -170,14 +172,16 @@ export function TranscriptPane() {
     setSavingName(true);
     setNamingError(null);
     try {
-      const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim());
+      const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim(), undefined, saveVoiceprint);
       if (sessionId.value !== meetingId || captureMeetingId.value !== meetingId) return;
       // The response acknowledges a durable display label, not a new identity.
       sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
         item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
       document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
       requestMeetingHistoryRefresh();
-      setNamingMessage(result.enrollment === "enrolled"
+      setNamingMessage(result.enrollment === "not_requested"
+        ? `Saved ${result.label}. Voiceprint not saved.`
+        : result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
         : `Saved ${result.label}. Voiceprint will save when enough clear speech arrives before Stop.`);
       setNamingTarget(null);
@@ -334,7 +338,8 @@ export function TranscriptPane() {
             <label htmlFor="speaker-name-input">Display name</label>
             <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
               disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
-            <p className="hint">Applies to this speaker throughout the active meeting. Enough clear speech also saves a private voiceprint. People may share the same name.</p>
+            <label><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /> Save voiceprint</label>
+            <p className="hint">Applies to this speaker throughout the active meeting. When checked, enough clear speech also saves a private voiceprint. People may share the same name.</p>
             {namingError ? <p role="alert">{namingError}</p> : null}
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>

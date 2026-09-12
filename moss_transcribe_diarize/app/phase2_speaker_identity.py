@@ -166,9 +166,10 @@ class AccountSpeakerIdentity:
         handle: Any,
         speaker_id: str,
         label: str,
+        *, save_voiceprint: bool = True,
     ) -> ManualNameResult:
         task = asyncio.create_task(
-            self._name_speaker_serial(owner_key, handle, speaker_id, label),
+            self._name_speaker_serial(owner_key, handle, speaker_id, label, save_voiceprint=save_voiceprint),
             name="phase2-manual-speaker-name",
         )
         self._naming_tasks.add(task)
@@ -176,7 +177,7 @@ class AccountSpeakerIdentity:
         return await asyncio.shield(task)
 
     async def _name_speaker_serial(
-        self, owner_key, handle, speaker_id, label,
+        self, owner_key, handle, speaker_id, label, *, save_voiceprint=True,
     ) -> ManualNameResult:
         async with self._lock:
             return await self._name_speaker_locked(
@@ -184,6 +185,7 @@ class AccountSpeakerIdentity:
                 handle,
                 speaker_id,
                 label,
+                save_voiceprint=save_voiceprint,
             )
 
     async def _name_speaker_locked(
@@ -192,6 +194,7 @@ class AccountSpeakerIdentity:
         handle: Any,
         speaker_id: str,
         label: str,
+        *, save_voiceprint: bool = True,
     ) -> ManualNameResult:
         if handle.owner_key != owner_key:
             raise SpeakerIdentityNotFound(speaker_id)
@@ -207,7 +210,7 @@ class AccountSpeakerIdentity:
                 speaker_id,
                 normalized,
             ) as active:
-                evidence = _eligible_evidence(active.evidence)
+                evidence = _eligible_evidence(active.evidence) if save_voiceprint else None
                 voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
                     owner_key,
                     handle.meeting_id,
@@ -215,6 +218,7 @@ class AccountSpeakerIdentity:
                     normalized,
                     active.document,
                     evidence,
+                    save_voiceprint=save_voiceprint,
                 )
                 active.mark_committed(transcript_version)
         except SpeakerIdentityNotFound:
@@ -223,7 +227,10 @@ class AccountSpeakerIdentity:
             raise SpeakerIdentityNotFound(speaker_id) from exc
 
         key = _pending_key(owner_key, handle.meeting_id, speaker_id)
-        if evidence is None:
+        if not save_voiceprint:
+            self._pending.pop(key, None)
+            enrollment = "not_requested"
+        elif evidence is None:
             self._pending[key] = _PendingEnrollment(
                 owner_key=owner_key,
                 meeting_id=handle.meeting_id,
@@ -255,6 +262,7 @@ class AccountSpeakerIdentity:
         label: str,
         document: Mapping[str, object],
         evidence: _EligibleEvidence | None,
+        *, save_voiceprint: bool = True,
     ) -> tuple[str | None, int, bool]:
         account_id, authority_generation = owner_key
         document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
@@ -283,7 +291,7 @@ class AccountSpeakerIdentity:
             )
             speaker_row = await speaker_cursor.fetchone()
             await speaker_cursor.close()
-            voiceprint_id = None if speaker_row is None else speaker_row["voiceprint_id"]
+            voiceprint_id = None if speaker_row is None or not save_voiceprint else speaker_row["voiceprint_id"]
             was_linked = voiceprint_id is not None
 
             if voiceprint_id is not None:
@@ -767,12 +775,14 @@ class AccountVoiceprintBank:
         handle: Any,
         speaker_id: str,
         label: str,
+        *, save_voiceprint: bool = True,
     ) -> ManualNameResult:
         return await self._identity._name_speaker(
             self._owner_key,
             handle,
             speaker_id,
             label,
+            save_voiceprint=save_voiceprint,
         )
 
     async def list_voiceprints(self) -> list[Voiceprint]:
