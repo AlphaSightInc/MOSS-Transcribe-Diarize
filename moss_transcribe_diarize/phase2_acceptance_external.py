@@ -1370,13 +1370,23 @@ class FixedAccountCampaign:
             frame_samples = created.descriptor.frame_samples
             admitted_item: int | None = None
             admitted_started = False
+            probe_started = time.monotonic()
+            events = ()
+            frames_sent = 0
+            # Burst within the existing 120-frame budget: real-time pacing lets
+            # a fast canonical decoder finish every span between observations.
+            # The interrupt contract needs a queued item, not a second item
+            # simultaneously running on the decoder.
             for sequence in range(120):
+                if time.monotonic() - probe_started >= 60:
+                    break
                 offset = sequence * frame_samples * 2 % len(pcm)
                 chunk = (pcm + pcm)[offset : offset + frame_samples * 2]
                 adapter.accept_frame(
                     created.session_id,
                     AudioFrame(sequence, chunk, frame_samples, LIVE_SAMPLE_RATE),
                 )
+                frames_sent += 1
                 events = adapter.events(created.session_id)
                 processed = {
                     int(event.payload["item_id"])
@@ -1399,14 +1409,25 @@ class FixedAccountCampaign:
                     and int(event.payload["item_id"]) not in processed
                     and int(event.payload["item_id"]) not in started
                 ]
-                if started and queued:
+                if queued:
                     admitted_item = queued[0]
-                    admitted_started = True
+                    admitted_started = bool(started)
                     break
-                time.sleep(frame_samples / LIVE_SAMPLE_RATE)
+            admission = {
+                "session_id": created.session_id,
+                "frames_sent": frames_sent,
+                "audio_seconds_sent": frames_sent * frame_samples / LIVE_SAMPLE_RATE,
+                "elapsed_seconds": time.monotonic() - probe_started,
+                "selected_queued_item_id": admitted_item,
+                "lifecycle_counts": {
+                    kind: sum(event.kind == kind for event in events)
+                    for kind in ("canonical_queued", "canonical_started", "canonical_processed")
+                },
+            }
+            self._artifact_json("operator/interrupt-admission.json", admission)
             if admitted_item is None:
                 raise ExternalMeasurementError(
-                    "operator interrupt probe did not observe admitted canonical work"
+                    f"operator interrupt probe did not observe queued canonical work: {admission}"
                 )
             before, _ = self.a.json(
                 "GET", f"/api/meetings/{created.session_id}", 200
@@ -1464,6 +1485,7 @@ class FixedAccountCampaign:
                 for event in after_events
             )
             interrupt_probe = {
+                "admission": admission,
                 "admitted_work_observed": True,
                 "admitted_started": admitted_started,
                 "command_interrupted": interrupted,

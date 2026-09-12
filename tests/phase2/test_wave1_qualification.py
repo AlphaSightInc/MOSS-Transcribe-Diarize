@@ -2735,8 +2735,10 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
     assert result["out_of_band_reconciled"] is True
 
 
+@pytest.mark.parametrize("queue_observed", [False, True])
+@pytest.mark.parametrize("has_running", [False, True])
 def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_result(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, has_running, queue_observed,
 ):
     socket_path = tmp_path / "control.sock"
     socket_path.write_text("", encoding="utf-8")
@@ -2751,6 +2753,15 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     cookie = tmp_path / "cookie"
     cookie.write_text("cookie", encoding="utf-8")
     cookie.chmod(0o600)
+    pending_frames = 0
+    interrupted = False
+
+    def paced_sleep(_seconds):
+        nonlocal pending_frames
+        pending_frames = 0  # Fast decoder drains each paced live span.
+
+    monkeypatch.setattr(external.time, "sleep", paced_sleep)
+
     class Adapter:
         def __init__(self, **kwargs: object) -> None:
             del kwargs
@@ -2762,16 +2773,19 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
             )
 
         def accept_frame(self, *args: object, **kwargs: object) -> None:
-            del args, kwargs
+            nonlocal pending_frames
+            pending_frames += 1
 
         def events(self, meeting_id: str):
             del meeting_id
-            return (
-                SimpleNamespace(kind="canonical_queued", payload={"item_id": 1}),
-                SimpleNamespace(kind="canonical_started", payload={"item_id": 1}),
-                SimpleNamespace(kind="canonical_queued", payload={"item_id": 2}),
-                SimpleNamespace(kind="canonical_discarded", payload={"item_id": 2}),
-            )
+            if pending_frames < 10 or not queue_observed:
+                return ()
+            events = [SimpleNamespace(kind="canonical_queued", payload={"item_id": 2})]
+            if has_running:
+                events += [SimpleNamespace(kind="canonical_started", payload={"item_id": 1})]
+            if interrupted:
+                events += [SimpleNamespace(kind="canonical_discarded", payload={"item_id": 2})]
+            return tuple(events)
 
         @staticmethod
         def _lane_payload(*args: object, **kwargs: object):
@@ -2822,12 +2836,14 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     }
 
     def control(_socket: Path, command: str, email=None, *, meeting_id=None):
+        nonlocal interrupted
         del email
         if command == "status":
             return copy.deepcopy(status)
         if command == "accounts.list":
             return []
         assert command == "meetings.interrupt" and meeting_id == "meeting"
+        interrupted = True
         return {"meeting_id": "meeting", "interrupted": True}
 
     campaign = _campaign(
@@ -2858,7 +2874,17 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
         "_await_meeting_terminal",
         lambda meeting_id, timeout=1800: copy.deepcopy(meeting),
     )
+    if not queue_observed:
+        with pytest.raises(external.ExternalMeasurementError, match="did not observe queued canonical"):
+            campaign.operator_control()
+        retained = json.loads((campaign.artifact_root / "operator/interrupt-admission.json").read_text())
+        assert retained["frames_sent"] == 120
+        assert retained["selected_queued_item_id"] is None
+        assert interrupted is False
+        return
     result = campaign.operator_control()
+    assert result["interrupt_probe"]["admission"]["frames_sent"] == 10
+    assert result["interrupt_probe"]["admission"]["audio_seconds_sent"] == 5
     assert acceptance._validate_raw_predicate(
         "operator_control",
         {"raw": result},
