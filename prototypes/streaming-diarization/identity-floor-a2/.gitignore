@@ -1,0 +1,2 @@
+# Reconstructable concatenated PCM; source intervals and embeddings are retained.
+results/*.wav

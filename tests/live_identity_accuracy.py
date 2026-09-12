@@ -272,6 +272,7 @@ def replay(
     encoder: CachedEncoder | None = None,
     sweep_interval: float | None = None,
     merge_threshold: float = SWEEP_MERGE_THRESHOLD,
+    trace: list[dict[str, object]] | None = None,
 ) -> ReplayResult:
     """Drive the production identity path over one meeting.
 
@@ -279,6 +280,9 @@ def replay(
     production code with `album=None`, which falls back to `_canonical_vectors` -- the
     latest-span replacement the album replaced. The old policy is still reachable, so the
     comparison needs no revert and no fork of the implementation.
+
+    `trace`, when supplied, receives copied label state after commits and applied sweeps.
+    It is observation-only; A2 uses it to separate unnamed speech and correction delay.
 
     `sweep_interval` adds step 3 on top, in seconds of meeting time. It is only defined for
     `policy="album"`: a sweep re-matches retained evidence against *the album*, and the
@@ -357,6 +361,8 @@ def replay(
                 correction.canonical_speaker
             )
         ledger.apply(revision)
+        if trace is not None:
+            trace.append({"event": "sweep", "time": span_end, "labels": list(final_canonical)})
         return len(revision.corrections)
 
     for span_id in sorted(spans):
@@ -405,6 +411,9 @@ def replay(
                 final_canonical[label_to_unit[local]] = canonical
             snapshot = preparation.proposed_snapshot
 
+        if trace is not None:
+            trace.append({"event": "commit", "time": span_end, "members": list(members),
+                          "labels": list(final_canonical), "live_labels": list(live_canonical)})
         if ledger is not None:
             for index in members:
                 # The seconds production's own interval filter selected, taken from what the
