@@ -1,0 +1,182 @@
+"""Retain browser failure facts without weakening waits or leaking page contents."""
+import importlib.util
+import json
+from pathlib import Path
+
+import pytest
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+from moss_transcribe_diarize.phase2_browser_evidence import (
+    BrowserTimeoutEvidence, BackgroundPolling, CONTENT_FREE_STYLE,
+    FINAL_TAIL_READY, wait_for_final_tail,
+)
+from moss_transcribe_diarize.phase2_acceptance_measure import _failure_details, _snapshot_campaign_artifacts
+from tests.phase2.browser_support import require_browser
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture
+def page():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
+        try:
+            page = browser.new_page(viewport={'width':400,'height':300})
+            page.set_default_timeout(200)  # Tests only; production defaults stay unchanged.
+            page.set_content('<main data-auth-state="signed-in" data-boot="loading"><p>PRIVATE TRANSCRIPT</p><input value="SECRET KEY"></main>')
+            yield page
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize('predicate,stage,kind,target', [
+    ('account_product_regression','background.enter-hidden','function',"() => false"),
+    ('transcript_pane_fidelity','candidate.workspace-ready','selector','[data-boot="ready"]'),
+    ('browser_final_summary','summary.configure.a.retry','locator','[aria-label="Provider HTTPS URL"]'),
+    ('transcript_pane_fidelity','reference.prepare','selector','.main'),
+])
+def test_timeout_fields_raw_record_and_content_free_artifact(page,tmp_path,predicate,stage,kind,target):
+    registered=set()
+    evidence=BrowserTimeoutEvidence(tmp_path,predicate,registered.add)
+    observed=evidence.page(page,stage)
+    with pytest.raises(PlaywrightTimeout) as caught:
+        if kind=='function': observed.wait_for_function(target)
+        elif kind=='selector': observed.wait_for_selector(target)
+        else: observed.locator(target).fill('DO NOT RETAIN THIS')
+    detail=_failure_details(caught.value,{})['browser_timeout']
+    assert detail['predicate']==predicate and detail['stage']==stage
+    assert target in detail['target']
+    assert detail['page_url']=='about:blank'
+    assert detail['attributes']=={'data-auth-state':['signed-in'],'data-boot':['loading'],'data-history-boot':[]}
+    screenshot=tmp_path/detail['screenshot'].removeprefix('artifacts/')
+    assert screenshot.is_file()
+    assert 'PRIVATE' not in json.dumps(detail) and 'DO NOT RETAIN' not in json.dumps(detail)
+    # Pixel equality with/without secret text and values demonstrates screenshot redaction.
+    first=screenshot.read_bytes()
+    page.locator('p').evaluate("e=>e.textContent='DIFFERENT PRIVATE WORDS'")
+    page.locator('input').fill('DIFFERENT SECRET')
+    assert page.screenshot(style=CONTENT_FREE_STYLE)==first
+    from types import SimpleNamespace
+    campaign=SimpleNamespace(safe_artifacts=tuple(registered),artifact_root=tmp_path)
+    raw=tmp_path/'raw';raw.mkdir()
+    copied=_snapshot_campaign_artifacts(campaign,raw)
+    assert screenshot.relative_to(tmp_path).as_posix() in copied
+    assert (raw/detail['screenshot']).read_bytes()==first
+
+
+def test_final_tail_rejects_draft_confirmed_and_late_preview(page,tmp_path):
+    observed=BrowserTimeoutEvidence(tmp_path,'transcript_pane_fidelity').page(page,'candidate.final-tail')
+    page.set_content('<div id="tr-body"><article class="utt" data-state="provisional"><p class="utt-text">fixture tail</p></article></div>')
+    with pytest.raises(PlaywrightTimeout): wait_for_final_tail(observed,'fixture tail')
+    assert not page.evaluate(FINAL_TAIL_READY,'fixture tail')
+    page.locator('.utt').evaluate("e=>e.dataset.state='confirmed'")
+    assert not page.evaluate(FINAL_TAIL_READY,'fixture tail')
+    page.locator('.utt').evaluate("e=>e.dataset.state='final'")
+    wait_for_final_tail(observed,'fixture tail')
+    page.locator('#tr-body').evaluate("e=>e.insertAdjacentHTML('beforeend','<article class=utt data-state=provisional>new draft</article>')")
+    with pytest.raises(PlaywrightTimeout): wait_for_final_tail(observed,'fixture tail')
+    page.locator('[data-state=provisional]').evaluate('e=>e.remove()')
+    wait_for_final_tail(observed,'fixture tail')
+
+
+def test_foreground_completions_satisfy_old_counter_but_not_hidden_counter():
+    class Request:
+        url='https://example.test/api/live/sessions/meeting/snapshot'
+    early, inflight, hidden=Request(),Request(),Request()
+    old_count=0
+    counter=BackgroundPolling('meeting')
+    counter.issued(early);counter.finished(early)
+    old_count+=1  # Exact old callback: any requestfinished on this URL increments.
+    counter.issued(inflight)
+    counter.begin()
+    counter.finished(inflight);old_count+=1
+    assert old_count>0 and counter.completed==0
+    counter.issued(hidden);counter.finished(hidden)
+    assert counter.completed==1
+
+
+def test_reference_prepare_retains_exact_wait_before_teardown(page,tmp_path):
+    spec=importlib.util.spec_from_file_location('reference_timeout_probe',ROOT/'tests/reference_ui_screenshot_diff.py')
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    observed=BrowserTimeoutEvidence(tmp_path,'transcript_pane_fidelity').page(page,'reference.prepare')
+    with pytest.raises(PlaywrightTimeout) as caught:
+        module.prepare_page(observed,[{'text':'private fixture'}],is_reference=True)
+    assert caught.value.browser_timeout['target']=='[data-boot="ready"]'
+    assert caught.value.browser_timeout['stage']=='reference.prepare'
+
+
+def test_summary_selector_auto_wait_retains_target_without_form_values(page,tmp_path):
+    from moss_transcribe_diarize.phase2_acceptance_summary import configure_external_summary
+    page.set_content('<section aria-label="Browser AI settings"><form><select aria-label="Provider"><option>External HTTPS provider</option></select></form></section>')
+    observed=BrowserTimeoutEvidence(tmp_path,'browser_final_summary').page(page,'summary.configure.a.retry')
+    with pytest.raises(PlaywrightTimeout) as caught:
+        configure_external_summary(observed,endpoint='https://private.test',model='private-model',api_key='private-key',prompt='private-prompt')
+    detail=caught.value.browser_timeout
+    assert 'Provider HTTPS URL' in detail['target'] and detail['operation']=='fill'
+    assert 'private-key' not in json.dumps(detail) and 'private.test' not in json.dumps(detail)
+
+
+def test_async_provider_timeout_survives_subprocess_boundary(tmp_path):
+    import asyncio
+    import subprocess
+    from types import SimpleNamespace
+    from playwright.async_api import async_playwright
+    from moss_transcribe_diarize.phase2_browser_evidence import AsyncEvidencePage
+    from moss_transcribe_diarize.phase2_acceptance_summary import retain_provider_probe_timeout
+
+    async def run():
+        async with async_playwright() as p:
+            browser=await p.chromium.launch(executable_path=str(require_browser(p)))
+            try:
+                page=await browser.new_page()
+                await page.set_content('<main data-boot="ready">PRIVATE RESULT</main>')
+                page.set_default_timeout(200)
+                writer=BrowserTimeoutEvidence(tmp_path,'browser_final_summary-relay')
+                observed=AsyncEvidencePage(page,writer,'provider-probe.relay')
+                with pytest.raises(PlaywrightTimeout) as caught:
+                    await observed.locator('[data-summary-state="current"]').wait_for()
+                assert caught.value.browser_timeout['target']=='[data-summary-state="current"]'
+            finally:
+                await browser.close()
+    asyncio.run(run())
+    campaign=SimpleNamespace(artifact_root=tmp_path,_safe_artifacts=set())
+    error=subprocess.CalledProcessError(1,['python','final_browser_probe.py'])
+    retain_provider_probe_timeout(campaign,error)
+    detail=_failure_details(error,{})['browser_timeout']
+    assert detail['stage']=='provider-probe.relay'
+    assert detail['attributes']['data-boot']==['ready']
+    assert len(campaign._safe_artifacts)==2
+    assert (tmp_path/detail['screenshot'].removeprefix('artifacts/')).is_file()
+
+
+def test_evidence_failure_does_not_replace_original_timeout(page,tmp_path,monkeypatch):
+    def unavailable(**kwargs): raise RuntimeError('SCREENSHOT CONTENT MUST NOT LEAK')
+    monkeypatch.setattr(page,'screenshot',unavailable)
+    observed=BrowserTimeoutEvidence(tmp_path,'account_product_regression').page(page,'background.enter-hidden')
+    with pytest.raises(PlaywrightTimeout) as caught:
+        observed.wait_for_function('() => false')
+    detail=caught.value.browser_timeout
+    assert detail['screenshot'] is None and detail['screenshot_error']=='RuntimeError'
+    assert 'CONTENT MUST NOT LEAK' not in json.dumps(detail)
+
+
+def test_cleanup_error_preserves_original_timeout_details():
+    try:
+        original=PlaywrightTimeout('Page.wait_for_function: Timeout 30000ms')
+        original.browser_timeout={'stage':'background.enter-hidden','target':"document.visibilityState === 'hidden'"}
+        try:
+            raise original
+        finally:
+            raise RuntimeError('cleanup failed')
+    except RuntimeError as error:
+        assert _failure_details(error,{})['browser_timeout']==original.browser_timeout
+
+
+def test_download_event_timeout_is_retained(page,tmp_path):
+    page.set_content('<button>Download</button>')
+    observed=BrowserTimeoutEvidence(tmp_path,'account_product_regression').page(page,'export.download')
+    with pytest.raises(PlaywrightTimeout) as caught:
+        with observed.expect_download(timeout=200):
+            observed.get_by_role('button',name='Download').click()
+    assert caught.value.browser_timeout['operation']=='expect_download'
+    assert caught.value.browser_timeout['stage']=='export.download'

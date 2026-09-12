@@ -39,6 +39,7 @@ _REPOSITORY_BOOTSTRAP = Path(__file__).resolve().parents[1]
 if str(_REPOSITORY_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_REPOSITORY_BOOTSTRAP))
 
+from moss_transcribe_diarize.phase2_browser_evidence import BrowserTimeoutEvidence, wait_for_final_tail
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -389,10 +390,7 @@ def prepare_page(page: Page, fixture: list[dict[str, Any]], is_reference: bool) 
         page.wait_for_selector('[data-auth-state="signed-in"]')
         page.wait_for_selector('[data-boot="ready"]')
         page.locator("[data-open-meeting]").first.click()
-        page.wait_for_function(
-            "(tail) => document.querySelector('#tr-body')?.textContent.includes(tail)",
-            arg=fixture[-1]["text"],
-        )
+        wait_for_final_tail(page, fixture[-1]["text"])
         # Compare the production bundle's work area, not the Account document's intentional
         # File -> Live -> History vertical composition. This moves already-rendered product
         # state; it does not substitute markup, source modules, or API responses.
@@ -666,6 +664,7 @@ def main() -> int:
 
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    timeout_evidence = BrowserTimeoutEvidence(output, "reference_screenshot")
     reference_port = unused_local_port()
     reference_server = start_vite(args.reference_frontend.resolve(), reference_port, output / "reference-vite.log")
     candidate_origin = "local authenticated Account origin"
@@ -693,8 +692,8 @@ def main() -> int:
                                 ignore_https_errors=True,
                             )
                             try:
-                                reference_page = reference_context.new_page()
-                                candidate_page = candidate_context.new_page()
+                                reference_page = timeout_evidence.page(reference_context.new_page(), "reference.prepare")
+                                candidate_page = timeout_evidence.page(candidate_context.new_page(), "candidate.prepare")
                                 install_reference_api_stub(reference_page)
                                 candidate_context.add_cookies(
                                     [
@@ -721,6 +720,7 @@ def main() -> int:
                                 )
                                 wait_for_visual_settle(reference_page)
                                 wait_for_visual_settle(candidate_page)
+                                wait_for_final_tail(candidate_page, fixture[-1]["text"])
                                 label = f"{viewport['width']}x{viewport['height']}"
                                 reference_path = output / f"reference-{label}.png"
                                 candidate_path = output / f"candidate-{label}.png"

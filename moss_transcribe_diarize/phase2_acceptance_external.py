@@ -502,6 +502,7 @@ class FixedAccountCampaign:
                 self.config,
                 repo=Path(self._text("repo_root")).resolve(),
                 work=Path(self._text("campaign_work_dir")).resolve(),
+                register_artifact=self._safe_artifacts.add,
             )
         return self._browser
 

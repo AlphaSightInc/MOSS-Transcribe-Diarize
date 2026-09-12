@@ -6,6 +6,7 @@ trusted certificate. Only content-free observations leave this measurement proce
 """
 from __future__ import annotations
 
+from .phase2_browser_evidence import BrowserTimeoutEvidence
 from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
 
 import json
@@ -114,6 +115,7 @@ class SummaryProbeProvider:
 
 
 def measure_browser_summary(campaign):
+    evidence = BrowserTimeoutEvidence(campaign.artifact_root, "browser_final_summary", campaign._safe_artifacts.add)
     origin = campaign.origin.rstrip("/")
     tls = _trusted_tls_identity(origin)  # No certificate exceptions permitted.
     host = urlsplit(origin).hostname
@@ -153,7 +155,7 @@ def measure_browser_summary(campaign):
                 try:
                     for index, context in enumerate(contexts):
                         _add_cookie(context, origin, Path(campaign._text(f"account_{'a' if index == 0 else 'b'}_cookie_file")))
-                        page = context.new_page(); pages.append(page)
+                        page = evidence.page(context.new_page(), f"owner-{index}.workspace"); pages.append(page)
                         def observe_request(request):
                             if request.url.startswith(origin + "/api/") and request.method != "GET":
                                 moss_writes.append(request.post_data or "")
@@ -164,18 +166,22 @@ def measure_browser_summary(campaign):
                         page.evaluate("window.__summaryEvents=[]; for (const name of ['llm_status','llm_summary_update']) document.addEventListener(name, e=>window.__summaryEvents.push({type:name,state:e.detail.artifact?.state}));")
 
                     def select(page, meeting):
+                        page.stage = "summary.select-meeting"
                         page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
                         _meeting_opener(page, meeting).click()
                         page.get_by_role("region", name="Final summary", exact=True).wait_for()
                     def configure(page, owner, mode):
+                        page.stage = f"summary.configure.{owner}.{mode}"
                         configure_external_summary(page, endpoint=provider.endpoint(mode), model=f"g9-model-{owner}",
                             api_key=f"g9-private-key-{owner}", prompt=f"g9-private-prompt-{owner}")
                     def start(page):
+                        page.stage = "summary.start-new-attempt"
                         region = page.get_by_role("region", name="Final summary", exact=True)
                         previous_attempt = region.get_attribute("data-summary-attempt")
                         _summary_action(page).click()
                         page.wait_for_function("previous => { const id=document.querySelector('[data-summary-state]')?.dataset.summaryAttempt; return id && id !== previous; }", arg=previous_attempt)
                     def state(page, wanted, timeout=30000):
+                        page.stage = f"summary.wait-state.{wanted}"
                         page.locator(f'[data-summary-state="{wanted}"]').wait_for(timeout=timeout)
                     def count(mode, number, page):
                         deadline = time.monotonic() + 30
@@ -265,9 +271,14 @@ def measure_browser_summary(campaign):
     # probe, on a scratch app configured solely with a loopback fake upstream. This
     # verifies candidate relay code without modifying the staged server's environment.
     relay_output = campaign.artifact_root / "summary-provider-paths.json"
-    subprocess.run([sys.executable, "prototypes/client-configured-llm/final_browser_probe.py",
-        "--chrome-binary", campaign._text("chrome_binary"), "--output", str(relay_output)],
-        cwd=campaign._text("repo_root"), check=True, capture_output=True, timeout=120)
+    try:
+        subprocess.run([sys.executable, "prototypes/client-configured-llm/final_browser_probe.py",
+            "--chrome-binary", campaign._text("chrome_binary"), "--output", str(relay_output),
+            "--timeout-evidence", str(campaign.artifact_root)],
+            cwd=campaign._text("repo_root"), check=True, capture_output=True, timeout=120)
+    except subprocess.CalledProcessError as exc:
+        retain_provider_probe_timeout(campaign, exc)
+        raise
     paths = json.loads(relay_output.read_text())
     campaign._safe_artifacts.add(Path("summary-provider-paths.json"))
     from .phase2_acceptance_completion import validate_relay_summary_observation
@@ -276,3 +287,16 @@ def measure_browser_summary(campaign):
            "events": observed_events, "provider_requests": len(provider.calls), "tls": tls, "relay": paths["relay"]}
     if not validate_completion_observation("browser_final_summary", raw): raise RuntimeError("Browser summary privacy/lifecycle/load qualification failed")
     return raw
+
+
+def retain_provider_probe_timeout(campaign, exc):
+    """Carry the subprocess's content-free timeout into the enclosing G9 raw record."""
+    relative = Path("browser-timeouts/browser_final_summary-relay-01.json")
+    path = campaign.artifact_root / relative
+    if path.is_file():
+        detail = json.loads(path.read_text())
+        exc.browser_timeout = detail
+        campaign._safe_artifacts.add(relative)
+        screenshot = relative.with_suffix(".png")
+        if detail.get("screenshot") == "artifacts/" + screenshot.as_posix() and (campaign.artifact_root / screenshot).is_file():
+            campaign._safe_artifacts.add(screenshot)

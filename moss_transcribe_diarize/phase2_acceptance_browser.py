@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
 from .app.phase2 import SESSION_COOKIE
+from .phase2_browser_evidence import BrowserTimeoutEvidence, BackgroundPolling, wait_for_final_tail
 
 
 class BrowserMeasurementError(RuntimeError):
@@ -118,7 +119,8 @@ def _load_reference_harness(repo: Path):
 
 
 class BrowserCampaign:
-    def __init__(self, config: Mapping[str, object], *, repo: Path, work: Path) -> None:
+    def __init__(self, config: Mapping[str, object], *, repo: Path, work: Path, register_artifact=None) -> None:
+        self.register_artifact = register_artifact
         self.config = config
         self.repo = repo
         self.work = work
@@ -269,6 +271,7 @@ class BrowserCampaign:
     ) -> dict[str, object]:
         """Exercise the committed bundle at its deployed origin, including background observation."""
 
+        evidence = BrowserTimeoutEvidence(self.work, "account_product_regression", self.register_artifact)
         suites: list[dict[str, object]] = []
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(executable_path=str(self.chrome), headless=True)
@@ -279,7 +282,7 @@ class BrowserCampaign:
                     self.origin,
                     Path(_text(self.config, "account_a_cookie_file")).expanduser(),
                 )
-                page = context.new_page()
+                page = evidence.page(context.new_page(), "desktop.workspace")
                 _wait_workspace(page, self.origin)
                 checks = [
                     page.locator('[data-workspace-section="file"]').count() == 1,
@@ -301,25 +304,24 @@ class BrowserCampaign:
                     raise BrowserMeasurementError(
                         f"active observer Meeting expected 1 interactive history card; observed {active_count}"
                     )
-                poll_requests = 0
-
-                def observed(request: Any) -> None:
-                    nonlocal poll_requests
-                    if f"/api/live/sessions/{meeting_id}/" in request.url:
-                        poll_requests += 1
-
-                page.on("requestfinished", observed)
+                polling = BackgroundPolling(meeting_id)
+                page.on("request", polling.issued)
+                page.on("requestfinished", polling.finished)
+                page.stage = "background.open-observer"
                 active.click()
                 page.wait_for_selector('[data-observer-mode="read-only"]')
                 foreground = page.locator('[data-capture-phase="viewing"]').count() == 1
-                other = context.new_page()
+                other = evidence.page(context.new_page(), "background.other-page")
                 other.goto("about:blank")
                 other.bring_to_front()
+                page.stage = "background.enter-hidden"
                 page.wait_for_function("document.visibilityState === 'hidden'")
                 hidden_state = page.evaluate("document.visibilityState") == "hidden"
-                time.sleep(2.5)
-                background_polled = poll_requests > 0
+                polling.begin()
+                page.wait_for_timeout(2500)
+                background_polled = polling.completed > 0
                 page.bring_to_front()
+                page.stage = "background.reload-observer"
                 page.reload(wait_until="networkidle")
                 page.wait_for_selector('[data-observer-mode="read-only"]')
                 reload_read_only = (
@@ -345,7 +347,7 @@ class BrowserCampaign:
                     self.origin,
                     Path(_text(self.config, "account_a_cookie_file")).expanduser(),
                 )
-                mobile_page = mobile.new_page()
+                mobile_page = evidence.page(mobile.new_page(), "mobile.workspace")
                 _wait_workspace(mobile_page, self.origin)
                 mobile_checks = [
                     mobile_page.evaluate("innerWidth") == 390,
@@ -365,7 +367,7 @@ class BrowserCampaign:
                     self.origin,
                     Path(_text(self.config, "account_a_cookie_file")).expanduser(),
                 )
-                export_page = export_context.new_page()
+                export_page = evidence.page(export_context.new_page(), "export.workspace")
                 _wait_workspace(export_page, self.origin)
                 _meeting_opener(export_page, export_meeting_id).click()
                 export_page.wait_for_selector('#transcript-panel')
@@ -529,6 +531,7 @@ class BrowserCampaign:
         }
 
     def transcript_fidelity(self, meeting: Mapping[str, object]) -> dict[str, object]:
+        evidence = BrowserTimeoutEvidence(self.work, "transcript_pane_fidelity", self.register_artifact)
         transcript = meeting.get("transcript")
         segments = transcript.get("segments") if isinstance(transcript, Mapping) else None
         if not isinstance(segments, list) or not segments:
@@ -602,21 +605,21 @@ class BrowserCampaign:
                             Path(_text(self.config, "account_a_cookie_file")).expanduser(),
                         )
                         try:
-                            reference_page = reference_context.new_page()
-                            candidate_page = candidate_context.new_page()
+                            reference_page = evidence.page(reference_context.new_page(), "reference.navigation")
+                            candidate_page = evidence.page(candidate_context.new_page(), "candidate.navigation")
                             harness.install_reference_api_stub(reference_page)
                             reference_page.goto(
                                 f"http://127.0.0.1:{reference_port}/", wait_until="networkidle"
                             )
                             candidate_page.goto(self.origin, wait_until="networkidle")
+                            reference_page.stage = "reference.prepare"
                             harness.prepare_page(reference_page, fixture, is_reference=True)
+                            candidate_page.stage = "candidate.workspace-ready"
                             candidate_page.wait_for_selector('[data-auth-state="signed-in"]')
                             candidate_page.wait_for_selector('[data-boot="ready"]')
                             _meeting_opener(candidate_page, meeting_id).click()
-                            candidate_page.wait_for_function(
-                                "tail => document.querySelector('#tr-body')?.textContent.includes(tail)",
-                                arg=fixture[-1]["text"],
-                            )
+                            candidate_page.stage = "candidate.final-tail-before-extraction"
+                            wait_for_final_tail(candidate_page, fixture[-1]["text"])
                             candidate_page.evaluate(
                                 """() => {
                                   const app = document.querySelector('#app > .app');
@@ -626,8 +629,14 @@ class BrowserCampaign:
                                   Object.assign(app.style, {position:'fixed', inset:'0', width:'100vw', height:'100vh'});
                                 }"""
                             )
+                            reference_page.stage = "reference.visual-settle"
+                            candidate_page.stage = "candidate.visual-settle"
                             harness.wait_for_visual_settle(reference_page)
                             harness.wait_for_visual_settle(candidate_page)
+                            candidate_page.stage = "candidate.final-tail-after-settle"
+                            wait_for_final_tail(candidate_page, fixture[-1]["text"])
+                            reference_page.stage = "reference.screenshot"
+                            candidate_page.stage = "candidate.screenshot"
                             label = f"{viewport['width']}x{viewport['height']}"
                             reference_path = output / f"reference-{label}.png"
                             candidate_path = output / f"candidate-{label}.png"

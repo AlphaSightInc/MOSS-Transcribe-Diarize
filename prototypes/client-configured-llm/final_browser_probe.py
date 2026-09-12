@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from playwright.async_api import async_playwright
+from moss_transcribe_diarize.phase2_browser_evidence import BrowserTimeoutEvidence, AsyncEvidencePage
 from moss_transcribe_diarize.phase2_acceptance_summary import SummaryProbeProvider, select_external_summary_provider
 
 spec = importlib.util.spec_from_file_location("workspace_bench", ROOT / "prototypes/phase2-account-lifecycle/browser_workspace_probe.py")
@@ -30,7 +31,8 @@ bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 
 
-async def run(root, chrome_binary=None):
+async def run(root, chrome_binary=None, timeout_evidence=None):
+    evidence_writer = BrowserTimeoutEvidence(timeout_evidence or root, "browser_final_summary-relay")
     import sqlite3
     from moss_transcribe_diarize.app import phase2
     phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version
@@ -56,7 +58,7 @@ async def run(root, chrome_binary=None):
                 browser = await p.chromium.launch(executable_path=chrome_binary or str(browser_executable(p)), headless=True, args=["--mute-audio"])
                 try:
                     contexts = [await browser.new_context(ignore_https_errors=True) for _ in range(2)]
-                    pages = [await c.new_page() for c in contexts]
+                    pages = [AsyncEvidencePage(await c.new_page(), evidence_writer, f"provider-probe.owner-{i}.workspace") for i, c in enumerate(contexts)]
                     ids, owners = [], []
                     for index, page in enumerate(pages):
                         page.on("request", lambda request: moss_writes.append(request.post_data or "") if request.url.startswith(origin + "/api/") and request.method != "GET" else None)
@@ -72,12 +74,14 @@ async def run(root, chrome_binary=None):
                         await page.get_by_test_id("final-summary-generate").wait_for()
                     evidence["history_causes_zero_provider_requests"] = len(calls) == 0
                     for index, page in enumerate(pages):
+                        page.stage = f"provider-probe.owner-{index}.external-configure"
                         await page.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
                         await select_external_summary_provider(page.get_by_role("region", name="Browser AI settings", exact=True))
                         for label, value in (("Provider HTTPS URL", endpoint), ("Model", f"probe-model-{index}"),
                                              ("API key (optional)", f"probe-secret-{index}"), ("Final-summary prompt", f"probe-prompt-{index}")):
                             await page.get_by_label(label, exact=True).fill(value)
                         await page.get_by_role("button", name="Save on this browser", exact=True).click()
+                        page.stage = f"provider-probe.owner-{index}.external-generate"
                         await page.get_by_test_id("final-summary-generate").click()
                         await page.locator('[data-summary-state="current"]').wait_for(timeout=15000)
                     evidence["real_preflight_and_post"] = len(preflights) == len(calls) == 2
@@ -98,6 +102,7 @@ async def run(root, chrome_binary=None):
                     # A second G9 scenario: actual browser -> same-origin app -> HTTP fake
                     # upstream. No network interception or mutation of staged host config.
                     page = pages[0]
+                    page.stage = "provider-probe.relay"
                     await page.get_by_role("region", name="Meeting history", exact=True).locator(f'[data-open-meeting="{ids[0]}"]').click()
                     region = page.get_by_role("region", name="Browser AI settings", exact=True)
                     if await region.locator("form").count() == 0:
@@ -142,9 +147,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--chrome-binary")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--timeout-evidence", type=Path)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="moss-final-browser-probe-") as directory:
-        result = asyncio.run(run(Path(directory), args.chrome_binary))
+        result = asyncio.run(run(Path(directory), args.chrome_binary, args.timeout_evidence))
     encoded = json.dumps(result, indent=2) + "\n"
     if args.output: args.output.write_text(encoded)
     print(encoded)

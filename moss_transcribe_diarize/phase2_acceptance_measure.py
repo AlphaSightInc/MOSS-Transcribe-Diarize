@@ -210,8 +210,8 @@ def _write_json_once(path: Path, payload: object) -> None:
         os.close(descriptor)
 
 
-def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, str]:
-    """Keep diagnostics, never browser call logs, subprocess output or frame locals."""
+def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, object]:
+    """Keep structured wait facts, never browser DOM logs, subprocess output or frame locals."""
     if isinstance(exc, subprocess.CalledProcessError):
         command = exc.cmd[0] if isinstance(exc.cmd, (list, tuple)) else "subprocess"
         message = f"{command} exited with status {exc.returncode}"
@@ -239,7 +239,14 @@ def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, 
         f"{Path(trace.tb_frame.f_code.co_filename).name}:{trace.tb_lineno}:{trace.tb_frame.f_code.co_name}"
         if trace is not None else type(exc).__name__
     )
-    return {"failure_message": message, "failure_operation": operation}
+    details = {"failure_message": message, "failure_operation": operation}
+    underlying = exc
+    while underlying is not None:
+        if hasattr(underlying, "browser_timeout"):
+            details["browser_timeout"] = underlying.browser_timeout
+            break
+        underlying = underlying.__cause__ or underlying.__context__
+    return details
 
 
 def _snapshot_campaign_artifacts(
@@ -249,7 +256,7 @@ def _snapshot_campaign_artifacts(
 
     The campaign work directory also contains speech, transcripts, screenshots, and logs.  It is
     deliberately not an evidence source: the candidate-owned producer must first reduce a
-    load-bearing observation to an allowlisted JSON artifact and register that exact path.
+    load-bearing observation to an allowlisted content-free artifact and register that exact path.
     """
 
     if campaign is None:
