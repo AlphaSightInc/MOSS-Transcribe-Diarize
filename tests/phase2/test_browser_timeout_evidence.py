@@ -180,3 +180,31 @@ def test_download_event_timeout_is_retained(page,tmp_path):
             observed.get_by_role('button',name='Download').click()
     assert caught.value.browser_timeout['operation']=='expect_download'
     assert caught.value.browser_timeout['stage']=='export.download'
+
+
+def test_reference_boot_stub_supplies_pinned_health_calibration(page):
+    """6a8d0c1f App.bootstrap awaits getHealth before setting data-boot=ready."""
+    spec = importlib.util.spec_from_file_location(
+        'reference_boot_probe', ROOT / 'tests/reference_ui_screenshot_diff.py'
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.install_reference_api_stub(page)
+    page.route('http://reference.test/', lambda route: route.fulfill(
+        content_type='text/html', body='<main></main>'
+    ))
+    page.goto('http://reference.test/')
+    result = page.evaluate('''async () => {
+      const response = await fetch('/api/health');
+      const health = await response.json();
+      const unknown = await fetch('/api/not-a-fixture');
+      return {status: response.status, calibration: health.calibration_profile,
+              unknown: unknown.status};
+    }''')
+    assert result['status'] == 200
+    assert result['calibration'] == {
+        'live_refined_overlay_enabled': False,
+        'live_refined_osf_enabled': False,
+        'live_refined_insertion_mode': 'off',
+    }
+    assert result['unknown'] == 404

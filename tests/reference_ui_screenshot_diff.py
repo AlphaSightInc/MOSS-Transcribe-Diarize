@@ -335,6 +335,15 @@ def install_reference_api_stub(page: Page) -> None:
           localStorage.clear();
           sessionStorage.clear();
           const responses = {
+            // Pinned 6a8d0c1f bootstrap requires health before publishing boot=ready.
+            "/api/health": {
+              status: "ok",
+              calibration_profile: {
+                live_refined_overlay_enabled: false,
+                live_refined_osf_enabled: false,
+                live_refined_insertion_mode: "off"
+              }
+            },
             "/api/settings": {},
             "/api/devices/input": { devices: [] },
             "/api/devices/live": { microphones: [] },
