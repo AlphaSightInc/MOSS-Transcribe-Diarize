@@ -509,7 +509,7 @@ class FixedAccountCampaign:
     def cleanup(self) -> None:
         """Terminalize every reusable probe Meeting before the final zero-work predicate."""
 
-        failures = 0
+        failures = []
         owned = {meeting_id: owner for owner, meeting_id in self._live.items()}
         owned.update({meeting_id: owner for meeting_id, (owner, _) in self._live_helpers.items()})
         for meeting_id, owner in owned.items():
@@ -517,14 +517,24 @@ class FixedAccountCampaign:
             response = client.request(
                 "POST", f"/api/live/sessions/{meeting_id}/abort", json={}
             )
-            if response.status_code not in {200, 409}:
-                failures += 1
+            durable_status = None
+            if response.status_code == 404:
+                # A forced restart drops the in-memory session, but its recovered
+                # Meeting must be durably terminal before cleanup can count it.
+                meeting = client.request("GET", f"/api/meetings/{meeting_id}")
+                if meeting.status_code == 200:
+                    durable_status = meeting.json().get("status")
+            if response.status_code not in {200, 409} and durable_status not in {
+                "completed", "interrupted", "failed"
+            }:
+                failures.append({"session_id": meeting_id, "abort_status": response.status_code,
+                                 "durable_status": durable_status})
         self._live.clear()
         for _, helper in self._live_helpers.values():
             helper.close()
         self._live_helpers.clear()
         if failures:
-            raise ExternalMeasurementError("probe Live cleanup failed")
+            raise ExternalMeasurementError(f"probe Live cleanup failed: {failures}")
 
     @property
     def origin(self) -> str:
@@ -1947,10 +1957,32 @@ class FixedAccountCampaign:
 
     def account_product_regression(self) -> dict[str, object]:
         active_id = self._new_live_id("a")
-        completed = self._durable_transcript_meeting()
-        result = self.browser.product_regression(active_id, str(completed["id"]))
-        self._artifact_json("browser/product-suite-counts.json", result)
-        return result
+        try:
+            completed = self._durable_transcript_meeting()
+            result = self.browser.product_regression(active_id, str(completed["id"]))
+            self._artifact_json("browser/product-suite-counts.json", result)
+            return result
+        finally:
+            failed = sys.exc_info()[0] is not None
+            try:
+                response = self.a.request(
+                    "POST", f"/api/live/sessions/{active_id}/abort", json={}
+                )
+                if response.status_code not in {200, 409}:
+                    raise ExternalMeasurementError(
+                        f"product observer cleanup failed: session_id={active_id}, "
+                        f"abort_status={response.status_code}"
+                    )
+                registered = self._live_helpers.pop(active_id, None)
+                if registered is not None:
+                    registered[1].close()
+                if self._live.get("a") == active_id:
+                    self._live.pop("a")
+            except Exception:
+                # Keep failed cleanup registered for the campaign's final sweep;
+                # a secondary cleanup failure must not erase the browser failure.
+                if not failed:
+                    raise
 
     def transcript_pane_fidelity(self) -> dict[str, object]:
         result = self.browser.transcript_fidelity(self._durable_transcript_meeting())
