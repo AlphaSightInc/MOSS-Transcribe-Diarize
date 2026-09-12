@@ -334,3 +334,25 @@ def test_wrapped_exception_diagnostics_do_not_copy_arbitrary_content(tmp_path, e
     assert details['exception_type'] == type(error).__name__
     assert details['exception_message'] == '[redacted: unstructured exception message]'
     assert 'PRIVATE' not in str(details) and 'SECRET' not in str(details)
+
+
+def test_merged_tail_keeps_last_words_once_and_checkpoint_resume(tmp_path):
+    runner, extractor = make_runner([
+        result('[10][S01]first[11]'),
+        result('[120][S01]last word[120.5]'),
+    ], 240.5)
+    source = tmp_path / 'source.wav'
+    source.write_bytes(b'source')
+    checkpoint = tmp_path / 'checkpoint'
+    first = runner.transcribe(source, checkpoint_dir=checkpoint)
+    assert first.text.count('last word') == 1
+    from moss_transcribe_diarize.transcript_parser import parse_transcript
+    last = parse_transcript(first.text)[-1]
+    assert (last.start, last.end, last.text) == (240, 240.5, 'last word')
+    assert first.completed_windows == 2
+    assert [(start, duration) for _, _, start, duration in extractor.calls] == [(0, 150), (120, 120.5)]
+    resumed = runner.transcribe(source, checkpoint_dir=checkpoint)
+    assert resumed.text == first.text
+    assert len(extractor.calls) == 2
+    assert resumed.window_diagnostics == first.window_diagnostics
+    assert resumed.window_diagnostics[-1]['condition'] == 'short_tail_window_merged'

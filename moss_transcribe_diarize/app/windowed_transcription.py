@@ -57,6 +57,7 @@ class WindowPlan:
     end: float
     own_start: float
     own_end: float
+    merged_tail_start: float | None = None
 
     @property
     def duration(self) -> float:
@@ -117,6 +118,13 @@ def extract_window_wav(
     subprocess.run(command, check=True, capture_output=True, text=True)
 
 
+# Operational floor for redundant terminal tails, not a hard model input limit.
+# The processor emits ~12.5 audio tokens/s: .5 s offers only ~7 tokens. Keep
+# sub-second tails in the preceding overlapping witness instead of decoding them
+# alone. Never discard their PCM or exceed the existing window bound.
+MIN_USEFUL_TAIL_SECONDS = 1.0
+
+
 def plan_windows(duration_seconds: float, *, window_seconds: float = 150.0, stride_seconds: float = 120.0) -> list[WindowPlan]:
     if duration_seconds <= 0:
         raise RuntimeError(f"Media duration must be greater than zero, got {duration_seconds}.")
@@ -126,11 +134,15 @@ def plan_windows(duration_seconds: float, *, window_seconds: float = 150.0, stri
         starts.append(cursor)
         cursor += stride_seconds
     raw = [(start, min(start + window_seconds, duration_seconds)) for start in starts]
+    merged_tail_start = None
+    if len(raw) > 1 and raw[-1][1] - raw[-1][0] < MIN_USEFUL_TAIL_SECONDS and raw[-2][1] >= raw[-1][1]:
+        merged_tail_start = raw.pop()[0]
     windows: list[WindowPlan] = []
     for index, (start, end) in enumerate(raw):
         own_start = 0.0 if index == 0 else (start + raw[index - 1][1]) / 2.0
         own_end = duration_seconds if index == len(raw) - 1 else (end + raw[index + 1][0]) / 2.0
-        windows.append(WindowPlan(index=index, start=start, end=end, own_start=own_start, own_end=own_end))
+        windows.append(WindowPlan(index=index, start=start, end=end, own_start=own_start, own_end=own_end,
+                                  merged_tail_start=merged_tail_start if index == len(raw) - 1 else None))
     return windows
 
 
@@ -182,34 +194,43 @@ class WindowedRunner:
         )
         if len(windows) == 1:
             result = self._decode_window(source, windows[0], kwargs)
-            return _with_window_metadata(
+            result = _with_window_metadata(
                 result,
                 window_count=1,
                 completed_windows=1,
                 possibly_truncated=_hit_token_cap(result, kwargs.get("max_new_tokens")),
             )
-
-        checkpoint = None
-        if checkpoint_dir is not None:
-            checkpoint = _CheckpointStore(
-                Path(checkpoint_dir),
-                source=source,
-                windows=windows,
-                model_path=str(self.model_path),
-                inference=_checkpoint_inference(kwargs),
-                window_seconds=float(self.window_seconds),
-                stride_seconds=float(self.stride_seconds),
-                identity_contract=self.identity_resolver.contract(),
-            )
-        return self._transcribe_windows(source, windows, kwargs, checkpoint)
+        else:
+            checkpoint = None
+            if checkpoint_dir is not None:
+                checkpoint = _CheckpointStore(
+                    Path(checkpoint_dir),
+                    source=source,
+                    windows=windows,
+                    model_path=str(self.model_path),
+                    inference=_checkpoint_inference(kwargs),
+                    window_seconds=float(self.window_seconds),
+                    stride_seconds=float(self.stride_seconds),
+                    identity_contract=self.identity_resolver.contract(),
+                )
+            result = self._transcribe_windows(source, windows, kwargs, checkpoint)
+        merged = [{"condition": "short_tail_window_merged", "window_index": w.index,
+                   "start_seconds": w.merged_tail_start, "end_seconds": w.end,
+                   "merged_into_start_seconds": w.start, "minimum_tail_seconds": MIN_USEFUL_TAIL_SECONDS}
+                  for w in windows if w.merged_tail_start is not None]
+        return replace(result, window_diagnostics=[*(result.window_diagnostics or []), *merged]) if merged else result
 
     def _decode_window(self, audio: Path, window: WindowPlan, kwargs: dict) -> TranscriptionResult:
         started = time.monotonic()
         try:
             result = self.delegate.transcribe(audio, **kwargs)
         except EmptyTranscriptionError as exc:
-            if exc.cause in (EmptyTranscriptCause.NO_GENERATED_TOKENS, EmptyTranscriptCause.EMPTY_TEXT) and not exc.text.strip():
+            if exc.cause == EmptyTranscriptCause.UNPARSEABLE_TEXT or (
+                exc.cause in (EmptyTranscriptCause.NO_GENERATED_TOKENS, EmptyTranscriptCause.EMPTY_TEXT) and not exc.text.strip()
+            ):
                 diagnostic = _speechless_window(audio, window)
+                if diagnostic is not None and exc.cause == EmptyTranscriptCause.UNPARSEABLE_TEXT:
+                    diagnostic["condition"] = "unparseable_speechless"
                 if diagnostic is not None:
                     return TranscriptionResult(
                         text="", prompt_len=0, generated_tokens=exc.generated_tokens,
@@ -225,6 +246,12 @@ class WindowedRunner:
             if diagnostic is not None:
                 return replace(result, text="", window_diagnostics=[diagnostic])
             raise _window_error(window, "no_generated_tokens" if result.generated_tokens <= 0 else "empty_text")
+        if not parse_transcript(result.text):
+            diagnostic = _speechless_window(audio, window)
+            if diagnostic is not None:
+                diagnostic["condition"] = "unparseable_speechless"
+                return replace(result, text="", window_diagnostics=[diagnostic])
+            raise _window_error(window, "no_generated_tokens" if result.generated_tokens <= 0 else "unparseable_text")
         return result
 
     def _transcribe_windows(
@@ -376,7 +403,7 @@ def _speechless_window(audio: Path, window: WindowPlan) -> dict[str, Any] | None
 
 def _accepted_speechless(result: TranscriptionResult) -> bool:
     return not result.text.strip() and any(
-        d.get("condition") == "speechless_window_empty" for d in (result.window_diagnostics or [])
+        d.get("condition") in ("speechless_window_empty", "unparseable_speechless") for d in (result.window_diagnostics or [])
     )
 
 

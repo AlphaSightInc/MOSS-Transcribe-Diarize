@@ -37,6 +37,8 @@ class Decoder:
             raise EmptyTranscriptionError('empty', cause=EmptyTranscriptCause.NO_GENERATED_TOKENS if self.kind == 'zero' else EmptyTranscriptCause.EMPTY_TEXT)
         elif self.kind == 'unparseable':
             raise EmptyTranscriptionError('bad format', cause=EmptyTranscriptCause.UNPARSEABLE_TEXT, text='not compact', generated_tokens=4)
+        elif self.kind == 'raw_unparseable':
+            text, tokens = 'not compact', 4
         else:
             text, tokens = '', 0
         return TranscriptionResult(text=text, prompt_len=0, generated_tokens=tokens, elapsed_sec=0,
@@ -60,16 +62,12 @@ def test_speech_with_empty_decoder_remains_failure(tmp_path, kind):
     assert caught.value.condition in ('no_generated_tokens', 'empty_text')
 
 
-def test_unparseable_output_is_not_excused_by_silence(tmp_path):
-    with pytest.raises(WindowTranscriptionError, match='unparseable_text'):
-        WindowedRunner(Decoder('unparseable')).transcribe(wav(tmp_path / 'silent.wav', bytes(32000)))
-
-
-def test_mixed_windows_and_terminal_long_silent_tail_finalize(tmp_path):
+@pytest.mark.parametrize('kind', ['zero', 'unparseable', 'raw_unparseable'])
+def test_mixed_windows_and_terminal_long_silent_tail_finalize(tmp_path, kind):
     pcm = voiced_pcm().ljust(300*32000, b'\0')
     tape = CompleteMixedTape(epoch=0, capacity_bytes=len(pcm))
     tape.append(start_sample=0, pcm=pcm)
-    decoder = Decoder(first_text=True)
+    decoder = Decoder(kind, first_text=True)
     final = TerminalTranscriptFinalizer(runner=WindowedRunner(decoder)).finalize(
         plan=plan_for(len(pcm)//2), tape=tape, base_text_revision_version=0)
     assert final.accounting.outcome.value == 'finalized'
@@ -86,7 +84,7 @@ def test_mixed_windows_and_terminal_long_silent_tail_finalize(tmp_path):
     assert final.accounting.completed_windows == 3
     diagnostics = final.accounting.to_dict()['window_diagnostics']
     assert [d['window_index'] for d in diagnostics] == [1, 2]
-    assert all(d['condition'] == 'speechless_window_empty' for d in diagnostics)
+    assert all(d['condition'] == ('speechless_window_empty' if kind == 'zero' else 'unparseable_speechless') for d in diagnostics)
 
 
 def test_voiced_later_window_still_fails_mixed_job(tmp_path):
@@ -96,7 +94,8 @@ def test_voiced_later_window_still_fails_mixed_job(tmp_path):
     assert caught.value.window_index == 1
 
 
-def test_speechless_checkpoint_resumes_without_redecoding(tmp_path):
+@pytest.mark.parametrize('kind', ['zero', 'unparseable'])
+def test_speechless_checkpoint_resumes_without_redecoding(tmp_path, kind):
     class Interrupt(Decoder):
         def transcribe(self, path, **kwargs):
             if self.calls == 2:
@@ -106,16 +105,59 @@ def test_speechless_checkpoint_resumes_without_redecoding(tmp_path):
     source = wav(tmp_path / 'tape.wav', pcm)
     checkpoint = tmp_path / 'checkpoint'
     with pytest.raises(WindowTranscriptionError, match='decoder_exception'):
-        WindowedRunner(Interrupt(first_text=True)).transcribe(source, checkpoint_dir=checkpoint)
-    decoder = Decoder()
+        WindowedRunner(Interrupt(kind, first_text=True)).transcribe(source, checkpoint_dir=checkpoint)
+    decoder = Decoder(kind)
     result = WindowedRunner(decoder).transcribe(source, checkpoint_dir=checkpoint)
     assert decoder.calls == 1  # Speech window and first silent window came from checkpoint.
     assert result.completed_windows == 3 and 'Hello' in result.text
     assert [d['window_index'] for d in result.window_diagnostics] == [1, 2]
 
 
-def test_unavailable_vad_cannot_turn_empty_decode_into_success(tmp_path, monkeypatch):
+@pytest.mark.parametrize('kind', ['zero', 'unparseable', 'raw_unparseable'])
+def test_unavailable_vad_cannot_turn_empty_decode_into_success(tmp_path, monkeypatch, kind):
     import sys
     monkeypatch.setitem(sys.modules, 'webrtcvad', None)
-    with pytest.raises(WindowTranscriptionError, match='no_generated_tokens'):
-        WindowedRunner(Decoder()).transcribe(wav(tmp_path / 'silent.wav', bytes(32000)))
+    with pytest.raises(WindowTranscriptionError, match='no_generated_tokens|unparseable_text'):
+        WindowedRunner(Decoder(kind)).transcribe(wav(tmp_path / 'silent.wav', bytes(32000)))
+
+
+@pytest.mark.parametrize('seconds, expected', [(120.5, 1), (240.5, 2), (121.0, 2)])
+def test_short_redundant_tail_is_owned_by_previous_window(seconds, expected):
+    from moss_transcribe_diarize.app.windowed_transcription import plan_windows
+    windows = plan_windows(seconds)
+    assert len(windows) == expected
+    assert windows[0].own_start == 0 and windows[-1].own_end == seconds
+    assert all(w.duration <= 150 for w in windows)
+    assert all(a.own_end == b.own_start for a, b in zip(windows, windows[1:]))
+
+
+def test_overload_tape_terminal_merges_half_second_tail(tmp_path):
+    pcm = voiced_pcm().ljust(int(120.5*32000), b'\0')
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=len(pcm))
+    tape.append(start_sample=0, pcm=pcm)
+    decoder = Decoder('unparseable', first_text=True)
+    final = TerminalTranscriptFinalizer(runner=WindowedRunner(decoder)).finalize(
+        plan=plan_for(len(pcm)//2), tape=tape, base_text_revision_version=0)
+    assert final.accounting.outcome.value == 'finalized'
+    assert decoder.calls == 1
+    assert final.accounting.window_count == final.accounting.completed_windows == 1
+    assert final.accounting.window_diagnostics[0]['condition'] == 'short_tail_window_merged'
+
+
+@pytest.mark.parametrize('kind', ['unparseable', 'raw_unparseable'])
+@pytest.mark.parametrize('seconds', [.5, 2])
+def test_unparseable_speech_remains_failure_even_when_short(tmp_path, seconds, kind):
+    pcm = voiced_pcm()[:int(seconds*32000)]
+    with pytest.raises(WindowTranscriptionError, match='unparseable_text'):
+        WindowedRunner(Decoder(kind)).transcribe(wav(tmp_path / 'speech.wav', pcm))
+
+
+@pytest.mark.parametrize('kind', ['unparseable', 'raw_unparseable'])
+@pytest.mark.parametrize('seconds', [.5, 2])
+def test_unparseable_speechless_is_success_with_diagnostics(tmp_path, seconds, kind):
+    result = WindowedRunner(Decoder(kind)).transcribe(
+        wav(tmp_path / 'silence.wav', bytes(int(seconds*32000))))
+    assert result.text == ''
+    assert result.window_diagnostics[0]['condition'] == 'unparseable_speechless'
+    assert result.window_diagnostics[0]['voiced_samples'] == 0
+    assert 'not compact' not in str(result.window_diagnostics)
