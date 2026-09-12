@@ -924,3 +924,28 @@ function v2Session(acceptedSamples: number) {
     }
   };
 }
+
+
+it("reports reader recovery once, including an unchanged snapshot, preserving cursors", async () => {
+  vi.useFakeTimers();
+  const recovered=vi.fn(); let offline=false;
+  const fetcher=vi.fn(async (url: RequestInfo | URL) => {
+    if(offline) throw new TypeError("Failed to fetch");
+    if(String(url).includes("/events")) return jsonResponse({events:[]});
+    return jsonResponse(String(url).includes("since_version=7") ? {unchanged:true} : {
+      snapshot:{session_id:"recover",descriptor:{sample_rate:16000},session:{status:"active",version:7,
+        committed_samples:0,identity_snapshot:{canonical_speakers:[]},committed:[],provisional:null}}
+    });
+  }) as typeof fetch;
+  const poller=createMossSessionPoller({sessionId:"recover",fetch:fetcher,onRecovered:recovered});
+  try {
+    poller.start();await vi.advanceTimersByTimeAsync(0);
+    offline=true;await vi.advanceTimersByTimeAsync(100);
+    expect(recovered).not.toHaveBeenCalled();
+    offline=false;await vi.advanceTimersByTimeAsync(500);
+    expect(recovered).toHaveBeenCalledOnce();
+    expect(poller.cursors().snapshotVersion).toBe(7);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(recovered).toHaveBeenCalledOnce();
+  } finally {poller.stop();vi.useRealTimers();}
+});

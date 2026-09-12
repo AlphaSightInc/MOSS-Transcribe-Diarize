@@ -130,6 +130,8 @@ export type CaptureClientOptions = Readonly<{
   onMeter?: (lane: CaptureLane, rms: number) => void;
   onPreflightStatus?: (statusLine: string) => void;
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
+  /** Fires once all previously failing frame lanes/heartbeat have succeeded. */
+  onTransportRecovered?: () => void;
   onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
 }>;
 
@@ -391,6 +393,7 @@ export class CaptureClient {
   private session: CaptureSession | null = null;
   private readonly lanes = new Map<CaptureLane, LaneState>();
   private readonly laneHasSignal = new Set<CaptureLane>();
+  private failedTransports = new Set<CaptureLane | "heartbeat">();
   private heartbeatPending: HelperState | null = null;
   private heartbeatFlush: Promise<void> | null = null;
   private heartbeatFlushing = false;
@@ -613,6 +616,7 @@ export class CaptureClient {
       this.detachLaneResources(state);
     }
     this.lanes.clear();
+    this.failedTransports.clear();
     this.laneHasSignal.clear();
     this.session = null;
     this.heartbeatPending = null;
@@ -804,22 +808,25 @@ export class CaptureClient {
         body: JSON.stringify(frame),
       }, this.frameDeadlineSignal ?? undefined);
     } catch (caught) {
-      this.reportTransportError("frame", caught);
+      this.reportTransportError("frame", caught, frame.lane);
       // No response means the server may have admitted the frame. Retain the exact
       // payload and sequence so its idempotent replay contract resolves ambiguity.
       return "retry";
     }
-    if (response.ok) return "accepted";
+    if (response.ok) {
+      this.transportRecovered(frame.lane);
+      return "accepted";
+    }
     const failure = await this.frameFailure(response);
     if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) return "retry";
     if (response.status === 429) return "dropped";
     if (response.status === 409 && failure.code === "frame_work_exceeds_queue_capacity") {
       const error = new Error("capture frame exceeds server queue capacity");
-      this.reportTransportError("frame", error);
+      this.reportTransportError("frame", error, frame.lane);
       try {
         await this.close();
       } catch (closeError) {
-        this.reportTransportError("frame", closeError);
+        this.reportTransportError("frame", closeError, frame.lane);
       }
       return "stopped";
     }
@@ -838,18 +845,18 @@ export class CaptureClient {
     );
     if (response.status === 409) {
       this.resetSessionForRecreation();
-      this.reportTransportError("frame", error);
+      this.reportTransportError("frame", error, frame.lane);
       return "recreate";
     }
     if (response.status >= 500) {
-      this.reportTransportError("frame", error);
+      this.reportTransportError("frame", error, frame.lane);
       return "retry";
     }
-    this.reportTransportError("frame", error);
+    this.reportTransportError("frame", error, frame.lane);
     try {
       await this.close();
     } catch (closeError) {
-      this.reportTransportError("frame", closeError);
+      this.reportTransportError("frame", closeError, frame.lane);
     }
     return "stopped";
   }
@@ -909,6 +916,7 @@ export class CaptureClient {
   }
 
   private resetSessionForRecreation(): void {
+    this.failedTransports.clear();
     this.session = null;
     this.heartbeatPending = null;
     this.heartbeatSequence = 0;
@@ -982,6 +990,7 @@ export class CaptureClient {
         );
         this.heartbeatSequence += 1;
         if (!response.ok) throw new Error(`heartbeat POST failed: HTTP ${response.status}`);
+        this.transportRecovered("heartbeat");
       }
     } catch (caught) {
       this.reportTransportError("heartbeat", caught);
@@ -1127,7 +1136,17 @@ export class CaptureClient {
     return descriptor.preflightStatusLines[kind];
   }
 
-  private reportTransportError(route: "frame" | "heartbeat", caught: unknown): void {
+  private transportRecovered(path: CaptureLane | "heartbeat"): void {
+    if (this.failedTransports.delete(path) && this.failedTransports.size === 0 && this.session && !this.stopping) {
+      this.options.onTransportRecovered?.();
+    }
+  }
+
+  private reportTransportError(route: "frame" | "heartbeat", caught: unknown, lane?: CaptureLane): void {
+    if (this.session && !this.stopping) {
+      if (route === "heartbeat") this.failedTransports.add("heartbeat");
+      else if (lane) this.failedTransports.add(lane);
+    }
     const error = caught instanceof Error ? caught : new Error(String(caught));
     this.options.onTransportError?.(route, error);
   }

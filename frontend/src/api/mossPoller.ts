@@ -85,6 +85,7 @@ export interface MossPollerOptions {
   fetch?: typeof globalThis.fetch;
   dispatch?: (event: WsEvent) => void;
   onError?: (message: string) => void;
+  onRecovered?: () => void;
   onTerminal?: (message: string) => void;
 }
 
@@ -335,6 +336,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
         return;
       }
 
+      if (retryIndex > 0) options.onRecovered?.();
       retryIndex = 0;
       if (running) {
         scheduleNext(pollDelayForStatus(snapshot?.status ?? lastSessionState?.status ?? "idle"));

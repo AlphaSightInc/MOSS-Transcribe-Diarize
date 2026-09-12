@@ -70,10 +70,12 @@ function testLaneState(): TestLaneState {
 
 function activeFrameClient(
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void,
+  onTransportRecovered?: () => void,
 ): { client: ActiveClient; lane: TestLaneState } {
   const client = new CaptureClient({
     helperVersion: "test",
     onTransportError,
+    onTransportRecovered,
   });
   const active = client as unknown as ActiveClient;
   const lane = testLaneState();
@@ -1216,4 +1218,67 @@ it("accepts only the explicit retryable Stop-pending response", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({}, { status: 202 })));
   await expect(stopCaptureSession({ id: "m" }, 5)).rejects.toThrow("invalid pending response");
   vi.unstubAllGlobals();
+});
+
+
+it("reports recovery only after both failed lanes have acknowledged their retained frames", async () => {
+  const recovered = vi.fn();
+  const { client, lane } = activeFrameClient(undefined, recovered);
+  const system = testLaneState(); client.lanes.set("system", system);
+  const healthy = new Set<string>();
+  vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
+    const frame = JSON.parse(init.body);
+    if (!healthy.has(frame.lane)) throw new TypeError("Failed to fetch");
+    return {ok:true,status:200};
+  }));
+  const send = (name: CaptureLane, startFrame: number) => client.onWorkletFrame(name, {
+    type:"frame",lane:name,startFrame,samples:new Float32Array([.1,.1])
+  });
+  send("microphone",0);send("system",0);
+  await vi.waitFor(()=>expect(lane.postInFlight || system.postInFlight).toBe(false));
+  healthy.add("microphone"); send("microphone",2);
+  await vi.waitFor(()=>expect(lane.sequence).toBe(2));
+  expect(recovered).not.toHaveBeenCalled();
+  healthy.add("system");send("system",2);
+  await vi.waitFor(()=>expect(system.sequence).toBe(2));
+  expect(recovered).toHaveBeenCalledOnce();
+  send("microphone",4);
+  await vi.waitFor(()=>expect(lane.sequence).toBe(3));
+  expect(recovered).toHaveBeenCalledOnce();
+});
+
+it("waits for heartbeat recovery as well as frame recovery", async () => {
+  const recovered=vi.fn();
+  const {client,lane}=activeFrameClient(undefined,recovered);
+  let framesHealthy=false, heartbeatHealthy=false;
+  vi.stubGlobal("fetch",vi.fn(async (url) => {
+    if(String(url).endsWith("/heartbeat") ? !heartbeatHealthy : !framesHealthy) throw new TypeError("Failed to fetch");
+    return {ok:true,status:200};
+  }));
+  const pulse=()=> (client as unknown as {scheduleHeartbeat(state:string):Promise<void>}).scheduleHeartbeat("capturing");
+  await pulse();
+  client.onWorkletFrame("microphone",workletFrame(0));
+  await vi.waitFor(()=>expect(lane.postInFlight).toBe(false));
+  framesHealthy=true;
+  client.onWorkletFrame("microphone",workletFrame(2));
+  await vi.waitFor(()=>expect(lane.sequence).toBe(2));
+  expect(recovered).not.toHaveBeenCalled();
+  heartbeatHealthy=true;await pulse();
+  expect(recovered).toHaveBeenCalledOnce();
+});
+
+it("does not publish a recovery notification from a frame response after close", async () => {
+  const recovered=vi.fn();
+  const {client,lane}=activeFrameClient(undefined,recovered);
+  let resolve!:(value:unknown)=>void;
+  vi.stubGlobal("fetch",vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"))
+    .mockImplementationOnce(()=>new Promise(r=>{resolve=r;})));
+  client.onWorkletFrame("microphone",workletFrame(0));
+  await vi.waitFor(()=>expect(lane.postInFlight).toBe(false));
+  client.onWorkletFrame("microphone",workletFrame(2));
+  client.context=null;
+  await (client as unknown as CaptureClient).close();
+  resolve({ok:true,status:200});
+  await vi.waitFor(()=>expect(lane.postInFlight).toBe(false));
+  expect(recovered).not.toHaveBeenCalled();
 });

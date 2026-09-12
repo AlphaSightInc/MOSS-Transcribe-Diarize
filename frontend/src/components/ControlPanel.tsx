@@ -35,6 +35,7 @@ const HELPER_VERSION = "moss-web/1";
 export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 
 export function ControlPanel() {
+  const recovering = useRef(new Set<"capture" | "transcript">());
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [connected, setConnected] = useState({ microphone: false, system: false });
@@ -68,7 +69,22 @@ export function ControlPanel() {
     setMessage(`${failure.lane}: ${failure.code}`);
   };
 
+  const transportFailed = (source: "capture" | "transcript", message: string) => {
+    recovering.current.add(source);
+    setMessage(message === "Failed to fetch" || message === "request timed out"
+      ? "Connection interrupted. Retrying automatically; keep this tab open."
+      : message);
+  };
+
+  const transportRecovered = (source: "capture" | "transcript") => {
+    const wasRecovering = recovering.current.delete(source);
+    if (wasRecovering && recovering.current.size === 0 && phaseRef.current === "active") {
+      setMessage("Connection restored. Recording microphone and shared audio.");
+    }
+  };
+
   const handleTerminal = (terminalMessage: string, clearSaved: boolean) => {
+    recovering.current.clear();
     captureMeetingId.value = null;
     if (clearSaved) clearSessionReattach(sessionReattachStorage());
     pollerRef.current?.stop();
@@ -93,7 +109,12 @@ export function ControlPanel() {
       onMeter: updateMeter,
       onPreflightStatus: setMessage,
       onPreSessionFailure: reportPreSessionFailure,
-      onTransportError: (_route, error) => setMessage(error.message)
+      onTransportError: (_route, error) => {
+        if (clientRef.current === client) transportFailed("capture", error.message);
+      },
+      onTransportRecovered: () => {
+        if (clientRef.current === client) transportRecovered("capture");
+      }
     });
     clientRef.current = client;
     try {
@@ -153,6 +174,7 @@ export function ControlPanel() {
     const client = clientRef.current;
     if (!client || phase !== "ready") return;
     transition("configuring");
+    recovering.current.clear();
     setMessage("Creating live session...");
     resetSessionState();
     sessionTitle.value = "";
@@ -164,7 +186,10 @@ export function ControlPanel() {
       });
       const poller = createMossSessionPoller({
         sessionId: session.id,
-        onError: setMessage,
+        onError: (message) => transportFailed("transcript", message),
+        onRecovered: () => {
+          if (captureMeetingId.value === session.id) transportRecovered("transcript");
+        },
         onTerminal(terminalMessage) {
           handleTerminal(terminalMessage, true);
         }

@@ -371,6 +371,132 @@ class Harness:
         result.update(meeting=ident,status_received=meeting['status']); result['ok'] &= meeting['status']=='interrupted'
         return result
 
+    async def network_outages(self):
+        """Row 13: real two-lane capture through short and long origin outages."""
+        variants=[]
+        origin=urlsplit(self.args.base)
+        for seconds in (3,20):
+            # Independent capture setups. Never navigate/reload within an outage case.
+            if variants:
+                await self.page.close()
+                self.page=self.attach(await self.context.new_page())
+                await self.open()
+            trace=[]; tasks=set(); blocked=[]; restored=None
+            def is_origin(url):
+                parsed=urlsplit(url)
+                return (parsed.scheme,parsed.netloc)==(origin.scheme,origin.netloc)
+            async def observe(response):
+                request=response.request; path=urlsplit(request.url).path
+                if not is_origin(request.url): return
+                entry={'t':time.monotonic(),'path':path,'status':response.status}
+                if path.endswith(('/frames','/heartbeat')):
+                    payload=request.post_data_json
+                    entry.update({k:payload[k] for k in ('lane','sequence','device_epoch','capture_timestamp_ns','discontinuity') if k in payload})
+                if path.endswith(('/frames','/snapshot','/heartbeat')):
+                    try:
+                        body=await asyncio.wait_for(response.json(),timeout=3)
+                        entry['failure']=body.get('failure',body.get('detail')) if not response.ok else None
+                        snapshot=body.get('snapshot') or {}; session=snapshot.get('session') or {}
+                        entry.update(version=session.get('version'),committed=session.get('committed_samples'),unchanged=body.get('unchanged'))
+                    except Exception: pass
+                    trace.append(entry)
+            def listener(response):
+                task=asyncio.create_task(observe(response));tasks.add(task);task.add_done_callback(tasks.discard)
+            async def drop(route):
+                if is_origin(route.request.url):
+                    blocked.append({'t':time.monotonic(),'path':urlsplit(route.request.url).path})
+                    await route.abort('internetdisconnected')
+                else: await route.continue_()
+            self.page.on('response',listener)
+            result={'outage_seconds':seconds}
+            try:
+                await self.setup_live();ident=await self.start_live(f'outage_{seconds}')
+                result['meeting']=ident
+                await self.page.wait_for_function('document.querySelectorAll(".utt-text").length > 0',timeout=35000)
+                await asyncio.sleep(2)
+                before=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body']['snapshot']['session']
+                result['before']={k:before.get(k) for k in ('status','version','accepted_samples','committed_samples')}
+                # Observe actual text changes without retaining spoken words or reloading.
+                await self.page.evaluate('''() => {
+                    window.__outageTextChanges=0;
+                    const panel=document.querySelector('#transcript-panel');
+                    let previous=panel.textContent;
+                    window.__outageObserver=new MutationObserver(()=>{
+                        const next=panel.textContent;
+                        if(next!==previous){window.__outageTextChanges++;previous=next;}
+                    });
+                    window.__outageObserver.observe(panel,{subtree:true,childList:true,characterData:true});
+                }''')
+                started=time.monotonic()
+                await self.context.route('**/*',drop)
+                try: await asyncio.sleep(seconds)
+                finally:
+                    restored=time.monotonic()
+                    result['phase_during_outage']=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')
+                    await self.context.unroute('**/*',drop)
+                result['restored_monotonic']=restored
+                result['actual_outage_seconds']=restored-started
+                result['blocked_requests']=len(blocked)
+                result['origin_outage_verified']=all(any(x['path'].endswith('/'+route) for x in blocked) for route in ('frames','heartbeat','snapshot'))
+                result['blocked_routes']=sorted({x['path'].rsplit('/',1)[-1] for x in blocked})
+                await self.page.evaluate('window.__outageTextChanges=0')
+                # Allow backlog drain and reader backoff; do not reload or recreate capture.
+                for _ in range(30):
+                    if all(any(x['t']>=restored and x['path'].endswith('/frames') and x.get('lane')==lane and x['status']==200 for x in trace) for lane in ('microphone','system')) and await self.page.evaluate('window.__outageTextChanges>0'):
+                        break
+                    if await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')=='terminal': break
+                    await asyncio.sleep(1)
+                result['phase_after_restore']=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')
+                result['ui_status']=await self.page.locator('.capture-status').inner_text()
+                result['text_changes_after_restore']=await self.page.evaluate('window.__outageTextChanges')
+                result['frames_resumed']=all(any(x['t']>=restored and x['path'].endswith('/frames') and x.get('lane')==lane and x['status']==200 for x in trace) for lane in ('microphone','system'))
+                result['first_frame_recovery_seconds']={lane:min((x['t']-restored for x in trace if x['t']>=restored and x['path'].endswith('/frames') and x.get('lane')==lane and x['status']==200),default=None) for lane in ('microphone','system')}
+                result['first_snapshot_recovery_seconds']=min((x['t']-restored for x in trace if x['t']>=restored and x['path'].endswith('/snapshot') and x['status']==200),default=None)
+                result['heartbeat_resumed']=any(x['t']>=restored and x['path'].endswith('/heartbeat') and x['status']==200 for x in trace)
+                heartbeat_times=sorted(x['t'] for x in trace if x['path'].endswith('/heartbeat') and x['status']==200)
+                result['maximum_heartbeat_gap_seconds']=max((b-a for a,b in zip(heartbeat_times,heartbeat_times[1:])),default=None)
+                result['polling_resumed']=any(x['t']>=restored and x['path'].endswith('/snapshot') and x['status']==200 for x in trace)
+                result['sequence_continuity']={}
+                for lane in ('microphone','system'):
+                    frames=[x for x in trace if x['path'].endswith('/frames') and x.get('lane')==lane and x['status']==200]
+                    result['sequence_continuity'][lane]=bool(frames) and all(b['sequence'] in (a['sequence'],a['sequence']+1) and b['device_epoch']==a['device_epoch'] and (b['sequence']==a['sequence'] or b['capture_timestamp_ns']>a['capture_timestamp_ns']) for a,b in zip(frames,frames[1:]))
+                result['frame_errors']=[x['failure'] for x in trace if x['path'].endswith('/frames') and x['status']==409]
+                stop=self.page.get_by_role('button',name='Stop and finalize',exact=True)
+                if await stop.count(): await stop.click()
+                meeting=await self.terminal(ident,240)
+                live=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body'].get('snapshot') or {}
+                session=live.get('session') or {}
+                result.update(status_received=meeting['status'],finalization_status=session.get('finalization_status'),failure_reason=session.get('failure_reason'))
+                await self.page.locator('[aria-label="Meeting history"]').get_by_role('button',name='Refresh',exact=True).click()
+                card=self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"]')
+                result['history_preserved']=await card.count()==1
+                async with self.page.expect_download() as pending: await card.locator('[data-audio-download]').click()
+                download=await pending.value;path=self.out/f'outage-{seconds}.mp3';await download.save_as(path)
+                duration=float(probe(path)['format']['duration'])
+                subprocess.run(['ffmpeg','-v','error','-i',str(path),'-f','null','-'],check=True,capture_output=True)
+                result.update(audio_seconds=duration,audio_preserved=duration>0,partial_audio=download.suggested_filename.endswith('.partial.mp3'))
+                survived=(result['phase_during_outage']=='active' and result['phase_after_restore']=='active' and result['frames_resumed'] and result['heartbeat_resumed'] and result['polling_resumed'] and result['text_changes_after_restore']>0 and all(result['sequence_continuity'].values()) and not result['frame_errors'] and meeting['status']=='completed' and result['finalization_status']=='final')
+                graceful=(result['phase_after_restore']=='terminal' and bool(result['ui_status']) and result['ui_status']!='Failed to fetch' and 'Retrying' not in result['ui_status'] and meeting['status']!='active' and result['partial_audio'])
+                result['recovery_feedback_clear']='Failed to fetch' not in result['ui_status'] and 'Retrying' not in result['ui_status']
+                result['ok']=result['origin_outage_verified'] and (not survived or result['recovery_feedback_clear']) and result['history_preserved'] and result['audio_preserved'] and (survived or (seconds==20 and graceful))
+                result['outcome']='survived' if survived else 'graceful_terminal' if graceful else 'failed'
+            except Exception as exc:
+                result.update(ok=False,error=str(exc)[:1600],exception=type(exc).__name__)
+            finally:
+                write(self.out/f'row-13-{seconds}s.json',result)
+                await self.context.unroute('**/*',drop)
+                self.page.remove_listener('response',listener)
+                if tasks:
+                    done,pending=await asyncio.wait(tasks,timeout=4)
+                    for task in pending: task.cancel()
+                    if pending: result.update(ok=False,trace_error='response observation did not finish')
+                await self.page.evaluate('window.__outageObserver?.disconnect()')
+                write(self.out/f'row-13-{seconds}s-trace.json',{'responses':trace,'blocked':blocked})
+                write(self.out/f'row-13-{seconds}s.json',result)
+                variants.append(result)
+                await self.snapshot(13,f'-{seconds}s')
+        return {'ok':all(v['ok'] for v in variants),'variants':variants}
+
     async def run(self):
         try:
             from playwright.async_api import async_playwright
@@ -407,10 +533,10 @@ class Harness:
                     self.state['meetings']={}
                 self.page=self.attach(await self.context.new_page()); self.source=await self.context.new_page(); await self.source.goto(self.media+'/source.html')
                 await self.source.locator('audio').evaluate('a=>a.play()'); await self.page.bring_to_front()
-                rows=set(map(int,self.args.rows.split(','))) if self.args.rows else set(range(1,13))
+                rows=set(map(int,self.args.rows.split(','))) if self.args.rows else set(range(1,14))
                 if 1 in rows: await self.check(1,self.bootstrap)
                 else: await self.open()
-                for n,fn in [(2,self.file),(3,lambda:self.file(True)),(4,self.live),(5,self.enrollment),(6,self.exports),(7,lambda:self.audio(self.state['meetings']['file'])),(9,self.summaries),(11,self.history),(12,self.phone),(10,self.bank),(8,self.interrupted)]:
+                for n,fn in [(2,self.file),(3,lambda:self.file(True)),(4,self.live),(5,self.enrollment),(6,self.exports),(7,lambda:self.audio(self.state['meetings']['file'])),(9,self.summaries),(11,self.history),(12,self.phone),(10,self.bank),(8,self.interrupted),(13,self.network_outages)]:
                     if n in rows and not (n==5 and 4 in rows): await self.check(n,fn)
                 for n in rows:
                     if str(n) not in self.state['rows']: self.state['rows'][str(n)]={'status':'FAIL','reason':'Prerequisite not reached'}
@@ -424,6 +550,6 @@ class Harness:
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base',default='https://127.0.0.1:17861')
-    parser.add_argument('--new-workspace',action='store_true',help='Fresh test cookie after an external stack database reset; prior evidence retained')
+    parser.add_argument('--new-workspace',action='store_true',help='Fresh test workspace without resetting the stack database; prior evidence retained')
     parser.add_argument('--corpus',required=True); parser.add_argument('--output',required=True); parser.add_argument('--rows')
     raise SystemExit(asyncio.run(Harness(parser.parse_args()).run()))

@@ -14,8 +14,8 @@ const mocks = vi.hoisted(() => {
   };
   return {
     poller,
-    pollerOptions: null as { onTerminal?: (message: string) => void } | null,
-    createMossSessionPoller: vi.fn((options: { onTerminal?: (message: string) => void }) => {
+    pollerOptions: null as { onTerminal?: (message: string) => void; onError?: (message: string) => void; onRecovered?: () => void } | null,
+    createMossSessionPoller: vi.fn((options: { onTerminal?: (message: string) => void; onError?: (message: string) => void; onRecovered?: () => void }) => {
       mocks.pollerOptions = options;
       return poller;
     }),
@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => {
     replaceLane: vi.fn().mockResolvedValue(undefined),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
+      onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
+      onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
     } | null,
@@ -37,11 +39,15 @@ vi.mock("../api/mossPoller", () => ({
 vi.mock("../capture/captureClient", () => ({
   CaptureClient: class {
     options: {
+      onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
+      onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
     };
 
     constructor(options: {
+      onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
+      onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
     }) {
@@ -220,6 +226,27 @@ describe("ControlPanel reattach", () => {
 
     expect(mocks.createMossSessionPoller).not.toHaveBeenCalled();
     expect(root.querySelector('[data-capture-phase="configuring"]')).not.toBeNull();
+  });
+
+  it("clears network warnings only after capture and polling recover, never after terminal", async () => {
+    await act(async () => { render(<ControlPanel />, root); });
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    await act(async () => button("Enable microphone")?.click());
+    await act(async () => button("Share audio")?.click());
+    await act(async () => button("Start capture")?.click());
+    act(() => {
+      mocks.captureOptions?.onTransportError?.("frame", new TypeError("Failed to fetch"));
+      mocks.pollerOptions?.onError?.("Failed to fetch");
+    });
+    expect(root.textContent).toContain("Retrying automatically");
+    act(() => mocks.pollerOptions?.onRecovered?.());
+    expect(root.textContent).toContain("Retrying automatically");
+    act(() => mocks.captureOptions?.onTransportRecovered?.());
+    expect(root.textContent).toContain("Connection restored. Recording microphone and shared audio.");
+    act(() => mocks.pollerOptions?.onTerminal?.("helper_lease_expired"));
+    act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.pollerOptions?.onRecovered?.(); });
+    expect(root.textContent).toContain("helper_lease_expired");
+    expect(root.textContent).not.toContain("Connection restored");
   });
 
   it("keeps polling while an accepted Stop is still draining", async () => {
