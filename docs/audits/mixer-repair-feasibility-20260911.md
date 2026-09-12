@@ -65,7 +65,7 @@ The corrected raw-analysis prototype completed Adam before implementation: settl
 The implementation carries bounded analysis PCM alongside existing decoder PCM until canonical commitment. A sole audible lane retains original level; two audible lanes retain their existing coherent mix. Analysis drives speech detection and identity; decoder, draft, rolling, recording and terminal audio keep existing PCM. Explicit observed frame ends remove the successor hold without terminal-style flush. Ingress rejects overlap with a previously sealed end, even after source frames are released. A skewed arrival test also fences the newest explicit frame start before treating a missing peer as a gap.
 ASR retains its PCM gain and decoder; changed endpoint windows can nevertheless
 change WER. Any difference will be reported explicitly, not called unchanged.
-The six-case candidate restores reference speaker counts in all cases, but worsens Jamie/RTFL settled DER versus account before and changes immediate WER in Adam/Jamie. Hold from cutover; see the completed differential report.
+The six-case candidate restores reference speaker counts in all cases, but worsens Jamie/RTFL settled DER versus account before and changes immediate WER in Adam/Jamie. The operator subsequently approved round 11 host measurement under the existing 5% band; see the completed differential report.
 
 ## Evidence
 

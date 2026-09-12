@@ -89,7 +89,8 @@ The live six-case after measurement is retained separately as it completes.
 Completed six-case result: `differential-results.json`. Settled DER macro improves
 .182603→.162036 (mono .156766), all six emitted counts equal reference. Per-case
 parity is NOT established: Jamie and RTFL DER worsen versus account before;
-Adam/Jamie immediate WER add two/one errors. Hold behavioral candidate from cutover.
+Adam/Jamie immediate WER add two/one errors. The operator subsequently approved
+round 11 host measurement under the existing 5% band, superseding the hold recommendation.
 Full findings: `docs/audits/mixer-repair-differential-20260911.md`.
 
 To reproduce on an already running **own** stack (fresh output directory required):
@@ -103,3 +104,33 @@ its own state directory and port 17862. Do not restart or access the operator's
 17861 database. This replay invokes the decoder; do not confuse it with the
 network-free byte/encoder probes above. Raw captures and a mode-0600 cookie stay
 in the scratch output; results are written after each case.
+
+
+## Bounded attribution follow-up
+
+Structural question: does source-level analysis or observed-end release cause the
+Jamie/RTFL settled loss? Primitives are analysis PCM/window boundaries, release
+frontier, and scored capture. Invariants: fixed decoder and identity configuration,
+unchanged quality bounds, no future evidence, no cross-speaker merge, fresh scratch
+workspace, no host/17861 operations. A differing frozen span sequence between
+analysis-only and both would falsify the claim that observed ends only change
+release/coverage for these regularly timed corpus inputs.
+
+Two isolated process controls, each replaying Jamie then RTFL through the actual
+account API on own 17862. `analysis_only` omits the optional observed frame end;
+`ends_only` removes only internal analysis PCM before runtime admission. Production
+files are not patched. Existing before/both captures supply the other two cells.
+Scores, frozen span boundaries and abstention reasons: `attribution-results.json`.
+Anonymous Jamie witness: `attribution-witness.json`. No raw text, audio or embeddings
+are included. Raw capture location: `/tmp/moss-mixer-attribution`.
+
+Reproduction uses the existing own-stack recipe in `MOSS_DIFFERENTIAL_SCRATCH`:
+
+```sh
+MOSS_ATTRIBUTION_ARM=analysis_only MOSS_DIFFERENTIAL_SCRATCH=/tmp/own-stack .venv/bin/python prototypes/streaming-diarization/mixer-repair-feasibility/attribution_server.py
+MOSS_ATTRIBUTION_ARM=analysis_only .venv/bin/python prototypes/streaming-diarization/mixer-repair-feasibility/attribution_measure.py --cert /tmp/own-stack/cert.pem --out /tmp/analysis-only-new
+```
+
+After that process exits and its own server stops, repeat with `ends_only` and a
+fresh output/workspace. These commands spend decoder work through the existing
+local tunnel; the patches belong only in this diagnostic launcher.

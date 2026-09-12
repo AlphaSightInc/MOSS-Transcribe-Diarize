@@ -1,11 +1,12 @@
 # Mixer repair differential — 2026-09-11
 
-**Implemented and measured; the requested per-case quality target is NOT met.**
-The six-case candidate fixes both extra emitted identities (Adam 3→2, RTFL 5→4),
-but Jamie and RTFL settled DER worsen versus the prior account path. Immediate
-WER also worsens by two errors in Adam and one in Jamie. Recommend holding the
-behavioral candidate from demo cutover, not relaxing bounds or changing identity
-policy. The implementation checkpoint is `905eadbb` on private/auto-mvp-0911.
+**Operator-approved for round 11 host measurement under the pre-approved 5% band.**
+Local settled DER macro .162036 is below .16947 (1.05 × the operator-stated .1614
+bound); all six emitted speaker counts match reference, and final WER is unchanged
+or better. This supersedes the earlier hold recommendation. The host measurements
+decide qualification; this local comparison is not a host pass. The stricter
+per-case parity and unchanged-immediate-WER targets remain unmet, as retained below.
+The implementation checkpoint is `905eadbb` on private/auto-mvp-0911.
 
 ## F1 — What changed, and why the first shortcuts were rejected
 
@@ -121,13 +122,13 @@ The other five reported no replay performance failure.
   above is green. An isolated pre-existing 2-second Stop-test timeout also reproduces
   on unchanged 88e226a2; it passes in both complete product-suite runs.
 
-## D1 — Decision
+## D1 — Operator decision supersedes the earlier hold recommendation
 
-Hold `905eadbb` as a measured repair candidate, not a qualified demo cutover.
-It fixes the demonstrated extra identities and tail plumbing, but does not satisfy
-all requested quality invariants. Do not call the six-case difference noise or
-change identity policy/bounds to accept it. The raw-source speech-boundary choice
-has a real ASR/attribution trade-off, documented above for the operator.
+Proceed with round 11 host measurement under the mandate's existing 5% band.
+The measured local macro and final WER support that decision; per-case regressions
+remain visible, not waived by changing policy or bounds. No numeric bound or
+identity-policy value changes. The bounded attribution follow-up below isolates analysis from observed-end release.
+No production tweak is added; the accepted implementation remains unchanged.
 
 ## Custody and reproduction
 
@@ -143,3 +144,45 @@ No host operations or 17861 database access. Raw captures remain under
 [All per-surface DER/WER/counts and observations](../../prototypes/streaming-diarization/mixer-repair-feasibility/differential-results.json)
 and [input proof](../../prototypes/streaming-diarization/mixer-repair-feasibility/input-proof.json).
 Commands and the reusable fresh-workspace replay are in the adjacent NOTES.md.
+
+
+## F6 — Bounded attribution: source analysis causes the loss; observed ends help
+
+Completed in 11.6 minutes, within the 30-minute limit. Two new isolated account
+replays per case, same decoder/configuration and real audio. Production behavior
+unchanged; controls exist only in scratch process wrappers. Before/both cells are
+the accepted retained measurements, not new qualification runs.
+
+| Case | Before | Observed ends only | Source analysis only | Both (accepted candidate) |
+|---|---:|---:|---:|---:|
+| Jamie | 0.103849 | 0.091280 | 0.128484 | 0.116474 |
+| RTFL | 0.406546 | 0.405396 | 0.419230 | 0.419230 |
+
+For both cases, observed-end-only and before have identical frozen span boundaries;
+source-analysis-only and both also have identical boundaries. Source analysis is
+what changes those boundaries. Observed ends release the same regularly timed PCM
+earlier, improving Jamie's settled coverage; RTFL's analysis-only/both DER is
+identical. Thus the observed-frame-end change is not the cause of these losses.
+
+Jamie provides a concrete witness, not a complete allocation of every DER error:
+the relevant window shifts from [61.62,64.12) to [61.49,63.99). The decoder emits
+local S01 over [0,2.5) and overlapping S02 over [1.91,2.5). Both strongly match the
+same existing identity (.872015 and .672648); the unchanged same-span cannot-link
+rule correctly abstains. The reference contains one speaker over that span. This
+abstention recurs in the source-analysis-only control. It is not weak evidence or
+an observed-end-induced boundary change. Local ASR labels and word/timing output
+still depend on the canonical window, even when embedding audio is original-level.
+
+No obvious safe bounded tweak was established. Keeping the old endpoint windows
+and using original-level embeddings alone already failed the Adam control: .240166
+match, still three identities. Disabling source analysis would abandon that fix;
+weakening the cannot-link rule would violate policy/invariants. No per-case rule,
+new window policy, threshold change or merge is introduced. Leave the accepted
+candidate intact for round 11 under the operator's decision.
+
+All four new sessions finalized, and all settled captures drained without timeout.
+Full arm scores/counts, frozen boundaries and abstention reasons are retained in
+[attribution-results.json](../../prototypes/streaming-diarization/mixer-repair-feasibility/attribution-results.json);
+the anonymous [Jamie witness](../../prototypes/streaming-diarization/mixer-repair-feasibility/attribution-witness.json)
+contains no text/audio/embeddings. Agent-owned 17862 server stopped; its database
+and raw captures preserved. No host operations or 17861 access.

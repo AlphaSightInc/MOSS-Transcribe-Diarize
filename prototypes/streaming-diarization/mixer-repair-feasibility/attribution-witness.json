@@ -1,0 +1,41 @@
+{
+  "case_id": "discussion_jamie_dimon_180s",
+  "before_span_samples": [
+    985920,
+    1025920
+  ],
+  "source_analysis_span_samples": [
+    983840,
+    1023840
+  ],
+  "source_analysis_span_seconds": [
+    61.49,
+    63.99
+  ],
+  "reference_speaker_count_over_span": 1,
+  "decoder_local_intervals": {
+    "S01": [
+      [
+        0.0,
+        2.5
+      ]
+    ],
+    "S02": [
+      [
+        1.91,
+        2.5
+      ]
+    ]
+  },
+  "existing_speaker_count": 1,
+  "both_local_labels_match_same_existing_identity": true,
+  "match_scores": [
+    0.8720150236362821,
+    0.6726480138297769
+  ],
+  "identity_status": "abstain",
+  "identity_reason": "same_span_cannot_link_conflict",
+  "interpretation": "Strong matching evidence; the shifted ASR window introduces incompatible overlapping local labels. Does not attribute the entire DER change to this one span.",
+  "raw_source": "/tmp/moss-der-differential/identity-9385.jsonl",
+  "trace_source": "/tmp/moss-mixer-repair/runs/account/discussion_jamie_dimon_180s/run-001/trace.jsonl"
+}
