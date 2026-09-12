@@ -1,0 +1,16 @@
+{
+  "bound_seconds": 4.0,
+  "derivation": "2.5s span + 1.0s decode/identity + 0.5s frame/poll",
+  "clock": "Start click (conservative speech-onset upper bound)",
+  "baseline": {
+    "seconds": 3.7007,
+    "status": "PASS",
+    "evidence": "current-stack-dom-clock/row-10.json"
+  },
+  "original": {
+    "seconds": 10.844687,
+    "status": "FAIL",
+    "decoder_runner_seconds": 7.068335625,
+    "evidence": "../../docs/audits/row10-recognition-events-20260912.json"
+  }
+}

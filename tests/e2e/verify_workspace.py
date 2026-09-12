@@ -22,6 +22,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tests.phase2.browser_support import browser_executable, BrowserExecutableMissing
 
 
+# First eligible canonical span (2.5s) + decode/identity allowance (1.0s)
+# + capture-frame/publication polling allowance (0.5s). This is an empirical
+# regression budget, not a worst-case inference guarantee. Start click precedes
+# captured speech, so our clock is a conservative upper bound from speech onset.
+FIRST_ENROLLED_LABEL_BOUND_SECONDS = 2.5 + 1.0 + 0.5
+
+
 def write(path, value):
     Path(path).write_text(json.dumps(value, indent=2) + '\n')
 
@@ -379,7 +386,9 @@ class Harness:
             latency=(timing['matched']-timing['started'])/1000
         except Exception: latency=None
         finally: await self.page.evaluate('window.__mossVoiceMatchCleanup()')
-        return {'ok':enrolled and latency is not None and latency<=3,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
+        trace='row-10-decoder-events.json'
+        write(self.out/trace, (await self.api('/api/live/sessions/'+ident+'/events'))['body'])
+        return {'ok':enrolled and latency is not None and latency<=FIRST_ENROLLED_LABEL_BOUND_SECONDS,'bound_seconds':FIRST_ENROLLED_LABEL_BOUND_SECONDS,'decoder_trace':trace,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
 
     async def interrupted(self):
         ident=self.state['meetings'].get('second_live') or self.state['meetings']['enrollment_live']

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from playwright.async_api import async_playwright
 
-from tests.e2e.verify_workspace import Harness
+from tests.e2e.verify_workspace import Harness, FIRST_ENROLLED_LABEL_BOUND_SECONDS
 from tests.phase2.browser_support import require_browser
 
 
@@ -25,6 +25,8 @@ def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
                 await page.route('**/*', lambda route: route.fulfill(status=200, content_type='text/html', body=html))
                 await page.goto('https://measurement.test/')
                 class Probe(Harness):
+                    async def api(self, path):
+                        return {"body": {"events": []}}
                     async def setup_live(self):
                         pass
                     async def start_live(self, key):
@@ -47,3 +49,9 @@ def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
             finally:
                 await browser.close()
     asyncio.run(run())
+
+
+def test_enrolled_label_budget_derives_from_live_pipeline():
+    # Preserve the 2.5s canonical cap; allow 1s processing and 0.5s frame/poll.
+    assert FIRST_ENROLLED_LABEL_BOUND_SECONDS == 2.5 + 1.0 + .5
+    assert 3.7007 <= FIRST_ENROLLED_LABEL_BOUND_SECONDS < 10.844687

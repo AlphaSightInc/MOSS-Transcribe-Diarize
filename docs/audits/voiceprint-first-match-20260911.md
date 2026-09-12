@@ -1,4 +1,4 @@
-# Row 10 — first enrolled voiceprint match (in progress)
+# Row 10 — first enrolled voiceprint match: PASS under approved derived budget
 
 ## Structural contract
 
@@ -52,3 +52,13 @@ The integration rebase supplied the original session's retained event projection
 A fresh Python process converting the exact first 40,000 samples of the same corpus through production `_media_to_wav_bytes` took **0.662572s**, then **0.000479s** and **0.000313s** on repeats (80,044-byte WAV each). See `evidence/voiceprint-first-match-20260911/conversion-timing.json`. Local first-use initialization is measurable, but this run does not explain the historical seven-second runner call. No speculative server warm-up, conversion bypass, or policy change was added.
 
 Checkpoint `01cf62ea` was pushed to private/auto-mvp-0911 after rebase. The timing regression also passed after integrating the other agents' harness changes. The queued G9 acceptance-selector/relay-qualification task remains next, after the row-10 scheduling-scope decision.
+
+## Approved resolution
+
+The operator explicitly retained all decode boundaries and identity policies and replaced the estimated 3s target with **4.0s**: 2.5s first canonical cap + approximately 1.0s decode/identity + 0.5s frame/poll allowance. This is a regression budget, not a guarantee against provider stalls. The harness measures Start click, conservatively earlier than captured speech onset; passing this stricter clock also passes the speech-onset bound.
+
+The retained unmodified-product 3.7007s run is **PASS** under this approved criterion. The original 10.844687s run remains **FAIL**, including its 7.068336s runner stall. The operator attributed that stall to shared-tunnel/vLLM contention; the retained runner timer independently establishes the delay but cannot separate conversion, transport, and upstream execution. Historical row JSONs preserve their original 3s verdict; `approved-verdicts.json` records re-evaluation without rewriting history.
+
+Every future row-10 run now writes `row-10-decoder-events.json`, preserving runner timing alongside the browser verdict. The host's four-session gate continues retaining its own runtime observations; no host test or restart was performed here. No earlier-decode production change was made. The isolated prototype server was stopped; its separate database remains intact.
+
+Verified four-session retention: `phase2_acceptance_external.py::_run_live_load` retains per-session diagnostic events; `_DIAGNOSTIC_PAYLOAD_FIELDS` already includes `canonical_decode_elapsed_sec` and `frozen_span_duration_sec`. No additional instrumentation or host operation is needed to expose a repeat stall under the gate. Full local validation with the G9 follow-up: 1,393 Python passed, 2 optional corpus skips, 37 subtests; 201 frontend passed.
