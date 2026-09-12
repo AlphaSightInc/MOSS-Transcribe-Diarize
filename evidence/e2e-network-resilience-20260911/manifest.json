@@ -1,0 +1,45 @@
+{
+  "before": {
+    "port": 17861,
+    "checkout": "b76b5b5c",
+    "state": "existing stack, unchanged",
+    "ui_warning": "Failed to fetch remained after recovery"
+  },
+  "after": {
+    "port": 17862,
+    "checkout": "ad059be5",
+    "state_directory": "/tmp/moss-outage-17862/state",
+    "launch_script": "/tmp/moss-outage-17862/run_local_stack.py",
+    "instance_status": "stopped after both meetings completed; state retained"
+  },
+  "lease_seconds": 30,
+  "corpus": "mono_javier_intro_50s",
+  "injection": "context.route abort(internetdisconnected), all original-origin requests; source-audio origin unaffected",
+  "outages_seconds": [
+    3,
+    20
+  ],
+  "excluded_setup_attempts": [
+    {
+      "path": "/tmp/moss-outages-baseline",
+      "reason": "Initial harness awaited response observers without a deadline; interrupted cleanup. No row verdict retained."
+    },
+    {
+      "path": "/tmp/moss-outages-baseline-v2",
+      "reason": "3-second case passed; 20-second case never started because repeat capture setup reported Invalid state. Final harness uses independent tabs before each case; no tab navigation during outage/recovery."
+    }
+  ],
+  "validation": {
+    "python_passed": 1380,
+    "python_existing_skips": 2,
+    "python_subtests_passed": 37,
+    "frontend_passed": 201,
+    "focused_red_failures": 3
+  },
+  "limitations": [
+    "One complete before/after pair for each duration; no statistical reliability claim.",
+    "Dropped requests model immediate network errors, not blackholed TCP or a response lost after server admission.",
+    "Graceful-terminal alternative is asserted by row 13 but was not exercised: both measured cases survived.",
+    "No host qualification or host operation."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "outage_seconds": 20,
+  "meeting": "muF0sObEPchLM8XiAQ8x7dxv",
+  "before": {
+    "status": "active",
+    "version": 21,
+    "accepted_samples": 78720,
+    "committed_samples": 40000
+  },
+  "phase_during_outage": "active",
+  "actual_outage_seconds": 20.002990499604493,
+  "blocked_requests": 135,
+  "blocked_routes": [
+    "events",
+    "frames",
+    "heartbeat",
+    "muF0sObEPchLM8XiAQ8x7dxv",
+    "snapshot"
+  ],
+  "phase_after_restore": "active",
+  "ui_status": "Failed to fetch",
+  "text_changes_after_restore": 2,
+  "frames_resumed": true,
+  "heartbeat_resumed": true,
+  "polling_resumed": true,
+  "sequence_continuity": {
+    "microphone": true,
+    "system": true
+  },
+  "frame_errors": [],
+  "status_received": "completed",
+  "finalization_status": "final",
+  "failure_reason": null,
+  "history_preserved": true,
+  "audio_seconds": 29.92,
+  "audio_preserved": true,
+  "partial_audio": false,
+  "ok": true,
+  "outcome": "survived"
+}

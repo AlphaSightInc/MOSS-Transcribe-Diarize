@@ -1,0 +1,16 @@
+{
+  "microphone": {
+    "accepted_responses": 60,
+    "timestamp_steps_ns": [
+      500000000
+    ],
+    "no_missing_500ms_frames": true
+  },
+  "system": {
+    "accepted_responses": 59,
+    "timestamp_steps_ns": [
+      500000000
+    ],
+    "no_missing_500ms_frames": true
+  }
+}
