@@ -261,6 +261,7 @@ describe("browser capture frame contract", () => {
       sample_count: 4,
       sample_rate: 48_000,
       capture_timestamp_ns: 83_333,
+      capture_end_timestamp_ns: 166_667,
     });
     expect(Array.from(new Int16Array(Uint8Array.from(atob(frame.pcm_base64), (byte) => byte.charCodeAt(0)).buffer))).toEqual([
       32767,

@@ -203,10 +203,18 @@ class LiveCompatibilityMixer:
                 * _NANOSECONDS_PER_SECOND
                 / LIVE_SAMPLE_RATE
             )
-            safe_end_ns = max(
-                strict_frontier_ns,
-                leading_frontier_ns - grace_ns,
-            )
+            grace_frontier_ns = leading_frontier_ns - grace_ns
+            # An explicit end seals a completed frame, not a missing peer.
+            # Permit ordinary one-frame arrival skew even when its observed
+            # duration differs from the nominal output chunk duration.
+            explicit_starts = [
+                retained_by_lane[lane][-1].frame.capture_timestamp_ns
+                for lane in observed_active_lanes
+                if retained_by_lane[lane][-1].frame.capture_end_timestamp_ns is not None
+            ]
+            if explicit_starts:
+                grace_frontier_ns = min(grace_frontier_ns, max(explicit_starts))
+            safe_end_ns = max(strict_frontier_ns, grace_frontier_ns)
         safe_end_ns = min(
             safe_end_ns,
             cursor_ns
@@ -269,6 +277,14 @@ class LiveCompatibilityMixer:
             samples.append(int(mixed * 32767.0))
 
         pcm = struct.pack("<" + "h" * len(samples), *samples)
+        # A single audible source needs no summing headroom for analysis. Keep
+        # its original level for endpointing and identity, without changing ASR
+        # or recording bytes. Two audible lanes retain their coherent mix.
+        audible = [values for values in lane_values.values() if any(values)]
+        analysis_pcm = None
+        if len(audible) == 1:
+            analysis_samples = [max(-32768, min(32767, int(value * 32768.0))) for value in audible[0]]
+            analysis_pcm = struct.pack("<" + "h" * len(analysis_samples), *analysis_samples)
         watermarks = self._watermarks(intervals_by_lane, safe_end_ns)
         diagnostics = LiveMixDiagnostics(
             start_timestamp_ns=cursor_ns,
@@ -285,6 +301,7 @@ class LiveCompatibilityMixer:
             pcm=pcm,
             sample_count=sample_count,
             sample_rate=LIVE_SAMPLE_RATE,
+            analysis_pcm=analysis_pcm,
         )
         return _StagedMix(frame=frame, diagnostics=diagnostics)
 
@@ -298,7 +315,9 @@ class LiveCompatibilityMixer:
         for index, item in enumerate(retained):
             frame = item.frame
             start_ns = frame.capture_timestamp_ns
-            if index + 1 < len(retained):
+            if frame.capture_end_timestamp_ns is not None:
+                end_ns = frame.capture_end_timestamp_ns
+            elif index + 1 < len(retained):
                 successor = retained[index + 1].frame
                 if successor.discontinuity:
                     end_ns = self._nominal_end_ns(item)
@@ -367,10 +386,8 @@ class LiveCompatibilityMixer:
         self,
         retained: tuple[RetainedLiveV2Frame, ...],
     ) -> int:
-        if len(retained) == 1:
-            return retained[0].frame.capture_timestamp_ns
         sealed = self._sealed_intervals(retained, final=False)
-        return sealed[-1].end_ns
+        return sealed[-1].end_ns if sealed else retained[0].frame.capture_timestamp_ns
 
     @staticmethod
     def _decode_pcm16(pcm: bytes) -> tuple[float, ...]:

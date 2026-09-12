@@ -50,6 +50,7 @@ export const V2_FRAME_KEYS = [
   "lane",
   "sequence",
   "capture_timestamp_ns",
+  "capture_end_timestamp_ns",
   "device_epoch",
   "pcm_base64",
   "sample_count",
@@ -72,6 +73,7 @@ export type V2Frame = {
   lane: CaptureLane;
   sequence: number;
   capture_timestamp_ns: number;
+  capture_end_timestamp_ns: number;
   device_epoch: number;
   pcm_base64: string;
   sample_count: number;
@@ -343,6 +345,7 @@ export function makeV2Frame(
     lane,
     sequence,
     capture_timestamp_ns: Math.round((startFrame / captureSampleRate) * 1e9),
+    capture_end_timestamp_ns: Math.round(((startFrame + samples.length) / captureSampleRate) * 1e9),
     device_epoch: deviceEpoch,
     pcm_base64: pcm16Base64(samples),
     sample_count: samples.length,

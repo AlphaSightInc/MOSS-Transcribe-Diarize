@@ -295,6 +295,7 @@ class AccountCookieLiveReplayService:
             "lane": lane,
             "sequence": frame.sequence,
             "capture_timestamp_ns": timestamp_ns,
+            "capture_end_timestamp_ns": timestamp_ns + round(frame.sample_count * 1e9 / frame.sample_rate),
             "device_epoch": 0,
             "pcm_base64": base64.b64encode(frame.pcm).decode("ascii"),
             "sample_count": frame.sample_count,

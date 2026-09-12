@@ -351,3 +351,15 @@ def test_v2_replay_store_prunes_oldest_ack_when_its_own_window_is_full():
     with pytest.raises(LiveV2PrunedReplayError) as raised:
         store.accept(first, ack_for)
     assert raised.value.pruned_through_sequence == 0
+
+
+def test_explicit_capture_end_roundtrips_without_changing_legacy_payloads():
+    payload = frame_payload(capture_end_timestamp_ns=125123)
+    assert LiveV2Frame.from_dict(payload).to_dict() == payload
+    assert LiveV2Frame.from_dict(frame_payload()).to_dict() == frame_payload()
+
+
+@pytest.mark.parametrize('end', [None, True, 123, 122, '456'])
+def test_explicit_capture_end_must_be_an_advancing_integer(end):
+    with pytest.raises(ValueError):
+        LiveV2Frame.from_dict(frame_payload(capture_end_timestamp_ns=end))

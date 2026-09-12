@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections import deque
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
 from moss_transcribe_diarize.transcript_parser import parse_transcript
@@ -323,6 +323,7 @@ class CoordinatorWorkInput:
     span: FrozenSpan
     pcm: bytes
     base_snapshot: LiveIdentitySnapshot
+    analysis_pcm: bytes | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -387,6 +388,7 @@ class LiveCoordinator:
         self.identity_preparer = identity_preparer
         self.arbiter = arbiter
         self._pcm = _PcmRetention()
+        self._analysis_pcm = _PcmRetention()
         self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
         self._abstention_count = 0
@@ -436,6 +438,12 @@ class LiveCoordinator:
             "abstention_count": self._abstention_count,
         }
 
+    @staticmethod
+    def _analysis_frame(frame: AudioFrame) -> AudioFrame:
+        if frame.analysis_pcm is None:
+            return frame
+        return replace(frame, pcm=frame.analysis_pcm, analysis_pcm=None)
+
     def preview_frame_work_items(self, frame: AudioFrame) -> int:
         if self._staged_frame is not None:
             if self._staged_frame.frame != frame:
@@ -447,7 +455,7 @@ class LiveCoordinator:
         start_sample = snapshot.accepted_samples
         end_sample = start_sample + frame.sample_count
         observations = self.speech_provider.observe(
-            frame=frame,
+            frame=self._analysis_frame(frame),
             start_sample=start_sample,
             end_sample=end_sample,
         )
@@ -468,6 +476,7 @@ class LiveCoordinator:
     def accept_frame(self, frame: AudioFrame) -> CoordinatorFrameResult:
         ack = self.session.accept_frame(frame)
         self._pcm.append(ack.start_sample, ack.end_sample, frame.pcm)
+        self._analysis_pcm.append(ack.start_sample, ack.end_sample, self._analysis_frame(frame).pcm)
         staged = self._staged_frame
         if staged is not None:
             if staged.frame != frame:
@@ -476,7 +485,7 @@ class LiveCoordinator:
             self._staged_frame = None
         else:
             observations = self.speech_provider.observe(
-                frame=frame,
+                frame=self._analysis_frame(frame),
                 start_sample=ack.start_sample,
                 end_sample=ack.end_sample,
             )
@@ -524,7 +533,10 @@ class LiveCoordinator:
             raise LiveCoordinatorError("canonical work span index is out of range.") from exc
         pcm = self._pcm.extract(span.start_sample, span.end_sample)
         base_snapshot = self.session.snapshot().identity_snapshot
-        return CoordinatorWorkInput(span=span, pcm=pcm, base_snapshot=base_snapshot)
+        return CoordinatorWorkInput(
+            span=span, pcm=pcm, base_snapshot=base_snapshot,
+            analysis_pcm=self._analysis_pcm.extract(span.start_sample, span.end_sample),
+        )
 
     def _canonical_work(self, item: ArbiterWorkItem) -> CanonicalWork:
         if item.kind != InferenceArbiter.LIVE_CANONICAL or not isinstance(item.payload, CanonicalWork):
@@ -569,7 +581,7 @@ class LiveCoordinator:
             on_decoded(span, transcript)
         preparation = self.identity_preparer.prepare(
             span=span,
-            pcm=pcm,
+            pcm=work.analysis_pcm if work.analysis_pcm is not None else pcm,
             transcript=transcript,
             base_snapshot=work.base_snapshot,
         )
@@ -632,6 +644,7 @@ class LiveCoordinator:
             self._abstention_count += int(identity_status == "abstain")
             self._capture_identity_counts()
             self._pcm.prune_before(snapshot.committed_samples)
+            self._analysis_pcm.prune_before(snapshot.committed_samples)
         revision = self._publish_identity_revision()
         # A base commit is the event that makes a window ownable: the witness may only revise
         # audio the session has already committed. This is one of the two `observe_base`

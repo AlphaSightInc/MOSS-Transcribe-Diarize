@@ -46,6 +46,8 @@ class AudioFrame:
     pcm: bytes
     sample_count: int
     sample_rate: int = LIVE_SAMPLE_RATE
+    # Internal mixer analysis only; decoder and recording always consume pcm.
+    analysis_pcm: bytes | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1223,6 +1225,11 @@ def _count_refusal(refusals: dict[str, int], reason: str, amount: int) -> None:
 def _validate_frame(frame: AudioFrame) -> None:
     if frame.sequence < 0:
         raise ValueError("frame sequence must be non-negative.")
+    if frame.analysis_pcm is not None and (
+        not isinstance(frame.analysis_pcm, bytes)
+        or len(frame.analysis_pcm) != len(frame.pcm)
+    ):
+        raise ValueError("analysis PCM must match the admitted audio extent.")
     if frame.sample_rate != LIVE_SAMPLE_RATE:
         raise ValueError(f"live audio must be {LIVE_SAMPLE_RATE} Hz PCM.")
     if frame.sample_count <= 0:

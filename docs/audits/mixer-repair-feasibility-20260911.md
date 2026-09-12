@@ -1,6 +1,6 @@
 # Mixer repair: two proposed shortcuts fail their necessary tests
 
-**The requested behavioral fixes are not implemented.** Real-encoder measurement
+**The corrected behavioral candidate is implemented; six-case qualification is pending.** Real-encoder measurement
 shows original PCM on the existing short windows still creates speaker 3. A
 terminal-style flush at canonical freeze changes already-committed audio under
 supported timestamp drift. Only an independently reproduced whole-frame-accounting
@@ -42,7 +42,7 @@ let the mixer seal without waiting for a successor; the browser already knows it
 audio-clock frame positions. This must be represented and validated in the lane
 contract and sent by the acceptance client too, rather than guessed inside the
 mixer. Stop already performs final sealing and full draining; it is not missing
-that operation. No new clock rule is shipped here.
+that operation. The candidate now accepts observed frame-end timestamps from browser/replay producers. Older frames keep successor-based sealing.
 
 ## F3 — Independent bookkeeping defect fixed
 
@@ -60,7 +60,9 @@ for the source audio, with measured ASR regression checks, plus **explicit frame
 timestamps** for early sealing. Preserve existing numeric policy and quality gates.
 Do not implement embedding-only normalization or reuse terminal flush during capture.
 
-The corrected raw-analysis candidate is being measured before implementation.
+The corrected raw-analysis prototype completed Adam before implementation: settled DER .097222, versus account .119889 and mono .091167; two speakers, two births, two admitted, no provisional-only identities. Final WER .133710 equals account; immediate .145009 differs by one error from account .143126.
+
+The implementation carries bounded analysis PCM alongside existing decoder PCM until canonical commitment. A sole audible lane retains original level; two audible lanes retain their existing coherent mix. Analysis drives speech detection and identity; decoder, draft, rolling, recording and terminal audio keep existing PCM. Explicit observed frame ends remove the successor hold without terminal-style flush. Ingress rejects overlap with a previously sealed end, even after source frames are released. A skewed arrival test also fences the newest explicit frame start before treating a missing peer as a gap.
 ASR retains its PCM gain and decoder; changed endpoint windows can nevertheless
 change WER. Any difference will be reported explicitly, not called unchanged.
 No six-case after result is claimed until a valid behavioral candidate exists.
@@ -68,7 +70,7 @@ No six-case after result is claimed until a valid behavioral candidate exists.
 ## Evidence
 
 [Prototype, commands and exact numerical results](../../prototypes/streaming-diarization/mixer-repair-feasibility/NOTES.md).
-The real encoder is local; no decoder requests, host operations or 17861 access.
+The original feasibility tests used only the local encoder. The corrected Adam prototype used the existing decoder tunnel; no host operations or 17861 access.
 The six-case before results remain in the accepted account-path differential report.
 Accounting-fix validation: 1,436 Python tests and 37 subtests passed, 2 existing
 skips. All 16 mixer tests pass. No frontend changes in this checkpoint.

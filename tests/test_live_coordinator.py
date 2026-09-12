@@ -371,3 +371,33 @@ def test_a_session_end_finalize_that_raises_is_named_rather_than_terminal():
 
     assert result.identity_revision_refusals == ((IDENTITY_FINALIZE_FAILED, 1),)
     assert session.snapshot().status == "active"
+
+
+@pytest.mark.parametrize('staged', [False, True])
+def test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned(staged):
+    class Identity(PreparingIdentity):
+        def prepare(self, **kwargs):
+            assert kwargs['pcm'] == b'rr' * 4000
+            return super().prepare(**kwargs)
+
+    live, decoder, arbiter, session = coordinator(speech=(), identity=Identity())
+    observed = []
+    class Speech:
+        def observe(self, *, frame, start_sample, end_sample):
+            observed.append(frame.pcm)
+            return (SpeechObservation(start_sample, end_sample, True),)
+    live.speech_provider = Speech()
+    audio = AudioFrame(0, b'dd' * 4000, 4000, analysis_pcm=b'rr' * 4000)
+    if staged:
+        live.preview_frame_work_items(audio)
+    live.accept_frame(audio)
+    item = arbiter.next_work()
+    work = live.capture_work_item(item)
+    assert work.pcm == b'dd' * 4000
+    assert work.analysis_pcm == b'rr' * 4000
+    assert observed == [b'rr' * 4000]
+    result = live.process_work_item(item)
+    assert result.submitted
+    assert decoder.calls == [((0, 4000), 8000, b'dd')]
+    assert not live._analysis_pcm._slices
+    assert not live._pcm._slices

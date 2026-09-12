@@ -1,0 +1,134 @@
+[
+  {
+    "case_id": "interview_adam_frank_180s",
+    "mode": "raw_analysis",
+    "performance_failure": null,
+    "scores": {
+      "pre_stop_immediate": {
+        "wer": 0.145009,
+        "tbsa": 0.879283,
+        "der": 0.111111,
+        "text_coverage": 0.890118,
+        "text_speaker_accuracy": 0.884985,
+        "content_recall": 0.926554,
+        "speaker_accuracy": 0.888889,
+        "matched_word_speaker_accuracy": 0.926554,
+        "reference_speech_der": 0.098124,
+        "reference_words": 531,
+        "hypothesis_words": 534,
+        "segments": 56
+      },
+      "pre_stop_settled": {
+        "wer": 0.131827,
+        "tbsa": 0.895694,
+        "der": 0.097222,
+        "text_coverage": 0.907605,
+        "text_speaker_accuracy": 0.902472,
+        "content_recall": 0.94162,
+        "speaker_accuracy": 0.902778,
+        "matched_word_speaker_accuracy": 0.94162,
+        "reference_speech_der": 0.083952,
+        "reference_words": 531,
+        "hypothesis_words": 543,
+        "segments": 57
+      },
+      "stop_return": {
+        "wer": 0.120527,
+        "tbsa": 0.909169,
+        "der": 0.085944,
+        "text_coverage": 0.921805,
+        "text_speaker_accuracy": 0.916672,
+        "content_recall": 0.951036,
+        "speaker_accuracy": 0.914056,
+        "matched_word_speaker_accuracy": 0.951036,
+        "reference_speech_der": 0.072445,
+        "reference_words": 531,
+        "hypothesis_words": 547,
+        "segments": 57
+      },
+      "post_stop_final": {
+        "wer": 0.13371,
+        "tbsa": 0.924491,
+        "der": 0.059611,
+        "text_coverage": 0.946652,
+        "text_speaker_accuracy": 0.941476,
+        "content_recall": 0.949153,
+        "speaker_accuracy": 0.940389,
+        "matched_word_speaker_accuracy": 0.949153,
+        "reference_speech_der": 0.047333,
+        "reference_words": 531,
+        "hypothesis_words": 552,
+        "segments": 35
+      }
+    },
+    "surface_observations": {
+      "pre_stop_immediate": {
+        "identity_counts": {
+          "emitted_speaker_count": 2,
+          "reference_speaker_count": 2,
+          "identities_born_count": 2,
+          "album_admitted_count": 2,
+          "provisional_only_count": 0,
+          "abstention_count": 0,
+          "unattributed_segment_count": 0
+        },
+        "finalization_status": "not_started",
+        "pending_work_items": 1,
+        "pending_span_count": 1,
+        "accepted_samples": 2880000,
+        "accounted_samples": 2827200,
+        "canonical_through_sample": 2720000,
+        "text_revision_version": 17,
+        "observed_monotonic_ns": 2282046930335125,
+        "wait": null
+      },
+      "pre_stop_settled": {
+        "identity_counts": {
+          "emitted_speaker_count": 2,
+          "reference_speaker_count": 2,
+          "identities_born_count": 2,
+          "album_admitted_count": 2,
+          "provisional_only_count": 0,
+          "abstention_count": 0,
+          "unattributed_segment_count": 0
+        },
+        "finalization_status": "not_started",
+        "pending_work_items": 0,
+        "pending_span_count": 0,
+        "accepted_samples": 2880000,
+        "accounted_samples": 2867200,
+        "canonical_through_sample": 2720000,
+        "text_revision_version": 17,
+        "observed_monotonic_ns": 2282047188063458,
+        "wait": {
+          "seconds": 0.257663,
+          "polls": 1,
+          "timeout_seconds": 30,
+          "drained": true,
+          "pending_rolling_work_items": 0
+        }
+      },
+      "post_stop_final": {
+        "identity_counts": {
+          "emitted_speaker_count": 2,
+          "reference_speaker_count": 2,
+          "identities_born_count": 2,
+          "album_admitted_count": 2,
+          "provisional_only_count": 0,
+          "abstention_count": 0,
+          "unattributed_segment_count": 0
+        },
+        "finalization_status": "final",
+        "pending_work_items": 0,
+        "pending_span_count": 0,
+        "accepted_samples": 2880000,
+        "accounted_samples": 2880000,
+        "canonical_through_sample": 2880000,
+        "text_revision_version": 19,
+        "observed_monotonic_ns": 2282054926728500,
+        "wait": null
+      }
+    },
+    "elapsed_seconds": 188.1180184171535
+  }
+]

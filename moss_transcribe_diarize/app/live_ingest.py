@@ -95,6 +95,7 @@ class _LaneState:
     retained_samples: int = 0
     current_device_epoch: int | None = None
     retained_frames: list[RetainedLiveV2Frame] = field(default_factory=list)
+    last_capture_end_timestamp_ns: int | None = None
 
 
 class LiveLaneIngress:
@@ -142,6 +143,9 @@ class LiveLaneIngress:
                 )
 
             self._check_epoch(frame, lane)
+            if (lane.last_capture_end_timestamp_ns is not None
+                    and frame.capture_timestamp_ns < lane.last_capture_end_timestamp_ns):
+                raise ValueError("capture timestamp overlaps an explicitly sealed frame.")
             self._check_capacity(frame, lane)
 
             start_sample = lane.accepted_samples
@@ -170,6 +174,7 @@ class LiveLaneIngress:
             lane.retained_samples = retained_samples
             lane.next_sequence += 1
             lane.current_device_epoch = frame.device_epoch
+            lane.last_capture_end_timestamp_ns = frame.capture_end_timestamp_ns
             return ack
 
     def retained_frames(self, lane: LiveLane | None = None) -> tuple[RetainedLiveV2Frame, ...]:

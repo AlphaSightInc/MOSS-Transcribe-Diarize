@@ -573,3 +573,68 @@ def test_partial_timestamp_stretched_frame_waits_for_complete_source_accounting(
     assert final is not None and final.frame.sample_count == 8_000
     assert mixer.admit_available('session-1', source, runtime, final=True) is None
     assert [f.sequence for f in runtime.frames] == [0, 1, 2]
+
+
+@pytest.mark.parametrize('audible_lane', [LiveLane.SYSTEM, LiveLane.MICROPHONE])
+def test_single_source_analysis_keeps_original_level_without_changing_decoder_pcm(audible_lane):
+    source = LiveV2Session(max_retained_samples=20000)
+    values = (-32768, -1234, 0, 1234, 32767) * 32
+    for lane in LiveLane:
+        for sequence in range(2):
+            source.accept(_values_frame(lane, sequence, sequence * 10000000, 16000,
+                values if lane == audible_lane else (0,) * 160, silent=lane != audible_lane))
+    result = LiveCompatibilityMixer().admit_available('test', source, _Runtime())
+    assert _pcm_values(result.frame.analysis_pcm) == values
+    assert _pcm_values(result.frame.pcm) == tuple(_encoded_sample(x) for x in values)
+
+
+def test_two_audible_sources_analysis_preserves_existing_mix():
+    result = LiveCompatibilityMixer().admit_available('test', _source_pair(), _Runtime())
+    assert result.frame.analysis_pcm is None
+    assert _pcm_values(result.frame.pcm) == (_encoded_sample(16384),) * 160
+
+
+def test_observed_frame_ends_release_canonical_boundary_without_changing_two_lane_alignment():
+    from dataclasses import replace
+    timestamps = (0, 500000000, 1000000000, 1500000000, 2000000000, 2500500000)
+    ends = (*timestamps[1:], 3000500000)
+    def run(explicit):
+        source = LiveV2Session(max_retained_samples=960000)
+        mixer, runtime = LiveCompatibilityMixer(max_output_samples=8000), _Runtime()
+        admitted = []
+        for sequence, timestamp in enumerate(timestamps):
+            for lane in LiveLane:
+                values = tuple(1000 + i % 6000 if lane == LiveLane.SYSTEM else -700 + i % 1200 for i in range(8000))
+                frame = _values_frame(lane, sequence, timestamp, 16000, values)
+                if explicit:
+                    frame = replace(frame, capture_end_timestamp_ns=ends[sequence])
+                source.accept(frame)
+                if explicit:
+                    while mixer.admit_available('test', source, runtime) is not None:
+                        pass
+            while mixer.admit_available('test', source, runtime) is not None:
+                pass
+            admitted.append(sum(frame.sample_count for frame in runtime.frames))
+        while mixer.admit_available('test', source, runtime, final=True) is not None:
+            pass
+        assert [frame.sequence for frame in runtime.frames] == list(range(len(runtime.frames)))
+        return b''.join(frame.pcm for frame in runtime.frames), admitted
+    baseline, before = run(False)
+    actual, after = run(True)
+    assert actual == baseline
+    assert before[4] == 32000
+    assert after[4] == 40008
+    assert after[-1] == 48008
+
+
+def test_explicit_frame_end_cannot_be_rewritten_after_source_accounting():
+    from dataclasses import replace
+    source = LiveV2Session(max_retained_samples=20000)
+    mixer, runtime = LiveCompatibilityMixer(), _Runtime()
+    for lane in LiveLane:
+        source.accept(replace(_frame(lane, 0, 0, 16000, 8000, 1000), capture_end_timestamp_ns=500000000))
+    assert mixer.admit_available('test', source, runtime) is not None
+    assert not source.retained_frames(LiveLane.SYSTEM)
+    with pytest.raises(ValueError, match='overlaps an explicitly sealed frame'):
+        source.accept(_frame(LiveLane.SYSTEM, 1, 499500000, 16000, 8000, 1000))
+    source.accept(_frame(LiveLane.SYSTEM, 1, 500000000, 16000, 8000, 1000))

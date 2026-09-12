@@ -236,12 +236,17 @@ class LiveV2Frame:
     sample_rate: int
     sample_count: int
     pcm: bytes
+    capture_end_timestamp_ns: int | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.lane, LiveLane):
             raise ValueError("lane must be a canonical v2 live lane.")
         _non_negative_int(self.sequence, "sequence")
         _non_negative_int(self.capture_timestamp_ns, "capture_timestamp_ns")
+        if self.capture_end_timestamp_ns is not None:
+            _non_negative_int(self.capture_end_timestamp_ns, "capture_end_timestamp_ns")
+            if self.capture_end_timestamp_ns <= self.capture_timestamp_ns:
+                raise ValueError("capture_end_timestamp_ns must follow capture_timestamp_ns.")
         _non_negative_int(self.device_epoch, "device_epoch")
         _exact_bool(self.silent, "silent")
         _exact_bool(self.discontinuity, "discontinuity")
@@ -255,7 +260,7 @@ class LiveV2Frame:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "LiveV2Frame":
         _assert_exact_keys(
-            payload,
+            {key: value for key, value in payload.items() if key != "capture_end_timestamp_ns"},
             {
                 "lane",
                 "sequence",
@@ -270,6 +275,10 @@ class LiveV2Frame:
             "v2 frame",
         )
         return cls(
+            capture_end_timestamp_ns=(
+                _required_int(payload["capture_end_timestamp_ns"], "capture_end_timestamp_ns")
+                if "capture_end_timestamp_ns" in payload else None
+            ),
             lane=_lane(payload["lane"]),
             sequence=_required_int(payload["sequence"], "sequence"),
             capture_timestamp_ns=_required_int(payload["capture_timestamp_ns"], "capture_timestamp_ns"),
@@ -283,6 +292,8 @@ class LiveV2Frame:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            **({"capture_end_timestamp_ns": self.capture_end_timestamp_ns}
+               if self.capture_end_timestamp_ns is not None else {}),
             "lane": self.lane.value,
             "sequence": self.sequence,
             "capture_timestamp_ns": self.capture_timestamp_ns,
