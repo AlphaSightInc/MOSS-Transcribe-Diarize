@@ -570,6 +570,9 @@ def test_live_load_success_reaches_authoritative_result_projection(tmp_path, mon
         ),
     ]
 
+    for seq, event in enumerate(events):
+        event.seq = seq
+
     class Adapter:
         def __init__(self, **kwargs: object) -> None:
             del kwargs
@@ -596,9 +599,9 @@ def test_live_load_success_reaches_authoritative_result_projection(tmp_path, mon
             )
             return SimpleNamespace(session=session)
 
-        def events(self, session_id: str):
+        def events(self, session_id: str, since_seq=0):
             del session_id
-            return events
+            return [event for event in events if event.seq >= since_seq]
 
         async def abort(self, session_id: str, reason: str):
             del session_id, reason

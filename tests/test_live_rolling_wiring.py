@@ -804,3 +804,29 @@ def _refinement_item(coordinator: LiveCoordinator, arbiter: InferenceArbiter, *,
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_capacity_event_capture_retains_all_600_seconds_past_product_ring_limit():
+    from moss_transcribe_diarize.phase2_acceptance_external import _LoadEventCapture
+    from moss_transcribe_diarize.concurrency_evidence import prestop_inference_projection
+
+    base, witness = _decoders(rolling=True)
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(base=base, rolling=witness, scheduler=scheduler)
+    session_id = runtime.create().session_id
+    capture = _LoadEventCapture()
+    for sequence in range(1200):
+        runtime.accept_frame(session_id, AudioFrame(
+            sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES,
+            sample_count=FRAME_SAMPLES,
+        ))
+        scheduler.drain()
+        capture.read(runtime, session_id)
+    asyncio.run(runtime.stop(session_id, 5.0))
+    capture.read(runtime, session_id)
+    assert len(runtime.events(session_id)) == 1000
+    assert len(capture.events) > 1000
+    result = prestop_inference_projection(capture.events, accepted_audio_seconds=600)
+    assert result["canonical_processed_items"] == 240
+    assert result["rolling_completed_items"] == 60
+    assert abs(result["decode_seconds"] - 3.0) < 1e-9

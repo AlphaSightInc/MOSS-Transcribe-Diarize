@@ -62,6 +62,7 @@ class AccountCookieLiveReplayService:
         self._cookie = cookie
         self._frame_samples: dict[str, int] = {}
         self._heartbeat_sequence: dict[str, int] = {}
+        self.stop_observations: dict[str, dict[str, object]] = {}
 
     def descriptor(self):
         """Read the authenticated production descriptor without creating a Meeting."""
@@ -157,8 +158,49 @@ class AccountCookieLiveReplayService:
             f"/api/live/sessions/{self._quoted(session_id)}/stop",
             {"deadline": float(deadline)},
         )
+        if payload.get("code") == "stop_in_progress":
+            payload = await self._await_stop_publication(session_id)
         self._forget(session_id)
         return _snapshot_from_dict(payload["snapshot"])
+
+    async def _await_stop_publication(self, session_id: str) -> dict[str, Any]:
+        # HTTP 202 is an accepted Stop, not a drained session. Reuse this producer's
+        # existing request budget for observation; never alter the browser's drain deadline.
+        started = time.monotonic()
+        end = started + self._timeout_seconds
+        observation: dict[str, object] = {
+            "session_id": session_id, "initial_code": "stop_in_progress",
+            "deadline_seconds": self._timeout_seconds, "polls": 0, "settled": False,
+        }
+        self.stop_observations[session_id] = observation
+        try:
+            while True:
+                remaining = end - time.monotonic()
+                if remaining <= 0:
+                    raise AccountReplayTransportFailure(
+                        "accepted Stop did not publish terminal state within observation deadline",
+                        http_status=202,
+                    )
+                payload = await asyncio.to_thread(
+                    self._json, "GET",
+                    f"/api/live/sessions/{self._quoted(session_id)}/snapshot",
+                    timeout_seconds=remaining,
+                )
+                observation["polls"] += 1
+                value = payload.get("snapshot")
+                if value is not None:
+                    snapshot = _snapshot_from_dict(value)
+                    status = snapshot.session.status
+                    finalization = snapshot.session.finalization_status
+                    observation.update(status=status, finalization_status=finalization)
+                    if status in {"aborted", "failed"} or (
+                        status == "closed" and finalization != "running"
+                    ):
+                        observation["settled"] = True
+                        return payload
+                await asyncio.sleep(min(0.25, max(0.0, end - time.monotonic())))
+        finally:
+            observation["wait_seconds"] = time.monotonic() - started
 
     async def abort(self, session_id: str, reason: str) -> LiveServiceSnapshot:
         payload = await asyncio.to_thread(
@@ -219,7 +261,8 @@ class AccountCookieLiveReplayService:
         self._heartbeat_sequence.pop(session_id, None)
 
     def _json(
-        self, method: str, path: str, payload: dict[str, object] | None = None
+        self, method: str, path: str, payload: dict[str, object] | None = None,
+        *, timeout_seconds: float | None = None,
     ) -> dict[str, Any]:
         data = None
         headers = {"Accept": "application/json", "Cookie": f"{SESSION_COOKIE}={self._cookie}"}
@@ -230,7 +273,7 @@ class AccountCookieLiveReplayService:
             self._base_url + path, data=data, headers=headers, method=method
         )
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout_seconds) as response:
+            with urllib.request.urlopen(request, timeout=self._timeout_seconds if timeout_seconds is None else min(self._timeout_seconds, timeout_seconds)) as response:
                 envelope = json.loads(response.read())
         except urllib.error.HTTPError as exc:
             body = exc.read()

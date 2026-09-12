@@ -60,6 +60,23 @@ class ExternalMeasurementError(RuntimeError):
     """A fixed measurement ran but did not produce trustworthy product state."""
 
 
+class _LoadEventCapture:
+    """Drain the bounded product event ring throughout capture, with no silent gaps."""
+
+    def __init__(self):
+        self.next_seq = 0
+        self.events: list[dict[str, Any]] = []
+
+    def read(self, adapter, session_id):
+        for event in adapter.events(session_id, since_seq=self.next_seq):
+            if event.seq != self.next_seq:
+                raise ExternalMeasurementError(
+                    f"live load event gap: expected seq={self.next_seq}, observed={event.seq}"
+                )
+            self.events.append(event.to_dict())
+            self.next_seq += 1
+
+
 class _CrashRecoveryOps:
     def __init__(self, client):
         self.client = client
@@ -2208,6 +2225,7 @@ class FixedAccountCampaign:
             probe = AccountHttpClient(self.origin, cookie_paths[1 - owner])
             session_id: str | None = None
             terminal = False
+            captured_events = _LoadEventCapture()
             try:
                 descriptor = adapter.descriptor()
                 frame_samples = descriptor.frame_samples
@@ -2244,6 +2262,7 @@ class FixedAccountCampaign:
                         if backpressure is None
                         else backpressure.accept(index, adapter, session_id, frame)
                     )
+                    captured_events.read(adapter, session_id)
                     maximum_pending = max(maximum_pending, last_snapshot.pending_work_items)
                     response = probe.request(
                         "GET", f"/api/live/sessions/{session_id}/snapshot"
@@ -2264,8 +2283,8 @@ class FixedAccountCampaign:
                         cross_sentinel_deliveries += foreign_matches
                 stopped = asyncio.run(adapter.stop(session_id, ACCEPTANCE_STOP_DEADLINE_SECONDS))
                 terminal = True
-                events = adapter.events(session_id)
-                payloads = [event.to_dict() for event in events]
+                captured_events.read(adapter, session_id)
+                payloads = captured_events.events
                 lags = [
                     max(
                         0.0,
@@ -2310,6 +2329,15 @@ class FixedAccountCampaign:
                 with lock:
                     failures.append(type(exc).__name__)
             finally:
+                if session_id is not None:
+                    self._artifact_json(f"load-{sessions}/session-{index + 1}-events.json", {
+                        "session_id": session_id, "next_seq": captured_events.next_seq,
+                        "events": [_diagnostic_event(event) for event in captured_events.events
+                                   if event.get("kind") in _DIAGNOSTIC_EVENT_KINDS],
+                    })
+                    wait = getattr(adapter, "stop_observations", {}).get(session_id)
+                    if wait is not None:
+                        self._artifact_json(f"load-{sessions}/session-{index + 1}-stop-wait.json", wait)
                 probe.close()
                 if session_id is not None and not terminal:
                     try:
