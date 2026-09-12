@@ -36,65 +36,35 @@ The browser sends the transcript through authenticated same-origin `/api/llm/cha
 
 Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
-## 2. Provisional gate state — round 12, candidate `e03d6a31`
+## 2. State of the gates (round 14, candidate `057a547c`)
 
-**Latest COMPLETE qualification; handoff condition NOT MET.** Candidate
-`e03d6a310f86c3db0292ae3de0e784270e01f288`. This is the measured round-12 result,
-not qualification of the current branch or a preadmission certificate. The round
-ended **restored, admitted=false, G7 UNCLAIMED**. Its unattended `pre_admission`
-measurement layer is not the attended canary. Phase-1's restoration at that time
-must not be confused with its later disk-incident outage.
-
-Sources: round-12 report: `/tmp/moss-round12-stage/result/report.md` — MacStudio-local (not in repo)
-and per-case CSV: `/tmp/moss-round12-stage/result/quality-per-case.csv` — MacStudio-local (not in repo). The CSV has
-24 observations: six cases, two passes, two layers. Numbers and strict/exception
-marks below retain the report's precision without rounding or recomputing verdicts.
-
-| Layer | Collected | Passed | Failed | Unmeasured |
-|---|---:|---:|---:|---:|
-| Deterministic commands | 18 | 17 | 1 | 0 |
-| deployed predicates | 19 | 16 | 3 | 0 |
+| layer | collected | passed | failed | unmeasured |
+|---|---|---|---|---|
+| Deterministic commands | 18 | 18 | 0 | 0 |
+| deployed predicates | 19 | 17 | 2 | 0 |
 | pre_admission predicates | 17 | 14 | 3 | 0 |
 
-Python: 1,595 collected, 1,593 executed, 1,592 passed, one failed, two skipped,
-zero unmeasured. Frontend: 202 collected/executed/passed, zero failed/skipped/unmeasured.
-All 48 main quality/capacity/overload sessions finalized. These facts do not turn
-failed predicates into passes.
-
-### Eight quality macros
-
-Strict bounds are unchanged. **Strict** means the original bound passed;
-**exception** means only the pre-approved 5% relative band passed. Speaker metrics
-use the settled surface. Both layers have **5/8 strict, 8/8 within the band**.
-
-| Metric | Strict bound | 5% limit | Deployed | pre_admission |
-|---|---:|---:|---|---|
+| macro | bound | 5 % limit | deployed | pre-admission |
+|---|---|---|---|---|
 | final_wer | ≤0.095074000 | 0.099827700 | 0.091705333 **strict** | 0.091705333 **strict** |
-| immediate_wer | ≤0.166655000 | 0.174987750 | 0.165072333 **strict** | 0.165072333 **strict** |
-| settled_wer | ≤0.140442000 | 0.147464100 | 0.135817167 **strict** | 0.135817167 **strict** |
-| diarization_error_rate | ≤0.161430000 | 0.169501500 | 0.162678500 **exception** | 0.162678583 **exception** |
-| reference_speech_der | ≤0.134804000 | 0.141544200 | 0.135727250 **exception** | 0.135727500 **exception** |
-| recall | ≥0.929636000 | 0.883154200 | 0.930811250 **strict** | 0.930811250 **strict** |
-| matched_speaker_accuracy | ≥0.911512000 | 0.865936400 | 0.911188083 **exception** | 0.911188083 **exception** |
-| time_speaker_attribution | ≥0.876970000 | 0.833121500 | 0.877656000 **strict** | 0.877656000 **strict** |
+| immediate_wer | ≤0.166655000 | 0.174987750 | 0.164927167 **strict** | 0.165072333 **strict** |
+| settled_wer | ≤0.140442000 | 0.147464100 | 0.135672000 **strict** | 0.135817167 **strict** |
+| diarization_error_rate | ≤0.161430000 | 0.169501500 | 0.162635750 **exception** | 0.162618333 **exception** |
+| reference_speech_der | ≤0.134804000 | 0.141544200 | 0.135679583 **exception** | 0.135663583 **exception** |
+| recall | ≥0.929636000 | 0.883154200 | 0.930956500 **strict** | 0.930811250 **strict** |
+| matched_speaker_accuracy | ≥0.911512000 | 0.865936400 | 0.911333250 **exception** | 0.911188083 **exception** |
+| time_speaker_attribution | ≥0.876970000 | 0.833121500 | 0.877720667 **strict** | 0.877703250 **strict** |
+
+Failed predicates: `account_product_regression` (deployed), `account_product_regression` (pre_admission), `meeting_modes_history_restart` (pre_admission), `quality_corpus` (deployed), `quality_corpus` (pre_admission)
 
 The exception set is exactly **diarization_error_rate, reference_speech_der,
 matched_speaker_accuracy**, in each layer. `quality_corpus` still failed strict
 evaluation in both layers; no exception was silently applied to its verdict.
 QUALITY_BOUNDS and identity policy remain unchanged.
 
-### Two non-exempt blockers and committed fixes
+Two harness defects remained (account_product_regression AttributeError at phase2_acceptance_browser.py:401; pre-admission meeting_modes_history_restart one_item_failure_isolated=false); fixes in progress; round 15 is the confirmation run.
 
-| Blocker | Round-12 failure | Fix; confirmation still required |
-|---|---|---|
-| Copied Playwright driver permissions | Python's `test_headless_background_uses_real_hidden_state_and_post_hidden_requests`, plus `account_product_regression` in both layers, raised `PermissionError` before browser launch. `copytree` preserved read-only permissions, then the helper tried to write `coreBundle.js`. | `0fa7f04e` makes the disposable copied focus bundle writable. |
-| Overload evaluator | `eight_session_overload` failed in both layers: the evaluator required `requested == 30` although the probe requested **120.5 s**. All eight sessions finalized per layer with accepted=accounted=**1,928,000** samples each. | `52b0ece4` derives duration from declared lane capacity; `0f68d910` requires every overload session to finalize without failure. |
-
-These two blockers plus strict `quality_corpus` explain each layer's three failed
-predicates; the copied-driver defect also explains the deterministic failure.
-The fixes are on the branch, but round 12 did not measure them.
-
-**Confirmation pending:** Round 13 (0f68d910) is the confirmation run of these two fixes; it was interrupted by the host disk incident on 2026-09-12 and must be rerun before preadmission.
+Source: [round-14 report, sanitized copy](../evidence/round-reports/round-14.md). Handoff condition **NOT MET**; terminal **restored**, admitted=false, G7 UNCLAIMED. All 48 main sessions finalized.
 
 ## 3. What changed since the 2026-09-10 plan (on the branch; validation scoped by the cited audit)
 

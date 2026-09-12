@@ -46,3 +46,7 @@ Copied reports' companion links are converted to labelled local paths unless the
 companion was separately reviewed and copied. The handback's audit index uses only
 repository-relative links. No product, test, build, bound or policy file changed;
 no host operation was performed.
+
+## Round 14 — sanitized copy
+
+[Round 14](round-14.md) preserves all numbers and verdicts. Name-bearing corpus IDs were replaced with consistent neutral case numbers, explicitly labelled as sanitization; the original report remains MacStudio-local. Reviewed remaining prose, tables and JSON: statuses, measurements, opaque session IDs, technical paths and token-free service origins only. No transcript/prompt text, audio, screenshots or credential values copied. Companion links are annotated local paths.
