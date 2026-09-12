@@ -1,0 +1,11 @@
+{
+  "case": "rtx4090-relay",
+  "status": 502,
+  "seconds": 20.08,
+  "content_chars": 0,
+  "reasoning_chars": 0,
+  "summary": null,
+  "finish_reason": null,
+  "usage": null,
+  "error": "empty_content"
+}

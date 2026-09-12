@@ -22,10 +22,15 @@ certificate, proxy configuration, or running service was changed by this feature
 - **R2 — Routing:** `POST /api/llm/chat/completions` accepts only `model`, `messages`,
   optional `max_tokens`, and optional `temperature`. Unknown models return 404
   `unknown_model`. A request cannot supply a URL, key, streaming mode, or cookies
-  to an upstream. The server adds `stream:false`; tokens default to 1024 and cap at 4096.
+  to an upstream. The server adds `stream:false`; valid positive token budgets default/floor to 2048 and cap at 4096.
+  The frontend explicitly requests 2048 for summaries. The relay sends
+  `chat_template_kwargs: {"enable_thinking": false}`; configured upstreams must support
+  this chat-template option (verified against both deployments in the example above).
 - **R3 — Failure:** upstream transport/timeout errors return 502 `upstream_unreachable`;
   HTTP/invalid-JSON errors return 502 `upstream_error`; missing/blank answer content returns
-  502 `empty_content`, even when reasoning content exists. Nonempty answer JSON is passed
+  502 `empty_content`. A reasoning-only response gets exactly one fresh attempt with
+  thinking disabled, within the original 180-second deadline. Both-empty responses
+  fail immediately; reasoning is never substituted for the answer. Nonempty answer JSON is passed
   through, including reasoning fields. No prompt, response, or raw exception is journaled.
 - **R4 — Fallback:** the browser retries once with the next listed model after those
   relay errors, within the same summary attempt. It does not cycle through the list or

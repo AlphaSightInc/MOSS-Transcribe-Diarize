@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "model": "qwen/qwen3.6-35b-a3b",
+      "checks": {
+        "http_200": true,
+        "current": true,
+        "budget_2048": true,
+        "exact_transcript": true,
+        "current_default_prompt": true
+      }
+    },
+    {
+      "model": "qwen38-27b-mtp",
+      "checks": {
+        "http_200": true,
+        "current": true,
+        "budget_2048": true,
+        "exact_transcript": true,
+        "current_default_prompt": true
+      }
+    }
+  ],
+  "sqlite": "3.50.4",
+  "browser": "153.0.8010.37",
+  "stack": "disposable patched production app; real tailnet upstreams"
+}

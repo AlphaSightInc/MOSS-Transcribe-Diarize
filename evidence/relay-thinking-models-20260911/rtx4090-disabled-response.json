@@ -1,0 +1,38 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"summary\": \"Javier Milei, the president of Argentina, is identified as a libertarian and economist who campaigned using a chainsaw to symbolize his intent to dismantle the state bureaucracy.\",\n  \"topics\": [\n    {\n      \"title\": \"Political Symbolism and Economic Ideology\",\n      \"description\": \"The introduction characterizes Milei as a libertarian and economist, linking his political identity to a specific campaign tactic: the use of a chainsaw. This object is presented as a direct symbol of his promise to cut back the corrupt state bureaucracy, establishing his governance approach as one of aggressive reduction of government presence.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Campaign Symbolism\",\n      \"description\": \"The speaker notes that Milei campaigned with a chainsaw, which he used to symbolize his promise to slash the corrupt bureaucracy of the state.\",\n      \"timestamp\": \"00:00:13\"\n    }\n  ],\n  \"speaker_background\": [\n    \"S01: Narrator introducing Javier Milei as the president of Argentina, a libertarian, and an economist.\"\n  ],\n  \"data_references\": []\n}"
+      }
+    }
+  ],
+  "created": 1789171304,
+  "model": "qwen38-27b-mtp",
+  "system_fingerprint": "b9873-a4107133a",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 258,
+    "prompt_tokens": 1817,
+    "total_tokens": 2075,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "id": "chatcmpl-I3thL2zoAmhd5FVyKuzfADGMXjhfEuTk",
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 1817,
+    "prompt_ms": 1837.22,
+    "prompt_per_token_ms": 1.0111282333516787,
+    "prompt_per_second": 988.9942412993546,
+    "predicted_n": 258,
+    "predicted_ms": 4031.606,
+    "predicted_per_token_ms": 15.62637984496124,
+    "predicted_per_second": 63.99434865410955,
+    "draft_n": 170,
+    "draft_n_accepted": 148
+  }
+}

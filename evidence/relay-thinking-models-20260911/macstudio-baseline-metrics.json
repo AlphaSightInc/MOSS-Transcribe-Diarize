@@ -1,0 +1,18 @@
+{
+  "case": "macstudio-baseline",
+  "status": 200,
+  "seconds": 3.43,
+  "content_chars": 1005,
+  "reasoning_chars": 0,
+  "summary": "Javier Milei, the president of Argentina, is characterized as a libertarian economist who campaigned on a platform of drastically reducing state bureaucracy, symbolized by his use of a chainsaw.",
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 1817,
+    "completion_tokens": 249,
+    "total_tokens": 2066,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "error": null
+}

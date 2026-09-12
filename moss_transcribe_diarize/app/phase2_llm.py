@@ -90,7 +90,7 @@ class LlmRelay:
         upstream = next((u for u in self.upstreams if model in u.models), None)
         if upstream is None:
             raise HTTPException(404, "unknown_model")
-        tokens = body.get("max_tokens", 1024)
+        tokens = body.get("max_tokens", 2048)
         if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
             raise HTTPException(400, "invalid_request")
         if "temperature" in body:
@@ -98,27 +98,39 @@ class LlmRelay:
             if (isinstance(temperature, bool) or not isinstance(temperature, (int, float))
                     or not math.isfinite(temperature)):
                 raise HTTPException(400, "invalid_request")
-        payload = {**body, "max_tokens": min(tokens, 4096), "stream": False}
+        payload = {**body, "max_tokens": max(2048, min(tokens, 4096)), "stream": False,
+                   "chat_template_kwargs": {"enable_thinking": False}}
+
+        async def request_answer(client: httpx.AsyncClient) -> Any:
+            for attempt in range(2):
+                response = await client.post(f"{upstream.base_url}/chat/completions", json=payload)
+                if not response.is_success:
+                    raise HTTPException(502, "upstream_error")
+                try:
+                    result = response.json()
+                except ValueError:
+                    raise HTTPException(502, "upstream_error") from None
+                try:
+                    message = result["choices"][0]["message"]
+                    content = message.get("content")
+                    reasoning = message.get("reasoning_content")
+                except (KeyError, IndexError, TypeError, AttributeError):
+                    content = reasoning = None
+                if isinstance(content, str) and content.strip():
+                    return result
+                # Some thinking servers still reason despite the template hint.
+                # One fresh disabled-thinking attempt, never reasoning as an answer.
+                if attempt == 0 and isinstance(reasoning, str) and reasoning.strip():
+                    continue
+                raise HTTPException(502, "empty_content")
+
         try:
             async with httpx.AsyncClient(transport=self.transport, timeout=180,
                                          follow_redirects=False, trust_env=False) as client:
-                response = await wait_for(
-                    client.post(f"{upstream.base_url}/chat/completions", json=payload), timeout=180)
+                return await wait_for(request_answer(client), timeout=180)
         except (httpx.RequestError, asyncio.TimeoutError):
             raise HTTPException(502, "upstream_unreachable") from None
-        if not response.is_success:
-            raise HTTPException(502, "upstream_error")
-        try:
-            result = response.json()
-        except ValueError:
-            raise HTTPException(502, "upstream_error") from None
-        try:
-            content = result["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError):
-            content = None
-        if not isinstance(content, str) or not content.strip():
-            raise HTTPException(502, "empty_content")
-        return result
+
 
 
 def attach_llm_routes(app: Any, require_account: Any, raw: str | None = None) -> None:

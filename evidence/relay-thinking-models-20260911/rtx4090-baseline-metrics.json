@@ -1,0 +1,18 @@
+{
+  "case": "rtx4090-baseline",
+  "status": 200,
+  "seconds": 20.41,
+  "content_chars": 0,
+  "reasoning_chars": 5073,
+  "summary": null,
+  "finish_reason": "length",
+  "usage": {
+    "completion_tokens": 1024,
+    "prompt_tokens": 1853,
+    "total_tokens": 2877,
+    "prompt_tokens_details": {
+      "cached_tokens": 1719
+    }
+  },
+  "error": null
+}

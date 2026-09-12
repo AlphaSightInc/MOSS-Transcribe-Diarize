@@ -105,7 +105,7 @@ export function validateSummary(value: unknown, duration: number): SummaryDocume
 
 export function providerBody(meeting: Meeting, settings: SummarySettings): string {
   if (meeting.status !== "completed" || !meeting.transcript?.segments.some(s => s.text.trim())) throw new Error("Finalized speech is required.");
-  return JSON.stringify({ model: settings.model, ...(settings.endpoint === RELAY_ENDPOINT ? {} : { stream: false }), messages: [
+  return JSON.stringify({ model: settings.model, max_tokens: 2048, ...(settings.endpoint === RELAY_ENDPOINT ? {} : { stream: false }), messages: [
     { role: "system", content: `${settings.prompt}${settings.language.trim() ? `\nWrite the final briefing in ${settings.language.trim()}.` : ""}` },
     { role: "user", content: JSON.stringify({ segments: meeting.transcript.segments.map(s => ({ start: s.start, end: s.end, speaker: s.speaker, text: s.text })) }) }
   ] });

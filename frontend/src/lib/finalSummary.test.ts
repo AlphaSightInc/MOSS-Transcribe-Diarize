@@ -60,6 +60,7 @@ it("keeps settings local, blank disables, rejects own-origin/provider URL creden
 
 it("sends only projected final transcript and browser parameters, never meeting IDs/history/audio", () => {
   const body = providerBody(meeting(), settings());
+  expect(JSON.parse(body).max_tokens).toBe(2048);
   expect(body).toContain("ONLY A TRANSCRIPT"); expect(body).toContain("MY MODEL"); expect(body).toContain("MY PROMPT");
   for (const forbidden of ["MY SECRET", "private-meeting", "private-segment", "private-canonical", "PRIVATE TITLE", "audio", "ONLY B TRANSCRIPT"]) expect(body).not.toContain(forbidden);
   expect(() => providerBody({ ...meeting(), status: "active" }, settings())).toThrow();
@@ -172,7 +173,8 @@ it("allows only the exact same-origin relay endpoint and never stores a relay ke
     expect(() => validateSettings({ ...settings(), endpoint })).toThrow();
   }
   const body = JSON.parse(providerBody(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT }));
-  expect(Object.keys(body).sort()).toEqual(["messages", "model"]);
+  expect(Object.keys(body).sort()).toEqual(["max_tokens", "messages", "model"]);
+  expect(body.max_tokens).toBe(2048);
 });
 
 it("defaults fresh settings to the first relay model but preserves explicit external settings", async () => {

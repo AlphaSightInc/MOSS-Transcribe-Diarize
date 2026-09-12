@@ -1,0 +1,48 @@
+{
+  "python": {
+    "passed": 1363,
+    "skipped": [
+      {
+        "test": "tests.test_live_identity_real_corpus.test_available_external_real_corpus_matches_the_adopted_hashes",
+        "reason": "operator-owned real identity corpus is not provisioned"
+      },
+      {
+        "test": "tests.test_live_speaker_accuracy.test_f_cert_real_corpus_contract_is_exact",
+        "reason": "real F-cert corpus is not provisioned in this clean worktree"
+      }
+    ],
+    "subtests_passed": 37,
+    "failures": 0,
+    "seconds": 83.94
+  },
+  "frontend": {
+    "passed": 195,
+    "failures": 0,
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "browser": {
+    "real_models": {
+      "passed": 10,
+      "total": 10
+    },
+    "fake_relay": {
+      "passed": 7,
+      "total": 7
+    },
+    "external_https": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "post_rebase": {
+    "incoming_commit": "ee52440d",
+    "files": [
+      "tests/phase2/test_account_deployment_surface.py",
+      "tests/phase2/test_llm_relay.py"
+    ],
+    "passed": 61,
+    "failures": 0,
+    "seconds": 11.05
+  }
+}

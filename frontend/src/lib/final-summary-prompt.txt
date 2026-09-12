@@ -75,7 +75,9 @@ OUTPUT
 Return one raw, valid JSON object only. The first character must be { and the last must be }.
 Use double quotes around every property name and string. Do not use markdown fences, comments,
 trailing commas, or introductory text. Use exactly these five keys. This valid empty skeleton
-shows the required top-level types; populate it with supported content:
+shows the required top-level types; populate it with supported content. The completed summary must
+never be empty: for an introduction-only transcript, briefly state who or what is introduced
+and that the excerpt provides no substantive discussion beyond that introduction:
 
 {
   "summary": "",

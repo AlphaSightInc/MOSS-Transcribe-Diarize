@@ -1,0 +1,34 @@
+{
+  "state": "current",
+  "document": {
+    "summary": "This transcript is a brief introduction of Javier Malé, described as the president of Argentina. The narrator characterizes Malé as a libertarian, a narco-capitalist, and an economist whose campaign symbolically featured a chainsaw to represent the promise to cut bureaucratic corruption.",
+    "topics": [
+      {
+        "title": "Political Ideology and Symbolism",
+        "description": "The narrator identifies Malé’s political stance as libertarian and 'narco-capitalist' and links his campaign imagery (the chainsaw) to a specific policy intent: the reduction of state bureaucracy."
+      },
+      {
+        "title": "Professional Background",
+        "description": "The introduction explicitly establishes Malé’s professional identity as an economist, providing context for his economic and political positioning."
+      }
+    ],
+    "details": [
+      {
+        "title": "Introduction of the Subject",
+        "description": "The speaker introduces Javier Malé as the president of Argentina.",
+        "timestamp": "00:00:00"
+      },
+      {
+        "title": "Description of Campaign Symbolism",
+        "description": "The narrator explains that Malé campaigned with a chainsaw, a symbol for his promise to slash corrupt state bureaucracy.",
+        "timestamp": "00:00:05"
+      }
+    ],
+    "speaker_background": [],
+    "data_references": []
+  },
+  "attempt_id": "dYz9gwdA30xpsG-H7aYQXnam",
+  "source_version": 1,
+  "artifact_version": 2,
+  "error_code": null
+}

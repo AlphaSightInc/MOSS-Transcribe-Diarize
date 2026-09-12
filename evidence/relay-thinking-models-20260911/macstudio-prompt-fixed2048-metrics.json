@@ -1,0 +1,18 @@
+{
+  "case": "macstudio-prompt-fixed2048",
+  "status": 200,
+  "seconds": 3.99,
+  "content_chars": 837,
+  "reasoning_chars": 0,
+  "summary": "The transcript introduces Javier Milei, the president of Argentina, characterizing him as a libertarian economist who utilized a chainsaw as a campaign symbol to represent his promise to dismantle state bureaucracy.",
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 1852,
+    "completion_tokens": 195,
+    "total_tokens": 2047,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "error": null
+}

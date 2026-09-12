@@ -58,3 +58,21 @@ quality, or host configuration is implied by the local tests.
 Measured prototype and integration record:
 `prototypes/client-configured-llm/relay-NOTES.md`. Operator configuration:
 `docs/llm-relay.md`.
+
+### 2026-09-11 thinking-model response boundary
+
+The relay floors/defaults positive completion budgets to 2048 (cap 4096), sends
+`chat_template_kwargs.enable_thinking=false`, and permits one retry only for a
+reasoning-only response. Both attempts share the original 180-second deadline.
+Both configured deployments accepted the option; RTX's exact summary request
+previously exhausted 1024 tokens entirely on reasoning. Frontend summaries now
+explicitly request 2048. Reasoning remains separate from answer content.
+
+A distinct MacStudio failure produced valid outer answer content but an empty inner
+summary. The default prompt now explicitly requires a grounded nonempty summary
+for introduction-only transcripts. The accepted V15 bench prompt remains unchanged;
+the parity test permits only this measured clarification. Saved browser prompts
+remain untouched: choose **Restore default prompt**, then **Save on this browser**
+to adopt the clarification after deployment. Existing user-customized prompts
+retain their own output-quality risks. Evidence and limitations:
+`docs/audits/relay-thinking-models-20260911.md`.

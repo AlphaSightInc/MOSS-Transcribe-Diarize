@@ -267,3 +267,7 @@ non-gating. The operator selected V15 and closed T-33 on 2026-08-27; no Phase-2 
 written. Full output:
 `final-summary-iteration-15.json` and `final-summary-iteration-15.md`; complete history:
 `final-summary-prompt-iterations.md`.
+
+## 2026-09-11 thinking-model replay
+
+Question: can the configured upstreams return answer content without spending the completion budget thinking? Falsifier: rejected option or continued reasoning-only result. Exact live replay measured RTX 1024-token exhaustion with 5073 reasoning characters and no answer; changing only chat_template_kwargs.enable_thinking=false produced 1090 answer characters and zero reasoning. Both deployed upstreams accepted the option. At 2048, MacStudio still produced an empty inner summary, proving that prompt/schema ambiguity is separate. Raw evidence and verdict: docs/audits/relay-thinking-models-20260911.md. Replay driver absorbed into opt-in `thinking_request_probe.py` (fresh output directory required); `thinking_browser_probe.py` exercises the patched production app and real upstreams with disposable workspace/browser state. Both commands are in their module docstrings.

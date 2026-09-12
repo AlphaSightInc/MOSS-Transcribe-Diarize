@@ -58,7 +58,7 @@ def test_routing_auth_config_discovery_and_token_bounds(tmp_path, caplog):
         assert client.get("/api/llm/models").json() == {"data": [
             {"id": "primary", "upstream": "macstudio"}, {"id": "fallback", "upstream": "rtx4090"}]}
         assert not calls  # Discovery never calls upstream /models.
-        for model, tokens, expected in [("primary", None, 1024), ("fallback", 9000, 4096), ("primary", 17, 17)]:
+        for model, tokens, expected in [("primary", None, 2048), ("fallback", 9000, 4096), ("primary", 17, 2048)]:
             body = {**BODY, "model": model, "temperature": 0.3}
             if tokens is not None: body["max_tokens"] = tokens
             response = client.post("/api/llm/chat/completions", json=body)
@@ -66,7 +66,7 @@ def test_routing_auth_config_discovery_and_token_bounds(tmp_path, caplog):
             sent = calls[-1]
             assert sent.url.host == ("macstudio.tailnet.aisight.us" if model == "primary" else "100.64.1.2")
             assert sent.url.path == "/v1/chat/completions"
-            assert json.loads(sent.content) == {**body, "stream": False, "max_tokens": expected}
+            assert json.loads(sent.content) == {**body, "stream": False, "max_tokens": expected, "chat_template_kwargs": {"enable_thinking": False}}
             assert sent.extensions["timeout"]["read"] == 180
             assert "authorization" not in sent.headers and "cookie" not in sent.headers
         response = client.post("/api/llm/chat/completions", json={**BODY, "model": "not-listed"})
@@ -105,7 +105,7 @@ def test_content_free_failure_and_no_redirect(tmp_path, caplog, kind, reason):
         client.post("/api/workspace/bootstrap")
         response = client.post("/api/llm/chat/completions", json=BODY)
         assert response.status_code == 502 and response.json() == {"detail": reason}
-    assert len(calls) == 1
+    assert len(calls) == (2 if kind == "empty" else 1)
     assert "PRIVATE_" not in caplog.text
 
 
@@ -139,3 +139,58 @@ def test_whole_request_deadline_is_content_free(tmp_path, monkeypatch):
         client.post("/api/workspace/bootstrap")
         response = client.post("/api/llm/chat/completions", json=BODY)
         assert response.status_code == 502 and response.json() == {"detail": "upstream_unreachable"}
+
+
+@pytest.mark.parametrize('first,second,status,expected_calls', [
+    ({'content': 'answer'}, None, 200, 1),
+    ({'content': 'answer', 'reasoning_content': 'PRIVATE_REASONING'}, None, 200, 1),
+    ({'content': '', 'reasoning_content': 'PRIVATE_REASONING'}, {'content': 'answer'}, 200, 2),
+    ({'reasoning_content': 'PRIVATE_REASONING'}, {'content': 'answer'}, 200, 2),
+    ({'content': None, 'reasoning_content': 'PRIVATE_REASONING'}, {'content': 'answer'}, 200, 2),
+    ({'content': '', 'reasoning_content': 'PRIVATE_REASONING'}, {'content': '', 'reasoning_content': 'PRIVATE_REASONING'}, 502, 2),
+    ({'content': '', 'reasoning_content': ''}, None, 502, 1),
+])
+def test_thinking_response_shapes_have_one_bounded_retry(tmp_path, caplog, first, second, status, expected_calls):
+    calls = []
+    def upstream(request):
+        calls.append(json.loads(request.content))
+        message = first if len(calls) == 1 else second
+        return httpx.Response(200, json={'choices': [{'message': message}]})
+    app = create_phase2_app(database_path=tmp_path / 'db', llm_upstreams=CONFIG)
+    app.state.llm_relay.transport = httpx.MockTransport(upstream)
+    with TestClient(app, base_url='https://moss.test') as client:
+        client.post('/api/workspace/bootstrap')
+        response = client.post('/api/llm/chat/completions', json=BODY)
+    assert response.status_code == status
+    assert len(calls) == expected_calls
+    assert all(call['max_tokens'] >= 2048 for call in calls)
+    assert all(call['chat_template_kwargs'] == {'enable_thinking': False} for call in calls)
+    assert all(call['messages'] == BODY['messages'] for call in calls)
+    if status == 200:
+        assert response.json()['choices'][0]['message']['content'] == 'answer'
+    else:
+        assert response.json() == {'detail': 'empty_content'}
+    assert 'PRIVATE_' not in caplog.text
+
+
+def test_retry_shares_original_deadline(tmp_path, monkeypatch):
+    calls = []
+    deadlines = []
+    real_wait_for = asyncio.wait_for
+    async def upstream(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(200, json={'choices': [{'message': {'content': '', 'reasoning_content': 'thinking'}}]})
+        await asyncio.Event().wait()  # Retry hangs until the original deadline cancels it.
+    async def deadline(awaitable, *, timeout):
+        deadlines.append(timeout)
+        return await real_wait_for(awaitable, timeout=0.05)
+    monkeypatch.setattr(phase2_llm, 'wait_for', deadline)
+    app = create_phase2_app(database_path=tmp_path / 'db', llm_upstreams=CONFIG)
+    app.state.llm_relay.transport = httpx.MockTransport(upstream)
+    with TestClient(app, base_url='https://moss.test') as client:
+        client.post('/api/workspace/bootstrap')
+        response = client.post('/api/llm/chat/completions', json=BODY)
+    assert response.status_code == 502
+    assert response.json() == {'detail': 'upstream_unreachable'}
+    assert len(calls) == 2 and deadlines == [180]

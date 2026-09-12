@@ -17,9 +17,18 @@ RESULT = {"summary": "A grounded result.", "topics": [{"title": "Useful title", 
 TRANSCRIPT = {"segments": [{"start": 0, "end": 4, "speaker": "Alex", "text": "Owner A only."}]}
 
 
-def test_shipped_default_prompt_matches_accepted_v15():
+def test_shipped_default_prompt_preserves_v15_with_nonempty_summary_clarification():
     repo = Path(__file__).resolve().parents[2]
-    assert (repo / "frontend/src/lib/final-summary-prompt.txt").read_bytes() == (repo / "prototypes/client-configured-llm/final-summary-prompt.txt").read_bytes()
+    # Preserve the accepted quality baseline; permit only this measured row-9 clarification.
+    accepted = (repo / "prototypes/client-configured-llm/final-summary-prompt.txt").read_text()
+    clarified = accepted.replace(
+        "shows the required top-level types; populate it with supported content:",
+        "shows the required top-level types; populate it with supported content. The completed summary must\n"
+        "never be empty: for an introduction-only transcript, briefly state who or what is introduced\n"
+        "and that the excerpt provides no substantive discussion beyond that introduction:",
+    )
+    assert clarified != accepted
+    assert (repo / "frontend/src/lib/final-summary-prompt.txt").read_text() == clarified
 
 
 @pytest.mark.parametrize("mutate", [

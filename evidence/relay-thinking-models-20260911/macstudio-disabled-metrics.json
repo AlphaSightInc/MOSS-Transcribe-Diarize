@@ -1,0 +1,18 @@
+{
+  "case": "macstudio-disabled",
+  "status": 200,
+  "seconds": 3.53,
+  "content_chars": 978,
+  "reasoning_chars": 0,
+  "summary": "Javier Malé is introduced as the president of Argentina, characterized as a libertarian, narco-capitalist, and economist who utilized a chainsaw as a campaign symbol to promise the reduction of state bureaucracy.",
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 1817,
+    "completion_tokens": 242,
+    "total_tokens": 2059,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "error": null
+}

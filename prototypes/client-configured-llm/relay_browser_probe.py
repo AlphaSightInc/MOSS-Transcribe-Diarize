@@ -59,7 +59,7 @@ async def run(root):
                     await page.locator(f'[data-open-meeting="{meeting.meeting_id}"]').click()
                     await page.get_by_test_id("final-summary-generate").click()
                     await page.locator('[data-summary-state="current"]').wait_for(timeout=10000)
-                    checks["one_fallback"] = [c["model"] for c in calls] == ["primary-model", "fallback-model"]
+                    checks["one_fallback"] = [c["model"] for c in calls] == ["primary-model", "primary-model", "fallback-model"]
                     checks["status_names_model"] = "fallback-model" in await page.locator('[aria-label="Final summary"] [role="status"]').inner_text()
                     checks["cookie_not_forwarded"] = not any(c["cookie_forwarded"] for c in calls)
                     response = await page.evaluate("async id => (await (await fetch('/api/meetings/'+id+'/summary')).json()).summary", meeting.meeting_id)
