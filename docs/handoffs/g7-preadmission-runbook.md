@@ -5,6 +5,77 @@ Round 9 is not a passing prerequisite. This command repeats all automated qualif
 recorded exceptions do not bypass its gate checks. Preadmission leaves the candidate serving
 but **does not admit it**.
 
+## Host disk hygiene
+
+**Round-13 incident, as reported by the release owner:** Ubuntu's `ext4.vhdx`
+reached **570 GB**, filled Windows C: (4.4 MB free), prevented WSL from starting
+and killed vLLM. Cutover stopped at `old_stopped`, leaving Phase-1 down. This
+non-sparse VHDX grows on demand and does not automatically shrink when Linux files
+are deleted: Linux free space and Windows free space are different budgets.
+
+The [disk guards and retention implementation](../../ops/README.md), introduced in
+`58a742c8`, now refuses staging or a new cutover below **20 GB WSL-root / 10 GB C:**
+free, before touching Phase-1. `MOSS_MIN_ROOT_FREE_GB` and
+`MOSS_MIN_WINDOWS_FREE_GB` override those defaults. If neither `/mnt/c` nor
+PowerShell can report C: space, the guard prints `windows_c / unavailable` and
+still checks Linux; that is not proof of Windows capacity.
+
+**Pull evidence bundles off the host and verify the local copies before pruning
+attempt directories, including before staging invokes automatic pruning.** From
+the repository root in Ubuntu, inspect the plan, then prune only after that export:
+
+```sh
+python3 moss_transcribe_diarize/candidate_storage.py --dry-run
+python3 moss_transcribe_diarize/candidate_storage.py --prune
+```
+
+`ops/stage-account-candidate.sh --dry-run` prints the same retention plan with its
+invoking checkout protected. Default retention is the newest **two** attempts and
+runtimes (`MOSS_RETAIN_CANDIDATES`), plus active/current/recovery items. Incomplete,
+unreadable and `SAFE_STOPPED` attempts are protected; stale eligible staging and
+qualification directories become removable after 24 hours. Output lists removals
+and bytes. Pruning alone does not reclaim the VHDX's allocated Windows space.
+
+### Windows-side recovery — maintenance only
+
+**Never run `wsl --shutdown` during an attempt.** Every shutdown stops WSL services;
+vLLM must restart with a **new PID** and reload its model, and Phase-1 must restart
+and pass the service/readiness checks in the display-maintenance section below.
+Finish recovery of any interrupted cutover with the engineer before another attempt.
+
+On this host, the scheduled task **`MinerU-WSL-Keepalive` auto-restarts Ubuntu**.
+Temporarily disable it and stop any currently running task instance so shutdown
+holds. In Windows PowerShell as the task owner (elevated if required), during the
+agreed maintenance window:
+
+```powershell
+Disable-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'
+Stop-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'
+wsl --shutdown
+wsl --list --running
+```
+
+Confirm Ubuntu is stopped. Choose one recovery route with the engineer, using a
+WSL version whose `wsl --help` supports the command:
+
+- **Enable sparse reclamation:** `wsl --manage Ubuntu --set-sparse true`.
+  [Microsoft documents sparse-VHD reclamation](https://devblogs.microsoft.com/commandline/windows-subsystem-for-linux-september-2023-update/#automatic-disk-space-clean-up-set-sparse-vhd).
+  Do not assume it immediately returns all 570 GB: verify C: free space and actual
+  disk allocation afterward. If WSL refuses the operation, stop for the engineer;
+  do not bypass its refusal.
+- **Move Ubuntu to a drive with room:** `wsl --manage Ubuntu --move D:\WSL\Ubuntu`.
+  `D:\WSL\Ubuntu` is an example destination, not this host's confirmed recovery
+  location. Choose a drive with enough room for the existing VHDX. Use WSL's move
+  command, not a manual move of an attached VHDX.
+
+After the operation, re-enable the task with
+`Enable-ScheduledTask -TaskName 'MinerU-WSL-Keepalive'`, start Ubuntu, and verify
+Phase-1, vLLM/model readiness and both disk budgets before creating an attempt.
+Record the new vLLM PID as that attempt's baseline. These are operator instructions;
+no shutdown, task change, relocation or reclamation was performed for this doc update.
+
+**RECOVERY PLACEHOLDER — final ext4.vhdx location and allocated size after tonight's recovery: <LOCATION>; <SIZE>.**
+
 ## Choose a display before booking the attempt
 
 **Read-only findings:** WSLg 1.0.66 is installed but `gyauo` has `guiApplications=false`.
