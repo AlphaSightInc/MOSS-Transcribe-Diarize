@@ -1921,8 +1921,30 @@ class FixedAccountCampaign:
             if path.is_file() and path.suffix.lower() in {".wav", ".pcm", ".raw"}
         )
         partial_cases = 0
-        if self._meetings["crash"]:
-            crash_id = self._meetings["crash"][0]
+        if not self._meetings["crash"] and not self._meetings["partial"]:
+            # Pre-admission has no process-kill probe. Exercise a deliberate
+            # audio-bearing abort, instead of depending on incidental failures.
+            partial_id = self._new_live_id("a")
+            try:
+                self._seed_live_transcript(partial_id)
+            finally:
+                response = self.a.request(
+                    "POST", f"/api/live/sessions/{partial_id}/abort", json={}
+                )
+                if response.status_code not in {200, 409}:
+                    raise ExternalMeasurementError(
+                        f"partial audio abort failed: session_id={partial_id}, "
+                        f"status={response.status_code}"
+                    )
+                registered = self._live_helpers.pop(partial_id, None)
+                if registered is not None:
+                    registered[1].close()
+                if self._live.get("a") == partial_id:
+                    self._live.pop("a")
+            self._await_meeting_terminal(partial_id)
+            self._meetings["partial"].append(partial_id)
+        if self._meetings["crash"] or self._meetings["partial"]:
+            crash_id = (self._meetings["crash"] or self._meetings["partial"])[0]
             partial = self.a.json(
                 "GET", f"/api/meetings/{crash_id}", 200
             )[0]

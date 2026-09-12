@@ -2585,8 +2585,9 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
 
 
+@pytest.mark.parametrize("has_crash", [False, True])
 def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_artifact(
-    monkeypatch, tmp_path: Path,
+    monkeypatch, tmp_path: Path, has_crash,
 ):
     audio_root = tmp_path / "meetings"
     audio_root.mkdir(mode=0o700)
@@ -2640,6 +2641,9 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
 
     class Owner:
         def request(self, method: str, path: str, **kwargs: object):
+            if path.endswith("/abort"):
+                lifecycle.append("abort")
+                return _Response(200)
             del method, kwargs
             meeting_id = path.split("/")[3]
             if meeting_id == "out" and not out_path.exists():
@@ -2685,7 +2689,10 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
         https_origin="https://moss.example",
         file_fixture=str(fixture),
     )
-    campaign._meetings.update({"file": ["file"], "live": ["live"], "crash": ["crash"]})
+    campaign._meetings.update({"file": ["file"], "live": ["live"], "crash": ["crash"] if has_crash else []})
+    lifecycle = []
+    monkeypatch.setattr(campaign, "_new_live_id", lambda owner: "crash")
+    monkeypatch.setattr(campaign, "_seed_live_transcript", lambda meeting_id: lifecycle.append("seed"))
     campaign._clients.update(
         {"a": Owner(), "b": Denied(404), "revoked_probe": Denied(401)}
     )
@@ -2708,6 +2715,8 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
     )
     monkeypatch.setattr(external.httpx, "get", lambda *args, **kwargs: _Response(401))
     result = campaign.audio_durability_download()
+    assert result["partial_or_unavailable_crash_cases"] == 1
+    assert lifecycle == ([] if has_crash else ["seed", "abort"])
     assert all(
         result[key] == 0
         for key in (
