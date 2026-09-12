@@ -1,0 +1,18 @@
+{
+  "wait_seconds": 35.00356912473217,
+  "heartbeats": 7,
+  "sequences": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "maximum_heartbeat_gap_seconds": 5.012684958055615,
+  "session_status": "active",
+  "failure_reason": null,
+  "accepted_samples": 0,
+  "ok": true
+}

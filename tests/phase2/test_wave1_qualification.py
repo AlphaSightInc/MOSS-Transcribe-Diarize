@@ -1980,7 +1980,16 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
         with pytest.raises(external.ExternalMeasurementError):
             campaign.revocation_lifecycle()
         return
+    closed_helpers = []
+    from types import SimpleNamespace
+    campaign._live_helpers.update({
+        "live-b": ("b", SimpleNamespace(close=lambda: closed_helpers.append("live-b"))),
+        "older-live-b": ("b", SimpleNamespace(close=lambda: closed_helpers.append("older-live-b"))),
+        "live-a": ("a", SimpleNamespace(close=lambda: closed_helpers.append("live-a"))),
+    })
     revoked = campaign.revocation_lifecycle()
+    assert closed_helpers == ["live-b", "older-live-b"]
+    assert set(campaign._live_helpers) == {"live-a"}
     assert revoked["failures"] == 0
     assert revoked["late_commits"] == 0
     assert revoked["durable_prefix_preserved"] is True

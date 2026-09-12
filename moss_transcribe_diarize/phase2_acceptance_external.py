@@ -49,6 +49,9 @@ from .phase2_acceptance import (
 from .phase2_acceptance_replay import (
     AccountCookieLiveReplayService,
     AccountReplayTransportFailure,
+    AcceptanceHelperLease,
+    HELPER_HEARTBEAT_TIMEOUT_SECONDS,
+    ServiceReplayIdentityCommitFailure,
 )
 from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
@@ -426,6 +429,8 @@ class FixedAccountCampaign:
         self.config = config
         self._clients: dict[str, AccountHttpClient] = {}
         self._live: dict[str, str] = {}
+        self._live_helpers: dict[str, tuple[str, AcceptanceHelperLease]] = {}
+        self._replay_clients: list[AccountCookieLiveReplayService] = []
         self._meetings: dict[str, list[str]] = defaultdict(list)
         self._browser: object | None = None
         self._safe_artifacts: set[Path] = set()
@@ -481,6 +486,10 @@ class FixedAccountCampaign:
         return value
 
     def close(self) -> None:
+        for _, helper in self._live_helpers.values():
+            helper.close()
+        for adapter in self._replay_clients:
+            adapter.close()
         for client in self._clients.values():
             client.close()
 
@@ -500,7 +509,9 @@ class FixedAccountCampaign:
         """Terminalize every reusable probe Meeting before the final zero-work predicate."""
 
         failures = 0
-        for owner, meeting_id in tuple(self._live.items()):
+        owned = {meeting_id: owner for owner, meeting_id in self._live.items()}
+        owned.update({meeting_id: owner for meeting_id, (owner, _) in self._live_helpers.items()})
+        for meeting_id, owner in owned.items():
             client = self.a if owner == "a" else self.b
             response = client.request(
                 "POST", f"/api/live/sessions/{meeting_id}/abort", json={}
@@ -508,6 +519,9 @@ class FixedAccountCampaign:
             if response.status_code not in {200, 409}:
                 failures += 1
         self._live.clear()
+        for _, helper in self._live_helpers.values():
+            helper.close()
+        self._live_helpers.clear()
         if failures:
             raise ExternalMeasurementError("probe Live cleanup failed")
 
@@ -560,7 +574,22 @@ class FixedAccountCampaign:
         if not isinstance(meeting_id, str) or not meeting_id:
             raise ExternalMeasurementError("Live create omitted Meeting ID")
         self._live[owner] = meeting_id
+        def heartbeat(payload):
+            response = client.request("POST", f"/api/live/sessions/{meeting_id}/heartbeat",
+                                      json=payload, timeout=HELPER_HEARTBEAT_TIMEOUT_SECONDS)
+            if response.status_code in {401, 403, 404, 409}:
+                raise ServiceReplayIdentityCommitFailure(f"helper heartbeat returned HTTP {response.status_code}")
+            if response.status_code != 200:
+                raise ExternalMeasurementError(f"helper heartbeat returned HTTP {response.status_code}")
+        helper = AcceptanceHelperLease(heartbeat)
+        self._live_helpers[meeting_id] = (owner, helper)
+        helper.start()
         return meeting_id
+
+    def _replay_service(self, **kwargs) -> AccountCookieLiveReplayService:
+        adapter = AccountCookieLiveReplayService(**kwargs)
+        self._replay_clients.append(adapter)
+        return adapter
 
     def _new_live_id(self, owner: str) -> str:
         self._live.pop(owner, None)
@@ -1014,12 +1043,12 @@ class FixedAccountCampaign:
             float(clip["end_seconds"]),
         )
         cookie_key = f"account_{owner}_cookie_file"
-        adapter = AccountCookieLiveReplayService(
+        adapter = self._replay_service(
             base_url=self.origin,
             cookie_file=Path(self._text(cookie_key)).expanduser(),
             timeout_seconds=60,
         )
-        adapter.attach_existing(meeting_id)
+        adapter.attach_existing(meeting_id, helper=self._live_helpers[meeting_id][1])
         samples = adapter.descriptor().frame_samples
         deadline = time.monotonic() + 90
         sequence = 0
@@ -1221,6 +1250,12 @@ class FixedAccountCampaign:
             and len(live_state["audio_bytes"]) == live_state["byte_count"]
         )
         self._live.pop("b", None)
+        # Revocation has already terminalized this workspace's sessions. Do not keep
+        # renewing them or later try to abort them with authority the test revoked.
+        for meeting_id, (helper_owner, helper) in tuple(self._live_helpers.items()):
+            if helper_owner == "b":
+                helper.close()
+                del self._live_helpers[meeting_id]
         return {
             "cases": 6, "failures": failures, "late_commits": late_commits,
             "stale_authority_revived": stale_revived,
@@ -1280,7 +1315,7 @@ class FixedAccountCampaign:
             for path in ("/api/operator/status", "/api/admin", "/api/accounts")
         )
 
-        adapter = AccountCookieLiveReplayService(
+        adapter = self._replay_service(
             base_url=self.origin,
             cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
             timeout_seconds=60,
@@ -1630,7 +1665,7 @@ class FixedAccountCampaign:
         raise ExternalMeasurementError("Account web did not return after restart")
 
     def crash_recovery(self) -> dict[str, object]:
-        adapter = AccountCookieLiveReplayService(
+        adapter = self._replay_service(
             base_url=self.origin,
             cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
             timeout_seconds=60,
@@ -1984,7 +2019,7 @@ class FixedAccountCampaign:
                 reference = case_dir / "reference.jsonl"
                 if not audio.is_file() or not reference.is_file():
                     raise ExternalMeasurementError("quality case input is incomplete")
-                adapter = AccountCookieLiveReplayService(
+                adapter = self._replay_service(
                     base_url=self.origin,
                     cookie_file=cookie_paths[index % 2],
                     timeout_seconds=300,
@@ -2217,7 +2252,7 @@ class FixedAccountCampaign:
         def worker(index: int) -> None:
             nonlocal cross_sentinel_deliveries
             owner = index % 2
-            adapter = AccountCookieLiveReplayService(
+            adapter = self._replay_service(
                 base_url=self.origin,
                 cookie_file=cookie_paths[owner],
                 timeout_seconds=300,
@@ -2526,12 +2561,12 @@ class FixedAccountCampaign:
         manifest = json.loads((corpus / "corpus-manifest.json").read_text())
         case_id = manifest["cases"][0]["case_id"]
         pcm = _wav_pcm(corpus / case_id / "audio.wav")
-        hot = AccountCookieLiveReplayService(
+        hot = self._replay_service(
             base_url=self.origin,
             cookie_file=Path(self._text("account_a_cookie_file")).expanduser(),
             timeout_seconds=30,
         )
-        peer = AccountCookieLiveReplayService(
+        peer = self._replay_service(
             base_url=self.origin,
             cookie_file=Path(self._text("account_b_cookie_file")).expanduser(),
             timeout_seconds=30,

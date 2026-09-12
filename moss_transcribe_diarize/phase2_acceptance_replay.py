@@ -6,6 +6,7 @@ import asyncio
 import base64
 import json
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -40,6 +41,63 @@ class AccountReplayTransportFailure(ServiceReplayTransportFailure):
         self.http_status = http_status
 
 
+# Measurement clients own helper presence even while waiting for unrelated work.
+HELPER_HEARTBEAT_INTERVAL_SECONDS = 5.0
+HELPER_HEARTBEAT_TIMEOUT_SECONDS = 5.0
+
+
+class AcceptanceHelperLease:
+    """One serialized heartbeat stream, independent of blocking measurement requests."""
+
+    def __init__(self, post):
+        self._post = post
+        self._sequence = 0
+        self._lock = threading.Lock()
+        self._closed = threading.Event()
+        self._thread: threading.Thread | None = None
+        self.last_error: Exception | None = None
+
+    def start(self) -> None:
+        self.send()
+        self._thread = threading.Thread(target=self._run, name="acceptance-helper", daemon=True)
+        self._thread.start()
+
+    def send(self) -> None:
+        with self._lock:
+            if self._closed.is_set():
+                if self.last_error is not None:
+                    raise self.last_error
+                return
+            lane = {"state": "capturing", "device_epoch": 0, "dropped_frames": 0,
+                    "discontinuities": 0, "failure_code": None}
+            # Reserve the sequence before I/O: an ambiguous response may already be
+            # admitted. Presence accepts monotonic gaps, never reused sequences with
+            # changed timestamps. Frames retain their separate byte-identical retry rule.
+            sequence = self._sequence
+            self._sequence += 1
+            self._post({"schema": HELPER_SCHEMA, "instance_id": "phase2-acceptance-replay",
+                        "sequence": sequence, "sent_monotonic_ns": time.monotonic_ns(),
+                        "helper_version": "phase2-acceptance.v1", "state": "capturing",
+                        "lanes": {"system": dict(lane), "microphone": dict(lane)}})
+            self.last_error = None
+
+    def _run(self) -> None:
+        while not self._closed.wait(HELPER_HEARTBEAT_INTERVAL_SECONDS):
+            try:
+                self.send()
+            except ServiceReplayIdentityCommitFailure as exc:
+                # Revoked authority or an already-terminal session is not recreated.
+                self.last_error = exc
+                self._closed.set()
+            except Exception as exc:
+                self.last_error = exc
+
+    def close(self) -> None:
+        self._closed.set()
+        if self._thread is not None and self._thread is not threading.current_thread():
+            self._thread.join(timeout=HELPER_HEARTBEAT_TIMEOUT_SECONDS + 1)
+
+
 class AccountCookieLiveReplayService:
     """Adapt Account Live HTTP to the existing authority-neutral replay Interface.
 
@@ -61,7 +119,7 @@ class AccountCookieLiveReplayService:
         self._timeout_seconds = float(timeout_seconds)
         self._cookie = cookie
         self._frame_samples: dict[str, int] = {}
-        self._heartbeat_sequence: dict[str, int] = {}
+        self._helpers: dict[str, tuple[AcceptanceHelperLease, bool]] = {}
         self.stop_observations: dict[str, dict[str, object]] = {}
 
     def descriptor(self):
@@ -74,7 +132,7 @@ class AccountCookieLiveReplayService:
         descriptor = _descriptor_from_dict(payload["descriptor"])
         session_id = str(payload["id"])
         self._frame_samples[session_id] = descriptor.frame_samples
-        self._heartbeat_sequence[session_id] = 0
+        self._start_helper(session_id)
         from .app.live_service_runtime import LiveServiceCreateResult
 
         return LiveServiceCreateResult(
@@ -83,12 +141,15 @@ class AccountCookieLiveReplayService:
             snapshot=_snapshot_from_dict(payload["snapshot"]),
         )
 
-    def attach_existing(self, session_id: str) -> None:
+    def attach_existing(self, session_id: str, *, helper: AcceptanceHelperLease | None = None) -> None:
         """Bind local frame geometry to an already owner-created Account Live Meeting."""
 
         descriptor = self.descriptor()
         self._frame_samples[session_id] = descriptor.frame_samples
-        self._heartbeat_sequence[session_id] = 0
+        if helper is None:
+            self._start_helper(session_id)
+        else:
+            self._helpers[session_id] = (helper, False)
 
     def accept_frame(self, session_id: str, frame: AudioFrame) -> LiveServiceFrameResult:
         frame_samples = self._frame_samples[session_id]
@@ -212,29 +273,19 @@ class AccountCookieLiveReplayService:
         self._forget(session_id)
         return _snapshot_from_dict(payload["snapshot"])
 
+    def _start_helper(self, session_id: str) -> None:
+        helper = AcceptanceHelperLease(lambda payload: self._json(
+            "POST", f"/api/live/sessions/{self._quoted(session_id)}/heartbeat", payload,
+            timeout_seconds=HELPER_HEARTBEAT_TIMEOUT_SECONDS))
+        self._helpers[session_id] = (helper, True)
+        helper.start()
+
     def _heartbeat(self, session_id: str) -> None:
-        sequence = self._heartbeat_sequence[session_id]
-        lane = {
-            "state": "capturing",
-            "device_epoch": 0,
-            "dropped_frames": 0,
-            "discontinuities": 0,
-            "failure_code": None,
-        }
-        self._json(
-            "POST",
-            f"/api/live/sessions/{self._quoted(session_id)}/heartbeat",
-            {
-                "schema": HELPER_SCHEMA,
-                "instance_id": "phase2-acceptance-replay",
-                "sequence": sequence,
-                "sent_monotonic_ns": time.monotonic_ns(),
-                "helper_version": "phase2-acceptance.v1",
-                "state": "capturing",
-                "lanes": {"system": dict(lane), "microphone": dict(lane)},
-            },
-        )
-        self._heartbeat_sequence[session_id] = sequence + 1
+        self._helpers[session_id][0].send()
+
+    def close(self) -> None:
+        for session_id in tuple(self._helpers):
+            self._forget(session_id)
 
     @staticmethod
     def _lane_payload(
@@ -258,7 +309,9 @@ class AccountCookieLiveReplayService:
 
     def _forget(self, session_id: str) -> None:
         self._frame_samples.pop(session_id, None)
-        self._heartbeat_sequence.pop(session_id, None)
+        helper = self._helpers.pop(session_id, None)
+        if helper is not None and helper[1]:
+            helper[0].close()
 
     def _json(
         self, method: str, path: str, payload: dict[str, object] | None = None,

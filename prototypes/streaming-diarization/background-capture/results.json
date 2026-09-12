@@ -1,0 +1,20 @@
+{
+  "probe": "45s genuine hidden capture",
+  "meeting": "zekT338Xeq1Nm0rDj41O8o3h",
+  "hidden_seconds": 45.011864458210766,
+  "visibility_after_wait": "hidden",
+  "phase_after_wait": "active",
+  "session_status": "active",
+  "failure_reason": null,
+  "heartbeat_responses_hidden": 90,
+  "frame_responses_hidden": 180,
+  "maximum_heartbeat_gap_seconds": 0.5064730411395431,
+  "timer_callbacks": 46,
+  "timer_interval_ms_median": 999.5499999523163,
+  "timer_interval_ms_max": 1008.0999999046326,
+  "focus_emulation": false,
+  "background_throttling_disabled": false,
+  "terminal_meeting": "completed",
+  "finalization_status": "final",
+  "ok": true
+}
