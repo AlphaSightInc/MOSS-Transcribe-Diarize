@@ -72,8 +72,7 @@ WSL version whose `wsl --help` supports the command:
   disk allocation afterward. If WSL refuses the operation, stop for the engineer;
   do not bypass its refusal.
 - **Move Ubuntu to a drive with room:** `wsl --manage Ubuntu --move D:\WSL\Ubuntu`.
-  `D:\WSL\Ubuntu` is an example destination, not this host's confirmed recovery
-  location. Choose a drive with enough room for the existing VHDX. Use WSL's move
+  This host now uses `D:\wsl\Ubuntu` (move completed 2026-09-12). For any future move, choose a different destination with enough room for the existing VHDX. Use WSL's move
   command, not a manual move of an attached VHDX.
 
 After the operation, re-enable both tasks with
@@ -82,7 +81,57 @@ Phase-1, vLLM/model readiness and both disk budgets before creating an attempt.
 Record the new vLLM PID as that attempt's baseline. These are operator instructions;
 no shutdown, task change, relocation or reclamation was performed for this doc update.
 
-**RECOVERY PLACEHOLDER — final ext4.vhdx location and allocated size after tonight's recovery: <LOCATION>; <SIZE>.**
+**Recovered 2026-09-12:** `D:\wsl\Ubuntu\ext4.vhdx`, file length **612,482,678,784 bytes**; original C: LocalState copy removed. File length is not a measurement of allocated disk space.
+
+## Host hygiene — canonical origin after WSL restart
+
+Keep WSL hosts regeneration enabled. It maintains the machine's generated localhost,
+hostname and IPv6 entries; disabling it is unnecessary for one MOSS alias.
+
+Installed on this host: user unit `moss-canonical-host.service`, required and ordered
+before **both** `moss-web.service` and `moss-live-web.service` through their
+`~/.config/systemd/user/<unit>.d/10-canonical-host.conf` drop-ins. It runs
+`sudo -n /usr/local/sbin/moss-canonical-host` (root-owned, mode 0755), using this
+host's existing passwordless sudo. The helper appends
+`127.0.0.1 ga0-alienware-rtx4070ti.tailnet.aisight.us` only when that mapping is
+absent; it preserves every other hosts entry. Failure blocks the web startup.
+The oneshot runs again when the web service starts; no candidate code changes.
+
+After maintenance, check in Ubuntu:
+
+```sh
+getent ahostsv4 ga0-alienware-rtx4070ti.tailnet.aisight.us
+journalctl --user -b -u moss-canonical-host.service --no-pager
+systemctl --user is-active moss-web.service moss-live-web.service moss-vllm.service
+```
+
+**What you will see:** `127.0.0.1`, a successful hosts-unit run before the web
+services, and three `active` lines. Then check both Phase-1 views and model readiness
+as below. A new WSL boot means a new vLLM baseline; never restart during an attempt.
+
+**Verified 2026-09-12:** both MinerU tasks disabled at 08:44:02 EDT; Ubuntu
+remained stopped with no vmmem for 20 seconds. After restart, the hosts unit
+completed automatically at 08:44:28 and the canonical name resolved to loopback.
+Both tasks were re-enabled/running at 08:44:32 in the maintenance script's finally
+block. Two helper invocations before reboot also left exactly one alias line.
+
+The existing `moss-web.service` was **disabled** (live view enabled), so it required
+`systemctl --user start moss-web.service` after reboot. Its enablement was not
+changed. Include this start in maintenance recovery, then verify both views.
+**What you will see:** both views open with zero work; do not infer batch readiness
+from the live view alone.
+
+WSL also warned `Invalid escaped character: 'k'` at `.wslconfig:6`, whose kernel
+path uses single backslashes. Startup succeeded; configuration was not changed.
+Have the engineer review that separate warning before further host maintenance.
+
+**Reverse only during maintenance:** remove the two `10-canonical-host.conf`
+drop-ins and `~/.config/systemd/user/moss-canonical-host.service`; run
+`systemctl --user daemon-reload`; remove `/usr/local/sbin/moss-canonical-host`
+with sudo. Remove only the exact alias line from `/etc/hosts` if reverting the
+mapping too. WSL generation settings were not changed.
+**What you will see:** subsequent web starts no longer invoke the helper; the
+canonical loopback mapping is no longer guaranteed after a WSL restart.
 
 ## Choose a display before booking the attempt
 
