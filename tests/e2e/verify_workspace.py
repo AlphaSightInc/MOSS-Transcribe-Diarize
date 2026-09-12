@@ -544,6 +544,8 @@ class Harness:
                 assert await self.page.evaluate('window.__repeatDocument') == 'same-document'
                 # Do not use Playwright foregrounding to hide native repeat-capture failures.
                 await self.setup_live(foreground=False)
+                result['pane_empty_before_start']=await self.page.locator('.utt-text').count()==0
+                assert result['pane_empty_before_start'], 'Previous meeting transcript survived Reset capture'
                 ident=await self.start_live(f'repeat_{index}')
                 result['meeting']=ident
                 await self.page.wait_for_function('document.querySelectorAll(".utt-text").length > 0',timeout=35000)

@@ -1,0 +1,9 @@
+{
+  "error": "Locator.wait_for: Timeout 20000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"button\", name=\"Start capture\", exact=True) to be visible\n",
+  "exception": "TimeoutError",
+  "screenshot": "row-14.png",
+  "status": "FAIL",
+  "seconds": 32.37,
+  "network": "network.jsonl",
+  "row": 14
+}

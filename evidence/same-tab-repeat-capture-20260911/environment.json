@@ -1,0 +1,14 @@
+{
+  "baseline_commit": "4d6d487e",
+  "candidate_commit": "00ebcd10",
+  "base": "https://127.0.0.1:17863",
+  "state_directory": "/tmp/moss-repeat-capture-20260911/candidate/state",
+  "draft_lane_seconds": 1.0,
+  "decoder": "http://127.0.0.1:18000/v1",
+  "relay_models": [
+    "qwen/qwen3.6-35b-a3b",
+    "qwen38-27b-mtp"
+  ],
+  "instrumentation": "Native browser APIs called unchanged; wrappers recorded timing, context state, track state, focus and original exception. Chromium media_stream_manager verbose log identified the native error. No wrappers in final E2E.",
+  "original_database_17861": "untouched"
+}

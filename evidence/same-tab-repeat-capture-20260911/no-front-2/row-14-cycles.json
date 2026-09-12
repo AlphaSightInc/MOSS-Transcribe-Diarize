@@ -1,0 +1,18 @@
+[
+  {
+    "cycle": 1,
+    "meeting": "Utit5MScR16NUOO-z7A-m0zx",
+    "active_phase": "active",
+    "status_received": "completed",
+    "finalization_status": "final",
+    "history_present": true,
+    "export": "row-14-cycle-1.json",
+    "export_filename": "transcript-Utit5MScR16NUOO-z7A-m0zx-2026-09-12T02_01_04.997Z.json",
+    "terminal_phase": "terminal",
+    "screenshot": "row-14-cycle-1.png",
+    "ok": true
+  },
+  {
+    "cycle": 2
+  }
+]

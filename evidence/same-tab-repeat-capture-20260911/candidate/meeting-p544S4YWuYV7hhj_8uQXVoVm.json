@@ -1,0 +1,86 @@
+{
+  "id": "p544S4YWuYV7hhj_8uQXVoVm",
+  "mode": "file",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1789178965551,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.87,
+        "end": 6.33,
+        "speaker": "S01",
+        "text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina."
+      },
+      {
+        "id": "seg_0002",
+        "start": 6.33,
+        "end": 13.88,
+        "speaker": "S01",
+        "text": "He is a libertarian, anarcho-capitalist and economist who campaigned with the chainsaw"
+      },
+      {
+        "id": "seg_0003",
+        "start": 13.88,
+        "end": 19.32,
+        "speaker": "S01",
+        "text": "that symbolized his promise to slash the corrupt bureaucracy of the state."
+      },
+      {
+        "id": "seg_0004",
+        "start": 19.32,
+        "end": 24.93,
+        "speaker": "S01",
+        "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+      },
+      {
+        "id": "seg_0005",
+        "start": 24.93,
+        "end": 30.02,
+        "speaker": "S01",
+        "text": "deep in debt and suffering from mass unemployment and poverty."
+      },
+      {
+        "id": "seg_0006",
+        "start": 30.02,
+        "end": 35.47,
+        "speaker": "S01",
+        "text": "He took this crisis head-on, transforming one of Latin America's largest economies"
+      },
+      {
+        "id": "seg_0007",
+        "start": 35.47,
+        "end": 38.76,
+        "speaker": "S01",
+        "text": "through pure free-market principles."
+      },
+      {
+        "id": "seg_0008",
+        "start": 38.76,
+        "end": 43.82,
+        "speaker": "S01",
+        "text": "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+      },
+      {
+        "id": "seg_0009",
+        "start": 43.82,
+        "end": 49.98,
+        "speaker": "S01",
+        "text": "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      }
+    ]
+  },
+  "transcript_version": 1,
+  "audio": {
+    "state": "available",
+    "relative_path": "9T0uK-EogpMI4XeZ9D__eSKxbVLCMppU/p544S4YWuYV7hhj_8uQXVoVm/audio.mp3",
+    "byte_count": 300717,
+    "duration_ms": 50000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}

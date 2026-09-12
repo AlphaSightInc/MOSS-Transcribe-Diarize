@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "first_visible_seconds": 2.3353062090463936,
+  "stop_to_terminal_seconds": 2.0526821250095963,
+  "meeting": "Pg4zojz_ZLHIpS_H43GH9qLt",
+  "status_received": "completed",
+  "segments": 3,
+  "meters": [
+    "Microphone level 18%",
+    "Shared audio level 18%"
+  ],
+  "artifact": "meeting-Pg4zojz_ZLHIpS_H43GH9qLt.json",
+  "screenshot": "row-04.png",
+  "status": "PASS",
+  "seconds": 21.448,
+  "network": "network.jsonl",
+  "row": 4
+}

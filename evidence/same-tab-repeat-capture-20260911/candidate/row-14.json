@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "same_document": true,
+  "all_in_history": true,
+  "cycles": [
+    {
+      "cycle": 1,
+      "meeting": "KG9-HjStVvGtqxEVczFIA9Bh",
+      "active_phase": "active",
+      "first_frame_sequence": 0,
+      "status_received": "completed",
+      "finalization_status": "final",
+      "history_present": true,
+      "export": "row-14-cycle-1.json",
+      "export_filename": "transcript-KG9-HjStVvGtqxEVczFIA9Bh-2026-09-12T02_11_45.223Z.json",
+      "terminal_phase": "terminal",
+      "screenshot": "row-14-cycle-1.png",
+      "ok": true
+    },
+    {
+      "cycle": 2,
+      "meeting": "MTQ_bUUn1cyUTnwexgdQhz_i",
+      "active_phase": "active",
+      "first_frame_sequence": 0,
+      "status_received": "completed",
+      "finalization_status": "final",
+      "history_present": true,
+      "export": "row-14-cycle-2.json",
+      "export_filename": "transcript-MTQ_bUUn1cyUTnwexgdQhz_i-2026-09-12T02_11_57.290Z.json",
+      "terminal_phase": "terminal",
+      "screenshot": "row-14-cycle-2.png",
+      "ok": true
+    },
+    {
+      "cycle": 3,
+      "meeting": "Ap9X9sSfQhzvtOyVish2bXz5",
+      "active_phase": "active",
+      "first_frame_sequence": 0,
+      "status_received": "completed",
+      "finalization_status": "final",
+      "history_present": true,
+      "export": "row-14-cycle-3.json",
+      "export_filename": "transcript-Ap9X9sSfQhzvtOyVish2bXz5-2026-09-12T02_12_09.436Z.json",
+      "terminal_phase": "terminal",
+      "screenshot": "row-14-cycle-3.png",
+      "ok": true
+    }
+  ],
+  "screenshot": "row-14.png",
+  "status": "PASS",
+  "seconds": 36.389,
+  "network": "network.jsonl",
+  "row": 14
+}

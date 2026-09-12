@@ -1,0 +1,18 @@
+[
+  {
+    "cycle": 1,
+    "meeting": "LyJ_3-5YeZY9-FgVAmIClKbD",
+    "active_phase": "active",
+    "status_received": "completed",
+    "finalization_status": "final",
+    "history_present": true,
+    "export": "row-14-cycle-1.json",
+    "export_filename": "transcript-LyJ_3-5YeZY9-FgVAmIClKbD-2026-09-12T02_03_14.258Z.json",
+    "terminal_phase": "terminal",
+    "screenshot": "row-14-cycle-1.png",
+    "ok": true
+  },
+  {
+    "cycle": 2
+  }
+]

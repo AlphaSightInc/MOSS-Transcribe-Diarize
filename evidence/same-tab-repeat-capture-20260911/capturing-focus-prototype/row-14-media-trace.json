@@ -1,0 +1,467 @@
+[
+  {
+    "method": "setup-entry",
+    "focused": true,
+    "visibility": "visible",
+    "time": 109
+  },
+  {
+    "method": "resume",
+    "phase": "call",
+    "id": 1,
+    "state": "running",
+    "time": 179.40000009536743,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as resume] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50514)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "resume",
+    "phase": "resolved",
+    "id": 1,
+    "state": "running",
+    "time": 179.40000009536743,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 179.40000009536743,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getUserMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50634)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 196,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "d79d32af-0213-4e8f-9625-017305b234c5",
+        "kind": "audio",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 1,
+    "state": "running",
+    "time": 196.10000038146973,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50815)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 1,
+    "state": "running",
+    "time": 196.10000038146973,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 248.80000019073486,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getDisplayMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.requestDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51093)\n    at w (https://127.0.0.1:17863/static/app.js:117:67524)\n    at onClick (https://127.0.0.1:17863/static/app.js:117:72520)\n    at HTMLButtonElement.<anonymous> (https://127.0.0.1:17863/static/app.js:117:14605)"
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 281.90000009536743,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "03e766b4-3435-4f25-83d4-cc9274045055",
+        "kind": "audio",
+        "state": "live"
+      },
+      {
+        "id": "bbe20d28-b2dd-4fc2-b8db-e7b855f46690",
+        "kind": "video",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 1,
+    "state": "running",
+    "time": 282.1000003814697,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.attachDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51532)\n    at async w (https://127.0.0.1:17863/static/app.js:117:67761)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 1,
+    "state": "running",
+    "time": 282.1000003814697,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "close",
+    "phase": "call",
+    "id": 1,
+    "state": "running",
+    "time": 10176.400000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as close] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.close (https://127.0.0.1:17863/static/app.js:117:54598)\n    at Vr.stop (https://127.0.0.1:17863/static/app.js:117:54128)\n    at async D (https://127.0.0.1:17863/static/app.js:117:68994)"
+  },
+  {
+    "method": "close",
+    "phase": "resolved",
+    "id": 1,
+    "state": "closed",
+    "time": 10176.400000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "setup-entry",
+    "focused": true,
+    "visibility": "visible",
+    "time": 12150
+  },
+  {
+    "method": "resume",
+    "phase": "call",
+    "id": 3,
+    "state": "running",
+    "time": 12235.300000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as resume] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50514)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "resume",
+    "phase": "resolved",
+    "id": 3,
+    "state": "running",
+    "time": 12235.300000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 12235.400000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getUserMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50634)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 12255.800000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "15cf694d-c2b0-4e31-81f4-e48c908c4c60",
+        "kind": "audio",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 3,
+    "state": "running",
+    "time": 12255.800000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50815)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 3,
+    "state": "running",
+    "time": 12255.900000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 12297.300000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getDisplayMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.requestDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51093)\n    at w (https://127.0.0.1:17863/static/app.js:117:67524)\n    at onClick (https://127.0.0.1:17863/static/app.js:117:72520)\n    at HTMLButtonElement.<anonymous> (https://127.0.0.1:17863/static/app.js:117:14605)"
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 12333.10000038147,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "77b26ba8-d6f9-4acb-a64a-8342f2e53f15",
+        "kind": "audio",
+        "state": "live"
+      },
+      {
+        "id": "4c14a5d9-9009-4fd5-8702-01fcb5903f5f",
+        "kind": "video",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 3,
+    "state": "running",
+    "time": 12333.200000286102,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.attachDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51532)\n    at async w (https://127.0.0.1:17863/static/app.js:117:67761)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 3,
+    "state": "running",
+    "time": 12333.300000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "close",
+    "phase": "call",
+    "id": 3,
+    "state": "running",
+    "time": 22092.300000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as close] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.close (https://127.0.0.1:17863/static/app.js:117:54598)\n    at Vr.stop (https://127.0.0.1:17863/static/app.js:117:54128)\n    at async D (https://127.0.0.1:17863/static/app.js:117:68994)"
+  },
+  {
+    "method": "close",
+    "phase": "resolved",
+    "id": 3,
+    "state": "closed",
+    "time": 22092.400000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "setup-entry",
+    "focused": true,
+    "visibility": "visible",
+    "time": 24202
+  },
+  {
+    "method": "resume",
+    "phase": "call",
+    "id": 4,
+    "state": "running",
+    "time": 24282.700000286102,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as resume] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50514)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "resume",
+    "phase": "resolved",
+    "id": 4,
+    "state": "running",
+    "time": 24282.700000286102,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 24282.700000286102,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getUserMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50634)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "getUserMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 24298.5,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "a789036c-2270-40f5-aac9-90f2a878389b",
+        "kind": "audio",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 4,
+    "state": "running",
+    "time": 24298.60000038147,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.startMicrophone (https://127.0.0.1:17863/static/app.js:117:50815)\n    at async C (https://127.0.0.1:17863/static/app.js:117:67281)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 4,
+    "state": "running",
+    "time": 24298.60000038147,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "call",
+    "id": 2,
+    "state": null,
+    "time": 24347,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as getDisplayMedia] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.requestDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51093)\n    at w (https://127.0.0.1:17863/static/app.js:117:67524)\n    at onClick (https://127.0.0.1:17863/static/app.js:117:72520)\n    at HTMLButtonElement.<anonymous> (https://127.0.0.1:17863/static/app.js:117:14605)"
+  },
+  {
+    "method": "getDisplayMedia",
+    "phase": "resolved",
+    "id": 2,
+    "state": null,
+    "time": 24382.700000286102,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": [
+      {
+        "id": "30abadc3-0e8a-470f-822f-3e959f6d7b46",
+        "kind": "audio",
+        "state": "live"
+      },
+      {
+        "id": "24970d5c-2b1b-45bd-b93d-b4e579d2a053",
+        "kind": "video",
+        "state": "live"
+      }
+    ]
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "call",
+    "id": 4,
+    "state": "running",
+    "time": 24382.800000190735,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as createMediaStreamSource] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.attachLane (https://127.0.0.1:17863/static/app.js:117:55552)\n    at async Vr.attachDisplayMedia (https://127.0.0.1:17863/static/app.js:117:51532)\n    at async w (https://127.0.0.1:17863/static/app.js:117:67761)"
+  },
+  {
+    "method": "createMediaStreamSource",
+    "phase": "resolved",
+    "id": 4,
+    "state": "running",
+    "time": 24382.900000095367,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  },
+  {
+    "method": "close",
+    "phase": "call",
+    "id": 4,
+    "state": "running",
+    "time": 34141.10000038147,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "stack": "Error\n    at proto.<computed> [as close] (eval at evaluate (:311:30), <anonymous>:13:43)\n    at Vr.close (https://127.0.0.1:17863/static/app.js:117:54598)\n    at Vr.stop (https://127.0.0.1:17863/static/app.js:117:54128)\n    at async D (https://127.0.0.1:17863/static/app.js:117:68994)"
+  },
+  {
+    "method": "close",
+    "phase": "resolved",
+    "id": 4,
+    "state": "closed",
+    "time": 34141.2000002861,
+    "focused": true,
+    "activation": true,
+    "options": null,
+    "tracks": null
+  }
+]

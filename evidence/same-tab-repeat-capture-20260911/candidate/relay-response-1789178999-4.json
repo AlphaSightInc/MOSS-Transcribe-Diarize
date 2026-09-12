@@ -1,0 +1,38 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"summary\": \"The transcript introduces Javier Milei, identified as the President of Argentina, as a libertarian and anarcho-capitalist economist who campaigned with a chainsaw to symbolize his promise to slash corrupt state bureaucracy.\",\n  \"topics\": [\n    {\n      \"title\": \"Candidate Ideology and Symbolism\",\n      \"description\": \"The speaker argues that Milei's identity as a libertarian and anarcho-capitalist economist is central to his political platform, utilizing the chainsaw as a deliberate symbol to represent the reduction of state bureaucracy.\"\n    }\n  ],\n  \"details\": [\n    {\n      \"title\": \"Introduction of Speaker\",\n      \"description\": \"E2E Morgan introduces Javier Milei as the President of Argentina, a libertarian, an anarcho-capitalist, and an economist.\",\n      \"timestamp\": \"00:00:05\"\n    },\n    {\n      \"title\": \"Chainsaw Symbolism\",\n      \"description\": \"Morgan notes that Milei campaigned with a chainsaw, which symbolized his promise to slash the corrupt bureaucracy of the state.\",\n      \"timestamp\": \"00:00:13\"\n    }\n  ],\n  \"speaker_background\": [\n    \"E2E Morgan: Narrator\"\n  ],\n  \"data_references\": []\n}"
+      }
+    }
+  ],
+  "created": 1789178999,
+  "model": "qwen38-27b-mtp",
+  "system_fingerprint": "b9873-a4107133a",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 293,
+    "prompt_tokens": 1855,
+    "total_tokens": 2148,
+    "prompt_tokens_details": {
+      "cached_tokens": 1716
+    }
+  },
+  "id": "chatcmpl-bn98dcrV848lNHQR6KCAAlZDQoofZsTu",
+  "timings": {
+    "cache_n": 1716,
+    "prompt_n": 139,
+    "prompt_ms": 665.486,
+    "prompt_per_token_ms": 4.787669064748202,
+    "prompt_per_second": 208.869908608145,
+    "predicted_n": 293,
+    "predicted_ms": 3854.797,
+    "predicted_per_token_ms": 13.156303754266212,
+    "predicted_per_second": 76.00919062663999,
+    "draft_n": 210,
+    "draft_n_accepted": 191
+  }
+}

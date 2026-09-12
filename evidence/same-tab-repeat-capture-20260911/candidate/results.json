@@ -1,0 +1,419 @@
+{
+  "rows": {
+    "1": {
+      "signed_in": true,
+      "boot_ready": true,
+      "fresh_profile": true,
+      "screenshot": "row-01.png",
+      "status": "PASS",
+      "seconds": 0.272,
+      "network": "network.jsonl",
+      "row": 1
+    },
+    "2": {
+      "ok": true,
+      "meeting": "nMgx1bvYXIweozHeablRRiwk",
+      "status_received": "completed",
+      "segments": 9,
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": "meeting-nMgx1bvYXIweozHeablRRiwk.json",
+      "screenshot": "row-02.png",
+      "status": "PASS",
+      "seconds": 3.311,
+      "network": "network.jsonl",
+      "row": 2
+    },
+    "3": {
+      "ok": true,
+      "meeting": "p544S4YWuYV7hhj_8uQXVoVm",
+      "status_received": "completed",
+      "segments": 9,
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": "meeting-p544S4YWuYV7hhj_8uQXVoVm.json",
+      "screenshot": "row-03.png",
+      "status": "PASS",
+      "seconds": 2.252,
+      "network": "network.jsonl",
+      "row": 3
+    },
+    "5": {
+      "ok": true,
+      "renames": [
+        {
+          "name": "E2E Rowan",
+          "http": 200,
+          "speaker_id": "speaker-0001",
+          "enrollment": "pending",
+          "rows_legend_updated": true,
+          "history_updated": true,
+          "export_updated": null
+        },
+        {
+          "name": "E2E Morgan",
+          "http": 200,
+          "speaker_id": "speaker-0001",
+          "enrollment": "pending",
+          "rows_legend_updated": true,
+          "history_updated": true,
+          "export_updated": true
+        }
+      ],
+      "meeting": "Pg4zojz_ZLHIpS_H43GH9qLt",
+      "export_after_stop_without_reload": true,
+      "export": "renamed-export.json",
+      "screenshot": "row-05.png",
+      "status": "PASS",
+      "seconds": 0.165,
+      "network": "network.jsonl",
+      "row": 5
+    },
+    "4": {
+      "ok": true,
+      "first_visible_seconds": 2.3353062090463936,
+      "stop_to_terminal_seconds": 2.0526821250095963,
+      "meeting": "Pg4zojz_ZLHIpS_H43GH9qLt",
+      "status_received": "completed",
+      "segments": 3,
+      "meters": [
+        "Microphone level 18%",
+        "Shared audio level 18%"
+      ],
+      "artifact": "meeting-Pg4zojz_ZLHIpS_H43GH9qLt.json",
+      "screenshot": "row-04.png",
+      "status": "PASS",
+      "seconds": 21.448,
+      "network": "network.jsonl",
+      "row": 4
+    },
+    "6": {
+      "ok": true,
+      "formats": {
+        "md": {
+          "bytes": 265,
+          "artifact": "export.md",
+          "ok": true
+        },
+        "txt": {
+          "bytes": 262,
+          "artifact": "export.txt",
+          "ok": true
+        },
+        "json": {
+          "bytes": 767,
+          "artifact": "export.json",
+          "ok": true,
+          "turns": 1
+        },
+        "srt": {
+          "bytes": 284,
+          "artifact": "export.srt",
+          "ok": true,
+          "cues": 1,
+          "monotonic": true,
+          "speaker_prefixes": true
+        },
+        "vtt": {
+          "bytes": 292,
+          "artifact": "export.vtt",
+          "ok": true,
+          "cues": 1,
+          "monotonic": true,
+          "speaker_prefixes": true
+        }
+      },
+      "screenshot": "row-06.png",
+      "status": "PASS",
+      "seconds": 0.512,
+      "network": "network.jsonl",
+      "row": 6
+    },
+    "7": {
+      "ok": true,
+      "filename": "meeting-nMgx1bvYXIweozHeablRRiwk.mp3",
+      "duration": 50.0,
+      "source_duration": 50.0,
+      "artifact": "download.mp3",
+      "decodable": true,
+      "screenshot": "row-07.png",
+      "status": "PASS",
+      "seconds": 0.283,
+      "network": "network.jsonl",
+      "row": 7
+    },
+    "9": {
+      "ok": true,
+      "attempts": [
+        {
+          "requested_model": "qwen/qwen3.6-35b-a3b",
+          "state": "current",
+          "error_code": null,
+          "status_names_requested_model": true,
+          "rendered": true,
+          "artifact": "summary-macstudio.json"
+        },
+        {
+          "requested_model": "qwen38-27b-mtp",
+          "state": "current",
+          "error_code": null,
+          "status_names_requested_model": true,
+          "rendered": true,
+          "artifact": "summary-rtx4090.json"
+        }
+      ],
+      "fallback_note": "Both configured models exercised directly; natural 502 fallback recorded if produced, never injected.",
+      "screenshot": "row-09.png",
+      "status": "PASS",
+      "seconds": 9.913,
+      "network": "network.jsonl",
+      "row": 9
+    },
+    "11": {
+      "header_visible": true,
+      "header_box": {
+        "x": 673.375,
+        "y": 6.1875,
+        "width": 187.6875,
+        "height": 33.5
+      },
+      "ok": true,
+      "title_matches": true,
+      "mode": "File / URL",
+      "panel_box": {
+        "x": 310,
+        "y": -0.3125,
+        "width": 1112,
+        "height": 1068.5
+      },
+      "selected": "nMgx1bvYXIweozHeablRRiwk",
+      "screenshot": "row-11.png",
+      "status": "PASS",
+      "seconds": 0.182,
+      "network": "network.jsonl",
+      "row": 11
+    },
+    "12": {
+      "width": 400,
+      "scroll": 400,
+      "historyY": 69.6875,
+      "file_y": 70.1875,
+      "ok": true,
+      "screenshot": "row-12.png",
+      "status": "PASS",
+      "seconds": 0.238,
+      "network": "network.jsonl",
+      "row": 12
+    },
+    "10": {
+      "ok": true,
+      "bound_seconds": 4.0,
+      "decoder_trace": "row-10-decoder-events.json",
+      "expected_name": "E2E Morgan",
+      "bank_contains_name": true,
+      "recognition_seconds": 3.689699999809265,
+      "measurement": "Start click to visible name DOM mutation",
+      "meeting": "MQ9FZblTpW1bs-ebwPWlishd",
+      "screenshot": "row-10.png",
+      "status": "PASS",
+      "seconds": 5.339,
+      "network": "network.jsonl",
+      "row": 10
+    },
+    "8": {
+      "ok": true,
+      "filename": "meeting-MQ9FZblTpW1bs-ebwPWlishd.partial.mp3",
+      "duration": 11.42,
+      "source_duration": 50.0,
+      "artifact": "interrupted.partial.mp3",
+      "decodable": true,
+      "meeting": "MQ9FZblTpW1bs-ebwPWlishd",
+      "status_received": "interrupted",
+      "screenshot": "row-08.png",
+      "status": "PASS",
+      "seconds": 38.925,
+      "network": "network.jsonl",
+      "row": 8
+    },
+    "13": {
+      "ok": true,
+      "variants": [
+        {
+          "outage_seconds": 3,
+          "meeting": "3Robpzed503YqqySB2VOJ5mu",
+          "before": {
+            "status": "active",
+            "version": 15,
+            "accepted_samples": 54464,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": "active",
+          "restored_monotonic": 2279680.520451458,
+          "actual_outage_seconds": 3.0032979580573738,
+          "blocked_requests": 25,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            "3Robpzed503YqqySB2VOJ5mu",
+            "events",
+            "frames",
+            "heartbeat",
+            "snapshot"
+          ],
+          "phase_after_restore": "active",
+          "ui_status": "Connection restored. Recording microphone and shared audio.",
+          "text_changes_after_restore": 8,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.262686749920249,
+            "system": 0.3555497918277979
+          },
+          "first_snapshot_recovery_seconds": 0.5935154166072607,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 3.4951483751647174,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 11.0,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": "survived"
+        },
+        {
+          "outage_seconds": 20,
+          "meeting": "f_AczX1MqVYXpwUvBWW0U-a4",
+          "before": {
+            "status": "active",
+            "version": 15,
+            "accepted_samples": 54848,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": "active",
+          "restored_monotonic": 2279712.6256875,
+          "actual_outage_seconds": 20.002855999860913,
+          "blocked_requests": 135,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            "events",
+            "f_AczX1MqVYXpwUvBWW0U-a4",
+            "frames",
+            "heartbeat",
+            "snapshot"
+          ],
+          "phase_after_restore": "active",
+          "ui_status": "Connection restored. Recording microphone and shared audio.",
+          "text_changes_after_restore": 3,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.2960646660067141,
+            "system": 0.36623220797628164
+          },
+          "first_snapshot_recovery_seconds": 3.6405922500416636,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 20.49924266617745,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 28.0,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": "survived"
+        }
+      ],
+      "screenshot": "row-13.png",
+      "status": "PASS",
+      "seconds": 48.582,
+      "network": "network.jsonl",
+      "row": 13
+    },
+    "14": {
+      "ok": true,
+      "same_document": true,
+      "all_in_history": true,
+      "cycles": [
+        {
+          "cycle": 1,
+          "meeting": "KG9-HjStVvGtqxEVczFIA9Bh",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-1.json",
+          "export_filename": "transcript-KG9-HjStVvGtqxEVczFIA9Bh-2026-09-12T02_11_45.223Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-1.png",
+          "ok": true
+        },
+        {
+          "cycle": 2,
+          "meeting": "MTQ_bUUn1cyUTnwexgdQhz_i",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-2.json",
+          "export_filename": "transcript-MTQ_bUUn1cyUTnwexgdQhz_i-2026-09-12T02_11_57.290Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-2.png",
+          "ok": true
+        },
+        {
+          "cycle": 3,
+          "meeting": "Ap9X9sSfQhzvtOyVish2bXz5",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-3.json",
+          "export_filename": "transcript-Ap9X9sSfQhzvtOyVish2bXz5-2026-09-12T02_12_09.436Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-3.png",
+          "ok": true
+        }
+      ],
+      "screenshot": "row-14.png",
+      "status": "PASS",
+      "seconds": 36.389,
+      "network": "network.jsonl",
+      "row": 14
+    }
+  },
+  "meetings": {
+    "file": "nMgx1bvYXIweozHeablRRiwk",
+    "url": "p544S4YWuYV7hhj_8uQXVoVm",
+    "live": "Pg4zojz_ZLHIpS_H43GH9qLt",
+    "second_live": "MQ9FZblTpW1bs-ebwPWlishd",
+    "outage_3": "3Robpzed503YqqySB2VOJ5mu",
+    "outage_20": "f_AczX1MqVYXpwUvBWW0U-a4",
+    "repeat_1": "KG9-HjStVvGtqxEVczFIA9Bh",
+    "repeat_2": "MTQ_bUUn1cyUTnwexgdQhz_i",
+    "repeat_3": "Ap9X9sSfQhzvtOyVish2bXz5"
+  },
+  "named": "E2E Morgan"
+}

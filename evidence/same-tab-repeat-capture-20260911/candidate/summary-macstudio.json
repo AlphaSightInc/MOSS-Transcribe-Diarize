@@ -1,0 +1,27 @@
+{
+  "state": "current",
+  "document": {
+    "summary": "The transcript introduces Javier Milei, the president of Argentina, characterizing him as a libertarian, anarcho-capitalist, and economist who utilized a chainsaw in his campaign to symbolize his promise to slash state bureaucracy.",
+    "topics": [],
+    "details": [
+      {
+        "title": "Introduction of Javier Milei",
+        "description": "E2E Morgan introduces Javier Milei as the president of Argentina, noting his political ideologies (libertarian, anarcho-capitalist) and his profession as an economist.",
+        "timestamp": "00:00:00"
+      },
+      {
+        "title": "Symbolism of the Chainsaw Campaign",
+        "description": "The introduction highlights that Milei campaigned with a chainsaw, which served as a symbol for his pledge to reduce corrupt state bureaucracy.",
+        "timestamp": "00:00:05"
+      }
+    ],
+    "speaker_background": [
+      "E2E Morgan: Host/Interviewer introducing Javier Milei"
+    ],
+    "data_references": []
+  },
+  "attempt_id": "lADFgfPYwK5t-qSbH9bF9zDC",
+  "source_version": 13,
+  "artifact_version": 2,
+  "error_code": null
+}

@@ -1,0 +1,66 @@
+{
+  "rows": {
+    "14": {
+      "ok": true,
+      "same_document": true,
+      "all_in_history": true,
+      "cycles": [
+        {
+          "cycle": 1,
+          "pane_empty_before_start": true,
+          "meeting": "IJT7x-jxicSyt2t8GDuEqWLa",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-1.json",
+          "export_filename": "transcript-IJT7x-jxicSyt2t8GDuEqWLa-2026-09-12T02_12_46.710Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-1.png",
+          "ok": true
+        },
+        {
+          "cycle": 2,
+          "pane_empty_before_start": true,
+          "meeting": "JoaClwLRG3n2Vp0RMbT1fUNe",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-2.json",
+          "export_filename": "transcript-JoaClwLRG3n2Vp0RMbT1fUNe-2026-09-12T02_12_58.793Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-2.png",
+          "ok": true
+        },
+        {
+          "cycle": 3,
+          "pane_empty_before_start": true,
+          "meeting": "ErONmTrIM_4u_6ULvRF9lJNy",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-3.json",
+          "export_filename": "transcript-ErONmTrIM_4u_6ULvRF9lJNy-2026-09-12T02_13_10.875Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-3.png",
+          "ok": true
+        }
+      ],
+      "screenshot": "row-14.png",
+      "status": "PASS",
+      "seconds": 36.277,
+      "network": "network.jsonl",
+      "row": 14
+    }
+  },
+  "meetings": {
+    "repeat_1": "IJT7x-jxicSyt2t8GDuEqWLa",
+    "repeat_2": "JoaClwLRG3n2Vp0RMbT1fUNe",
+    "repeat_3": "ErONmTrIM_4u_6ULvRF9lJNy"
+  }
+}
