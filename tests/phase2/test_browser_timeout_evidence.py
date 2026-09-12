@@ -261,3 +261,50 @@ def test_failure_projection_drops_unquoted_page_text_http_body_and_os_paths():
         assert 'PRIVATE' not in json.dumps(detail)
     assert _failure_details(errors[1], {})['http_status'] == 502
     assert _failure_details(errors[2], {})['errno'] == 2
+
+
+def test_product_regression_download_context_preserves_event_value(tmp_path):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from playwright.sync_api import Download
+    artifact = tmp_path / 'transcript.srt'
+    artifact.write_text('fixture export')
+    item = Mock(spec=Download)
+    item.suggested_filename = 'transcript.srt'
+    item.path.return_value = str(artifact)
+    event = SimpleNamespace(value=item)
+    class Context:
+        def __enter__(self): return event
+        def __exit__(self, *args): return None
+    page = BrowserTimeoutEvidence(tmp_path, 'account_product_regression').page(
+        SimpleNamespace(expect_download=lambda: Context()), 'export.workspace')
+    with page.expect_download() as download:
+        pass
+    # Exact consumer contract at measure_product's export loop, not just __exit__.
+    assert download is event
+    assert isinstance(download.value, Download)
+    assert download.value.suggested_filename.endswith('.srt')
+    assert Path(download.value.path()).stat().st_size > 0
+
+
+def test_download_context_does_not_suppress_consumer_errors(tmp_path):
+    from types import SimpleNamespace
+    class Context:
+        def __enter__(self): return SimpleNamespace(value=None)
+        def __exit__(self, *args): return None
+    observed = BrowserTimeoutEvidence(tmp_path, 'account_product_regression').page(
+        SimpleNamespace(expect_download=lambda: Context()), 'export.workspace')
+    with pytest.raises(AssertionError, match='download consumer failed'):
+        with observed.expect_download():
+            raise AssertionError('download consumer failed')
+
+
+def test_real_product_export_download_value(page,tmp_path):
+    from playwright.sync_api import Download
+    page.set_content('<a download="transcript.srt" href="data:text/plain,fixture">SubRip (.srt)</a>')
+    observed = BrowserTimeoutEvidence(tmp_path, 'account_product_regression').page(page, 'export.workspace')
+    with observed.expect_download() as pending:
+        observed.get_by_role('link',name='SubRip (.srt)').click()
+    assert isinstance(pending.value, Download)
+    assert pending.value.suggested_filename.endswith('.srt')
+    assert Path(pending.value.path()).stat().st_size > 0

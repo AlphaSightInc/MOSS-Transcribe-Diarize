@@ -94,7 +94,12 @@ class EvidencePage:
             target = str(args[0]) if args and name in {
                 'wait_for_selector','wait_for_function','evaluate','eval_on_selector',
                 'goto','wait_for_load_state'} else name
-            return self.invoke(name, target, value, *args, **kwargs)
+            result = self.invoke(name, target, value, *args, **kwargs)
+            # Wrap only the page's context factory, never its __enter__ event
+            # info or __exit__ result (which must preserve .value / None).
+            if name.startswith('expect_'):
+                return EvidenceExpectation(result, self, name)
+            return result
         return call
 
     def invoke(self, operation, target, function, *args, **kwargs):
@@ -105,8 +110,6 @@ class EvidencePage:
             raise
         if isinstance(result, Locator):
             return EvidenceLocator(result, self)
-        if operation.startswith('expect_'):
-            return EvidenceExpectation(result, self, operation)
         return result
 
 
