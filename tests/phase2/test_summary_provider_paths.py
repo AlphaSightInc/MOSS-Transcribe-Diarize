@@ -6,8 +6,8 @@ import importlib.util
 import json
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
-from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright, expect as sync_expect
+from playwright.async_api import async_playwright, expect as async_expect
 
 from moss_transcribe_diarize.phase2_acceptance_summary import configure_external_summary
 from tests.phase2.browser_support import require_browser
@@ -28,7 +28,7 @@ def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
                 page.locator('[data-history-boot="ready"]').wait_for()
                 region = page.get_by_role("region", name="Browser AI settings", exact=True)
                 region.get_by_role("button").click()
-                assert region.get_by_label("Provider", exact=True).input_value() == "relay"
+                sync_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
                 assert region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
                 configure_external_summary(page, endpoint="https://example.test/v1", model="external-test",
                     api_key="test-key", prompt="test-prompt")
@@ -71,7 +71,7 @@ def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     region = page.get_by_role("region", name="Browser AI settings", exact=True)
                     await region.get_by_role("button").click()
-                    assert await region.get_by_label("Provider", exact=True).input_value() == "relay"
+                    await async_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
                     assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
                     # Invoke the exact helper imported by the deterministic probe.
                     await probe.select_external_summary_provider(region)

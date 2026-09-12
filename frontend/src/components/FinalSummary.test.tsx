@@ -89,3 +89,19 @@ it("names the model that produced the summary in its status line", async () => {
   } })); });
   expect(root.querySelector('[role="status"]')?.textContent).toContain("fallback");
 });
+
+it.each([true, false])("resolves a delayed model catalog before asserting the default (models=%s)", async hasModels => {
+  let deliver!: (response: Response) => void;
+  const catalog = new Promise<Response>(resolve => { deliver = resolve; });
+  const fetcher = vi.fn(() => catalog);
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => render(<FinalSummarySettings />, root));
+  await act(async () => root.querySelector<HTMLButtonElement>("button")!.click());
+  expect(fetcher).toHaveBeenCalledExactlyOnceWith("/api/llm/models", { credentials: "same-origin" });
+  await act(async () => deliver(new Response(JSON.stringify({
+    data: hasModels ? [{ id: "fixture-model", upstream: "fixture" }] : []
+  }))));
+  await vi.waitFor(() => expect(root.querySelector<HTMLSelectElement>('[aria-label="Provider"]')!.value)
+    .toBe(hasModels ? "relay" : "external"));
+  expect(loadSummarySettings().endpoint).toBe(hasModels ? RELAY_ENDPOINT : "");
+});

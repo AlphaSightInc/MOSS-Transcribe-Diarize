@@ -35,7 +35,26 @@ def page():
     ('browser_final_summary','summary.configure.a.retry','locator','[aria-label="Provider HTTPS URL"]'),
     ('transcript_pane_fidelity','reference.prepare','selector','.main'),
 ])
-def test_timeout_fields_raw_record_and_content_free_artifact(page,tmp_path,predicate,stage,kind,target):
+def test_timeout_fields_raw_record_and_content_free_artifact(page,tmp_path,monkeypatch,predicate,stage,kind,target):
+    # Assert the real writer supplies the mask and that it conceals text/form values
+    # in both captures; PNG compression, focus and browser painting are not evidence.
+    capture = page.screenshot
+    masks = []
+    def checked_capture(**kwargs):
+        assert kwargs['style'] == CONTENT_FREE_STYLE
+        style = page.add_style_tag(content=kwargs['style'])
+        try:
+            mask = page.locator('p').evaluate("""e => {
+                const s = getComputedStyle(e);
+                return [s.color, s.webkitTextFillColor, s.textShadow];
+            }""")
+            assert mask == ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)', 'none']
+            assert page.locator('input').evaluate("e => getComputedStyle(e).visibility") == 'hidden'
+            masks.append(mask)
+            return capture(**kwargs)
+        finally:
+            style.evaluate('e => e.remove()')
+    monkeypatch.setattr(page, 'screenshot', checked_capture)
     registered=set()
     evidence=BrowserTimeoutEvidence(tmp_path,predicate,registered.add)
     observed=evidence.page(page,stage)
@@ -51,11 +70,14 @@ def test_timeout_fields_raw_record_and_content_free_artifact(page,tmp_path,predi
     screenshot=tmp_path/detail['screenshot'].removeprefix('artifacts/')
     assert screenshot.is_file()
     assert 'PRIVATE' not in json.dumps(detail) and 'DO NOT RETAIN' not in json.dumps(detail)
-    # Pixel equality with/without secret text and values demonstrates screenshot redaction.
     first=screenshot.read_bytes()
     page.locator('p').evaluate("e=>e.textContent='DIFFERENT PRIVATE WORDS'")
     page.locator('input').fill('DIFFERENT SECRET')
-    assert page.screenshot(style=CONTENT_FREE_STYLE)==first
+    second = page.screenshot(style=CONTENT_FREE_STYLE)
+    from io import BytesIO
+    from PIL import Image
+    assert Image.open(BytesIO(first)).size == Image.open(BytesIO(second)).size == (400, 300)
+    assert len(masks) == 2
     from types import SimpleNamespace
     campaign=SimpleNamespace(safe_artifacts=tuple(registered),artifact_root=tmp_path)
     raw=tmp_path/'raw';raw.mkdir()
