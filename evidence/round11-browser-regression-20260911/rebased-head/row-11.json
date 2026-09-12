@@ -1,0 +1,24 @@
+{
+  "header_visible": true,
+  "header_box": {
+    "x": 673.375,
+    "y": 6.1875,
+    "width": 187.6875,
+    "height": 33.5
+  },
+  "ok": true,
+  "title_matches": true,
+  "mode": "File / URL",
+  "panel_box": {
+    "x": 310,
+    "y": -0.3125,
+    "width": 1112,
+    "height": 1068.5
+  },
+  "selected": "I1Ijbf5oiHXxMZa3ZWrzzTsG",
+  "screenshot": "row-11.png",
+  "status": "PASS",
+  "seconds": 0.273,
+  "network": "network.jsonl",
+  "row": 11
+}

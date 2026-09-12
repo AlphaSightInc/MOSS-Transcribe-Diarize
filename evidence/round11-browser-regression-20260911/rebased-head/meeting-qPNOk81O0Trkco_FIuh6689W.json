@@ -1,0 +1,103 @@
+{
+  "id": "qPNOk81O0Trkco_FIuh6689W",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1789178022444,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.26,
+        "end": 3.26,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "The following is a conversation with Javier Mal\u00e9,"
+      },
+      {
+        "id": "seg_0002",
+        "start": 3.29,
+        "end": 5.8,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "the president of Argentina."
+      },
+      {
+        "id": "seg_0003",
+        "start": 5.83,
+        "end": 10.66,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "He is a libertarian, a narco-capitalist and economist"
+      },
+      {
+        "id": "seg_0004",
+        "start": 10.69,
+        "end": 13.26,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "who campaigned with a chainsaw"
+      },
+      {
+        "id": "seg_0005",
+        "start": 13.29,
+        "end": 15.16,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "that symbolized his promise"
+      },
+      {
+        "id": "seg_0006",
+        "start": 15.19,
+        "end": 18.66,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "to slash the corrupt bureaucracy of the state."
+      },
+      {
+        "id": "seg_0007",
+        "start": 18.69,
+        "end": 22.06,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "He stepped into the presidency one year ago"
+      },
+      {
+        "id": "seg_0008",
+        "start": 22.09,
+        "end": 24.3,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "with the country on the brink of hyperinflation,"
+      },
+      {
+        "id": "seg_0009",
+        "start": 24.33,
+        "end": 26.3,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "deep in debt and suffering"
+      },
+      {
+        "id": "seg_0010",
+        "start": 26.33,
+        "end": 28,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "E2E Morgan",
+        "text": "from mass unemployment and poverty."
+      }
+    ]
+  },
+  "transcript_version": 17,
+  "audio": {
+    "state": "available",
+    "relative_path": "TWIUD6VK0sNcA3pqiZ3-j-u54Z15s66B/qPNOk81O0Trkco_FIuh6689W/audio.mp3",
+    "byte_count": 168741,
+    "duration_ms": 28000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}

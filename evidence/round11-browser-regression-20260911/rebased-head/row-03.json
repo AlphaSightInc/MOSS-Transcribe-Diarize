@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "meeting": "wjioHrCTYDQwUvThxnD0kOTX",
+  "status_received": "completed",
+  "segments": 9,
+  "speaker_count": 1,
+  "reference_words": 115,
+  "hypothesis_words": 111,
+  "edits": 10,
+  "wer": 0.08695652173913043,
+  "artifact": "meeting-wjioHrCTYDQwUvThxnD0kOTX.json",
+  "screenshot": "row-03.png",
+  "status": "PASS",
+  "seconds": 10.282,
+  "network": "network.jsonl",
+  "row": 3
+}
