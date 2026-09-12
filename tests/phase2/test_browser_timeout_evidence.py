@@ -308,3 +308,67 @@ def test_real_product_export_download_value(page,tmp_path):
     assert isinstance(pending.value, Download)
     assert pending.value.suggested_filename.endswith('.srt')
     assert Path(pending.value.path()).stat().st_size > 0
+
+
+@pytest.mark.parametrize('exit_value', [None, False, True])
+def test_async_expectation_preserves_same_event_shape_as_sync(tmp_path, exit_value):
+    import asyncio
+    from types import SimpleNamespace
+    from moss_transcribe_diarize.phase2_browser_evidence import AsyncEvidencePage
+    event = SimpleNamespace(value=object())
+    class Context:
+        def __enter__(self): return event
+        def __exit__(self, *args): return exit_value
+        async def __aenter__(self): return event
+        async def __aexit__(self, *args): return exit_value
+    raw = SimpleNamespace(expect_response=lambda: Context())
+    writer = BrowserTimeoutEvidence(tmp_path, 'browser_final_summary')
+    sync = writer.page(raw, 'summary').expect_response()
+    async_page = AsyncEvidencePage(raw, writer, 'summary')
+    async def run():
+        async with async_page.expect_response() as received:
+            assert received is event
+            assert received.value is sync.__enter__().value
+        context = async_page.expect_response()
+        assert await context.__aexit__(None, None, None) is sync.__exit__(None, None, None) is exit_value
+    asyncio.run(run())
+
+
+def test_async_expectation_does_not_suppress_body_error(tmp_path):
+    import asyncio
+    from types import SimpleNamespace
+    from moss_transcribe_diarize.phase2_browser_evidence import AsyncEvidencePage
+    class Context:
+        async def __aenter__(self): return SimpleNamespace(value=None)
+        async def __aexit__(self, *args): return None
+    page = AsyncEvidencePage(SimpleNamespace(expect_response=lambda: Context()),
+                             BrowserTimeoutEvidence(tmp_path, 'browser_final_summary'), 'summary')
+    async def run():
+        with pytest.raises(ValueError, match='consumer failure'):
+            async with page.expect_response():
+                raise ValueError('consumer failure')
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('boundary', ['enter', 'exit'])
+def test_async_expectation_timeout_retains_original_error(tmp_path, boundary):
+    import asyncio
+    from types import SimpleNamespace
+    from moss_transcribe_diarize.phase2_browser_evidence import AsyncEvidencePage
+    original = PlaywrightTimeout('fixture timeout')
+    class Context:
+        async def __aenter__(self):
+            if boundary == 'enter': raise original
+            return SimpleNamespace(value=None)
+        async def __aexit__(self, *args):
+            raise original
+    raw = SimpleNamespace(url='https://fixture.test/', expect_response=lambda: Context())
+    page = AsyncEvidencePage(raw, BrowserTimeoutEvidence(tmp_path, 'browser_final_summary'), 'summary.generate')
+    async def run():
+        with pytest.raises(PlaywrightTimeout) as caught:
+            async with page.expect_response():
+                pass
+        assert caught.value is original
+        assert original.browser_timeout['stage'] == 'summary.generate'
+        assert original.browser_timeout['operation'] == 'expect_response'
+    asyncio.run(run())

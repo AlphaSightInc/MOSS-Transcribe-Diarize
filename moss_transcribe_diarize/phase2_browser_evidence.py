@@ -136,6 +136,12 @@ class EvidenceExpectation:
     def __exit__(self, *args):
         return self.page.invoke(self.operation, self.operation, self.context.__exit__, *args)
 
+    async def __aenter__(self):
+        return await self.page.invoke(self.operation, self.operation, self.context.__aenter__)
+
+    async def __aexit__(self, *args):
+        return await self.page.invoke(self.operation, self.operation, self.context.__aexit__, *args)
+
 
 def wait_for_final_tail(page, tail):
     page.wait_for_function(FINAL_TAIL_READY, arg=tail)
