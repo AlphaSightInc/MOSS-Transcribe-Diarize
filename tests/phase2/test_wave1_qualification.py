@@ -2813,7 +2813,7 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     monkeypatch.setattr(
         external,
         "_admin_status_surfaces",
-        lambda socket, expected, forbidden: {
+        lambda socket, forbidden: {
             "json_exact_projection": True,
             "human_exact_projection": True,
             "json_stderr_bytes": 0,

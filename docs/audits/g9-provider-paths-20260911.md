@@ -22,3 +22,5 @@ Falsifiers: filling the URL while relay is selected; an external request going t
 Reproduce: `.venv/bin/python prototypes/client-configured-llm/final_browser_probe.py --output /tmp/g9-provider-paths.json`. The script pins imports to its own checkout. The host predicate supplies its configured Chrome binary; standalone probes use the shared executable discovery. Original local stack, host services, and databases were not changed.
 
 Full validation: `.venv/bin/python -m pytest tests/ -q` — **1,393 passed, 2 optional corpus skips, 37 subtests passed**; `npm --prefix frontend test -- --run` — **201 passed across 23 files**. Host round 10 has not been run by this agent.
+
+Final integration after rebase onto c07c5d46: **1,400 Python passed, 2 skipped, 37 subtests passed** (89.24s); frontend remains **201 passed** (no frontend changes in the rebase). The first integration run caught one stale three-argument `_admin_status_surfaces` test stub from the incoming operator-status change; updating it to the actual two-argument signature restored the full suite. No operator product behavior changed in this follow-up.
