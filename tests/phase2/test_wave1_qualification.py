@@ -2264,9 +2264,10 @@ def test_browser_batch_selector_executes_fixed_six_item_and_detached_contract(
     assert result["detached"] == {"status": 201, "meeting_id": "detached"}
 
 
+@pytest.mark.parametrize("kill_returncode", [0, 1])
 @pytest.mark.parametrize("prefix_fault", [None, "zero_version", "empty_segments", "nested_version_only"])
 def test_real_crash_producer_compares_recovered_bytes_to_production_archive_oracle(
-    monkeypatch, tmp_path: Path, prefix_fault,
+    monkeypatch, tmp_path: Path, prefix_fault, kill_returncode,
 ):
     corpus = tmp_path / "corpus"
     case = corpus / "case"
@@ -2376,14 +2377,14 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     monkeypatch.setattr(external, "MeetingAudioArchive", Archive)
     monkeypatch.setattr(external, "_wav_pcm", lambda path: b"\1\0" * 16_000)
     pids = iter((111, 222))
-    monkeypatch.setattr(external, "_unit_pid", lambda unit: next(pids))
+    monkeypatch.setattr(external, "_unit_pid", lambda unit, **kwargs: next(pids))
 
     def run(command: object, **kwargs: object):
         nonlocal restarted
         del kwargs
-        if "start" in command:
+        if "kill" in command:
             restarted = True
-        return SimpleNamespace(returncode=0)
+        return SimpleNamespace(returncode=kill_returncode)
 
     monkeypatch.setattr(external.subprocess, "run", run)
     monkeypatch.setattr(external.time, "sleep", lambda seconds: None)
@@ -2398,6 +2399,9 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     assert result["durable_document_mismatches"] == 0
     assert result["accepted_prefix_samples"] == 8_000
     assert result["process_replaced"] is True
+    assert result["recovery"]["kill_returncode"] == kill_returncode
+    assert result["recovery"]["ready"] is True
+    assert json.loads((campaign.artifact_root / "crash-recovery-wait.json").read_text()) == result["recovery"]
 
 
 @pytest.mark.parametrize("stop_failure", [False, True])

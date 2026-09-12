@@ -60,6 +60,42 @@ class ExternalMeasurementError(RuntimeError):
     """A fixed measurement ran but did not produce trustworthy product state."""
 
 
+class _CrashRecoveryOps:
+    def __init__(self, client):
+        self.client = client
+
+    monotonic = staticmethod(time.monotonic)
+    sleep = staticmethod(time.sleep)
+
+    def pid(self, unit, timeout):
+        return _unit_pid(unit, timeout=timeout)
+
+    def ready(self, timeout):
+        # Same authenticated readiness endpoint used by _await_service.
+        return self.client.request("GET", "/api/auth/session", timeout=timeout).status_code == 200
+
+
+def _wait_crash_recovery(ops, unit, old_pid, *, timeout=60.0):
+    started = ops.monotonic()
+    deadline = started + timeout
+    evidence = {"old_pid": old_pid, "new_pid": None, "ready": False,
+                "polls": 0, "deadline_seconds": timeout, "last_error_type": None}
+    while ops.monotonic() < deadline:
+        evidence["polls"] += 1
+        try:
+            pid = ops.pid(unit, min(1.0, deadline - ops.monotonic()))
+            evidence["new_pid"] = pid
+            remaining = deadline - ops.monotonic()
+            if pid != old_pid and pid > 0 and remaining > 0 and ops.ready(min(1.0, remaining)):
+                evidence["ready"] = True
+                break
+        except (ExternalMeasurementError, subprocess.TimeoutExpired) as exc:
+            evidence["last_error_type"] = type(exc).__name__
+        ops.sleep(min(0.5, max(0.0, deadline - ops.monotonic())))
+    evidence["wait_seconds"] = ops.monotonic() - started
+    return evidence
+
+
 class _CampaignBackpressure:
     """Bind one exact refusal, peer advance, and retry to existing campaign sessions."""
 
@@ -1588,20 +1624,21 @@ class FixedAccountCampaign:
             raise ExternalMeasurementError("crash probe PCM does not cover the accepted prefix")
         unit = str(self.config.get("web_unit") or "moss-web.service")
         old_pid = _unit_pid(unit)
-        killed = subprocess.run(
-            ("systemctl", "--user", "kill", "--signal=KILL", unit),
-            check=False,
-            capture_output=True,
-        )
-        started = subprocess.run(
-            ("systemctl", "--user", "start", unit), check=False, capture_output=True
-        )
-        if killed.returncode or started.returncode:
-            raise ExternalMeasurementError("forced Account web restart failed")
-        self._await_service()
-        new_pid = _unit_pid(unit)
-        if new_pid == old_pid:
-            raise ExternalMeasurementError("forced Account web restart did not replace the process")
+        kill_error = None
+        kill_returncode = None
+        try:
+            killed = subprocess.run(
+                ("systemctl", "--user", "kill", "--kill-whom=main", "--signal=KILL", unit),
+                check=False, capture_output=True, timeout=30,
+            )
+            kill_returncode = killed.returncode
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            kill_error = type(exc).__name__
+        recovery = _wait_crash_recovery(_CrashRecoveryOps(self.a), unit, old_pid)
+        recovery.update(kill_returncode=kill_returncode, kill_error_type=kill_error)
+        self._artifact_json("crash-recovery-wait.json", recovery)
+        if not recovery["ready"]:
+            raise ExternalMeasurementError("Account web recovery did not become ready within 60 seconds")
         after, _ = self.a.json(
             "GET", f"/api/meetings/{created.session_id}", 200
         )
@@ -1661,6 +1698,7 @@ class FixedAccountCampaign:
             "audio_prefix_failures": audio_prefix_failures,
             "accepted_prefix_samples": accepted_prefix_samples,
             "process_replaced": True,
+            "recovery": recovery,
             "resumed_capture": int(reattach.status_code != 409),
             "non_interrupted_active_rows": int(after.get("status") != "interrupted"),
         }
@@ -2732,7 +2770,7 @@ def _wav_pcm_clip(path: Path, start_seconds: float, end_seconds: float) -> bytes
     return payload
 
 
-def _unit_pid(unit: str) -> int:
+def _unit_pid(unit: str, *, timeout: float = 30) -> int:
     if unit not in {"moss-web.service", "moss-vllm.service"}:
         raise ExternalMeasurementError("qualification accepts only fixed MOSS service units")
     result = subprocess.run(
@@ -2740,6 +2778,7 @@ def _unit_pid(unit: str) -> int:
         check=False,
         capture_output=True,
         text=True,
+        timeout=timeout,
     )
     try:
         pid = int(result.stdout.strip())
