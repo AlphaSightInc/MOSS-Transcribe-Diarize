@@ -2,7 +2,7 @@
 
 Pull request (draft, unmerged, do not merge before deciding on history squash): https://github.com/aiSight-us/MOSS-Transcribe-Diarize/pull/32
 
-Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 provisionally records round 12, the latest complete qualification; replace it with the completed confirmation result before acting. Do not infer a PR, merge or admission from this handback.
+Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 records round 15; round 16 is the pending confirmation run. Do not infer a PR, merge or admission from this handback.
 
 ## 1. What you need to do (in order)
 
@@ -38,35 +38,32 @@ The browser sends the transcript through authenticated same-origin `/api/llm/cha
 
 Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
-## 2. State of the gates (round 14, candidate `057a547c`)
+## 2. State of the gates (round 15, candidate `767965d7`)
 
 | layer | collected | passed | failed | unmeasured |
 |---|---|---|---|---|
-| Deterministic commands | 18 | 18 | 0 | 0 |
-| deployed predicates | 19 | 17 | 2 | 0 |
-| pre_admission predicates | 17 | 14 | 3 | 0 |
+| Deterministic commands | 18 | 16 | 2 | 0 |
+| deployed predicates | 19 | 18 | 1 | 0 |
+| pre_admission predicates | 17 | 15 | 2 | 0 |
 
 | macro | bound | 5 % limit | deployed | pre-admission |
 |---|---|---|---|---|
 | final_wer | ≤0.095074000 | 0.099827700 | 0.091705333 **strict** | 0.091705333 **strict** |
-| immediate_wer | ≤0.166655000 | 0.174987750 | 0.164927167 **strict** | 0.165072333 **strict** |
-| settled_wer | ≤0.140442000 | 0.147464100 | 0.135672000 **strict** | 0.135817167 **strict** |
-| diarization_error_rate | ≤0.161430000 | 0.169501500 | 0.162635750 **exception** | 0.162618333 **exception** |
-| reference_speech_der | ≤0.134804000 | 0.141544200 | 0.135679583 **exception** | 0.135663583 **exception** |
-| recall | ≥0.929636000 | 0.883154200 | 0.930956500 **strict** | 0.930811250 **strict** |
-| matched_speaker_accuracy | ≥0.911512000 | 0.865936400 | 0.911333250 **exception** | 0.911188083 **exception** |
-| time_speaker_attribution | ≥0.876970000 | 0.833121500 | 0.877720667 **strict** | 0.877703250 **strict** |
+| immediate_wer | ≤0.166655000 | 0.174987750 | 0.165072333 **strict** | 0.164927167 **strict** |
+| settled_wer | ≤0.140442000 | 0.147464100 | 0.135817167 **strict** | 0.135672000 **strict** |
+| diarization_error_rate | ≤0.161430000 | 0.169501500 | 0.160881583 **strict** | 0.162669083 **exception** |
+| reference_speech_der | ≤0.134804000 | 0.141544200 | 0.133706500 **strict** | 0.135703417 **exception** |
+| recall | ≥0.929636000 | 0.883154200 | 0.930811250 **strict** | 0.930956500 **strict** |
+| matched_speaker_accuracy | ≥0.911512000 | 0.865936400 | 0.913220583 **strict** | 0.911333250 **exception** |
+| time_speaker_attribution | ≥0.876970000 | 0.833121500 | 0.878384667 **strict** | 0.877713167 **strict** |
 
-Failed predicates: `account_product_regression` (deployed), `account_product_regression` (pre_admission), `meeting_modes_history_restart` (pre_admission), `quality_corpus` (deployed), `quality_corpus` (pre_admission)
+Failed predicates: `browser_final_summary` (deployed), `browser_final_summary` (pre_admission), `quality_corpus` (pre_admission)
 
-The exception set is exactly **diarization_error_rate, reference_speech_der,
-matched_speaker_accuracy**, in each layer. `quality_corpus` still failed strict
-evaluation in both layers; no exception was silently applied to its verdict.
-QUALITY_BOUNDS and identity policy remain unchanged.
+Approved exception set: **DER, reference-speech DER, matched-speaker accuracy**, within 5% relative tolerance, **pre-admission only**; deployed passes all eight strict bounds. QUALITY_BOUNDS and identity policy remain unchanged.
 
-Two harness defects remained (account_product_regression AttributeError at phase2_acceptance_browser.py:401; pre-admission meeting_modes_history_restart one_item_failure_isolated=false); fixes in progress; round 15 is the confirmation run.
+One regression remained (async context protocol in the evidence wrapper, breaking the final-summary probe); fix in progress; round 16 is the confirmation run.
 
-Source: [round-14 report, sanitized copy](../evidence/round-reports/round-14.md). Handoff condition **NOT MET**; terminal **restored**, admitted=false, G7 UNCLAIMED. All 48 main sessions finalized.
+Source: [round-15 report, sanitized copy](../evidence/round-reports/round-15.md). Handoff condition **NOT MET**; terminal **restored**, admitted=false, G7 UNCLAIMED. All 48 main sessions finalized.
 
 ## 3. What changed since the 2026-09-10 plan (on the branch; validation scoped by the cited audit)
 

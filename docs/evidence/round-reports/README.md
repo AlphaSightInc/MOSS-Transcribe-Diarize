@@ -52,3 +52,7 @@ no host operation was performed.
 ## Round 14 — sanitized copy
 
 [Round 14](round-14.md) preserves all numbers and verdicts. Name-bearing corpus IDs were replaced with consistent neutral case numbers, explicitly labelled as sanitization; the original report remains MacStudio-local. Reviewed remaining prose, tables and JSON: statuses, measurements, opaque session IDs, technical paths and token-free service origins only. No transcript/prompt text, audio, screenshots or credential values copied. Companion links are annotated local paths.
+
+## Round 15 — sanitized copy
+
+[Round 15](round-15.md) preserves numbers and verdicts. Corpus IDs replaced with neutral case numbers; remaining fields reviewed as statuses, metrics, opaque identifiers, technical paths and token-free origins. No transcript/prompt text, credentials, audio or screenshots copied. Companion artifacts remain explicitly MacStudio-local.
