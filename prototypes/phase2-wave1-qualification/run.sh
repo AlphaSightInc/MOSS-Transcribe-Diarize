@@ -22,37 +22,8 @@ SOURCE_COPY="${ARTIFACT_ROOT}/source"
 mkdir -p "${SOURCE_COPY}"
 tar --exclude=.git --exclude=.venv --exclude=node_modules --exclude=build --exclude=dist \
   --exclude=evidence -C "${ROOT}" -cf - . | tar -C "${SOURCE_COPY}" -xf -
-"${ROOT}/.venv/bin/python" - "${ROOT}" "${SOURCE_COPY}" <<'PY'
-import hashlib
-import json
-import pathlib
-import subprocess
-import sys
-
-root = pathlib.Path(sys.argv[1])
-source = pathlib.Path(sys.argv[2])
-git = lambda *args: subprocess.check_output(("git", *args), cwd=root, text=True).strip()
-payload = {
-    "schema": "moss-phase2-acceptance.v1",
-    "git_sha": git("rev-parse", "HEAD"),
-    "git_tree": git("rev-parse", "HEAD^{tree}"),
-    "uv_lock_sha256": hashlib.sha256((root / "uv.lock").read_bytes()).hexdigest(),
-    "fixtures": {
-        "quality_corpus_manifest": hashlib.sha256(
-            (root / "evidence/live-policy-sweep-20260825/corpus/corpus-manifest.json").read_bytes()
-        ).hexdigest(),
-        "concurrency_fixture": hashlib.sha256(
-            (root / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json").read_bytes()
-        ).hexdigest(),
-        "concurrency_preregistration": hashlib.sha256(
-            (root / "prototypes/streaming-diarization/concurrency/preregistration.json").read_bytes()
-        ).hexdigest(),
-    },
-}
-(source / "moss_transcribe_diarize" / "build_candidate.json").write_text(
-    json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-)
-PY
+"${ROOT}/.venv/bin/python" "${ROOT}/moss_transcribe_diarize/candidate_identity.py" \
+  "${ROOT}" "${SOURCE_COPY}"
 uv build --wheel --out-dir "${ARTIFACT_ROOT}" "${SOURCE_COPY}" >/dev/null
 WHEEL="$(find "${ARTIFACT_ROOT}" -maxdepth 1 -name '*.whl' -print -quit)"
 [ -n "${WHEEL}" ] || { echo '{"runtime_probe":"FAIL","reason":"wheel absent"}' >&2; exit 1; }

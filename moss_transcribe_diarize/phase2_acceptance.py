@@ -8,6 +8,8 @@ it never restores browser authority or changes the database.
 
 from __future__ import annotations
 
+from .candidate_identity import FIXTURE_PATHS, write_build_candidate
+
 import hashlib
 import importlib.metadata
 import json
@@ -251,11 +253,7 @@ QUALITY_BOUNDS = {
     "reference_speech_der": ("max", 0.134804),
     "final_wer": ("max", 0.095074),
 }
-FIXTURE_PATHS = {
-    "quality_corpus_manifest": "evidence/live-policy-sweep-20260825/corpus/corpus-manifest.json",
-    "concurrency_fixture": "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json",
-    "concurrency_preregistration": "prototypes/streaming-diarization/concurrency/preregistration.json",
-}
+
 QUALITY_CASE_IDS = {
     "mono_javier_intro_50s",
     "interview_bill_ackman_60s",
@@ -499,16 +497,7 @@ def build_candidate_wheel(
         build_root = Path(directory) / "source"
         ignore = shutil.ignore_patterns(".git", ".venv", "node_modules", "dist", "evidence")
         shutil.copytree(repo, build_root, ignore=ignore)
-        embedded = {
-            "schema": SCHEMA,
-            "git_sha": source_identity["git_sha"],
-            "git_tree": source_identity["git_tree"],
-            "uv_lock_sha256": source_identity["uv_lock_sha256"],
-            "fixtures": source_identity["fixtures"],
-        }
-        (build_root / "moss_transcribe_diarize" / "build_candidate.json").write_text(
-            json.dumps(embedded, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        write_build_candidate(build_root, source_identity)
         wheel_dir = Path(directory) / "wheel"
         process = subprocess.run(
             ("uv", "build", "--wheel", "--out-dir", str(wheel_dir)),
