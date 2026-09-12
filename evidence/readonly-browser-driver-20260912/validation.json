@@ -1,0 +1,26 @@
+{
+  "before": {
+    "failed": 1,
+    "exception": "PermissionError",
+    "errno": 13
+  },
+  "after": {
+    "passed": 3,
+    "source_file_mode": "0444",
+    "source_directory_mode": "0555",
+    "source_unchanged": true,
+    "temporary_copy_removed": true,
+    "driver_resolution_restored": true
+  },
+  "e2e": {
+    "rows": [
+      1,
+      4,
+      11
+    ],
+    "passed": 3,
+    "failed": 0,
+    "first_visible_seconds": 2.3320528748445213,
+    "stop_to_terminal_seconds": 2.0601014592684805
+  }
+}

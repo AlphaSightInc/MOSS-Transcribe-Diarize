@@ -21,6 +21,9 @@ def unfocused_driver():
         needle = 'this._client.send("Emulation.setFocusEmulationEnabled", { enabled: true })'
         if text.count(needle) != 1:
             raise RuntimeError('Playwright focus override changed; refusing a false background test')
+        # copytree preserves an installed package's read-only file mode.
+        # Change only the disposable copy; retain all other permission bits.
+        bundle.chmod(bundle.stat().st_mode | 0o200)
         bundle.write_text(text.replace(needle, 'this._client.send("Emulation.setFocusEmulationEnabled", { enabled: false })'))
         _transport.compute_driver_executable = lambda: (node, str(package / 'cli.js'))
         try: yield

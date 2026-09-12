@@ -49,3 +49,34 @@ def test_g9_registers_second_session_with_owner_before_seeding(tmp_path,monkeypa
     monkeypatch.setattr(summary,'_trusted_tls_identity',lambda origin:{'trusted':True})
     with pytest.raises(ReachedFile):summary.measure_browser_summary(campaign)
     assert calls==[('create','b'),('seed','b','owned-second',1),('stop','/api/live/sessions/owned-second/stop')]
+
+
+def test_unfocused_driver_copies_read_only_installation(tmp_path,monkeypatch):
+    from pathlib import Path
+    from playwright._impl import _transport
+    source=tmp_path/'installed-package'
+    (source/'lib').mkdir(parents=True)
+    cli=source/'cli.js';cli.write_text('// fixture driver entrypoint\n')
+    bundle=source/'lib/coreBundle.js'
+    original_text='this._client.send("Emulation.setFocusEmulationEnabled", { enabled: true })'
+    bundle.write_text(original_text)
+    original=lambda: ('node',str(cli))
+    monkeypatch.setattr(_transport,'compute_driver_executable',original)
+    for path in (cli,bundle):path.chmod(0o444)
+    for path in (source/'lib',source):path.chmod(0o555)
+    try:
+        with unfocused_driver():
+            _,copied_cli=_transport.compute_driver_executable()
+            copied_root=Path(copied_cli).parent
+            copied_bundle=copied_root/'lib/coreBundle.js'
+            assert copied_root != source
+            assert 'enabled: false' in copied_bundle.read_text()
+            assert copied_bundle.stat().st_mode & 0o200
+            assert bundle.read_text()==original_text
+            assert bundle.stat().st_mode & 0o222 == 0
+            assert source.stat().st_mode & 0o222 == 0
+        assert not copied_root.exists()
+        assert _transport.compute_driver_executable is original
+    finally:
+        for path in (source,source/'lib'):path.chmod(0o755)
+        for path in (cli,bundle):path.chmod(0o644)
