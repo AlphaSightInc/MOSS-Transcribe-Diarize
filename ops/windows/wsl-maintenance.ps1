@@ -6,7 +6,8 @@ param(
     [string]$Action,
     [string]$Destination,
     [string]$Distro = 'Ubuntu',
-    [string]$KeepaliveTask = 'MinerU-WSL-Keepalive',
+    [ValidateNotNullOrEmpty()]
+    [string[]]$KeepaliveTasks = @('MinerU-WSL-Keepalive', 'MinerU-Windows-Watchdog'),
     [switch]$DryRun,
     [switch]$Force,
     [string]$Acknowledgement,
@@ -173,9 +174,11 @@ try {
     if (-not $ownsMutex) { throw 'Another MOSS maintenance wrapper owns the maintenance lock.' }
     Write-Record 'started' @{ started = $started.ToString('o'); action = $Action; distro = $Distro;
         dry_run = [bool]$DryRun; validation = 'untested_on_windows' }
-    $tasks = @(Get-ScheduledTask -TaskName $KeepaliveTask -ErrorAction Stop)
-    if ($tasks.Count -ne 1) { throw 'Exactly one keepalive task must match; no task changes performed.' }
-    $task = $tasks[0]
+    $task = @(foreach ($taskName in $KeepaliveTasks) {
+        $taskMatches = @(Get-ScheduledTask -TaskName $taskName -ErrorAction Stop)
+        if ($taskMatches.Count -ne 1) { throw 'Exactly one task must match each requested name; no task changes performed.' }
+        $taskMatches[0]
+    })
     $before = Get-Disk
     if ($Action -eq 'move' -and (Test-Path -LiteralPath $Destination)) {
         throw 'Move destination must not already exist; select a new directory on the approved drive.'
@@ -230,14 +233,16 @@ try {
     try { Write-Record 'failed' @{ exception_type = $_.Exception.GetType().Name } } catch { Write-Warning 'Failure log write failed.' }
 } finally {
     if ($reenable -and $null -ne $task) {
-        try {
-            $task | Enable-ScheduledTask | Out-Null
-            $enabled = Get-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath
-            if ($enabled.State -eq 'Disabled') { throw 'Keepalive remains disabled.' }
-            Write-Record 'keepalive_reenabled'
-        } catch {
-            $exitCode = 1
-            Write-Warning 'KEEPALIVE RE-ENABLE NOT CONFIRMED: check the task and re-enable it manually if needed.'
+        foreach ($taskToEnable in $task) {
+            try {
+                $taskToEnable | Enable-ScheduledTask | Out-Null
+                $enabled = Get-ScheduledTask -TaskName $taskToEnable.TaskName -TaskPath $taskToEnable.TaskPath
+                if ($enabled.State -eq 'Disabled') { throw 'Restart task remains disabled.' }
+                Write-Record 'restart_task_reenabled' @{ task = $taskToEnable.TaskName }
+            } catch {
+                $exitCode = 1
+                Write-Warning ("TASK RE-ENABLE NOT CONFIRMED: check and re-enable manually: " + $taskToEnable.TaskName)
+            }
         }
     }
     if ($ownsMutex) { $mutex.ReleaseMutex() }

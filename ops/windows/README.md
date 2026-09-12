@@ -56,10 +56,11 @@ Phase-1 units or claim their readiness; use the release owner's recovery procedu
   -Acknowledgement 'no cutover attempt is running'
 ```
 
-Parameters: `-Distro` defaults to `Ubuntu`; `-KeepaliveTask` currently defaults to
-`MinerU-WSL-Keepalive` only. **The current wrapper does not yet handle the watchdog;
-its task-list patch is pending approval. Do not use it for maintenance until both
-tasks are covered.** `-LogDirectory` defaults to `%LOCALAPPDATA%\MOSS\maintenance`.
+Parameters: `-Distro` defaults to `Ubuntu`; `-KeepaliveTasks` is a nonempty array
+with defaults `MinerU-WSL-Keepalive` and `MinerU-Windows-Watchdog`. Both task names
+must resolve uniquely before any task is changed. All selected tasks are disabled,
+then their running instances stopped, before shutdown; any failure aborts shutdown.
+`-LogDirectory` defaults to `%LOCALAPPDATA%\MOSS\maintenance`.
 If C: is too full even for a small log, choose a writable directory on a healthy
 Windows drive with `-LogDirectory`. Other actions are `set-sparse`, `move` (requires
 `-Destination`) and `compact-check`.
@@ -110,11 +111,13 @@ user's distro registration to the requested destination, leave a readable/exclus
 VHDX there, and remove the old VHDX path. The script never claims those checks prove
 transcript integrity or service readiness.
 
-The `finally` block attempts to re-enable and verify keepalive on success or any
-ordinary exception after disabling it—even if it was initially disabled. Failure
-to confirm that produces a warning and nonzero exit. **Process kill, host crash or
+The `finally` block attempts to re-enable and verify **every selected task** on
+success or any ordinary exception after disabling begins—even tasks that were
+initially disabled. Each task has its own error handling: one re-enable failure
+does not prevent the attempt to re-enable the others. A failure produces a warning
+naming the task and a nonzero exit. **Process kill, host crash or
 PowerShell termination can prevent any finally block from running**; the operator
-must then inspect/re-enable the task manually. Do not run concurrent maintenance.
+must then inspect/re-enable both tasks manually. Do not run concurrent maintenance.
 Logs are timestamped `wsl-maintenance-<date>-<pid>.jsonl`; exit 0 means the selected
 checks passed (or a dry-run plan completed), not that the host is qualified.
 
@@ -128,7 +131,8 @@ pwsh -NoProfile -Command '$tokens = $null; $parseErrors = $null; [System.Managem
 
 If `pwsh` is unavailable on Windows, use `powershell.exe -NoProfile -Command` with
 the same parser expression. Then validate missing acknowledgement refusal, dry-run
-non-mutation, unknown-launcher refusal, known-controller attribution, task restoration
-on an induced action failure, and the full stopped interval during an approved
-maintenance window. Validate actual sparse/move outcomes only on the release owner's
+non-mutation, unknown-launcher refusal, known-controller attribution, restoration
+of both tasks on an induced action failure (including continuation after one
+re-enable failure), and the full stopped interval during an approved maintenance
+window. Validate actual sparse/move outcomes only on the release owner's
 chosen action; this document does not authorize an extra move or recovery experiment.
