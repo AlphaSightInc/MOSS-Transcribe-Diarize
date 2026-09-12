@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-n30dm6zc7eoerjxy2li3b",
+  "object": "chat.completion",
+  "created": 1789183456,
+  "model": "qwen/qwen3.6-35b-a3b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"summary\": \"The provided text is an introductory segment for a conversation with Javier Milei, identified as the president of Argentina and a libertarian. It contains no substantive discussion, analysis, or arguments beyond this identification.\",\n  \"topics\": [],\n  \"details\": [],\n  \"speaker_background\": [\n    \"S01: Narrator/Interviewer introducing the guest\"\n  ],\n  \"data_references\": []\n}",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1798,
+    "completion_tokens": 94,
+    "total_tokens": 1892,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.6-35b-a3b"
+}

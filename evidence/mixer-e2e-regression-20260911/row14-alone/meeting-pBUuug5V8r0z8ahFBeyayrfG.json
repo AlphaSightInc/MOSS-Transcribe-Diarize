@@ -1,0 +1,39 @@
+{
+  "id": "pBUuug5V8r0z8ahFBeyayrfG",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1789183458904,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.26,
+        "end": 5.75,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina."
+      },
+      {
+        "id": "seg_0002",
+        "start": 5.78,
+        "end": 7.95,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "He is a libertarian and"
+      }
+    ]
+  },
+  "transcript_version": 6,
+  "audio": {
+    "state": "available",
+    "relative_path": "WuHM7sHp2fzXqmJxX2DNRYUCu5scPCgY/pBUuug5V8r0z8ahFBeyayrfG/audio.mp3",
+    "byte_count": 48861,
+    "duration_ms": 8000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}

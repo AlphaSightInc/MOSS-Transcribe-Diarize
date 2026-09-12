@@ -1,0 +1,126 @@
+{
+  "rows": {
+    "13": {
+      "ok": true,
+      "variants": [
+        {
+          "outage_seconds": 3,
+          "meeting": "azmyjaItqAw13Nj3zD6sRDhp",
+          "before": {
+            "status": "active",
+            "version": 17,
+            "accepted_samples": 62976,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": "active",
+          "restored_monotonic": 2284140.494305541,
+          "actual_outage_seconds": 3.002106874715537,
+          "blocked_requests": 25,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            "azmyjaItqAw13Nj3zD6sRDhp",
+            "events",
+            "frames",
+            "heartbeat",
+            "snapshot"
+          ],
+          "phase_after_restore": "active",
+          "ui_status": "Connection restored. Recording microphone and shared audio.",
+          "text_changes_after_restore": 8,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.2342219171114266,
+            "system": 0.2939334590919316
+          },
+          "first_snapshot_recovery_seconds": 0.6367485420778394,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 3.503458125051111,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 11.5,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": "survived"
+        },
+        {
+          "outage_seconds": 20,
+          "meeting": "09d175_iGJ5kxykBIoLX-iZx",
+          "before": {
+            "status": "active",
+            "version": 15,
+            "accepted_samples": 54592,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": "active",
+          "restored_monotonic": 2284172.709484708,
+          "actual_outage_seconds": 20.003186999820173,
+          "blocked_requests": 135,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            "09d175_iGJ5kxykBIoLX-iZx",
+            "events",
+            "frames",
+            "heartbeat",
+            "snapshot"
+          ],
+          "phase_after_restore": "active",
+          "ui_status": "Connection restored. Recording microphone and shared audio.",
+          "text_changes_after_restore": 3,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.2592080421745777,
+            "system": 0.33433679211884737
+          },
+          "first_snapshot_recovery_seconds": 3.622993375174701,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 20.503898332826793,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 28.0,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": "survived"
+        }
+      ],
+      "screenshot": "row-13.png",
+      "status": "PASS",
+      "seconds": 49.219,
+      "network": "network.jsonl",
+      "row": 13
+    },
+    "14": {
+      "error": "Locator.select_option: Timeout 12000ms exceeded.\nCall log:\n  - waiting for get_by_label(\"Listening setup\", exact=True)\n    - locator resolved to <select disabled id=\"audio-route\" aria-label=\"Listening setup\">\u2026</select>\n  - attempting select option action\n    2 \u00d7 waiting for element to be visible and enabled\n      - element is not enabled\n    - retrying select option action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible and enabled\n      - element is not enabled\n    - retrying select option action\n      - waiting 100ms\n    24 \u00d7 waiting for element to be visible and enabled\n       - element is not enabled\n     - retrying select option action\n       - waiting 500ms\n",
+      "exception": "TimeoutError",
+      "screenshot": "row-14.png",
+      "status": "FAIL",
+      "seconds": 12.151,
+      "network": "network.jsonl",
+      "row": 14
+    }
+  },
+  "meetings": {
+    "outage_3": "azmyjaItqAw13Nj3zD6sRDhp",
+    "outage_20": "09d175_iGJ5kxykBIoLX-iZx"
+  },
+  "base": "https://127.0.0.1:17864"
+}

@@ -1,0 +1,1444 @@
+{"t": 1789183588.781437, "row": 0, "method": "GET", "path": "/", "status": 200}
+{"t": 1789183588.804765, "row": 0, "method": "GET", "path": "/api/auth/session", "status": 401}
+{"t": 1789183588.806475, "row": 0, "method": "POST", "path": "/api/workspace/bootstrap", "status": 200}
+{"t": 1789183588.80749, "row": 0, "method": "GET", "path": "/api/auth/session", "status": 200}
+{"t": 1789183588.8106182, "row": 0, "method": "GET", "path": "/", "status": 200}
+{"t": 1789183588.816836, "row": 0, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789183588.8272588, "row": 0, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789183588.854458, "row": 0, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789183588.85477, "row": 0, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789183588.8549912, "row": 0, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789183588.8552, "row": 0, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789183588.8738291, "row": 0, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789183588.8742368, "row": 0, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789183588.874476, "row": 0, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789183588.8799949, "row": 0, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183588.8803468, "row": 0, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183588.9025931, "row": 13, "page_closed": true}
+{"t": 1789183588.931102, "row": 13, "method": "GET", "path": "/", "status": 200}
+{"t": 1789183588.935508, "row": 13, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789183588.9633322, "row": 13, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789183588.9848, "row": 13, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789183588.9850712, "row": 13, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789183588.985248, "row": 13, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789183588.98546, "row": 13, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789183589.0012429, "row": 13, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789183589.00158, "row": 13, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789183589.001879, "row": 13, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789183589.005779, "row": 13, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183589.0059588, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183589.090472, "row": 13, "setup_before_reset": "idle", "reset_count": 0}
+{"t": 1789183589.0925848, "row": 13, "setup_after_reset": "idle"}
+{"t": 1789183589.1480582, "row": 13, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789183589.24574, "row": 13, "source_audio": {"paused": false, "currentTime": 0.094278, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789183590.036096, "row": 13, "capture_meters": ["Microphone level 18%", "Shared audio level 18%"]}
+{"t": 1789183590.038856, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183590.066169, "row": 13, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789183590.066427, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183590.068789, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183590.070596, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.0711129, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.071809, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183590.0776699, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "status": 200}
+{"t": 1789183590.179323, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.180033, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.187545, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183590.18883, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183590.25865, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183590.283891, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.284357, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.38928, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.389757, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.4942222, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.494762, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.5987148, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.599126, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.691414, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183590.694017, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183590.702697, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.7030668, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.7632792, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183590.8081322, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.808557, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183590.914892, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183590.915753, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.019808, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.020399, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.123939, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.1244009, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.186767, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183591.189755, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183591.23238, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.233115, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.263633, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183591.3381052, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.338579, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.44328, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.444076, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.55335, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.553962, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.6527302, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.653173, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.691238, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183591.694286, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183591.764055, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183591.7647731, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.765165, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.8689642, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.869399, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183591.974006, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183591.975295, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.079063, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.079613, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.080395, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "status": 200}
+{"t": 1789183592.183424, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.1838741, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.186323, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183592.189303, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183592.258431, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183592.2876852, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.2886558, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.393802, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.394333, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.499926, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.5004401, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.60448, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.604886, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.691772, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183592.6954062, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183592.711276, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.711796, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.765409, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183592.814691, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.815166, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183592.918488, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183592.919039, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.022656, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.0230558, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.131131, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.1318588, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.187382, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183593.189827, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183593.234293, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.234756, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.2583349, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183593.338912, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.339356, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.447743, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.44841, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.552895, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.5535412, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183593.5682602, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183593.657092, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183593.657195, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183593.691062, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183593.6912482, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183593.7552562, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.086137, "row": 13, "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.1595361, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.159831, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.1865711, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.1868649, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.2517262, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.690783, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.690903, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183594.754905, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.165107, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.165379, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.1896582, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.1901708, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.250868, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.694218, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.694578, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183595.7578828, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183596.1870232, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183596.187232, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183596.250761, "row": 13, "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183596.6911712, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183596.69462, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.696643, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.705701, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.7155998, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.725562, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.735143, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.745159, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.75557, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.758305, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.7600188, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.761821, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.769399, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.780253, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183596.789202, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183597.17193, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.172499, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.187083, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183597.190502, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183597.258487, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183597.277193, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.277657, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.3835049, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.384168, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.48825, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.488822, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.592308, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.592847, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.693562, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183597.696668, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183597.699679, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.700049, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.762538, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183597.805614, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.806067, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183597.9189901, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183597.919747, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.0237272, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.0241559, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.130732, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.13148, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.187159, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183598.190144, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183598.2339609, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.234335, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.259111, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183598.338658, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.339118, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.446404, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.447208, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.5508502, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.5512671, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.654502, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.6549382, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.690855, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183598.693794, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183598.7620401, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183598.763503, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.763823, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.868209, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.868785, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183598.975678, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183598.976156, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.08308, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.0835001, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.187886, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.190082, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.193023, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183599.193385, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183599.2577422, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183599.294464, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.294956, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.3983319, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.398727, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.50669, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.507245, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.617968, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.618794, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.69128, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183599.69408, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183599.7234392, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.723892, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.762549, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183599.829368, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.829941, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183599.9338791, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183599.934505, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.040294, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.040929, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.145907, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.1466088, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.1895401, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183600.1942558, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183600.251061, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.251693, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.2630882, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/frames", "status": 200}
+{"t": 1789183600.355037, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.3556852, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.458287, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.4587882, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.567297, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.5684218, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.6492171, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/heartbeat", "status": 200}
+{"t": 1789183600.649899, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "status": 200}
+{"t": 1789183600.671608, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.6723661, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.7788239, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.779242, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.8833349, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.8837628, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183600.988132, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183600.988545, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.0956218, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183601.0961668, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.200075, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183601.200577, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.305363, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183601.306124, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.4143019, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183601.414957, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.520324, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183601.5212412, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183601.6554098, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "status": 200}
+{"t": 1789183601.884657, "row": 13, "method": "POST", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/stop", "status": 200}
+{"t": 1789183602.664885, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG", "status": 200}
+{"t": 1789183602.671375, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183602.714392, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183602.763596, "row": 13, "method": "GET", "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG/audio/download", "status": 200}
+{"t": 1789183602.763863, "row": 13, "path": "/api/meetings/GBCob1l2mpvdL1usWtFKdzSG/audio/download", "failure": "net::ERR_ABORTED"}
+{"t": 1789183603.5354822, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/snapshot", "status": 200}
+{"t": 1789183603.536203, "row": 13, "method": "GET", "path": "/api/live/sessions/GBCob1l2mpvdL1usWtFKdzSG/events", "status": 200}
+{"t": 1789183603.540035, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183603.7382662, "row": 13, "page_closed": true}
+{"t": 1789183603.77091, "row": 13, "method": "GET", "path": "/", "status": 200}
+{"t": 1789183603.775425, "row": 13, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789183603.806405, "row": 13, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789183603.832216, "row": 13, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789183603.832694, "row": 13, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789183603.832931, "row": 13, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789183603.833139, "row": 13, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789183603.8496509, "row": 13, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789183603.850089, "row": 13, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789183603.851527, "row": 13, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789183603.8534431, "row": 13, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183603.856014, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183603.9429388, "row": 13, "setup_before_reset": "idle", "reset_count": 0}
+{"t": 1789183603.944833, "row": 13, "setup_after_reset": "idle"}
+{"t": 1789183603.999012, "row": 13, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789183604.093004, "row": 13, "source_audio": {"paused": false, "currentTime": 0.115347, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789183604.889931, "row": 13, "capture_meters": ["Microphone level 19%", "Shared audio level 18%"]}
+{"t": 1789183604.893617, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183604.932249, "row": 13, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789183604.93262, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183604.935273, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183604.937061, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183604.937492, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183604.9382799, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183604.9389088, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183605.01949, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183605.0207841, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183605.043365, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.043797, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.0987148, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183605.1489868, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.149568, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.2530088, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.2535338, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.358798, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.359278, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.462225, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.462624, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.5229828, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183605.5259142, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183605.566632, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.5670311, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.603901, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183605.671455, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.671936, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.775548, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.7759948, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.879511, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.8802938, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183605.983525, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183605.984019, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.019087, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183606.022302, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183606.086457, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.086941, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.098237, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183606.19296, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.193444, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.299989, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.30051, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.404624, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.405301, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.509365, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.5099158, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.522947, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183606.525785, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183606.6025448, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183606.6133409, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.613769, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.716827, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.71753, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.82045, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.8208482, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.924976, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183606.925525, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183606.9427981, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183607.0201879, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183607.023377, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183607.02896, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.029374, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.0983942, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183607.133613, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.134253, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.2379909, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.238626, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.342399, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.342954, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.449713, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.4502258, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.523183, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183607.5269918, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183607.5533109, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.5540721, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.603798, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183607.657333, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.6577752, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.7655199, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.7660742, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.8686001, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.86906, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183607.973591, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183607.9740858, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183608.019283, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183608.0225768, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183608.081268, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183608.081821, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183608.0985768, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183608.185127, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183608.185567, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183608.2032452, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183608.288633, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.288824, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.5254989, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.525825, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.596941, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.798157, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.7982879, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183608.94892, "row": 13, "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.018838, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.019111, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.091201, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.522676, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.522815, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.5948548, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.806648, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183609.8069298, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.0214531, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.0219321, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.0927832, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.5263329, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.526837, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183610.598144, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.021943, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.022362, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.0935261, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.52565, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.526083, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.599042, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.8106408, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183611.810742, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.0185258, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.018705, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.090424, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.524749, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.525175, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183612.596191, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.021434, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.02228, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.0926678, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.525284, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.5259929, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183613.5984159, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.021194, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.021663, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.09166, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.5226939, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.5228312, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183614.594353, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.0212, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.021557, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.092748, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.524112, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.524349, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183615.594306, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.0185971, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.018683, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.091427, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.522581, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.522706, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.5943942, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.814193, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183616.8144221, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.018677, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.0188181, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.09081, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.522702, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.5228329, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183617.594121, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.018432, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.018555, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.090591, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.522635, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.522919, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183618.59811, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.021128, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.021771, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.0932128, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.525019, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.525414, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183619.598016, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.021215, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.0217369, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.092181, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.523534, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.523916, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183620.594765, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.018338, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.018534, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.0905442, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.525103, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.5253718, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.59444, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.8209422, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183621.821177, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.018202, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.01849, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.093193, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.5225348, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.522669, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183622.594601, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.018193, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.018424, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.091069, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.523139, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.5233421, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183623.59435, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.0209558, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.0216, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.090326, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.525784, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.526314, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183624.596255, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.018475, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.018807, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.089901, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.522293, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.522608, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183625.594452, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.018185, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.0183291, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.089847, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.522227, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.5225542, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.5938299, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.831182, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183626.8314319, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.018581, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.018698, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.0922828, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.529085, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.529183, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183627.594662, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183628.018462, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183628.0186749, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183628.090313, "row": 13, "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789183628.527086, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183628.530551, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.532616, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.54321, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.553854, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.5637069, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.5721338, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.581534, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.590505, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.59928, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.600488, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.608317, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.609122, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.617454, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.6181881, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.6262999, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.628303, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.636575, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.637367, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.645741, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.646518, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.6552022, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.656055, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.664507, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.665382, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.673934, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.6751769, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.684177, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.684751, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.69346, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.694161, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.70239, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.709124, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.7122061, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.713195, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.721677, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.723625, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.731997, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.732954, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.74141, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.742212, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.750946, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.751584, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.760581, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.761255, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.770823, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.771478, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.780354, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.7810938, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.7894132, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.7902138, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.798248, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.7989929, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.8079731, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.808631, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.814974, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.8156521, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.824939, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.8255308, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.8351722, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.8357959, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.845068, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.845697, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.854818, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.855411, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.864557, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.865152, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.874961, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.875624, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.884911, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.88567, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.894937, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.895608, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.904156, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.9051251, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.9072142, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.909038, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.910626, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.912412, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.914069, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.920706, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.93057, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183628.939252, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183629.019129, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183629.021569, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183629.097753, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183629.5227032, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183629.526975, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183629.603371, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183630.018425, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183630.021199, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183630.097652, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183630.5227919, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183630.525583, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183630.601687, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183631.018558, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183631.021479, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183631.097406, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183631.522799, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183631.525467, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183631.601324, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183631.84287, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183631.844767, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183631.94944, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183631.9499469, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.018174, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183632.020923, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183632.0534909, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.053921, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.096969, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/frames", "status": 200}
+{"t": 1789183632.160013, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.160898, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.2657049, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/heartbeat", "status": 200}
+{"t": 1789183632.2661812, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183632.2704031, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.2718878, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.378745, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.3791978, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.48287, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.4833112, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.587481, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.587945, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.691958, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.692378, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.799155, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.799718, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183632.902755, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183632.9033659, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.0061948, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.006676, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.1131709, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.113958, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.21742, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.217933, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.2718809, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183633.3231602, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.323664, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.428664, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.4291751, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.532736, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.533112, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.63755, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.637961, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.7411551, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.741618, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.849143, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.8496351, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183633.953108, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183633.95362, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.0570061, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.057445, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.162772, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.163378, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.266151, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.266581, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.275978, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183634.369621, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.3702059, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.4819798, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.482626, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183634.586547, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183634.58706, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183635.286386, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183635.611287, "row": 13, "method": "POST", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/stop", "status": 200}
+{"t": 1789183636.2955651, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p", "status": 200}
+{"t": 1789183636.301952, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183636.331778, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183636.377504, "row": 13, "method": "GET", "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p/audio/download", "status": 200}
+{"t": 1789183636.3777652, "row": 13, "path": "/api/meetings/oOSAubH2EgI-ptzpszxUOI-p/audio/download", "failure": "net::ERR_ABORTED"}
+{"t": 1789183636.628895, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/snapshot", "status": 200}
+{"t": 1789183636.631029, "row": 13, "method": "GET", "path": "/api/live/sessions/oOSAubH2EgI-ptzpszxUOI-p/events", "status": 200}
+{"t": 1789183636.6321, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183636.6707819, "row": 14, "setup_before_reset": "terminal", "reset_count": 1}
+{"t": 1789183636.700421, "row": 14, "setup_after_reset": "idle"}
+{"t": 1789183636.74832, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789183636.8408399, "row": 14, "source_audio": {"paused": false, "currentTime": 0.117022, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789183637.631352, "row": 14, "capture_meters": ["Microphone level 19%", "Shared audio level 18%"]}
+{"t": 1789183637.635512, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183637.665204, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789183637.665605, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183637.667156, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183637.669543, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183637.670914, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183637.671605, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183637.672087, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183637.777411, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183637.7778392, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183637.778526, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183637.7791538, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183637.849043, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183637.882091, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183637.8823302, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183637.985713, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183637.986067, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.089822, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.089994, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.194679, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.194946, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.2822552, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183638.284457, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183638.299223, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.299735, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.352829, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183638.403439, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.403643, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.5121431, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.512396, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.616101, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.616312, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.720932, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.7212129, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.779881, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183638.78418, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183638.8270998, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.827362, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183638.8503191, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183638.932781, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183638.933023, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.036875, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.060251, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.1413639, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.154929, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.246569, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.246967, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.282646, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183639.2852008, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183639.35499, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183639.356029, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.356713, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.460362, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.4606872, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.568131, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.56847, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.675272, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.675712, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.676787, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183639.783621, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183639.789869, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183639.7903621, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.791716, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183639.8525949, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183639.8995562, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183639.899791, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.005388, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.00576, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.1115232, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.111878, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.220382, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.220833, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.286706, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183640.2923672, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183640.326644, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.3269062, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.3553522, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183640.434895, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.435285, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.5389729, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.5391831, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.646848, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.647088, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.750859, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.7510998, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.7778308, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183640.7806132, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183640.848862, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183640.853766, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.8539908, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183640.961112, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183640.9613178, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.067086, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.067484, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.171482, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.171784, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.277003, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.2773492, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.2821949, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183641.284962, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183641.353486, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183641.3827069, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.3829398, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.4875278, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.488225, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.593557, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.593772, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.6829839, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183641.700308, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.700762, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.77824, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183641.781336, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183641.804039, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.80447, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183641.849697, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183641.9112792, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183641.9115598, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.016462, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.016709, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.122272, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.122622, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.2283142, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.228707, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.283624, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183642.286724, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183642.332757, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.332957, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.3552692, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183642.437089, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.437278, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.543744, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.543936, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.652597, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.653149, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.7586062, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.759434, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.781572, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183642.787513, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183642.848882, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183642.865844, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.8662012, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183642.9695292, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183642.9697652, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.075365, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.075734, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.1825469, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.182774, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.2823732, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183643.285372, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183643.286425, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.286827, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.3541398, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183643.391655, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.391903, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.4989388, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.4992661, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.603074, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.603334, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.687664, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183643.709159, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.7095108, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.77776, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183643.781425, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183643.812832, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.813417, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183643.84909, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183643.9175549, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183643.917782, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.021893, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.022161, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.1267462, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.127081, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.235469, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.236116, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.285027, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183644.290837, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183644.340191, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.340536, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.3534, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183644.4443488, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.444701, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.552717, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.5533178, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.660928, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.662005, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.768393, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.769069, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.780714, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183644.7843132, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183644.850322, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183644.87329, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.87358, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183644.978675, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183644.978962, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.083596, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.084052, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.190089, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.190917, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.283521, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183645.287487, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183645.29456, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.294881, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.352706, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/frames", "status": 200}
+{"t": 1789183645.399798, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.400141, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.503544, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.5037901, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.609282, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.609479, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.6804218, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/heartbeat", "status": 200}
+{"t": 1789183645.6805959, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183645.691617, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183645.7149272, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.715241, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.818732, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.819018, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183645.922513, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183645.923397, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183646.0292659, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183646.029521, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183646.132075, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183646.132249, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183646.237366, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183646.237643, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183646.5229151, "row": 14, "method": "POST", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/stop", "status": 200}
+{"t": 1789183646.686771, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183647.705802, "row": 14, "method": "GET", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF", "status": 200}
+{"t": 1789183647.70975, "row": 14, "method": "POST", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF/summary", "status": 200}
+{"t": 1789183647.7121909, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183647.714582, "row": 14, "method": "PUT", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF/summary/fNIfirZhvASjcG6Vko04mQGN", "status": 200}
+{"t": 1789183648.251965, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183648.252349, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183648.254005, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183648.483059, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/snapshot", "status": 200}
+{"t": 1789183648.488323, "row": 14, "method": "GET", "path": "/api/live/sessions/SmDVUVxiVlYBsXusezXoxvHF/events", "status": 200}
+{"t": 1789183648.5307672, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183648.6085188, "row": 14, "download": "row-14-cycle-1.json", "suggested_filename": "transcript-SmDVUVxiVlYBsXusezXoxvHF-2026-09-12T03_27_28.581Z.json", "bytes": 1323}
+{"t": 1789183648.745335, "row": 14, "setup_before_reset": "terminal", "reset_count": 1}
+{"t": 1789183648.786191, "row": 14, "setup_after_reset": "idle"}
+{"t": 1789183648.8303611, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789183648.9233248, "row": 14, "source_audio": {"paused": false, "currentTime": 0.103766, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789183649.520448, "row": 14, "method": "POST", "path": "/api/llm/chat/completions", "status": 200, "model": "qwen/qwen3.6-35b-a3b", "response_artifact": "relay-response-1789183649-1.json"}
+{"t": 1789183649.521875, "row": 14, "method": "PUT", "path": "/api/meetings/SmDVUVxiVlYBsXusezXoxvHF/summary/fNIfirZhvASjcG6Vko04mQGN", "status": 200}
+{"t": 1789183649.523371, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183649.7224882, "row": 14, "capture_meters": ["Microphone level 18%", "Shared audio level 18%"]}
+{"t": 1789183649.727461, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183649.7635598, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789183649.7639968, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183649.7670841, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183649.7704399, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183649.771678, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183649.772461, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183649.773077, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183649.8423512, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183649.843019, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183649.878189, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183649.8783731, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183649.937441, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183649.982971, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183649.983217, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.088036, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.088355, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.198328, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.19869, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.302764, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.303079, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.346695, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183650.349903, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183650.408931, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.409205, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.44095, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183650.515418, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.51567, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.619539, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.619885, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.725014, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.725251, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.832507, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.832695, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183650.841661, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183650.84464, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183650.9387321, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183650.9399061, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183650.9402502, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.0439591, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.044332, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.150198, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.1505191, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.254538, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.254993, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.3470569, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183651.350406, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183651.360399, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.36061, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.443233, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183651.4662158, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.4663959, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.570724, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.5709782, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.679148, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.6794019, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.781857, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183651.784218, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.78452, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.8426182, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183651.84682, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183651.889919, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183651.890147, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183651.9363651, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183652.0000389, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.000395, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.105886, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.106391, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.216087, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.216445, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.3206599, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.321579, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.346176, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183652.3507378, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183652.427901, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.428192, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.443083, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183652.532217, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.532414, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.637152, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.637416, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.742997, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.7432861, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.842052, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183652.8452978, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183652.846657, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.846884, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183652.93693, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183652.9494221, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183652.949651, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.053944, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.054118, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.160471, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.1606772, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.265308, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.265512, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.346845, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183653.350121, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183653.369326, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.369556, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.443769, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183653.475552, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.475764, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.579794, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.580131, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.6951199, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.695524, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.7919009, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183653.9027798, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183653.903454, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183653.904027, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183653.907296, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183653.93696, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183654.0082078, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.008513, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.1196969, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.12002, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.225688, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.226012, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.3331041, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.333389, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.345887, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183654.349893, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183654.441628, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183654.442782, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.443016, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.550255, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.550595, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.655353, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.655731, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.762049, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.7624362, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.842411, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183654.846796, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183654.866792, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.867096, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183654.93985, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183654.9710379, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183654.971358, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.076711, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.077924, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.1833951, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.183597, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.286892, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.28724, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.346818, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183655.35009, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183655.390843, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.3911638, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.4422379, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183655.499576, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.499973, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.6032908, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.603609, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.706763, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.7069921, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.796976, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183655.81592, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.8163772, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.842077, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183655.845325, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183655.919905, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183655.9202309, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183655.9371982, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183656.0250292, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.025238, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.1324449, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.132672, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.2356422, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.2358139, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.338857, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.3390698, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.3460789, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183656.349597, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183656.4417028, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183656.442952, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.443292, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.548953, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.5498471, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.6544309, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.654901, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.759918, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.761525, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.8437371, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183656.848001, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183656.868191, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.86883, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183656.938245, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183656.974658, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183656.975404, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.081666, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.08204, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.185336, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.185695, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.292377, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.292608, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.346931, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183657.3504288, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183657.3989928, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.399621, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.4421918, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/frames", "status": 200}
+{"t": 1789183657.503069, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.50334, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.608717, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.6092649, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.714489, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.714711, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.7809439, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/heartbeat", "status": 200}
+{"t": 1789183657.781145, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183657.801739, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183657.8177888, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.8181398, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183657.9242308, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183657.9246368, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.028806, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183658.029161, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.1329238, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183658.133111, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.236759, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183658.2369869, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.3403141, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183658.340575, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.449177, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183658.449501, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183658.7301068, "row": 14, "method": "POST", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/stop", "status": 200}
+{"t": 1789183658.786536, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183659.811796, "row": 14, "method": "GET", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR", "status": 200}
+{"t": 1789183659.814393, "row": 14, "method": "POST", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR/summary", "status": 200}
+{"t": 1789183659.815635, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183659.817488, "row": 14, "method": "PUT", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR/summary/jaW2v1buyb30wx-zfzFvYz8u", "status": 200}
+{"t": 1789183660.4569979, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183660.457302, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183660.459705, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183660.584811, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/snapshot", "status": 200}
+{"t": 1789183660.5903082, "row": 14, "method": "GET", "path": "/api/live/sessions/8n6pdzsFIOocBGOL4bglhVUR/events", "status": 200}
+{"t": 1789183660.630877, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183660.691085, "row": 14, "download": "row-14-cycle-2.json", "suggested_filename": "transcript-8n6pdzsFIOocBGOL4bglhVUR-2026-09-12T03_27_40.681Z.json", "bytes": 1322}
+{"t": 1789183660.829362, "row": 14, "setup_before_reset": "terminal", "reset_count": 1}
+{"t": 1789183660.871677, "row": 14, "setup_after_reset": "idle"}
+{"t": 1789183660.9305768, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789183661.04702, "row": 14, "source_audio": {"paused": false, "currentTime": 0.141238, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789183661.537456, "row": 14, "method": "POST", "path": "/api/llm/chat/completions", "status": 200, "model": "qwen/qwen3.6-35b-a3b", "response_artifact": "relay-response-1789183661-2.json"}
+{"t": 1789183661.5391629, "row": 14, "method": "PUT", "path": "/api/meetings/8n6pdzsFIOocBGOL4bglhVUR/summary/jaW2v1buyb30wx-zfzFvYz8u", "status": 200}
+{"t": 1789183661.5415502, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183661.851419, "row": 14, "capture_meters": ["Microphone level 19%", "Shared audio level 18%"]}
+{"t": 1789183661.854676, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183661.896689, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789183661.8970912, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183661.899609, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183661.902026, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183661.9033449, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183661.903892, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183661.904507, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183661.961736, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183661.962464, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183662.011157, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.0114062, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.059327, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183662.115843, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.116051, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.221258, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.221479, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.3271098, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.327394, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.433063, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.433325, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.4665432, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183662.4703062, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183662.537248, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.537468, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.5603662, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183662.6448278, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.645206, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.749913, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.750211, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.8540852, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.8542879, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.962451, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183662.962694, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183662.96294, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183662.968449, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183663.061829, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183663.067782, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.0680819, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.1719658, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.172277, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.2755358, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.275723, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.382234, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.3824692, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.46641, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183663.470195, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183663.4853601, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.485565, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.561908, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183663.590275, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.590466, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.696348, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.696533, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.802211, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.802408, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.908992, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183663.9092412, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183663.909748, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183663.961558, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183663.964812, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183664.015746, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.01595, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.057905, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183664.12026, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.1205592, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.227486, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.2277691, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.3324091, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.332693, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.436314, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.4365172, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.46576, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183664.469271, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183664.541413, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.541873, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.56032, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183664.646379, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.646726, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.749871, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.750178, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.8549602, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.855427, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.9579241, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183664.958112, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183664.9608672, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183664.9643672, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183665.058159, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183665.061589, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.06256, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.166131, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.166332, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.26998, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.270242, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.377921, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.378109, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.466916, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183665.470347, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183665.482104, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.482286, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.56084, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183665.586398, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.5866969, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.6959832, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.696272, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.8008268, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.801069, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.916047, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183665.9172962, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183665.918688, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183665.963577, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183665.967079, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183666.0207932, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.0211499, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.056982, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183666.128277, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.128586, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.234576, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.234808, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.343443, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.343776, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.448308, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.44855, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.465822, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183666.469053, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183666.552653, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.552834, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.5602849, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183666.656708, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.6569731, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.764244, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.7648032, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.8684201, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.868601, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183666.9616268, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183666.965371, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183666.972149, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183666.9725068, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.0567691, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183667.077009, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.077246, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.1818502, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.182198, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.287029, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.287265, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.392224, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.39243, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.465816, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183667.469362, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183667.4962418, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.4963999, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.561055, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183667.6003, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.600575, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.704482, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.7047198, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.812306, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.8125079, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.916285, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183667.9164789, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183667.9219148, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183667.961515, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183667.965472, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183668.020705, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.02106, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.057173, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183668.127865, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.128164, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.2319329, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.2321222, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.3379369, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.338263, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.444801, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.445025, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.46559, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183668.468875, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183668.5489962, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.549234, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.560543, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183668.65261, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.652919, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.758355, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.758538, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.866543, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.8667269, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183668.962123, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183668.9660249, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183668.969464, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183668.970023, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.0572228, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183669.0757859, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.07604, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.181696, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.18191, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.2863512, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.286721, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.391505, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.391832, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.466007, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183669.469234, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183669.496522, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.4968169, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.561302, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/frames", "status": 200}
+{"t": 1789183669.600645, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.600836, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.705782, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.706003, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.81393, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.814844, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.913779, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/heartbeat", "status": 200}
+{"t": 1789183669.913975, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183669.920083, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183669.9207199, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183669.9248269, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183670.0257049, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.02603, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.1321979, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.132376, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.244046, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.244546, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.349032, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.3495958, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.453326, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.45361, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.556711, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.55699, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.6660638, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183670.666351, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183670.9207911, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183670.974484, "row": 14, "method": "POST", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/stop", "status": 200}
+{"t": 1789183671.930384, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183671.93375, "row": 14, "method": "GET", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe", "status": 200}
+{"t": 1789183671.937744, "row": 14, "method": "POST", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe/summary", "status": 200}
+{"t": 1789183671.939439, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789183671.941856, "row": 14, "method": "PUT", "path": "/api/meetings/8YbY58RvSvctucKZFxp_iWOe/summary/tb3xXgPNo4SH4pqs5ndaEs3Y", "status": 200}
+{"t": 1789183672.68078, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183672.6811252, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183672.6837602, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183672.723042, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/snapshot", "status": 200}
+{"t": 1789183672.729408, "row": 14, "method": "GET", "path": "/api/live/sessions/8YbY58RvSvctucKZFxp_iWOe/events", "status": 200}
+{"t": 1789183672.78052, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789183672.8403132, "row": 14, "download": "row-14-cycle-3.json", "suggested_filename": "transcript-8YbY58RvSvctucKZFxp_iWOe-2026-09-12T03_27_52.827Z.json", "bytes": 1295}
+{"t": 1789183673.025572, "row": 0, "page_closed": true}

@@ -1,0 +1,49 @@
+{
+  "outage_seconds": 20,
+  "meeting": "Lrq1SIBu9IV8QNEeiauA7noB",
+  "before": {
+    "status": "active",
+    "version": 15,
+    "accepted_samples": 54848,
+    "committed_samples": 40000
+  },
+  "phase_during_outage": "active",
+  "restored_monotonic": 2283986.435571458,
+  "actual_outage_seconds": 20.002085250336677,
+  "blocked_requests": 135,
+  "origin_outage_verified": true,
+  "blocked_routes": [
+    "Lrq1SIBu9IV8QNEeiauA7noB",
+    "events",
+    "frames",
+    "heartbeat",
+    "snapshot"
+  ],
+  "phase_after_restore": "active",
+  "ui_status": "Connection restored. Recording microphone and shared audio.",
+  "text_changes_after_restore": 2,
+  "frames_resumed": true,
+  "first_frame_recovery_seconds": {
+    "microphone": 0.3291150419972837,
+    "system": 0.4004038330167532
+  },
+  "first_snapshot_recovery_seconds": 3.6489992500282824,
+  "heartbeat_resumed": true,
+  "maximum_heartbeat_gap_seconds": 20.507545250002295,
+  "polling_resumed": true,
+  "sequence_continuity": {
+    "microphone": true,
+    "system": true
+  },
+  "frame_errors": [],
+  "status_received": "completed",
+  "finalization_status": "final",
+  "failure_reason": null,
+  "history_preserved": true,
+  "audio_seconds": 27.5,
+  "audio_preserved": true,
+  "partial_audio": false,
+  "recovery_feedback_clear": true,
+  "ok": true,
+  "outcome": "survived"
+}

@@ -1,0 +1,9 @@
+{
+  "error": "Locator.select_option: Timeout 12000ms exceeded.\nCall log:\n  - waiting for get_by_label(\"Listening setup\", exact=True)\n    - locator resolved to <select disabled id=\"audio-route\" aria-label=\"Listening setup\">\u2026</select>\n  - attempting select option action\n    2 \u00d7 waiting for element to be visible and enabled\n      - element is not enabled\n    - retrying select option action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible and enabled\n      - element is not enabled\n    - retrying select option action\n      - waiting 100ms\n    24 \u00d7 waiting for element to be visible and enabled\n       - element is not enabled\n     - retrying select option action\n       - waiting 500ms\n",
+  "exception": "TimeoutError",
+  "screenshot": "row-14.png",
+  "status": "FAIL",
+  "seconds": 12.151,
+  "network": "network.jsonl",
+  "row": 14
+}

@@ -1,0 +1,95 @@
+{
+  "id": "oOSAubH2EgI-ptzpszxUOI-p",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1789183604917,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.26,
+        "end": 3.28,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "The following is a conversation with Javier Mal\u00e9,"
+      },
+      {
+        "id": "seg_0002",
+        "start": 3.31,
+        "end": 5.81,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "the president of Argentina."
+      },
+      {
+        "id": "seg_0003",
+        "start": 5.84,
+        "end": 10.71,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "He is a libertarian, a narco-capitalist and economist"
+      },
+      {
+        "id": "seg_0004",
+        "start": 10.74,
+        "end": 13.28,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "who campaigned with a chainsaw"
+      },
+      {
+        "id": "seg_0005",
+        "start": 13.31,
+        "end": 15.18,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "that symbolized his promise"
+      },
+      {
+        "id": "seg_0006",
+        "start": 15.21,
+        "end": 18.71,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "to slash the corrupt bureaucracy of the state."
+      },
+      {
+        "id": "seg_0007",
+        "start": 18.74,
+        "end": 22.11,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "He stepped into the presidency one year ago"
+      },
+      {
+        "id": "seg_0008",
+        "start": 22.14,
+        "end": 24.31,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "with the country on the brink of hyperinflation,"
+      },
+      {
+        "id": "seg_0009",
+        "start": 24.34,
+        "end": 27.48,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "deep in debt and suffering from mass unemployment."
+      }
+    ]
+  },
+  "transcript_version": 16,
+  "audio": {
+    "state": "available",
+    "relative_path": "X6nDsvIpnqZdctJVmLjVn-Yt-T_kZYSO/oOSAubH2EgI-ptzpszxUOI-p/audio.mp3",
+    "byte_count": 165717,
+    "duration_ms": 27500,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}

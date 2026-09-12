@@ -1,0 +1,67 @@
+{
+  "rows": {
+    "14": {
+      "ok": true,
+      "same_document": true,
+      "all_in_history": true,
+      "cycles": [
+        {
+          "cycle": 1,
+          "pane_empty_before_start": true,
+          "meeting": "C69hI9z9WCdjF9bCWYtTcDA1",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-1.json",
+          "export_filename": "transcript-C69hI9z9WCdjF9bCWYtTcDA1-2026-09-12T03_24_05.651Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-1.png",
+          "ok": true
+        },
+        {
+          "cycle": 2,
+          "pane_empty_before_start": true,
+          "meeting": "xWou2ZPI08dVNtpyu5VR0vPv",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-2.json",
+          "export_filename": "transcript-xWou2ZPI08dVNtpyu5VR0vPv-2026-09-12T03_24_17.717Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-2.png",
+          "ok": true
+        },
+        {
+          "cycle": 3,
+          "pane_empty_before_start": true,
+          "meeting": "pBUuug5V8r0z8ahFBeyayrfG",
+          "active_phase": "active",
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": "row-14-cycle-3.json",
+          "export_filename": "transcript-pBUuug5V8r0z8ahFBeyayrfG-2026-09-12T03_24_29.833Z.json",
+          "terminal_phase": "terminal",
+          "screenshot": "row-14-cycle-3.png",
+          "ok": true
+        }
+      ],
+      "screenshot": "row-14.png",
+      "status": "PASS",
+      "seconds": 36.345,
+      "network": "network.jsonl",
+      "row": 14
+    }
+  },
+  "meetings": {
+    "repeat_1": "C69hI9z9WCdjF9bCWYtTcDA1",
+    "repeat_2": "xWou2ZPI08dVNtpyu5VR0vPv",
+    "repeat_3": "pBUuug5V8r0z8ahFBeyayrfG"
+  },
+  "base": "https://127.0.0.1:17863"
+}

@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "formats": {
+    "md": {
+      "bytes": 265,
+      "artifact": "export.md",
+      "ok": true
+    },
+    "txt": {
+      "bytes": 262,
+      "artifact": "export.txt",
+      "ok": true
+    },
+    "json": {
+      "bytes": 767,
+      "artifact": "export.json",
+      "ok": true,
+      "turns": 1
+    },
+    "srt": {
+      "bytes": 284,
+      "artifact": "export.srt",
+      "ok": true,
+      "cues": 1,
+      "monotonic": true,
+      "speaker_prefixes": true
+    },
+    "vtt": {
+      "bytes": 292,
+      "artifact": "export.vtt",
+      "ok": true,
+      "cues": 1,
+      "monotonic": true,
+      "speaker_prefixes": true
+    }
+  },
+  "screenshot": "row-06.png",
+  "status": "PASS",
+  "seconds": 0.533,
+  "network": "network.jsonl",
+  "row": 6
+}

@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "filename": "meeting-ZIOYM0QSgYMZ8KjMygYax0vI.mp3",
+  "duration": 18.0,
+  "source_duration": 18.0,
+  "artifact": "download.mp3",
+  "decodable": true,
+  "screenshot": "row-07.png",
+  "status": "PASS",
+  "seconds": 0.278,
+  "network": "network.jsonl",
+  "row": 7
+}

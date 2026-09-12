@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-fv9yi0xr5exn9tfchlgzm",
+  "object": "chat.completion",
+  "created": 1789183274,
+  "model": "qwen/qwen3.6-35b-a3b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"summary\": \"E2E Morgan introduces Javier Milei as the president of Argentina, characterizing him through his self-identification as a libertarian, anarcho-capitalist, and economist, and noting his use of a chainsaw as a campaign symbol for slashing state bureaucracy.\",\n  \"topics\": [],\n  \"details\": [\n    {\n      \"title\": \"Javier Milei Introduction\",\n      \"description\": \"E2E Morgan identifies Javier Milei as the president of Argentina, an economist, and a libertarian/anarcho-capitalist who used a chainsaw in his campaign to symbolize cutting state bureaucracy.\",\n      \"timestamp\": \"00:00:00\"\n    }\n  ],\n  \"speaker_background\": [\n    \"E2E Morgan: Interviewer/Narrator\"\n  ],\n  \"data_references\": []\n}",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1855,
+    "completion_tokens": 187,
+    "total_tokens": 2042,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.6-35b-a3b"
+}

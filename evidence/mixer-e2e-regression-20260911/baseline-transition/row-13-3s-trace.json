@@ -1,0 +1,1445 @@
+{
+  "responses": [
+    {
+      "t": 2284133.12143275,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.225926958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.331119541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.434628958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.538330458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.641251458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.750499291,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 0,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.854192583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 1,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.957337166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 1,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.06329225,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 1,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.169992375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 1,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.274189958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 2,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.382814041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 3,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.487852583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 3,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.5950195,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 3,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.703315291,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 3,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.820394083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 5,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.925420083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 5,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.033445833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 5,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.153935333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 5,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.258641041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 6,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.362021666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 7,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.468194541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 7,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.571618458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 7,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.677288916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 7,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.787169166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 8,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.893100666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 9,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284135.999175541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 9,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284136.106116208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 9,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.119392875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 0
+    },
+    {
+      "t": 2284136.214672916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 9,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.220261208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 1
+    },
+    {
+      "t": 2284133.221830875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 0,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284133.284630333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 0,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.320158333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 11,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284136.437907666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 12,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284136.541993208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 12,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284136.646541541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 12,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.7245195,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 2
+    },
+    {
+      "t": 2284133.72515475,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 1,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 1008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.75335975,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 13,
+      "committed": 0,
+      "unchanged": false
+    },
+    {
+      "t": 2284133.79651475,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 1,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 1072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.860027708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 15,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284136.966965541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 15,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284137.071271916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 15,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284137.176774416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 15,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.219846958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 3
+    },
+    {
+      "t": 2284134.223337416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 2,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 1508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284137.280253666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 16,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.291986083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 2,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 1572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284137.38729475,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 17,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284137.488910083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 17,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284137.491560083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 17,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284134.72480325,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 4
+    },
+    {
+      "t": 2284134.730651416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 3,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 2008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284134.819817,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 3,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 2072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284135.22015575,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 5
+    },
+    {
+      "t": 2284135.223689625,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 4,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 2508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284135.291294333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 4,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 2572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284135.723370333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 6
+    },
+    {
+      "t": 2284135.726692208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 5,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 3008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284135.795671041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 5,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 3072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.220067083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 7
+    },
+    {
+      "t": 2284136.226542333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 6,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 3508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.294737958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 6,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 3572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.723350375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 8
+    },
+    {
+      "t": 2284136.726508708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 7,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 4008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284136.795625333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 7,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 4072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284137.220899,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 9
+    },
+    {
+      "t": 2284137.227269291,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 8,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 4508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284137.291812708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 8,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 4572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284141.131054083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 27,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.237018416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 28,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.343356833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 29,
+      "committed": 40000,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.447605125,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 30,
+      "committed": 80000,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.550895416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 32,
+      "committed": 85440,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.655135291,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 34,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.760841916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 35,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.867999375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 36,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.9721095,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 37,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.076097375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 37,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.181030375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 37,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.294685458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 39,
+      "committed": 91360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.398945083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 40,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.502809416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 40,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.609119083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 40,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.716173375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 40,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.820575208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 42,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.929373833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 42,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.042685958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 42,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.149154166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 42,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.253760166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 43,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.359648041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 44,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.46355875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 44,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.566607541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 44,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.669842291,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 44,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284140.724357125,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 10
+    },
+    {
+      "t": 2284140.728527458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 9,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 5008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.730891875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 10,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 5508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.742646,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 11,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 6008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.753482333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 12,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 6508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.764001,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 13,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 7008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.773943708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 14,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 7508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284143.774864708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 45,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284140.78355875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 15,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 8008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.788239,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 9,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 5072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.790476333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 10,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 5572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.792410583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 11,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 6072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.794291333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 12,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 6572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.801718916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 13,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 7072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.815323666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 14,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 7572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284140.823998583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 15,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 8072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284143.88211375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 46,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.988944833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 46,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.096442375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 46,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.2041015,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 46,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.219502041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 11
+    },
+    {
+      "t": 2284141.2239725,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 16,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 8508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284141.292206208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 16,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 8572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.308648,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 48,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.418786416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 49,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.523112458,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 49,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.631455375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 50,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.72368875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 12
+    },
+    {
+      "t": 2284141.72724375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 17,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 9008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.735330708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 50,
+      "committed": 131360,
+      "unchanged": false
+    },
+    {
+      "t": 2284141.796055083,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 17,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 9072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.84239375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 51,
+      "committed": 171360,
+      "unchanged": false
+    },
+    {
+      "t": 2284144.946577833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 52,
+      "committed": 171360,
+      "unchanged": false
+    },
+    {
+      "t": 2284145.049688041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 53,
+      "committed": 184000,
+      "unchanged": false
+    },
+    {
+      "t": 2284145.154759041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 53,
+      "committed": 184000,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.219630041,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 13
+    },
+    {
+      "t": 2284142.224309166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 18,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 9508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284145.2632545,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 53,
+      "committed": 184000,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.293723625,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 18,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 9572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284145.368557125,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 57,
+      "committed": 184000,
+      "unchanged": false
+    },
+    {
+      "t": 2284142.725844208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 14
+    },
+    {
+      "t": 2284142.72925575,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 19,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 10008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284142.796036833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 19,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 10072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284143.219277708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 15
+    },
+    {
+      "t": 2284143.22305975,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 20,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 10508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284143.29115975,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 20,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 10572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284146.581023916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot",
+      "status": 200,
+      "failure": null,
+      "version": 58,
+      "committed": 184000,
+      "unchanged": false
+    },
+    {
+      "t": 2284143.727131583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 16
+    },
+    {
+      "t": 2284143.733142791,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 21,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 11008000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284143.795601708,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 21,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 11072000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.222481958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 17
+    },
+    {
+      "t": 2284144.22998075,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "microphone",
+      "sequence": 22,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 11508000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.2927385,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames",
+      "status": 200,
+      "lane": "system",
+      "sequence": 22,
+      "device_epoch": 1,
+      "capture_timestamp_ns": 11572000000,
+      "discontinuity": false
+    },
+    {
+      "t": 2284144.563350416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat",
+      "status": 200,
+      "sequence": 18
+    }
+  ],
+  "blocked": [
+    {
+      "t": 2284137.602612125,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot"
+    },
+    {
+      "t": 2284137.606435666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/events"
+    },
+    {
+      "t": 2284137.722847541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284137.723584833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284137.786534625,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284138.11639625,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot"
+    },
+    {
+      "t": 2284138.116691416,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/events"
+    },
+    {
+      "t": 2284138.218521666,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284138.218869833,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284138.282370333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284138.725238166,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284138.726396541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284138.786485583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284139.12284675,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/snapshot"
+    },
+    {
+      "t": 2284139.123070958,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/events"
+    },
+    {
+      "t": 2284139.150355291,
+      "path": "/api/meetings/azmyjaItqAw13Nj3zD6sRDhp"
+    },
+    {
+      "t": 2284139.218073791,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284139.218372375,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284139.282787583,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284139.724087333,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284139.725142541,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284139.786377875,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284140.218861208,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/heartbeat"
+    },
+    {
+      "t": 2284140.219155916,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    },
+    {
+      "t": 2284140.28268,
+      "path": "/api/live/sessions/azmyjaItqAw13Nj3zD6sRDhp/frames"
+    }
+  ]
+}

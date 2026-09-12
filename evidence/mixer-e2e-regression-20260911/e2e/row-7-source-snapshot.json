@@ -1,0 +1,251 @@
+{
+  "snapshot": {
+    "session_id": "ZIOYM0QSgYMZ8KjMygYax0vI",
+    "descriptor": {
+      "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+      "provider_name": "moss-rtx-webrtc-wespeaker",
+      "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+      "config_hashes": {
+        "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+        "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+        "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+      },
+      "bounds": {
+        "max_frame_samples": 16000,
+        "max_queue_depth": 16,
+        "max_retained_samples": 960000,
+        "max_identity_speakers": 16,
+        "max_events": 1000,
+        "hard_cap_samples": 40000,
+        "stop_drain_deadline_seconds": 5,
+        "max_tape_bytes": 9600000
+      },
+      "schema_version": 1,
+      "live_protocol_version": "moss-live-service.v1",
+      "live_protocol": {
+        "protocol": "moss-live-service.v2",
+        "min_protocol_version": 2,
+        "max_protocol_version": 2,
+        "capabilities": {
+          "lanes": true,
+          "binary": false,
+          "idempotent_frames": true,
+          "resumable": true
+        }
+      },
+      "sample_rate": 16000,
+      "frame_samples": 8000,
+      "feature_enabled": true
+    },
+    "session": {
+      "status": "closed",
+      "epoch": 0,
+      "version": 96,
+      "accepted_samples": 288000,
+      "accounted_samples": 288000,
+      "retained_samples": 0,
+      "committed_samples": 288000,
+      "committed_prefix_hash": "15a29ce2551ee2f541afb65db67673635282bb8131b43f97d0f113308e03afe8",
+      "identity_snapshot": {
+        "version": 9,
+        "canonical_speakers": [
+          "speaker-0001"
+        ],
+        "diagnostics": [
+          [
+            "schema_version",
+            "1"
+          ],
+          [
+            "status",
+            "prepared"
+          ],
+          [
+            "reason",
+            "ok"
+          ],
+          [
+            "span_id",
+            "9"
+          ],
+          [
+            "span_samples",
+            "252000:288000"
+          ],
+          [
+            "local_speakers",
+            "S01"
+          ],
+          [
+            "assignments",
+            "S01->speaker-0001"
+          ],
+          [
+            "deferred_births",
+            ""
+          ],
+          [
+            "canonical_speakers",
+            "speaker-0001"
+          ]
+        ]
+      },
+      "committed": [
+        {
+          "span_id": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "transcript": "[0.28][S01]The following is a conversation with Javier[2.45]",
+          "prefix_hash": "b3e936e682893dd40909229635e2c5f3c14b370b09fb7f862a861a1b69f8b4f5",
+          "identity_snapshot_version": 1,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 1,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "transcript": "[0.07][S01]Malay, the president of Argentina.[2.45]",
+          "prefix_hash": "45ffcf3d0ad9fd1987c2691070066e79a7df5121692a6f47a71cea9e42712d21",
+          "identity_snapshot_version": 2,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 2,
+          "start_sample": 80000,
+          "end_sample": 86240,
+          "transcript": "[0][S00]Yeah.[0.18]",
+          "prefix_hash": "9dede95c11d93be5cd3cb102e9cae476a8259ab80f5eefacc35e5edfc4b5465e",
+          "identity_snapshot_version": 3,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 3,
+          "start_sample": 86240,
+          "end_sample": 91520,
+          "transcript": "[0][S00]\u55ef\u3002[0.22]",
+          "prefix_hash": "85f3f4569118bdeeccc1445019fd474561aaf7b04d85e3d4f7ce08e42ca09c24",
+          "identity_snapshot_version": 4,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 4,
+          "start_sample": 91520,
+          "end_sample": 131520,
+          "transcript": "[0][S01]He is a libertarian, anarcho-[2.42]",
+          "prefix_hash": "82ab6b495c660e07697968eb15e719bf54f80b42abc8faccfb8dd75a8788e056",
+          "identity_snapshot_version": 5,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 5,
+          "start_sample": 131520,
+          "end_sample": 171520,
+          "transcript": "[0.08][S01]Capitalist and economist.[2.12]",
+          "prefix_hash": "96a3eca6704912f93f5c52c5eab2f69b5cdf59c96f1179957018d829bdd9e0a6",
+          "identity_snapshot_version": 6,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 6,
+          "start_sample": 171520,
+          "end_sample": 211520,
+          "transcript": "[0][S01]who campaigned with a chainsaw.[1.98]",
+          "prefix_hash": "2ef3717863ffeeb71307d6215490f8bde2b30463493a296e27575ad92f73bd5e",
+          "identity_snapshot_version": 7,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 7,
+          "start_sample": 211520,
+          "end_sample": 212000,
+          "transcript": "",
+          "prefix_hash": "96099ea6921aeabd235c02e4ac2ea55358e9827617864be5170e17f8961ff922",
+          "identity_snapshot_version": 7,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 8,
+          "start_sample": 212000,
+          "end_sample": 252000,
+          "transcript": "[0][S01]That symbolized his promise, the slash[2.42]",
+          "prefix_hash": "6a8e303d442b521376c11465596c9af8af0ddfc33c082e5f5a8acf0992dd1c6e",
+          "identity_snapshot_version": 8,
+          "revised_transcript": null
+        },
+        {
+          "span_id": 9,
+          "start_sample": 252000,
+          "end_sample": 288000,
+          "transcript": "[0][S01]The corrupt bureaucracy of the state.[1.88]",
+          "prefix_hash": "15a29ce2551ee2f541afb65db67673635282bb8131b43f97d0f113308e03afe8",
+          "identity_snapshot_version": 9,
+          "revised_transcript": null
+        }
+      ],
+      "provisional": null,
+      "next_frame_sequence": 72,
+      "frozen_until_sample": 288000,
+      "pending_span_ids": [],
+      "failure_reason": null,
+      "label_revision_version": 0,
+      "text_revision_version": 2,
+      "canonical_through_sample": 288000,
+      "effective_transcript": [
+        {
+          "start_sample": 4160,
+          "end_sample": 92960,
+          "text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina.",
+          "canonical_speaker": "speaker-0001",
+          "authority": "terminal"
+        },
+        {
+          "start_sample": 92960,
+          "end_sample": 212480,
+          "text": "He is a libertarian, anarcho-capitalist, and economist who campaigned with a chainsaw",
+          "canonical_speaker": "speaker-0001",
+          "authority": "terminal"
+        },
+        {
+          "start_sample": 212480,
+          "end_sample": 282240,
+          "text": "that symbolized his promise to slash the corrupt bureaucracy of the state.",
+          "canonical_speaker": "speaker-0001",
+          "authority": "terminal"
+        }
+      ],
+      "finalization_status": "final"
+    },
+    "pending_work_items": 0,
+    "terminal_failure": null,
+    "schema_version": 1,
+    "draft": null,
+    "draft_stats": {
+      "lane_seconds": 1,
+      "ticks": 18,
+      "started": 14,
+      "skipped": 4,
+      "published": 13,
+      "stale": 1,
+      "errors": 0
+    },
+    "identity_counts": {
+      "identities_born_count": 1,
+      "album_admitted_count": 1,
+      "provisional_only_count": 0,
+      "abstention_count": 0
+    }
+  },
+  "unchanged": false,
+  "v2_session": null,
+  "helper_presence": null,
+  "meeting_transcript_version": 13,
+  "persistence_failure": null,
+  "speaker_labels": {
+    "speaker-0001": "E2E Morgan"
+  },
+  "speaker_label_revision": 2,
+  "capture_phase": "stopped",
+  "status_line": "Audio capture stopped."
+}

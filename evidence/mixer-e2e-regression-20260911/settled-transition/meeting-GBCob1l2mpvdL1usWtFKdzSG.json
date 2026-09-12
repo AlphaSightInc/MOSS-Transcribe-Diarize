@@ -1,0 +1,39 @@
+{
+  "id": "GBCob1l2mpvdL1usWtFKdzSG",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1789183590052,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.26,
+        "end": 5.81,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "The following is a conversation with Javier Mal\u00e9, the president of Argentina."
+      },
+      {
+        "id": "seg_0002",
+        "start": 5.81,
+        "end": 10.33,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "He is a libertarian, anarcho-capitalist, and economist."
+      }
+    ]
+  },
+  "transcript_version": 7,
+  "audio": {
+    "state": "available",
+    "relative_path": "X6nDsvIpnqZdctJVmLjVn-Yt-T_kZYSO/GBCob1l2mpvdL1usWtFKdzSG/audio.mp3",
+    "byte_count": 63765,
+    "duration_ms": 10500,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  }
+}
