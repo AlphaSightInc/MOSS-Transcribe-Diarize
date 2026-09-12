@@ -166,6 +166,7 @@ class Harness:
                 'artifact':f'meeting-{ident}.json'}
 
     async def setup_live(self):
+        await self.page.bring_to_front()
         await self.page.get_by_role('link',name='Live / Transcript & export',exact=True).click()
         reset=self.page.get_by_role('button',name='Reset capture',exact=True)
         if await reset.count(): await reset.click()
@@ -355,7 +356,11 @@ class Harness:
         return data
 
     async def bank(self):
-        await self.page.reload(); await self.page.locator('[data-boot=ready]').wait_for()
+        # Independent capture fixture: a reused capture document can reject tab sharing
+        # with InvalidStateError after Stop (retained in the original E2E audit).
+        await self.page.close()
+        self.page=self.attach(await self.context.new_page())
+        await self.open()
         bank=self.page.locator('[aria-label="Private voiceprints"]'); await bank.get_by_role('button',name='Voiceprints',exact=True).click()
         await asyncio.sleep(.3)
         name=self.state.get('named','E2E Rowan'); enrolled=await bank.locator('[data-voiceprint-id]').filter(has_text=name).count()>0
@@ -391,7 +396,8 @@ class Harness:
         return {'ok':enrolled and latency is not None and latency<=FIRST_ENROLLED_LABEL_BOUND_SECONDS,'bound_seconds':FIRST_ENROLLED_LABEL_BOUND_SECONDS,'decoder_trace':trace,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
 
     async def interrupted(self):
-        ident=self.state['meetings'].get('second_live') or self.state['meetings']['enrollment_live']
+        ident=self.state['meetings'].get('second_live')
+        assert ident, 'Row 8 blocked: row 10 did not create a second live capture'
         await asyncio.sleep(max(0,12-(time.monotonic()-getattr(self,'started',0))))
         await self.snapshot(8,'-before-close')
         await self.page.close()  # Real capture-owner interruption; no server abort endpoint or host action.
@@ -407,10 +413,9 @@ class Harness:
         origin=urlsplit(self.args.base)
         for seconds in (3,20):
             # Independent capture setups. Never navigate/reload within an outage case.
-            if variants:
-                await self.page.close()
-                self.page=self.attach(await self.context.new_page())
-                await self.open()
+            await self.page.close()
+            self.page=self.attach(await self.context.new_page())
+            await self.open()
             trace=[]; tasks=set(); blocked=[]; restored=None
             def is_origin(url):
                 parsed=urlsplit(url)
