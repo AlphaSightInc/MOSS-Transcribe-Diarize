@@ -19,3 +19,5 @@ Ran the actual CLI:
 Requested suites: `tests/phase2/test_browser_timeout_evidence.py` and `tests/phase2/test_summary_provider_paths.py`; results recorded below. Existing browser availability guards remain intact. No host operations or access to the user's 17861 database. All probe servers and temporary state are managed and cleaned by the probe; retained output contains only diagnostic metadata.
 
 Requested suites: **26 passed in 24.59 s**, no skips. Subsequently added async enter/exit timeout tests: **2 passed**. Total **28 distinct passing tests**.
+
+Completeness follow-up: the fake AsyncEvidencePage test now yields a resolved Future and explicitly awaits `.value`, while retaining sync/async event identity checks. The old-artifact/new-attempt regression in `test_summary_provider_paths.py` now passes an AsyncEvidencePage to `regenerate_summary`, exactly as the deterministic CLI and G9 subprocess do. This removes its former raw-page coverage gap. No production change in this follow-up; the previously measured CLI exit 0 covers external and relay together.

@@ -326,9 +326,14 @@ def test_async_expectation_preserves_same_event_shape_as_sync(tmp_path, exit_val
     sync = writer.page(raw, 'summary').expect_response()
     async_page = AsyncEvidencePage(raw, writer, 'summary')
     async def run():
+        result = object()
+        future = asyncio.get_running_loop().create_future()
+        future.set_result(result)
+        event.value = future
         async with async_page.expect_response() as received:
             assert received is event
             assert received.value is sync.__enter__().value
+            assert await received.value is result
         context = async_page.expect_response()
         assert await context.__aexit__(None, None, None) is sync.__exit__(None, None, None) is exit_value
     asyncio.run(run())

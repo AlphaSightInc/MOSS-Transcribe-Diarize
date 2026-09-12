@@ -103,7 +103,10 @@ def test_relay_wait_rejects_old_current_artifact_during_new_attempt(tmp_path):
                           },200));">Generate</button>''')
                 await page.route('**/*',route)
                 await page.goto('https://fixture.test/')
-                pending=asyncio.create_task(probe.regenerate_summary(page,'owned'))
+                observed = probe.AsyncEvidencePage(
+                    page, probe.BrowserTimeoutEvidence(tmp_path, 'browser_final_summary'),
+                    'summary.generate')
+                pending=asyncio.create_task(probe.regenerate_summary(observed,'owned'))
                 # Reproduce the host shape: the old artifact arrives after previous=None.
                 await page.wait_for_function("previous => { const el=document.querySelector('[data-summary-state]'); return el.dataset.summaryState === 'current' && el.dataset.summaryAttempt !== previous; }",arg=None)
                 assert await page.locator('section').get_attribute('data-summary-attempt')=='old-attempt'
