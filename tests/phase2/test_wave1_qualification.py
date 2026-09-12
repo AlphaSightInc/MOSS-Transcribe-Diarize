@@ -2004,9 +2004,16 @@ def test_real_sentinel_and_revocation_producers_measure_both_accounts_and_durabl
     assert revoked["durable_prefix_preserved"] is True
 
 
-@pytest.mark.parametrize("stop_status", [200, 409])
+@pytest.mark.parametrize(
+    "stop_status,failed_item_status,peer_status,rejection_count",
+    [(200, "failed", "completed", 1), (409, "failed", "completed", 1),
+     (200, "completed", "completed", 1), (200, "failed", "failed", 1),
+     (200, "failed", "interrupted", 1), (200, "failed", "completed", 0),
+     (200, "failed", "completed", 2)],
+)
 def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
-    monkeypatch, tmp_path: Path, stop_status: int,
+    monkeypatch, tmp_path: Path, stop_status: int, failed_item_status: str,
+    peer_status: str, rejection_count: int,
 ):
     fixture = tmp_path / "fixture.wav"
     fixture.write_bytes(b"fixture")
@@ -2041,6 +2048,14 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
             "live-a",
         )
     ]
+
+    # Pre-admission's separate audio-bearing abort is visible in owner history,
+    # but must never enter the batch-isolation denominator.
+    meetings.append({"id": "unrelated-partial", "status": "interrupted"})
+    next(item for item in meetings if item["id"] == "url-failed")["status"] = failed_item_status
+    next(item for item in meetings if item["id"] == "url-2")["status"] = peer_status
+    ordered = [item for item in ordered if item["status"] != 400]
+    ordered.extend({"path": "/api/meetings/url", "status": 400} for _ in range(rejection_count))
 
     class Client:
         def json(self, method: str, path: str, expected: int, **kwargs: object):
@@ -2105,7 +2120,20 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
             campaign.meeting_modes_history_restart()
         return
     result = campaign.meeting_modes_history_restart()
-    assert result["one_item_failure_isolated"] is True
+    assert result["one_item_failure_isolated"] is (
+        failed_item_status == "failed" and peer_status == "completed" and rejection_count == 1
+    )
+    assert result["accepted_failure_meeting_id"] == "url-failed"
+    assert result["terminal_states"] == {
+        key: value["status"] for key, value in terminal.items()
+        if key not in {"live-a", "unrelated-partial"}
+    }
+    assert result["submissions"]["input_boundary_rejection"] == rejection_count
+    assert result["submissions"]["accepted_failure"] == 1
+    assert "words" not in json.dumps(result)
+    assert "fixture" not in json.dumps(result)
+    if (failed_item_status, peer_status, rejection_count) != ("failed", "completed", 1):
+        return
     assert result["submissions"] == {
         "single_file": 1,
         "multi_file": 2,

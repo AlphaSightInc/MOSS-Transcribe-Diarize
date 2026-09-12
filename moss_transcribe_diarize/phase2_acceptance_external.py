@@ -1602,17 +1602,17 @@ class FixedAccountCampaign:
             or not isinstance(detached_file_id, str)
         ):
             raise ExternalMeasurementError("browser batch did not create the ruled Meetings")
-        input_boundary_rejection = sum(
+        input_boundary_rejections = sum(
             isinstance(item, dict) and item.get("status") in {400, 422}
             for item in ordered
-        ) == 1
+        )
         terminal_states = {
             meeting_id: self._await_meeting_terminal(meeting_id).get("status")
             for meeting_id in (*file_ids, *successful_url_ids, *accepted_failure_ids, detached_file_id)
         }
         accepted_failure_id = accepted_failure_ids[0]
         failure_isolated = (
-            input_boundary_rejection
+            input_boundary_rejections == 1
             and terminal_states[accepted_failure_id] == "failed"
             and all(
                 status == "completed"
@@ -1683,9 +1683,12 @@ class FixedAccountCampaign:
                 "url": len(successful_url_ids),
                 "serial_batch": len(ordered),
                 "browser_closed_after_accept": 1,
-                "accepted_failure": 1,
-                "input_boundary_rejection": 1,
+                "accepted_failure": len(accepted_failure_ids),
+                "input_boundary_rejection": input_boundary_rejections,
             },
+            # Keep the operands of the isolation verdict, never meeting content.
+            "accepted_failure_meeting_id": accepted_failure_id,
+            "terminal_states": terminal_states,
             "one_item_failure_isolated": failure_isolated,
         }
 
