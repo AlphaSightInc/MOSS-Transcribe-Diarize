@@ -711,8 +711,42 @@ describe("MOSS session poller", () => {
     expect(onTerminal).toHaveBeenCalledWith("polling ended");
   });
 
-  it("uses the ruled 250 ms capture cadence and 2 s finalization cadence", () => {
-    expect(pollDelayForStatus("active")).toBe(250);
+  it("continues active background polling at 100 ms even when snapshots are unchanged", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("document", Object.assign(new EventTarget(), { visibilityState: "hidden" }));
+    let snapshots = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/events")) return jsonResponse({ events: [] });
+      snapshots += 1;
+      return jsonResponse(snapshots > 1 ? { unchanged: true, snapshot: null } : {
+        snapshot: { session_id: "active-background", descriptor: { sample_rate: 16_000 },
+          session: { committed_samples: 0, status: "active", version: 1, failure_reason: null,
+            identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null } }
+      });
+    }) as typeof fetch;
+    const poller = createMossSessionPoller({ sessionId: "active-background", fetch: fetcher });
+    try {
+      poller.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(snapshots).toBe(1);
+      await vi.advanceTimersByTimeAsync(99);
+      expect(snapshots).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(snapshots).toBe(2);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(snapshots).toBe(3);
+      poller.stop();
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(snapshots).toBe(3);
+    } finally {
+      poller.stop();
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it("uses 100 ms active polling and backs off to 2 s outside capture", () => {
+    expect(pollDelayForStatus("active")).toBe(100);
     expect(pollDelayForStatus("closing")).toBe(2_000);
     expect(pollDelayForStatus("idle")).toBe(2_000);
   });

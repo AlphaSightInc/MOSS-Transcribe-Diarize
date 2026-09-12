@@ -9,7 +9,7 @@ import type {
 import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { dispatchWsEvent } from "./ws";
 
-const CAPTURING_POLL_DELAY_MS = 250;
+const CAPTURING_POLL_DELAY_MS = 100;
 const IDLE_POLL_DELAY_MS = 2_000;
 const RETRY_DELAYS_MS = [500, 1_000, 2_000, 5_000] as const;
 const POLL_REQUEST_TIMEOUT_MS = 10_000;

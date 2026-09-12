@@ -112,7 +112,7 @@ return `401`.
   `(account_id, meeting_id)` ownership; Voiceprint children carry composite
   `(account_id, voiceprint_id)` ownership. Cross-Account foreign keys cannot be represented.
 - One current structured transcript document and version is persisted after every accepted
-  transcript commit. Events/cursors are not durable. The 250 ms poll path reads memory, not SQLite.
+  transcript commit. Events/cursors are not durable. The 100 ms active poll path (2 s outside capture) reads memory, not SQLite.
 - Filesystem owns only large Meeting audio. There are no JSON projections, audio BLOBs, durable
   event/cursor/device/view-grant tables, or separate durable batch/job object.
 - Missing database initializes once with `PRAGMA user_version=1`; an existing non-v1 database is
