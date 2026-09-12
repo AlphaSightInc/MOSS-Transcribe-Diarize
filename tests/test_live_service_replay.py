@@ -958,6 +958,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
     return LiveServiceSnapshot(
         draft=LiveDraft(3, 39840, 40000, "[0][S00]draft[0.01]"),
         draft_stats={"ticks": 3, "started": 2, "skipped": 1},
+        identity_counts={"identities_born_count": 2, "album_admitted_count": 1, "provisional_only_count": 1, "abstention_count": 3},
         session_id="session-round-trip",
         descriptor=descriptor,
         session=session,

@@ -948,3 +948,31 @@ def test_abort_fences_inflight_tape_recovery_publication():
     assert snapshot.status == 'aborted'
     assert snapshot.text_revision_version == 1
     assert snapshot.canonical_through_sample == 160000
+
+
+def test_identity_counts_survive_event_eviction_and_snapshot_reads_do_not_change_them():
+    base, _ = _decoders(rolling=False)
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = _runtime(base=base, rolling=None, max_events=16, scheduler=scheduler)
+    sid = runtime.create().session_id
+    preparer = runtime._sessions[sid].coordinator.identity_preparer
+    prepare = preparer.prepare
+    calls = [0]
+    def alternating(**kwargs):
+        result = prepare(**kwargs)
+        calls[0] += 1
+        return replace(result, status='abstain', reason='ambiguous') if calls[0] % 2 else result
+    preparer.prepare = alternating
+    for sequence in range(60):
+        runtime.accept_frame(sid, AudioFrame(sequence=sequence, pcm=b'\x11\x22' * FRAME_SAMPLES,
+                                             sample_count=FRAME_SAMPLES))
+        scheduler.drain()
+    counts = runtime.snapshot(sid).identity_counts
+    assert calls[0] == 12
+    assert counts['abstention_count'] == 6
+    assert counts['identities_born_count'] == 1
+    assert counts['album_admitted_count'] is None
+    assert len(runtime.events(sid)) == 16
+    for _ in range(10):
+        assert runtime.snapshot(sid).identity_counts == counts
+    assert calls[0] == 12

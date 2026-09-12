@@ -196,6 +196,10 @@ class BoundedCausalIdentityPreparer:
         observations = getattr(self.evidence_provider, "match_observations", None)
         return () if observations is None else tuple(observations(base_snapshot=base_snapshot))
 
+    def identity_counts(self):
+        counts = getattr(self.evidence_provider, "identity_counts", None)
+        return None if counts is None else counts()
+
     def journal_observations(self):
         """Expose completed evidence-provider observations without owning their shape."""
 

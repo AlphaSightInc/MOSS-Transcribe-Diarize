@@ -904,6 +904,7 @@ def _snapshot_from_dict(payload: dict[str, Any]) -> LiveServiceSnapshot:
         schema_version=int(payload.get("schema_version", 1)),
         draft=LiveDraft(**payload["draft"]) if payload.get("draft") is not None else None,
         draft_stats=payload.get("draft_stats"),
+        identity_counts=payload.get("identity_counts"),
     )
 
 

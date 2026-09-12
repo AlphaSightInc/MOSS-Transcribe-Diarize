@@ -389,6 +389,8 @@ class LiveCoordinator:
         self._pcm = _PcmRetention()
         self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
+        self._abstention_count = 0
+        self._album_counts = None
         # The rolling witness is asked for by name, like the identity reviser above it: a
         # decoder able to hear a whole window is what the second listener needs and the base
         # path does not have, because the deployed span decoder is bounded at the span cap.
@@ -418,6 +420,21 @@ class LiveCoordinator:
             )
         )
         self._rolling_admission_refusals = 0
+
+    def _capture_identity_counts(self) -> None:
+        # Called only after preparation/finalization, never while the provider mutates.
+        counts = getattr(self.identity_preparer, "identity_counts", None)
+        self._album_counts = None if counts is None else counts()
+
+    def identity_counts(self) -> dict[str, int | None]:
+        snapshot = self.session.snapshot()
+        album = self._album_counts or {}
+        return {
+            "identities_born_count": len(snapshot.identity_snapshot.canonical_speakers),
+            "album_admitted_count": album.get("album_admitted_count"),
+            "provisional_only_count": album.get("provisional_only_count"),
+            "abstention_count": self._abstention_count,
+        }
 
     def preview_frame_work_items(self, frame: AudioFrame) -> int:
         if self._staged_frame is not None:
@@ -612,6 +629,8 @@ class LiveCoordinator:
                 )
         snapshot = self.session.snapshot()
         if submission.submitted:
+            self._abstention_count += int(identity_status == "abstain")
+            self._capture_identity_counts()
             self._pcm.prune_before(snapshot.committed_samples)
         revision = self._publish_identity_revision()
         # A base commit is the event that makes a window ownable: the witness may only revise
@@ -688,6 +707,7 @@ class LiveCoordinator:
         if finalize is not None:
             try:
                 finalize(base_snapshot=self.session.snapshot().identity_snapshot)
+                self._capture_identity_counts()
             except Exception:
                 # Counts and the name only -- a span's words are the meeting, and they are no
                 # more loggable at the end of one than they were during it.

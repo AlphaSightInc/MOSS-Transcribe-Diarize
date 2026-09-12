@@ -759,6 +759,17 @@ class WeSpeakerLiveEvidenceProvider:
             ))
         return tuple(observations)
 
+    def identity_counts(self) -> dict[str, int | None]:
+        """Count existing album state; never reconcile or compute an embedding here."""
+        if self._album is None:
+            return {"album_admitted_count": None, "provisional_only_count": None}
+        speakers = self._album.speakers()
+        return {
+            "album_admitted_count": sum(self._album.exemplar_count(s) > 0 for s in speakers),
+            "provisional_only_count": sum(self._album.exemplar_count(s) == 0 and self._album.has_provisional(s)
+                                          for s in speakers),
+        }
+
     def journal_observations(self) -> tuple[LiveSpeakerJournalObservation, ...]:
         """Project the completed album into immutable, encoder-pinned observations."""
 

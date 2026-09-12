@@ -305,6 +305,7 @@ class LiveServiceSnapshot:
     schema_version: int = LIVE_SERVICE_SCHEMA_VERSION
     draft: LiveDraft | None = None
     draft_stats: Mapping[str, int | float] | None = None
+    identity_counts: Mapping[str, int | None] | None = None
 
     def __post_init__(self) -> None:
         if self.schema_version != LIVE_SERVICE_SCHEMA_VERSION:
@@ -1336,6 +1337,7 @@ class LiveServiceRuntime:
             descriptor=state.descriptor,
             session=session,
             pending_work_items=self._pending_work_items(state),
+            identity_counts=state.coordinator.identity_counts(),
             terminal_failure=state.terminal_failure,
             draft=self._visible_draft_locked(state, session),
             draft_stats=(

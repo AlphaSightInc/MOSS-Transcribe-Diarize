@@ -2427,7 +2427,10 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         directory = corpus / case_id
         directory.mkdir()
         (directory / "audio.wav").write_bytes(b"wav")
-        (directory / "reference.jsonl").write_text("{}\n", encoding="utf-8")
+        (directory / "reference.jsonl").write_text(
+            json.dumps({"start": 0, "end": 1, "speaker": "S1", "text": "test"}) + "\n",
+            encoding="utf-8",
+        )
         cases.append({"case_id": case_id, "category": "speech"})
     (corpus / "corpus-manifest.json").write_text(
         json.dumps({"cases": cases}), encoding="utf-8"

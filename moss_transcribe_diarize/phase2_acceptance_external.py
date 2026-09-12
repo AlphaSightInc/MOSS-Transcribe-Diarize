@@ -2118,7 +2118,11 @@ class FixedAccountCampaign:
                             "settled": scored["pre_stop_settled"],
                             "final": scored["post_stop_final"],
                         },
-                        "surface_observations": _quality_surface_observations(captured.captures),
+                        "surface_observations": _quality_surface_observations(
+                            captured.captures,
+                            reference_speaker_count=len({json.loads(line)["speaker"]
+                                for line in reference.read_text(encoding="utf-8").splitlines() if line.strip()}),
+                        ),
                         "event_counts": {
                             "service": len(events),
                             "trace": len(trace_rows),
@@ -3095,14 +3099,26 @@ def _mean(rows: list[dict[str, object]], surface: str, field: str) -> float:
     return sum(values) / len(values)
 
 
-def _quality_surface_observations(captures: Mapping[str, Any]) -> dict[str, object]:
+def _quality_surface_observations(captures: Mapping[str, Any], *, reference_speaker_count: int | None = None) -> dict[str, object]:
     """Retain timing and completion state without exporting transcript content."""
     observations = {}
     for name in ("pre_stop_immediate", "pre_stop_settled", "post_stop_final"):
         capture = captures[name]
         snapshot = capture["snapshot"]
         session = snapshot.get("session", {})
+        identity = snapshot.get("identity_counts") or {}
+        segments = session.get("effective_transcript", [])
         observations[name] = {
+            "identity_counts": {
+                "emitted_speaker_count": len({segment["canonical_speaker"] for segment in segments
+                                               if segment.get("canonical_speaker") is not None}),
+                "reference_speaker_count": reference_speaker_count,
+                "identities_born_count": identity.get("identities_born_count"),
+                "album_admitted_count": identity.get("album_admitted_count"),
+                "provisional_only_count": identity.get("provisional_only_count"),
+                "abstention_count": identity.get("abstention_count"),
+                "unattributed_segment_count": sum(segment.get("canonical_speaker") is None for segment in segments),
+            },
             "finalization_status": session.get("finalization_status"),
             "pending_work_items": snapshot.get("pending_work_items"),
             "pending_span_count": len(session.get("pending_span_ids", [])),
