@@ -1,5 +1,7 @@
 # auto-mvp-0911 — operator handback
 
+Pull request (draft, unmerged, do not merge before deciding on history squash): https://github.com/aiSight-us/MOSS-Transcribe-Diarize/pull/32
+
 Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 provisionally records round 12, the latest complete qualification; replace it with the completed confirmation result before acting. Do not infer a PR, merge or admission from this handback.
 
 ## 1. What you need to do (in order)

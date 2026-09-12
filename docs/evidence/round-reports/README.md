@@ -1,5 +1,7 @@
 # Portable historical reports
 
+Pull request (draft, unmerged, do not merge before deciding on history squash): https://github.com/aiSight-us/MOSS-Transcribe-Diarize/pull/32
+
 Reviewed on 2026-09-12. These are historical observations, not a new qualification
 or a statement of current host status. Report numbers and decisions are unchanged;
 only source/link availability annotations were added. Raw bundles, screenshots,
