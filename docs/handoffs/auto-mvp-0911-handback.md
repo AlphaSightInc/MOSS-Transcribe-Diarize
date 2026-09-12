@@ -1,8 +1,10 @@
 # auto-mvp-0911 — operator handback
 
-Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Fill section 2 from the actual gate result before acting. Do not infer a PR, merge or admission from this handback.
+Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 provisionally records round 12, the latest complete qualification; replace it with the completed confirmation result before acting. Do not infer a PR, merge or admission from this handback.
 
 ## 1. What you need to do (in order)
+
+**Recovery prerequisite — PENDING:** the [issue #10 incident](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10#issuecomment-5644757476) records a **570 GB** `ext4.vhdx` on C:, C: full, WSL startup failure and round 13 stopped at `old_stopped`, leaving Phase-1 down. The [04:50 EDT update](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10#issuecomment-5644839169) still reported `moss-web` inactive; two move attempts failed because Ubuntu restarted. `MinerU-WSL-Keepalive` restarts it every 45 seconds, and the host tooling's `remote.py` polls also start the distro. Before step 1, obtain 2.1's recovery handoff: **final VHDX location/size — PENDING; move to D: completed or not — PENDING; keepalive enabled/disabled state — PENDING; Phase-1 readiness and new vLLM PID — PENDING.** D: was the planned destination, not a verified move. Follow [Host disk hygiene](g7-preadmission-runbook.md#host-disk-hygiene); never shut down WSL during an attempt.
 
 1. **Wait for the owner’s go and exact qualified, staged SHA.** Then arrange a working host display **and microphone/audio path** for the attended canary. The recorded host inspection found WSLg disabled; it is not a current live check. Follow the [G7 preadmission runbook](g7-preadmission-runbook.md). An X server alone supplies no audio. If enabling WSLg requires `wsl --shutdown`, arrange downtime **before** an attempt: it stops WSL services, including vLLM and Phase-1; allow model reload and verify recovery. Do not restart them during an attempt.
 2. **Run attended preadmission from the interactive WSL terminal**, exactly as the runbook specifies. Budget roughly an hour or more for qualification, not a fixed 60–75 minutes. When Chrome opens, handle sign-in/permissions and share tab audio, then entire-screen audio; make both voices audible and answer four Enter prompts. Success leaves the candidate serving `:7861` in **preadmission, `admitted=false`**. A failure normally restores Phase-1; `SAFE_STOPPED` requires the engineer. Verify the durable result; a missing result is not success.
@@ -26,11 +28,65 @@ The browser sends the transcript through authenticated same-origin `/api/llm/cha
 
 Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
-## 2. State of the gates (round `<ROUND>`, candidate `<SHA>`)
+## 2. Provisional gate state — round 12, candidate `e03d6a31`
 
-`<TABLE>`
+**Latest COMPLETE qualification; handoff condition NOT MET.** Candidate
+`e03d6a310f86c3db0292ae3de0e784270e01f288`. This is the measured round-12 result,
+not qualification of the current branch or a preadmission certificate. The round
+ended **restored, admitted=false, G7 UNCLAIMED**. Its unattended `pre_admission`
+measurement layer is not the attended canary. Phase-1's restoration at that time
+must not be confused with its later disk-incident outage.
 
-**Operator: fill this section yourself.** Include deterministic/deployed/pre-admission counts, exact failed predicates/messages, quality macros versus bounds and the approved 5% band, exceptions used (or none), and remaining open items. Do not copy local E2E or historical round counts into this table. Do not infer admission from preadmission.
+Sources, read-only on this Mac: [round-12 report](/tmp/moss-round12-stage/result/report.md)
+and [per-case CSV](/tmp/moss-round12-stage/result/quality-per-case.csv). The CSV has
+24 observations: six cases, two passes, two layers. Numbers and strict/exception
+marks below retain the report's precision without rounding or recomputing verdicts.
+
+| Layer | Collected | Passed | Failed | Unmeasured |
+|---|---:|---:|---:|---:|
+| Deterministic commands | 18 | 17 | 1 | 0 |
+| deployed predicates | 19 | 16 | 3 | 0 |
+| pre_admission predicates | 17 | 14 | 3 | 0 |
+
+Python: 1,595 collected, 1,593 executed, 1,592 passed, one failed, two skipped,
+zero unmeasured. Frontend: 202 collected/executed/passed, zero failed/skipped/unmeasured.
+All 48 main quality/capacity/overload sessions finalized. These facts do not turn
+failed predicates into passes.
+
+### Eight quality macros
+
+Strict bounds are unchanged. **Strict** means the original bound passed;
+**exception** means only the pre-approved 5% relative band passed. Speaker metrics
+use the settled surface. Both layers have **5/8 strict, 8/8 within the band**.
+
+| Metric | Strict bound | 5% limit | Deployed | pre_admission |
+|---|---:|---:|---|---|
+| final_wer | ≤0.095074000 | 0.099827700 | 0.091705333 **strict** | 0.091705333 **strict** |
+| immediate_wer | ≤0.166655000 | 0.174987750 | 0.165072333 **strict** | 0.165072333 **strict** |
+| settled_wer | ≤0.140442000 | 0.147464100 | 0.135817167 **strict** | 0.135817167 **strict** |
+| diarization_error_rate | ≤0.161430000 | 0.169501500 | 0.162678500 **exception** | 0.162678583 **exception** |
+| reference_speech_der | ≤0.134804000 | 0.141544200 | 0.135727250 **exception** | 0.135727500 **exception** |
+| recall | ≥0.929636000 | 0.883154200 | 0.930811250 **strict** | 0.930811250 **strict** |
+| matched_speaker_accuracy | ≥0.911512000 | 0.865936400 | 0.911188083 **exception** | 0.911188083 **exception** |
+| time_speaker_attribution | ≥0.876970000 | 0.833121500 | 0.877656000 **strict** | 0.877656000 **strict** |
+
+The exception set is exactly **diarization_error_rate, reference_speech_der,
+matched_speaker_accuracy**, in each layer. `quality_corpus` still failed strict
+evaluation in both layers; no exception was silently applied to its verdict.
+QUALITY_BOUNDS and identity policy remain unchanged.
+
+### Two non-exempt blockers and committed fixes
+
+| Blocker | Round-12 failure | Fix; confirmation still required |
+|---|---|---|
+| Copied Playwright driver permissions | Python's `test_headless_background_uses_real_hidden_state_and_post_hidden_requests`, plus `account_product_regression` in both layers, raised `PermissionError` before browser launch. `copytree` preserved read-only permissions, then the helper tried to write `coreBundle.js`. | `0fa7f04e` makes the disposable copied focus bundle writable. |
+| Overload evaluator | `eight_session_overload` failed in both layers: the evaluator required `requested == 30` although the probe requested **120.5 s**. All eight sessions finalized per layer with accepted=accounted=**1,928,000** samples each. | `52b0ece4` derives duration from declared lane capacity; `0f68d910` requires every overload session to finalize without failure. |
+
+These two blockers plus strict `quality_corpus` explain each layer's three failed
+predicates; the copied-driver defect also explains the deterministic failure.
+The fixes are on the branch, but round 12 did not measure them.
+
+**Confirmation pending:** Round 13 (0f68d910) is the confirmation run of these two fixes; it was interrupted by the host disk incident on 2026-09-12 and must be rerun before preadmission.
 
 ## 3. What changed since the 2026-09-10 plan (on the branch; validation scoped by the cited audit)
 
@@ -80,7 +136,7 @@ Use the integrated commit IDs below, not historical sibling-worktree IDs. Each l
 | Operator precheck / handback | Add trusted-TLS, exact-SHA and timed model precheck; assemble evidence handback and qualified limitation wording. | [`7fd9f4d0`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/7fd9f4d0789143258c5d431c5309e2ad8d523114), [`8a2dc33a`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/8a2dc33a23f07b57e20d29a5f7bd209bf839a825), [`8f274786`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/8f274786a46927323fb606ce31414fbcb39b3216) | [Precheck audit](../audits/demo-precheck-20260911.md); this handback |
 | Content boundary | Remove retained content/caches and prevent diagnostic writers from recreating them; product relay error paths verified clean. | [`09539ad7`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/09539ad72006d756fcece932efe74fbb6d8490b1) | [Boundary audit and inventory](../audits/content-boundary-20260912.md) |
 
-### Latest measured quality — round 11, not the final-round gate table
+### Earlier measured quality — round 11; provisional round 12 is in section 2
 
 Use **round 11 (`c70a96e2`, draft lane ON)** as the latest measured host result; **round 12 is in flight**. All eight quality macros fall inside the approved band in both layers, and four-session capacity passes both layers. S = strict bound; E = pre-approved 5% exception. Bounds and identity policy remain unchanged. Source: [issue #10, round-11 result](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10#issuecomment-5643836080).
 
