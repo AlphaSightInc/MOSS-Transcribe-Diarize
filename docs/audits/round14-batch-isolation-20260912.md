@@ -61,12 +61,18 @@ fields do not appear in the returned observation.
 
 Before the repair: **6 failed, 1 passed** (missing retained fields).
 After: **188 passed** in `tests/phase2/test_wave1_qualification.py`.
-Full Python suite, supported browser discovery disabled: **1,585 passed + 37
+Full Python suite before integration of the peer export-wrapper repair
+`974b419d`, supported browser discovery disabled: **1,585 passed + 37
 subtests, 25 optional skips, zero failures**. The production XML reducer confirms
 **all 24 required files, zero required failures/skips/missing cases** (1,647 XML
 cases; 1,622 executed/passed). Logs: `/tmp/moss-round14-isolation-python.log` and
 `/tmp/moss-round14-isolation-python.xml` — **MacStudio-local (not in repo)**.
-Frontend files were unchanged; no frontend rebuild was performed.
+After rebasing onto `974b419d`, the integrated producer and browser-evidence files
+passed together with real Chrome: **206 passed** at `a2d2b219`. Log:
+`/tmp/moss-round14-isolation-integrated.log` — **MacStudio-local (not in repo)**.
+The full-suite count above predates that peer change; it is not claimed as a second
+full-suite run on the integrated head. Frontend files were unchanged; no frontend
+rebuild was performed.
 
 A future failure can now identify which operand failed without inspecting content.
 Without the original batch states, changing the producer or declaring the host
