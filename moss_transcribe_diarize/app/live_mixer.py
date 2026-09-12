@@ -133,7 +133,10 @@ class LiveCompatibilityMixer:
                 retryable_queue_backpressure=retryable_backpressure,
             )
             self._cursor_ns = staged.diagnostics.end_timestamp_ns
-            source.account_through(staged.diagnostics.source_watermarks)
+            # A bounded output chunk may end inside every retained lane frame.
+            # Keep those source frames until a later chunk consumes them completely.
+            if staged.diagnostics.source_watermarks:
+                source.account_through(staged.diagnostics.source_watermarks)
             return LiveMixResult(
                 frame=staged.frame,
                 queued_item_ids=tuple(getattr(accepted, "queued_item_ids", ())),

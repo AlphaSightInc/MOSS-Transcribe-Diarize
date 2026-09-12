@@ -1,0 +1,38 @@
+{
+  "successor_timestamp_ns": 2500500000,
+  "nominal_frame_end_ns": 2500000000,
+  "timestamp_delta_samples": 8,
+  "normal_samples": 48008,
+  "early_flush_samples": 48008,
+  "changed_samples": 7024,
+  "normal_zero_samples": 0,
+  "early_flush_zero_samples": 8,
+  "normal_boundary": [
+    1498,
+    1499,
+    1499,
+    1500,
+    1500,
+    1501,
+    1501,
+    1502,
+    1502,
+    1503,
+    501,
+    501
+  ],
+  "early_flush_boundary": [
+    1502,
+    1503,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    501,
+    501
+  ]
+}

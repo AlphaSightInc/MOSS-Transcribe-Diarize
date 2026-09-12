@@ -544,3 +544,32 @@ def test_registry_create_get_release_is_exact():
     assert registry.release("session-1") is created
     with pytest.raises(KeyError):
         registry.get("session-1")
+
+
+def test_partial_timestamp_stretched_frame_waits_for_complete_source_accounting():
+    # A supported timestamp interval is slightly longer than its nominal samples.
+    # The first bounded output chunk cannot yet account for either whole lane frame.
+    source = LiveV2Session(max_retained_samples=960_000)
+    for lane in (LiveLane.SYSTEM, LiveLane.MICROPHONE):
+        source.accept(_frame(lane, 0, 0, 16_000, 8_000, 8_192))
+        source.accept(_frame(lane, 1, 500_500_000, 16_000, 8_000, 8_192))
+    before = source.snapshot().to_dict()
+    runtime = _Runtime()
+    mixer = LiveCompatibilityMixer(max_output_samples=8_000)
+
+    first = mixer.admit_available('session-1', source, runtime)
+    assert first is not None and first.frame.sample_count == 8_000
+    assert first.diagnostics.source_watermarks == {}
+    assert source.snapshot().to_dict() == before
+
+    remainder = mixer.admit_available('session-1', source, runtime)
+    assert remainder is not None and remainder.frame.sample_count == 8
+    assert remainder.diagnostics.source_watermarks == {LiveLane.SYSTEM: 0, LiveLane.MICROPHONE: 0}
+    assert [f.sequence for f in runtime.frames] == [0, 1]
+    for lane in ('system', 'microphone'):
+        assert source.snapshot().to_dict()['lanes'][lane]['accounted_samples'] == 8_000
+
+    final = mixer.admit_available('session-1', source, runtime, final=True)
+    assert final is not None and final.frame.sample_count == 8_000
+    assert mixer.admit_available('session-1', source, runtime, final=True) is None
+    assert [f.sequence for f in runtime.frames] == [0, 1, 2]
