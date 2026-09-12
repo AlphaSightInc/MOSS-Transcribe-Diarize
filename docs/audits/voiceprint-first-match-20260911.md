@@ -44,3 +44,11 @@ Retained evidence: `evidence/voiceprint-first-match-20260911/`, with five labell
 Validation: `.venv/bin/python -m pytest tests/phase2/test_voiceprint_latency_measurement.py tests/phase2/test_voiceprint_matching.py tests/test_live_provider_bundle.py -q` — **50 passed**. The new optional-browser test deliberately delays the reader by 800ms while inserting the label at 200ms; the reported latency remains tied to the DOM mutation. Existing production tests cover immediate one-second matching and private-bank publication. No product identity or quality-policy values changed.
 
 **Current verdict:** the bank-trigger hypothesis is false. A second match trigger would duplicate working code. The limiting path is capture sealing → first decode → embedding. A scope clarification is pending on advancing the first decode boundary under the user's no-policy-change instruction; no geometry change is shipped in this diagnostic checkpoint. Row 10 is not closed.
+
+## Original 10.845s trace and conversion check
+
+The integration rebase supplied the original session's retained event projection, `docs/audits/row10-recognition-events-20260912.json`, and the read-only trace `row10-recognition-readonly-20260912.md`. The original first runner call took **7.068335625s**, within **7.438577042s** canonical processing; the second runner call took **0.147940375s**. Thus the exceptional original delay is inside the runner boundary, not a periodic voice-bank trigger. That boundary includes local media conversion, HTTP waiting, and streamed response consumption; the old trace cannot isolate them further.
+
+A fresh Python process converting the exact first 40,000 samples of the same corpus through production `_media_to_wav_bytes` took **0.662572s**, then **0.000479s** and **0.000313s** on repeats (80,044-byte WAV each). See `evidence/voiceprint-first-match-20260911/conversion-timing.json`. Local first-use initialization is measurable, but this run does not explain the historical seven-second runner call. No speculative server warm-up, conversion bypass, or policy change was added.
+
+Checkpoint `01cf62ea` was pushed to private/auto-mvp-0911 after rebase. The timing regression also passed after integrating the other agents' harness changes. The queued G9 acceptance-selector/relay-qualification task remains next, after the row-10 scheduling-scope decision.
