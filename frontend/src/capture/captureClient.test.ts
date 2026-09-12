@@ -92,6 +92,7 @@ function activeFrameClient(
 }
 
 type PreSessionClient = {
+  close: () => Promise<void>;
   context: AudioContext | null;
   descriptor: { sampleRate: number; frameSamples: number } | null;
   lanes: Map<string, TestLaneState>;
@@ -578,6 +579,38 @@ describe("browser capture frame contract", () => {
         system: { state: "degraded", failure_code: "browser_audio_context_suspended" },
       },
     });
+  });
+
+  it("keeps the capture application focused with a fresh controller for every chooser", async () => {
+    const order: string[] = [];
+    class Controller {
+      setFocusBehavior(value: string) { order.push(value); }
+    }
+    vi.stubGlobal("CaptureController", Controller);
+    const controllers = new Set<unknown>();
+    const stream = {} as MediaStream;
+    const getDisplayMedia = vi.fn((options: DisplayMediaStreamOptions & { controller?: Controller }) => {
+      expect(options.controller).toBeInstanceOf(Controller);
+      expect(controllers.has(options.controller)).toBe(false);
+      expect(order.at(-1)).toBe("focus-capturing-application");
+      expect(options.video).toBe(true);
+      expect(options.audio).toMatchObject({ echoCancellation: false, autoGainControl: false });
+      controllers.add(options.controller);
+      order.push("chooser");
+      return Promise.resolve(stream);
+    });
+    vi.stubGlobal("navigator", { mediaDevices: { getDisplayMedia } });
+    // New captures plus a reshare each require their own one-use CaptureController.
+    for (let i = 0; i < 3; i++) {
+      const { client } = preSessionClient(vi.fn());
+      client.lanes.set("microphone", testLaneState());
+      const first = client.requestDisplayMedia();
+      expect(getDisplayMedia).toHaveBeenCalledTimes(i * 2 + 1); // synchronous user gesture
+      expect(await first).toBe(stream);
+      expect(await client.requestDisplayMedia()).toBe(stream);
+      await client.close();
+    }
+    expect(controllers.size).toBe(6);
   });
 
   it("reports and tears down real pre-session capture failures without a heartbeat", async () => {

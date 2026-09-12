@@ -443,7 +443,19 @@ export class CaptureClient {
   requestDisplayMedia(): Promise<MediaStream> {
     if (!this.lanes.has("microphone")) throw new Error("start microphone before display capture");
     if (this.context?.state !== "running") throw new Error("capture AudioContext is not running");
-    return navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS).catch(async (error) => {
+    // Keep the capture tab active after the chooser. On macOS, moving native
+    // focus to the shared tab can make the next chooser reject as backgrounded
+    // even when document.hasFocus() is true. Controllers are single-request objects.
+    type FocusController = { setFocusBehavior(behavior: "focus-capturing-application"): void };
+    const Controller = (globalThis as typeof globalThis & {
+      CaptureController?: { new(): FocusController; prototype: FocusController };
+    }).CaptureController;
+    const options: DisplayMediaStreamOptions & { controller?: FocusController } = { ...DISPLAY_MEDIA_OPTIONS };
+    if (typeof Controller?.prototype.setFocusBehavior === "function") {
+      options.controller = new Controller();
+      options.controller.setFocusBehavior("focus-capturing-application");
+    }
+    return navigator.mediaDevices.getDisplayMedia(options).catch(async (error) => {
       if (!this.session) {
         await this.failBeforeSession("system", "browser_capture_request_rejected");
       }

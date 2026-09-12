@@ -165,8 +165,9 @@ class Harness:
                 'meeting':ident,'status_received':meeting['status'],'segments':len(segments),'speaker_count':len(labels),**metric,
                 'artifact':f'meeting-{ident}.json'}
 
-    async def setup_live(self):
-        await self.page.bring_to_front()
+    async def setup_live(self, *, foreground=True):
+        if foreground:
+            await self.page.bring_to_front()
         await self.page.get_by_role('link',name='Live / Transcript & export',exact=True).click()
         reset=self.page.get_by_role('button',name='Reset capture',exact=True)
         if await reset.count(): await reset.click()
@@ -275,6 +276,7 @@ class Harness:
         async with self.page.expect_download() as pending:
             await self.page.get_by_role('menuitem',name=labels[fmt],exact=True).click()
         download=await pending.value; path=self.out/f'{prefix}.{fmt}'; await download.save_as(path)
+        self.last_export_filename=download.suggested_filename
         self.event({'download':path.name,'suggested_filename':download.suggested_filename,'bytes':path.stat().st_size})
         return path
 
@@ -532,6 +534,48 @@ class Harness:
                 await self.snapshot(13,f'-{seconds}s')
         return {'ok':all(v['ok'] for v in variants),'variants':variants}
 
+    async def consecutive_meetings(self):
+        """Row 14: three real captures in one document, no reload or replacement page."""
+        await self.page.evaluate('window.__repeatDocument = "same-document"')
+        cycles=[]
+        for index in range(1,4):
+            result={'cycle':index}
+            try:
+                assert await self.page.evaluate('window.__repeatDocument') == 'same-document'
+                # Do not use Playwright foregrounding to hide native repeat-capture failures.
+                await self.setup_live(foreground=False)
+                ident=await self.start_live(f'repeat_{index}')
+                result['meeting']=ident
+                await self.page.wait_for_function('document.querySelectorAll(".utt-text").length > 0',timeout=35000)
+                await asyncio.sleep(max(0,8-(time.monotonic()-self.started)))
+                result['active_phase']=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')
+                await self.page.get_by_role('button',name='Stop and finalize',exact=True).click()
+                meeting=await self.terminal(ident,240)
+                await self.page.locator('[data-capture-phase="terminal"]').wait_for(timeout=30000)
+                snapshot=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body']['snapshot']['session']
+                events=(await self.api(f'/api/live/sessions/{ident}/events'))['body']
+                write(self.out/f'row-14-cycle-{index}-events.json',events)
+                first_frame=next(e for e in events['events'] if e['kind']=='frame_accepted')
+                result['first_frame_sequence']=first_frame['payload']['sequence']
+                await self.page.locator('[aria-label="Meeting history"]').get_by_role('button',name='Refresh',exact=True).click()
+                history=await self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"]').count()==1
+                # Verify the displayed export belongs to this capture, not the prior one.
+                export=await self.export('json',f'row-14-cycle-{index}')
+                exported=json.loads(export.read_text())
+                result.update(status_received=meeting['status'],finalization_status=snapshot.get('finalization_status'),
+                              history_present=history,export=export.name,export_filename=self.last_export_filename,
+                              terminal_phase=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase'),
+                              screenshot=await self.snapshot(14,f'-cycle-{index}'))
+                result['ok']=(meeting['status']=='completed' and snapshot.get('finalization_status')=='final'
+                              and history and result['first_frame_sequence']==0 and result['active_phase']=='active' and self.last_export_filename.startswith(f'transcript-{ident}-') and bool(exported.get('turns')))
+            finally:
+                cycles.append(result)
+                write(self.out/'row-14-cycles.json',cycles)
+        ids=[c['meeting'] for c in cycles]
+        retained=all([await self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"]').count()==1 for ident in ids])
+        return {'ok':all(c['ok'] for c in cycles) and len(set(ids))==3 and retained,
+                'same_document':True,'all_in_history':retained,'cycles':cycles}
+
     async def run(self):
         try:
             from playwright.async_api import async_playwright
@@ -568,10 +612,10 @@ class Harness:
                     self.state['meetings']={}
                 self.page=self.attach(await self.context.new_page()); self.source=await self.context.new_page(); await self.source.goto(self.media+'/source.html')
                 await self.source.locator('audio').evaluate('a=>a.play()'); await self.page.bring_to_front()
-                rows=set(map(int,self.args.rows.split(','))) if self.args.rows else set(range(1,14))
+                rows=set(map(int,self.args.rows.split(','))) if self.args.rows else set(range(1,15))
                 if 1 in rows: await self.check(1,self.bootstrap)
                 else: await self.open()
-                for n,fn in [(2,self.file),(3,lambda:self.file(True)),(4,self.live),(5,self.enrollment),(6,self.exports),(7,lambda:self.audio(self.state['meetings']['file'])),(9,self.summaries),(11,self.history),(12,self.phone),(10,self.bank),(8,self.interrupted),(13,self.network_outages)]:
+                for n,fn in [(2,self.file),(3,lambda:self.file(True)),(4,self.live),(5,self.enrollment),(6,self.exports),(7,lambda:self.audio(self.state['meetings']['file'])),(9,self.summaries),(11,self.history),(12,self.phone),(10,self.bank),(8,self.interrupted),(13,self.network_outages),(14,self.consecutive_meetings)]:
                     if n in rows and not (n==5 and 4 in rows): await self.check(n,fn)
                 for n in rows:
                     if str(n) not in self.state['rows']: self.state['rows'][str(n)]={'status':'FAIL','reason':'Prerequisite not reached'}
