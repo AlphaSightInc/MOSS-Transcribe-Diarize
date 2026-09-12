@@ -2605,6 +2605,13 @@ def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
           "exception_type", "exception_message") if key in window_failure}
         if isinstance(window_failure, dict) else None
     )
+    row["window_diagnostics"] = [
+        {key: diagnostic[key] for key in
+         ("condition", "window_index", "start_seconds", "end_seconds", "vad", "vad_mode",
+          "frame_ms", "samples", "voiced_samples", "voiced_fraction", "speechless_threshold")
+         if key in diagnostic}
+        for diagnostic in (payload.get("window_diagnostics") or []) if isinstance(diagnostic, dict)
+    ]
     row["failure_code"] = failure.get("code")
     row["failure_kind"] = failure.get("kind")
     return row

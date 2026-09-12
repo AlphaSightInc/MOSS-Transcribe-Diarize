@@ -7,6 +7,7 @@ import re
 import subprocess
 import tempfile
 import time
+import wave
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -17,7 +18,7 @@ from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_t
 from .ffmpeg import detect_ffmpeg, probe_media
 from .model_runner import StatusCallback, TranscriptionResult
 from .speaker_identity import IdentityResolver
-from .transcription_outcome import EmptyTranscriptionError
+from .transcription_outcome import EmptyTranscriptionError, EmptyTranscriptCause
 
 
 class WindowTranscriptionError(RuntimeError):
@@ -203,12 +204,28 @@ class WindowedRunner:
         return self._transcribe_windows(source, windows, kwargs, checkpoint)
 
     def _decode_window(self, audio: Path, window: WindowPlan, kwargs: dict) -> TranscriptionResult:
+        started = time.monotonic()
         try:
-            return self.delegate.transcribe(audio, **kwargs)
+            result = self.delegate.transcribe(audio, **kwargs)
         except EmptyTranscriptionError as exc:
+            if exc.cause in (EmptyTranscriptCause.NO_GENERATED_TOKENS, EmptyTranscriptCause.EMPTY_TEXT) and not exc.text.strip():
+                diagnostic = _speechless_window(audio, window)
+                if diagnostic is not None:
+                    return TranscriptionResult(
+                        text="", prompt_len=0, generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started, model=self.model_path,
+                        audio=str(audio), decoding=str(kwargs.get("decoding") or "greedy"),
+                        temperature=kwargs.get("temperature"), window_diagnostics=[diagnostic],
+                    )
             raise _window_error(window, exc.cause.value, exc) from exc
         except Exception as exc:
             raise _window_error(window, "decoder_exception", exc) from exc
+        if not result.text.strip():
+            diagnostic = _speechless_window(audio, window)
+            if diagnostic is not None:
+                return replace(result, text="", window_diagnostics=[diagnostic])
+            raise _window_error(window, "no_generated_tokens" if result.generated_tokens <= 0 else "empty_text")
+        return result
 
     def _transcribe_windows(
         self,
@@ -227,15 +244,17 @@ class WindowedRunner:
         possibly_truncated = False
         segments_by_window: list[list[TranscriptSegment]] = []
         window_audio_paths: list[Path | None] = []
+        window_diagnostics: list[dict[str, Any]] = []
         last_progress = 0.0
         for result in prefix_results:
             segments = parse_transcript(result.text)
-            if result.generated_tokens <= 0:
+            if result.generated_tokens <= 0 and not _accepted_speechless(result):
                 raise _window_error(windows[len(segments_by_window)], "no_generated_tokens")
-            if not result.text.strip() or not segments:
+            if (not result.text.strip() or not segments) and not _accepted_speechless(result):
                 raise _window_error(windows[len(segments_by_window)], "unparseable_text")
             segments_by_window.append(segments)
             window_audio_paths.append(None)
+            window_diagnostics.extend(result.window_diagnostics or [])
             prompt_tokens += result.prompt_len
             generated_tokens += result.generated_tokens
             elapsed_sec += result.elapsed_sec
@@ -270,17 +289,18 @@ class WindowedRunner:
                 result = self._decode_window(window_audio, window, child_kwargs)
 
                 segments = parse_transcript(result.text)
-                if result.generated_tokens <= 0:
+                if result.generated_tokens <= 0 and not _accepted_speechless(result):
                     raise _window_error(window, "no_generated_tokens")
-                if not result.text.strip():
+                if not result.text.strip() and not _accepted_speechless(result):
                     raise _window_error(window, "empty_text")
-                if not segments:
+                if not segments and not _accepted_speechless(result):
                     raise _window_error(window, "unparseable_text")
 
                 if checkpoint is not None:
                     checkpoint.commit_window(window, result, possibly_truncated=_hit_token_cap(result, kwargs.get("max_new_tokens")))
                 segments_by_window.append(segments)
                 window_audio_paths.append(window_audio)
+                window_diagnostics.extend(result.window_diagnostics or [])
                 prompt_tokens += result.prompt_len
                 generated_tokens += result.generated_tokens
                 elapsed_sec += result.elapsed_sec
@@ -309,6 +329,7 @@ class WindowedRunner:
             window_count=len(windows),
             completed_windows=completed,
             possibly_truncated=possibly_truncated,
+            window_diagnostics=window_diagnostics,
             identity_summary=identity.summary,
             identity_resolution={
                 "schema_version": identity.diagnostics["schema_version"],
@@ -316,6 +337,47 @@ class WindowedRunner:
                 "diagnostics": identity.diagnostics,
             },
         )
+
+
+# Strictly below 0.01%: one voiced 20ms frame in a maximum 150s window
+# is enough to refuse empty-output success. Mode 0 minimizes missed speech.
+SPEECHLESS_VOICED_FRACTION = 0.0001
+
+
+def _speechless_window(audio: Path, window: WindowPlan) -> dict[str, Any] | None:
+    """Inspect exactly the decoded PCM; unavailable/unsupported VAD never excuses failure."""
+    try:
+        import webrtcvad  # Existing live/acceptance dependency; optional in bare file installs.
+        with wave.open(str(audio), "rb") as wav:
+            if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) != (1, 2, 16000):
+                return None
+            pcm = wav.readframes(wav.getnframes())
+        samples = len(pcm) // 2
+        if not samples:
+            return None
+        vad = webrtcvad.Vad(0)
+        voiced_samples = 0
+        for start in range(0, len(pcm), 640):
+            frame = pcm[start:start + 640]
+            # Only the final incomplete frame is padded; count actual samples only.
+            if vad.is_speech(frame.ljust(640, b"\0"), 16000):
+                voiced_samples += len(frame) // 2
+        fraction = voiced_samples / samples
+    except Exception:
+        return None
+    if fraction >= SPEECHLESS_VOICED_FRACTION:
+        return None
+    return {"condition": "speechless_window_empty", "window_index": window.index,
+            "start_seconds": window.start, "end_seconds": window.end,
+            "vad": "webrtc", "vad_mode": 0, "frame_ms": 20,
+            "samples": samples, "voiced_samples": voiced_samples,
+            "voiced_fraction": fraction, "speechless_threshold": SPEECHLESS_VOICED_FRACTION}
+
+
+def _accepted_speechless(result: TranscriptionResult) -> bool:
+    return not result.text.strip() and any(
+        d.get("condition") == "speechless_window_empty" for d in (result.window_diagnostics or [])
+    )
 
 
 class _CheckpointError(WindowTranscriptionError):
@@ -452,8 +514,7 @@ class _CheckpointStore:
 def _stitch_segments(windows: list[WindowPlan], local_results: list[list[TranscriptSegment]]) -> list[AbsoluteSegment]:
     output: list[AbsoluteSegment] = []
     for window, segments in zip(windows, local_results, strict=True):
-        if not segments:
-            raise _window_error(window, "unparseable_text")
+        # Empty lists have already passed the window-level speechless check.
         for segment in segments:
             absolute = AbsoluteSegment(
                 start=window.start + segment.start,
@@ -606,6 +667,7 @@ def _result_from_raw(raw: dict[str, Any]) -> TranscriptionResult:
         audio=str(raw.get("audio") or ""),
         decoding=str(raw.get("decoding") or "greedy"),
         temperature=raw.get("temperature"),
+        window_diagnostics=raw.get("window_diagnostics"),
         top_p=raw.get("top_p"),
         top_k=raw.get("top_k"),
         window_count=raw.get("window_count"),

@@ -45,6 +45,7 @@ class TranscriptionResult:
     possibly_truncated: bool | None = None
     identity_summary: dict[str, Any] | None = None
     identity_resolution: dict[str, Any] | None = None
+    window_diagnostics: list[dict[str, Any]] | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -63,6 +64,7 @@ class TranscriptionResult:
             "possibly_truncated": self.possibly_truncated,
             "identity_summary": self.identity_summary,
             "identity_resolution": self.identity_resolution,
+            "window_diagnostics": self.window_diagnostics,
         }
 
 

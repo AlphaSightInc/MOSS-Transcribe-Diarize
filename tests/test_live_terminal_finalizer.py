@@ -676,7 +676,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
-def test_silent_tail_reaches_window_decoder_and_retains_empty_condition(tmp_path):
+def test_silent_tail_reaches_window_decoder_and_retains_speechless_condition(tmp_path):
     """Deterministic silence probe; it does not assert what a real model will emit."""
     from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
     from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptionError, EmptyTranscriptCause
@@ -707,14 +707,14 @@ def test_silent_tail_reaches_window_decoder_and_retains_empty_condition(tmp_path
     final = TerminalTranscriptFinalizer(runner=runner).finalize(
         plan=plan_for(600 * SECOND), tape=tape, base_text_revision_version=0,
     )
-    assert calls == [(150 * SECOND, True), (150 * SECOND, True), (150 * SECOND, False)]
+    assert calls == [(150 * SECOND, True), (150 * SECOND, True),
+                     (150 * SECOND, False), (150 * SECOND, False), (120 * SECOND, False)]
     payload = final.accounting.to_dict()
-    assert payload["outcome"] == "decode_failed"
-    assert payload["window_failure"] == {"condition": "no_generated_tokens", "window_index": 2,
-                                         "start_seconds": 240.0, "end_seconds": 390.0,
-                                         "exception_type": "EmptyTranscriptionError",
-                                         "exception_message": "no_generated_tokens"}
-    payload["window_failure"]["text"] = "PRIVATE"
-    retained = _diagnostic_event({"kind": "terminal_finalization_failed", "payload": payload})
+    assert payload["outcome"] == "finalized"
+    assert payload["finalization_status"] == "running"  # Proposal; publication is checked separately.
+    assert payload["window_failure"] is None
+    assert [d["window_index"] for d in payload["window_diagnostics"]] == [2, 3, 4]
+    payload["window_diagnostics"][0]["text"] = "PRIVATE"
+    retained = _diagnostic_event({"kind": "terminal_finalization_completed", "payload": payload})
     assert "PRIVATE" not in str(retained)
-    assert retained["window_failure"]["condition"] == "no_generated_tokens"
+    assert retained["window_diagnostics"][0]["condition"] == "speechless_window_empty"

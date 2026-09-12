@@ -667,6 +667,7 @@ class TerminalFinalizationAccounting:
     window_seconds: float | None
     stride_seconds: float | None
     window_failure: dict[str, object] | None = None
+    window_diagnostics: list[dict[str, object]] | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -696,6 +697,7 @@ class TerminalFinalizationAccounting:
             "window_seconds": self.window_seconds,
             "stride_seconds": self.stride_seconds,
             "window_failure": self.window_failure,
+            "window_diagnostics": self.window_diagnostics,
         }
 
 
@@ -1045,6 +1047,7 @@ class TerminalTranscriptFinalizer:
             tape_gaps=len(gaps),
             window_count=window_count,
             completed_windows=int(getattr(result, "completed_windows", 0) or 0),
+            window_diagnostics=getattr(result, "window_diagnostics", None),
             decoded_audio_samples=tape_samples if window_count else 0,
             generated_tokens=int(getattr(result, "generated_tokens", 0) or 0),
             prompt_tokens=int(getattr(result, "prompt_len", 0) or 0),

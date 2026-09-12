@@ -1,0 +1,46 @@
+{
+  "source": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav",
+  "vad_mode": 0,
+  "frame_ms": 20,
+  "threshold": 0.0001,
+  "silence_150s": {
+    "samples": 2400000,
+    "frames": 7500,
+    "voiced_samples": 0,
+    "voiced_fraction": 0.0,
+    "speechless": true,
+    "seconds": 0.011541207786649466
+  },
+  "real_speech": {
+    "samples": 800000,
+    "frames": 2500,
+    "voiced_samples": 745920,
+    "voiced_fraction": 0.9324,
+    "speechless": false,
+    "seconds": 0.00461933296173811
+  },
+  "speech_then_long_silence": {
+    "samples": 2400000,
+    "frames": 7500,
+    "voiced_samples": 748480,
+    "voiced_fraction": 0.3118666666666667,
+    "speechless": false,
+    "seconds": 0.012958042323589325
+  },
+  "brief_speech_in_silence": {
+    "samples": 2400000,
+    "frames": 7500,
+    "voiced_samples": 8320,
+    "voiced_fraction": 0.0034666666666666665,
+    "speechless": false,
+    "seconds": 0.01166079193353653
+  },
+  "silence_partial_frame": {
+    "samples": 32001,
+    "frames": 101,
+    "voiced_samples": 0,
+    "voiced_fraction": 0.0,
+    "speechless": true,
+    "seconds": 0.00015520816668868065
+  }
+}
