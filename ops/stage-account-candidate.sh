@@ -172,6 +172,15 @@ assert installed_candidate_identity()["git_sha"] == sys.argv[1]
 assert installed_project_record_identity()["record_entries_verified"] > 0
 PY
 
+# Finalize with candidate-owned code before publishing/repointing staged references.
+# Both acceptance layers read the descriptor configured by this shared staged profile.
+finalize_candidate_provider() {
+  PYTHONDONTWRITEBYTECODE=1 LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" \
+    "${RELEASE}/bin/python" -I "${CHECKOUT}/ops/stage-account-provider-manifest.py" \
+    "${CANDIDATE_SHA}" "${LINUX_USER_DIR}/.config/moss-transcribe-diarize/moss-cutover.json"
+}
+finalize_candidate_provider
+
 if [ ! -L "${CHECKOUT}/.venv" ]; then
   ln -s "${RELEASE}" "${CHECKOUT}/.venv"
 fi

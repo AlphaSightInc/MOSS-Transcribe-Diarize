@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import shlex
 import shutil
 import subprocess
 import sys
@@ -25,6 +27,9 @@ from moss_transcribe_diarize.app.live_manifest_finalizer import (
     LIVE_RECONNECT_BURST_FRAMES,
     LIVE_RECONNECT_BURST_SAMPLES,
     LIVE_WIRE_FRAME_SAMPLES,
+    LiveIdentityRecalibration,
+    LiveManifestRetune,
+    finalize_payload,
     main,
 )
 from moss_transcribe_diarize.app.live_provider_bundle import (
@@ -39,6 +44,7 @@ from moss_transcribe_diarize.app.live_session import LIVE_SAMPLE_RATE
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OPS_TOOL = REPO_ROOT / "ops" / "finalize-live-provider-manifest.py"
+STAGE_TOOL = REPO_ROOT / "ops" / "stage-account-provider-manifest.py"
 
 # The retuned contract values (plan D3/D5/D6): 2.5 s span cap, 60 s retention, 0.5 s frames.
 HARD_CAP_SAMPLES = 40000
@@ -654,3 +660,120 @@ def test_tracked_ops_tool_finalizes_from_the_checkout(tmp_path):
     assert payload["identity_provider"]["album_admission_seconds"] == ALBUM_ADMISSION_SECONDS
     assert payload["identity_provider"]["birth_min_seconds"] == ALBUM_BIRTH_MIN_SECONDS
     assert f"wrote: {output}" in result.stdout
+
+
+@pytest.fixture
+def candidate_provider_tree(tmp_path):
+    home = tmp_path / "home"
+    config = home / ".config/moss-transcribe-diarize"
+    staged = config / "staged/moss-account.env"
+    staged.parent.mkdir(parents=True)
+    live = home / ".local/share/moss-transcribe-diarize/live"
+    live.mkdir(parents=True)
+    source = live / "previous-provider.json"
+    payload, _ = finalize_payload(
+        _provisional_payload(),
+        source_revision="a" * 40,
+        retune=LiveManifestRetune(HARD_CAP_SAMPLES, MAX_RETAINED_SAMPLES, FRAME_SAMPLES, 19200000),
+        identity=LiveIdentityRecalibration(
+            ALBUM_MIN_MATCH_SCORE, ALBUM_MIN_MATCH_MARGIN,
+            ALBUM_ADMISSION_SECONDS, ALBUM_BIRTH_MIN_SECONDS,
+        ),
+    )
+    source.write_text(json.dumps(payload))
+    staged.write_text(
+        f"# Keep all unrelated assignments verbatim.\nMOSS_LIVE_PROVIDER_MANIFEST={source}\n"
+        'MOSS_LLM_UPSTREAMS=[{"name":"test","base_url":"http://localhost:1234/v1"}]\n'
+        "MOSS_LIVE_DRAFT_LANE_SECONDS=1.0\nMOSS_TLS_CERTFILE=unchanged-cert\n"
+    )
+    staged.chmod(0o600)
+    active = config / "moss-account.env"
+    active.write_text("active profile must not change\n")
+    profile = config / "moss-cutover.json"
+    profile.write_text(json.dumps({
+        "candidate": {"account_profile_source": str(staged)},
+        "candidate_manifest": "previous-candidate.json",
+    }))
+    profile.chmod(0o600)
+    release = home / ".local/share/moss-transcribe-diarize/account-runtimes" / DEPLOYED_REVISION
+    (release / "bin").mkdir(parents=True)
+    python = release / "bin/python"
+    python.write_text(f'#!/bin/sh\nexec {shlex.quote(sys.executable)} "$@"\n')
+    python.chmod(0o755)
+    checkout = tmp_path / "candidate-checkout"
+    (checkout / "ops").mkdir(parents=True)
+    shutil.copy2(STAGE_TOOL, checkout / "ops" / STAGE_TOOL.name)
+    (checkout / "moss_transcribe_diarize").symlink_to(REPO_ROOT / "moss_transcribe_diarize")
+    spec = importlib.util.spec_from_file_location("stage_account_provider", STAGE_TOOL)
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    return home, release, checkout, source, staged, profile, active, tool
+
+
+def test_candidate_stage_finalizes_provider_with_fake_runtime_before_repointing(candidate_provider_tree):
+    home, release, checkout, source, staged, profile, active, tool = candidate_provider_tree
+    originals = {p: p.read_bytes() for p in (source, staged, profile, active)}
+    script = (REPO_ROOT / "ops/stage-account-candidate.sh").read_text()
+    start = script.index("finalize_candidate_provider() {")
+    end = script.index("\n}", start) + 2
+    # Execute the actual shell boundary with a fake installed runtime and detached checkout.
+    shell = (
+        'set -eu\nRELEASE="$1"\nCHECKOUT="$2"\nLINUX_USER_DIR="$3"\n'
+        'CANDIDATE_SHA="$4"\nSQLITE_PREFIX="$3/sqlite"\n'
+        + script[start:end] + "\nfinalize_candidate_provider\n"
+    )
+    command = ["bash", "-c", shell, "bash", str(release), str(checkout), str(home), DEPLOYED_REVISION]
+    result = subprocess.run(command, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    destination = source.with_name(f"live-provider-{DEPLOYED_REVISION}.json")
+    final = json.loads(destination.read_text())
+    assert tool.verify_admission(final, base_dir=destination.parent)["source_revision"] == DEPLOYED_REVISION
+    previous = json.loads(originals[source])
+    assert final == {**previous, "source_revision": DEPLOYED_REVISION, "config_hashes": final["config_hashes"]}
+    assert staged.read_bytes() == originals[staged].replace(str(source).encode(), str(destination).encode())
+    assert staged.stat().st_mode & 0o777 == 0o600
+    assert destination.stat().st_mode & 0o777 == 0o600
+    for path in (source, profile, active):
+        assert path.read_bytes() == originals[path]
+    assert script.index("\nfinalize_candidate_provider\n") < script.index('ln -s "${RELEASE}" "${CHECKOUT}/.venv"')
+    assert script.index("\nfinalize_candidate_provider\n") < script.index('if [ ! -e "${MANIFEST}" ]')
+    # A repeated stage now reads its own finalized provider; it must remain idempotent.
+    before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in (staged, destination)}
+    repeated = subprocess.run(command, capture_output=True, text=True)
+    assert repeated.returncode == 0, repeated.stderr
+    assert {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in before} == before
+
+
+@pytest.mark.parametrize("failure", ["descriptor_revision", "generated_revision", "policy", "existing_manifest"])
+def test_candidate_stage_refuses_provider_mismatch_without_repointing(
+    candidate_provider_tree, monkeypatch, failure,
+):
+    _, _, _, source, staged, profile, active, tool = candidate_provider_tree
+    before = {p: p.read_bytes() for p in (source, staged, profile, active)}
+    destination = source.with_name(f"live-provider-{DEPLOYED_REVISION}.json")
+    if failure == "descriptor_revision":
+        verify = tool.verify_admission
+        monkeypatch.setattr(tool, "verify_admission", lambda *a, **kw: {
+            **verify(*a, **kw), "source_revision": "b" * 40,
+        })
+    elif failure in ("generated_revision", "policy"):
+        finalize = tool.finalize_payload
+
+        def broken_finalizer(*args, **kwargs):
+            payload, evidence = finalize(*args, **kwargs)
+            if failure == "generated_revision":
+                payload["source_revision"] = "b" * 40
+            else:
+                payload["identity_provider"]["album_admission_seconds"] += 1.0
+            return payload, evidence
+
+        monkeypatch.setattr(tool, "finalize_payload", broken_finalizer)
+    else:
+        destination.write_bytes(before[source])
+    with pytest.raises(ValueError, match="revision|policy|differs"):
+        tool.stage_provider_manifest(DEPLOYED_REVISION, profile)
+    assert {path: path.read_bytes() for path in before} == before
+    if failure == "existing_manifest":
+        assert destination.read_bytes() == before[source]
+    else:
+        assert not destination.exists()
