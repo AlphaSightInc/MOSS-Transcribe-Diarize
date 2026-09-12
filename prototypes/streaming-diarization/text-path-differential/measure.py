@@ -20,7 +20,7 @@ client=httpx.Client(verify=str(HERE/'cert.pem'),base_url='https://127.0.0.1:1786
 Path(os.environ['MOSS_TEXT_OUT']).mkdir(parents=True,exist_ok=True)
 cookie=Path(os.environ['MOSS_TEXT_OUT'])/'measurement.cookie';cookie.touch(mode=0o600);cookie.write_text(client.cookies.get(SESSION_COOKIE));cookie.chmod(0o600)
 account=AccountCookieLiveReplayService(base_url='https://127.0.0.1:17862',cookie_file=cookie,timeout_seconds=300)
-result=json.loads((Path(os.environ['MOSS_TEXT_OUT'])/'results.json').read_text()) if (Path(os.environ['MOSS_TEXT_OUT'])/'results.json').exists() else {'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'identity_manifest':str(args.live_provider_manifest),'paths':{'mono':'current shared LiveServiceRuntime, legacy mono adapter, no Account/v2','account':'own Phase-2 HTTPS stack17862, fresh workspace, speakers + silent microphone'},'rows':[]}
+result=json.loads((Path(os.environ['MOSS_TEXT_OUT'])/'results.json').read_text()) if (Path(os.environ['MOSS_TEXT_OUT'])/'results.json').exists() else {'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'identity_manifest':Path(args.live_provider_manifest).name,'paths':{'mono':'current shared LiveServiceRuntime, legacy mono adapter, no Account/v2','account':'own Phase-2 HTTPS stack17862, fresh workspace, speakers + silent microphone'},'rows':[]}
 for case in CASES:
  for mode,service in [('mono',Mono(runtime)),('account',account)]:
   if any(x['case_id']==case and x['mode']==mode for x in result['rows']):continue
@@ -32,7 +32,7 @@ for case in CASES:
    try:
     run_service_replay(service=captured,audio_path=CORPUS/case/'audio.wav',out_dir=out,pace=1,max_pacing_lag=3,runs=1,expect_revision=desc.source_revision,expect_provider_hash=desc.provider_manifest_hash,expect_config_hash=desc.config_hashes.combined_config_hash)
    except ServiceReplayRtfFailure as e:
-    performance_failure=str(e)
+    performance_failure=type(e).__name__
     assert all(x in captured.captures for x in ['pre_stop_immediate','pre_stop_settled','post_stop_final'])
    (out/'captures.json').write_text(json.dumps(captured.captures))
    ref=CORPUS/case/'reference.jsonl'
@@ -51,6 +51,6 @@ for case in CASES:
      events=service.events(sid,since_seq=0)
      (out/'failure-events.jsonl').write_text(''.join(json.dumps({'kind':'service_event','event':event.to_dict()})+'\n' for event in events))
     except Exception as evidence_error:
-     (out/'failure-evidence-error.txt').write_text(str(evidence_error))
-   result['rows'].append({'case_id':case,'mode':mode,'error':str(e)});(Path(os.environ['MOSS_TEXT_OUT'])/'results.json').write_text(json.dumps(result,indent=2)+'\n');print('FAILED',case,mode,str(e),flush=True)
+     (out/'failure-evidence-error.txt').write_text(type(evidence_error).__name__)
+   result['rows'].append({'case_id':case,'mode':mode,'error':type(e).__name__});(Path(os.environ['MOSS_TEXT_OUT'])/'results.json').write_text(json.dumps(result,indent=2)+'\n');print('FAILED',case,mode,type(e).__name__,flush=True)
 account.close();client.close()

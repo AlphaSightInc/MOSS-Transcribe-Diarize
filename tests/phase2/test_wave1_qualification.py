@@ -1514,7 +1514,7 @@ def test_fixed_measurement_failure_still_runs_cleanup_zero_and_closes(
     assert state["counts"]["failed"] == 1
     assert calls[-3:] == ["cleanup", "zero_work_end", "close"]
     record = json.loads(next((tmp_path / "attempt/raw").glob("*operator_control*.json")).read_text())["raw"]
-    assert record["failure_message"] == str(failure)
+    assert record["failure_type"] == type(failure).__name__
     assert record["failure_operation"].endswith(":run")
 
 
@@ -3438,10 +3438,10 @@ def test_predicate_diagnostics_remove_credentials_browser_dom_and_subprocess_out
     config = {"content_boundary_files": {"account_a_session_cookie": str(secret)}}
     error = Error('Locator.click: locator("PRIVATE_TRANSCRIPT") failed PRIVATE_COOKIE\nCall log:\nPRIVATE_DOM')
     raw = measurement._failure_details(error, config)
-    assert "Locator.click" in raw["failure_message"]
+    assert raw["failure_type"] == "Error"
     assert all(value not in json.dumps(raw) for value in ("PRIVATE_COOKIE", "PRIVATE_TRANSCRIPT", "PRIVATE_DOM"))
     error = subprocess.CalledProcessError(1, ["browser", "PRIVATE_ARGUMENT"], output="PRIVATE_STDOUT", stderr="PRIVATE_STDERR")
-    assert measurement._failure_details(error, config)["failure_message"] == "browser exited with status 1"
+    assert measurement._failure_details(error, config)["exit_status"] == 1
 
 
 @pytest.mark.parametrize("fault", [None, "other_release", "missing_resolution", "different_exe", "different_module"])
@@ -3548,3 +3548,17 @@ def test_mp3_probe_reports_duration_for_real_encoded_audio(tmp_path):
     assert measured["sample_rate_hz"] == 16000
     assert measured["channels"] == 1
     assert measured["duration_seconds"] > 0
+
+
+def test_outer_acceptance_failure_never_retains_exception_content(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(acceptance, 'discover_candidate', lambda repo: {'git_sha': 'a' * 40})
+    monkeypatch.setattr(acceptance, 'load_profile', lambda path: ({}, []))
+    def fail(**kwargs):
+        raise RuntimeError('PRIVATE_TRANSCRIPT PRIVATE_API_KEY /Users/PRIVATE_OPERATOR')
+    monkeypatch.setattr(acceptance, 'build_candidate_wheel', fail)
+    output = tmp_path / 'evidence/phase2/wave-1/20260912T000000Z-aaaaaaa'
+    assert acceptance.run_acceptance(wave=1, output=output, repo=tmp_path) == 1
+    diagnostic = json.loads((output / 'terminal-error.json').read_text())
+    assert diagnostic['error'] == 'RuntimeError' and diagnostic['qualified'] is False
+    assert 'PRIVATE' not in capsys.readouterr().err
+    assert all(b'PRIVATE' not in path.read_bytes() for path in output.rglob('*') if path.is_file())

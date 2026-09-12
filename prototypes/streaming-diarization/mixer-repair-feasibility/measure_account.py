@@ -51,7 +51,7 @@ try:
                     expect_provider_hash=desc.provider_manifest_hash,
                     expect_config_hash=desc.config_hashes.combined_config_hash)
             except ServiceReplayRtfFailure as error:
-                record['performance_failure'] = str(error)
+                record['performance_failure'] = type(error).__name__
                 assert all(key in captured.captures for key in ('pre_stop_immediate', 'pre_stop_settled', 'post_stop_final'))
             ref = corpus/case/'reference.jsonl'
             with wave.open(str(corpus/case/'audio.wav')) as audio:
@@ -61,7 +61,7 @@ try:
             record['surface_observations'] = _quality_surface_observations(captured.captures,
                 reference_speaker_count=len({json.loads(line)['speaker'] for line in ref.read_text().splitlines()}))
         except Exception as error:
-            record['error'] = str(error)
+            record['error'] = type(error).__name__
         finally:
             (out/'captures.json').write_text(json.dumps(captured.captures))
             record['elapsed_seconds'] = time.monotonic()-started

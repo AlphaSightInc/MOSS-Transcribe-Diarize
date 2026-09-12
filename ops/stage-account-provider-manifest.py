@@ -68,7 +68,7 @@ def stage_provider_manifest(candidate_sha: str, cutover_profile: Path) -> Path:
     )
     if updated != original:
         _atomic_private_file(account_profile, updated.encode())
-    print(f"evidence: live_provider_manifest={destination}")
+    print("evidence: live_provider_manifest_staged=true")
     print(f"evidence: provider_descriptor_source_revision={admission['source_revision']}")
     return destination
 
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     try:
         stage_provider_manifest(sys.argv[1], Path(sys.argv[2]))
     except (OSError, ValueError, KeyError) as exc:
-        raise SystemExit(f"refused: {exc}") from exc
+        raise SystemExit(f"refused: {type(exc).__name__}") from None

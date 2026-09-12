@@ -21,3 +21,7 @@ Run (existing local assets only):
 ```
 
 The user explicitly requested a retained, repeatable batch bench; it replaces the prototype skill's interactive TUI. Fresh embedding is default; `--reuse` replays available retained vectors; missing caches are freshly embedded locally. Verdict and measured results: `docs/audits/identity-floor-a2-bench-20260911.md`.
+
+Content boundary: only counts, timing and reference ids are retained. Embedding/PCM
+caches were removed from git; the runner now uses ~/.cache/moss-private/identity-floor-a2
+for private reusable inputs, outside the evidence output. Never commit that cache.

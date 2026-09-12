@@ -1184,12 +1184,12 @@ class LiveServiceRuntime:
                 base_surface=snapshot.effective_transcript,
                 canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
             )
-        except Exception:
+        except Exception as exc:
             # Counts and names only, never the words -- the rule every listener in this
             # runtime follows. The adapter answers with a named refusal for the failures it
             # expects, so reaching here means a defect, and a defect is still not the
             # meeting's problem.
-            _TERMINAL_LOG.warning("live terminal finalization failed", exc_info=True)
+            _TERMINAL_LOG.warning("live terminal finalization failed: error_type=%s", type(exc).__name__)
         with self._lock:
             try:
                 self._publish_terminal_locked(state, finalization)
@@ -1591,16 +1591,16 @@ class LiveServiceRuntime:
                     if result.proposed
                     else "no_proposal"
                 )
-        except Exception:
+        except Exception as exc:
             # Counts and names only, never the words: the same rule the identity finalizer
             # follows. Rolling stops for this session so the defect cannot repeat every
             # window; the transcript keeps everything both listeners had already published.
-            _ROLLING_LOG.warning("live rolling refinement failed", exc_info=True)
+            _ROLLING_LOG.warning("live rolling refinement failed: error_type=%s", type(exc).__name__)
             with self._lock:
                 try:
                     state.coordinator.stop_rolling()
-                except Exception:
-                    _ROLLING_LOG.warning("live rolling refinement stop failed", exc_info=True)
+                except Exception as exc:
+                    _ROLLING_LOG.warning("live rolling refinement stop failed: error_type=%s", type(exc).__name__)
         finally:
             with self._lock:
                 state.coordinator.release_refinement(item)

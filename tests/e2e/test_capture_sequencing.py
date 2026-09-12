@@ -64,7 +64,8 @@ def test_timeout_retains_reason_and_does_not_continue(tmp_path,phase,history):
             evidence=json.loads((tmp_path/'row-14-before-reset.json').read_text())
             assert not evidence['ready'] and evidence['meeting']=='owned'
             assert evidence['phase']==phase and evidence['history_status']==history
-            assert evidence['reason'].startswith('TimeoutError:')
+            assert evidence['reason_code']=='previous_meeting_not_ready'
+            assert evidence['exception']=='TimeoutError'
         finally:
             harness.network.close()
     asyncio.run(run())

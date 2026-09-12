@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -212,26 +211,17 @@ def _write_json_once(path: Path, payload: object) -> None:
 
 def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, object]:
     """Keep structured wait facts, never browser DOM logs, subprocess output or frame locals."""
+    # Exceptions can include upstream response details, page text, file paths or
+    # credential-bearing URLs. Keep the failing operation and typed facts only.
+    message = type(exc).__name__
+    facts = {"failure_type": type(exc).__name__}
     if isinstance(exc, subprocess.CalledProcessError):
-        command = exc.cmd[0] if isinstance(exc.cmd, (list, tuple)) else "subprocess"
-        message = f"{command} exited with status {exc.returncode}"
-    elif isinstance(exc, OSError):
-        message = str(exc)  # OS error plus filenames, not file contents.
-    else:
-        message = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
-        # Playwright headers may contain selectors/text; full call logs contain DOM.
-        if type(exc).__module__.startswith("playwright."):
-            message = re.sub(r'''"[^"\n]*"|'[^'\n]*'|`[^`\n]*`''', "[redacted]", message)
-    boundaries = config.get("content_boundary_files", {})
-    if isinstance(boundaries, dict):
-        for path in boundaries.values():
-            try:
-                value = Path(path).expanduser().read_text().strip()
-            except (OSError, UnicodeError):
-                message = "Diagnostic withheld: content-boundary file unavailable"
-                break
-            if value:
-                message = message.replace(value, "[redacted]")
+        facts["exit_status"] = exc.returncode
+    if isinstance(exc, OSError) and exc.errno is not None:
+        facts["errno"] = exc.errno
+    status = getattr(exc, "http_status", None)
+    if isinstance(status, int):
+        facts["http_status"] = status
     trace = exc.__traceback__
     while trace is not None and trace.tb_next is not None:
         trace = trace.tb_next
@@ -239,7 +229,7 @@ def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, 
         f"{Path(trace.tb_frame.f_code.co_filename).name}:{trace.tb_lineno}:{trace.tb_frame.f_code.co_name}"
         if trace is not None else type(exc).__name__
     )
-    details = {"failure_message": message, "failure_operation": operation}
+    details = {"failure_message": message, "failure_operation": operation, **facts}
     underlying = exc
     while underlying is not None:
         if hasattr(underlying, "browser_timeout"):

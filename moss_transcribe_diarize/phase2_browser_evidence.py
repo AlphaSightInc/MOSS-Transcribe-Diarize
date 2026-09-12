@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 from playwright.sync_api import Locator, TimeoutError as PlaywrightTimeout
 
 # Keep boxes/colors, but hide every text source, form value and media surface.
@@ -25,6 +26,16 @@ FINAL_TAIL_READY = """tail => {
 }"""
 
 
+def _page_scheme(url):
+    # URLs may carry account names, query credentials or fragments. No URL value
+    # or locator/JavaScript source belongs in retained diagnostic evidence.
+    try:
+        scheme = urlsplit(url).scheme
+    except ValueError:
+        return "unknown"
+    return scheme if scheme in {"http", "https", "about", "data", "file"} else "unknown"
+
+
 class BrowserTimeoutEvidence:
     def __init__(self, root: Path, predicate: str, register=None):
         self.root = root
@@ -41,7 +52,7 @@ class BrowserTimeoutEvidence:
         self.sequence += 1
         relative = Path('browser-timeouts') / f'{self.predicate}-{self.sequence:02d}'
         detail = {'predicate': self.predicate, 'stage': stage, 'operation': operation,
-                  'target': target, 'page_url': page.url, 'attributes': None,
+                  'target': operation, 'page_scheme': _page_scheme(page.url), 'attributes': None,
                   'screenshot': None, 'screenshot_kind': 'content-free-layout'}
         # Attach first: an evidence-collection failure must not replace the original timeout.
         exc.browser_timeout = detail
@@ -174,7 +185,7 @@ async def retain_async_timeout(observed, operation, target, exc):
     evidence.sequence += 1
     relative = Path('browser-timeouts') / f'{evidence.predicate}-{evidence.sequence:02d}'
     detail = {'predicate': evidence.predicate, 'stage': observed.stage, 'operation': operation,
-              'target': target, 'page_url': page.url, 'attributes': None,
+              'target': operation, 'page_scheme': _page_scheme(page.url), 'attributes': None,
               'screenshot': None, 'screenshot_kind': 'content-free-layout'}
     exc.browser_timeout = detail
     try:

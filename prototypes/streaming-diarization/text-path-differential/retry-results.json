@@ -1,6 +1,6 @@
 {
   "source_revision": "3a641f06d363d0d4b6dc0ec7d36fe9d4f74bf868",
-  "identity_manifest": "/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
+  "identity_manifest": "~/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
   "paths": {
     "mono": "current shared LiveServiceRuntime, legacy mono adapter, no Account/v2",
     "account": "own Phase-2 HTTPS stack17862, fresh workspace, speakers + silent microphone"

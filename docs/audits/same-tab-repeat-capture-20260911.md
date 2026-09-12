@@ -59,7 +59,7 @@ One command for the focused scenario (stack running with the retained environmen
 ```sh
 .venv/bin/python tests/e2e/verify_workspace.py --rows 14 \
   --base https://127.0.0.1:17863 \
-  --corpus /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
+  --corpus ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
   --output /tmp/moss-repeat-capture-new-run
 ```
 

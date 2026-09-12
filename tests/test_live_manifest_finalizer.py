@@ -725,6 +725,8 @@ def test_candidate_stage_finalizes_provider_with_fake_runtime_before_repointing(
     command = ["bash", "-c", shell, "bash", str(release), str(checkout), str(home), DEPLOYED_REVISION]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+    assert str(home) not in result.stdout
+    assert "live_provider_manifest_staged=true" in result.stdout
     destination = source.with_name(f"live-provider-{DEPLOYED_REVISION}.json")
     final = json.loads(destination.read_text())
     assert tool.verify_admission(final, base_dir=destination.parent)["source_revision"] == DEPLOYED_REVISION
@@ -777,3 +779,12 @@ def test_candidate_stage_refuses_provider_mismatch_without_repointing(
         assert destination.read_bytes() == before[source]
     else:
         assert not destination.exists()
+
+
+def test_candidate_stage_error_does_not_log_operator_path(tmp_path):
+    secret_path = tmp_path / "PRIVATE_OPERATOR" / "profile.json"
+    result = subprocess.run([sys.executable, str(STAGE_TOOL), DEPLOYED_REVISION, str(secret_path)],
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert result.stderr.strip() == "refused: FileNotFoundError"
+    assert "PRIVATE_OPERATOR" not in result.stdout + result.stderr

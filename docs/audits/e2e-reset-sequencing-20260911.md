@@ -11,7 +11,7 @@ Run:
 ```sh
 .venv/bin/python tests/e2e/verify_workspace.py \
   --base https://127.0.0.1:17863 --allow-local-self-signed \
-  --corpus /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
+  --corpus ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
   --rows 13,14 --output /tmp/moss-sequencing-20260911/e2e
 ```
 

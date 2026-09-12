@@ -422,3 +422,19 @@ def test_analysis_retention_uses_existing_admission_bound_and_releases_committed
     live.process_work_item(arbiter.next_work())
     live.process_work_item(arbiter.next_work())
     assert retained() == 0
+
+
+def test_identity_finalize_exception_does_not_log_content(caplog):
+    class PrivateFailure(FinalizingIdentity):
+        def finalize_identity(self, **kwargs):
+            raise RuntimeError('PRIVATE_TRANSCRIPT PRIVATE_API_KEY')
+    live, _, arbiter, session = coordinator(speech=(True, False), identity=PrivateFailure())
+    live.accept_frame(frame(0, 1000))
+    live.accept_frame(frame(1, 1000))
+    live.process_work_item(arbiter.next_work())
+    with caplog.at_level('WARNING', logger='moss_transcribe_diarize.live.identity'):
+        result = live.finalize_identity()
+    assert 'error_type=RuntimeError' in caplog.text and 'PRIVATE' not in caplog.text
+    assert all(record.exc_info is None for record in caplog.records)
+    assert result.identity_revision_refusals == ((IDENTITY_FINALIZE_FAILED, 1),)
+    assert session.snapshot().status == 'active'

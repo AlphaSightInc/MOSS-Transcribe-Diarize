@@ -45,8 +45,8 @@ def test_timeout_fields_raw_record_and_content_free_artifact(page,tmp_path,predi
         else: observed.locator(target).fill('DO NOT RETAIN THIS')
     detail=_failure_details(caught.value,{})['browser_timeout']
     assert detail['predicate']==predicate and detail['stage']==stage
-    assert target in detail['target']
-    assert detail['page_url']=='about:blank'
+    assert detail['target']==detail['operation']
+    assert detail['page_scheme']=='about' and 'page_url' not in detail
     assert detail['attributes']=={'data-auth-state':['signed-in'],'data-boot':['loading'],'data-history-boot':[]}
     screenshot=tmp_path/detail['screenshot'].removeprefix('artifacts/')
     assert screenshot.is_file()
@@ -101,7 +101,7 @@ def test_reference_prepare_retains_exact_wait_before_teardown(page,tmp_path):
     observed=BrowserTimeoutEvidence(tmp_path,'transcript_pane_fidelity').page(page,'reference.prepare')
     with pytest.raises(PlaywrightTimeout) as caught:
         module.prepare_page(observed,[{'text':'private fixture'}],is_reference=True)
-    assert caught.value.browser_timeout['target']=='[data-boot="ready"]'
+    assert caught.value.browser_timeout['target']=='wait_for_selector'
     assert caught.value.browser_timeout['stage']=='reference.prepare'
 
 
@@ -112,7 +112,7 @@ def test_summary_selector_auto_wait_retains_target_without_form_values(page,tmp_
     with pytest.raises(PlaywrightTimeout) as caught:
         configure_external_summary(observed,endpoint='https://private.test',model='private-model',api_key='private-key',prompt='private-prompt')
     detail=caught.value.browser_timeout
-    assert 'Provider HTTPS URL' in detail['target'] and detail['operation']=='fill'
+    assert detail['target']=='fill' and detail['operation']=='fill'
     assert 'private-key' not in json.dumps(detail) and 'private.test' not in json.dumps(detail)
 
 
@@ -135,7 +135,7 @@ def test_async_provider_timeout_survives_subprocess_boundary(tmp_path):
                 observed=AsyncEvidencePage(page,writer,'provider-probe.relay')
                 with pytest.raises(PlaywrightTimeout) as caught:
                     await observed.locator('[data-summary-state="current"]').wait_for()
-                assert caught.value.browser_timeout['target']=='[data-summary-state="current"]'
+                assert caught.value.browser_timeout['target']=='wait_for'
             finally:
                 await browser.close()
     asyncio.run(run())
@@ -208,3 +208,34 @@ def test_reference_boot_stub_supplies_pinned_health_calibration(page):
         'live_refined_insertion_mode': 'off',
     }
     assert result['unknown'] == 404
+
+
+def test_timeout_metadata_never_retains_navigation_or_text_locator(tmp_path):
+    """No browser binary needed: exercise the actual diagnostic writer boundary."""
+    class Page:
+        url = 'https://person:cookie@example.test/private-name?key=SECRET#TRANSCRIPT'
+        def evaluate(self, expression):
+            return {'data-auth-state': ['signed-in'], 'data-boot': ['ready'], 'data-history-boot': []}
+        def screenshot(self, **kwargs):
+            raise RuntimeError('screenshot unavailable')
+    error = PlaywrightTimeout('Locator.wait_for: unexpected value PRIVATE_TRANSCRIPT')
+    writer = BrowserTimeoutEvidence(tmp_path, 'browser_final_summary')
+    writer.retain(Page(), 'summary.wait-state.current', 'wait_for',
+                  'internal:text="PRIVATE_TRANSCRIPT"', error)
+    detail = json.loads(next(tmp_path.rglob('*.json')).read_text())
+    assert detail['target'] == 'wait_for' and detail['page_scheme'] == 'https'
+    assert all(secret not in json.dumps(detail) for secret in
+               ('person', 'cookie', 'example.test', 'private-name', 'SECRET', 'TRANSCRIPT'))
+
+
+def test_failure_projection_drops_unquoted_page_text_http_body_and_os_paths():
+    from moss_transcribe_diarize.phase2_acceptance_replay import AccountReplayTransportFailure
+    errors = [PlaywrightTimeout('unexpected value PRIVATE_TRANSCRIPT'),
+              AccountReplayTransportFailure('upstream PRIVATE_RESPONSE', http_status=502),
+              OSError(2, 'missing', '/Users/PRIVATE_NAME/PRIVATE_RECORDING.wav')]
+    for error in errors:
+        detail = _failure_details(error, {})
+        assert detail['failure_type'] == type(error).__name__
+        assert 'PRIVATE' not in json.dumps(detail)
+    assert _failure_details(errors[1], {})['http_status'] == 502
+    assert _failure_details(errors[2], {})['errno'] == 2

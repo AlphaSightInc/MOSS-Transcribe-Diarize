@@ -721,10 +721,10 @@ class LiveCoordinator:
             try:
                 finalize(base_snapshot=self.session.snapshot().identity_snapshot)
                 self._capture_identity_counts()
-            except Exception:
+            except Exception as exc:
                 # Counts and the name only -- a span's words are the meeting, and they are no
                 # more loggable at the end of one than they were during it.
-                _IDENTITY_LOG.warning("live identity finalize failed", exc_info=True)
+                _IDENTITY_LOG.warning("live identity finalize failed: error_type=%s", type(exc).__name__)
                 extra = ((IDENTITY_FINALIZE_FAILED, 1),)
         revision = self._publish_identity_revision()
         return CoordinatorFinalizeResult(

@@ -46,3 +46,10 @@ frontend/node_modules
 # AFK loop runtime coordination. These are process-local, not review evidence.
 scripts/afk*/.lock/
 scripts/afk*/.stop
+
+# E2E raw content belongs only in private temporary measurement storage.
+evidence/e2e-*/browser-state.json
+evidence/e2e-*/*.mp3
+evidence/e2e-*/*.wav
+evidence/e2e-*/*.png
+prototypes/streaming-diarization/identity-floor-a2/results/*.npz

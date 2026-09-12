@@ -25,5 +25,5 @@ def run(early):
  pcm=b''.join(x.pcm for x in runtime.frames)
  return list(struct.unpack('<'+'h'*(len(pcm)//2),pcm))
 a=run(False);b=run(True)
-result={'successor_timestamp_ns':2500500000,'nominal_frame_end_ns':2500000000,'timestamp_delta_samples':8,'normal_samples':len(a),'early_flush_samples':len(b),'changed_samples':sum(x!=y for x,y in zip(a,b)),'normal_zero_samples':a.count(0),'early_flush_zero_samples':b.count(0),'normal_boundary':a[39998:40010],'early_flush_boundary':b[39998:40010]}
+result={'successor_timestamp_ns':2500500000,'nominal_frame_end_ns':2500000000,'timestamp_delta_samples':8,'normal_samples':len(a),'early_flush_samples':len(b),'changed_samples':sum(x!=y for x,y in zip(a,b)),'normal_zero_samples':a.count(0),'early_flush_zero_samples':b.count(0)}
 print(json.dumps(result,indent=2))

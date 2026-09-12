@@ -1,7 +1,8 @@
 """Real UI/decoder verification. One pass; no decoder mocks or automatic decoder retries.
 Run: .venv/bin/python tests/e2e/verify_workspace.py --corpus /path/to/mono_javier_intro_50s --output /tmp/moss-e2e-20260911
 Requires ffmpeg/ffprobe and Playwright Chrome/Chromium. Exit 77 = browser unavailable.
-Artifacts may contain corpus speech; report/network metadata never include transcript bodies.
+Retained artifacts contain identifiers, statuses and numeric measurements only.
+Audio/downloads are temporary measurement inputs, never retained evidence.
 --rows selects checks in a fresh workspace. Evidence output must be empty.
 System TLS trust is the default; local self-signed TLS requires an explicit loopback-only flag.
 """
@@ -16,6 +17,7 @@ import subprocess
 import threading
 import time
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -30,8 +32,48 @@ from tests.phase2.browser_support import browser_executable, BrowserExecutableMi
 FIRST_ENROLLED_LABEL_BOUND_SECONDS = 2.5 + 1.0 + 0.5
 
 
+_STATUS_VALUES = frozenset({
+    'PASS', 'FAIL', 'SKIP', 'active', 'completed', 'failed', 'closed', 'final',
+    'not_started', 'running', 'stopping', 'terminal', 'idle', 'capturing',
+    'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
+    'live', 'file', 'url', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'mp3',
+    'microphone', 'system', 'interrupted', 'aborted', 'confirmed', 'provisional',
+    'previous_meeting_not_ready',
+})
+_ID_KEYS = frozenset({'id', 'meeting', 'session_id', 'meeting_id', 'speaker_id', 'speaker_entity_id', 'voiceprint_id'})
+_BODY_KEYS = frozenset({'body', 'messages', 'prompt', 'content', 'text', 'transcript',
+                       'snapshot', 'document', 'cookies', 'origins', 'headers', 'payload',
+                       'segments', 'turns', 'effective_transcript', 'committed', 'provisional',
+                       'pcm', 'audio', 'embedding', 'embeddings', 'vectors', 'vector'})
+
+
+def retained_metadata(value, key=''):
+    """Unknown strings and API document bodies never enter retained evidence."""
+    if isinstance(value, dict):
+        return {k: retained_metadata(v, 'meeting_id' if key == 'meetings' else k) for k, v in value.items() if k not in _BODY_KEYS}
+    if isinstance(value, (list, tuple)):
+        return [retained_metadata(v, key) for v in value]
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        if key == 'path' and re.fullmatch(
+            r'/api/(?:live/sessions/[A-Za-z0-9_-]+/(?:frames|heartbeat|snapshot|events|stop)|'
+            r'meetings(?:/[A-Za-z0-9_-]+(?:/(?:summary|audio|speakers))?)?|'
+            r'llm/(?:models|chat/completions)|workspace/bootstrap)', value
+        ):
+            return value
+        if key in _ID_KEYS and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', value):
+            return value
+        if key in {'status', 'status_received', 'history_status', 'snapshot_status',
+                   'finalization_status', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code'} and value in _STATUS_VALUES:
+            return value
+        if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
+            return value
+    return None
+
+
 def write(path, value):
-    Path(path).write_text(json.dumps(value, indent=2) + '\n')
+    Path(path).write_text(json.dumps(retained_metadata(value), indent=2) + '\n')
 
 
 def probe(path):
@@ -60,28 +102,19 @@ class Harness:
         self.out = Path(args.output).resolve(); self.out.mkdir(parents=True, exist_ok=True)
         if any(self.out.iterdir()):
             raise ValueError('Use an empty --output directory; existing evidence and browser state are never reused')
+        self._private = tempfile.TemporaryDirectory(prefix='moss-e2e-private-')
+        self.private = Path(self._private.name)
         self.state = {'rows': {}, 'meetings': {}, 'base': args.base}
         self.row = 0; self.seq = 0; self.page = None
         self.network = (self.out/'network.jsonl').open('a')
         self.pending = set()
 
     def event(self, value):
-        self.network.write(json.dumps({'t': time.time(), 'row': self.row, **value})+'\n'); self.network.flush()
+        self.network.write(json.dumps(retained_metadata({'t': time.time(), 'row': self.row, **value}))+'\n'); self.network.flush()
 
     async def response(self, response):
         request = response.request
         item = {'method': request.method, 'path': urlsplit(response.url).path, 'status': response.status}
-        if item['path'].endswith('/chat/completions'):
-            try: item['model'] = request.post_data_json.get('model')
-            except Exception: pass
-            try:
-                body=await response.json()
-                self.seq+=1
-                path=self.out/f'relay-response-{int(time.time())}-{self.seq}.json'
-                write(path,body)
-                item['response_artifact']=path.name
-                if not response.ok: item['reason_code']=body.get('detail')
-            except Exception: pass
         self.event(item)
 
     def attach(self, page):
@@ -99,9 +132,8 @@ class Harness:
         return await self.page.evaluate('async p => { const r=await fetch(p); return {status:r.status, body:await r.json()}; }', path)
 
     async def snapshot(self, n, extra=''):
-        path = self.out/f'row-{n:02d}{extra}.png'
-        await self.page.screenshot(path=str(path), full_page=True)
-        return path.name
+        # E2E screenshots expose transcript, names and summaries. No image retention.
+        return None
 
     async def check(self, n, fn):
         if n in (2,3,4) and str(n) in self.state['rows'] and (n != 4 or 'live' in self.state['meetings']):
@@ -113,16 +145,13 @@ class Harness:
         except Exception as exc:
             status='FAIL'
             # Locator/errors only; no response/prompt text.
-            data={'error': str(exc)[:1600], 'exception': type(exc).__name__}
+            data={'exception': type(exc).__name__}
         try: data['screenshot']=await self.snapshot(n)
         except Exception: data['screenshot']=None
         data.update(status=status, seconds=round(time.monotonic()-start,3), network='network.jsonl', row=n)
         self.state['rows'][str(n)]=data
         write(self.out/f'row-{n:02d}.json',data); write(self.out/'results.json', self.state)
-        print(f'ROW {n}: {status} '+json.dumps(data),flush=True)
-        if not self.page.is_closed():
-            await self.context.storage_state(path=str(self.out/'browser-state.json'))
-            (self.out/'browser-state.json').chmod(0o600)
+        print(f'ROW {n}: {status} '+json.dumps(retained_metadata(data)),flush=True)
         self.row=previous_row
         if n==12: await self.page.set_viewport_size({'width':1440,'height':1100})
 
@@ -141,7 +170,7 @@ class Harness:
         while time.monotonic()<stop:
             result=await self.api('/api/meetings/'+ident)
             if result['status']==200 and result['body']['status']!='active':
-                write(self.out/f'meeting-{ident}.json',result['body']); return result['body']
+                write(self.out/f'meeting-{ident}.json', {'id':ident, 'status':result['body']['status'], 'segment_count':len((result['body'].get('transcript') or {}).get('segments',[]))}); return result['body']
             await asyncio.sleep(1)
         raise AssertionError(f'meeting {ident} still active after {timeout}s')
 
@@ -195,8 +224,8 @@ class Harness:
             await asyncio.wait_for(ready(),timeout=timeout)
             evidence['ready']=True
         except Exception as exc:
-            evidence.update(ready=False,reason=f'{type(exc).__name__}: previous meeting did not reach durable completion and UI terminal before Reset')
-            raise AssertionError(json.dumps(evidence)) from exc
+            evidence.update(ready=False,reason_code='previous_meeting_not_ready',exception=type(exc).__name__)
+            raise AssertionError('previous meeting did not reach durable completion and UI terminal before Reset') from exc
         finally:
             write(path,evidence)
             self.event({"before_reset":evidence})
@@ -312,7 +341,7 @@ class Harness:
         await self.page.get_by_role('button',name='Export transcript',exact=True).click()
         async with self.page.expect_download() as pending:
             await self.page.get_by_role('menuitem',name=labels[fmt],exact=True).click()
-        download=await pending.value; path=self.out/f'{prefix}.{fmt}'; await download.save_as(path)
+        download=await pending.value; path=self.private/f'{prefix}.{fmt}'; await download.save_as(path)
         self.last_export_filename=download.suggested_filename
         self.event({'download':path.name,'suggested_filename':download.suggested_filename,'bytes':path.stat().st_size})
         return path
@@ -342,7 +371,7 @@ class Harness:
         await self.page.locator('[aria-label="Meeting history"]').get_by_role('button',name='Refresh',exact=True).click()
         link=self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"] [data-audio-download]')
         async with self.page.expect_download() as pending: await link.click()
-        download=await pending.value; path=self.out/('interrupted.partial.mp3' if partial else 'download.mp3'); await download.save_as(path)
+        download=await pending.value; path=self.private/('interrupted.partial.mp3' if partial else 'download.mp3'); await download.save_as(path)
         data=probe(path); duration=float(data['format']['duration']); write(path.with_suffix('.ffprobe.json'),data)
         subprocess.run(['ffmpeg','-v','error','-i',str(path),'-f','null','-'],check=True,capture_output=True)
         expected=float(probe(self.wav)['format']['duration'])
@@ -370,7 +399,7 @@ class Harness:
             await self.page.locator(f'[data-summary-attempt="{accepted["attempt_id"]}"][data-summary-state="current"], [data-summary-attempt="{accepted["attempt_id"]}"][data-summary-state="failed"]').wait_for(timeout=390000)
             summary=(await self.api('/api/meetings/'+ident+'/summary'))['body']['summary']
             status=await self.page.locator('[aria-label="Final summary"] [role=status]').inner_text()
-            path=self.out/f'summary-{model["upstream"]}.json'; write(path,summary)
+            path=self.out/f'summary-{model["upstream"]}.json'; write(path, {'status':summary.get('status'), 'version':summary.get('transcript_version')})
             attempts.append({'requested_model':model['id'],'state':summary['state'],'error_code':summary.get('error_code'),
                 'status_names_requested_model':model['id'] in status,'rendered':await self.page.locator('[data-final-summary]').count()>0,'artifact':path.name})
             await self.snapshot(9,'-'+model['upstream'])
@@ -557,7 +586,7 @@ class Harness:
                 card=self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"]')
                 result['history_preserved']=await card.count()==1
                 async with self.page.expect_download() as pending: await card.locator('[data-audio-download]').click()
-                download=await pending.value;path=self.out/f'outage-{seconds}.mp3';await download.save_as(path)
+                download=await pending.value;path=self.private/f'outage-{seconds}.mp3';await download.save_as(path)
                 duration=float(probe(path)['format']['duration'])
                 subprocess.run(['ffmpeg','-v','error','-i',str(path),'-f','null','-'],check=True,capture_output=True)
                 result.update(audio_seconds=duration,audio_preserved=duration>0,partial_audio=download.suggested_filename.endswith('.partial.mp3'))
@@ -640,17 +669,17 @@ class Harness:
                 self.network.close()
                 return 77
             server=None
-            options=dict(headless=True,downloads_path=str(self.out/'browser-downloads'))
+            options=dict(headless=True,downloads_path=str(self.private/'browser-downloads'))
             if self.args.corpus:
                 self.wav=(Path(self.args.corpus)/'audio.wav').resolve()
                 self.reference=' '.join(json.loads(s)['text'] for s in (Path(self.args.corpus)/'reference.jsonl').read_text().splitlines())
-                self.mp3=self.out/'source.mp3'
+                self.mp3=self.private/'source.mp3'
                 if not self.mp3.exists(): subprocess.run(['ffmpeg','-v','error','-i',str(self.wav),'-ac','1','-ar','16000','-codec:a','libmp3lame',str(self.mp3)],check=True)
                 # A separate real browser tab supplies shared audio; no media API replacement.
-                (self.out/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
-                wavlink=self.out/'source.wav'
+                (self.private/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
+                wavlink=self.private/'source.wav'
                 if not wavlink.exists(): wavlink.symlink_to(self.wav)
-                server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.out)))
+                server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.private)))
                 threading.Thread(target=server.serve_forever,daemon=True).start(); self.media=f'http://127.0.0.1:{server.server_port}'
                 options.update(ignore_default_args=['--mute-audio'],args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture',f'--use-file-for-fake-audio-capture={self.wav}','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required'])
             self.resumed=False
@@ -676,6 +705,7 @@ class Harness:
                 await self.context.close(); await browser.close()
                 if server: server.shutdown()
                 self.network.close()
+                self._private.cleanup()
 
 
 def parse_args(argv=None):
@@ -716,8 +746,12 @@ def main(argv=None):
     harness=Harness(args)
     try:
         return asyncio.run(harness.run())
+    except Exception as exc:
+        print(type(exc).__name__, file=sys.stderr)
+        return 1
     finally:
         print(summary(harness.state,args.rows),flush=True)
+        harness._private.cleanup()
 
 
 if __name__=='__main__':

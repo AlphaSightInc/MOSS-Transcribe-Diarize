@@ -382,3 +382,18 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
+
+
+def test_finalizer_defect_does_not_log_provider_content(caplog):
+    class Exploding:
+        def finalize(self, **kwargs):
+            raise ValueError('PRIVATE_TRANSCRIPT PRIVATE_API_KEY')
+    scheduler = _ManualTerminalScheduler()
+    runtime, _ = _runtime(finalizer=Exploding(), scheduler=scheduler)
+    session_id = _stop_after_a_meeting(runtime)
+    with caplog.at_level('WARNING', logger='moss_transcribe_diarize.live.terminal'):
+        scheduler.run_one()
+    assert 'error_type=ValueError' in caplog.text
+    assert 'PRIVATE' not in caplog.text
+    assert all(record.exc_info is None for record in caplog.records)
+    assert runtime.snapshot(session_id).session.finalization_status == 'failed'

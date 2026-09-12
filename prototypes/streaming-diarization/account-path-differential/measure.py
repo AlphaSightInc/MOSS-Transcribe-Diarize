@@ -44,7 +44,7 @@ class Mono(InMemoryLiveReplayService):
 client=httpx.Client(verify=str(HERE/'cert.pem'),base_url='https://127.0.0.1:17862');client.post('/api/workspace/bootstrap').raise_for_status()
 cookie=HERE/'measurement.cookie';cookie.write_text(client.cookies.get(SESSION_COOKIE));cookie.chmod(0o600)
 account=AccountCookieLiveReplayService(base_url='https://127.0.0.1:17862',cookie_file=cookie,timeout_seconds=300)
-result=json.loads((HERE/'results.json').read_text()) if (HERE/'results.json').exists() else {'source_revision':os.popen('git -C '+str(ROOT)+' rev-parse HEAD').read().strip(),'identity_manifest':str(args.live_provider_manifest),'paths':{'mono':'current shared LiveServiceRuntime, legacy mono adapter, no Account/v2','account':'own Phase-2 HTTPS stack17862, fresh workspace, speakers + silent microphone'},'rows':[]}
+result=json.loads((HERE/'results.json').read_text()) if (HERE/'results.json').exists() else {'source_revision':os.popen('git -C '+str(ROOT)+' rev-parse HEAD').read().strip(),'identity_manifest':Path(args.live_provider_manifest).name,'paths':{'mono':'current shared LiveServiceRuntime, legacy mono adapter, no Account/v2','account':'own Phase-2 HTTPS stack17862, fresh workspace, speakers + silent microphone'},'rows':[]}
 for case in CASES:
  for mode,service in [('mono',Mono(runtime)),('account',account)]:
   if any(x['case_id']==case and x['mode']==mode for x in result['rows']):continue
@@ -56,7 +56,7 @@ for case in CASES:
    try:
     run_service_replay(service=captured,audio_path=CORPUS/case/'audio.wav',out_dir=out,pace=1,max_pacing_lag=3,runs=1,expect_revision=desc.source_revision,expect_provider_hash=desc.provider_manifest_hash,expect_config_hash=desc.config_hashes.combined_config_hash)
    except ServiceReplayRtfFailure as e:
-    performance_failure=str(e)
+    performance_failure=type(e).__name__
     assert all(x in captured.captures for x in ['pre_stop_immediate','pre_stop_settled','post_stop_final'])
    (out/'captures.json').write_text(json.dumps(captured.captures))
    ref=CORPUS/case/'reference.jsonl';duration=surface._wav_duration(CORPUS/case/'audio.wav') if hasattr(surface,'_wav_duration') else mixing[CASES.index(case)]['samples']/16000
@@ -66,5 +66,5 @@ for case in CASES:
    result['rows'].append(row);(HERE/'results.json').write_text(json.dumps(result,indent=2)+'\n');print('CASE',case,mode,json.dumps(row),flush=True)
   except Exception as e:
    (out/'captures.json').write_text(json.dumps(captured.captures))
-   result['rows'].append({'case_id':case,'mode':mode,'error':str(e)});(HERE/'results.json').write_text(json.dumps(result,indent=2)+'\n');print('FAILED',case,mode,str(e),flush=True)
+   result['rows'].append({'case_id':case,'mode':mode,'error':type(e).__name__});(HERE/'results.json').write_text(json.dumps(result,indent=2)+'\n');print('FAILED',case,mode,type(e).__name__,flush=True)
 account.close();client.close()

@@ -13,21 +13,21 @@ samples,sr=sf.read(paths[0],dtype='int16');assert sr==16000 and samples.ndim==1
 current={}
 class Probe(VllmRunner):
  def _build_fields(self,**kw):
-  current['field_arguments']=kw
+  current['field_arguments']={k:v for k,v in kw.items() if k != 'prompt' and isinstance(v,(int,float,bool,type(None)))}
+  current['prompt_is_none']=kw.get('prompt') is None
   return super()._build_fields(**kw)
  def _post_multipart(self,url,**kw):
   current['http_requests']=current.get('http_requests',0)+1
-  current['request']={'url':url,'fields':kw['fields'],'wav_bytes':len(kw['file_bytes']),'sample_rate':16000,'timestamp_options':'absent','word_options':'absent'}
+  current['request']={'wav_bytes':len(kw['file_bytes']),'sample_rate':16000,'field_count':len(kw['fields'])}
   return super()._post_multipart(url,**kw)
  def transcribe(self,path,**kw):
-  current['runner_kwargs']=kw;current['source_wav_bytes']=Path(path).stat().st_size
+  current['runner_kwargs']={k:v for k,v in kw.items() if k != 'prompt' and isinstance(v,(int,float,bool,type(None)))};current['source_wav_bytes']=Path(path).stat().st_size
   try:return super().transcribe(path,**kw)
   except Exception as e:
-   current['exception_type']=type(e).__name__;current['exception_message']=str(e)
-   current['traceback']=traceback.format_exc()
+   current['exception_type']=type(e).__name__
    chain=[];x=e
    while x is not None:
-    chain.append({'type':type(x).__name__,'message':str(x),'http_status':getattr(x,'code',None)})
+    chain.append({'type':type(x).__name__,'http_status':getattr(x,'code',None)})
     x=x.__cause__
    current['exception_chain']=chain
    raise

@@ -130,6 +130,8 @@ def main():
     p.add_argument('--reuse', action='store_true')
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=True)
+    cache_root = Path.home() / '.cache/moss-private/identity-floor-a2'
+    cache_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     adapter = WeSpeakerResNet152LmAdapter(a.data_root / 'voxceleb_resnet152_LM.onnx')
     adapter.preflight()
     manifest = json.loads((ROOT / 'tests/fixtures/live_identity_real_corpus.json').read_text())
@@ -164,19 +166,19 @@ def main():
             source = intro if speaker == 'Lex Fridman' else bill
             chunk = source[round(start*rate):round(end*rate)]
             truth.append((cursor/rate, (cursor+len(chunk))/rate, speakers.index(speaker)))
-            plan.append(dict(speaker=speaker, source=str(a.intro_wav if speaker == 'Lex Fridman' else bill_path),
+            plan.append(dict(speaker=f'reference-{speakers.index(speaker)}', source='intro' if speaker == 'Lex Fridman' else 'second',
                              source_start=start, source_end=end, meeting_start=cursor/rate))
             pcm.extend([chunk, np.zeros(9600, dtype=np.float32)])
             cursor += len(chunk)+9600
-        audio = a.output / f'{name}.wav'
+        audio = cache_root / f'{name}.wav'
         if not a.reuse or not audio.exists():
             sf.write(audio, np.concatenate(pcm), rate, subtype='PCM_16')
         cases.append((name, np.asarray(truth), audio, speakers, 'controlled', plan))
     output = dict(code_sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
-                  asset=str(a.data_root / 'voxceleb_resnet152_LM.onnx'), manifest=manifest, sweep_seconds=SWEEP_INTERVAL_SECONDS, cases={})
+                  asset='voxceleb_resnet152_LM.onnx', manifest=manifest, sweep_seconds=SWEEP_INTERVAL_SECONDS, cases={})
     for name, truth, audio, speakers, group, plan in cases:
         print(f'EMBED {name}', flush=True)
-        meeting = embed(name, truth, audio, adapter, a.output, a.reuse)
+        meeting = embed(name, truth, audio, adapter, cache_root, a.reuse)
         arms = {}
         for floor in (1.,1.5,2.):
             trace = []
@@ -188,7 +190,7 @@ def main():
             arms[str(floor)] = dict(regression=dataclasses.asdict(result), metrics=metrics(meeting, trace), trace=trace)
             print(name, floor, result.accuracy, json.dumps({k:v for k,v in arms[str(floor)]['metrics'].items()
                                                           if k not in ('units_detail',)}), flush=True)
-        output['cases'][name] = dict(group=group, speakers=speakers, source_plan=plan, arms=arms)
+        output['cases'][name] = dict(group=group, speakers=[f'reference-{i}' for i in range(len(speakers))], source_plan=plan, arms=arms)
         (a.output / 'results.json').write_text(json.dumps(output, separators=(',', ':'))+'\n')
 
 if __name__ == '__main__':

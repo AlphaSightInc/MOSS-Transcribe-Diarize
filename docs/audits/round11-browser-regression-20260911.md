@@ -47,7 +47,7 @@ The harness correction makes the previously measured independent-fixture protoco
 ```sh
 .venv/bin/python tests/e2e/verify_workspace.py \
   --base https://127.0.0.1:17863 \
-  --corpus /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
+  --corpus ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
   --output /tmp/moss-round11-e2e-20260911/attempt3/artifacts
 ```
 

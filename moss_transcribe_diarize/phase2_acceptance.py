@@ -2555,7 +2555,7 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
         print(json.dumps(verdict, indent=2, sort_keys=True))
         return 0 if verdict["qualified"] else 1
     except BaseException as exc:
-        failure = {"schema": SCHEMA, "qualified": False, "g7": "UNCLAIMED", "error": f"{type(exc).__name__}: {exc}"}
+        failure = {"schema": SCHEMA, "qualified": False, "g7": "UNCLAIMED", "error": type(exc).__name__}
         try:
             bundle.write("terminal-error.json", failure)
             bundle.event("attempt_failed", error=type(exc).__name__)

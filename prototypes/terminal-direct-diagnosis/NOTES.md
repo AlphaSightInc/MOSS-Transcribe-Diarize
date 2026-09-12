@@ -48,13 +48,13 @@ is discarded by the vLLM runner. There are no separate timestamp/word options.
 Live 2.5-second control: WAV 80,044 bytes; max_new_tokens=286. Actual multipart fields:
 model=OpenMOSS-Team/MOSS-Transcribe-Diarize, response_format=json, stream=true,
 stream_include_usage=true, stream_continuous_usage_stats=true,
-max_completion_tokens=286, temperature=0.0, prompt=DEFAULT_PROMPT. Exact prompt and fields
-are in `results.jsonl`; the prompt is a static instruction, not transcript content.
+max_completion_tokens=286, temperature=0.0, prompt=DEFAULT_PROMPT. Prompt bodies and wire fields were removed from `results.jsonl` by the content-boundary audit. Numeric parameters remain.
 No timestamp/word options. One request, decoder returned; successful response body and
 status were not logged by this probe. No transcript text retained.
 
-`results.jsonl` contains full underlying exception messages and tracebacks for each
-terminal case, call parameters, and the live request parameters. No credentials or audio.
+`results.jsonl` now retains exception types and numeric call measurements only.
+Historical tracebacks, freeform messages and request bodies were removed; the probe
+writer follows the same boundary. No credentials or audio are retained.
 
 ## F3 — diagnostic patch and limits
 

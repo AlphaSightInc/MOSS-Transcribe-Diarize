@@ -976,3 +976,23 @@ def test_identity_counts_survive_event_eviction_and_snapshot_reads_do_not_change
     for _ in range(10):
         assert runtime.snapshot(sid).identity_counts == counts
     assert calls[0] == 12
+
+
+def test_rolling_defect_does_not_log_provider_content(caplog):
+    base, witness = _decoders(rolling=True)
+    runtime = _runtime(base=base, rolling=witness)
+    created = runtime.create()
+    coordinator = runtime._sessions[created.session_id].coordinator
+    def exploding_submit(decode, item):
+        raise RuntimeError('PRIVATE_TRANSCRIPT PRIVATE_API_KEY')
+    coordinator.submit_refinement = exploding_submit
+    with caplog.at_level('WARNING', logger='moss_transcribe_diarize.live.rolling'):
+        for sequence in range(TWO_WINDOW_FRAMES):
+            runtime.accept_frame(created.session_id, AudioFrame(
+                sequence=sequence, pcm=b'\x11\x22' * FRAME_SAMPLES, sample_count=FRAME_SAMPLES))
+        asyncio.run(runtime.stop(created.session_id, 5.0))
+    assert 'error_type=RuntimeError' in caplog.text
+    assert 'PRIVATE' not in caplog.text
+    assert all(record.exc_info is None for record in caplog.records)
+    assert runtime.snapshot(created.session_id).terminal_failure is None
+    assert coordinator.rolling_accounting().status == RollingStatus.STOPPED

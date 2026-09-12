@@ -1,0 +1,6723 @@
+{
+  "base": "c93395fe",
+  "audited_head": "e03d6a31",
+  "changed_evidence_files": 625,
+  "removed_evidence_files": 402,
+  "retained_evidence_files": 223,
+  "files": [
+    {
+      "path": "evidence/browser-timeout-evidence-20260911/focused-tests.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/browser-timeout-evidence-20260911/python-suite.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 24,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/demo-precheck-20260911/local-trusted.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/demo-precheck-20260911/local-untrusted.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/diagnoses.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.recognition.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 24
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/download.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/download.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_export",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/export.md",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/export.srt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/export.txt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/export.vtt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/interrupted.partial.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/interrupted.partial.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-0n3T5oKMSXbAHB7KlnyLdKp8.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-0u3AnN6tERGhpxWqr3YxPPMq.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-4XEDDwdaowqbw63xwSsE3s95.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-8CehapNthQUZABs-nhKdaqqe.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-AZDnSaVxIaKO6TXPnGnokyMv.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 6,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-dumLBBk3DZ5hoKU4LeZkP9rV.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/meeting-hxXjVgnmTsYKS7PsK6V4YWdr.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/row-09-macstudio.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/row-09-rtx4090.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/row-09.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/row-09.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/summary-macstudio.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/model-first-measured/summary-rtx4090.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 5,
+          "reason": "speaker_display_name",
+          "line": 1222
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/relay-response-1789170282-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/relay-response-1789170302-2.json",
+      "reasons": [
+        "upstream_request_response_body"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/renamed-export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.10.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 185
+        },
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 214
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 253
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-02.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-02.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-03.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-03.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-04-first-text.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-04.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-04.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05-ack-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05-ack-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05-rename-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05-rename-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-05.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-07.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-07.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-08-before-close.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-09-macstudio.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-09-rtx4090.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-09.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-09.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/run-custody.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/summary-macstudio.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-feature-verification-20260911/summary-rtx4090.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-20s-coverage.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-3s-coverage.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/after/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-20s-coverage.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-3s-coverage.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/before/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-network-resilience-20260911/manifest.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/meeting-UPF5lZB8LNtDw0nlYI08gGHB.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/meeting-gpeqe_XRpszQBmzrvHyXUa9w.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/meeting-rTqq8Y6EcO8LU9AvOolrd7m1.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/meeting-vgsD4Am4Z_541rj6_n4WI3tj.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/meeting-xxV2Aob91WxTqrXtBU-84ASw.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/relay-response-1789184068-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/relay-response-1789184080-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-before-reset.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-1-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-1.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-2-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-2.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-3-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-3.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycle-3.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/e2e-reset-sequencing-20260911/tests.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/g9-provider-paths-20260911.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/meeting-09d175_iGJ5kxykBIoLX-iZx.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 10,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/meeting-azmyjaItqAw13Nj3zD6sRDhp.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/baseline-transition/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/download.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/download.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_export",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/export.md",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/export.srt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/export.txt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/export.vtt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/interrupted.partial.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/interrupted.partial.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/meeting-Lrq1SIBu9IV8QNEeiauA7noB.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/meeting-N9m7srKUYzEdLIQA8DRWN-gf.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/meeting-Nd2VnCrbK93Z6GzSMkmzCrkP.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/meeting-ZIOYM0QSgYMZ8KjMygYax0vI.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 133
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/relay-response-1789183277-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/renamed-export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 17
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 293
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-04-first-text.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-04.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-04.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05-ack-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05-ack-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05-rename-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05-rename-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-05.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-07.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-07.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-08-before-close.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/e2e/row-7-source-snapshot.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.snapshot.session.committed[].transcript",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 100
+        },
+        {
+          "key": "$.snapshot.session.effective_transcript[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 199
+        },
+        {
+          "key": "$.speaker_labels.speaker-0001",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 246
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/instrumented.py.patch",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 8,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/meeting-C69hI9z9WCdjF9bCWYtTcDA1.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/meeting-pBUuug5V8r0z8ahFBeyayrfG.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/meeting-xWou2ZPI08dVNtpyu5VR0vPv.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/relay-response-1789183447-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/relay-response-1789183458-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-1-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-1.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-2-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-2.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-3-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-3.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycle-3.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/row14-alone/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/meeting-8YbY58RvSvctucKZFxp_iWOe.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/meeting-8n6pdzsFIOocBGOL4bglhVUR.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/meeting-GBCob1l2mpvdL1usWtFKdzSG.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/meeting-SmDVUVxiVlYBsXusezXoxvHF.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/meeting-oOSAubH2EgI-ptzpszxUOI-p.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/relay-response-1789183649-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/relay-response-1789183661-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-1-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-1.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-2-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-2.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-3-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-3.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycle-3.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled-transition/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/settled.py.patch",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 8,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/mixer-e2e-regression-20260911/verify_workspace.py.patch",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 8,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/empty-history.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/operator-smoke-20260911/verification.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser-aborted/macstudio-browser-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser-aborted/macstudio-relay-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/browser-results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/macstudio-browser-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/macstudio-browser.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/macstudio-relay-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/macstudio-summary.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 9
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 10
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 13
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/rtx4090-browser-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/rtx4090-browser.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/rtx4090-relay-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/browser/rtx4090-summary.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.topics[].title",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.topics[].description",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 19
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-baseline-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-baseline-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-baseline-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-disabled-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-disabled-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-disabled-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-prompt-fixed2048-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-prompt-fixed2048-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-prompt-fixed2048-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-relay-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-relay-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/macstudio-relay-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-baseline-metrics.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-baseline-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-baseline-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.reasoning_content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 9
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-disabled-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-disabled-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-disabled-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-prompt-fixed2048-metrics.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-prompt-fixed2048-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-prompt-fixed2048-response.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-relay-metrics.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-relay-request.json",
+      "reasons": [
+        "upstream_request_body",
+        "upstream_request_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.messages[].content",
+          "count": 2,
+          "reason": "upstream_request_body",
+          "line": 6
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/rtx4090-relay-response.json",
+      "reasons": [
+        "upstream_request_response_body"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/relay-thinking-models-20260911/validation.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/full-suite.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 25,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/post-rebase.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 8,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/probe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/round11-probe-stderr.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/targeted.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 4,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-fixes-20260912/workspace-hidden.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/environment.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final-pass.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/download.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/download.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_export",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/export.md",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/export.srt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/export.txt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/export.vtt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/interrupted.partial.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/interrupted.partial.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-4-oOLzFUZClnxa2ivJXNi0Yy.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-JFk__zFShr9gCm0C_0_sR56z.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-ZkbaLeib2heAZ_0chG7AU1Sg.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-mqkOEHuG_tiMLhWO0akHcZaL.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-oULsWVCqmjPMouAi0M8rV3qE.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/meeting-yDyZDZcSgilQ8Tn5u9Z8FSnU.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 10,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 188
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/relay-response-1789177618-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/relay-response-1789177628-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/relay-response-1789177637-3.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/relay-response-1789177639-4.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/renamed-export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 51
+        },
+        {
+          "key": "$.rows.10.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 218
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 361
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-02.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-02.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-03.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-03.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-04-first-text.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-04.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-04.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05-ack-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05-ack-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05-rename-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05-rename-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-05.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-07.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-07.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-08-before-close.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-09-macstudio.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-09-rtx4090.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-09.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-09.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-10-decoder-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/summary-macstudio.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 9
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 10
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 18
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/final/summary-rtx4090.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 196
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 51
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 304
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-10.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/first-pass/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/frontend-tests.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 9,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/identity-count-regression.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/local_launcher.py",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 6,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/pytest.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 24,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/download.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/download.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_export",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/export.md",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/export.srt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/export.txt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/export.vtt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/interrupted.partial.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/interrupted.partial.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-BjPLX-KeznCIDVNekol6-zvl.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-FarkwC0G1Qqi_gCIsm5s7EUW.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-I1Ijbf5oiHXxMZa3ZWrzzTsG.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-aBThF3lgscWbVLPj49-2SPlp.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-qPNOk81O0Trkco_FIuh6689W.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 10,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/meeting-wjioHrCTYDQwUvThxnD0kOTX.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 248
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/relay-response-1789177925-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/relay-response-1789177938-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/relay-response-1789177956-3.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/relay-response-1789177960-4.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/renamed-export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 51
+        },
+        {
+          "key": "$.rows.10.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 218
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 361
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-02.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-02.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-03.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-03.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-04-first-text.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-04.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-04.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05-ack-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05-ack-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05-rename-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05-rename-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-05.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-07.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-07.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-08-before-close.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-09-macstudio.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-09-rtx4090.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-09.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-09.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-10-decoder-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/summary-macstudio.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 7
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-head/summary-rtx4090.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.topics[].title",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.topics[].description",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 15
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 18
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/rebased-pass.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/round11-browser-regression-20260911/voiceprint-lifecycle.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 4,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/acceptance-tests.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 6,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate-run.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/download.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/download.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_export",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/export.md",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/export.srt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/export.txt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/export.vtt",
+      "reasons": [
+        "transcript_export"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/interrupted.partial.ffprobe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/interrupted.partial.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-3Robpzed503YqqySB2VOJ5mu.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-Ap9X9sSfQhzvtOyVish2bXz5.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-KG9-HjStVvGtqxEVczFIA9Bh.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-MQ9FZblTpW1bs-ebwPWlishd.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-MTQ_bUUn1cyUTnwexgdQhz_i.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-Pg4zojz_ZLHIpS_H43GH9qLt.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-f_AczX1MqVYXpwUvBWW0U-a4.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 10,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-nMgx1bvYXIweozHeablRRiwk.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/meeting-p544S4YWuYV7hhj_8uQXVoVm.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 9,
+          "reason": "transcript_text",
+          "line": 15
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/network.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].rename_ack.name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 197
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/outage-20.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/outage-3.mp3",
+      "reasons": [
+        "audio_bytes"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789178973-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789178981-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789178994-3.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789178999-4.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789179106-5.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/relay-response-1789179118-6.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 7
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 8
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/renamed-export.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/results.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.rows.5.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 51
+        },
+        {
+          "key": "$.rows.10.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 218
+        },
+        {
+          "key": "$.named",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 418
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-01.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-01.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-02.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-02.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-03.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-03.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-04-first-text.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-04.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-04.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05-ack-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05-ack-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05-rename-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05-rename-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.renames[].name",
+          "count": 2,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-05.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-06.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-06.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-07.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-07.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-08-before-close.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-08.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-08.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-09-macstudio.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-09-rtx4090.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-09.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-09.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-10-decoder-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 5
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-11.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-11.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-12.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-12.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-20s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-20s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-20s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-3s-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-3s.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13-3s.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-13.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-1-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-1.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-2-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-2.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-3-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-3.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-3.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/summary-macstudio.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 9
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 10
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 18
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/candidate/summary-rtx4090.json",
+      "reasons": [
+        "summary_content"
+      ],
+      "findings": [
+        {
+          "key": "$.document.summary",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 4
+        },
+        {
+          "key": "$.document.topics[].title",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.topics[].description",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].title",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 7
+        },
+        {
+          "key": "$.document.details[].description",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 8
+        },
+        {
+          "key": "$.document.details[].timestamp",
+          "count": 2,
+          "reason": "summary_content",
+          "line": 15
+        },
+        {
+          "key": "$.document.speaker_background[]",
+          "count": 1,
+          "reason": "summary_content",
+          "line": 23
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/capturing-focus-prototype/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/capturing-focus-prototype/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/capturing-focus-prototype/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/capturing-focus-prototype/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/capturing-focus-prototype/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/controller-prototype/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/controller-prototype/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/controller-prototype/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/controller-prototype/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/controller-prototype/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/environment.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-green.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 9,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-prototype/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-prototype/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-prototype/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-prototype/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-prototype/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/focus-red.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 9,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/frontend-tests.txt",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 9,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/local_launcher.py",
+      "reasons": [
+        "user_home_path"
+      ],
+      "findings": [
+        {
+          "line": 6,
+          "reason": "user_home_path"
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native-rejection.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/native/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front-2/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front-2/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front-2/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front-2/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front-2/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front/row-14-media-trace.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/no-front/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/meeting-ErONmTrIM_4u_6ULvRF9lJNy.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/meeting-IJT7x-jxicSyt2t8GDuEqWLa.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/meeting-JoaClwLRG3n2Vp0RMbT1fUNe.json",
+      "reasons": [
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.transcript.segments[].text",
+          "count": 2,
+          "reason": "transcript_text",
+          "line": 16
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/network.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/relay-response-1789179167-1.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/relay-response-1789179179-2.json",
+      "reasons": [
+        "upstream_request_response_body",
+        "upstream_response_body"
+      ],
+      "findings": [
+        {
+          "key": "$.choices[].message.role",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 10
+        },
+        {
+          "key": "$.choices[].message.content",
+          "count": 1,
+          "reason": "upstream_response_body",
+          "line": 11
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/results.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-1-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-1.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-1.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-2-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-2.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-2.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-3-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-3.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.turns[].display_name",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 9
+        },
+        {
+          "key": "$.turns[].speaker_label",
+          "count": 3,
+          "reason": "speaker_display_name",
+          "line": 10
+        },
+        {
+          "key": "$.turns[].text",
+          "count": 3,
+          "reason": "transcript_text",
+          "line": 12
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycle-3.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14-cycles.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/reset-proof/row-14.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/same-tab-repeat-capture-20260911/typecheck.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/summary-browser-guard-20260911/probe.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/summary-browser-guard-20260911/tests.txt",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/summary-probe-selection-20260911/probe-after.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/summary-probe-selection-20260911/probe-before.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/approved-verdicts.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/conversion-timing.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/matched-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/matched-snapshot.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.snapshot.session.committed[].transcript",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 100
+        },
+        {
+          "key": "$.snapshot.session.effective_transcript[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 118
+        },
+        {
+          "key": "$.speaker_labels.speaker-0001",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 188
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-dom-clock/timing.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].observation.speaker_labels.speaker-0001",
+          "count": 7,
+          "reason": "speaker_display_name",
+          "line": 117
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/matched-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/matched-snapshot.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.snapshot.session.committed[].transcript",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 100
+        },
+        {
+          "key": "$.snapshot.session.effective_transcript[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 118
+        },
+        {
+          "key": "$.speaker_labels.speaker-0001",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 188
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/current-stack-legacy-clock/timing.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].observation.speaker_labels.speaker-0001",
+          "count": 11,
+          "reason": "speaker_display_name",
+          "line": 125
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/matched-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/matched-snapshot.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.snapshot.session.committed[].transcript",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 100
+        },
+        {
+          "key": "$.snapshot.session.effective_transcript[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 118
+        },
+        {
+          "key": "$.speaker_labels.speaker-0001",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 188
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-cold/timing.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].observation.speaker_labels.speaker-0001",
+          "count": 8,
+          "reason": "speaker_display_name",
+          "line": 129
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/matched-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/matched-snapshot.json",
+      "reasons": [
+        "speaker_display_name",
+        "transcript_text"
+      ],
+      "findings": [
+        {
+          "key": "$.snapshot.session.committed[].transcript",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 100
+        },
+        {
+          "key": "$.snapshot.session.effective_transcript[].text",
+          "count": 1,
+          "reason": "transcript_text",
+          "line": 118
+        },
+        {
+          "key": "$.speaker_labels.speaker-0001",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 188
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/first2s-prototype-warm/timing.jsonl",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$[].observation.speaker_labels.speaker-0001",
+          "count": 7,
+          "reason": "speaker_display_name",
+          "line": 98
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/old-stack-legacy-clock/live-events.json",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/old-stack-legacy-clock/row-10-bank.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/old-stack-legacy-clock/row-10.json",
+      "reasons": [
+        "speaker_display_name"
+      ],
+      "findings": [
+        {
+          "key": "$.expected_name",
+          "count": 1,
+          "reason": "speaker_display_name",
+          "line": 3
+        }
+      ],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/old-stack-legacy-clock/row-10.png",
+      "reasons": [
+        "unredacted_browser_screenshot"
+      ],
+      "findings": [],
+      "disposition": "remove"
+    },
+    {
+      "path": "evidence/voiceprint-first-match-20260911/old-stack-legacy-clock/timing.jsonl",
+      "reasons": [],
+      "findings": [],
+      "disposition": "retain"
+    }
+  ]
+}

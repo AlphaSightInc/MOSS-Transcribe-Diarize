@@ -1,6 +1,6 @@
-"""Opt-in replay bench; raw responses retained, credentials never written.
+"""Opt-in replay bench; only numeric/status measurements retained; request input stays private.
 
-PYTHONPATH=. .venv/bin/python prototypes/client-configured-llm/thinking_request_probe.py --request evidence/relay-thinking-models-20260911/macstudio-relay-request.json --output /tmp/moss-thinking-replay --stages relay baseline disabled disabled2048 --browser-state /tmp/moss-e2e-20260911/browser-state.json
+PYTHONPATH=. .venv/bin/python prototypes/client-configured-llm/thinking_request_probe.py --request /tmp/private-relay-request.json --output /tmp/moss-thinking-replay --stages relay baseline disabled disabled2048 --browser-state /tmp/moss-e2e-20260911/browser-state.json
 Original frontend omits max_tokens; baseline applies the old relay default (1024).
 Each stage changes only the named variable. Fresh output directory required.
 """
@@ -34,12 +34,10 @@ async def probe(args, name, model, url, stage):
         if stage.startswith('disabled'):
             body['chat_template_kwargs'] = {'enable_thinking': False}
     label = f'{name}-{stage}'
-    write(args.output / f'{label}-request.json', body)
     start = time.monotonic()
     async with httpx.AsyncClient(verify=False, trust_env=False, timeout=190, cookies=cookies) as client:
         response = await client.post(url + '/chat/completions', json=body, headers={'Origin': 'https://127.0.0.1:17861'})
     raw = response.json()
-    write(args.output / f'{label}-response.json', raw)
     choice = (raw.get('choices') or [{}])[0]
     message = choice.get('message', {})
     content = message.get('content') or ''
@@ -49,8 +47,8 @@ async def probe(args, name, model, url, stage):
     except (ValueError, AttributeError):
         summary = None
     result = {'case': label, 'status': response.status_code, 'seconds': round(time.monotonic() - start, 2),
-              'content_chars': len(content), 'reasoning_chars': len(reasoning), 'summary': summary,
-              'finish_reason': choice.get('finish_reason'), 'usage': raw.get('usage'), 'error': raw.get('detail', raw.get('error'))}
+              'content_chars': len(content), 'reasoning_chars': len(reasoning), 'summary_present': isinstance(summary, str) and bool(summary),
+              'finished': choice.get('finish_reason') == 'stop', 'usage': {k:v for k,v in (raw.get('usage') or {}).items() if k in ('prompt_tokens','completion_tokens','total_tokens') and isinstance(v,int)}, 'failed': not response.is_success}
     write(args.output / f'{label}-metrics.json', result)
     print(json.dumps(result, ensure_ascii=False), flush=True)
 

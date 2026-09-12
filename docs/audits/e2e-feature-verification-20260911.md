@@ -41,12 +41,12 @@ transcript/download artefact. Network records are filtered by the same row numbe
 | V02 MP3 upload | PASS | Completed; 9 segments; 1 speaker; word error rate 10/115 = **8.70%**, below 15%. | [JSON](../../evidence/e2e-feature-verification-20260911/row-02.json), [screen](../../evidence/e2e-feature-verification-20260911/row-02.png) |
 | V03 Media URL | PASS | Same checked outcomes and **8.70%** word error rate; local HTTP-served MP3 submitted through the URL form. | [JSON](../../evidence/e2e-feature-verification-20260911/row-03.json), [screen](../../evidence/e2e-feature-verification-20260911/row-03.png) |
 | V04 Live mic + shared audio | PASS | Both meters nonzero; first text **3.825 s** after Start; Stop to completed **2.187 s**; 3 final segments. | [JSON](../../evidence/e2e-feature-verification-20260911/row-04.json), [screen](../../evidence/e2e-feature-verification-20260911/row-04.png) |
-| V05 Rename row + legend | PASS | Same speaker renamed Rowan then Morgan; each acknowledgment 200; rows, legend and public history data updated. Final JSON export contains Morgan after Stop on the same page, **without reload**. | [JSON](../../evidence/e2e-feature-verification-20260911/row-05.json), [screen](../../evidence/e2e-feature-verification-20260911/row-05.png), [export](../../evidence/e2e-feature-verification-20260911/renamed-export.json) |
+| V05 Rename row + legend | PASS | Same speaker renamed fixture-label-1 then fixture-label-2; each acknowledgment 200; rows, legend and public history data updated. Final JSON export contains fixture-label-2 after Stop on the same page, **without reload**. | [JSON](../../evidence/e2e-feature-verification-20260911/row-05.json), [screen](../../evidence/e2e-feature-verification-20260911/row-05.png), [export](../../evidence/e2e-feature-verification-20260911/renamed-export.json) |
 | V06 Five transcript exports | PASS | MD/TXT nonempty; JSON parsed and round-tripped; SRT/VTT parsed with positive durations, ordered starts and speaker prefixes. | [JSON](../../evidence/e2e-feature-verification-20260911/row-06.json), [screen](../../evidence/e2e-feature-verification-20260911/row-06.png) |
 | V07 Audio export | PASS | Downloaded MP3 decoded by ffmpeg; ffprobe duration **50.000 s**, matching 50.000 s source. | [JSON](../../evidence/e2e-feature-verification-20260911/row-07.json), [screen](../../evidence/e2e-feature-verification-20260911/row-07.png), [MP3](../../evidence/e2e-feature-verification-20260911/download.mp3) |
 | V08 Interrupted audio | PASS | Closed capture tab mid-live; lease expired into `interrupted`; **11.436 s** `.partial.mp3` downloaded and decoded. | [JSON](../../evidence/e2e-feature-verification-20260911/row-08.json), [screen](../../evidence/e2e-feature-verification-20260911/row-08.png), [MP3](../../evidence/e2e-feature-verification-20260911/interrupted.partial.mp3) |
 | V09 Both relay models | **FAIL** | MacStudio: HTTP 200, invalid summary document. RTX4090: HTTP 502 `empty_content`. Neither generated a rendered valid summary on the measured short live meeting. | [JSON](../../evidence/e2e-feature-verification-20260911/row-09.json), [screen](../../evidence/e2e-feature-verification-20260911/row-09.png) |
-| V10 Voice bank + repeat recognition | **FAIL** | Morgan present in bank; same corpus recognized as Morgan after **10.845 s**, exceeding 3 s. Enrollment and eventual matching work. | [JSON](../../evidence/e2e-feature-verification-20260911/row-10.json), [bank](../../evidence/e2e-feature-verification-20260911/row-10-bank.png), [screen](../../evidence/e2e-feature-verification-20260911/row-10.png) |
+| V10 Voice bank + repeat recognition | **FAIL** | fixture-label-2 present in bank; same corpus recognized as fixture-label-2 after **10.845 s**, exceeding 3 s. Enrollment and eventual matching work. | [JSON](../../evidence/e2e-feature-verification-20260911/row-10.json), [bank](../../evidence/e2e-feature-verification-20260911/row-10-bank.png), [screen](../../evidence/e2e-feature-verification-20260911/row-10.png) |
 | V11 History selection | PASS | Transcript scrolled into view; visible header title matches selected card and mode. Initial File/URL and later Live selection both checked; final evidence is Live. | [JSON](../../evidence/e2e-feature-verification-20260911/row-11.json), [screen](../../evidence/e2e-feature-verification-20260911/row-11.png) |
 | V12 Phone width | PASS | Populated workspace at **400 px**; document scroll width **400 px**; history/file navigation usable; screenshot visually reviewed. | [JSON](../../evidence/e2e-feature-verification-20260911/row-12.json), [screen](../../evidence/e2e-feature-verification-20260911/row-12.png) |
 
@@ -81,8 +81,8 @@ the diagnostic repetition both failed; earlier automatic summaries on the longer
 transcripts do not establish reliable short-transcript behavior.
 
 **F2 — V10: recognition works but misses its latency target.** Name committed speech,
-confirm Morgan in Voiceprints, open a fresh capture page in the same workspace, and play
-this corpus through both lanes. Measure Start click to the first visible Morgan label.
+confirm fixture-label-2 in Voiceprints, open a fresh capture page in the same workspace, and play
+this corpus through both lanes. Measure Start click to the first visible fixture-label-2 label.
 The captured result is 10.845 s, not approximately 3 s. See V10 above.
 
 The current matching rule (`app/phase2_voiceprint_match.py::match_voiceprint`) refuses
@@ -124,7 +124,7 @@ thresholds. A one-second eligibility floor is not a promise of one-second recogn
 
 ```sh
 .venv/bin/python tests/e2e/verify_workspace.py \
-  --corpus /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
+  --corpus ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s \
   --output /tmp/moss-e2e-new-run
 ```
 

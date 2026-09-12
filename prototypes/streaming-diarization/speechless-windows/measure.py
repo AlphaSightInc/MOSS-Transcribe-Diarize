@@ -39,7 +39,7 @@ if __name__ == '__main__':
              'speech_then_long_silence': speech + bytes(max(0, 150*32000-len(speech))),
              'brief_speech_in_silence': bytes(70*32000) + speech[:32000] + bytes(79*32000),
              'silence_partial_frame': bytes(32001*2)}
-    output = {'source': str(args.speech), 'vad_mode': 0, 'frame_ms': 20, 'threshold': .0001}
+    output = {'source': 'local-speech-fixture', 'vad_mode': 0, 'frame_ms': 20, 'threshold': .0001}
     for name, pcm in cases.items():
         start = time.monotonic(); output[name] = {**measure(pcm), 'seconds': time.monotonic()-start}
         with tempfile.TemporaryDirectory() as root:

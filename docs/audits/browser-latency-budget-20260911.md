@@ -75,10 +75,9 @@ in polling cadence. The local stack's draft lane was off; this
 does not measure the host's proposed draft-on configuration.
 
 **F4 — First-any-text can be a misleading latency metric.**
-The validated fixture's first preview in **both arms** was a model refusal (“I'm sorry,
-I can't assist with that request.”), not spoken audio. A content-free boolean prefix
+The validated fixture's first preview in **both arms** was a model refusal (body removed by the content-boundary audit), not spoken audio. A content-free boolean prefix
 check and a separate `known_speech_dom` clock now distinguish first-any-text from the
-first appearance of “the following”. Both runs ultimately completed with corpus speech.
+first appearance of the known spoken fixture prefix. Both runs ultimately completed with corpus speech.
 The earlier unvalidated fixture observations of about 945 → 699 ms were therefore
 rejected as speech-latency evidence. The later validated pair gives about 3.29 → 3.28 s.
 This is a concrete decoder/preview content finding, not evidence that the polling patch

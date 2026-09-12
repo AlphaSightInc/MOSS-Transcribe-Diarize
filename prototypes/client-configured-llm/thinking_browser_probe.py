@@ -2,7 +2,7 @@
 
 PYTHONPATH=. .venv/bin/python prototypes/client-configured-llm/thinking_browser_probe.py --output /tmp/moss-thinking-browser
 Creates only disposable app/browser state; does not operate the running host stack.
-Uses retained row-9 transcript; makes one summary attempt per configured model.
+Uses an explicit private transcript input; makes one summary attempt per configured model.
 """
 import argparse
 import asyncio
@@ -32,9 +32,9 @@ def write(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
 
 
-async def run(root, output):
+async def run(root, output, source_path):
     phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version
-    source = json.loads((ROOT / 'evidence/e2e-feature-verification-20260911/meeting-4XEDDwdaowqbw63xwSsE3s95.json').read_text())
+    source = json.loads(source_path.read_text())
     segments = [{k: s[k] for k in ('start', 'end', 'speaker', 'text')} for s in source['transcript']['segments']]
     with patch.dict(os.environ, {'MOSS_LLM_UPSTREAMS': json.dumps(CONFIG)}):
         async with bench.running(root / 'probe.sqlite3') as (app, port):
@@ -63,14 +63,10 @@ async def run(root, output):
                                 await page.get_by_test_id('final-summary-generate').click()
                             accepted = await (await accepted_response.value).json()
                         relay = await relay_response.value
-                        write(output / f'{name}-browser-request.json', relay.request.post_data_json)
-                        write(output / f'{name}-relay-response.json', await relay.json())
                         # Bind to this attempt, never a previous current artifact.
                         attempt = accepted['attempt_id']
                         await page.locator(f'[data-summary-attempt="{attempt}"][data-summary-state="current"], [data-summary-attempt="{attempt}"][data-summary-state="failed"]').wait_for(timeout=10000)
                         artifact = await page.evaluate("async id => (await (await fetch('/api/meetings/'+id+'/summary')).json()).summary", meeting.meeting_id)
-                        write(output / f'{name}-summary.json', artifact)
-                        await page.screenshot(path=str(output / f'{name}-browser.png'), full_page=True)
                         checks = {'http_200': relay.status == 200, 'current': artifact['state'] == 'current',
                                   'budget_2048': relay.request.post_data_json['max_tokens'] == 2048,
                                   'exact_transcript': json.loads(relay.request.post_data_json['messages'][1]['content']) == {'segments': segments},
@@ -86,11 +82,12 @@ async def run(root, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--source', type=Path, required=True, help='Private transcript JSON; never retained in evidence')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     try:
         with tempfile.TemporaryDirectory(prefix='moss-thinking-browser-') as root:
-            asyncio.run(run(Path(root), args.output))
+            asyncio.run(run(Path(root), args.output, args.source))
     except BrowserExecutableMissing as exc:
-        print(str(exc))
+        print(type(exc).__name__)
         raise SystemExit(77)

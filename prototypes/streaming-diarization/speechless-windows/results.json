@@ -1,5 +1,5 @@
 {
-  "source": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav",
+  "source": "audio.wav",
   "vad_mode": 0,
   "frame_ms": 20,
   "threshold": 0.0001,

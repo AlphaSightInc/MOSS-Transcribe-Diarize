@@ -104,8 +104,8 @@ Measured production source: `323f122203cc5912ed539b9c753bc5c5c498cd63` in isolat
 
 ```sh
 .venv/bin/python prototypes/streaming-diarization/identity-floor-a2/run.py \
-  --data-root /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data \
-  --intro-wav /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav
+  --data-root ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data \
+  --intro-wav ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav
 ```
 
 Add `--reuse` for the retained vectors (missing caches are freshly embedded locally). The existing local corpus and ONNX remain required; the command never downloads them. Generated concatenated WAVs are ignored and reconstructable; `.npz` observations and JSON state are retained in the bench.

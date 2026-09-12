@@ -41,12 +41,12 @@ for case,mode,service,audio_root in plans:
    run_service_replay(service=captured,audio_path=audio_root/case/'audio.wav',out_dir=out,pace=1,max_pacing_lag=3,runs=1,expect_revision=desc.source_revision,expect_provider_hash=desc.provider_manifest_hash,expect_config_hash=desc.config_hashes.combined_config_hash)
    record['performance_failure']=None
   except ServiceReplayRtfFailure as e:
-   record['performance_failure']=str(e)
+   record['performance_failure']=type(e).__name__
    assert all(k in captured.captures for k in ['pre_stop_immediate','pre_stop_settled','post_stop_final'])
   ref=corpus/case/'reference.jsonl';duration=next(x['samples']/16000 for x in json.load(open(HERE/'mixing.json')) if x['case_id']==case)
   record['scores']={k:surface.score_surface(surface.Case(case,corpus/case,ref),surface.transcript_rows(v['snapshot'],duration)) for k,v in captured.captures.items()}
   record['surface_observations']=_quality_surface_observations(captured.captures,reference_speaker_count=len({json.loads(x)['speaker'] for x in ref.read_text().splitlines()}))
- except Exception as e:record['error']=str(e)
+ except Exception as e:record['error']=type(e).__name__
  finally:
   (out/'captures.json').write_text(json.dumps(captured.captures))
   record['elapsed_seconds']=time.monotonic()-started;results.append(record)

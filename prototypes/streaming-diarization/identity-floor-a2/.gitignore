@@ -1,2 +1,3 @@
-# Reconstructable concatenated PCM; source intervals and embeddings are retained.
+# Private PCM and speaker embeddings are measurement inputs, not evidence.
 results/*.wav
+results/*.npz
