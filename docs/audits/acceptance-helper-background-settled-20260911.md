@@ -1,5 +1,10 @@
 # Helper lifetime, background capture, and settled quality — 2026-09-11
 
+Update: F3/F4's missing round-9 evidence is now resolved in the
+[retained-artifact follow-up](round9-quality-retained-20260911.md). The quality
+mean increase comes from canonical tail work; Javier pass 1 lost rolling to PCM
+eviction. The original evidence-limited findings below are retained as history.
+
 **Acceptance lease starvation is fixed and measured. The real browser already
 survives the requested 45-second hidden-tab test; no browser/server policy change
 is warranted. The specific round-9 WER loss remains unassigned without its per-case
