@@ -1,6 +1,6 @@
 # auto-mvp-0911 — operator handback
 
-Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `6c2fc663`; all change-table commits are verified ancestors. Fill section 2 from the actual gate result before acting. No PR for this branch was returned by the private repository lookup; do not assume a PR or merge exists.
+Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Fill section 2 from the actual gate result before acting. Do not infer a PR, merge or admission from this handback.
 
 ## 1. What you need to do (in order)
 
@@ -21,6 +21,10 @@ MOSS_LIVE_DRAFT_LANE_SECONDS=1.0
 Keep both configured MacStudio and RTX4090 upstream servers available; their URLs/models are verified configuration, not a current process-health check. In **Optional AI summaries**, select **Provider → Server relay (tailnet models)**, choose **Relay model**, then **Save on this browser**. Fresh settings choose the first model; saved external settings are preserved. Test each model on a completed rehearsal meeting and read the actual successful model beside **Summary ready.** A model listing is configuration, not a health test.
 
 The browser sends the transcript through authenticated same-origin `/api/llm/chat/completions`; no API key is needed. The frontend requests 2048 tokens; relay budgets floor/default to 2048 and cap at 4096. Both configured upstreams accepted `chat_template_kwargs.enable_thinking=false` in the [real-model replay](../audits/relay-thinking-models-20260911.md). A reasoning-only answer gets one bounded retry, never reasoning substituted as an answer. The browser may then try the next listed model once for relay errors. Keep the generating tab open; the successful-model status is transient, not persisted provenance. For an old saved prompt, choose **Restore default prompt**, then **Save on this browser**. Direct **External HTTPS provider** remains supported and browser-owned.
+
+### Content boundary
+
+Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
 ## 2. State of the gates (round `<ROUND>`, candidate `<SHA>`)
 
@@ -58,29 +62,63 @@ Use the integrated commit IDs below, not historical sibling-worktree IDs. Each l
 | Recognition harness | Derive 4 s label budget and retain decoder timing; do not ship earlier-decode prototype. | [`d6175b46`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/d6175b46d3cef0183750994af772a9c2011a4b24) | [Approved row-10 resolution](../audits/voiceprint-first-match-20260911.md) |
 | E2E / operator smoke | Retain 14 browser rows and three same-tab meetings; add isolated row selection and system-trust production smoke. | [`b20dac94`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/b20dac9427f4f3553ce132238f277f94d87cbb61), [`253aaf2c`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/253aaf2c169e3b2824c18f160989352a50923d84) | [Full regression](../audits/same-tab-repeat-capture-20260911.md); [operator smoke](e2e-smoke-for-operator.md) |
 | Evidence-only identity work | Measure birth floors with a brief second person; separate mixer-tail/window effects from account carryover. | [`22ef9115`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/22ef9115a71fbd75556297f27cfb03909c1a9996), [`987d17dc`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/987d17dc916edefec7e1216603e9349f2c80b6ef) | [A2](../audits/identity-floor-a2-bench-20260911.md); [path differential](../audits/account-path-der-differential-20260911.md) |
+| Mixer repair | Preserve pre-attenuation analysis PCM and release held frame tails; retain six-case measurement and attribution limits. | [`88e226a2`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/88e226a2fdd9457ba1c953c9e062955bbc954bee), [`905eadbb`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/905eadbb39c4ed17a75628bd827edede0ef52b69), [`3d1e2b8a`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/3d1e2b8a2bfb746ffa2a3a1c55040e4b873e7e57), [`3a641f06`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/3a641f06d363d0d4b6dc0ec7d36fe9d4f74bf868) | [Mixer differential](../audits/mixer-repair-differential-20260911.md) |
+| Settled text evidence | Measure repaired account/mono text surfaces; the earlier host WER gap predates the accepted mixer repair. | [`1dee922d`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/1dee922dcb203f6d7a9cb7ba1d6016fdb89f9b27) | [Text differential](../audits/text-path-differential-20260911.md) |
+| Trailing terminal window | Merge already-covered subsecond tails; accept unparseable output only when the exact PCM is verified speechless. | [`68f7f3ee`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/68f7f3ee67a3a3aa43b4f46ed975ba45f94fb7ab) | [Tail repair](../audits/terminal-short-tail-20260912.md) |
+| R11-1 · operator discard projection | Retain queued-item discard events in interrupted public projections. | [`7d82a9e2`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/7d82a9e24cbf70eb6e41513d419aa9bf3b547d34) | [Projection regression](../../tests/phase2/test_owner_bound_live_meeting.py) |
+| R11-2 · partial audio seeding | Supply the owning account, session and clip to the deliberate partial-audio fixture. | [`1dab0bb8`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/1dab0bb83575a5e52e6ead4a16edccb3290e20e1) | [Acceptance regression](../../tests/phase2/test_wave1_qualification.py) |
+| R11-3 · G9 session ownership | Register owner-b session/helper before seeding its transcript. | [`e03d6a31`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/e03d6a310f86c3db0292ae3de0e784270e01f288) | [G9 diagnosis](../audits/round11-browser-fixes-20260912.md#f2--g9-omitted-owner-registration) |
+| R11-4 · hidden observer | Remove Playwright forced focus and throttling bypasses; retain genuine hidden state and post-hidden-only polling checks. | [`e03d6a31`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/e03d6a310f86c3db0292ae3de0e784270e01f288) | [Visibility diagnosis](../audits/round11-browser-fixes-20260912.md#f1--the-page-never-became-hidden) |
+| R11-5 · reference bootstrap | Provide the pinned reference health fixture so fidelity preparation boots. | [`5993afcb`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/5993afcb29c55bda1c2e22107b8766378f49852d) | [Reference regression](../../tests/phase2/test_browser_timeout_evidence.py) |
+| R11-6 · relay attempt synchronization | Wait for current state of the new POST’s exact attempt ID, not a restored older summary. | [`e03d6a31`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/e03d6a310f86c3db0292ae3de0e784270e01f288) | [Relay race](../audits/round11-browser-fixes-20260912.md#f3--old-summary-satisfied-the-relay-completion-wait) |
+| Earlier staging / G8 fixes | Finalize and verify staged provider identity; register G8 sessions through the owning helper. | [`9dc047f8`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/9dc047f8dd5d05fd63bc4ca908d1bcdc9f440372), [`15b35860`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/15b35860e674ad38cf1af750552c6a347ab9be38) | [Staging tests](../../tests/test_live_manifest_finalizer.py); [helper tests](../../tests/phase2/test_acceptance_helper_lifetime.py) |
+| Earlier cleanup / audio fixes | Close observers; recognize recovered terminal cleanup; compare archives with mixed PCM; create a deliberate partial-audio case. | [`62a3c601`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/62a3c60142491e106984430f813ff0f85d31b498), [`2b709b2f`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/2b709b2f3a668baba6c53cc8c486fa538d6ffca5), [`70f1480d`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/70f1480de9ed811ca70037a4e5cb5da25093137f) | [Cleanup tests](../../tests/phase2/test_acceptance_cleanup.py); [audio tests](../../tests/phase2/test_wave1_qualification.py) |
+| Earlier operator / overload setup | Burst canonical work before interrupt; drive eight-session input beyond declared lane capacity. | [`809a9a5e`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/809a9a5e9b656fd19b7228ea3dfaf57b0665ce68), [`c70a96e2`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/c70a96e22be4108c5f4f760fe4dd493a38ea0a21) | [Overload test](../../tests/phase2/test_acceptance_overload_window.py) |
+| Browser failure evidence | Retain bounded diagnostics and strengthen readiness; subsequent content-boundary cleanup narrows retained fields. | [`cf0dc398`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/cf0dc39812dd699e40d2ac1ee718c0cfd47fc315) | [Timeout audit](../audits/browser-timeout-evidence-20260911.md); [current boundary](../audits/content-boundary-20260912.md) |
+| Browser availability | Prove optional G9 cases skip before probe setup when the executable is missing. | [`f8e66aeb`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/f8e66aeb552cb8691759ff405de324ffa692acb9) | [Guard audit](../audits/summary-browser-guard-20260911.md) |
+| E2E sequencing | Diagnose pre-existing 13→14 Reset timing; require durable completion and terminal UI before Reset, with a bounded wait. | [`5c226b43`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/5c226b4366ae8c42fa8b237d461d979924ada965), [`b1feae6f`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/b1feae6fe99f492dc95e62df597fae3081a8698b) | [Diagnosis](../audits/mixer-e2e-regression-20260911.md); [combined 13/14 rerun](../audits/e2e-reset-sequencing-20260911.md) |
+| Operator precheck / handback | Add trusted-TLS, exact-SHA and timed model precheck; assemble evidence handback and qualified limitation wording. | [`7fd9f4d0`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/7fd9f4d0789143258c5d431c5309e2ad8d523114), [`8a2dc33a`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/8a2dc33a23f07b57e20d29a5f7bd209bf839a825), [`8f274786`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/8f274786a46927323fb606ce31414fbcb39b3216) | [Precheck audit](../audits/demo-precheck-20260911.md); this handback |
+| Content boundary | Remove retained content/caches and prevent diagnostic writers from recreating them; product relay error paths verified clean. | [`09539ad7`](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/commit/09539ad72006d756fcece932efe74fbb6d8490b1) | [Boundary audit and inventory](../audits/content-boundary-20260912.md) |
+
+### Latest measured quality — round 11, not the final-round gate table
+
+Use **round 11 (`c70a96e2`, draft lane ON)** as the latest measured host result; **round 12 is in flight**. All eight quality macros fall inside the approved band in both layers, and four-session capacity passes both layers. S = strict bound; E = pre-approved 5% exception. Bounds and identity policy remain unchanged. Source: [issue #10, round-11 result](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10#issuecomment-5643836080).
+
+| macro | bound | deployed | pre-admission |
+|---|---|---|---|
+| final WER | ≤ .095074 | **.0917 S** | **.0917 S** |
+| immediate WER | ≤ .166655 | **.1648 S** | **.1660 S** |
+| settled WER | ≤ .140442 | **.1355 S** | **.1357 S** |
+| recall | ≥ .929636 | **.9313 S** | **.9310 S** |
+| time-speaker attribution | ≥ .876970 | **.8778 S** | **.8779 S** |
+| matched-speaker accuracy | ≥ .911512 | **.9116 S** | .9113 E |
+| diarization error rate | ≤ .161430 | .1626 E | .1624 E |
+| reference-speech DER | ≤ .134804 | .1357 E | .1354 E |
+
+This is not an all-gates pass: round 11 retained six browser/operator/audio/probe items and **2/8 overload finalization failures per layer** on a redundant 0.5 s terminal tail; the repairs above await round-12 measurement. Do not replace section 2’s `<ROUND>`, `<SHA>` or `<TABLE>` until the operator has the final result.
 
 ## 4. Verified feature checklist (14 rows)
 
-Use the [same-tab audit](../audits/same-tab-repeat-capture-20260911.md) and its [full candidate result](../../evidence/same-tab-repeat-capture-20260911/candidate/results.json): **14/14 PASS at `00ebcd10`**, real local Chromium/decoder, draft lane 1.0, separate state and relay configured. This is not a new run at the handback SHA, not the MacBook’s actual AirPods capture, and not deployed qualification. The [original audit](../audits/e2e-feature-verification-20260911.md) remains 10/12 historically; row 9 and row 10 were subsequently resolved. The [13-row audit](../audits/round11-browser-regression-20260911.md) bridges those runs; its unresolved repeat-capture note is superseded by row 14.
+Use the [same-tab audit](../audits/same-tab-repeat-capture-20260911.md) (raw candidate artifacts removed under the content boundary): **14/14 PASS at `00ebcd10`**, real local Chromium/decoder, draft lane 1.0, separate state and relay configured. This is not a new run at the handback SHA, not the MacBook’s actual AirPods capture, and not deployed qualification. The [original audit](../audits/e2e-feature-verification-20260911.md) remains 10/12 historically; row 9 and row 10 were subsequently resolved. The [13-row audit](../audits/round11-browser-regression-20260911.md) bridges those runs; its unresolved repeat-capture note is superseded by row 14.
 
 | Row | Verified behavior | Result / checked artefact |
 |---:|---|---|
-| 1 | Fresh workspace | [PASS — Signed in; workspace boot ready.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-01.json) |
-| 2 | MP3 upload | [PASS — Completed; 10 edits / 115 reference words = 8.70% WER.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-02.json) |
-| 3 | Media URL | [PASS — Completed; same 8.70% WER, local reachable URL fixture.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-03.json) |
-| 4 | Live microphone + tab | [PASS — Both meters; first visible text 2.335 s; Stop to completed 2.053 s.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-04.json) |
-| 5 | Rename both controls | [PASS — Transcript-row label and legend; acknowledged names in history and export.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-05.json) |
-| 6 | Transcript exports | [PASS — MD/TXT/JSON/SRT/VTT downloaded; nonempty, cues/timing/speaker prefixes checked.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-06.json) |
-| 7 | Completed audio | [PASS — 50.0 s MP3 downloaded and decoded.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-07.json) |
-| 8 | Interrupted audio | [PASS — Interrupted meeting; 11.42 s partial MP3 decoded.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-08.json) |
-| 9 | Relay summaries | [PASS — Both configured models returned current, rendered, validated summaries.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-09.json) |
-| 10 | Enrolled recognition | [PASS — Visible saved name 3.6897 s after Start; bound 4.0 s; decoder trace retained.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-10.json) |
-| 11 | History → transcript | [PASS — Selected title/mode correct and header visible.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-11.json) |
-| 12 | Phone-width layout | [PASS — 400 px viewport and scroll width; navigation anchors visible.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-12.json) |
-| 13 | Network resilience | [PASS — 3 s and 20 s origin outages; sequences preserved; both completed/final.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-13.json) |
-| 14 | Consecutive same-tab meetings | [PASS — Three distinct meetings, same document; all completed/final and in history; pane/export bound to each new meeting.](../../evidence/same-tab-repeat-capture-20260911/candidate/row-14.json) |
+| 1 | Fresh workspace | [PASS — Signed in; workspace boot ready.](../audits/same-tab-repeat-capture-20260911.md) |
+| 2 | MP3 upload | [PASS — Completed; 10 edits / 115 reference words = 8.70% WER.](../audits/same-tab-repeat-capture-20260911.md) |
+| 3 | Media URL | [PASS — Completed; same 8.70% WER, local reachable URL fixture.](../audits/same-tab-repeat-capture-20260911.md) |
+| 4 | Live microphone + tab | [PASS — Both meters; first visible text 2.335 s; Stop to completed 2.053 s.](../audits/same-tab-repeat-capture-20260911.md) |
+| 5 | Rename both controls | [PASS — Transcript-row label and legend; acknowledged names in history and export.](../audits/same-tab-repeat-capture-20260911.md) |
+| 6 | Transcript exports | [PASS — MD/TXT/JSON/SRT/VTT downloaded; nonempty, cues/timing/speaker prefixes checked.](../audits/same-tab-repeat-capture-20260911.md) |
+| 7 | Completed audio | [PASS — 50.0 s MP3 downloaded and decoded.](../audits/same-tab-repeat-capture-20260911.md) |
+| 8 | Interrupted audio | [PASS — Interrupted meeting; 11.42 s partial MP3 decoded.](../audits/same-tab-repeat-capture-20260911.md) |
+| 9 | Relay summaries | [PASS — Both configured models returned current, rendered, validated summaries.](../audits/same-tab-repeat-capture-20260911.md) |
+| 10 | Enrolled recognition | [PASS — Visible saved name 3.6897 s after Start; bound 4.0 s; decoder trace retained.](../audits/same-tab-repeat-capture-20260911.md) |
+| 11 | History → transcript | [PASS — Selected title/mode correct and header visible.](../audits/same-tab-repeat-capture-20260911.md) |
+| 12 | Phone-width layout | [PASS — 400 px viewport and scroll width; navigation anchors visible.](../audits/same-tab-repeat-capture-20260911.md) |
+| 13 | Network resilience | [PASS — 3 s and 20 s origin outages; sequences preserved; both completed/final.](../audits/same-tab-repeat-capture-20260911.md) |
+| 14 | Consecutive same-tab meetings | [PASS — Three distinct meetings, same document; all completed/final and in history; pane/export bound to each new meeting.](../audits/same-tab-repeat-capture-20260911.md) |
 
-Also retain the [row-14 reset proof](../../evidence/same-tab-repeat-capture-20260911/reset-proof/row-14.json): the pane cleared before each Start. The default-checked **Save voiceprint** change has checked/unchecked API/UI tests and **61 required lifecycle tests, no skips** in the [13-row audit](../audits/round11-browser-regression-20260911.md).
+The [row-14 audit](../audits/same-tab-repeat-capture-20260911.md) records the historical reset proof: the pane cleared before each Start. The default-checked **Save voiceprint** change has checked/unchecked API/UI tests and **61 required lifecycle tests, no skips** in the [13-row audit](../audits/round11-browser-regression-20260911.md).
 
 ## 5. Latency (measured; keep the clocks separate)
 
@@ -111,7 +149,7 @@ For concurrency context, the retained [headroom report](/tmp/moss-draft-headroom
 
 ## Known limitations and how to talk about them
 
-1. **Settled word error rate (WER):** say “the gap against the 2026-08-25 campaign bound remains under investigation”; round-9 settled macro WER was **16.75575%**—historical runtime non-reproducibility is a possibility to investigate, not an established cause or a waived bound. [Retained quality audit](../audits/round9-quality-retained-20260911.md), [historical-comparison limits](../audits/account-path-der-differential-20260911.md).
+1. **Settled word error rate (WER):** the historical gap is superseded by round 11: **13.55% deployed / 13.57% pre-admission**, both below the **14.0442%** bound; the earlier .1693 host score predates the mixer repair, so do not present runtime non-reproducibility as the established cause. [Latest host table](https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10#issuecomment-5643836080), [text-path audit](../audits/text-path-differential-20260911.md).
 2. **New voices:** ask for **~2 s of contiguous speech** for stable identity evidence; short fragments may remain unlabeled by design, while the **1.0 s birth floor / 2.0 s album admission** mean “no label before 2 s” is not an absolute rule or a wall-clock guarantee. [Identity-floor bench](../audits/identity-floor-a2-bench-20260911.md).
 3. **Concurrency:** plan for **4 supported sessions**, not 8; the local eight-session overload run reached **8/8 closed/final**, but coverage latency p50 rose to **17.86–21.91 s** (~20 s), with p95 **59.82–65.71 s**—graceful completion, not a host capacity certificate. [Today's retained headroom measurement](/tmp/moss-draft-headroom-20260911/REPORT.md).
 4. **G7 canary:** arrange a working **host display and microphone/audio path**; the runbook recorded **WSLg 1.0.66 disabled (`guiApplications=false`)**, so SSH alone is insufficient—have the operator verify readiness before booking the attended attempt. [G7 runbook](g7-preadmission-runbook.md#choose-a-display-before-booking-the-attempt).
@@ -132,7 +170,7 @@ Do not add `--profile`. Restore uses the attempt’s stored state and **refuses 
 
 ## Evidence index — today’s branch audits and handoffs
 
-Read these as dated evidence with their stated scope, not interchangeable gate certificates. Inventory includes every Markdown audit/handoff touched in this branch’s September-11 work (including the UTC-dated September-12 row-10 file). The peer handoff and original scratch latency notes are linked above separately because they are not branch files.
+Read these as dated evidence with their stated scope, not interchangeable gate certificates. Inventory includes the September-11 work and subsequent September-12 updates through the reviewed head. Content-removal notices supersede older raw-artifact retention claims. The peer handoff and original scratch latency notes are linked above separately because they are not branch files.
 
 - [acceptance-helper-background-settled-20260911](../audits/acceptance-helper-background-settled-20260911.md) — Acceptance heartbeat repair and genuine 45 s hidden-tab capture; its missing quality evidence is resolved by the later round-9 audit.
 - [account-path-der-differential-20260911](../audits/account-path-der-differential-20260911.md) — Mixer tail and attenuation change coverage/embedding windows; measured empty-bank account carryover is rejected.
@@ -169,6 +207,18 @@ Read these as dated evidence with their stated scope, not interchangeable gate c
 - [G7 preadmission runbook](g7-preadmission-runbook.md) — Display/audio prerequisites, attended procedure and interrupted-attempt recovery; preadmission is not admission.
 - [Operator E2E smoke](e2e-smoke-for-operator.md) — Exact production-origin commands, row prerequisites, fresh-workspace isolation and 4/4 no-decoder local evidence.
 - [Presenter demo script](demo-script.md) — Ten-minute client flow with exact controls, expectations and recoveries.
+
+- [browser-timeout-evidence-20260911](../audits/browser-timeout-evidence-20260911.md) — Original timeout/readiness instrumentation; current retained fields are narrowed by the content-boundary audit.
+- [content-boundary-20260912](../audits/content-boundary-20260912.md) — 402 evidence files and 16 caches removed; metadata-only writers enforced and production relay error paths verified clean.
+- [demo-precheck-20260911](../audits/demo-precheck-20260911.md) — Trusted TLS, full candidate SHA, configured models and sequential 16-token health probes; local failure paths verified.
+- [e2e-reset-sequencing-20260911](../audits/e2e-reset-sequencing-20260911.md) — Bounded durable/UI terminal wait repairs the combined 13→14 handoff; targeted 2/2 rerun, not a new full 14-row run.
+- [mixer-e2e-regression-20260911](../audits/mixer-e2e-regression-20260911.md) — Nine requested rows pass; row-14 combined failure reproduces before mixer repair and is isolated to Reset sequencing.
+- [mixer-repair-differential-20260911](../audits/mixer-repair-differential-20260911.md) — Six-case repair measurements and source-analysis versus observed-end attribution; per-case tradeoffs retained.
+- [mixer-repair-feasibility-20260911](../audits/mixer-repair-feasibility-20260911.md) — Rejected shortcuts and measured corrected mixer design before implementation.
+- [round11-browser-fixes-20260912](../audits/round11-browser-fixes-20260912.md) — Forced-focus, unregistered G9 session and stale-summary attempt races repaired; local checks do not replace host qualification.
+- [summary-browser-guard-20260911](../audits/summary-browser-guard-20260911.md) — Optional G9 entrypoints skip with a missing-executable reason before probe setup.
+- [terminal-short-tail-20260912](../audits/terminal-short-tail-20260912.md) — Redundant subsecond terminal windows reproduced; merged coverage and verified-silence classification repaired.
+- [text-path-differential-20260911](../audits/text-path-differential-20260911.md) — Repaired account settled WER .136379 versus mono .137097; earlier host score measured pre-repair.
 
 ### Draft corrections to retain
 
