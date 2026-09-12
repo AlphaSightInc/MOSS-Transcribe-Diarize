@@ -1,0 +1,170 @@
+[
+  {
+    "case_id": "mono_javier_intro_50s",
+    "round9_settled": {
+      "der": 0.1768,
+      "reference_speech_der": 0.13709149999999998
+    },
+    "aug25_settled": {
+      "der": 0.113,
+      "reference_speech_der": 0.093316
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 1,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 1,
+        "pre_stop_settled": 1,
+        "stop_return": 1,
+        "post_stop_final": 1
+      },
+      "B": {
+        "pre_stop_immediate": 1,
+        "pre_stop_settled": 1,
+        "stop_return": 1,
+        "post_stop_final": 1
+      }
+    }
+  },
+  {
+    "case_id": "interview_bill_ackman_60s",
+    "round9_settled": {
+      "der": 0.156167,
+      "reference_speech_der": 0.149808
+    },
+    "aug25_settled": {
+      "der": 0.12825,
+      "reference_speech_der": 0.1128355
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 2,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      },
+      "B": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      }
+    }
+  },
+  {
+    "case_id": "interview_keyu_jin_60s",
+    "round9_settled": {
+      "der": 0.140833,
+      "reference_speech_der": 0.123669
+    },
+    "aug25_settled": {
+      "der": 0.111167,
+      "reference_speech_der": 0.090519
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 2,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      },
+      "B": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      }
+    }
+  },
+  {
+    "case_id": "interview_adam_frank_180s",
+    "round9_settled": {
+      "der": 0.123944,
+      "reference_speech_der": 0.110821
+    },
+    "aug25_settled": {
+      "der": 0.091167,
+      "reference_speech_der": 0.077717
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 2,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      },
+      "B": {
+        "pre_stop_immediate": 2,
+        "pre_stop_settled": 2,
+        "stop_return": 2,
+        "post_stop_final": 2
+      }
+    }
+  },
+  {
+    "case_id": "discussion_jamie_dimon_180s",
+    "round9_settled": {
+      "der": 0.104017,
+      "reference_speech_der": 0.092088
+    },
+    "aug25_settled": {
+      "der": 0.094352,
+      "reference_speech_der": 0.081653
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 3,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 3,
+        "pre_stop_settled": 3,
+        "stop_return": 2,
+        "post_stop_final": 2
+      },
+      "B": {
+        "pre_stop_immediate": 3,
+        "pre_stop_settled": 3,
+        "stop_return": 2,
+        "post_stop_final": 2
+      }
+    }
+  },
+  {
+    "case_id": "discussion_rtfl_90s",
+    "round9_settled": {
+      "der": 0.40580649999999996,
+      "reference_speech_der": 0.3262585
+    },
+    "aug25_settled": {
+      "der": 0.430644,
+      "reference_speech_der": 0.352785
+    },
+    "round9_speaker_counts": null,
+    "round9_count_reason": "No speaker labels or counts retained in round9 bundle",
+    "reference_speakers": 4,
+    "aug25_visible_speaker_counts": {
+      "A": {
+        "pre_stop_immediate": 4,
+        "pre_stop_settled": 4,
+        "stop_return": 4,
+        "post_stop_final": 4
+      },
+      "B": {
+        "pre_stop_immediate": 4,
+        "pre_stop_settled": 4,
+        "stop_return": 4,
+        "post_stop_final": 4
+      }
+    }
+  }
+]

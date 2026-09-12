@@ -394,17 +394,13 @@ class LiveCoordinator:
         # path does not have, because the deployed span decoder is bounded at the span cap.
         # No decoder, no converger, and the coordinator behaves exactly as it did before E2.
         self.rolling_decoder = rolling_decoder
-        self.converger = (
-            None
-            if rolling_decoder is None
-            else RollingTranscriptConverger(epoch=session.epoch, geometry=rolling_geometry)
-        )
-        self._rolling_admission_refusals = 0
         # The third retention, and the only one that outlives its listener. The base keeps a
         # span until it commits and the witness keeps a bounded ring of the newest window;
         # neither can answer "what did this whole meeting sound like", which is the only
         # question a terminal 150/120 pass asks. Declared by the deployment or absent
-        # entirely (ADR-0003 D2), so a service that declares no capacity retains exactly
+        # entirely (ADR-0003 D2). Rolling may read a committed interval from this same
+        # tape after a queue delay outlives its short ring. No second tape is allocated.
+        # A service that declares no capacity retains exactly
         # what it retains today and reports terminal convergence unavailable rather than
         # running one over a partial meeting.
         self.tape = (
@@ -412,6 +408,16 @@ class LiveCoordinator:
             if tape_capacity_bytes is None
             else CompleteMixedTape(epoch=session.epoch, capacity_bytes=tape_capacity_bytes)
         )
+
+        self.converger = (
+            None
+            if rolling_decoder is None
+            else RollingTranscriptConverger(
+                epoch=session.epoch, geometry=rolling_geometry,
+                pcm_reader=None if self.tape is None else self.tape.read,
+            )
+        )
+        self._rolling_admission_refusals = 0
 
     def preview_frame_work_items(self, frame: AudioFrame) -> int:
         if self._staged_frame is not None:
@@ -465,12 +471,12 @@ class LiveCoordinator:
         # keeps a span until it commits, the witness keeps a bounded ring of the newest
         # window. Planning is gated on committed audio, so this rarely emits a window on its
         # own -- but it can, when a frame arrives after the commit that completed one.
-        rolling_windows = self._accept_rolling_pcm(ack.start_sample, frame.pcm)
         if self.tape is not None:
             # Never checked, never raised on: ADR-0003 D5 makes a tape that cannot keep up
             # degrade itself, and a frame acknowledged by the session is published whether
             # or not a terminal pass will ever be possible.
             self.tape.append(start_sample=ack.start_sample, pcm=frame.pcm)
+        rolling_windows = self._accept_rolling_pcm(ack.start_sample, frame.pcm)
         return CoordinatorFrameResult(
             accepted_start_sample=ack.start_sample,
             accepted_end_sample=ack.end_sample,

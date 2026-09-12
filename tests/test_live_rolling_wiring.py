@@ -830,3 +830,121 @@ def test_capacity_event_capture_retains_all_600_seconds_past_product_ring_limit(
     assert result["canonical_processed_items"] == 240
     assert result["rolling_completed_items"] == 60
     assert abs(result["decode_seconds"] - 3.0) < 1e-9
+
+
+def _queued_window_after_long_wait(*, tape=True):
+    """17.5 s admission plus 16.5 s queue wait, on the actual runtime/arbiter path."""
+    base, witness = _decoders(rolling=True)
+    clock = [0]
+    descriptor = _descriptor()
+    descriptor = replace(descriptor, bounds=replace(
+        descriptor.bounds, max_tape_bytes=60 * LIVE_SAMPLE_RATE * 2 if tape else None))
+    scheduler = _ManualCanonicalPumpScheduler()
+    runtime = LiveServiceRuntime(
+        descriptor=descriptor, endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config()),
+        speech_provider_factory=ScriptedSpeech, decoder_factory=lambda: base,
+        rolling_decoder_factory=lambda: witness, identity_preparer_factory=ScriptedIdentity,
+        _canonical_scheduler=scheduler, monotonic_ns=lambda: clock[0],
+    )
+    sid = runtime.create().session_id
+    def feed(start, end):
+        for sequence in range(start, end):
+            clock[0] += 500_000_000
+            runtime.accept_frame(sid, AudioFrame(sequence=sequence,
+                pcm=sequence.to_bytes(2, 'little') * FRAME_SAMPLES, sample_count=FRAME_SAMPLES))
+    feed(0, 35)
+    for _ in range(4):
+        assert runtime._pump_next_ready_session(raise_errors=True)
+    assert runtime._sessions[sid].arbiter.snapshot().live_refinement == 1
+    feed(35, 68)
+    return runtime, scheduler, sid, witness
+
+
+def test_queued_rolling_recovers_evicted_audio_without_skipping_prefix():
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait()
+    decode = witness.transcribe_pcm
+    def checked_decode(*, span, pcm):
+        expected = b"".join(sequence.to_bytes(2, 'little') * FRAME_SAMPLES
+                            for sequence in range(span.start_sample // FRAME_SAMPLES,
+                                                  span.end_sample // FRAME_SAMPLES))
+        assert pcm == expected
+        return decode(span=span, pcm=pcm)
+    witness.transcribe_pcm = checked_decode
+    scheduler.drain()
+    snapshot = runtime.snapshot(sid).session
+    assert witness.calls == [(0, 160000), (160000, 320000), (320000, 480000)]
+    assert snapshot.canonical_through_sample == 480000
+    assert snapshot.text_revision_version == 3
+    assert snapshot.status == 'active'
+    accounting = runtime._sessions[sid].coordinator.rolling_accounting()
+    assert accounting.status is RollingStatus.ROLLING
+    assert accounting.retained_high_water_samples <= 320000
+    events = runtime.events(sid)
+    queued = next(e for e in events if e.kind == 'rolling_decode_queued')
+    completed = next(e for e in events if e.kind == 'rolling_decode_completed')
+    assert completed.payload['runtime_monotonic_ns'] - queued.payload['runtime_monotonic_ns'] == 16_500_000_000
+    assert completed.payload['applied'] is True
+    assert all(end <= snapshot.committed_samples for _, end in witness.calls)
+
+
+def test_queued_rolling_without_complete_tape_still_reports_eviction():
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait(tape=False)
+    scheduler.drain()
+    assert witness.calls == []
+    assert runtime.snapshot(sid).session.status == 'active'
+    assert runtime._sessions[sid].coordinator.rolling_accounting().status is RollingStatus.PCM_EVICTED
+
+
+def test_abort_fences_queued_rolling_recovery():
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait()
+    asyncio.run(runtime.abort(sid, 'presenter aborted'))
+    scheduler.drain()
+    snapshot = runtime.snapshot(sid).session
+    assert snapshot.status == 'aborted'
+    assert snapshot.text_revision_version == 0
+    assert witness.calls == []
+
+
+def test_recovery_refuses_missing_tape_without_skipping_to_newest_window():
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait()
+    runtime._sessions[sid].coordinator.tape.release()
+    scheduler.drain()
+    # The original immutable request remains valid; the missing NEXT window does not.
+    assert witness.calls == [(0, 160000)]
+    assert runtime.snapshot(sid).session.canonical_through_sample == 160000
+    assert runtime._sessions[sid].coordinator.rolling_accounting().status is RollingStatus.PCM_EVICTED
+
+
+def test_complete_tape_does_not_revive_failed_rolling_decode():
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait()
+    witness.failure = LiveProviderTransientError('decoder did not answer')
+    scheduler.drain()
+    assert witness.calls == [(0, 160000)]
+    assert runtime.snapshot(sid).session.text_revision_version == 0
+    assert runtime._sessions[sid].coordinator.rolling_accounting().status is RollingStatus.WINDOW_FAILED
+
+
+def test_abort_fences_inflight_tape_recovery_publication():
+    import threading
+    runtime, scheduler, sid, witness = _queued_window_after_long_wait()
+    entered, release = threading.Event(), threading.Event()
+    decode = witness.transcribe_pcm
+    def blocked(*, span, pcm):
+        if span.start_sample == 160000:
+            entered.set()
+            assert release.wait(5)
+        return decode(span=span, pcm=pcm)
+    witness.transcribe_pcm = blocked
+    worker = threading.Thread(target=scheduler.drain)
+    worker.start()
+    try:
+        assert entered.wait(5), 'recovery window was not dispatched'
+        asyncio.run(runtime.abort(sid, 'abort during recovered decode'))
+    finally:
+        release.set()
+        worker.join(5)
+    assert not worker.is_alive()
+    snapshot = runtime.snapshot(sid).session
+    assert snapshot.status == 'aborted'
+    assert snapshot.text_revision_version == 1
+    assert snapshot.canonical_through_sample == 160000

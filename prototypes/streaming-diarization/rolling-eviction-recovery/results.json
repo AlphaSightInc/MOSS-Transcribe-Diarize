@@ -1,0 +1,29 @@
+{
+  "baseline": {
+    "status_after_wait": "pcm_evicted",
+    "status_after_drain": "pcm_evicted",
+    "planned": 1,
+    "applied_ends": [],
+    "tape_reads": [],
+    "ring_peak_samples": 320000,
+    "ring_limit_samples": 320000
+  },
+  "candidate": {
+    "status_after_wait": "rolling",
+    "status_after_drain": "rolling",
+    "planned": 3,
+    "applied_ends": [
+      160000,
+      320000,
+      480000
+    ],
+    "tape_reads": [
+      {
+        "start_sample": 160000,
+        "end_sample": 320000
+      }
+    ],
+    "ring_peak_samples": 320000,
+    "ring_limit_samples": 320000
+  }
+}

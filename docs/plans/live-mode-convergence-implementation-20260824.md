@@ -1478,3 +1478,21 @@ file mode. Latency/browser/scale certification beyond what quality work needs is
   `ralph/live-convergence-0824`, never merge.
 - The GPU is assumed quiet during the run; certification measurements must still record the
   endpoint counter deltas that prove it.
+
+### 2026-09-11 implementation note — recover ring eviction from existing tape
+
+Round 9 retained an admitted 0–10 s window behind canonical work for 16.54 s.
+The 20 s rolling ring overflowed, ended the converger and invalidated dispatch even
+though the request held immutable PCM and the deployment retained complete audio.
+The bounded recovery uses that existing tape's interval reader for the next missing
+**committed** window. It does not jump the rolling frontier, increase ring/tape
+capacity, change canonical-first scheduling or revive failed/refused decodes.
+Without a usable tape, explicit `pcm_evicted` remains the behavior. The runtime's
+publication lock and abort fencing remain the authority.
+
+The production-path regression reproduces 17.5 s of capture before admission plus
+16.5 s waiting: baseline zero rolling calls; recovery decodes 0–10, 10–20, 20–30 s
+in order with exact original PCM and a ring peak of 320,000 samples. See
+[measurement and failure boundaries](../../prototypes/streaming-diarization/rolling-eviction-recovery/NOTES.md).
+This is plumbing evidence, not a fresh quality/capacity qualification: recovering
+previously skipped windows necessarily restores their inference work.

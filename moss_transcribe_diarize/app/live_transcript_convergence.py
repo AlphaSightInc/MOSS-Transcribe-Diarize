@@ -30,7 +30,7 @@ exists. Widening the geometry is a new grid run, not a configuration edit.
 What it hides, per plan §6 M2: bounded PCM retention, window planning, one-witness-at-a-time
 admission, stale-work recognition, monotonic frontier advancement, and work accounting.
 
-Failure behaviour is plan §5.2's, verbatim in effect:
+Failure behaviour follows plan §5.2, with the 2026-09-11 tape-recovery extension:
 
 - *rolling failure* (a window whose decode publishes nothing) -- keep the surface, record the
   failed window, and stop planning. At zero overlap no later window begins at the stalled
@@ -39,9 +39,11 @@ Failure behaviour is plan §5.2's, verbatim in effect:
   Nothing is erased and nothing is silently skipped. Measured occurrences at the selected
   geometry: 0 of 54 window decodes (grid `decode_health`, 3 runs x 3 cases x 6 windows).
 - *rolling stale result* -- refused without changing the surface.
-- *retention overflow* -- the ring is bounded at `2 x window` samples (plan §6 M2). Reaching
-  that bound means the base path is a whole window behind, so the audio a later window needs
-  is already gone; the converger says so and stops planning rather than skipping a window.
+- *retention overflow* -- the ring stays bounded at `2 x window` samples (plan §6 M2).
+  If the deployment already retains a complete tape, the next committed window can be read
+  from that tape without skipping the contiguous rolling prefix. Without that reader, or
+  when it cannot supply the exact interval, rolling ends explicitly as `pcm_evicted`.
+  No extra tape capacity is allocated for recovery.
 
 A normalized proposal the session still refuses ends rolling as `proposal_refused`. The
 frontier and reader-visible surface do not move; the base listener keeps publishing and the
@@ -64,7 +66,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Callable, Mapping, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
@@ -246,9 +248,11 @@ class RollingTranscriptConverger:
         *,
         epoch: int,
         geometry: RollingGeometry = DEFAULT_ROLLING_GEOMETRY,
+        pcm_reader: Callable[..., bytes] | None = None,
     ):
         self.epoch = int(epoch)
         self.geometry = geometry
+        self._pcm_reader = pcm_reader
         self._status = RollingStatus.ROLLING
         self._buffer = bytearray()
         self._buffer_start_sample = 0
@@ -467,13 +471,24 @@ class RollingTranscriptConverger:
         if end_sample > self._committed_samples or end_sample > self._accepted_samples:
             return ()
         if start_sample < self._buffer_start_sample:
-            self._status = RollingStatus.PCM_EVICTED
-            return ()
-
-        offset = (start_sample - self._buffer_start_sample) * PCM16_BYTES_PER_SAMPLE
-        payload = bytes(
-            self._buffer[offset : offset + self.geometry.window_samples * PCM16_BYTES_PER_SAMPLE]
-        )
+            # A queued witness can outlive the short ring. Recover only its next
+            # committed interval from existing tape; never jump the authority frontier.
+            if self._pcm_reader is None:
+                self._end_refinement(RollingStatus.PCM_EVICTED)
+                return ()
+            try:
+                payload = self._pcm_reader(start_sample=start_sample, end_sample=end_sample)
+            except CompleteMixedTapeUnavailable:
+                self._end_refinement(RollingStatus.PCM_EVICTED)
+                return ()
+            if len(payload) != self.geometry.window_samples * PCM16_BYTES_PER_SAMPLE:
+                self._end_refinement(RollingStatus.PCM_EVICTED)
+                return ()
+        else:
+            offset = (start_sample - self._buffer_start_sample) * PCM16_BYTES_PER_SAMPLE
+            payload = bytes(
+                self._buffer[offset : offset + self.geometry.window_samples * PCM16_BYTES_PER_SAMPLE]
+            )
         request = RollingDecodeRequest(
             id=self._next_request_id,
             epoch=self.epoch,
@@ -502,7 +517,9 @@ class RollingTranscriptConverger:
         The bound is enforced by dropping, not by refusing audio: the session's own retention
         is the authority on what the meeting keeps, and a converger that pushed back on
         `accept_pcm` would let a rolling experiment stall the base path. What it may not do is
-        drop audio and stay silent about it, so the eviction names itself and planning stops.
+        fabricate an interval: without a complete-tape reader, eviction names itself and
+        planning stops. With that reader the immutable in-flight request remains valid,
+        and _plan reads the next missing window on demand, still gated by commitment.
         """
 
         window_start = self._next_window_index * self.geometry.stride_samples
@@ -516,7 +533,7 @@ class RollingTranscriptConverger:
             del self._buffer[: excess * PCM16_BYTES_PER_SAMPLE]
             self._buffer_start_sample += excess
             self._retained_high_water = max(self._retained_high_water, self._retained_samples)
-            if self._status is RollingStatus.ROLLING:
+            if self._status is RollingStatus.ROLLING and self._pcm_reader is None:
                 self._end_refinement(RollingStatus.PCM_EVICTED)
                 return
         self._retained_high_water = max(self._retained_high_water, self._retained_samples)
