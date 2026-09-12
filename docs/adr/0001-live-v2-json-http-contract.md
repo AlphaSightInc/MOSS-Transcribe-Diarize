@@ -62,7 +62,8 @@ version and maps to an HTTP 426-style response.
 One in-process `LiveCompatibilityMixer` plus a per-session registry bridges
 retained `system` and `microphone` lane frames into the unchanged mono runtime.
 It interprets `capture_timestamp_ns` as the frame's first PCM sample time,
-seals lane intervals with successor timestamps or final nominal ends, resamples
+seals lane intervals with observed frame ends (when supplied), successor timestamps
+or final nominal ends, resamples
 onto a shared 16 kHz mono grid, applies exact per-lane headroom and the
 registered soft limiter, then calls `LiveServiceRuntime.accept_frame`. Source
 lane prefixes are accounted only after successful mono admission.
@@ -447,3 +448,32 @@ full state are recorded in `prototypes/capture-layout-policy/NOTES.md`.
   duplicate does not refresh last-seen; helper-sent time and wall time are not
   server freshness authority; failed/degraded health does not call lane
   failure, expiry, stop, abort, recovery, abandonment, or enablement logic.
+
+
+## 2026-09-11 — Observed ends and analysis audio
+
+Frames may carry `capture_end_timestamp_ns`, an integer strictly after their
+start. The browser derives both from the audio render clock and the completed
+frame's sample positions; the replay client supplies the corresponding audio-time
+end. This is not a wall-clock arrival time or a prediction of future audio.
+The mixer can seal these completed frames immediately, waiting for the peer lane
+under the existing bounded arrival-skew rule. The explicit newest frame's start
+also bounds gap release, so a stretched frame is not mistaken for a stalled peer.
+Ingress rejects a later frame overlapping a previously explicit end, including
+after source accounting. Absent this field, existing successor/final sealing stays
+in force. Stop still flushes and drains any remaining source audio.
+
+Mixed decoder/recording PCM keeps its existing headroom and limiter. A separate
+analysis copy preserves original level when exactly one rendered lane carries
+signal; two audible lanes retain their coherent mix. This audio drives speech
+boundaries and speaker evidence only. It shares the existing uncommitted retention
+bound and is released at the same canonical commitment boundary, with no raw
+analysis tape. No identity policy threshold changes.
+
+Why both changes: restoring level only on the existing short embedding windows
+still birthed speaker 3 (.2402 match). Restoring source-level speech boundaries
+and evidence in the Adam prototype yielded two speakers. Guessing an early frame
+end changed 7,024 samples; producer-observed ends preserved every mixed byte in a
+two-lane drift/skew test. Decoder bytes remain unchanged, but changed canonical
+windows can change WER; numerical regression results must be reported explicitly.
+See [measurement](../audits/mixer-repair-feasibility-20260911.md).

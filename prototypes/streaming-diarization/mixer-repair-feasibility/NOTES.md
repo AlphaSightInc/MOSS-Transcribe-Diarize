@@ -14,8 +14,7 @@ reveal an unknown successor clock timestamp.
 
 Invariants: unchanged policy values and QUALITY_BOUNDS; no future evidence; no
 joining distinct voices; complete final audio; source frames accounted only after
-consumption. Unknown: six-case WER after an endpoint change. No after scores are
-claimed for an unimplemented behavioral change.
+consumption. Unknown: six-case WER after an endpoint change. Six-case after scoring is required before claiming the target met.
 
 Falsifiers/experiments:
 1. Real pinned encoder and current identity preparer; replay the retained Adam
@@ -63,3 +62,44 @@ watermarks. Calling account_through({}) raised after runtime admission. The prod
 fix simply waits to account until a whole source frame has been consumed. Its
 regression fails before the fix and passes after, including the 8-sample remainder
 and final flush. This does not change PCM, endpointing, identity or clock policy.
+
+
+Corrected prototypes and custody checks:
+
+```sh
+.venv/bin/python prototypes/streaming-diarization/mixer-repair-feasibility/observed_end.py
+.venv/bin/python prototypes/streaming-diarization/mixer-repair-feasibility/input_proof.py
+```
+
+The observed-end prototype has two audible lanes and an 8-sample clock stretch:
+zero changed output bytes, 40,008 samples admitted by the fifth frame instead of
+32,000. Its product regression additionally interleaves lane arrival and draining.
+The six-case input proof finds byte-exact source analysis and byte-exact prior
+headroom decoder PCM; all received samples are admitted before Stop. Largest
+analysis frame is 16,000 bytes. The coordinator regression fills its existing
+8,000-sample admission bound, rejects an extra frame without growing analysis
+retention, then releases/reuses capacity on commitment. No raw analysis tape.
+
+`raw-analysis-adam.json` retains the corrected real-decoder prototype: settled
+DER .097222, two speakers vs account .119889/three; mono .091167/two. Final WER
+.133710 equals account; immediate .145009 vs .143126 differs by one error.
+The live six-case after measurement is retained separately as it completes.
+
+
+Completed six-case result: `differential-results.json`. Settled DER macro improves
+.182603→.162036 (mono .156766), all six emitted counts equal reference. Per-case
+parity is NOT established: Jamie and RTFL DER worsen versus account before;
+Adam/Jamie immediate WER add two/one errors. Hold behavioral candidate from cutover.
+Full findings: `docs/audits/mixer-repair-differential-20260911.md`.
+
+To reproduce on an already running **own** stack (fresh output directory required):
+
+```sh
+.venv/bin/python prototypes/streaming-diarization/mixer-repair-feasibility/measure_account.py --cert /tmp/own-stack/cert.pem --out /tmp/moss-mixer-replay-new
+```
+
+Start that stack with the existing account-path-differential/run_stack.py recipe,
+its own state directory and port 17862. Do not restart or access the operator's
+17861 database. This replay invokes the decoder; do not confuse it with the
+network-free byte/encoder probes above. Raw captures and a mode-0600 cookie stay
+in the scratch output; results are written after each case.

@@ -1,0 +1,62 @@
+[
+  {
+    "case_id": "discussion_jamie_dimon_180s",
+    "samples": 2880000,
+    "pre_stop_accepted_samples": 2880000,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 3163.716682508563,
+    "decoder_rms": 1585.2731658238747,
+    "largest_analysis_frame_bytes": 16000
+  },
+  {
+    "case_id": "discussion_rtfl_90s",
+    "samples": 1439896,
+    "pre_stop_accepted_samples": 1439896,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 558.1463380211243,
+    "decoder_rms": 279.4551882980373,
+    "largest_analysis_frame_bytes": 16000
+  },
+  {
+    "case_id": "interview_adam_frank_180s",
+    "samples": 2880000,
+    "pre_stop_accepted_samples": 2880000,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 3518.940864590667,
+    "decoder_rms": 1763.3187789138237,
+    "largest_analysis_frame_bytes": 16000
+  },
+  {
+    "case_id": "interview_bill_ackman_60s",
+    "samples": 960000,
+    "pre_stop_accepted_samples": 960000,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 3251.2143886454824,
+    "decoder_rms": 1629.1631395712031,
+    "largest_analysis_frame_bytes": 16000
+  },
+  {
+    "case_id": "interview_keyu_jin_60s",
+    "samples": 960000,
+    "pre_stop_accepted_samples": 960000,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 3519.1201701690475,
+    "decoder_rms": 1763.3919226084804,
+    "largest_analysis_frame_bytes": 16000
+  },
+  {
+    "case_id": "mono_javier_intro_50s",
+    "samples": 800000,
+    "pre_stop_accepted_samples": 800000,
+    "analysis_matches_source": true,
+    "decoder_matches_previous_headroom": true,
+    "source_rms": 2980.3385848744183,
+    "decoder_rms": 1493.4157485471853,
+    "largest_analysis_frame_bytes": 16000
+  }
+]

@@ -1,6 +1,6 @@
 # Mixer repair: two proposed shortcuts fail their necessary tests
 
-**The corrected behavioral candidate is implemented; six-case qualification is pending.** Real-encoder measurement
+**The corrected behavioral candidate is implemented; [six-case measurement](mixer-repair-differential-20260911.md) is complete and does not meet the full target.** Real-encoder measurement
 shows original PCM on the existing short windows still creates speaker 3. A
 terminal-style flush at canonical freeze changes already-committed audio under
 supported timestamp drift. Only an independently reproduced whole-frame-accounting
@@ -65,7 +65,7 @@ The corrected raw-analysis prototype completed Adam before implementation: settl
 The implementation carries bounded analysis PCM alongside existing decoder PCM until canonical commitment. A sole audible lane retains original level; two audible lanes retain their existing coherent mix. Analysis drives speech detection and identity; decoder, draft, rolling, recording and terminal audio keep existing PCM. Explicit observed frame ends remove the successor hold without terminal-style flush. Ingress rejects overlap with a previously sealed end, even after source frames are released. A skewed arrival test also fences the newest explicit frame start before treating a missing peer as a gap.
 ASR retains its PCM gain and decoder; changed endpoint windows can nevertheless
 change WER. Any difference will be reported explicitly, not called unchanged.
-No six-case after result is claimed until a valid behavioral candidate exists.
+The six-case candidate restores reference speaker counts in all cases, but worsens Jamie/RTFL settled DER versus account before and changes immediate WER in Adam/Jamie. Hold from cutover; see the completed differential report.
 
 ## Evidence
 

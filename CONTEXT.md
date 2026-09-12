@@ -97,6 +97,10 @@
   mono runtime still receives its existing single `AudioFrame.sequence`.
 - **Capture timestamp**: Non-negative `capture_timestamp_ns` supplied by the v2
   frame producer for the frame's first PCM sample.
+- **Capture end timestamp**: Producer-observed exclusive end of a completed
+  frame in the same capture-clock domain as its first sample.
+- **Analysis PCM**: Aligned source audio for speech boundaries and speaker
+  evidence, distinct from decoder and recording audio.
 - **Device epoch**: Non-negative `device_epoch` supplied by the v2 frame
   producer to identify a capture-device epoch.
 - **Silent flag**: Exact boolean v2 frame field indicating producer-observed
@@ -126,8 +130,8 @@
   `system` and `microphone` lane frames into canonical 16 kHz mono PCM16 for
   the existing mono runtime.
 - **Sealed lane interval**: Retained lane-frame interval whose end is known
-  from a successor frame's capture timestamp, a discontinuity boundary, or final
-  nominal sealing.
+  from a producer-observed end, a successor frame's capture timestamp, a
+  discontinuity boundary, or final nominal sealing.
 - **Shared mix frontier**: The timestamp frontier through which every active
   lane has sealed input available for mono mixing. Streaming output advances
   only to this frontier.

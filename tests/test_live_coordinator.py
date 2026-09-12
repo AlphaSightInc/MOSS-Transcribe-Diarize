@@ -401,3 +401,24 @@ def test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned
     assert decoder.calls == [((0, 4000), 8000, b'dd')]
     assert not live._analysis_pcm._slices
     assert not live._pcm._slices
+
+
+def test_analysis_retention_uses_existing_admission_bound_and_releases_committed_prefix():
+    from moss_transcribe_diarize.app.live_session import LiveSessionBackpressure
+    live, _, arbiter, _ = coordinator(speech=(True,) * 3)
+    def audio(sequence):
+        return AudioFrame(sequence, b'dd' * 4000, 4000, analysis_pcm=b'rr' * 4000)
+    live.accept_frame(audio(0))
+    live.accept_frame(audio(1))
+    retained = lambda: sum(len(part.pcm) for part in live._analysis_pcm._slices)
+    assert retained() == 16000  # Existing 8,000-sample session admission bound.
+    with pytest.raises(LiveSessionBackpressure):
+        live.accept_frame(audio(2))
+    assert retained() == 16000
+    live.process_work_item(arbiter.next_work())
+    assert retained() == 8000
+    live.accept_frame(audio(2))
+    assert retained() == 16000
+    live.process_work_item(arbiter.next_work())
+    live.process_work_item(arbiter.next_work())
+    assert retained() == 0

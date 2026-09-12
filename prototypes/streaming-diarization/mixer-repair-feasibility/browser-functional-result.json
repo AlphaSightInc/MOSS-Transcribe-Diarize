@@ -1,0 +1,5 @@
+{
+  "error_type": "TimeoutError",
+  "error": "Page.wait_for_function: Timeout 30000ms exceeded.",
+  "scratch_certificate_bypass": true
+}
