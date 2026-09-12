@@ -6,8 +6,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 . "${SCRIPT_DIR}/moss-ops-lib.sh"
 
+# A dry run only prints retention candidates; no wheel/build/service work follows.
+if [ "${1:-}" = "--dry-run" ] || dry_run; then
+  exec python3 "${PROJECT_DIR}/moss_transcribe_diarize/candidate_storage.py" --dry-run --protect "${PROJECT_DIR}"
+fi
+[ "$#" -eq 0 ] || die "usage: stage-account-candidate.sh [--dry-run]"
+python3 "${PROJECT_DIR}/moss_transcribe_diarize/candidate_storage.py"
+
 [ -f "${MOSS_CANDIDATE_WHEEL:-}" ] || die "MOSS_CANDIDATE_WHEEL must name a clean candidate wheel"
-require_cmd /usr/bin/python3.12 cmp git getent uv
+require_cmd /usr/bin/python3.12 cmp git getent uv flock
 
 LINUX_USER_DIR="$(getent passwd "$(id -un)" | cut -d: -f6)"
 RUNTIME_ROOT="${LINUX_USER_DIR}/.local/share/moss-transcribe-diarize"
@@ -15,6 +22,12 @@ SQLITE_PREFIX="${RUNTIME_ROOT}/sqlite-3.53.4"
 RELEASES_DIR="${RUNTIME_ROOT}/account-runtimes"
 CHECKOUTS_DIR="${RUNTIME_ROOT}/candidate-checkouts"
 MANIFESTS_DIR="${RUNTIME_ROOT}/candidate-manifests"
+# Serialize staging/pruning against cutover for the whole build, not just deletion.
+LOCK_ROOT="${LINUX_USER_DIR}/.local/state/moss-transcribe-diarize"
+mkdir -p "${LOCK_ROOT}"
+exec 9>"${LOCK_ROOT}/phase2-cutover.lock"
+flock -n 9 || die "cutover_or_staging_in_progress; staging refused"
+chmod 0600 "${LOCK_ROOT}/phase2-cutover.lock"
 CHECKOUT_STAGE=""
 RELEASE_STAGE=""
 MANIFEST_STAGE=""
@@ -76,6 +89,8 @@ CANDIDATE_RECORD="${CANDIDATE_IDENTITY[4]}"
 RELEASE="${RELEASES_DIR}/${CANDIDATE_SHA}"
 CHECKOUT="${CHECKOUTS_DIR}/${CANDIDATE_SHA}"
 MANIFEST="${MANIFESTS_DIR}/${CANDIDATE_SHA}.json"
+python3 "${PROJECT_DIR}/moss_transcribe_diarize/candidate_storage.py" --prune --lock-fd 9 \
+  --home "${LINUX_USER_DIR}" --protect "${PROJECT_DIR}" --protect "${RELEASE}" --protect "${CHECKOUT}"
 mkdir -p "${RELEASES_DIR}" "${CHECKOUTS_DIR}" "${MANIFESTS_DIR}"
 chmod 0700 "${RELEASES_DIR}" "${CHECKOUTS_DIR}" "${MANIFESTS_DIR}"
 
@@ -270,6 +285,9 @@ artifacts = validated_candidate_artifacts(payload)
 assert artifacts.release == pathlib.Path(sys.argv[3]).resolve()
 PY
 
+# Count the newly constructed runtime in the final retention selection too.
+python3 "${PROJECT_DIR}/moss_transcribe_diarize/candidate_storage.py" --prune --lock-fd 9 \
+  --home "${LINUX_USER_DIR}" --protect "${PROJECT_DIR}" --protect "${RELEASE}" --protect "${CHECKOUT}"
 evidence candidate_sha "${CANDIDATE_SHA}"
 evidence candidate_manifest "${MANIFEST}"
 evidence candidate_state staged_inert

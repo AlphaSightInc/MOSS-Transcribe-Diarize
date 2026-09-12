@@ -3604,3 +3604,30 @@ def test_overload_rejects_terminal_failure_or_any_session_not_finalized(failure)
     else:
         del raw["session_observations"][7]["finalization_status"]
     assert acceptance._validate_overload({"raw": raw}) is False
+
+
+def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
+    root = tmp_path / 'attempt' / 'measurement-workspaces'
+    root.mkdir(parents=True)
+    monkeypatch.setenv('MOSS_ACCEPTANCE_WORK_ROOT', str(root))
+    original_load = acceptance.load_profile
+    original_mkdtemp = acceptance.tempfile.mkdtemp
+    created = []
+
+    def load(*args, **kwargs):
+        profile, errors = original_load(*args, **kwargs)
+        profile['measurements'] = {'deployed': {}, 'pre_admission': {}}
+        return profile, errors
+
+    def mkdtemp(*args, **kwargs):
+        path = original_mkdtemp(*args, **kwargs)
+        created.append(Path(path))
+        return path
+
+    monkeypatch.setattr(acceptance, 'load_profile', load)
+    monkeypatch.setattr(acceptance.tempfile, 'mkdtemp', mkdtemp)
+    # Refused identity skips external commands but still allocates/cleans both roots.
+    test_driver_verdict_counts_wave_commands_including_unmeasured(
+        monkeypatch, tmp_path, wave=1, expected=14, refused=True)
+    assert len(created) == 2
+    assert all(path.parent == root and not path.exists() for path in created)

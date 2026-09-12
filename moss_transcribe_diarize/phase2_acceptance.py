@@ -2384,7 +2384,10 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                 collector_errors.append(f"{layer}_measurement_missing")
                 continue
             workspace = Path(
-                tempfile.mkdtemp(prefix=f"moss-phase2-{layer}-measurement-")
+                tempfile.mkdtemp(
+                    prefix=f"moss-phase2-{layer}-measurement-",
+                    dir=os.environ.get("MOSS_ACCEPTANCE_WORK_ROOT"),
+                )
             ).resolve()
             measurement_workspaces.append(workspace)
             report_path = workspace / "observations.json"

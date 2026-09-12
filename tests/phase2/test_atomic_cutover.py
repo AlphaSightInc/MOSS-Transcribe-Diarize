@@ -52,6 +52,7 @@ def _commit_checkout(path: Path) -> str:
 
 
 def _cutover_fixture(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    monkeypatch.setattr(cutover, "check_space", lambda: [])
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
@@ -515,6 +516,9 @@ def test_qualification_finds_candidate_owned_uv_under_systemd_path(monkeypatch, 
     monkeypatch.setattr(setup, "prepare_acceptance_profile", lambda **kwargs: setup_calls.append(kwargs) or prepared)
     ops.run_qualification(artifacts=artifacts, candidate_sha=fixture["candidate"]["git_sha"], attempt=tmp_path / "attempt")
     assert calls[-1][1]["env"]["PATH"] == f"{artifacts.release}/bin:/usr/bin:/bin"
+    scratch = Path(calls[-1][1]["env"]["MOSS_ACCEPTANCE_WORK_ROOT"])
+    assert scratch.name == "measurement-workspaces" and scratch.is_dir()
+    assert scratch.parent == tmp_path / "attempt"
     assert calls[-2][0] == ("npm", "--prefix", "frontend", "ci")
     assert calls[-2][1]["cwd"] == tmp_path / "attempt/qualification"
     assert calls[-2][1]["check"] is True
@@ -1269,3 +1273,23 @@ def test_failed_phase_preserves_message_in_journal_and_result(monkeypatch, tmp_p
     failure = next(row for row in run.journal.read() if row["phase"] == "failure_observed")
     assert failure["error_message"] == message
     assert json.loads((run.attempt / "result.json").read_text())["error_message"] == message
+
+
+@pytest.mark.parametrize("filesystem", ["root", "windows_c"])
+def test_disk_refusal_precedes_phase1_mutation(monkeypatch, tmp_path, filesystem):
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = FakeCutoverOps(fixture)
+    attempt = tmp_path / 'disk-refused'
+    run = CutoverRun.prepare(profile_path=fixture['profile'], attempt=attempt,
+                             terminal='preadmission', ops=ops)
+    from moss_transcribe_diarize import candidate_storage
+    monkeypatch.setattr(cutover, 'check_space', candidate_storage.check_space)
+    monkeypatch.setattr(candidate_storage.shutil, 'disk_usage',
+                        lambda path: shutil._ntuple_diskusage(100*10**9, 0, (19 if filesystem == 'root' else 20)*10**9))
+    monkeypatch.setattr(candidate_storage, 'is_wsl', lambda: filesystem == 'windows_c')
+    monkeypatch.setattr(candidate_storage, 'windows_free_bytes', lambda: 9*10**9)
+    with pytest.raises(CutoverRefused, match='insufficient_disk_space'):
+        run.run()
+    assert ops.phase1_running and not ops.candidate_running
+    assert not fixture['marker'].exists()
+    assert not run.journal.read()

@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Callable, Mapping, Protocol, Sequence
 
 from .installed_candidate import CandidateArtifacts, validated_candidate_artifacts
+from .candidate_storage import StorageRefused, check_space
 from .phase2_g7_canary import (
     G7_PRODUCTION_ORIGIN,
     run_attended_g7_canary,
@@ -755,6 +756,10 @@ class SystemCutoverOps:
         output = qualification / f"evidence/phase2/wave-3/{stamp}-{candidate_sha[:7]}"
         environment = dict(os.environ)
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        # Large measurement scratch stays in its protected, retention-owned attempt.
+        scratch = attempt / "measurement-workspaces"
+        scratch.mkdir(mode=0o700)
+        environment["MOSS_ACCEPTANCE_WORK_ROOT"] = str(scratch)
         environment["PATH"] = os.pathsep.join(
             (str(artifacts.release / "bin"), environment.get("PATH", os.defpath))
         )
@@ -1176,6 +1181,11 @@ class CutoverRun:
         with self._locked():
             if self.journal.read():
                 raise CutoverRefused("cutover attempt cannot be resumed")
+            try:
+                for observation in check_space():
+                    print(json.dumps(observation), flush=True)
+            except StorageRefused as exc:
+                raise CutoverRefused(str(exc)) from exc
             original = self.ops.capture_original_state()
             if (
                 {row.get("name") for row in original.runtime_views} != {"batch", "live"}
