@@ -20,12 +20,12 @@ Baseline is the retained original `evidence/e2e-feature-verification-20260911/re
 | 2 | File transcription | PASS → **PASS** | [50 s corpus; completed; WER 8.70%](../../evidence/round11-browser-regression-20260911/rebased-head/row-02.json) |
 | 3 | URL transcription | PASS → **PASS** | [URL corpus; completed; WER 8.70%](../../evidence/round11-browser-regression-20260911/rebased-head/row-03.json) |
 | 4 | Live dual-lane capture | PASS → **PASS** | [First visible text 2.339 s; Stop → completed 2.069 s](../../evidence/round11-browser-regression-20260911/rebased-head/row-04.json) |
-| 5 | Speaker naming / default enrolment | PASS → **PASS** | [Both rename entry points; history and export updated](../../evidence/round11-browser-regression-20260911/rebased-head/row-05.json) |
+| 5 | Speaker naming / default enrolment | PASS → **PASS** | [Both rename entry points; history and export updated — removed; inventory](content-boundary-files-20260912.json) |
 | 6 | Five transcript exports | PASS → **PASS** | [MD, TXT, JSON, SRT, VTT checked](../../evidence/round11-browser-regression-20260911/rebased-head/row-06.json) |
 | 7 | Completed audio download | PASS → **PASS** | [50.0 s MP3; decoded successfully](../../evidence/round11-browser-regression-20260911/rebased-head/row-07.json) |
 | 8 | Interrupted capture / partial audio | PASS → **PASS** | [Interrupted status; decodable 11.412 s partial MP3](../../evidence/round11-browser-regression-20260911/rebased-head/row-08.json) |
 | 9 | Both relay summaries | FAIL → **PASS** | [MacStudio and RTX4090: current, validated, rendered summaries](../../evidence/round11-browser-regression-20260911/rebased-head/row-09.json) |
-| 10 | Enrolled speaker recognition | FAIL → **PASS** | [Bank present; visible enrolled name 3.700 s ≤ 4.0 s](../../evidence/round11-browser-regression-20260911/rebased-head/row-10.json) |
+| 10 | Enrolled speaker recognition | FAIL → **PASS** | [Bank present; visible enrolled name 3.700 s ≤ 4.0 s — removed; inventory](content-boundary-files-20260912.json) |
 | 11 | History / selected header | PASS → **PASS** | [Selected title/mode and header visible](../../evidence/round11-browser-regression-20260911/rebased-head/row-11.json) |
 | 12 | Phone layout | PASS → **PASS** | [400 px viewport; scroll width 400 px; anchors visible](../../evidence/round11-browser-regression-20260911/rebased-head/row-12.json) |
 | 13 | 3 s and 20 s origin outages | Later PASS → **PASS** | [Both outages survived; frame sequences continuous; completed/final](../../evidence/round11-browser-regression-20260911/rebased-head/row-13.json) |

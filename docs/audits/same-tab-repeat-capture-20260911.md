@@ -70,9 +70,9 @@ Omit `--rows 14` for all fourteen rows. Use a fresh output directory. Full candi
 
 | Row 14 cycle | Meeting | Server result | UI/export evidence |
 |---:|---|---|---|
-| 1 | `KG9-HjStVvGtqxEVczFIA9Bh` | completed / final; frame sequence 0 | [row-14-cycle-1.png](../../evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-1.png); current meeting in export filename |
-| 2 | `MTQ_bUUn1cyUTnwexgdQhz_i` | completed / final; frame sequence 0 | [row-14-cycle-2.png](../../evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-2.png); current meeting in export filename |
-| 3 | `Ap9X9sSfQhzvtOyVish2bXz5` | completed / final; frame sequence 0 | [row-14-cycle-3.png](../../evidence/same-tab-repeat-capture-20260911/candidate/row-14-cycle-3.png); current meeting in export filename |
+| 1 | `KG9-HjStVvGtqxEVczFIA9Bh` | completed / final; frame sequence 0 | [row-14-cycle-1.png — removed; inventory](content-boundary-files-20260912.json); current meeting in export filename |
+| 2 | `MTQ_bUUn1cyUTnwexgdQhz_i` | completed / final; frame sequence 0 | [row-14-cycle-2.png — removed; inventory](content-boundary-files-20260912.json); current meeting in export filename |
+| 3 | `Ap9X9sSfQhzvtOyVish2bXz5` | completed / final; frame sequence 0 | [row-14-cycle-3.png — removed; inventory](content-boundary-files-20260912.json); current meeting in export filename |
 
 All three were still in history at the end. No reload, replacement page, simulated recovery, automatic chooser retry or Playwright foreground operation occurred between those captures. The deployed capture client performed the focus intervention. Capture-phase attributes and acceptance predicates remain unchanged.
 

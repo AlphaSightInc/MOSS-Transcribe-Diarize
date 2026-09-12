@@ -23,7 +23,7 @@ Real Chromium, corpus `evidence/live-policy-sweep-20260825/corpus/mono_javier_in
 | 13 | Network recovery | PASS | 3 s and 20 s outages survive; both completed/final; frame sequences continuous |
 | 14 | Consecutive same-tab meetings | FAIL in combined run | First cycle blocked before admission: disabled Listening setup; passes independently with three completed/final meetings |
 
-Results, screenshots, downloaded exports/audio and network traces: [combined](../../evidence/mixer-e2e-regression-20260911/e2e/results.json), [independent row 14](../../evidence/mixer-e2e-regression-20260911/row14-alone/results.json). Browser cookies are excluded from committed evidence.
+Results, screenshots, downloaded exports/audio and network traces: [combined — removed; inventory](content-boundary-files-20260912.json), [independent row 14](../../evidence/mixer-e2e-regression-20260911/row14-alone/results.json). Browser cookies are excluded from committed evidence.
 
 ## F3 — failure attribution
 
@@ -38,6 +38,6 @@ Baseline evidence: [results](../../evidence/mixer-e2e-regression-20260911/baseli
 
 ## F4 — measured runner-only intervention
 
-On the repaired candidate, a temporary runner adds only a conditional wait for `[data-capture-phase=terminal]` when setup sees `stopping`, using the same 30-second terminal deadline already used inside row 14. Then it executes the normal Reset click. **Rows 13 and 14 both PASS**: both outages survive and all three consecutive meetings complete/finalize, remain in history, and export the correct current transcript. Trace shows terminal/Reset present → idle on every cycle. [Results](../../evidence/mixer-e2e-regression-20260911/settled-transition/results.json), [temporary patch](../../evidence/mixer-e2e-regression-20260911/settled.py.patch).
+On the repaired candidate, a temporary runner adds only a conditional wait for `[data-capture-phase=terminal]` when setup sees `stopping`, using the same 30-second terminal deadline already used inside row 14. Then it executes the normal Reset click. **Rows 13 and 14 both PASS**: both outages survive and all three consecutive meetings complete/finalize, remain in history, and export the correct current transcript. Trace shows terminal/Reset present → idle on every cycle. [Results](../../evidence/mixer-e2e-regression-20260911/settled-transition/results.json), [temporary patch — removed; inventory](content-boundary-files-20260912.json).
 
 No new mixer regression demonstrated. Preserve the original combined 9/10 result; do not relabel it 10/10. The independent row-14 PASS and 13→14 intervention PASS qualify the underlying behavior and isolate the existing harness handoff gap. The nine other requested rows retained PASS versus the previous 14/14 run. No product code or committed harness changes were made. Test instance state and full local logs remain under `/tmp/moss-mixer-regression-20260911`; only owned stack processes were stopped after measurement.
