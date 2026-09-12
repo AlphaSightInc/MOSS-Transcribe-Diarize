@@ -1,0 +1,272 @@
+[
+  {
+    "lane": "microphone",
+    "startFrame": 8128,
+    "file_offset_samples": 8112,
+    "correlation": 0.9976828046391137
+  },
+  {
+    "lane": "system",
+    "startFrame": 9152,
+    "file_offset_samples": 8441,
+    "correlation": 0.9682403345645295
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 16128,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "system",
+    "startFrame": 17152,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 24128,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "system",
+    "startFrame": 25152,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 32128,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "system",
+    "startFrame": 33152,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 40128,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "system",
+    "startFrame": 41152,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 48128,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "system",
+    "startFrame": 49152,
+    "file_offset_samples": 0,
+    "correlation": 0.0
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 56128,
+    "file_offset_samples": 109050,
+    "correlation": 0.21385960999533976
+  },
+  {
+    "lane": "system",
+    "startFrame": 57152,
+    "file_offset_samples": 148244,
+    "correlation": 0.15452346525706737
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 64128,
+    "file_offset_samples": 64148,
+    "correlation": 0.9945428300146464
+  },
+  {
+    "lane": "system",
+    "startFrame": 65152,
+    "file_offset_samples": 64914,
+    "correlation": 0.9973597429568789
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 72128,
+    "file_offset_samples": 72148,
+    "correlation": 0.9907480899871575
+  },
+  {
+    "lane": "system",
+    "startFrame": 73152,
+    "file_offset_samples": 72914,
+    "correlation": 0.9939219176337115
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 80128,
+    "file_offset_samples": 80148,
+    "correlation": 0.9842482616365974
+  },
+  {
+    "lane": "system",
+    "startFrame": 81152,
+    "file_offset_samples": 80914,
+    "correlation": 0.992098878449622
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 88128,
+    "file_offset_samples": 88148,
+    "correlation": 0.9870233035849808
+  },
+  {
+    "lane": "system",
+    "startFrame": 89152,
+    "file_offset_samples": 88914,
+    "correlation": 0.9933855105161562
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 96128,
+    "file_offset_samples": 96148,
+    "correlation": 0.9963132943093658
+  },
+  {
+    "lane": "system",
+    "startFrame": 97152,
+    "file_offset_samples": 96914,
+    "correlation": 0.9980910366808807
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 104128,
+    "file_offset_samples": 155670,
+    "correlation": 0.26497769179727954
+  },
+  {
+    "lane": "system",
+    "startFrame": 105152,
+    "file_offset_samples": 97153,
+    "correlation": 0.20344418663848607
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 112128,
+    "file_offset_samples": 112148,
+    "correlation": 0.9903188535712413
+  },
+  {
+    "lane": "system",
+    "startFrame": 113152,
+    "file_offset_samples": 112914,
+    "correlation": 0.994969936311601
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 120128,
+    "file_offset_samples": 182226,
+    "correlation": 0.15872773854943767
+  },
+  {
+    "lane": "system",
+    "startFrame": 121152,
+    "file_offset_samples": 123604,
+    "correlation": 0.1917166097264795
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 128128,
+    "file_offset_samples": 128148,
+    "correlation": 0.991200765139139
+  },
+  {
+    "lane": "system",
+    "startFrame": 129152,
+    "file_offset_samples": 128914,
+    "correlation": 0.9955312112435878
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 136128,
+    "file_offset_samples": 136148,
+    "correlation": 0.9942017388203463
+  },
+  {
+    "lane": "system",
+    "startFrame": 137152,
+    "file_offset_samples": 136914,
+    "correlation": 0.997277673290006
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 144128,
+    "file_offset_samples": 148148,
+    "correlation": 0.16153664386493094
+  },
+  {
+    "lane": "system",
+    "startFrame": 145152,
+    "file_offset_samples": 147168,
+    "correlation": 0.1773016754210863
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 152128,
+    "file_offset_samples": 152148,
+    "correlation": 0.9958413962602528
+  },
+  {
+    "lane": "system",
+    "startFrame": 153152,
+    "file_offset_samples": 152914,
+    "correlation": 0.9978232777469165
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 160128,
+    "file_offset_samples": 160148,
+    "correlation": 0.993302379984914
+  },
+  {
+    "lane": "system",
+    "startFrame": 161152,
+    "file_offset_samples": 160914,
+    "correlation": 0.9973516393718685
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 168128,
+    "file_offset_samples": 168148,
+    "correlation": 0.990935418102658
+  },
+  {
+    "lane": "system",
+    "startFrame": 169152,
+    "file_offset_samples": 168914,
+    "correlation": 0.9954601095096265
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 176128,
+    "file_offset_samples": 176148,
+    "correlation": 0.9965173933546908
+  },
+  {
+    "lane": "system",
+    "startFrame": 177152,
+    "file_offset_samples": 176914,
+    "correlation": 0.9990308719250511
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 184128,
+    "file_offset_samples": 184148,
+    "correlation": 0.9940612710739918
+  }
+]

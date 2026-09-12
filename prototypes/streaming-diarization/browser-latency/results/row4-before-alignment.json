@@ -1,0 +1,50 @@
+[
+  {
+    "lane": "microphone",
+    "startFrame": 8384,
+    "file_offset_samples": 8308,
+    "correlation": 0.9934627245073018
+  },
+  {
+    "lane": "system",
+    "startFrame": 9408,
+    "file_offset_samples": 8714,
+    "correlation": 0.9998022547962238
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 16384,
+    "file_offset_samples": 16308,
+    "correlation": 0.9948095129209261
+  },
+  {
+    "lane": "system",
+    "startFrame": 17408,
+    "file_offset_samples": 16714,
+    "correlation": 0.9998775071443051
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 24384,
+    "file_offset_samples": 24308,
+    "correlation": 0.9861466996744095
+  },
+  {
+    "lane": "system",
+    "startFrame": 25408,
+    "file_offset_samples": 24714,
+    "correlation": 0.9992132950194016
+  },
+  {
+    "lane": "microphone",
+    "startFrame": 32384,
+    "file_offset_samples": 32308,
+    "correlation": 0.9867842086234542
+  },
+  {
+    "lane": "system",
+    "startFrame": 33408,
+    "file_offset_samples": 32714,
+    "correlation": 0.9990527382367508
+  }
+]
