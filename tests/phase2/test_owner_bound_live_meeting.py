@@ -1435,6 +1435,11 @@ def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
         target_meeting = client.get(f"/api/meetings/{target}").json()
         assert target_meeting["status"] == "interrupted"
         assert target_meeting["transcript"] == admitted_document
+        public_events = client.get(f"/api/live/sessions/{target}/events").json()["events"]
+        assert {
+            event["payload"]["item_id"]
+            for event in public_events if event["kind"] == "canonical_discarded"
+        } == queued_canonical_ids
         assert target_meeting["audio"]["state"] in {"partial", "unavailable"}
         assert client.get(f"/api/meetings/{peer}").json()["status"] == "active"
         assert client.post(

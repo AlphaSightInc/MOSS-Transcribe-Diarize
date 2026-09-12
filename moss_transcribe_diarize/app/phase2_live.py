@@ -927,7 +927,8 @@ class Phase2LiveMeetings:
                     for event in terminal_events
                     if event.seq > binding.public_event_high_water
                     and event.kind
-                    in {"session_aborted", "terminal_failure", "session_tape_released"}
+                    in {"session_aborted", "terminal_failure", "session_tape_released",
+                        "canonical_discarded"}
                 )
                 binding.public_events = binding.public_events + new_events
                 if new_events:
