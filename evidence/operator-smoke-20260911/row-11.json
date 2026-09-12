@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "scope": "empty_workspace",
+  "empty_message_visible": true,
+  "artifact": "empty-history.json",
+  "selected_header_not_exercised": true,
+  "screenshot": "row-11.png",
+  "status": "PASS",
+  "seconds": 0.083,
+  "network": "network.jsonl",
+  "row": 11
+}

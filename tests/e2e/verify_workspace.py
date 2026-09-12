@@ -2,7 +2,8 @@
 Run: .venv/bin/python tests/e2e/verify_workspace.py --corpus /path/to/mono_javier_intro_50s --output /tmp/moss-e2e-20260911
 Requires ffmpeg/ffprobe and Playwright Chrome/Chromium. Exit 77 = browser unavailable.
 Artifacts may contain corpus speech; report/network metadata never include transcript bodies.
---rows resumes selected checks using saved test cookies/settings; completed rows 2/3/4 never rerun.
+--rows selects checks in a fresh workspace. Evidence output must be empty.
+System TLS trust is the default; local self-signed TLS requires an explicit loopback-only flag.
 """
 from __future__ import annotations
 import argparse
@@ -57,7 +58,9 @@ class Harness:
     def __init__(self, args):
         self.args = args
         self.out = Path(args.output).resolve(); self.out.mkdir(parents=True, exist_ok=True)
-        self.state = json.loads((self.out/'results.json').read_text()) if (self.out/'results.json').exists() else {'rows': {}, 'meetings': {}}
+        if any(self.out.iterdir()):
+            raise ValueError('Use an empty --output directory; existing evidence and browser state are never reused')
+        self.state = {'rows': {}, 'meetings': {}, 'base': args.base}
         self.row = 0; self.seq = 0; self.page = None
         self.network = (self.out/'network.jsonl').open('a')
         self.pending = set()
@@ -281,7 +284,12 @@ class Harness:
         return path
 
     async def exports(self):
-        ident=self.state['meetings'].get('live') or self.state['meetings']['file']; await self.select(ident)
+        ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings'].get('url')
+        if not ident:
+            assert not self.args.rows & {2,3,4}, 'Selected transcript-producing row did not create a meeting'
+            disabled=await self.page.get_by_role('button',name='Export transcript',exact=True).is_disabled()
+            return {'ok':disabled, 'scope':'empty_workspace', 'export_disabled':disabled, 'populated_export_not_exercised':True}
+        await self.select(ident)
         results={}
         for fmt in ('md','txt','json','srt','vtt'):
             path=await self.export(fmt); text=path.read_text(); result={'bytes':path.stat().st_size,'artifact':path.name,'ok':bool(text.strip())}
@@ -310,7 +318,7 @@ class Harness:
     async def summaries(self):
         models=(await self.api('/api/llm/models'))['body']['data']
         if not models: return {'ok':False,'reason':'No configured relay models'}
-        ident=self.state['meetings'].get('live') or self.state['meetings']['file']
+        ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings']['url']
         await self.select(ident)
         cancel=self.page.get_by_role('button',name='Cancel summary',exact=True)
         if await cancel.count():
@@ -336,7 +344,14 @@ class Harness:
                 'fallback_note':'Both configured models exercised directly; natural 502 fallback recorded if produced, never injected.'}
 
     async def history(self):
-        ident=self.state['meetings'].get('file') or self.state['meetings']['live']; await self.select(ident)
+        ident=self.state['meetings'].get('file') or self.state['meetings'].get('live') or self.state['meetings'].get('url')
+        if not ident:
+            assert not self.args.rows & {2,3,4}, 'Selected transcript-producing row did not create a meeting'
+            meetings=await self.api('/api/meetings')
+            write(self.out/'empty-history.json',meetings)
+            empty=await self.page.get_by_role('region',name='Meeting history',exact=True).get_by_text('No meetings yet.',exact=True).is_visible()
+            return {'ok':empty and meetings['status']==200 and meetings['body']['meetings']==[], 'scope':'empty_workspace', 'empty_message_visible':empty, 'artifact':'empty-history.json', 'selected_header_not_exercised':True}
+        await self.select(ident)
         meeting=(await self.api('/api/meetings/'+ident))['body']
         expected=await self.page.locator(f'.account-history-panel [data-meeting-card="{ident}"] .history-card-title').inner_text()
         title=await self.page.locator('.session-title').inner_text(); mode=await self.page.locator('.session-chip').inner_text()
@@ -347,7 +362,7 @@ class Harness:
                 'title_matches':expected==title,'mode':mode,'panel_box':box,'selected':ident}
 
     async def phone(self):
-        ident=self.state['meetings'].get('live') or self.state['meetings'].get('file')
+        ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings'].get('url')
         if ident: await self.select(ident)
         await self.page.set_viewport_size({'width':400,'height':900})
         await self.page.get_by_role('link',name='Meeting history',exact=True).click()
@@ -590,31 +605,30 @@ class Harness:
                 write(self.out/'skip.json',{'status':'SKIP','reason':str(exc)})
                 self.network.close()
                 return 77
-            self.wav=(Path(self.args.corpus)/'audio.wav').resolve()
-            self.reference=' '.join(json.loads(s)['text'] for s in (Path(self.args.corpus)/'reference.jsonl').read_text().splitlines())
-            self.mp3=self.out/'source.mp3'
-            if not self.mp3.exists(): subprocess.run(['ffmpeg','-v','error','-i',str(self.wav),'-ac','1','-ar','16000','-codec:a','libmp3lame',str(self.mp3)],check=True)
-            # A separate real browser tab supplies shared audio; no media API replacement.
-            (self.out/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
-            wavlink=self.out/'source.wav'
-            if not wavlink.exists(): wavlink.symlink_to(self.wav)
-            server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.out)))
-            threading.Thread(target=server.serve_forever,daemon=True).start(); self.media=f'http://127.0.0.1:{server.server_port}'
-            state_path=self.out/'browser-state.json'; self.resumed=state_path.exists()
-            options=dict(headless=True,ignore_default_args=['--mute-audio'],downloads_path=str(self.out/'browser-downloads'),
-                args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture',f'--use-file-for-fake-audio-capture={self.wav}',
-                      '--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required'])
+            server=None
+            options=dict(headless=True,downloads_path=str(self.out/'browser-downloads'))
+            if self.args.corpus:
+                self.wav=(Path(self.args.corpus)/'audio.wav').resolve()
+                self.reference=' '.join(json.loads(s)['text'] for s in (Path(self.args.corpus)/'reference.jsonl').read_text().splitlines())
+                self.mp3=self.out/'source.mp3'
+                if not self.mp3.exists(): subprocess.run(['ffmpeg','-v','error','-i',str(self.wav),'-ac','1','-ar','16000','-codec:a','libmp3lame',str(self.mp3)],check=True)
+                # A separate real browser tab supplies shared audio; no media API replacement.
+                (self.out/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
+                wavlink=self.out/'source.wav'
+                if not wavlink.exists(): wavlink.symlink_to(self.wav)
+                server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.out)))
+                threading.Thread(target=server.serve_forever,daemon=True).start(); self.media=f'http://127.0.0.1:{server.server_port}'
+                options.update(ignore_default_args=['--mute-audio'],args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture',f'--use-file-for-fake-audio-capture={self.wav}','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required'])
+            self.resumed=False
             browser=await p.chromium.launch(executable_path=str(chrome),channel='chromium',**options)
-            self.context=await browser.new_context(ignore_https_errors=True,accept_downloads=True,viewport={'width':1440,'height':1100},storage_state=str(state_path) if state_path.exists() else None)
+            self.context=await browser.new_context(ignore_https_errors=self.args.allow_local_self_signed,accept_downloads=True,viewport={'width':1440,'height':1100})
             try:
                 self.context.set_default_timeout(12000)
-                if self.args.new_workspace:
-                    await self.context.clear_cookies()
-                    self.state.setdefault('previous_workspaces',[]).append(dict(self.state['meetings']))
-                    self.state['meetings']={}
-                self.page=self.attach(await self.context.new_page()); self.source=await self.context.new_page(); await self.source.goto(self.media+'/source.html')
-                await self.source.locator('audio').evaluate('a=>a.play()'); await self.page.bring_to_front()
-                rows=set(map(int,self.args.rows.split(','))) if self.args.rows else set(range(1,15))
+                self.page=self.attach(await self.context.new_page())
+                if server:
+                    self.source=await self.context.new_page(); await self.source.goto(self.media+'/source.html')
+                    await self.source.locator('audio').evaluate('a=>a.play()'); await self.page.bring_to_front()
+                rows=self.args.rows
                 if 1 in rows: await self.check(1,self.bootstrap)
                 else: await self.open()
                 for n,fn in [(2,self.file),(3,lambda:self.file(True)),(4,self.live),(5,self.enrollment),(6,self.exports),(7,lambda:self.audio(self.state['meetings']['file'])),(9,self.summaries),(11,self.history),(12,self.phone),(10,self.bank),(8,self.interrupted),(13,self.network_outages),(14,self.consecutive_meetings)]:
@@ -625,12 +639,52 @@ class Harness:
                 return int(any(r['status']!='PASS' for r in self.state['rows'].values()))
             finally:
                 if self.pending: await asyncio.gather(*self.pending,return_exceptions=True)
-                await self.context.close(); await browser.close(); server.shutdown(); self.network.close()
+                await self.context.close(); await browser.close()
+                if server: server.shutdown()
+                self.network.close()
+
+
+def parse_args(argv=None):
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--base',default='https://127.0.0.1:17861')
+    parser.add_argument('--new-workspace',action='store_true',help=argparse.SUPPRESS)  # Every run is now fresh.
+    parser.add_argument('--allow-local-self-signed',action='store_true',help='Bypass TLS only for an isolated loopback test stack')
+    parser.add_argument('--corpus',help='Directory containing audio.wav and reference.jsonl; required for audio rows')
+    parser.add_argument('--output',required=True,help='New or empty evidence directory')
+    parser.add_argument('--rows',default=','.join(map(str,range(1,15))),help='Comma-separated row numbers 1–14; prerequisites must also be selected')
+    args=parser.parse_args(argv)
+    try:
+        args.rows=set(map(int,args.rows.split(',')))
+        if not args.rows or not args.rows<=set(range(1,15)): raise ValueError()
+    except ValueError: parser.error('--rows must contain numbers 1–14')
+    origin=urlsplit(args.base)
+    if origin.scheme not in ('http','https') or not origin.hostname or origin.username or origin.password:
+        parser.error('--base must be an HTTP(S) origin without credentials')
+    if args.allow_local_self_signed and origin.hostname not in ('localhost','127.0.0.1','::1'):
+        parser.error('--allow-local-self-signed is restricted to loopback')
+    if args.rows-{1,6,11,12} and not args.corpus:
+        parser.error('--corpus is required for audio rows')
+    for row,required in {5:{4},7:{2},8:{4,10},10:{4}}.items():
+        if row in args.rows and not required<=args.rows: parser.error(f'Row {row} requires rows {sorted(required)}')
+    if 9 in args.rows and not args.rows & {2,3,4}:
+        parser.error('Row 9 requires a transcript from row 2, 3, or 4')
+    return args
+
+
+def summary(state, rows):
+    statuses=[(n,state['rows'].get(str(n),{}).get('status','FAIL')) for n in sorted(rows)]
+    passed=sum(status=='PASS' for _,status in statuses)
+    return ' | '.join(f'{n}:{status}' for n,status in statuses)+f' | total {passed}/{len(rows)} PASS, {len(rows)-passed} FAIL'
+
+
+def main(argv=None):
+    args=parse_args(argv)
+    harness=Harness(args)
+    try:
+        return asyncio.run(harness.run())
+    finally:
+        print(summary(harness.state,args.rows),flush=True)
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--base',default='https://127.0.0.1:17861')
-    parser.add_argument('--new-workspace',action='store_true',help='Fresh test workspace without resetting the stack database; prior evidence retained')
-    parser.add_argument('--corpus',required=True); parser.add_argument('--output',required=True); parser.add_argument('--rows')
-    raise SystemExit(asyncio.run(Harness(parser.parse_args()).run()))
+    raise SystemExit(main())

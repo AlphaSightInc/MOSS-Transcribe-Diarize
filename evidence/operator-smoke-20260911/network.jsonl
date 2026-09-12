@@ -1,0 +1,18 @@
+{"t": 1789179818.5707269, "row": 1, "method": "GET", "path": "/", "status": 200}
+{"t": 1789179818.586147, "row": 1, "method": "GET", "path": "/api/auth/session", "status": 401}
+{"t": 1789179818.5876129, "row": 1, "method": "POST", "path": "/api/workspace/bootstrap", "status": 200}
+{"t": 1789179818.589142, "row": 1, "method": "GET", "path": "/api/auth/session", "status": 200}
+{"t": 1789179818.5922801, "row": 1, "method": "GET", "path": "/", "status": 200}
+{"t": 1789179818.598315, "row": 1, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789179818.61104, "row": 1, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789179818.634611, "row": 1, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789179818.6349802, "row": 1, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789179818.6352708, "row": 1, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789179818.6355321, "row": 1, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789179818.6515431, "row": 1, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789179818.651854, "row": 1, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789179818.652222, "row": 1, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789179818.6595159, "row": 1, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789179818.659675, "row": 1, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789179818.839693, "row": 11, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789179819.067026, "row": 0, "page_closed": true}

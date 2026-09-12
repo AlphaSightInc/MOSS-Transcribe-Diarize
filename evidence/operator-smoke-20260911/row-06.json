@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "scope": "empty_workspace",
+  "export_disabled": true,
+  "populated_export_not_exercised": true,
+  "screenshot": "row-06.png",
+  "status": "PASS",
+  "seconds": 0.074,
+  "network": "network.jsonl",
+  "row": 6
+}
