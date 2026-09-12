@@ -69,7 +69,9 @@ installed, so this is not a falsely precise additive attribution of every millis
 
 `captureClient.makeV2Frame` requires exactly descriptor-sized frames. Changing only the
 first frame would violate that contract. No frame size, lane, mixer, canonical-span,
-identity or draft-lane setting was changed. The local stack's draft lane was off; this
+identity or draft-lane setting was changed. The local stack's clean worktree was pinned to `b76b5b5c`; its service was not restarted.
+The baseline browser bundle was built from `24197fdd`; the after bundle differed only
+in polling cadence. The local stack's draft lane was off; this
 does not measure the host's proposed draft-on configuration.
 
 **F4 — First-any-text can be a misleading latency metric.**
@@ -80,7 +82,10 @@ first appearance of “the following”. Both runs ultimately completed with cor
 The earlier unvalidated fixture observations of about 945 → 699 ms were therefore
 rejected as speech-latency evidence. The later validated pair gives about 3.29 → 3.28 s.
 This is a concrete decoder/preview content finding, not evidence that the polling patch
-causes it. No decoder policy or acceptance predicate was weakened or changed.
+causes it. No decoder policy or acceptance predicate was weakened or changed. The subsequent
+rebase included `2c285f4e`, which handles empty speechless outputs; it does not by itself
+establish a remedy for this nonempty refusal. These captures do not measure that newer
+server implementation.
 The fixture's copied reference is only a harness prerequisite; it is not a WER result.
 
 **F5 — Required row 4 rerun, retained without attributing provider recovery to the patch.**
@@ -112,9 +117,10 @@ hidden during 2.5 seconds, not a maximum request count. The new deterministic te
 acceptance selector changed. Focused browser/preview tests: 14 passed. This is not a
 claim that the entire host browser qualification ran locally.
 
-After rebasing over concurrent summary changes and rebuilding generated assets:
-**1,366 Python tests passed, 37 subtests passed, 2 existing skips; 196 frontend tests
-passed.** Initial pre-rebase suite: 1,355 / 196, same skips and subtests. Typecheck passed.
+Final suite after rebasing over `2c285f4e` and `e786a6e2`: **1,380 Python tests passed,
+37 subtests passed, 2 existing skips; 196 frontend tests passed.** Generated assets
+were rebuilt after the earlier summary-change rebase. Intermediate Python suite: 1,366;
+initial pre-rebase suite: 1,355. Same skips/subtests throughout. Typecheck passed.
 No local stack restart, database reset, host operation, or production-branch push.
 
 Measurement tools, content-free traces and reproduction instructions:
