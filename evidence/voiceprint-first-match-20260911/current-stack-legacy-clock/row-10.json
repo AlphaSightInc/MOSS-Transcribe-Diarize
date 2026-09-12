@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "expected_name": "E2E Morgan",
+  "bank_contains_name": true,
+  "recognition_seconds": 4.338445749599487,
+  "meeting": "_78Z_57hDkMEtCCCD0MetLXG",
+  "screenshot": "row-10.png",
+  "status": "FAIL",
+  "seconds": 6.956,
+  "network": "network.jsonl",
+  "row": 10
+}

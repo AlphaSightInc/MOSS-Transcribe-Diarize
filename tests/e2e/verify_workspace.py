@@ -199,7 +199,7 @@ class Harness:
             await self.page.locator('dialog[open]').wait_for(state='hidden')
             await asyncio.sleep(.3)
             labels=await self.page.locator('.utt-speaker-label, .legend-chip-name').all_text_contents()
-            meeting=(await self.api('/api/meetings/'+self.state['meetings'].get('enrollment_live',self.state['meetings']['live'])))['body']
+            meeting=(await self.api('/api/meetings/'+(self.state['meetings'].get('enrollment_live') or self.state['meetings']['live'])))['body']
             segments=(meeting.get('transcript') or {}).get('segments',[])
             selected=[s for s in segments if s.get('speaker_entity_id')==body.get('speaker_id')]
             self.event({'rename_ack':{'name':name,'http':response.status,'speaker_id':body.get('speaker_id'),'enrollment':body.get('enrollment')}})
@@ -353,12 +353,33 @@ class Harness:
         await asyncio.sleep(.3)
         name=self.state.get('named','E2E Rowan'); enrolled=await bank.locator('[data-voiceprint-id]').filter(has_text=name).count()>0
         await self.snapshot(10,'-bank')
-        await self.setup_live(); ident=await self.start_live('second_live')
+        await self.setup_live()
+        # Timestamp the DOM mutation itself; locator retries add up to a polling interval.
+        await self.page.evaluate('''name => {
+          const result = window.__mossVoiceMatchTiming = {started: null, matched: null};
+          const clicked = event => {
+            if (event.target.closest('button')?.textContent.trim() === 'Start capture') {
+              result.started = performance.now(); document.removeEventListener('click', clicked, true);
+            }
+          };
+          document.addEventListener('click', clicked, true);
+          const observer = new MutationObserver(() => {
+            if (result.started === null) return;
+            const found = [...document.querySelectorAll('.utt-speaker-label')]
+              .some(el => el.getClientRects().length && el.textContent.includes(name));
+            if (found) { result.matched = performance.now(); observer.disconnect(); }
+          });
+          observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true});
+          window.__mossVoiceMatchCleanup = () => { observer.disconnect(); document.removeEventListener('click', clicked, true); };
+        }''', name)
+        ident=await self.start_live('second_live')
         try:
-            await self.page.locator('.utt-speaker-label').filter(has_text=name).first.wait_for(timeout=30000)
-            latency=time.monotonic()-self.started
+            await self.page.wait_for_function('window.__mossVoiceMatchTiming.matched !== null', timeout=30000)
+            timing=await self.page.evaluate('window.__mossVoiceMatchTiming')
+            latency=(timing['matched']-timing['started'])/1000
         except Exception: latency=None
-        return {'ok':enrolled and latency is not None and latency<=3,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'meeting':ident}
+        finally: await self.page.evaluate('window.__mossVoiceMatchCleanup()')
+        return {'ok':enrolled and latency is not None and latency<=3,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
 
     async def interrupted(self):
         ident=self.state['meetings'].get('second_live') or self.state['meetings']['enrollment_live']

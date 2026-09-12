@@ -1,0 +1,30 @@
+{
+  "asset_bytes": 79158228,
+  "results": [
+    {
+      "phase": "before1",
+      "seconds": 0.3405927908606827,
+      "hash_calls": 1,
+      "hash_seconds": 0.033475959207862616
+    },
+    {
+      "phase": "before2",
+      "seconds": 0.343579167034477,
+      "hash_calls": 1,
+      "hash_seconds": 0.03436233336105943
+    },
+    {
+      "phase": "cached1",
+      "seconds": 0.34441704116761684,
+      "hash_calls": 1,
+      "hash_seconds": 0.035105207934975624
+    },
+    {
+      "phase": "cached2",
+      "seconds": 0.30683975014835596,
+      "hash_calls": 0,
+      "hash_seconds": 0
+    }
+  ],
+  "max_vector_difference": 0.0
+}

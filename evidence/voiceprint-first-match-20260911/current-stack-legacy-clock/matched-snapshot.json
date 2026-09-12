@@ -1,0 +1,193 @@
+{
+  "snapshot": {
+    "session_id": "_78Z_57hDkMEtCCCD0MetLXG",
+    "descriptor": {
+      "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+      "provider_name": "moss-rtx-webrtc-wespeaker",
+      "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+      "provider_manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+      "config_hashes": {
+        "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+        "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+        "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+        "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+      },
+      "bounds": {
+        "max_frame_samples": 16000,
+        "max_queue_depth": 16,
+        "max_retained_samples": 960000,
+        "max_identity_speakers": 16,
+        "max_events": 1000,
+        "hard_cap_samples": 40000,
+        "stop_drain_deadline_seconds": 5,
+        "max_tape_bytes": 9600000
+      },
+      "schema_version": 1,
+      "live_protocol_version": "moss-live-service.v1",
+      "live_protocol": {
+        "protocol": "moss-live-service.v2",
+        "min_protocol_version": 2,
+        "max_protocol_version": 2,
+        "capabilities": {
+          "lanes": true,
+          "binary": false,
+          "idempotent_frames": true,
+          "resumable": true
+        }
+      },
+      "sample_rate": 16000,
+      "frame_samples": 8000,
+      "feature_enabled": true
+    },
+    "session": {
+      "status": "active",
+      "epoch": 0,
+      "version": 17,
+      "accepted_samples": 62976,
+      "accounted_samples": 40000,
+      "retained_samples": 22976,
+      "committed_samples": 40000,
+      "committed_prefix_hash": "3df5e53573aabc381dda8da1d81075d0e3a65819c37fe45d474715ba011501a7",
+      "identity_snapshot": {
+        "version": 1,
+        "canonical_speakers": [
+          "speaker-0001"
+        ],
+        "diagnostics": [
+          [
+            "schema_version",
+            "1"
+          ],
+          [
+            "status",
+            "prepared"
+          ],
+          [
+            "reason",
+            "ok"
+          ],
+          [
+            "span_id",
+            "0"
+          ],
+          [
+            "span_samples",
+            "0:40000"
+          ],
+          [
+            "local_speakers",
+            "S01"
+          ],
+          [
+            "assignments",
+            "S01->speaker-0001"
+          ],
+          [
+            "deferred_births",
+            ""
+          ],
+          [
+            "canonical_speakers",
+            "speaker-0001"
+          ]
+        ]
+      },
+      "committed": [
+        {
+          "span_id": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "transcript": "[0.26][S01]The following is a conversation with Javier[2.46]",
+          "prefix_hash": "3df5e53573aabc381dda8da1d81075d0e3a65819c37fe45d474715ba011501a7",
+          "identity_snapshot_version": 1,
+          "revised_transcript": null
+        }
+      ],
+      "provisional": null,
+      "next_frame_sequence": 15,
+      "frozen_until_sample": 40000,
+      "pending_span_ids": [],
+      "failure_reason": null,
+      "label_revision_version": 0,
+      "text_revision_version": 0,
+      "canonical_through_sample": 0,
+      "effective_transcript": [
+        {
+          "start_sample": 4160,
+          "end_sample": 39360,
+          "text": "The following is a conversation with Javier",
+          "canonical_speaker": "speaker-0001",
+          "authority": "provisional"
+        }
+      ],
+      "finalization_status": "not_started"
+    },
+    "pending_work_items": 0,
+    "terminal_failure": null,
+    "schema_version": 1
+  },
+  "unchanged": false,
+  "v2_session": {
+    "status": "active",
+    "terminal_reason": null,
+    "lanes": {
+      "system": {
+        "lane": "system",
+        "next_sequence": 9,
+        "accepted_samples": 72000,
+        "accounted_samples": 56000,
+        "failed_samples": 0,
+        "retained_samples": 16000,
+        "current_device_epoch": 1,
+        "pruned_through_sequence": -1,
+        "health": "active",
+        "failure_code": null
+      },
+      "microphone": {
+        "lane": "microphone",
+        "next_sequence": 9,
+        "accepted_samples": 72000,
+        "accounted_samples": 64000,
+        "failed_samples": 0,
+        "retained_samples": 8000,
+        "current_device_epoch": 1,
+        "pruned_through_sequence": -1,
+        "health": "active",
+        "failure_code": null
+      }
+    }
+  },
+  "helper_presence": {
+    "schema": "moss-live-helper-health.v1",
+    "instance_id": "browser-31144f83-7a32-47a0-bc35-fb0d8b506b18",
+    "sequence": 9,
+    "sent_monotonic_ns": 5579400000,
+    "last_seen_monotonic_ns": 2273788182326458,
+    "helper_version": "moss-web/1",
+    "state": "capturing",
+    "lanes": {
+      "microphone": {
+        "state": "capturing",
+        "device_epoch": 1,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": null
+      },
+      "system": {
+        "state": "capturing",
+        "device_epoch": 1,
+        "dropped_frames": 0,
+        "discontinuities": 0,
+        "failure_code": null
+      }
+    }
+  },
+  "meeting_transcript_version": 1,
+  "persistence_failure": null,
+  "speaker_labels": {
+    "speaker-0001": "E2E Morgan"
+  },
+  "speaker_label_revision": 1,
+  "capture_phase": "recording",
+  "status_line": "Capturing microphone and shared audio."
+}

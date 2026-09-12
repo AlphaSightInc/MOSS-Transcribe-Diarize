@@ -1,0 +1,242 @@
+{
+  "events": [
+    {
+      "seq": 0,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "session_created",
+      "snapshot_version": 0,
+      "payload": {},
+      "schema_version": 1
+    },
+    {
+      "seq": 1,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 1,
+      "payload": {
+        "sequence": 0,
+        "start_sample": 0,
+        "end_sample": 6848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 2,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 2,
+      "payload": {
+        "sequence": 1,
+        "start_sample": 6848,
+        "end_sample": 8000,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 3,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 3,
+      "payload": {
+        "sequence": 2,
+        "start_sample": 8000,
+        "end_sample": 14848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 4,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 4,
+      "payload": {
+        "sequence": 3,
+        "start_sample": 14848,
+        "end_sample": 16000,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 5,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 5,
+      "payload": {
+        "sequence": 4,
+        "start_sample": 16000,
+        "end_sample": 22848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 6,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 6,
+      "payload": {
+        "sequence": 5,
+        "start_sample": 22848,
+        "end_sample": 24000,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 7,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 7,
+      "payload": {
+        "sequence": 6,
+        "start_sample": 24000,
+        "end_sample": 30848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 8,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 8,
+      "payload": {
+        "sequence": 7,
+        "start_sample": 30848,
+        "end_sample": 32000,
+        "queued_item_ids": [
+          0
+        ]
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 9,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "span_frozen",
+      "snapshot_version": 8,
+      "payload": {
+        "span_id": 0,
+        "start_sample": 0,
+        "end_sample": 32000,
+        "reason": "hard_cap"
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 10,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "canonical_queued",
+      "snapshot_version": 8,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2274113347143375
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 11,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "canonical_started",
+      "snapshot_version": 8,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2274113347324958,
+        "queue_wait_ms": 0.181583
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 12,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 9,
+      "payload": {
+        "sequence": 8,
+        "start_sample": 32000,
+        "end_sample": 38848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 13,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "canonical_preview",
+      "snapshot_version": 10,
+      "payload": {
+        "span_id": 0,
+        "start_sample": 0,
+        "end_sample": 32000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 14,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 11,
+      "payload": {
+        "sequence": 9,
+        "start_sample": 38848,
+        "end_sample": 40000,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 15,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "frame_accepted",
+      "snapshot_version": 12,
+      "payload": {
+        "sequence": 10,
+        "start_sample": 40000,
+        "end_sample": 46848,
+        "queued_item_ids": []
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 16,
+      "session_id": "4HKPw6d5oiNxrGpY8p1zbt2j",
+      "kind": "canonical_processed",
+      "snapshot_version": 13,
+      "payload": {
+        "item_id": 0,
+        "runtime_monotonic_ns": 2274113950758166,
+        "queue_wait_ms": 0.181583,
+        "canonical_processing_elapsed_ms": 603.433208,
+        "queued_to_processed_ms": 603.614791,
+        "batch_index": 0,
+        "batch_size": 1,
+        "span_id": 0,
+        "submitted": true,
+        "identity_status": "prepared",
+        "identity_reason": null,
+        "submission_refusal": null,
+        "empty_reason": null,
+        "committed_samples": 32000,
+        "canonical_decode_elapsed_sec": 0.2965001668781042,
+        "frozen_span_sample_count": 32000,
+        "frozen_span_duration_sec": 2,
+        "canonical_decode_rtf": 0.1482500834390521,
+        "canonical_decode_token_cap": 242,
+        "canonical_decode_capped": false,
+        "canonical_decode_generated_tokens": 22,
+        "canonical_decode_salvage": null,
+        "identity_revision_version": 0,
+        "identity_revision_spans": 0,
+        "identity_revision_units": 0,
+        "identity_revision_merges": 0,
+        "identity_revision_refusals": {},
+        "rolling_status": "rolling"
+      },
+      "schema_version": 1
+    }
+  ]
+}

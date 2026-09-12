@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "expected_name": "E2E Morgan",
+  "bank_contains_name": true,
+  "recognition_seconds": 3.7006999998092653,
+  "measurement": "Start click to visible name DOM mutation",
+  "meeting": "CPYBc9EoVMJyCLznk98qXmiz",
+  "screenshot": "row-10.png",
+  "status": "FAIL",
+  "seconds": 6.328,
+  "network": "network.jsonl",
+  "row": 10
+}
