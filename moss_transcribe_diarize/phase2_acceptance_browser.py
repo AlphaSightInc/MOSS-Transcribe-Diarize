@@ -42,6 +42,23 @@ def _meeting_opener(page, meeting_id):
     )
 
 
+def _reload_history_observer(page, meeting_id):
+    """History observers are ephemeral; reopen the same owned meeting after reload.
+
+    Only originating capture tabs persist automatic reattachment. Prove the history
+    path survives navigation without granting capture ownership to the observer.
+    """
+    page.reload(wait_until="networkidle")
+    page.wait_for_selector('[data-history-boot="ready"]')
+    page.wait_for_selector('[data-capture-phase="idle"]')
+    _meeting_opener(page, meeting_id).click()
+    page.wait_for_selector('[data-observer-mode="read-only"]')
+    return (
+        page.locator('[data-capture-phase="viewing"]').count() == 1
+        and page.get_by_text("Stop and finalize").count() == 0
+    )
+
+
 def _trusted_tls_identity(origin: str) -> dict[str, object]:
     parsed = urlsplit(origin)
     if parsed.scheme != "https" or not parsed.hostname:
@@ -326,12 +343,7 @@ class BrowserCampaign:
                 background_polled = polling.completed > 0
                 page.bring_to_front()
                 page.stage = "background.reload-observer"
-                page.reload(wait_until="networkidle")
-                page.wait_for_selector('[data-observer-mode="read-only"]')
-                reload_read_only = (
-                    page.locator('[data-capture-phase="viewing"]').count() == 1
-                    and page.get_by_text("Stop and finalize").count() == 0
-                )
+                reload_read_only = _reload_history_observer(page, meeting_id)
                 suites.append(
                     _suite(
                         "active-background-observer",

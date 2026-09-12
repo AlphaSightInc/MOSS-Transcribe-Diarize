@@ -80,3 +80,51 @@ def test_unfocused_driver_copies_read_only_installation(tmp_path,monkeypatch):
     finally:
         for path in (source,source/'lib'):path.chmod(0o755)
         for path in (cli,bundle):path.chmod(0o644)
+
+
+def test_reload_history_observer_reopens_ephemeral_view_without_capture_controls():
+    from moss_transcribe_diarize.phase2_acceptance_browser import _reload_history_observer
+
+    class Page:
+        phase = 'viewing'
+        calls = []
+        stop_visible = False
+
+        def reload(self, **kwargs):
+            assert kwargs == {'wait_until': 'networkidle'}
+            self.phase = 'idle'
+            self.calls.append('reload')
+
+        def wait_for_selector(self, selector):
+            self.calls.append(selector)
+            if 'read-only' in selector:
+                assert self.phase == 'viewing', 'ephemeral history observer must be reopened'
+            if 'idle' in selector:
+                assert self.phase == 'idle'
+
+        def get_by_role(self, role, **kwargs):
+            assert role == 'region' and kwargs == {'name': 'Meeting history', 'exact': True}
+            return self
+
+        def locator(self, selector):
+            if 'data-open-meeting' in selector:
+                assert selector == '[data-open-meeting="owned"]'
+                return SimpleNamespace(click=self.open)
+            assert selector == '[data-capture-phase="viewing"]'
+            return SimpleNamespace(count=lambda: int(self.phase == 'viewing'))
+
+        def open(self):
+            self.calls.append('open-owned')
+            self.phase = 'viewing'
+
+        def get_by_text(self, text):
+            assert text == 'Stop and finalize'
+            return SimpleNamespace(count=lambda: int(self.stop_visible))
+
+    page = Page()
+    assert _reload_history_observer(page, 'owned')
+    assert page.calls == ['reload', '[data-history-boot="ready"]',
+                          '[data-capture-phase="idle"]', 'open-owned',
+                          '[data-observer-mode="read-only"]']
+    page.stop_visible = True
+    assert not _reload_history_observer(page, 'owned')
