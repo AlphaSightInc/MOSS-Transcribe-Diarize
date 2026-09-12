@@ -1958,7 +1958,7 @@ class FixedAccountCampaign:
             # audio-bearing abort, instead of depending on incidental failures.
             partial_id = self._new_live_id("a")
             try:
-                self._seed_live_transcript(partial_id)
+                self._seed_live_transcript("a", partial_id, 0)
             finally:
                 response = self.a.request(
                     "POST", f"/api/live/sessions/{partial_id}/abort", json={}

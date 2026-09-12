@@ -2695,7 +2695,28 @@ def test_real_g5_audio_producer_reconciles_owner_foreign_partial_and_missing_art
     campaign._meetings.update({"file": ["file"], "live": ["live"], "crash": ["crash"] if has_crash else []})
     lifecycle = []
     monkeypatch.setattr(campaign, "_new_live_id", lambda owner: "crash")
-    monkeypatch.setattr(campaign, "_seed_live_transcript", lambda meeting_id: lifecycle.append("seed"))
+    # Exercise the actual helper, including owner/session/clip arguments and attach.
+    seed_fixture = tmp_path / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json"
+    seed_fixture.parent.mkdir(parents=True)
+    seed_fixture.write_text(json.dumps({
+        "clips": [{"expected_marker": "mp3-crash", "start_seconds": 0, "end_seconds": 1}],
+        "audio": {"path": "speech.wav"},
+    }))
+    campaign.config["repo_root"] = str(tmp_path)
+    campaign.config["account_a_cookie_file"] = str(tmp_path / "cookie")
+    helper = SimpleNamespace(close=lambda: None)
+    campaign._live_helpers["crash"] = (None, helper)
+    class SeedAdapter:
+        def attach_existing(self, meeting_id, *, helper):
+            assert meeting_id == "crash"
+            assert helper is campaign._live_helpers[meeting_id][1]
+        def descriptor(self):
+            return SimpleNamespace(frame_samples=8000)
+        def accept_frame(self, meeting_id, frame):
+            assert meeting_id == "crash" and frame.sample_count == 8000
+            lifecycle.append("seed")
+    monkeypatch.setattr(campaign, "_replay_service", lambda **kwargs: SeedAdapter())
+    monkeypatch.setattr(external, "_wav_pcm_clip", lambda *args: b"\0\0" * 16000)
     campaign._clients.update(
         {"a": Owner(), "b": Denied(404), "revoked_probe": Denied(401)}
     )
