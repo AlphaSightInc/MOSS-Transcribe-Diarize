@@ -1,0 +1,28 @@
+{
+  "muted": true,
+  "sqlite": "3.50.4",
+  "synthetic_transcripts": true,
+  "provider_tls_trust_verified": false,
+  "deployed_qualification": false,
+  "history_causes_zero_provider_requests": true,
+  "real_preflight_and_post": true,
+  "separate_payloads": true,
+  "no_owner_meeting_ids_or_ambient_credentials": true,
+  "settings_never_sent_to_moss": true,
+  "foreign_result_404": true,
+  "reload_does_not_call_provider": true,
+  "two_durable_results_no_provider_metadata": true,
+  "relay": {
+    "checks": {
+      "same_origin_request": true,
+      "configured_model": true,
+      "token_floor": true,
+      "owner_transcript_only": true,
+      "no_ambient_credentials": true,
+      "durable_result": true
+    },
+    "upstream_requests": 1
+  },
+  "passed": 8,
+  "total": 8
+}

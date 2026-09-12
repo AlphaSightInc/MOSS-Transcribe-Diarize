@@ -31,6 +31,20 @@ bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 
 
+async def regenerate_summary(page, meeting_id):
+    """Await the new POST's attempt, never an asynchronously restored old artifact."""
+    async with page.expect_response(lambda response: response.request.method == "POST"
+                                    and response.url.endswith(f"/api/meetings/{meeting_id}/summary")) as pending:
+        await page.get_by_test_id("final-summary-generate").click()
+    response = await pending.value
+    if response.status != 200:
+        raise RuntimeError(f"Summary attempt POST returned HTTP {response.status}")
+    payload = await response.json()
+    attempt = payload["attempt_id"]
+    await page.wait_for_function("attempt => { const el=document.querySelector('[data-summary-state]'); return el?.dataset.summaryState === 'current' && el.dataset.summaryAttempt === attempt; }", arg=attempt)
+    return attempt
+
+
 async def run(root, chrome_binary=None, timeout_evidence=None):
     evidence_writer = BrowserTimeoutEvidence(timeout_evidence or root, "browser_final_summary-relay")
     import sqlite3
@@ -112,10 +126,7 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                     await region.get_by_role("button", name="Save on this browser", exact=True).click()
                     relay_posts = []
                     page.on("request", lambda request: relay_posts.append(request.url) if request.method == "POST" and "/api/llm/" in request.url else None)
-                    previous = await page.locator("[data-summary-state]").get_attribute("data-summary-attempt")
-                    await page.get_by_test_id("final-summary-generate").click()
-                    # A prior current artifact must not satisfy the new attempt's check.
-                    await page.wait_for_function("previous => { const el=document.querySelector('[data-summary-state]'); return el?.dataset.summaryState === 'current' && el.dataset.summaryAttempt !== previous; }", arg=previous)
+                    await regenerate_summary(page, ids[0])
                     result = await page.evaluate("async id => (await (await fetch('/api/meetings/'+id+'/summary')).json()).summary", ids[0])
                     relay_calls = relay_provider.calls
                     body = json.loads(relay_calls[0]["body"]) if len(relay_calls) == 1 else {}

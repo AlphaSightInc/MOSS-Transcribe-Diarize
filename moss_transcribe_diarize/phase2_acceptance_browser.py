@@ -273,8 +273,12 @@ class BrowserCampaign:
 
         evidence = BrowserTimeoutEvidence(self.work, "account_product_regression", self.register_artifact)
         suites: list[dict[str, object]] = []
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(executable_path=str(self.chrome), headless=True)
+        from .phase2_browser_visibility import unfocused_driver
+        with unfocused_driver(), sync_playwright() as playwright:
+            browser = playwright.chromium.launch(executable_path=str(self.chrome), headless=True,
+                ignore_default_args=["--disable-background-timer-throttling",
+                                     "--disable-backgrounding-occluded-windows",
+                                     "--disable-renderer-backgrounding"])
             try:
                 context = browser.new_context(viewport={"width": 1440, "height": 900})
                 _add_cookie(

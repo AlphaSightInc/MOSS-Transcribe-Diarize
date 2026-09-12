@@ -125,8 +125,7 @@ def measure_browser_summary(campaign):
     primary, _ = a.json("GET", f"/api/meetings/{first}", 200)
     if not any(s["speaker"] == "Qualification speaker" for s in primary["transcript"]["segments"]):
         raise RuntimeError("G9 source lacks actual Wave-2 display labels")
-    b_created, _ = campaign.b.json("POST", "/api/live/sessions", 201, json={"echo_mode": "speakers"})
-    second = b_created["id"]
+    second = campaign._new_live_id("b")
     try:
         campaign._seed_live_transcript("b", second, 1)
         campaign.b.json("POST", f"/api/live/sessions/{second}/stop", 200, json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})

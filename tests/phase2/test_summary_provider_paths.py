@@ -81,3 +81,34 @@ def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
                 finally:
                     await browser.close()
     asyncio.run(run())
+
+
+def test_relay_wait_rejects_old_current_artifact_during_new_attempt(tmp_path):
+    async def run():
+        async with async_playwright() as p:
+            browser=await p.chromium.launch(executable_path=str(require_browser(p)),headless=True)
+            try:
+                page=await browser.new_page()
+                async def route(request):
+                    if request.request.method=='POST':
+                        await asyncio.sleep(.2)
+                        await request.fulfill(json={'attempt_id':'new-attempt'})
+                    else:
+                        await request.fulfill(content_type='text/html',body='''<section data-summary-state="off"></section>
+                        <button data-testid="final-summary-generate" onclick="
+                          const el=document.querySelector('section');
+                          el.dataset.summaryState='current'; el.dataset.summaryAttempt='old-attempt';
+                          fetch('/api/meetings/owned/summary',{method:'POST'}).then(()=>setTimeout(()=>{
+                            el.dataset.summaryAttempt='new-attempt';
+                          },200));">Generate</button>''')
+                await page.route('**/*',route)
+                await page.goto('https://fixture.test/')
+                pending=asyncio.create_task(probe.regenerate_summary(page,'owned'))
+                # Reproduce the host shape: the old artifact arrives after previous=None.
+                await page.wait_for_function("previous => { const el=document.querySelector('[data-summary-state]'); return el.dataset.summaryState === 'current' && el.dataset.summaryAttempt !== previous; }",arg=None)
+                assert await page.locator('section').get_attribute('data-summary-attempt')=='old-attempt'
+                assert not pending.done(), 'Old artifact released the new-attempt wait'
+                await pending
+                assert await page.locator('section').get_attribute('data-summary-attempt')=='new-attempt'
+            finally: await browser.close()
+    asyncio.run(run())
