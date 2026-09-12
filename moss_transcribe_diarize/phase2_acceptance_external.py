@@ -199,7 +199,15 @@ class _CampaignBackpressure:
                 silent=silent,
             )
             refused_here = False
+            retry_deadline = time.monotonic() + 30
             while True:
+                if refused_here and time.monotonic() >= retry_deadline:
+                    with self._lock:
+                        self._state["retry_timed_out"] = True
+                    raise ExternalMeasurementError(
+                        f"eight-session refused frame retry timed out: "
+                        f"session_id={session_id}, lane={lane}, sequence={frame.sequence}"
+                    )
                 try:
                     adapter.accept_lane(session_id, payload)
                 except AccountReplayTransportFailure as exc:
@@ -217,7 +225,9 @@ class _CampaignBackpressure:
                                 }
                             )
                     self._refusal_seen.set()
-                    if not self._peer_progress_seen.wait(timeout=30):
+                    if not self._peer_progress_seen.wait(
+                        timeout=max(0, retry_deadline - time.monotonic())
+                    ):
                         raise ExternalMeasurementError(
                             "eight-session peer made no progress during backpressure"
                         )
@@ -2289,9 +2299,18 @@ class FixedAccountCampaign:
         return measure_browser_summary(self)
 
     def eight_session_overload(self) -> dict[str, object]:
+        descriptor = self.a.json("GET", "/api/live/descriptor", 200)[0]["descriptor"]
+        capacity_samples = int(descriptor["bounds"]["max_retained_samples"])
+        frame_samples = int(descriptor["frame_samples"])
+        # One retained buffer plus another buffer of drain headroom, then one
+        # whole frame beyond it. Keep peers paced for the same audio duration so
+        # the target's refusal/retry occurs inside this eight-session campaign.
+        frames = max(math.ceil(30 * LIVE_SAMPLE_RATE / frame_samples),
+                     2 * math.ceil(capacity_samples / frame_samples) + 1)
+        duration = frames * frame_samples / LIVE_SAMPLE_RATE
         result = self._run_live_load(
             sessions=8,
-            duration_seconds=30.0,
+            duration_seconds=duration,
             embedded_backpressure=True,
         )
         backpressure = result.pop("embedded_backpressure_observation")
@@ -2312,6 +2331,9 @@ class FixedAccountCampaign:
                 "peer_progress_during_backpressure": backpressure["peer_progress"],
                 "refused_frame_retry_succeeded": backpressure["same_sequence_retry"],
                 "backpressure_observation": backpressure,
+                "backpressure_workload": {"lane_capacity_samples": capacity_samples,
+                                          "frames_per_session": frames,
+                                          "audio_seconds_per_session": duration},
             }
         )
         return result
@@ -2518,6 +2540,9 @@ class FixedAccountCampaign:
             for thread in threads:
                 thread.join(timeout=0.25)
         campaign_finished_ns = time.monotonic_ns()
+        if backpressure is not None:
+            # Preserve the actual refusal/retry outcome even when a worker fails.
+            self._artifact_json("load-8/backpressure-observation.json", backpressure.observation())
         if failures or len(outputs) != sessions:
             raise ExternalMeasurementError(
                 f"live load failed in {len(failures)} session/probe paths"

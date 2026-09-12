@@ -2036,6 +2036,9 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
     class Client:
         def json(self, method: str, path: str, expected: int, **kwargs: object):
             del expected, kwargs
+            if path == "/api/live/descriptor":
+                return {"descriptor": {"frame_samples": 8000,
+                        "bounds": {"max_retained_samples": 960000}}}, _Response(200)
             if method == "PUT":
                 renamed = {**meetings[0], "title": "Wave 1 durable owner title"}
                 meetings[0] = renamed
