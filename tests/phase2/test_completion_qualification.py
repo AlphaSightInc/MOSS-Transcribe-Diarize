@@ -13,7 +13,7 @@ from moss_transcribe_diarize import phase2_acceptance as acceptance
 from moss_transcribe_diarize.phase2_acceptance_collect import collect_layer
 from moss_transcribe_diarize.phase2_acceptance_measure import measure_layer
 from moss_transcribe_diarize.phase2_acceptance_completion import (
-    SUMMARY_CHECKS, VOICEPRINT_CHECKS, measure_voiceprint_workspace, validate_completion_observation,
+    SUMMARY_CHECKS, VOICEPRINT_CHECKS, RELAY_SUMMARY_CHECKS, measure_voiceprint_workspace, validate_completion_observation,
 )
 from tests.phase2.test_wave1_qualification import _capacity_raw
 from tests.phase2.test_owner_bound_live_meeting import EligibleIdentity, make_app, provision, session, feed_two_lane_span, wait_snapshot
@@ -47,7 +47,7 @@ def test_g8_rule_requires_explicit_measured_observations(mutation):
 
 
 def summary_report():
-    return {"checks": {key: True for key in SUMMARY_CHECKS}, "capacity": _capacity_raw(), "retry_deliveries": [0, 60, 180, 420],
+    return {"relay": {"checks": {key: True for key in RELAY_SUMMARY_CHECKS}, "upstream_requests": 1}, "checks": {key: True for key in SUMMARY_CHECKS}, "capacity": _capacity_raw(), "retry_deliveries": [0, 60, 180, 420],
         "events": [[{"type": "llm_status", "state": value} for value in ("queued", "generating", "retry_wait", "failed", "cancelled", "current")],
                    [{"type": "llm_summary_update", "state": "current"}]]}
 
@@ -60,7 +60,7 @@ def test_completion_boolean_claims_cannot_replace_missing_rows_timings_or_capaci
         assert not validate_completion_observation("browser_final_summary", invalid), key
         del invalid["checks"][key]
         assert not validate_completion_observation("browser_final_summary", invalid), key
-    for key in ("capacity", "events", "retry_deliveries"):
+    for key in ("capacity", "events", "retry_deliveries", "relay"):
         invalid = copy.deepcopy(raw); del invalid[key]
         assert not validate_completion_observation("browser_final_summary", invalid)
     invalid = copy.deepcopy(raw); invalid["retry_deliveries"] = [0, 0, 0, 0]
@@ -129,3 +129,13 @@ def test_g8_http_collector_handles_empty_name_map_and_same_name_neighbor(tmp_pat
         assert validate_completion_observation("voiceprint_workspace_behavior", raw)
         assert raw["live_meetings"] == 3
         assert campaign.a.json("GET", "/api/voiceprints", 200)[0] == {"voiceprints": []}
+
+
+def test_summary_relay_evidence_is_required_and_falsifiable():
+    for key in RELAY_SUMMARY_CHECKS:
+        raw = summary_report()
+        raw["relay"]["checks"][key] = False
+        assert not validate_completion_observation("browser_final_summary", raw)
+    raw = summary_report()
+    raw["relay"]["upstream_requests"] = 0
+    assert not validate_completion_observation("browser_final_summary", raw)

@@ -9,23 +9,28 @@ deployed qualification. No provider mocking/interception in the browser.
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import importlib.util
 import json
+import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
 from playwright.async_api import async_playwright
 from moss_transcribe_diarize.phase2_acceptance_summary import SummaryProbeProvider
 
-ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("workspace_bench", ROOT / "prototypes/phase2-account-lifecycle/browser_workspace_probe.py")
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 
 
-async def run(root):
+async def run(root, chrome_binary=None):
     import sqlite3
     from moss_transcribe_diarize.app import phase2
     phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version
@@ -35,15 +40,20 @@ async def run(root):
     moss_writes = []
     provider = SummaryProbeProvider(origin="http://localhost:1", certificate=cert, key=key)
     provider.__enter__()
+    relay_provider = SummaryProbeProvider(origin="http://127.0.0.1")
+    relay_provider.__enter__()
     calls, preflights = provider.calls, provider.preflights
     endpoint = provider.endpoint("okay")
     evidence = {"muted": True, "sqlite": sqlite3.sqlite_version, "synthetic_transcripts": True, "provider_tls_trust_verified": False, "deployed_qualification": False}
     try:
-        async with bench.running(root / "probe.sqlite3") as (app, port):
+        async with bench.running(root / "probe.sqlite3", llm_upstreams=json.dumps([{
+            "name": "G9 fake upstream", "base_url": relay_provider.endpoint("relay"), "models": ["g9-relay-model"]
+        }])) as (app, port):
             origin = f"http://localhost:{port}"
             provider.origin = origin
             async with async_playwright() as p:
-                browser = await p.chromium.launch(channel="chrome", headless=True, args=["--mute-audio"])
+                from tests.phase2.browser_support import browser_executable
+                browser = await p.chromium.launch(executable_path=chrome_binary or str(browser_executable(p)), headless=True, args=["--mute-audio"])
                 try:
                     contexts = [await browser.new_context(ignore_https_errors=True) for _ in range(2)]
                     pages = [await c.new_page() for c in contexts]
@@ -62,7 +72,8 @@ async def run(root):
                         await page.get_by_test_id("final-summary-generate").wait_for()
                     evidence["history_causes_zero_provider_requests"] = len(calls) == 0
                     for index, page in enumerate(pages):
-                        await page.get_by_role("button", name="Optional AI summaries · off", exact=True).click()
+                        await page.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
+                        await page.get_by_label("Provider", exact=True).select_option(label="External HTTPS provider")
                         for label, value in (("Provider HTTPS URL", endpoint), ("Model", f"probe-model-{index}"),
                                              ("API key (optional)", f"probe-secret-{index}"), ("Final-summary prompt", f"probe-prompt-{index}")):
                             await page.get_by_label(label, exact=True).fill(value)
@@ -84,16 +95,56 @@ async def run(root):
                     cursor = await app.state.phase2_store._connection.execute("SELECT state,document_json,provenance_json FROM llm_artifacts")
                     rows = await cursor.fetchall(); await cursor.close()
                     evidence["two_durable_results_no_provider_metadata"] = len(rows) == 2 and all(row["state"] == "current" and set(json.loads(row["provenance_json"])) == {"attempt_id", "source_version", "artifact_version", "error_code"} for row in rows)
+                    # A second G9 scenario: actual browser -> same-origin app -> HTTP fake
+                    # upstream. No network interception or mutation of staged host config.
+                    page = pages[0]
+                    await page.get_by_role("region", name="Meeting history", exact=True).locator(f'[data-open-meeting="{ids[0]}"]').click()
+                    region = page.get_by_role("region", name="Browser AI settings", exact=True)
+                    if await region.locator("form").count() == 0:
+                        await region.get_by_role("button").click()
+                    await region.get_by_label("Provider", exact=True).select_option(label="Server relay (tailnet models)")
+                    await region.get_by_label("Final-summary prompt", exact=True).fill("G9 relay structural fixture")
+                    await region.get_by_role("button", name="Save on this browser", exact=True).click()
+                    relay_posts = []
+                    page.on("request", lambda request: relay_posts.append(request.url) if request.method == "POST" and "/api/llm/" in request.url else None)
+                    previous = await page.locator("[data-summary-state]").get_attribute("data-summary-attempt")
+                    await page.get_by_test_id("final-summary-generate").click()
+                    # A prior current artifact must not satisfy the new attempt's check.
+                    await page.wait_for_function("previous => { const el=document.querySelector('[data-summary-state]'); return el?.dataset.summaryState === 'current' && el.dataset.summaryAttempt !== previous; }", arg=previous)
+                    result = await page.evaluate("async id => (await (await fetch('/api/meetings/'+id+'/summary')).json()).summary", ids[0])
+                    relay_calls = relay_provider.calls
+                    body = json.loads(relay_calls[0]["body"]) if len(relay_calls) == 1 else {}
+                    evidence["relay"] = {
+                        "checks": {
+                            "same_origin_request": relay_posts == [origin + "/api/llm/chat/completions"],
+                            "configured_model": body.get("model") == "g9-relay-model",
+                            "token_floor": body.get("max_tokens", 0) >= 2048,
+                            "owner_transcript_only": "ONLY-OWNER-0-TRANSCRIPT" in str(body) and "ONLY-OWNER-1-TRANSCRIPT" not in str(body),
+                            "no_ambient_credentials": len(relay_calls) == 1 and not any(k.lower() in {"cookie", "authorization"} for k in relay_calls[0]["headers"]),
+                            "durable_result": result["state"] == "current" and result["document"]["summary"] == "Qualification summary",
+                        },
+                        "upstream_requests": len(relay_calls),
+                    }
                 finally:
                     await browser.close()
     finally:
         provider.__exit__()
-    checks = {k: v for k, v in evidence.items() if k not in {"muted", "sqlite", "synthetic_transcripts", "provider_tls_trust_verified", "deployed_qualification"}}
+        relay_provider.__exit__()
+    checks = {k: v for k, v in evidence.items() if k not in {"muted", "sqlite", "synthetic_transcripts", "provider_tls_trust_verified", "deployed_qualification", "relay"}}
     evidence["passed"] = sum(v is True for v in checks.values()); evidence["total"] = len(checks)
-    print(json.dumps(evidence, indent=2))
-    if evidence["passed"] != evidence["total"]: raise SystemExit(1)
+    from moss_transcribe_diarize.phase2_acceptance_completion import validate_relay_summary_observation
+    if evidence["passed"] != evidence["total"] or not validate_relay_summary_observation(evidence["relay"]):
+        raise RuntimeError(json.dumps(evidence, indent=2))
+    return evidence
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--chrome-binary")
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="moss-final-browser-probe-") as directory:
-        asyncio.run(run(Path(directory)))
+        result = asyncio.run(run(Path(directory), args.chrome_binary))
+    encoded = json.dumps(result, indent=2) + "\n"
+    if args.output: args.output.write_text(encoded)
+    print(encoded)

@@ -29,13 +29,13 @@ from moss_transcribe_diarize.app import phase2
 
 
 @asynccontextmanager
-async def running(database, port=0, *, file_runner=None):
+async def running(database, port=0, *, file_runner=None, llm_upstreams=None):
     listener = socket.socket()
     listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     listener.bind(("127.0.0.1", port))
     port = listener.getsockname()[1]
     app = phase2.create_phase2_app(
-        database_path=database, file_runner=file_runner,
+        database_path=database, file_runner=file_runner, llm_upstreams=llm_upstreams,
         file_work_root=database.parent / "file-work",
     )
 

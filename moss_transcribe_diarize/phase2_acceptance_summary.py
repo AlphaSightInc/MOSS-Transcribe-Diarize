@@ -11,6 +11,8 @@ from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
 import json
 import re
 import ssl
+import subprocess
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -25,13 +27,26 @@ from .phase2_acceptance_browser import _add_cookie, _trusted_tls_identity, _meet
 from .phase2_acceptance_completion import validate_completion_observation
 
 
+def configure_external_summary(page, *, endpoint, model, api_key, prompt, timeout="2400"):
+    """Choose the external path explicitly even when server relay models exist."""
+    region = page.get_by_role("region", name="Browser AI settings", exact=True)
+    if region.locator("form").count() == 0:
+        region.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
+    region.get_by_label("Provider", exact=True).select_option(label="External HTTPS provider")
+    for label, value in (("Provider HTTPS URL", endpoint), ("Model", model),
+                         ("API key (optional)", api_key), ("Final-summary prompt", prompt),
+                         ("Request timeout (seconds)", timeout)):
+        region.get_by_label(label, exact=True).fill(value)
+    region.get_by_role("button", name="Save on this browser", exact=True).click()
+
+
 def _summary_action(page):
     return page.get_by_role("region", name="Final summary", exact=True).get_by_test_id("final-summary-generate")
 
 
 class SummaryProbeProvider:
     """Fixed fake provider with real CORS, delivery errors and held responses."""
-    def __init__(self, *, origin: str, certificate: Path, key: Path):
+    def __init__(self, *, origin: str, certificate: Path | None = None, key: Path | None = None):
         self.origin = origin
         self.calls: list[dict] = []
         self.preflights: list[dict] = []
@@ -70,9 +85,11 @@ class SummaryProbeProvider:
                 finally: row["finished"] = time.monotonic_ns()
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.server.daemon_threads = True
-        tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        tls.load_cert_chain(certificate, key)
-        self.server.socket = tls.wrap_socket(self.server.socket, server_side=True)
+        self.scheme = "https" if certificate else "http"
+        if certificate:
+            tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            tls.load_cert_chain(certificate, key)
+            self.server.socket = tls.wrap_socket(self.server.socket, server_side=True)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
     def __enter__(self): self.thread.start(); return self
@@ -81,7 +98,7 @@ class SummaryProbeProvider:
         self.server.shutdown(); self.server.server_close(); self.thread.join()
 
     def endpoint(self, mode: str) -> str:
-        return f"https://{urlsplit(self.origin).hostname}:{self.server.server_port}/{mode}/v1"
+        return f"{self.scheme}://{urlsplit(self.origin).hostname}:{self.server.server_port}/{mode}/v1"
 
     def requests(self, mode: str):
         with self.lock: return [row for row in self.calls if row["path"].startswith(f"/{mode}/")]
@@ -142,13 +159,8 @@ def measure_browser_summary(campaign):
                         _meeting_opener(page, meeting).click()
                         page.get_by_role("region", name="Final summary", exact=True).wait_for()
                     def configure(page, owner, mode):
-                        region = page.get_by_role("region", name="Browser AI settings", exact=True)
-                        if region.locator("form").count() == 0: region.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
-                        for label, value in (("Provider HTTPS URL", provider.endpoint(mode)), ("Model", f"g9-model-{owner}"),
-                            ("API key (optional)", f"g9-private-key-{owner}"), ("Final-summary prompt", f"g9-private-prompt-{owner}"),
-                            ("Request timeout (seconds)", "2400")):
-                            region.get_by_label(label, exact=True).fill(value)
-                        region.get_by_role("button", name="Save on this browser", exact=True).click()
+                        configure_external_summary(page, endpoint=provider.endpoint(mode), model=f"g9-model-{owner}",
+                            api_key=f"g9-private-key-{owner}", prompt=f"g9-private-prompt-{owner}")
                     def start(page):
                         region = page.get_by_role("region", name="Final summary", exact=True)
                         previous_attempt = region.get_attribute("data-summary-attempt")
@@ -212,7 +224,7 @@ def measure_browser_summary(campaign):
                     for row in provider.calls:
                         body = json.loads(row["body"])
                         owner = "a" if body.get("model") == "g9-model-a" else "b"
-                        payload_ok = payload_ok and set(body) == {"model", "stream", "messages"} and body["stream"] is False
+                        payload_ok = payload_ok and set(body) == {"model", "stream", "messages", "max_tokens"} and body["stream"] is False and body["max_tokens"] >= 2048
                         payload_ok = payload_ok and body["messages"][0] == {"role": "system", "content": f"g9-private-prompt-{owner}"}
                         payload_ok = payload_ok and body["messages"][1]["role"] == "user" and json.loads(body["messages"][1]["content"]) in expected[owner]
                     checks["owner_payloads_only"] = payload_ok
@@ -240,7 +252,18 @@ def measure_browser_summary(campaign):
             attempt = value.get("summary")
             if isinstance(attempt, dict) and attempt.get("state") in {"queued", "generating", "retry_wait"}:
                 client.json("PUT", f"/api/meetings/{meeting}/summary/{attempt['attempt_id']}", 200, json={"state": "cancelled"})
+    # Host qualification runs the same real-browser relay scenario as the deterministic
+    # probe, on a scratch app configured solely with a loopback fake upstream. This
+    # verifies candidate relay code without modifying the staged server's environment.
+    relay_output = campaign.artifact_root / "summary-provider-paths.json"
+    subprocess.run([sys.executable, "prototypes/client-configured-llm/final_browser_probe.py",
+        "--chrome-binary", campaign._text("chrome_binary"), "--output", str(relay_output)],
+        cwd=campaign._text("repo_root"), check=True, capture_output=True, timeout=120)
+    paths = json.loads(relay_output.read_text())
+    campaign._safe_artifacts.add(Path("summary-provider-paths.json"))
+    from .phase2_acceptance_completion import validate_relay_summary_observation
+    checks["relay_path_qualified"] = validate_relay_summary_observation(paths.get("relay"))
     raw = {"checks": checks, "capacity": capacity, "retry_deliveries": retry_times,
-           "events": observed_events, "provider_requests": len(provider.calls), "tls": tls}
+           "events": observed_events, "provider_requests": len(provider.calls), "tls": tls, "relay": paths["relay"]}
     if not validate_completion_observation("browser_final_summary", raw): raise RuntimeError("Browser summary privacy/lifecycle/load qualification failed")
     return raw

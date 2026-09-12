@@ -21,8 +21,20 @@ SUMMARY_CHECKS = {
     "durable_results", "manual_title_preserved", "serial_worker", "cancel_late_result",
     "four_identical_deliveries", "retry_intervals", "invalid_output_no_repair", "cancel_retry_wait",
     "load_overlaps_provider", "speech_capacity_unchanged",
-    "lifecycle_events",
+    "lifecycle_events", "relay_path_qualified",
 }
+
+
+RELAY_SUMMARY_CHECKS = {
+    "same_origin_request", "configured_model", "token_floor", "owner_transcript_only",
+    "no_ambient_credentials", "durable_result",
+}
+
+
+def validate_relay_summary_observation(raw):
+    return (isinstance(raw, dict) and raw.get("upstream_requests") == 1
+        and isinstance(raw.get("checks"), dict) and set(raw["checks"]) == RELAY_SUMMARY_CHECKS
+        and all(value is True for value in raw["checks"].values()))
 
 
 def validate_completion_observation(predicate_id: str, raw: object) -> bool:
@@ -51,6 +63,7 @@ def validate_completion_observation(predicate_id: str, raw: object) -> bool:
     if expected is None or not isinstance(raw.get("checks"), dict): return False
     if set(raw["checks"]) != expected or not all(value is True for value in raw["checks"].values()): return False
     if predicate_id == "browser_final_summary":
+        if not validate_relay_summary_observation(raw.get("relay")): return False
         from .phase2_acceptance import _validate_capacity
         if not isinstance(raw.get("capacity"), dict) or not _validate_capacity({"raw": raw["capacity"]}): return False
         deliveries = raw.get("retry_deliveries")
