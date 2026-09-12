@@ -56,3 +56,28 @@ def test_real_browser_external_and_relay_paths_with_fake_upstreams(tmp_path):
     assert result["passed"] == result["total"]
     assert result["relay"]["upstream_requests"] == 1
     assert all(result["relay"]["checks"].values())
+
+
+def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
+    async def run():
+        async with async_playwright() as p:
+            chrome = str(require_browser(p))
+            config = json.dumps([{"name": "Selection fixture", "base_url": "http://127.0.0.1:1/v1", "models": ["relay-model"]}])
+            async with probe.bench.running(tmp_path / "async-selection.sqlite", llm_upstreams=config) as (_, port):
+                browser = await p.chromium.launch(executable_path=chrome, headless=True)
+                try:
+                    page = await browser.new_page()
+                    await page.goto(f"http://localhost:{port}")
+                    await page.locator('[data-history-boot="ready"]').wait_for()
+                    region = page.get_by_role("region", name="Browser AI settings", exact=True)
+                    await region.get_by_role("button").click()
+                    assert await region.get_by_label("Provider", exact=True).input_value() == "relay"
+                    assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
+                    # Invoke the exact helper imported by the deterministic probe.
+                    await probe.select_external_summary_provider(region)
+                    await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
+                    assert await region.get_by_label("Provider", exact=True).input_value() == "external"
+                    assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
+                finally:
+                    await browser.close()
+    asyncio.run(run())

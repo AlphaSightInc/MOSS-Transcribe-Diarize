@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from playwright.async_api import async_playwright
-from moss_transcribe_diarize.phase2_acceptance_summary import SummaryProbeProvider
+from moss_transcribe_diarize.phase2_acceptance_summary import SummaryProbeProvider, select_external_summary_provider
 
 spec = importlib.util.spec_from_file_location("workspace_bench", ROOT / "prototypes/phase2-account-lifecycle/browser_workspace_probe.py")
 bench = importlib.util.module_from_spec(spec)
@@ -73,7 +73,7 @@ async def run(root, chrome_binary=None):
                     evidence["history_causes_zero_provider_requests"] = len(calls) == 0
                     for index, page in enumerate(pages):
                         await page.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
-                        await page.get_by_label("Provider", exact=True).select_option(label="External HTTPS provider")
+                        await select_external_summary_provider(page.get_by_role("region", name="Browser AI settings", exact=True))
                         for label, value in (("Provider HTTPS URL", endpoint), ("Model", f"probe-model-{index}"),
                                              ("API key (optional)", f"probe-secret-{index}"), ("Final-summary prompt", f"probe-prompt-{index}")):
                             await page.get_by_label(label, exact=True).fill(value)

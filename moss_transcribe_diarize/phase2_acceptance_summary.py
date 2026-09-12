@@ -27,12 +27,21 @@ from .phase2_acceptance_browser import _add_cookie, _trusted_tls_identity, _meet
 from .phase2_acceptance_completion import validate_completion_observation
 
 
+def select_external_summary_provider(region):
+    """Shared selector for sync predicates and async probes (await the latter).
+
+    Playwright sync returns the selected values; async returns an awaitable.
+    Keep the provider label and choice here so both callers follow the same path.
+    """
+    return region.get_by_label("Provider", exact=True).select_option(label="External HTTPS provider")
+
+
 def configure_external_summary(page, *, endpoint, model, api_key, prompt, timeout="2400"):
     """Choose the external path explicitly even when server relay models exist."""
     region = page.get_by_role("region", name="Browser AI settings", exact=True)
     if region.locator("form").count() == 0:
         region.get_by_role("button", name=re.compile(r"^Optional AI summaries · ")).click()
-    region.get_by_label("Provider", exact=True).select_option(label="External HTTPS provider")
+    select_external_summary_provider(region)
     for label, value in (("Provider HTTPS URL", endpoint), ("Model", model),
                          ("API key (optional)", api_key), ("Final-summary prompt", prompt),
                          ("Request timeout (seconds)", timeout)):
