@@ -191,27 +191,61 @@ class _CampaignBackpressure:
             return dict(self._state)
 
 
+def _run_admin_status(admin: Path, socket_path: Path, *, json_output: bool):
+    """Capture the response this CLI actually renders through a transparent UDS relay.
+
+    Status contains clocks and resource counters: another request is not its oracle.
+    The relay forwards the real request and response unchanged, without retaining content.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    from .app.phase2_control import MAX_CONTROL_LINE_BYTES
+
+    with tempfile.TemporaryDirectory(prefix="moss-status-", dir="/tmp") as directory:
+        proxy = str(Path(directory) / "s")
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+            listener.bind(proxy)
+            listener.listen(1)
+            listener.settimeout(30)
+
+            def relay():
+                connection, _ = listener.accept()
+                with connection, socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as upstream:
+                    connection.settimeout(30)
+                    upstream.settimeout(30)
+                    with connection.makefile("rb") as incoming:
+                        request = incoming.readline(MAX_CONTROL_LINE_BYTES + 1)
+                    if json.loads(request) != {"command": "status"}:
+                        raise ExternalMeasurementError("mtd-admin sent a non-status request")
+                    upstream.connect(str(socket_path))
+                    upstream.sendall(request)
+                    with upstream.makefile("rb") as incoming:
+                        response = incoming.readline(MAX_CONTROL_LINE_BYTES + 1)
+                    if len(response) > MAX_CONTROL_LINE_BYTES or not response.endswith(b"\n"):
+                        raise ExternalMeasurementError("operator status response is invalid")
+                    connection.sendall(response)
+                    envelope = json.loads(response)
+                    if envelope.get("ok") is not True:
+                        raise ExternalMeasurementError("operator status request failed")
+                    return envelope["result"]
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                captured = executor.submit(relay)
+                argv = (str(admin), "--socket", proxy, "status")
+                if json_output:
+                    argv += ("--json",)
+                result = subprocess.run(argv, check=False, capture_output=True, timeout=30)
+                return result, captured.result(timeout=30)
+
+
 def _admin_status_surfaces(
     socket_path: Path,
-    expected: Mapping[str, object],
     forbidden: list[bytes],
 ) -> dict[str, object]:
     admin = Path(sys.executable).parent / "mtd-admin"
     if not admin.is_file() or not os.access(admin, os.X_OK):
         raise ExternalMeasurementError("installed mtd-admin executable is unavailable")
-    base = (str(admin), "--socket", str(socket_path), "status")
-    human = subprocess.run(
-        base,
-        check=False,
-        capture_output=True,
-        timeout=30,
-    )
-    machine = subprocess.run(
-        (*base, "--json"),
-        check=False,
-        capture_output=True,
-        timeout=30,
-    )
+    human, human_source = _run_admin_status(admin, socket_path, json_output=False)
+    machine, machine_source = _run_admin_status(admin, socket_path, json_output=True)
     if human.returncode or machine.returncode:
         raise ExternalMeasurementError("installed mtd-admin status command failed")
     try:
@@ -219,8 +253,8 @@ def _admin_status_surfaces(
         allowlisted = serialize_operator_payload("status", machine_payload)
     except (json.JSONDecodeError, ValueError, TypeError) as exc:
         raise ExternalMeasurementError("mtd-admin JSON status is invalid") from exc
-    expected_projection = serialize_operator_payload("status", expected)
-    expected_human = (render_operator_status(expected_projection) + "\n").encode()
+    expected_projection = serialize_operator_payload("status", machine_source)
+    expected_human = (render_operator_status(serialize_operator_payload("status", human_source)) + "\n").encode()
     return {
         "json_exact_projection": allowlisted == expected_projection,
         "human_exact_projection": human.stdout == expected_human,
@@ -1191,7 +1225,6 @@ class FixedAccountCampaign:
                     forbidden.append(Path(value).expanduser().read_bytes().strip())
         status_surfaces = _admin_status_surfaces(
             self.operator_socket,
-            status_before,
             forbidden,
         )
         capacity = status_before.get("capacity")

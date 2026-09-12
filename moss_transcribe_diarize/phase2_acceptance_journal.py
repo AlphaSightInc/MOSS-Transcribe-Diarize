@@ -36,7 +36,12 @@ class ServiceJournalWindow:
         except ValueError as exc:
             raise JournalMeasurementError("Service journal returned invalid records") from exc
         if any(
-            not isinstance(row, dict) or row.get("_SYSTEMD_USER_UNIT") != self.unit
+            not isinstance(row, dict) or not (
+                row.get("_SYSTEMD_USER_UNIT") == self.unit
+                or (row.get("_SYSTEMD_USER_UNIT") == "init.scope"
+                    and row.get("_COMM") == "systemd"
+                    and row.get("USER_UNIT") == self.unit)
+            )
             or not isinstance(row.get("MESSAGE"), str)
             for row in rows
         ):

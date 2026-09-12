@@ -2870,8 +2870,8 @@ def test_admin_status_surfaces_execute_human_and_json_cli_and_reject_extra_field
             )
         return SimpleNamespace(returncode=0, stdout=b"status=1\n", stderr=b"")
 
-    monkeypatch.setattr(external.subprocess, "run", run)
-    surfaces = external._admin_status_surfaces(Path("/run/moss.sock"), expected, ())
+    monkeypatch.setattr(external, "_run_admin_status", lambda admin, path, json_output: (run((str(admin), "--json") if json_output else (str(admin),)), expected))
+    surfaces = external._admin_status_surfaces(Path("/run/moss.sock"), ())
     assert surfaces == {
         "json_exact_projection": True,
         "human_exact_projection": True,
@@ -2891,9 +2891,9 @@ def test_admin_status_surfaces_execute_human_and_json_cli_and_reject_extra_field
             )
         return SimpleNamespace(returncode=0, stdout=b"status=1\n", stderr=b"")
 
-    monkeypatch.setattr(external.subprocess, "run", extra_run)
+    monkeypatch.setattr(external, "_run_admin_status", lambda admin, path, json_output: (extra_run((str(admin), "--json") if json_output else (str(admin),)), expected))
     with pytest.raises(external.ExternalMeasurementError, match="JSON status is invalid"):
-        external._admin_status_surfaces(Path("/run/moss.sock"), expected, ())
+        external._admin_status_surfaces(Path("/run/moss.sock"), ())
 
 
 def test_malformed_external_envelope_is_a_qualification_blocker(tmp_path: Path):

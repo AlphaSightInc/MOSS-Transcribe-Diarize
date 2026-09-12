@@ -53,3 +53,23 @@ def test_failed_tail_does_not_inherit_success_from_baseline(monkeypatch):
     with pytest.raises(journal.JournalMeasurementError):
         window.read()
     assert not window.observation()["read_succeeded"]
+
+@pytest.mark.parametrize("fault", [None, "other_unit", "other_process", "other_scope"])
+def test_manager_records_are_bound_to_the_target_unit(monkeypatch, fault):
+    row = record(unit="init.scope")
+    row.update(USER_UNIT="moss-web.service", _COMM="systemd")
+    if fault == "other_unit":
+        row["USER_UNIT"] = "other.service"
+    elif fault == "other_process":
+        row["_COMM"] = "other"
+    elif fault == "other_scope":
+        row["_SYSTEMD_USER_UNIT"] = "other.scope"
+    monkeypatch.setattr(journal.subprocess, "run", lambda argv, **kwargs:
+        subprocess.CompletedProcess(argv, 0, json.dumps(row), ""))
+    if fault:
+        with pytest.raises(journal.JournalMeasurementError, match="provenance"):
+            journal.ServiceJournalWindow("moss-web.service")
+    else:
+        window = journal.ServiceJournalWindow("moss-web.service")
+        assert window.read() == b"started"
+        assert window.observation()["entries"] == 1
