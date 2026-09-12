@@ -102,3 +102,5 @@ private temporary output directories. One before/after pair per duration is a re
 measurement, not a statistical reliability claim. Immediate request drops do not cover
 blackholed TCP, browser suspension, or lost responses after server admission. Existing
 unit coverage separately checks identical frame replay after unconfirmed delivery.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

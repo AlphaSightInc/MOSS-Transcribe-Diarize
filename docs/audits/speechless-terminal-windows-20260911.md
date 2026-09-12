@@ -32,7 +32,7 @@ The typed empty exception does not expose prompt-token count; its synthesized em
 
 ## Validation
 
-Before implementation: new regressions **8 failed, 4 passed** (`/tmp/moss-speechless-red.log`). Failures included short/150-second silent windows and the mixed tape terminal pass.
+Before implementation: new regressions **8 failed, 4 passed** (`/tmp/moss-speechless-red.log` (MacStudio-local (not in repo))). Failures included short/150-second silent windows and the mixed tape terminal pass.
 
 Focused regression after implementation: **64 passed, 19 subtests passed** in 6.00s. Includes:
 
@@ -42,6 +42,6 @@ Focused regression after implementation: **64 passed, 19 subtests passed** in 6.
 - **T4:** the earlier 600-second host-reproduction test now processes all five windows and retains three silent-window classifications instead of failing at window 2. Sanitized diagnostic projection removes injected transcript text.
 - **T5:** checkpoint resume reuses an accepted silent window without decoding it again; missing VAD preserves failure.
 
-Full Python suite: **1380 passed, 2 existing optional corpus skips, 37 subtests passed**, zero failures, in 83.54s. Command: `.venv/bin/python -m pytest tests/ -q --junitxml=/tmp/moss-speechless-full.xml`. No frontend source changed; no model or host service calls were needed for these deterministic classification regressions.
+Full Python suite: **1380 passed, 2 existing optional corpus skips, 37 subtests passed**, zero failures, in 83.54s. Command: `.venv/bin/python -m pytest tests/ -q --junitxml=/tmp/moss-speechless-full.xml`. No frontend source changed; no model or host service calls were needed for these deterministic classification regressions. Scratch command paths: MacStudio-local (not in repo).
 
 Pre-push rebase incorporated `eb935313` (frontend polling interval and tests/assets only). No conflicts or backend changes. Post-rebase frontend suite: **196 passed**; TypeScript typecheck passed. The Python suite above ran before that unrelated frontend commit. Push target: `private/auto-mvp-0911`.

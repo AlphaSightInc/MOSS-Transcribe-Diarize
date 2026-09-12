@@ -82,3 +82,5 @@ A final focused row-14 run adds an explicit empty-pane assertion **before each S
 Prevention: retain the same-document scenario as a required E2E row. Fresh-page fixtures still isolate unrelated checks, but cannot substitute for Stop → Reset → Start lifecycle coverage. Browser DOM focus alone is not sufficient evidence of native capture eligibility on macOS.
 
 The isolated 17863 instance was stopped after measurement; its separate databases remain retained. No host operation, vLLM setting, identity threshold, first-decode boundary, acceptance predicate, or 17861 database was changed.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

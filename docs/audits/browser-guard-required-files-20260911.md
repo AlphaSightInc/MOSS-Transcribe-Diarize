@@ -27,13 +27,13 @@ must be evaluated using a full-suite report.
 ## Measured checks
 
 - Browser-forbidden required suite: **393 passed, 0 skipped**;
-  `/tmp/moss-required-browser-audit.log`, `/tmp/moss-required-browser-free.xml`.
+  `/tmp/moss-required-browser-audit.log` (MacStudio-local (not in repo)), `/tmp/moss-required-browser-free.xml` (MacStudio-local (not in repo)).
 - Simulated missing executable: **17 passed, 6 browser-only skipped**;
-  `/tmp/moss-missing-browser-tests.log`. Required multi-file API test completed.
+  `/tmp/moss-missing-browser-tests.log` (MacStudio-local (not in repo)). Required multi-file API test completed.
 - Real MacStudio Chrome plus guard regression tests: **14 passed, 0 skipped**;
-  `/tmp/moss-browser-present-tests.log`.
+  `/tmp/moss-browser-present-tests.log` (MacStudio-local (not in repo)).
 - Split API/browser/lifecycle/legacy tests: **30 passed, 0 skipped**;
-  `/tmp/moss-browser-split-tests.log`.
+  `/tmp/moss-browser-split-tests.log` (MacStudio-local (not in repo)).
 
 Static AST audit found no browser-launch/environmental-skip calls in these required
 files; imported fixtures were also inspected. Runtime browser-forbidden execution
@@ -68,5 +68,5 @@ launch a browser or skip a test.
 | `tests/phase2/test_workspace_reachability.py` | None | None |
 
 Full product suite: **1330 passed, 2 optional corpus skips, 37 subtests passed**.
-`/tmp/moss-guard-full.xml` passes the unchanged `_pytest_denominators` evaluator with
+`/tmp/moss-guard-full.xml` (MacStudio-local (not in repo)) passes the unchanged `_pytest_denominators` evaluator with
 all 24 required files and no evaluator errors, including the whole-suite count gate.

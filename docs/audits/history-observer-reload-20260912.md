@@ -16,4 +16,4 @@ Own fresh HTTPS stack on port 17863, isolated state, current candidate source, r
 - `python -m pytest tests/phase2/test_round11_browser_fixes.py -q`: **4 passed**, including actual hidden polling and a new reload-order/ownership-negative regression.
 - `npm test -- src/components/ControlPanel.test.tsx`: **11 passed**, including ephemeral history remount and originating capture reattachment.
 
-Local reproduction command: `.venv/bin/python /tmp/moss-round13-observer-reload/probe.py`. Scratch script and numeric results remain there; no audio, transcript or screenshot committed. This verifies the failed boundary on macOS Chromium with the predicate's flags, not a new host admission run.
+Local reproduction command: `.venv/bin/python /tmp/moss-round13-observer-reload/probe.py`. Scratch script and numeric results remain there; no audio, transcript or screenshot committed. This verifies the failed boundary on macOS Chromium with the predicate's flags, not a new host admission run. Scratch command paths: MacStudio-local (not in repo).

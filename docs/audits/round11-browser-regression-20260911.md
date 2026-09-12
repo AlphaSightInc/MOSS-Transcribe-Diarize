@@ -60,3 +60,5 @@ No host operations, vLLM changes, port-17861 service changes or database access.
 ## Scheduling permission received during the run
 
 The operator now permits earlier first-decode scheduling while preserving identity thresholds. This completed candidate remains on the previously accepted decode geometry so its measurements stay attributable. Timing implementation scope was queried separately; no earlier-decode prototype has been shipped as part of the checkbox or regression task.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

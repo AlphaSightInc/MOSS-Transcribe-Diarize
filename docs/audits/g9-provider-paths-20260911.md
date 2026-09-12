@@ -19,7 +19,7 @@ Falsifiers: filling the URL while relay is selected; an external request going t
 
 `evidence/g9-provider-paths-20260911.json`: **8/8 external checks**, **6/6 relay checks**, **1 fake relay upstream request**. Real Chromium; no browser request interception; no paid upstream. Focused regression/evaluator/timing tests: **16 passed**. Full-suite results appended after completion.
 
-Reproduce: `.venv/bin/python prototypes/client-configured-llm/final_browser_probe.py --output /tmp/g9-provider-paths.json`. The script pins imports to its own checkout. The host predicate supplies its configured Chrome binary; standalone probes use the shared executable discovery. Original local stack, host services, and databases were not changed.
+Reproduce: `.venv/bin/python prototypes/client-configured-llm/final_browser_probe.py --output /tmp/g9-provider-paths.json`. The script pins imports to its own checkout. The host predicate supplies its configured Chrome binary; standalone probes use the shared executable discovery. Original local stack, host services, and databases were not changed. Scratch command paths: MacStudio-local (not in repo).
 
 Full validation: `.venv/bin/python -m pytest tests/ -q` — **1,393 passed, 2 optional corpus skips, 37 subtests passed**; `npm --prefix frontend test -- --run` — **201 passed across 23 files**. Host round 10 has not been run by this agent.
 

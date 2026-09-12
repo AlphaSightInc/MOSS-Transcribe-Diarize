@@ -343,3 +343,5 @@ row into acceptance on the user's behalf.
 - `$diagnose` — if any fresh result differs from the checked-in baseline.
 - `$prototype` — mandatory for geometry, reconciliation, speaker-boundary, or routing changes.
 - `$aisight-xreview` — only when the owner explicitly requests another cross-review.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

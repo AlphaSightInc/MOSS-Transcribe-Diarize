@@ -91,8 +91,8 @@ case. Frontend: **202 passed**. The real-browser masked-PNG and writer tests als
 passed during the focused run (196 tests); the E2E metadata/sequence tests passed
 without browsers. No frontend behavior or bundle rebuild.
 
-Full logs stay outside the repository: `/tmp/moss-content-boundary-python.log`,
-`/tmp/moss-content-boundary-python.xml`, `/tmp/moss-content-boundary-frontend.log`.
+Full logs stay outside the repository: `/tmp/moss-content-boundary-python.log` (MacStudio-local (not in repo)),
+`/tmp/moss-content-boundary-python.xml` (MacStudio-local (not in repo)), `/tmp/moss-content-boundary-frontend.log` (MacStudio-local (not in repo)).
 
 ## Follow-up confirmation and removal history
 

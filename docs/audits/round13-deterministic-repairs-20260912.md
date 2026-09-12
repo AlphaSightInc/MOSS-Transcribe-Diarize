@@ -7,7 +7,7 @@ reported 1,637 combines ordinary tests and subtests. Its trace explicitly launch
 requested unavailable-browser environment rather than claiming that Chrome was
 absent in this retained run.
 
-Read-only source: `/tmp/moss-round13-retry-stage/result/raw/python.stdout` and
+Read-only source: `/tmp/moss-round13-retry-stage/result/raw/python.stdout` (MacStudio-local (not in repo)) and
 `python.stderr`. No host operations, decoder requests or existing-stack database
 access. Browser experiments used separate temporary fixture databases and the same
 SQLite-version seam as `tests/phase2/conftest.py`.
@@ -77,6 +77,6 @@ the required-file policy. The real discovery function confirmed no executable.
 - Full frontend in the same clean worktree: **204 passed**.
 
 Logs and XML stay outside git; the local scratch root is recorded in
-`/tmp/moss-round13-hoststyle-root`. No content-bearing evidence is added. The follow-up
+`/tmp/moss-round13-hoststyle-root` (MacStudio-local (not in repo)). No content-bearing evidence is added. The follow-up
 recording these integrated counts changes documentation only. This is local regression
 verification, not a completed host qualification or preadmission.

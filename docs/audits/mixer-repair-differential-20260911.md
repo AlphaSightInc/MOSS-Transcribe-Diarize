@@ -139,7 +139,7 @@ from `463b1d66` reported in `987d17dc`, not an asserted historical Phase-1 binar
 Same installed provider/decoder/configuration, existing local tunnel, draft off,
 pace 1x, a fresh workspace on the agent-owned 17862 database, no bank enrollment.
 No host operations or 17861 database access. Raw captures remain under
-`/tmp/moss-mixer-repair/runs`; only content-free scores/counts/timings are committed.
+`/tmp/moss-mixer-repair/runs` (MacStudio-local (not in repo)); only content-free scores/counts/timings are committed.
 
 [All per-surface DER/WER/counts and observations](../../prototypes/streaming-diarization/mixer-repair-feasibility/differential-results.json)
 and [input proof](../../prototypes/streaming-diarization/mixer-repair-feasibility/input-proof.json).

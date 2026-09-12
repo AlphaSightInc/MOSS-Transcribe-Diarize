@@ -10,7 +10,7 @@ No runtime, collector, bounds or identity changes are made.
 
 ## Evidence and method
 
-Archive: `/tmp/moss-round9-stage/result/evidence.tar`, candidate **433e67b2**.
+Archive: `/tmp/moss-round9-stage/result/evidence.tar` (MacStudio-local (not in repo)), candidate **433e67b2**.
 Extracted into a temporary directory outside the repo. Read
 `raw/pre_admission-collector/artifacts/quality/content-free-metrics.json` and each
 `pass-{1,2}/<case>/terminal-diagnostics.json`. All **12** rows are used to reproduce

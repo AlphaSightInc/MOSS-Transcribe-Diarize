@@ -7,6 +7,8 @@ but **does not admit it**.
 
 ## Host disk hygiene
 
+Repository copies: [incident timeline](../evidence/round-reports/host-incident-status-20260912.md), [sparse-attempt result](../evidence/round-reports/host-sparse-result-20260912.md), and [report availability](../evidence/round-reports/README.md). These are historical records; later recovery entries supersede earlier failures.
+
 **Round-13 incident, as reported by the release owner:** Ubuntu's `ext4.vhdx`
 reached **570 GB**, filled Windows C: (4.4 MB free), prevented WSL from starting
 and killed vLLM. Cutover stopped at `old_stopped`, leaving Phase-1 down. This

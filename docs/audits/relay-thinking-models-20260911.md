@@ -40,7 +40,7 @@ Use the verified chat-template option on both attempts for the configured compat
 
 Clarify the default prompt that the empty skeleton is not a completed answer and introduction-only transcripts still require a grounded nonempty summary. This fixes the separately reproduced prompt/validator mismatch without relaxing validation or inventing transcript facts. Existing user-saved prompts remain user-owned.
 
-Regression seam: real authenticated route with fake upstream responses. Seven new response-shape cases were run before production changes: **7 failed**, including the reasoning-only recovery and token floor (`/tmp/moss-thinking-red.log`).
+Regression seam: real authenticated route with fake upstream responses. Seven new response-shape cases were run before production changes: **7 failed**, including the reasoning-only recovery and token floor (`/tmp/moss-thinking-red.log` (MacStudio-local (not in repo))).
 
 Evidence custody note: the original 2048 pair's raw files were accidentally overwritten by the prompt-fixed pair during the throwaway probe. Those new files are now named `prompt-fixed2048`; the earlier 2048 metrics above are from captured terminal output, not retained raw JSON. The relay, direct 1024, and option-only 1024 request/response pairs remain intact. The original E2E raw MacStudio empty-summary response is also retained, independently establishing H2.
 
@@ -48,7 +48,7 @@ Prompt-only treatment (same 2048 budget and disabled thinking) returned nonempty
 
 ## Patched real-browser verification
 
-Run: `PYTHONPATH=. .venv/bin/python prototypes/client-configured-llm/thinking_browser_probe.py --output /tmp/moss-thinking-browser-fixed`.
+Run: `PYTHONPATH=. .venv/bin/python prototypes/client-configured-llm/thinking_browser_probe.py --output /tmp/moss-thinking-browser-fixed`. Scratch command paths: MacStudio-local (not in repo).
 
 This launches the built production frontend and patched production relay in a disposable app/workspace, then uses real Chromium and both real configured upstreams. The operator's HTTPS stack is not restarted or modified. The original transcript is committed into scratch meeting state; no transcription is rerun. Each model is selected using the Browser AI UI; Restore default prompt and Save are clicked; Generate/Regenerate drives the real frontend request, validation, and durable summary API.
 

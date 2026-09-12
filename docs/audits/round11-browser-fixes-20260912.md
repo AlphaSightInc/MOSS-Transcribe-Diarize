@@ -1,6 +1,6 @@
 # Round 11 browser and relay repairs
 
-Three acceptance/probe defects repaired; no transcription, identity, polling or relay product behavior changed. Source starts at `1dee922d`; retained host round is `c70a96e2`. Host evidence was read locally from `/tmp/moss-round11-stage/result/`; no host operations or operator 17861 database access.
+Three acceptance/probe defects repaired; no transcription, identity, polling or relay product behavior changed. Source starts at `1dee922d`; retained host round is `c70a96e2`. Host evidence was read locally from `/tmp/moss-round11-stage/result/` (MacStudio-local (not in repo)); no host operations or operator 17861 database access.
 
 ## F1 — the page never became hidden
 

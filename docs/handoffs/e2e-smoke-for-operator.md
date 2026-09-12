@@ -40,3 +40,5 @@ Verified on isolated port 17863, separate SQLite state, draft lane 1.0, **relay 
 ```
 
 Result: 4/4 PASS. Network evidence contains exactly one mutation, `POST /api/workspace/bootstrap`; zero decoder/summary submissions. Nine CLI/isolation regression tests pass. Retained evidence: `evidence/operator-smoke-20260911/`. This local self-signed run does not claim verification of production TLS or deployment. No host operations or changes to port 17861's database.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

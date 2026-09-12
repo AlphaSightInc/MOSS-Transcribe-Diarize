@@ -111,7 +111,7 @@ thresholds. A one-second eligibility floor is not a promise of one-second recogn
   interactive panel rather than duplicate server fallback markup. The harness now does so.
   One rapid Stop→Reset→capture attempt showed `Invalid state`; a fresh capture page worked.
   Its native-browser versus product-lifecycle origin remains unisolated, with retained
-  evidence in the initial logs under `/tmp/moss-e2e-20260911`.
+  evidence in the initial logs under `/tmp/moss-e2e-20260911` (MacStudio-local (not in repo)).
 - **H4 — Honest denominator:** one MP3 upload, one URL submission, one V04 live latency/Stop
   run. Seven live sessions were admitted in total: the required run plus naming, recognition
   and browser-failure recovery fixtures. Preflight retries admitted no sessions. Remaining
@@ -143,3 +143,5 @@ Final harness syntax/import/help checks passed. Full Python guard suite previous
 **1330 tests + 37 subtests**, with two optional corpus skips; all **24 required files / 393
 required tests** had zero skips and passed the unchanged acceptance evaluator. Guard commit:
 `433e67b2`, pushed independently before E2E resumed; [guard audit](browser-guard-required-files-20260911.md).
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

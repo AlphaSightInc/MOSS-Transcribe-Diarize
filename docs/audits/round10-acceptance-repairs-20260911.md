@@ -39,3 +39,5 @@ PYTHONDONTWRITEBYTECODE=1 /tmp/moss-prompt-fix/.venv/bin/python -m pytest -q \
   tests/phase2/test_wave1_qualification.py tests/phase2/test_operator_status.py \
   tests/test_live_service_replay.py tests/test_live_rolling_wiring.py
 ```
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

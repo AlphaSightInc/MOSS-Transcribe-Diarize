@@ -16,3 +16,5 @@ Run:
 ```
 
 [Results](../../evidence/e2e-reset-sequencing-20260911/results.json), [handoff evidence](../../evidence/e2e-reset-sequencing-20260911/network.jsonl), [tests](../../evidence/e2e-reset-sequencing-20260911/tests.txt). Screenshots, meeting records, exports and audio are retained alongside these files; browser cookies are excluded. Exit 0: `13:PASS | 14:PASS | total 2/2 PASS, 0 FAIL`.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

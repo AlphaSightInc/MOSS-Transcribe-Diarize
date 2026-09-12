@@ -18,3 +18,5 @@ MOSS_LLM_UPSTREAMS='[{"name":"selection-regression","base_url":"http://127.0.0.1
 Post-change command: **returncode 0, external 8/8, all relay checks true, one relay upstream request**. Before/after JSON and test output are retained in `evidence/summary-probe-selection-20260911/`.
 
 The deterministic probe creates its own local stack and scratch SQLite database, configures a real HTTP fake relay upstream explicitly, and uses synthetic transcripts; it does not connect to port 17861 or inject state into a running operator workspace. Its separate HTTPS fake external provider uses test-only self-signed TLS bypass, as before. This proves selection and CORS/relay behavior, not production TLS trust or host qualification. No actual model or decoder was called.
+
+Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).

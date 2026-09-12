@@ -46,11 +46,11 @@ Refresh exact SHA, service revision, host state, corpus hashes, thresholds, devi
 
 Primary existing evidence:
 
-- `/tmp/moss-final-c2e6248-evidence/f4b-disposition.txt`
-- `/tmp/moss-final-c2e6248-evidence/real-c2e6248/speaker-diagnosis.txt`
-- `/tmp/moss-final-c2e6248-evidence/real-c2e6248/speaker-final.json`
-- `/tmp/moss-final-c2e6248-evidence/offline-c2e6248/clause11-fixture-verdict.txt`
-- `/tmp/moss-final-c2e6248-evidence/offline-c2e6248/matching-diagnosis.txt`
+- `/tmp/moss-final-c2e6248-evidence/f4b-disposition.txt` (MacStudio-local (not in repo))
+- `/tmp/moss-final-c2e6248-evidence/real-c2e6248/speaker-diagnosis.txt` (MacStudio-local (not in repo))
+- `/tmp/moss-final-c2e6248-evidence/real-c2e6248/speaker-final.json` (MacStudio-local (not in repo))
+- `/tmp/moss-final-c2e6248-evidence/offline-c2e6248/clause11-fixture-verdict.txt` (MacStudio-local (not in repo))
+- `/tmp/moss-final-c2e6248-evidence/offline-c2e6248/matching-diagnosis.txt` (MacStudio-local (not in repo))
 
 Controlling design and code:
 

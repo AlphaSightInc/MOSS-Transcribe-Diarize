@@ -44,7 +44,7 @@ HTTP server or reproduce the host's restored unit.
 
 Both use the same current runtime factory, decoder endpoint through the existing
 tunnel, identity manifest, and finalizer. Account service runs only on 17862 with
-its own state directory `/tmp/moss-der-differential/state`; 17861 is untouched.
+its own state directory `/tmp/moss-der-differential/state` (MacStudio-local (not in repo)); 17861 is untouched.
 Draft lane remains off.
 
 ## F2 — Audio is not identical
@@ -246,7 +246,7 @@ its database and raw evidence are preserved. No host operation or 17861 mutation
 - [PCM/RMS and exact endpoint partitions](../../prototypes/streaming-diarization/account-path-differential/results/input-effects.json).
 - [Anonymous embedding-window durations and best-match observations](../../prototypes/streaming-diarization/account-path-differential/results/identity-windows.json).
 - [Reproduction scripts and scope](../../prototypes/streaming-diarization/account-path-differential/NOTES.md).
-- Raw captures/traces: /tmp/moss-der-differential (not committed).
+- Raw captures/traces: /tmp/moss-der-differential (not committed). MacStudio-local (not in repo).
 - Current mono/account descriptors are identical. August's provider, endpoint,
   decoder and identity hashes also match. Descriptor source revision belongs to
   the pinned provider bundle (29681e0479305449bb40caa49154fe4b1ae85eea);

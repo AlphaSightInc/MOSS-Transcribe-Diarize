@@ -5,7 +5,7 @@
 Round 11 at c70a96e2 retained four overload failures: session ordinals 7/8 in both
 layers, condition `unparseable_text`, wrapped `EmptyTranscriptionError`, window 1
 [120.0,120.5), refusal null. Each accepted/accounted 1,928,000 samples and closed,
-but finalization failed. Source: `/tmp/moss-round11-stage/result/report.md`, F6.
+but finalization failed. Source: `/tmp/moss-round11-stage/result/report.md` (MacStudio-local (not in repo)), F6.
 
 The 150-second window / 120-second stride planner creates starts while start is
 less than tape duration. At 120.5 seconds, window 0 already reads [0,120.5), but
@@ -73,9 +73,9 @@ unprovisioned corpus tests), 0 failures. Run with an empty Playwright browser pa
 and the scratch-only system-browser discovery shim used in the prior preflight.
 All 24 required files and all required named cases pass the acceptance denominator
 check, with no missing/failed/skipped required case. Frontend: **202 passed**.
-No frontend changes or rebuild. Raw logs: `/tmp/moss-short-tail-python.log`,
-`/tmp/moss-short-tail-python.xml`, `/tmp/moss-short-tail-frontend.log`.
+No frontend changes or rebuild. Raw logs: `/tmp/moss-short-tail-python.log` (MacStudio-local (not in repo)),
+`/tmp/moss-short-tail-python.xml` (MacStudio-local (not in repo)), `/tmp/moss-short-tail-frontend.log` (MacStudio-local (not in repo)).
 
 After rebase onto peer `1dab0bb8`, full Python rerun again passed **1,532 + 37
 subtests**, 22 expected skips; all required coverage remains green. Rebased logs:
-`/tmp/moss-short-tail-rebased.log`, `/tmp/moss-short-tail-rebased.xml`.
+`/tmp/moss-short-tail-rebased.log` (MacStudio-local (not in repo)), `/tmp/moss-short-tail-rebased.xml` (MacStudio-local (not in repo)).

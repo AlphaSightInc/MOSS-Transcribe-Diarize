@@ -7,7 +7,7 @@ was measured before that repair. No further plumbing change is indicated.
 ## F1 — The reported host score predates the accepted repair
 
 The local round-10 bundle pins **19ea9365fb9bbc19edb66a036bbc7be85538e288**
-in both `/tmp/moss-round10-stage/identity.json` and `sha.txt`. Its settled WER
+in both `/tmp/moss-round10-stage/identity.json` (MacStudio-local (not in repo)) and `sha.txt`. Its settled WER
 is .169310833. That candidate does not contain mixer repair **905eadbb**:
 its mixer has neither source-analysis PCM nor observed frame-end release.
 Thus .1693 does not measure the repaired account path. The fresh paired replay
@@ -148,8 +148,8 @@ local measurement is evidence for round 11, not a substitute for host qualificat
 - [Bench contract and reproduction](../../prototypes/streaming-diarization/text-path-differential/NOTES.md)
 - [Accepted mixer differential and controls](mixer-repair-differential-20260911.md)
 
-Raw fresh captures/traces: `/tmp/moss-text-differential/runs/{mono,account}/<case>/`.
-Retained host inputs: `/tmp/moss-round10-stage/result/raw/pre_admission-collector/artifacts/quality/`.
+Raw fresh captures/traces: `/tmp/moss-text-differential/runs/{mono,account}/<case>/` (MacStudio-local (not in repo)).
+Retained host inputs: `/tmp/moss-round10-stage/result/raw/pre_admission-collector/artifacts/quality/` (MacStudio-local (not in repo)).
 
 Code witnesses: `app/live_transcript_convergence.py::_plan` requires both accepted
 and committed samples through the rolling window end; `app/live_mixer.py` uses
