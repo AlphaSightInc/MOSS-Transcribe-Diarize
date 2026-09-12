@@ -30,6 +30,7 @@ from urllib.parse import urlsplit
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Mapping
+from types import SimpleNamespace
 
 import httpx
 
@@ -114,6 +115,35 @@ def _wait_crash_recovery(ops, unit, old_pid, *, timeout=60.0):
         ops.sleep(min(0.5, max(0.0, deadline - ops.monotonic())))
     evidence["wait_seconds"] = ops.monotonic() - started
     return evidence
+
+
+def _recording_mix_pcm(system_pcm: bytes) -> bytes:
+    """The replay client sends system audio plus a silent microphone, not mono input.
+
+    Use the production mixer before the archive oracle: recording headroom and
+    analysis-only gain are distinct; only frame.pcm is the recording surface.
+    """
+    from .app.live_lane_contract import LiveLane, LiveV2Frame
+    from .app.live_mixer import LiveCompatibilityMixer
+    from .app.live_v2_session import LiveV2Session
+
+    count = len(system_pcm) // 2
+    source = LiveV2Session(max_retained_samples=count)
+    for lane in LiveLane:
+        source.accept(LiveV2Frame(
+            lane=lane, sequence=0, capture_timestamp_ns=0, device_epoch=0,
+            silent=lane == LiveLane.MICROPHONE, discontinuity=False,
+            sample_rate=LIVE_SAMPLE_RATE, sample_count=count,
+            pcm=system_pcm if lane == LiveLane.SYSTEM else b"\0" * len(system_pcm),
+        ))
+    runtime = SimpleNamespace(snapshot=lambda _: SimpleNamespace(
+        session=SimpleNamespace(next_frame_sequence=0)))
+    mixed = LiveCompatibilityMixer(max_output_samples=count)._stage(
+        "recording-oracle", source, runtime, final=True
+    )
+    if mixed is None or mixed.frame.sample_count != count:
+        raise ExternalMeasurementError("recording oracle did not cover the accepted prefix")
+    return mixed.frame.pcm
 
 
 class _CampaignBackpressure:
@@ -1751,7 +1781,7 @@ class FixedAccountCampaign:
         ) as directory:
             oracle_root = Path(directory)
             source = oracle_root / "accepted-prefix.pcm"
-            source.write_bytes(accepted_pcm)
+            source.write_bytes(_recording_mix_pcm(accepted_pcm))
             expected = MeetingAudioArchive(oracle_root / "archive").publish_live_prefix(
                 "oracle-account", "oracle-meeting", source, partial=True
             )
@@ -1771,6 +1801,7 @@ class FixedAccountCampaign:
         }
         audio_prefix_failures = int(
             recovered_metadata != expected_metadata
+            or not isinstance(after_audio, dict)
             or not isinstance(after_audio.get("relative_path"), str)
             or not after_audio["relative_path"]
             or recovered_audio.status_code != 200
@@ -1786,8 +1817,18 @@ class FixedAccountCampaign:
                 silent=True,
             ),
         )
+        comparison = {
+            "session_id": created.session_id,
+            "expected_metadata": expected_metadata,
+            "recovered_metadata": recovered_metadata,
+            "download_status": recovered_audio.status_code,
+            "recording_bytes_equal": recovered_audio.content == expected_bytes,
+            "late_frame_status": reattach.status_code,
+        }
+        self._artifact_json("crash-audio-comparison.json", comparison)
         return {
             "cases": 1,
+            "audio_comparison": comparison,
             "nonempty_durable_prefix": durable_prefix,
             "lost_commits": document_mismatches,
             "durable_document_mismatches": document_mismatches,
@@ -1795,7 +1836,7 @@ class FixedAccountCampaign:
             "accepted_prefix_samples": accepted_prefix_samples,
             "process_replaced": True,
             "recovery": recovery,
-            "resumed_capture": int(reattach.status_code != 409),
+            "resumed_capture": int(200 <= reattach.status_code < 300),
             "non_interrupted_active_rows": int(after.get("status") != "interrupted"),
         }
 

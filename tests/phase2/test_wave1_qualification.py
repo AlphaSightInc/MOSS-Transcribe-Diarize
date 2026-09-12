@@ -2276,10 +2276,12 @@ def test_browser_batch_selector_executes_fixed_six_item_and_detached_contract(
     assert result["detached"] == {"status": 201, "meeting_id": "detached"}
 
 
+@pytest.mark.parametrize("corrupt_audio", [False, True])
+@pytest.mark.parametrize("late_status", [409, 404, 200])
 @pytest.mark.parametrize("kill_returncode", [0, 1])
 @pytest.mark.parametrize("prefix_fault", [None, "zero_version", "empty_segments", "nested_version_only"])
 def test_real_crash_producer_compares_recovered_bytes_to_production_archive_oracle(
-    monkeypatch, tmp_path: Path, prefix_fault, kill_returncode,
+    monkeypatch, tmp_path: Path, prefix_fault, kill_returncode, late_status, corrupt_audio,
 ):
     corpus = tmp_path / "corpus"
     case = corpus / "case"
@@ -2300,6 +2302,8 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
         def publish_live_prefix(self, account: str, meeting: str, source: Path, *, partial: bool):
             del account, meeting
             assert partial is True and len(source.read_bytes()) == 16_000
+            # System sample 1 mixed with silent microphone rounds to zero.
+            assert source.read_bytes() == b"\0\0" * 8_000
             path = self.root / "audio.partial.mp3"
             path.parent.mkdir(parents=True)
             path.write_bytes(b"expected-mp3")
@@ -2370,9 +2374,9 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
         def request(self, method: str, path: str, **kwargs: object):
             del method, kwargs
             if path.endswith("/audio/download"):
-                return _Response(200, content=b"expected-mp3")
+                return _Response(200, content=b"corrupt-mp3" if corrupt_audio else b"expected-mp3")
             if path.endswith("/frames"):
-                return _Response(409)
+                return _Response(late_status)
             return _Response(200)
 
         def close(self) -> None:
@@ -2407,7 +2411,9 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
         assert restarted is False
         return
     result = campaign.crash_recovery()
-    assert result["audio_prefix_failures"] == 0
+    assert result["resumed_capture"] == int(late_status == 200)
+    assert result["audio_comparison"]["late_frame_status"] == late_status
+    assert result["audio_prefix_failures"] == int(corrupt_audio)
     assert result["durable_document_mismatches"] == 0
     assert result["accepted_prefix_samples"] == 8_000
     assert result["process_replaced"] is True
