@@ -1,0 +1,12 @@
+{
+  "product_commit": "6b292c409ce92ab3cdd0d17a3b1a6ff63ceaba59",
+  "full_pass_commit": "ad6e252e",
+  "base": "https://127.0.0.1:17863",
+  "state_directory": "/tmp/moss-round11-e2e-20260911/attempt2/state",
+  "draft_lane_seconds": 1.0,
+  "decoder": "http://127.0.0.1:18000/v1",
+  "first_pass_directory": "/tmp/moss-round11-e2e-20260911/artifacts",
+  "final_directory": "/tmp/moss-round11-e2e-20260911/attempt2/artifacts",
+  "sqlite_override": "launcher patches only REQUIRED_SQLITE_RUNTIME to local sqlite3.sqlite_version",
+  "isolation": "17861 database untouched; fresh separate database for each pass"
+}

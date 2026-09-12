@@ -1,0 +1,9 @@
+{
+  "error": "'enrollment_live'",
+  "exception": "KeyError",
+  "screenshot": "row-08.png",
+  "status": "FAIL",
+  "seconds": 0.099,
+  "network": "network.jsonl",
+  "row": 8
+}
