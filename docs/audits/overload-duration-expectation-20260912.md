@@ -6,9 +6,11 @@ ran 120.5 seconds per session: both layers finalized all eight sessions and
 retained refusal → peer progress → retry of the same frame. The evaluator still
 rejected both at `requested != 30`.
 
-**This is the only evaluator expectation changed in this qualification effort.**
-The user explicitly authorized this correction after accepting Round 12.
-QUALITY_BOUNDS, the identity policy, runtime behavior, and all other overload
+**Two evaluator changes are now recorded in this qualification effort:** one
+loosening of the obsolete exact-duration literal to a descriptor-derived minimum,
+and one tightening requiring zero terminal failures and all eight sessions final.
+The user explicitly authorized both after accepting Round 12.
+QUALITY_BOUNDS, the identity policy, runtime behavior, and the remaining overload
 assertions remain unchanged. The existing three quality exceptions remain
 exceptions; no quality bound is relaxed in code.
 
@@ -64,14 +66,21 @@ python -m pytest tests/phase2/test_wave1_qualification.py \
 The existing real `LiveV2Session` test exercises the 60-second lane boundary,
 observes an actual capacity refusal, drains on peer progress, and retries the
 identical frame. The evaluator regressions use complete eight-session evidence,
-including accounting, lifecycle fairness and foreign-owner probes. All 180 tests
+including accounting, lifecycle fairness and foreign-owner probes. All 184 tests
 in the two affected modules pass, including independent rejection when any of
 the three backpressure witnesses is false.
 
-## Separate finding — terminal enforcement
+## Second change — enforce terminal completion
 
-Inspection also found that `_validate_overload` currently accepts an otherwise
-valid fixture with `terminal_failures=1`. Its explicit terminal-failure check is
-absent (the capacity validator has one). That gap is reported separately and left unchanged. This duration-only change does not
-claim to add terminal enforcement or certify a new candidate. Round 12's zero
-terminal failures and all-eight finalization were independently observed.
+Inspection and a failing regression showed that `_validate_overload` accepted
+`terminal_failures=1`, or a session with failed/missing finalization status.
+The user authorized tightening this gap, consistent with the existing plan:
+`terminal_failures == 0` and all eight session observations must have
+`finalization_status == "final"`. The load collector retains each actual Stop
+snapshot's finalization status; it does not infer success from a returned Stop.
+
+Tests now reject one terminal failure, one non-final session, and missing final
+status. The producer projection test covers both final and failed snapshots so
+it cannot manufacture finalization success. This is stricter enforcement, not
+an additional exception. Round 12 independently measured all eight finalized
+in both layers. No runtime or quality policy is changed.

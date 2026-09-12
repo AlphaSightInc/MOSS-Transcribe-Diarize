@@ -250,6 +250,7 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
                 "session_ordinal": ordinal,
                 "account_ordinal": 1 if ordinal % 2 else 2,
                 "frames": frames,
+                "finalization_status": "final",
                 "accepted_samples": samples,
                 "accounted_samples": samples,
             }
@@ -286,6 +287,7 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
     value.update(
         {
             "sessions": 8,
+            "terminal_failures": 0,
             "accounts": 2,
             "requested_duration_seconds": duration_seconds,
             "duration_seconds": duration_seconds,
@@ -509,7 +511,8 @@ def test_prestop_rtf_includes_rolling_and_scopes_stop_items_to_meeting():
     }
 
 
-def test_live_load_success_reaches_authoritative_result_projection(tmp_path, monkeypatch):
+@pytest.mark.parametrize("finalization_status", ["final", "failed"])
+def test_live_load_success_reaches_authoritative_result_projection(tmp_path, monkeypatch, finalization_status):
     fixture_root = tmp_path / "repo"
     fixture_path = fixture_root / "prototypes/streaming-diarization/concurrency"
     fixture_path.mkdir(parents=True)
@@ -600,6 +603,7 @@ def test_live_load_success_reaches_authoritative_result_projection(tmp_path, mon
                 accepted_samples=8_000,
                 accounted_samples=8_000,
                 effective_transcript=(SimpleNamespace(text="marker"),),
+                finalization_status=finalization_status,
             )
             return SimpleNamespace(session=session)
 
@@ -642,6 +646,7 @@ def test_live_load_success_reaches_authoritative_result_projection(tmp_path, mon
 
     result = campaign._run_live_load(sessions=1, duration_seconds=0.5)
 
+    assert result["session_observations"][0]["finalization_status"] == finalization_status
     assert result["prestop_inference_rtf"] == 0.4
     assert result["terminal_failures"] == 0
     assert "stale_failed_windows" not in result
@@ -3585,4 +3590,17 @@ def test_overload_duration_must_cover_descriptor_buffer_and_retry_margin(duratio
 def test_sufficient_overload_duration_still_requires_each_backpressure_witness(field):
     raw = _overload_raw()
     raw["backpressure_observation"][field] = False
+    assert acceptance._validate_overload({"raw": raw}) is False
+
+
+@pytest.mark.parametrize("failure", ["terminal_count", "one_not_final", "missing_final_status"])
+def test_overload_rejects_terminal_failure_or_any_session_not_finalized(failure):
+    raw = _overload_raw()
+    assert acceptance._validate_overload({"raw": raw}) is True
+    if failure == "terminal_count":
+        raw["terminal_failures"] = 1
+    elif failure == "one_not_final":
+        raw["session_observations"][7]["finalization_status"] = "failed"
+    else:
+        del raw["session_observations"][7]["finalization_status"]
     assert acceptance._validate_overload({"raw": raw}) is False

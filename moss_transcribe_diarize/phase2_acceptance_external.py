@@ -2498,6 +2498,7 @@ class FixedAccountCampaign:
                             "lags": lags,
                             "accepted_samples": stopped.session.accepted_samples,
                             "accounted_samples": stopped.session.accounted_samples,
+                            "finalization_status": stopped.session.finalization_status,
                             "events": payloads,
                             "maximum_pending_work_items": maximum_pending,
                             "own_marker_present": marker.casefold() in transcript_text,
@@ -2662,6 +2663,7 @@ class FixedAccountCampaign:
                     "lags": output["lags"],
                     "accepted_samples": output["accepted_samples"],
                     "accounted_samples": output["accounted_samples"],
+                    "finalization_status": output["finalization_status"],
                     "maximum_pending_work_items": output[
                         "maximum_pending_work_items"
                     ],

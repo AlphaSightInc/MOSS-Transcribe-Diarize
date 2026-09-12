@@ -1375,6 +1375,8 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
     return (
         raw.get("sessions") == 8
         and int(raw.get("accounts", 0)) == 2
+        and raw.get("terminal_failures") == 0
+        and all(item.get("finalization_status") == "final" for item in ordered)
         and sequence_gaps == 0
         and isolation_failures == 0
         and probes_complete
